@@ -13,7 +13,7 @@ java_library(
     deps = [
         "//:lombok",
         "//950-delegate-tasks-beans:module",
-        "//970-api-services-beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/shell:module",
         "//980-commons/src/main/java/io/harness/expression:module",
         "//980-commons/src/main/java/io/harness/expression/common:module",
     ],

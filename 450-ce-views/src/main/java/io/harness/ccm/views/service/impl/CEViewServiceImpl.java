@@ -9,19 +9,18 @@ package io.harness.ccm.views.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
-import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.budget.utils.BudgetUtils;
-import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.views.dao.CEReportScheduleDao;
 import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.dao.CEViewFolderDao;
 import io.harness.ccm.views.dto.DefaultViewIdDto;
+import io.harness.ccm.views.dto.LinkedPerspectives;
+import io.harness.ccm.views.dto.LinkedPerspectives.LinkedPerspectivesBuilder;
 import io.harness.ccm.views.dto.ViewTimeRangeDto;
 import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.entities.CEView;
@@ -59,13 +58,14 @@ import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.utils.CEViewPreferenceUtils;
 import io.harness.exception.InvalidRequestException;
 
-import com.google.cloud.bigquery.BigQuery;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.fabric8.utils.Lists;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -88,8 +88,6 @@ public class CEViewServiceImpl implements CEViewService {
   @Inject private ViewTimeRangeHelper viewTimeRangeHelper;
   @Inject private ViewFilterBuilderHelper viewFilterBuilderHelper;
   @Inject private ViewsQueryHelper viewsQueryHelper;
-  @Inject private BigQueryHelper bigQueryHelper;
-  @Inject private BigQueryService bigQueryService;
 
   private static final String VIEW_NAME_DUPLICATE_EXCEPTION = "Perspective with given name already exists";
   private static final String CLONE_NAME_DUPLICATE_EXCEPTION = "A clone for this perspective already exists";
@@ -158,10 +156,8 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   private double getCostForPerspective(String accountId, List<QLCEViewFilterWrapper> filters) {
-    String cloudProviderTable = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
-    ViewCostData costData = viewsBillingService.getCostData(bigQueryService.get(), filters,
-        viewsQueryHelper.getPerspectiveTotalCostAggregation(), cloudProviderTable,
-        viewsQueryHelper.buildQueryParams(accountId, false));
+    ViewCostData costData = viewsBillingService.getCostData(filters,
+        viewsQueryHelper.getPerspectiveTotalCostAggregation(), viewsQueryHelper.buildQueryParams(accountId, false));
     return costData.getCost();
   }
 
@@ -176,14 +172,12 @@ public class CEViewServiceImpl implements CEViewService {
     filters.add(viewsQueryHelper.getViewMetadataFilter(perspectiveId));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(startTime, AFTER));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
-    String cloudProviderTable = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     ViewCostData costDataForForecast =
         ViewCostData.builder()
-            .cost(
-                viewsBillingService
-                    .getCostData(bigQueryService.get(), filters, viewsQueryHelper.getPerspectiveTotalCostAggregation(),
-                        cloudProviderTable, viewsQueryHelper.buildQueryParams(accountId, false))
-                    .getCost())
+            .cost(viewsBillingService
+                      .getCostData(filters, viewsQueryHelper.getPerspectiveTotalCostAggregation(),
+                          viewsQueryHelper.buildQueryParams(accountId, false))
+                      .getCost())
             .minStartTime(1000 * startTime)
             .maxStartTime(1000 * BudgetUtils.getStartOfCurrentDay() - BudgetUtils.ONE_DAY_MILLIS)
             .build();
@@ -292,12 +286,34 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   @Override
+  public Set<String> getPerspectiveFolderIds(String accountId, List<String> ceViewIds) {
+    if (ceViewIds == null) {
+      return null;
+    }
+    List<CEView> ceViews = ceViewDao.getPerspectivesByIds(accountId, ceViewIds);
+    return ceViews.stream().map(ceView -> ceView.getFolderId()).collect(Collectors.toSet());
+  }
+
+  @Override
+  public HashMap<String, String> getPerspectiveIdAndFolderId(String accountId, List<String> ceViewIds) {
+    if (ceViewIds == null) {
+      return null;
+    }
+    List<CEView> ceViews = ceViewDao.getPerspectivesByIds(accountId, ceViewIds);
+    HashMap<String, String> perspectiveIdAndFolderIds = new HashMap<>();
+    for (CEView ceView : ceViews) {
+      perspectiveIdAndFolderIds.put(ceView.getUuid(), ceView.getFolderId());
+    }
+    return perspectiveIdAndFolderIds;
+  }
+
+  @Override
   public void updateBusinessMappingName(String accountId, String buinessMappingUuid, String newBusinessMappingName) {
     ceViewDao.updateBusinessMappingName(accountId, buinessMappingUuid, newBusinessMappingName);
   }
 
   @Override
-  public CEView updateTotalCost(CEView ceView, BigQuery bigQuery, String cloudProviderTableName) {
+  public CEView updateTotalCost(CEView ceView) {
     if (ceView.getViewState() != null && ceView.getViewState() == ViewState.COMPLETED) {
       List<QLCEViewAggregation> totalCostAggregationFunction = Collections.singletonList(
           QLCEViewAggregation.builder().columnName("cost").operationType(QLCEViewAggregateOperation.SUM).build());
@@ -313,8 +329,11 @@ public class CEViewServiceImpl implements CEViewService {
       filters.add(
           viewFilterBuilderHelper.getViewTimeFilter(startEndTime.getEndTime(), QLCEViewTimeFilterOperator.BEFORE));
 
-      QLCEViewTrendInfo trendData = viewsBillingService.getTrendStatsData(
-          bigQuery, filters, totalCostAggregationFunction, cloudProviderTableName);
+      QLCEViewTrendInfo trendData =
+          viewsBillingService
+              .getTrendStatsDataNg(filters, Collections.emptyList(), totalCostAggregationFunction,
+                  viewsQueryHelper.buildQueryParams(ceView.getAccountId(), false))
+              .getTotalCost();
       double totalCost = trendData.getValue().doubleValue();
       log.info("Total cost of view {}", totalCost);
       return ceViewDao.updateTotalCost(ceView.getUuid(), ceView.getAccountId(), totalCost);
@@ -330,7 +349,7 @@ public class CEViewServiceImpl implements CEViewService {
   @Override
   public List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria) {
     List<CEView> viewList = ceViewDao.findByAccountId(accountId, sortCriteria);
-    List<CEViewFolder> folderList = ceViewFolderDao.getFolders(accountId);
+    List<CEViewFolder> folderList = ceViewFolderDao.getFolders(accountId, "");
     if (!includeDefault) {
       viewList = viewList.stream()
                      .filter(view -> ImmutableSet.of(ViewType.SAMPLE, ViewType.CUSTOMER).contains(view.getViewType()))
@@ -350,6 +369,11 @@ public class CEViewServiceImpl implements CEViewService {
                      .collect(Collectors.toList());
     }
     return getQLCEViewsFromCEViews(accountId, viewList, folderList);
+  }
+
+  @Override
+  public List<CEView> getAllViews(String accountId) {
+    return ceViewDao.list(accountId);
   }
 
   private List<QLCEView> getQLCEViewsFromCEViews(
@@ -404,6 +428,22 @@ public class CEViewServiceImpl implements CEViewService {
   @Override
   public List<CEView> getViewByState(String accountId, ViewState viewState) {
     return ceViewDao.findByAccountIdAndState(accountId, viewState);
+  }
+
+  @Override
+  public List<LinkedPerspectives> getViewsByBusinessMapping(String accountId, List<String> businessMappingUuids) {
+    List<LinkedPerspectives> perspectiveListMessageList = new ArrayList<>();
+    for (String businessMappingUuid : businessMappingUuids) {
+      List<CEView> ceViewList = ceViewDao.findByAccountIdAndBusinessMapping(accountId, businessMappingUuid);
+      LinkedPerspectivesBuilder perspectiveListMessageBuilder =
+          LinkedPerspectives.builder().costCategoryId(businessMappingUuid);
+      if (!Lists.isNullOrEmpty(ceViewList)) {
+        perspectiveListMessageBuilder.perspectiveIdAndName(
+            ceViewList.stream().collect(Collectors.toMap(CEView::getUuid, CEView::getName)));
+      }
+      perspectiveListMessageList.add(perspectiveListMessageBuilder.build());
+    }
+    return perspectiveListMessageList;
   }
 
   private ViewIdCondition getDefaultViewIdCondition(String fieldId, String fieldName, ViewFieldIdentifier identifier) {
@@ -524,12 +564,37 @@ public class CEViewServiceImpl implements CEViewService {
     return null;
   }
 
-  private String getDefaultFolderId(String accountId) {
+  public String getDefaultFolderId(String accountId) {
     CEViewFolder defaultFolder = ceViewFolderDao.getDefaultFolder(accountId);
     if (defaultFolder == null) {
       return ceViewFolderDao.createDefaultOrSampleFolder(accountId, ViewType.DEFAULT);
     } else {
       return defaultFolder.getUuid();
     }
+  }
+
+  @Override
+  public boolean setFolderId(
+      CEView ceView, Set<String> allowedFolderIds, List<CEViewFolder> ceViewFolders, String defaultFolderId) {
+    List<CEViewFolder> allowedCeViewFolders =
+        ceViewFolders.stream()
+            .filter(ceViewFolder -> allowedFolderIds.contains(ceViewFolder.getUuid()))
+            .collect(Collectors.toList());
+    if (allowedCeViewFolders.size() == 0) {
+      return false;
+    }
+    if (allowedCeViewFolders.size() == 1 && allowedCeViewFolders.get(0).getName().equals("By Harness")) {
+      return false;
+    }
+    if (allowedFolderIds.contains(defaultFolderId)) {
+      ceView.setFolderId(defaultFolderId);
+      return true;
+    }
+    if (allowedCeViewFolders.get(0).getName().equals("By Harness")) {
+      ceView.setFolderId(allowedCeViewFolders.get(1).getUuid());
+      return true;
+    }
+    ceView.setFolderId(allowedCeViewFolders.get(0).getUuid());
+    return true;
   }
 }

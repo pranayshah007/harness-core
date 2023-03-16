@@ -29,9 +29,9 @@ import software.wings.beans.APMValidateCollectorConfig;
 import software.wings.beans.PrometheusConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.delegatetasks.cv.DataCollectionException;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.APMDelegateService;
 import software.wings.service.impl.analysis.SetupTestNodeData;
 import software.wings.service.impl.analysis.TimeSeries;
@@ -68,7 +68,7 @@ public class PrometheusAnalysisServiceTest extends WingsBaseTest {
   public void setup() {
     settingId = generateUuid();
     MockitoAnnotations.initMocks(this);
-    when(delegateProxyFactory.get(eq(APMDelegateService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(APMDelegateService.class), any(SyncTaskContext.class)))
         .thenReturn(apmDelegateService);
     when(mlServiceUtils.getHostName(any())).thenReturn("dummyHostName");
     PrometheusConfig config = PrometheusConfig.builder().url("http://34.68.138.55:8080/").build();

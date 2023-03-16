@@ -44,6 +44,7 @@ public class K8sClientHelper {
         .apiClient(apiClient)
         .eventInfoFormat(eventInfoFormat)
         .eventErrorFormat(EVENT_ERROR_FORMAT)
+        .releaseName(steadyStateDTO.getRequest().getReleaseName())
         .resourceIds(steadyStateDTO.getResourceIds())
         .workingDirectory(steadyStateDTO.getK8sDelegateTaskParams().getWorkingDirectory())
         .isErrorFrameworkEnabled(steadyStateDTO.isErrorFrameworkEnabled())
@@ -56,6 +57,7 @@ public class K8sClientHelper {
         .client(client)
         .eventInfoFormat(eventInfoFormat)
         .eventErrorFormat(EVENT_ERROR_FORMAT)
+        .releaseName(steadyStateDTO.getRequest().getReleaseName())
         .resourceIds(steadyStateDTO.getResourceIds())
         .workingDirectory(steadyStateDTO.getK8sDelegateTaskParams().getWorkingDirectory())
         .isErrorFrameworkEnabled(steadyStateDTO.isErrorFrameworkEnabled())
@@ -82,9 +84,9 @@ public class K8sClientHelper {
         .build();
   }
 
-  ApiClient createKubernetesApiClient(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
+  ApiClient createKubernetesApiClient(K8sInfraDelegateConfig k8sInfraDelegateConfig, LogCallback logCallback) {
     KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sInfraDelegateConfig);
+        containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sInfraDelegateConfig, logCallback);
     return kubernetesHelperService.getApiClient(kubernetesConfig);
   }
 

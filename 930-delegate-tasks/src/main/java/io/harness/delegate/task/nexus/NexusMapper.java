@@ -7,7 +7,7 @@
 
 package io.harness.delegate.task.nexus;
 
-import static io.harness.utils.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
+import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 
 import static java.lang.String.format;
 
@@ -152,6 +152,39 @@ public class NexusMapper {
           .hasCredentials(false)
           .isCertValidationRequired(requestDetails.isCertValidationRequired())
           .artifactRepositoryUrl(requestDetails.getArtifactUrl())
+          .build();
+    }
+
+    throw new InvalidRequestException(format("Unsupported Nexus auth type: %s", authType));
+  }
+
+  public NexusRequest toNexusRequest(
+      NexusConnectorDTO nexusConnectorDTO, boolean isCertValidationRequired, String artifactRepositoryUrl) {
+    NexusAuthType authType = nexusConnectorDTO.getAuth().getAuthType();
+    if (NexusAuthType.USER_PASSWORD == authType) {
+      NexusUsernamePasswordAuthDTO credentials =
+          (NexusUsernamePasswordAuthDTO) nexusConnectorDTO.getAuth().getCredentials();
+
+      String username =
+          getSecretAsStringFromPlainTextOrSecretRef(credentials.getUsername(), credentials.getUsernameRef());
+      char[] decryptedValue = credentials.getPasswordRef().getDecryptedValue();
+
+      return NexusRequest.builder()
+          .nexusUrl(nexusConnectorDTO.getNexusServerUrl())
+          .version(nexusConnectorDTO.getVersion())
+          .username(username)
+          .password(decryptedValue)
+          .hasCredentials(true)
+          .isCertValidationRequired(isCertValidationRequired)
+          .artifactRepositoryUrl(artifactRepositoryUrl)
+          .build();
+    } else if (NexusAuthType.ANONYMOUS == authType) {
+      return NexusRequest.builder()
+          .nexusUrl(nexusConnectorDTO.getNexusServerUrl())
+          .version(nexusConnectorDTO.getVersion())
+          .hasCredentials(false)
+          .isCertValidationRequired(isCertValidationRequired)
+          .artifactRepositoryUrl(artifactRepositoryUrl)
           .build();
     }
 

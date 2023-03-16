@@ -91,7 +91,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
 
     doReturn(KubernetesConfig.builder().accountId(ACCOUNT_ID).build())
         .when(containerBaseHelper)
-        .createKubernetesConfig(any(DirectK8sInfraDelegateConfig.class));
+        .createKubernetesConfig(any(DirectK8sInfraDelegateConfig.class), any());
   }
 
   @Test

@@ -12,7 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//970-api-services-beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/azure/model:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_azure_azure_core",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",

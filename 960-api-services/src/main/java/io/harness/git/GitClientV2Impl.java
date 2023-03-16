@@ -19,6 +19,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.git.Constants.COMMIT_MESSAGE;
+import static io.harness.git.Constants.DEFAULT_FETCH_IDENTIFIER;
 import static io.harness.git.Constants.EXCEPTION_STRING;
 import static io.harness.git.Constants.GIT_YAML_LOG_PREFIX;
 import static io.harness.git.Constants.HARNESS_IO_KEY_;
@@ -149,6 +150,7 @@ public class GitClientV2Impl implements GitClientV2 {
   private static final String INVALID_ADVERTISEMENT_ERROR = "invalid advertisement of";
   private static final String REDIRECTION_BLOCKED_ERROR = "Redirection blocked";
   private static final String TIMEOUT_ERROR = "Connection time out";
+  private static final int SOCKET_CONNECTION_READ_TIMEOUT_SECONDS = 60;
 
   @Inject private GitClientHelper gitClientHelper;
   /**
@@ -1025,6 +1027,11 @@ public class GitClientV2Impl implements GitClientV2 {
 
   @Override
   public FetchFilesResult fetchFilesByPath(FetchFilesByPathRequest request) throws IOException {
+    return fetchFilesByPath(DEFAULT_FETCH_IDENTIFIER, request);
+  }
+
+  @Override
+  public FetchFilesResult fetchFilesByPath(String identifier, FetchFilesByPathRequest request) throws IOException {
     cleanup(request);
     validateRequiredArgs(request);
     File lockFile = gitClientHelper.getLockObject(request.getConnectorId());
@@ -1033,7 +1040,8 @@ public class GitClientV2Impl implements GitClientV2 {
       try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
            FileLock lock = fileOutputStream.getChannel().lock()) {
         log.info("Successfully acquired lock on {}", lockFile);
-        checkoutFiles(request);
+        String latestCommitSHA = checkoutFiles(request);
+        GitFetchMetadataLocalThread.putCommitId(identifier, latestCommitSHA);
         List<GitFile> gitFiles = getFilteredGitFiles(request);
         resetWorkingDir(request);
 
@@ -1422,6 +1430,14 @@ public class GitClientV2Impl implements GitClientV2 {
       gitCommand.setTransportConfigCallback(transport -> {
         if (transport instanceof TransportHttp) {
           TransportHttp http = (TransportHttp) transport;
+          // Without proper timeout socket can get hang (ref: java.net.SocketInputStream.socketRead0) indefinitely
+          // during packet loss. In some scenarios even if connection is established back this may still remain stuck.
+          // Since socketRead0 ignores the thread interruptions, the original task thread will remain in running state
+          // forever. As all of our operations are synchronized stuck thread will block other git tasks to execute
+          // This timeout is used for setting connection and read timeout based on current implementation. A better
+          // option for further improvements is to have a custom connection factory where will use a more granular
+          // configuration of these timeouts parameters
+          http.setTimeout(SOCKET_CONNECTION_READ_TIMEOUT_SECONDS);
           http.setHttpConnectionFactory(connectionFactory);
         }
       });

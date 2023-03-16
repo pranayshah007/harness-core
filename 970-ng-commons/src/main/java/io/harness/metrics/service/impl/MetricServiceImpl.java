@@ -72,6 +72,7 @@ public class MetricServiceImpl implements MetricService {
   private static final String ENV_METRICS_COLLECTION_DISABLED = "METRICS_COLLECTION_DISABLED";
   private static final String ENABLE_PROMETHEUS_COLLECTOR = "ENABLE_PROMETHEUS_COLLECTOR";
   private static final String PROMETHEUS_COLLECTOR_PORT = "PROMETHEUS_COLLECTOR_PORT";
+  private static final String ENV_VARIABLE_WORKLOAD_IDENTITY = "USE_WORKLOAD_IDENTITY";
 
   public MetricServiceImpl(int exportIntervalMins) {
     this.exportIntervalMins = exportIntervalMins;
@@ -116,6 +117,10 @@ public class MetricServiceImpl implements MetricService {
     boolean prometheusCollectorEnabled = isPrometheusConnectorEnabled();
     log.info("GOOGLE_APPLICATION_CREDENTIALS: {} ENABLE_PROMETHEUS_COLLECTOR: {}", googleApplicationCred,
         prometheusCollectorEnabled);
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv(ENV_VARIABLE_WORKLOAD_IDENTITY));
+    if (usingWorkloadIdentity) {
+      return true;
+    }
     return isNotEmpty(googleApplicationCred) || prometheusCollectorEnabled;
   }
 

@@ -22,6 +22,7 @@ import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.DOCKER_RE
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ECR;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GCR;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GITHUB_PACKAGES;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GOOGLE_CLOUD_STORAGE;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GoogleArtifactRegistry;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.JENKINS;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.NEXUS2_REGISTRY;
@@ -60,6 +61,7 @@ public class GeneratorFactory {
   private final Nexus3PollingItemGenerator nexus3PollingItemGenerator;
   private final AzureArtifactsPollingItemGenerator azureArtifactsPollingItemGenerator;
   private final AMIPollingItemGenerator amiPollingItemGenerator;
+  private final GoogleCloudStoragePollingItemGenerator googleCloudStoragePollingItemGenerator;
 
   public PollingItemGenerator retrievePollingItemGenerator(BuildTriggerOpsData buildTriggerOpsData) {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
@@ -104,6 +106,8 @@ public class GeneratorFactory {
       return azureArtifactsPollingItemGenerator;
     } else if (AMI.getValue().equals(buildType)) {
       return amiPollingItemGenerator;
+    } else if (GOOGLE_CLOUD_STORAGE.getValue().equals(buildType)) {
+      return googleCloudStoragePollingItemGenerator;
     }
     return null;
   }

@@ -25,7 +25,9 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
+import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.currency.Currency;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewChartType;
@@ -127,6 +129,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @Mock private TableResult resultSet;
   @Mock private FieldValueList row;
   @Mock private CEMetadataRecordDao ceMetadataRecordDao;
+  @Mock private BigQueryService bigQueryService;
+  @Mock private BigQueryHelper bigQueryHelper;
 
   private Schema schema;
   private List<Field> fields;
@@ -147,17 +151,19 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     doCallRealMethod().when(viewsQueryBuilder).getAliasFromField(any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getFilterValuesQuery(any(), any(), any(), anyString(), anyInt(), anyInt(), anyBoolean());
-    doCallRealMethod().when(viewsQueryBuilder).getQuery(any(), any(), any(), any(), any(), any(), anyString());
+        .getFilterValuesQuery(any(), any(), any(), anyString(), anyInt(), anyInt(), anyBoolean(), anyBoolean());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt());
+        .getQuery(any(), any(), any(), any(), any(), any(), anyString(), any(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
+    doCallRealMethod()
+        .when(viewsQueryBuilder)
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
     doCallRealMethod().when(viewsQueryBuilder).getTotalCountQuery(any(), any(), any(), any(), anyString());
     doReturn(resultSet).when(bigQuery).query(any());
     doCallRealMethod().when(viewsQueryHelper).buildQueryParams(any(), anyBoolean());
@@ -167,7 +173,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .buildQueryParams(any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
     doCallRealMethod()
         .when(viewsQueryHelper)
-        .buildQueryParams(any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyInt(), anyBoolean());
+        .buildQueryParams(
+            any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyInt(), anyBoolean(), anyBoolean());
     doCallRealMethod().when(viewsQueryHelper).getDefaultViewGroupBy(any());
     doCallRealMethod().when(viewsQueryHelper).getViewFieldInput(any());
     doCallRealMethod().when(viewsQueryHelper).getUpdatedFiltersForPrevPeriod(any());
@@ -262,6 +269,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     when(businessMappingDataSourceHelper.getBusinessMappingViewFieldIdentifiersFromViewRules(anyList()))
         .thenReturn(Collections.emptySet());
     when(ceMetadataRecordDao.getDestinationCurrency(anyString())).thenReturn(Currency.USD);
+    when(bigQueryService.get()).thenReturn(bigQuery);
+    when(bigQueryHelper.getCloudProviderTableName(any(), any())).thenReturn(CLOUD_PROVIDER_TABLE);
   }
 
   @Test
@@ -277,8 +286,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                     .build());
     when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
         .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
-    List<String> filterValueStats =
-        viewsBillingService.getFilterValueStats(bigQuery, filters, CLOUD_PROVIDER_TABLE, 10, 0);
+    List<String> filterValueStats = viewsBillingService.getFilterValueStats(filters, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
   }
 
@@ -292,8 +300,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                     .build());
     when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
         .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
-    List<String> filterValueStats =
-        viewsBillingService.getFilterValueStats(bigQuery, filters, CLOUD_PROVIDER_TABLE, 10, 0);
+    List<String> filterValueStats = viewsBillingService.getFilterValueStats(filters, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
   }
 
@@ -307,8 +314,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                     .build());
     when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
         .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
-    List<String> filterValueStats =
-        viewsBillingService.getFilterValueStats(bigQuery, filters, CLOUD_PROVIDER_TABLE, 10, 0);
+    List<String> filterValueStats = viewsBillingService.getFilterValueStats(filters, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(LABEL_KEY);
   }
 
@@ -322,8 +328,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                     .build());
     when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
         .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
-    List<String> filterValueStats =
-        viewsBillingService.getFilterValueStats(bigQuery, filters, CLOUD_PROVIDER_TABLE, 10, 0);
+    List<String> filterValueStats = viewsBillingService.getFilterValueStats(filters, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(LABEL_VALUE);
   }
 
@@ -371,13 +376,12 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                     .build());
     when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), anyString()))
         .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
-    List<String> filterValueStats = viewsBillingService.getFilterValueStatsNg(
-        bigQuery, filters, CLOUD_PROVIDER_TABLE, 10, 0, getMockViewQueryParams(false));
+    List<String> filterValueStats =
+        viewsBillingService.getFilterValueStatsNg(filters, 10, 0, getMockViewQueryParams(false));
     assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
 
     // Cluster table query
-    filterValueStats = viewsBillingService.getFilterValueStatsNg(
-        bigQuery, filters, CLOUD_PROVIDER_TABLE, 10, 0, getMockViewQueryParams(true));
+    filterValueStats = viewsBillingService.getFilterValueStatsNg(filters, 10, 0, getMockViewQueryParams(true));
     assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
   }
 
@@ -407,8 +411,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
 
     // Perspective grid query
-    List<QLCEViewEntityStatsDataPoint> data = viewsBillingService.getEntityStatsDataPoints(
-        bigQuery, filters, groupBy, aggregations, sortCriteria, CLOUD_PROVIDER_TABLE, 100, 0);
+    List<QLCEViewEntityStatsDataPoint> data =
+        viewsBillingService.getEntityStatsDataPoints(filters, groupBy, aggregations, sortCriteria, 100, 0);
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -447,8 +451,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
 
     // Perspective grid query
-    QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(bigQuery, filters, groupBy, aggregations,
-        sortCriteria, CLOUD_PROVIDER_TABLE, 100, 0, getMockViewQueryParams(false));
+    QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
+        filters, groupBy, aggregations, sortCriteria, 100, 0, getMockViewQueryParams(false));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -485,8 +489,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
 
     // Perspective grid query
-    QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(bigQuery, filters, groupBy, aggregations,
-        sortCriteria, CLOUD_PROVIDER_TABLE, 100, 0, getMockViewQueryParams(false));
+    QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
+        filters, groupBy, aggregations, sortCriteria, 100, 0, getMockViewQueryParams(false));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -528,8 +532,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
 
     // Perspective grid query
-    QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(bigQuery, filters, groupBy, aggregations,
-        sortCriteria, CLOUD_PROVIDER_TABLE, 100, 0, getMockViewQueryParams(true));
+    QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
+        filters, groupBy, aggregations, sortCriteria, 100, 0, getMockViewQueryParams(true));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -568,8 +572,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
 
     // Perspective chart query
-    TableResult data = viewsBillingService.getTimeSeriesStats(
-        bigQuery, filters, groupBy, aggregations, sortCriteria, CLOUD_PROVIDER_TABLE);
+    TableResult data = viewsBillingService.getTimeSeriesStats(ACCOUNT_ID, filters, groupBy, aggregations, sortCriteria);
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -602,8 +605,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
 
     // Perspective chart query
-    TableResult data = viewsBillingService.getTimeSeriesStatsNg(bigQuery, filters, groupBy, aggregations, sortCriteria,
-        CLOUD_PROVIDER_TABLE, false, 100, getMockViewQueryParams(false, true));
+    TableResult data = viewsBillingService.getTimeSeriesStatsNg(
+        filters, groupBy, aggregations, sortCriteria, false, 100, getMockViewQueryParams(false, true));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -636,8 +639,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
 
     // Perspective chart query
-    TableResult data = viewsBillingService.getTimeSeriesStatsNg(bigQuery, filters, groupBy, aggregations, sortCriteria,
-        CLOUD_PROVIDER_TABLE, false, 100, getMockViewQueryParams(false, true));
+    TableResult data = viewsBillingService.getTimeSeriesStatsNg(
+        filters, groupBy, aggregations, sortCriteria, false, 100, getMockViewQueryParams(false, true));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -666,8 +669,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     aggregations.add(getAggregation("cost", QLCEViewAggregateOperation.SUM));
 
     // Perspective SummaryCard query
-    QLCEViewTrendInfo data =
-        viewsBillingService.getTrendStatsData(bigQuery, filters, aggregations, CLOUD_PROVIDER_TABLE);
+    QLCEViewTrendInfo data = viewsBillingService.getTrendStatsData(filters, aggregations);
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -703,7 +705,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Perspective SummaryCard query
     QLCEViewTrendData data = viewsBillingService.getTrendStatsDataNg(
-        bigQuery, filters, Collections.emptyList(), aggregations, CLOUD_PROVIDER_TABLE, getMockViewQueryParams(false));
+        filters, Collections.emptyList(), aggregations, getMockViewQueryParams(false));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -736,7 +738,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Perspective SummaryCard query
     QLCEViewTrendData data = viewsBillingService.getTrendStatsDataNg(
-        bigQuery, filters, Collections.emptyList(), aggregations, CLOUD_PROVIDER_TABLE, getMockViewQueryParams(false));
+        filters, Collections.emptyList(), aggregations, getMockViewQueryParams(false));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -765,8 +767,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     groupBy.add(getEntityGroupBy(NAMESPACE, "Namespace Id", ViewFieldIdentifier.CLUSTER));
 
     // Total count query
-    Integer data = viewsBillingService.getTotalCountForQuery(
-        bigQuery, filters, groupBy, CLOUD_PROVIDER_TABLE, getMockViewQueryParamsForTotalCount(false));
+    Integer data =
+        viewsBillingService.getTotalCountForQuery(filters, groupBy, getMockViewQueryParamsForTotalCount(false));
 
     // Assertions on result
     assertThat(data).isNotNull();

@@ -154,7 +154,7 @@ public class WebhookTriggerProcessor {
 
     waitNotifyEngine.waitForAllOn(
         ORCHESTRATION, new TriggerCallback(accountId, appId, savedTriggerExecution.getUuid()), waitId);
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     log.info("Issued file content change delegate task request for trigger execution id {}",
         savedTriggerExecution.getUuid());
   }

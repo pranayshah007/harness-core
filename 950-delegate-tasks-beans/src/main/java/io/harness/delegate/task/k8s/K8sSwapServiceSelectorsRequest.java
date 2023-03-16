@@ -46,4 +46,9 @@ public class K8sSwapServiceSelectorsRequest implements K8sDeployRequest {
   public List<String> getOpenshiftParamList() {
     return Collections.emptyList();
   }
+
+  @Override
+  public String getReleaseName() {
+    return null;
+  }
 }

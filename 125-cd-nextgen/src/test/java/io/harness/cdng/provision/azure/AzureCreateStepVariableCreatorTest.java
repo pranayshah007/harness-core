@@ -78,7 +78,8 @@ public class AzureCreateStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.commitId",
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.branch",
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.repoName",
-            "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.paths");
+            "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.paths",
+            "pipeline.stages.aaa.spec.execution.steps.aaa.when");
   }
 
   @Test
@@ -108,7 +109,8 @@ public class AzureCreateStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.commitId",
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.branch",
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.repoName",
-            "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.paths");
+            "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.paths",
+            "pipeline.stages.aaa.spec.execution.steps.aaa.when");
   }
 
   @Test
@@ -138,7 +140,8 @@ public class AzureCreateStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.commitId",
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.branch",
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.repoName",
-            "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.paths");
+            "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.paths",
+            "pipeline.stages.aaa.spec.execution.steps.aaa.when");
   }
 
   @Test
@@ -167,7 +170,8 @@ public class AzureCreateStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.commitId",
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.branch",
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.repoName",
-            "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.paths");
+            "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.parameters.store.spec.paths",
+            "pipeline.stages.aaa.spec.execution.steps.aaa.when");
   }
 
   @Test
@@ -189,7 +193,8 @@ public class AzureCreateStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.template.store.spec.branch",
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.template.store.spec.repoName",
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.template.store.spec.commitId",
-            "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.assignmentName");
+            "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.assignmentName",
+            "pipeline.stages.aaa.spec.execution.steps.aaa.when");
   }
 
   @Test
@@ -203,7 +208,8 @@ public class AzureCreateStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.aaa.spec.execution.steps.aaa.timeout",
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.provisionerIdentifier",
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.delegateSelectors",
-            "pipeline.stages.aaa.spec.execution.steps.aaa.description");
+            "pipeline.stages.aaa.spec.execution.steps.aaa.description",
+            "pipeline.stages.aaa.spec.execution.steps.aaa.when");
   }
 
   @Test
@@ -224,6 +230,7 @@ public class AzureCreateStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.template.store.spec.secretFiles",
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.connectorRef",
             "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.scope.spec.subscription",
-            "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.scope.spec.resourceGroup");
+            "pipeline.stages.aaa.spec.execution.steps.aaa.spec.configuration.scope.spec.resourceGroup",
+            "pipeline.stages.aaa.spec.execution.steps.aaa.when");
   }
 }

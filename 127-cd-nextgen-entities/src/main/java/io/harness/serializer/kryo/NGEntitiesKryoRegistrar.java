@@ -35,6 +35,7 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactSpecVisit
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptBaseSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
@@ -64,9 +65,14 @@ import io.harness.cdng.customdeployment.CustomDeploymentNGVariableType;
 import io.harness.cdng.customdeployment.CustomDeploymentNumberNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentSecretNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable;
+import io.harness.cdng.hooks.ServiceHook;
+import io.harness.cdng.hooks.ServiceHookOutcome;
+import io.harness.cdng.hooks.ServiceHookWrapper;
 import io.harness.cdng.infra.beans.AsgInfrastructureOutcome;
+import io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.GoogleFunctionsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
@@ -87,6 +93,9 @@ import io.harness.cdng.manifest.yaml.AsgLaunchTemplateManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScalingPolicyManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScheduledUpdateGroupActionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsLambdaAliasDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
 import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
@@ -129,6 +138,8 @@ import io.harness.cdng.manifest.yaml.kinds.AsgLaunchTemplateManifest;
 import io.harness.cdng.manifest.yaml.kinds.AsgScalingPolicyManifest;
 import io.harness.cdng.manifest.yaml.kinds.AsgScheduledUpdateGroupActionManifest;
 import io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest;
+import io.harness.cdng.manifest.yaml.kinds.AwsLambdaDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.AwsSamDirectoryManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
@@ -374,6 +385,20 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(AsgInfrastructure.class, 140067);
     kryo.register(GoogleCloudFunctionDefinitionManifest.class, 140068);
     kryo.register(GoogleCloudFunctionDefinitionManifestOutcome.class, 140069);
+    kryo.register(GoogleFunctionsInfrastructureOutcome.class, 1500001);
     kryo.register(CfCliVersionNG.class, 140070);
+    kryo.register(BambooArtifactConfig.class, 150070);
+    kryo.register(AwsLambdaDefinitionManifest.class, 140071);
+    kryo.register(AwsLambdaDefinitionManifestOutcome.class, 140072);
+    kryo.register(AwsLambdaAliasDefinitionManifestOutcome.class, 140073);
+
+    // AWS SAM
+    kryo.register(AwsSamInfrastructureOutcome.class, 1510001);
+    kryo.register(AwsSamDirectoryManifest.class, 1510002);
+    kryo.register(AwsSamDirectoryManifestOutcome.class, 1510003);
+    // HOOKS
+    kryo.register(ServiceHookWrapper.class, 160001);
+    kryo.register(ServiceHook.class, 160002);
+    kryo.register(ServiceHookOutcome.class, 160004);
   }
 }

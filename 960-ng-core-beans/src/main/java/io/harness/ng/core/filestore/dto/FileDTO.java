@@ -47,7 +47,7 @@ public class FileDTO {
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) private String projectIdentifier;
 
   @ApiModelProperty(required = true)
-  @EntityIdentifier(maxLength = 128)
+  @EntityIdentifier
   @Schema(description = "Identifier of the File or Folder")
   @FormDataParam("identifier")
   private String identifier;

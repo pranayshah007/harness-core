@@ -105,8 +105,8 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
       LogCallback executionLogCallback) throws Exception {
     executionLogCallback.saveExecutionLog("Initializing..\n");
     executionLogCallback.saveExecutionLog(color(format("Release Name: [%s]", this.releaseName), Yellow, Bold));
-    this.kubernetesConfig =
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(request.getK8sInfraDelegateConfig());
+    this.kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+        request.getK8sInfraDelegateConfig(), executionLogCallback);
     this.client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
     List<String> manifestOverrideFiles = getManifestOverrideFlies(request);
 

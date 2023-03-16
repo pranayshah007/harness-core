@@ -110,8 +110,8 @@ public class InfrastructurePmsPlanCreatorTest extends CDNGTestBase {
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     Map<String, String> dependencyMap =
         planCreationResponseMap.get(rcField.getNode().getUuid()).getDependencies().getDependenciesMap();
-    assertThat(dependencyMap.size()).isEqualTo(1);
-    assertThat(dependencyMap.containsKey(rcField.getNode().getUuid())).isTrue();
+    assertThat(dependencyMap).hasSize(1);
+    assertThat(dependencyMap).containsKey(rcField.getNode().getUuid());
   }
   @Test
   @Owner(developers = OwnerRule.YOGESH)
@@ -128,7 +128,7 @@ public class InfrastructurePmsPlanCreatorTest extends CDNGTestBase {
             .build(),
         Collections.singletonList(AdviserObtainment.newBuilder().build()), null, null);
 
-    assertThat(node.getName()).isEqualTo("Infrastructure Section");
+    assertThat(node.getName()).isEqualTo("Infrastructure");
     assertThat(node.getIdentifier()).isEqualTo("infrastructure");
     assertThat(node.getStepType()).isEqualTo(InfrastructureTaskExecutableStepV2.STEP_TYPE);
     assertThat(node.getGroup()).isEqualTo("infrastructureGroup");

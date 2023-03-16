@@ -12,6 +12,9 @@ import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_SYNC_ENTITY_STREAM;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.API_KEY_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.AZURE_ARM_CONFIG_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CD_TELEMETRY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CLOUDFORMATION_CONFIG_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENVIRONMENT_GROUP_ENTITY;
@@ -23,15 +26,19 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_CO
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_PROCESS_REQUEST;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_TO_HARNESS_PROGRESS;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.INVITE;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.LICENSE_MODULES;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.POLLING_DOCUMENT;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SCM;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SERVICEACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SETTINGS;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SETUP_USAGE_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SIGNUP_TOKEN;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.STAGE_EXEC_INFO;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TEMPLATE_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TERRAFORM_CONFIG_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TERRAGRUNT_CONFIG_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_GROUP;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_SCOPE_RECONCILIATION;
@@ -77,10 +84,16 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
       @Named(SETUP_USAGE_ENTITY) MessageProcessor setupUsageChangeEventMessageProcessor,
       @Named(USER_ENTITY + ENTITY_CRUD) MessageListener userEntityCRUDStreamListener,
       @Named(SECRET_ENTITY + ENTITY_CRUD) MessageListener secretEntityCRUDStreamListner,
+      @Named(SERVICEACCOUNT_ENTITY + ENTITY_CRUD) MessageListener serviceAccountEntityCRUDStreamListener,
+      @Named(TERRAFORM_CONFIG_ENTITY + ENTITY_CRUD) MessageListener terraformConfigEntityCRUDStreamListener,
+      @Named(TERRAGRUNT_CONFIG_ENTITY + ENTITY_CRUD) MessageListener terragruntConfigEntityCRUDStreamListener,
+      @Named(CLOUDFORMATION_CONFIG_ENTITY + ENTITY_CRUD) MessageListener cloudformationConfigEntityCRUDStreamListener,
+      @Named(AZURE_ARM_CONFIG_ENTITY + ENTITY_CRUD) MessageListener azureARMConfigEntityCRUDStreamListener,
       @Named(VARIABLE_ENTITY + ENTITY_CRUD) MessageListener variableEntityCRUDStreamListener,
       @Named(USER_GROUP + ENTITY_CRUD) MessageListener userGroupEntityCRUDStreamListener,
       @Named(FILTER + ENTITY_CRUD) MessageListener filterEventListener,
       @Named(FREEZE_CONFIG + ENTITY_CRUD) MessageListener freezeEventListener,
+      @Named(LICENSE_MODULES + ENTITY_CRUD) MessageListener licenseModuleListener,
       @Named(GIT_COMMIT + ENTITY_CRUD) MessageListener gitCommitEventListener,
       @Named(GIT_PROCESS_REQUEST + ENTITY_CRUD) MessageListener gitProcessRequestEventListener,
       @Named(GIT_TO_HARNESS_PROGRESS + ENTITY_CRUD) MessageListener gitToHarnessEventListener,
@@ -90,6 +103,7 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
       @Named(SETTINGS + ENTITY_CRUD) MessageListener settingsEventListener,
       @Named(USER_SCOPE_RECONCILIATION) MessageListener userMembershipReconciliationMessageProcessor,
       @Named(GIT_SYNC_ENTITY_STREAM + ENTITY_CRUD) MessageListener gitSyncProjectCleanup,
+      @Named(CD_TELEMETRY + ENTITY_CRUD) MessageListener cdTelemetryEventListener,
       @Named(GITOPS_CLUSTER_ENTITY + ENTITY_CRUD) MessageListener gitopsClusterCleanupProcessor,
       @Named(TEMPLATE_ENTITY + ENTITY_CRUD) MessageListener customDeploymentEntityCRUDStreamEventListener,
       @Named(SIGNUP_TOKEN + ENTITY_CRUD) MessageListener signupTokenEventListener,
@@ -106,11 +120,18 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
     messageListenersList.add(environmentGroupEntityCRUDStreamListener);
     messageListenersList.add(userEntityCRUDStreamListener);
     messageListenersList.add(secretEntityCRUDStreamListner);
+    messageListenersList.add(serviceAccountEntityCRUDStreamListener);
+    messageListenersList.add(terraformConfigEntityCRUDStreamListener);
+    messageListenersList.add(terragruntConfigEntityCRUDStreamListener);
+    messageListenersList.add(cloudformationConfigEntityCRUDStreamListener);
+    messageListenersList.add(azureARMConfigEntityCRUDStreamListener);
     messageListenersList.add(variableEntityCRUDStreamListener);
     messageListenersList.add(userGroupEntityCRUDStreamListener);
     messageListenersList.add(filterEventListener);
     messageListenersList.add(freezeEventListener);
+    messageListenersList.add(licenseModuleListener);
     messageListenersList.add(gitCommitEventListener);
+    messageListenersList.add(cdTelemetryEventListener);
     messageListenersList.add(signupTokenEventListener);
     messageListenersList.add(sourceCodeManagerEventListener);
     messageListenersList.add(stageExecutionInfoEventListener);

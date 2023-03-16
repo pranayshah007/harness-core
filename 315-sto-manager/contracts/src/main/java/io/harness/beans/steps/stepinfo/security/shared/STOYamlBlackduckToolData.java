@@ -13,18 +13,17 @@ import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-import org.codehaus.jackson.annotate.JsonProperty;
 
 @Data
 @OwnedBy(STO)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class STOYamlBlackduckToolData {
-  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "project_name")
-  @JsonProperty("project_name")
-  protected ParameterField<String> projectName;
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "project_name") protected ParameterField<String> projectName;
 
   @ApiModelProperty(dataType = STRING_CLASSPATH, name = "project_version")
-  @JsonProperty("project_version")
   protected ParameterField<String> projectVersion;
 }

@@ -19,7 +19,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.WingsException;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -41,7 +41,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SettingAttributeValidateConnectivityHandler
-    extends IteratorPumpModeHandler implements Handler<SettingAttribute> {
+    extends IteratorPumpAndRedisModeHandler implements Handler<SettingAttribute> {
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofHours(1);
+
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private SettingsService settingsService;
@@ -57,7 +59,7 @@ public class SettingAttributeValidateConnectivityHandler
                            .clazz(SettingAttribute.class)
                            .fieldName(SettingAttributeKeys.nextIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofHours(1))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                            .handler(this)
                            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                            .filterExpander(query
@@ -78,6 +80,37 @@ public class SettingAttributeValidateConnectivityHandler
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  public void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<SettingAttribute, MorphiaFilterExpander<SettingAttribute>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       SettingAttributeValidateConnectivityHandler.class,
+                       MongoPersistenceIterator.<SettingAttribute, MorphiaFilterExpander<SettingAttribute>>builder()
+                           .clazz(SettingAttribute.class)
+                           .fieldName(SettingAttributeKeys.nextIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .filterExpander(query
+                               -> query.field(SettingAttributeKeys.value_type)
+                                      .in(asList(SettingVariableTypes.AWS.name(), SettingVariableTypes.GCP.name(),
+                                          SettingVariableTypes.AZURE.name(), SettingVariableTypes.DOCKER.name(),
+                                          SettingVariableTypes.ECR.name(), SettingVariableTypes.GCR.name(),
+                                          SettingVariableTypes.ACR.name(), SettingVariableTypes.ARTIFACTORY.name(),
+                                          SettingVariableTypes.NEXUS.name(), SettingVariableTypes.JENKINS.name(),
+                                          SettingVariableTypes.BAMBOO.name(), SettingVariableTypes.GCS.name(),
+                                          SettingVariableTypes.AMAZON_S3.name(),
+                                          SettingVariableTypes.AZURE_ARTIFACTS_PAT.name(),
+                                          SettingVariableTypes.HTTP_HELM_REPO.name(),
+                                          SettingVariableTypes.AMAZON_S3_HELM_REPO.name(),
+                                          SettingVariableTypes.OCI_HELM_REPO.name(),
+                                          SettingVariableTypes.GCS_HELM_REPO.name(), SettingVariableTypes.SMB.name(),
+                                          SettingVariableTypes.SFTP.name(), SettingVariableTypes.CUSTOM.name())))
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

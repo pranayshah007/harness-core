@@ -8,9 +8,11 @@
 package io.harness.engine.executions.plan;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plan.Node;
 import io.harness.plan.NodeEntity;
@@ -24,7 +26,9 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import net.jodah.failsafe.Failsafe;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanServiceImpl implements PlanService {
@@ -35,7 +39,7 @@ public class PlanServiceImpl implements PlanService {
   @Override
   public Plan fetchPlan(String planId) {
     Optional<Plan> planOptional = planRepository.findById(planId);
-    if (!planOptional.isPresent()) {
+    if (planOptional.isEmpty()) {
       throw new InvalidRequestException("Plan not found for id" + planId);
     }
     return planOptional.get();
@@ -78,5 +82,27 @@ public class PlanServiceImpl implements PlanService {
       return plan.fetchPlanNode(nodeId);
     }
     return PlanNode.fromPlanNodeProto(fetchPlan(planId).fetchNode(nodeId));
+  }
+
+  @Override
+  public void deleteNodesForGivenIds(Set<String> nodeEntityIds) {
+    if (EmptyPredicate.isEmpty(nodeEntityIds)) {
+      return;
+    }
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      nodeEntityRepository.deleteAllByUuidIn(nodeEntityIds);
+      return true;
+    });
+  }
+
+  @Override
+  public void deletePlansForGivenIds(Set<String> planIds) {
+    if (EmptyPredicate.isEmpty(planIds)) {
+      return;
+    }
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      planRepository.deleteAllByUuidIn(planIds);
+      return true;
+    });
   }
 }

@@ -7,14 +7,19 @@
 
 package io.harness.engine.executions.plan;
 
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.repositories.PlanExecutionMetadataRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Optional;
+import java.util.Set;
+import net.jodah.failsafe.Failsafe;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -34,5 +39,17 @@ public class PlanExecutionMetadataServiceImpl implements PlanExecutionMetadataSe
   @Override
   public PlanExecutionMetadata save(PlanExecutionMetadata planExecutionMetadata) {
     return planExecutionMetadataRepository.save(planExecutionMetadata);
+  }
+
+  @Override
+  public void deleteMetadataForGivenPlanExecutionIds(Set<String> planExecutionIds) {
+    if (EmptyPredicate.isEmpty(planExecutionIds)) {
+      return;
+    }
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      // Uses - id index
+      planExecutionMetadataRepository.deleteAllByPlanExecutionIdIn(planExecutionIds);
+      return true;
+    });
   }
 }

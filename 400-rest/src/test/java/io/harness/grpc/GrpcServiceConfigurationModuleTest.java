@@ -14,7 +14,7 @@ import io.harness.govern.ProviderModule;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.perpetualtask.PerpetualTaskServiceModule;
 import io.harness.rule.Owner;
-import io.harness.service.impl.AgentMtlsEndpointServiceReadOnlyImpl;
+import io.harness.service.impl.agent.mtls.AgentMtlsEndpointServiceReadOnlyImpl;
 import io.harness.service.intfc.AgentMtlsEndpointService;
 
 import software.wings.app.MainConfiguration;

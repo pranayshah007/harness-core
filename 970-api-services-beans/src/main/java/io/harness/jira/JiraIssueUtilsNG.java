@@ -183,6 +183,8 @@ public class JiraIssueUtilsNG {
         return convertOptionToFinalValue(field, name, value);
       case ISSUE_LINK:
         return convertIssueLinkToFinalValue(field, name, value);
+      case ISSUE_TYPE:
+        return convertIssueTypeToFinalValue(field, name, value);
       default:
         throw new JiraClientException(String.format("Unsupported field type: %s", field.getSchema().getType()), true);
     }
@@ -255,6 +257,18 @@ public class JiraIssueUtilsNG {
     }
     Map<String, String> issueLinkMap = new HashMap<>();
     issueLinkMap.put("key", value);
+    return issueLinkMap;
+  }
+
+  private Object convertIssueTypeToFinalValue(JiraFieldNG field, String name, String value) {
+    // reference
+    // https://community.atlassian.com/t5/Jira-questions/How-can-I-change-an-issuetype-on-an-existing-issue-via-the-REST/qaq-p/801750#:~:text=Then%20I%20executed%20PUT%20%C2%A0/rest/api/2/issue/issuekey%20with%20the%20following%20JSON%3A
+    // used for updating issue type only in update step
+    if (StringUtils.isBlank(value)) {
+      throw new JiraClientException(String.format("Invalid issuetype value for field [%s]", name), true);
+    }
+    Map<String, String> issueLinkMap = new HashMap<>();
+    issueLinkMap.put("name", value);
     return issueLinkMap;
   }
 }

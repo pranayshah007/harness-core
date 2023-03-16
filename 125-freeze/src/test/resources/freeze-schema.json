@@ -1,0 +1,428 @@
+{
+  "status": "SUCCESS",
+  "data": {
+    "type": "object",
+    "required": [
+      "freeze"
+    ],
+    "properties": {
+      "freeze": {
+        "$ref": "#/definitions/FreezeInfoConfig"
+      }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+      "EntityConfig": {
+        "type": "object",
+        "required": [
+          "filterType",
+          "type"
+        ],
+        "properties": {
+          "entityRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "filterType": {
+            "type": "string",
+            "enum": [
+              "All",
+              "Equals",
+              "NotEquals"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Service",
+              "Project",
+              "Org",
+              "Environment",
+              "EnvType"
+            ]
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "FreezeConfig": {
+        "type": "object",
+        "required": [
+          "freeze"
+        ],
+        "properties": {
+          "freeze": {
+            "$ref": "#/definitions/FreezeInfoConfig"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "FreezeEntityRule": {
+        "type": "object",
+        "required": [
+          "entities"
+        ],
+        "properties": {
+          "entities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/EntityConfig"
+            }
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "FreezeEvent": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "FreezeWindowEnabled",
+              "DeploymentRejectedDueToFreeze"
+            ]
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "FreezeInfoConfig": {
+        "type": "object",
+        "required": [
+          "identifier",
+          "name",
+          "status",
+          "orgIdentifier",
+          "projectIdentifier"
+        ],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "entityConfigs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/FreezeEntityRule"
+            }
+          },
+          "identifier": {
+            "type": "string",
+            "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+          },
+          "notificationRules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/FreezeNotifications"
+            }
+          },
+          "orgIdentifier": {
+            "type": "string",
+            "const": "harness"
+          },
+          "projectIdentifier": {
+            "type": "string",
+            "const": "abhinav"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Enabled",
+              "Disabled"
+            ]
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "windows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/FreezeWindow"
+            }
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "FreezeNotificationChannelWrapper": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "Email"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "spec": {
+                  "$ref": "#/definitions/PmsEmailChannel"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "MsTeams"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "spec": {
+                  "$ref": "#/definitions/PmsMSTeamChannel"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "PagerDuty"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "spec": {
+                  "$ref": "#/definitions/PmsPagerDutyChannel"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "Slack"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "spec": {
+                  "$ref": "#/definitions/PmsSlackChannel"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "FreezeNotifications": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/FreezeEvent"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "notificationMethod": {
+            "$ref": "#/definitions/FreezeNotificationChannelWrapper"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "FreezeWindow": {
+        "type": "object",
+        "required": [
+          "startTime",
+          "timeZone"
+        ],
+        "properties": {
+          "duration": {
+            "type": "string"
+          },
+          "endTime": {
+            "type": "string"
+          },
+          "recurrence": {
+            "$ref": "#/definitions/Recurrence"
+          },
+          "startTime": {
+            "type": "string"
+          },
+          "timeZone": {
+            "type": "string"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "allOf": [
+          {
+            "oneOf": [
+              {
+                "required": [
+                  "duration"
+                ]
+              },
+              {
+                "required": [
+                  "endTime"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "PmsEmailChannel": {
+        "allOf": [
+          {
+            "$ref": "#/definitions/PmsNotificationChannel"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "recipients": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "userGroups": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "PmsMSTeamChannel": {
+        "allOf": [
+          {
+            "$ref": "#/definitions/PmsNotificationChannel"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "msTeamKeys": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "userGroups": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "PmsNotificationChannel": {
+        "type": "object",
+        "discriminator": "type",
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "PmsPagerDutyChannel": {
+        "allOf": [
+          {
+            "$ref": "#/definitions/PmsNotificationChannel"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "integrationKey": {
+                "type": "string"
+              },
+              "userGroups": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "PmsSlackChannel": {
+        "allOf": [
+          {
+            "$ref": "#/definitions/PmsNotificationChannel"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "userGroups": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "webhookUrl": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "Recurrence": {
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "spec": {
+            "$ref": "#/definitions/RecurrenceSpec"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Daily",
+              "Weekly",
+              "Monthly",
+              "Yearly"
+            ]
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "RecurrenceSpec": {
+        "type": "object",
+        "required": [
+          "until"
+        ],
+        "properties": {
+          "until": {
+            "type": "string"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      }
+    }
+  },
+  "metaData": null,
+  "correlationId": "63136938-cd26-465b-879b-e49de3349b2f"
+}

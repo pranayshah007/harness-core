@@ -22,6 +22,7 @@ import io.harness.cvng.core.beans.TimeGraphResponse.DataPoints;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.sidekick.VerificationTaskCleanupSideKickData;
+import io.harness.cvng.core.beans.sli.MetricOnboardingGraph;
 import io.harness.cvng.core.beans.sli.SLIOnboardingGraphs;
 import io.harness.cvng.core.beans.sli.SLIOnboardingGraphs.MetricGraph;
 import io.harness.cvng.core.entities.CVConfig;
@@ -36,10 +37,16 @@ import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.utils.DateTimeUtils;
+import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
+import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
+import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
@@ -51,20 +58,17 @@ import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorServic
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
-import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorTransformer;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.persistence.HPersistence;
 import io.harness.serializer.JsonUtils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Preconditions;
-import com.google.common.reflect.TypeToken;
-import com.google.gson.Gson;
 import com.google.inject.Inject;
 import dev.morphia.query.Criteria;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
-import java.lang.reflect.Type;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -74,6 +78,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -87,13 +92,12 @@ import org.apache.commons.lang3.StringUtils;
 public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorService {
   private static final int INTERVAL_HOURS = 12;
   @Inject private HPersistence hPersistence;
-  @Inject private Map<SLIMetricType, ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder;
+  @Inject private Map<String, ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder;
   @Inject private ServiceLevelIndicatorEntityAndDTOTransformer serviceLevelIndicatorEntityAndDTOTransformer;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private HealthSourceService healthSourceService;
   @Inject private OnboardingService onboardingService;
   @Inject private MetricPackService metricPackService;
-  @Inject private Map<SLIMetricType, ServiceLevelIndicatorTransformer> serviceLevelIndicatorTransformerMap;
   @Inject private Map<DataSourceType, DataCollectionSLIInfoMapper> dataSourceTypeDataCollectionInfoMapperMap;
   @Inject private SLIDataProcessorService sliDataProcessorService;
   @Inject private Clock clock;
@@ -103,59 +107,31 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
   @Inject private CompositeSLOService compositeSLOService;
 
   @Inject private SLIRecordService sliRecordService;
+
+  @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
   @Override
   public SLIOnboardingGraphs getOnboardingGraphs(ProjectParams projectParams, String monitoredServiceIdentifier,
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String tracingId) {
-    List<CVConfig> cvConfigs = healthSourceService
-                                   .getCVConfigs(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
-                                       projectParams.getProjectIdentifier(), monitoredServiceIdentifier,
-                                       serviceLevelIndicatorDTO.getHealthSourceRef())
-                                   .stream()
-                                   .filter(MetricCVConfig.class ::isInstance)
-                                   .map(MetricCVConfig.class ::cast)
-                                   .peek(metricCVConfig
-                                       -> metricPackService.populateDataCollectionDsl(
-                                           metricCVConfig.getType(), metricCVConfig.getMetricPack()))
-                                   .collect(Collectors.toList());
+    List<CVConfig> cvConfigs =
+        getCvConfigs(projectParams, monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef());
+    CVConfig baseCVConfig = cvConfigs.get(0);
 
     MonitoredService monitoredService =
         monitoredServiceService.getMonitoredService(MonitoredServiceParams.builderWithProjectParams(projectParams)
                                                         .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                                         .build());
 
-    ServiceLevelIndicator serviceLevelIndicator =
-        serviceLevelIndicatorTransformerMap.get(serviceLevelIndicatorDTO.getSpec().getType())
-            .getEntity(projectParams, serviceLevelIndicatorDTO, monitoredServiceIdentifier,
-                serviceLevelIndicatorDTO.getHealthSourceRef(), monitoredService.isEnabled());
-    Preconditions.checkArgument(isNotEmpty(cvConfigs), "Health source not present");
-    CVConfig baseCVConfig = cvConfigs.get(0);
+    ServiceLevelIndicator serviceLevelIndicator = convertDTOToEntity(projectParams, serviceLevelIndicatorDTO,
+        monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef(), monitoredService.isEnabled());
+
     DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(baseCVConfig.getType())
                                                 .toDataCollectionInfo(cvConfigs, serviceLevelIndicator);
 
     Instant endTime = clock.instant().truncatedTo(ChronoUnit.MINUTES);
     Instant startTime = endTime.minus(Duration.ofDays(1));
 
-    DataCollectionRequest request = SyncDataCollectionRequest.builder()
-                                        .type(DataCollectionRequestType.SYNC_DATA_COLLECTION)
-                                        .dataCollectionInfo(dataCollectionInfo)
-                                        .endTime(endTime)
-                                        .startTime(startTime)
-                                        .build();
-
-    OnboardingRequestDTO onboardingRequestDTO = OnboardingRequestDTO.builder()
-                                                    .dataCollectionRequest(request)
-                                                    .connectorIdentifier(baseCVConfig.getConnectorIdentifier())
-                                                    .accountId(projectParams.getAccountIdentifier())
-                                                    .orgIdentifier(projectParams.getOrgIdentifier())
-                                                    .projectIdentifier(projectParams.getProjectIdentifier())
-                                                    .tracingId(tracingId)
-                                                    .build();
-
-    OnboardingResponseDTO response =
-        onboardingService.getOnboardingResponse(projectParams.getAccountIdentifier(), onboardingRequestDTO);
-    final Gson gson = new Gson();
-    Type type = new TypeToken<List<TimeSeriesRecord>>() {}.getType();
-    List<TimeSeriesRecord> timeSeriesRecords = gson.fromJson(JsonUtils.asJson(response.getResult()), type);
+    List<TimeSeriesRecord> timeSeriesRecords =
+        getTimeSeriesRecords(projectParams, baseCVConfig, startTime, endTime, dataCollectionInfo, tracingId);
 
     Map<String, List<SLIAnalyseRequest>> sliAnalyseRequest =
         timeSeriesRecords.stream().collect(Collectors.groupingBy(TimeSeriesRecord::getMetricIdentifier,
@@ -165,8 +141,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                        .timeStamp(Instant.ofEpochMilli(timeSeriesRecord.getTimestamp()))
                        .build(),
                 Collectors.toList())));
-    List<SLIAnalyseResponse> sliAnalyseResponses = sliDataProcessorService.process(
-        sliAnalyseRequest, serviceLevelIndicatorDTO.getSpec().getSpec(), startTime, endTime);
+    List<SLIAnalyseResponse> sliAnalyseResponses = sliDataProcessorService.process(sliAnalyseRequest,
+        ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec(), startTime, endTime);
     sliAnalyseResponses.sort(Comparator.comparing(SLIAnalyseResponse::getTimeStamp));
     final SLIAnalyseResponse initialSLIResponse = sliAnalyseResponses.get(0);
 
@@ -197,6 +173,65 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
   }
 
   @Override
+  public MetricOnboardingGraph getMetricGraphs(ProjectParams projectParams, String monitoredServiceIdentifier,
+      String healthSourceRef, RatioSLIMetricEventType ratioSLIMetricEventType, List<String> metricIdentifiers,
+      String tracingId) {
+    List<CVConfig> cvConfigs = getCvConfigs(projectParams, monitoredServiceIdentifier, healthSourceRef);
+    CVConfig baseCVConfig = cvConfigs.get(0);
+    DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(baseCVConfig.getType())
+                                                .toDataCollectionInfo(cvConfigs, metricIdentifiers);
+
+    Instant endTime = clock.instant().truncatedTo(ChronoUnit.MINUTES);
+    Instant startTime = endTime.minus(Duration.ofDays(1));
+
+    List<TimeSeriesRecord> timeSeriesRecords =
+        getTimeSeriesRecords(projectParams, baseCVConfig, startTime, endTime, dataCollectionInfo, tracingId);
+    return MetricOnboardingGraph.builder()
+        .metricGraphs(getMetricGraphs(timeSeriesRecords, metricIdentifiers, startTime, endTime))
+        .metricPercentageGraph(
+            getMetricPercentageGraph(timeSeriesRecords, metricIdentifiers, startTime, endTime, ratioSLIMetricEventType))
+        .build();
+  }
+
+  private List<CVConfig> getCvConfigs(
+      ProjectParams projectParams, String monitoredServiceIdentifier, String healthSourceRef) {
+    List<CVConfig> cvConfigs =
+        healthSourceService
+            .getCVConfigs(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+                projectParams.getProjectIdentifier(), monitoredServiceIdentifier, healthSourceRef)
+            .stream()
+            .filter(MetricCVConfig.class ::isInstance)
+            .map(MetricCVConfig.class ::cast)
+            .peek(metricCVConfig
+                -> metricPackService.populateDataCollectionDsl(
+                    metricCVConfig.getType(), metricCVConfig.getMetricPack()))
+            .collect(Collectors.toList());
+    Preconditions.checkArgument(isNotEmpty(cvConfigs), "Health source not present");
+    return cvConfigs;
+  }
+
+  private List<TimeSeriesRecord> getTimeSeriesRecords(ProjectParams projectParams, CVConfig baseCVConfig,
+      Instant startTime, Instant endTime, DataCollectionInfo dataCollectionInfo, String tracingId) {
+    DataCollectionRequest request = SyncDataCollectionRequest.builder()
+                                        .type(DataCollectionRequestType.SYNC_DATA_COLLECTION)
+                                        .dataCollectionInfo(dataCollectionInfo)
+                                        .endTime(endTime)
+                                        .startTime(startTime)
+                                        .build();
+    OnboardingRequestDTO onboardingRequestDTO = OnboardingRequestDTO.builder()
+                                                    .dataCollectionRequest(request)
+                                                    .connectorIdentifier(baseCVConfig.getConnectorIdentifier())
+                                                    .accountId(projectParams.getAccountIdentifier())
+                                                    .orgIdentifier(projectParams.getOrgIdentifier())
+                                                    .projectIdentifier(projectParams.getProjectIdentifier())
+                                                    .tracingId(tracingId)
+                                                    .build();
+
+    OnboardingResponseDTO response =
+        onboardingService.getOnboardingResponse(projectParams.getAccountIdentifier(), onboardingRequestDTO);
+    return JsonUtils.asList(JsonUtils.asJson(response.getResult()), new TypeReference<>() {});
+  }
+  @Override
   public List<String> create(ProjectParams projectParams, List<ServiceLevelIndicatorDTO> serviceLevelIndicatorDTOList,
       String serviceLevelObjectiveIdentifier, String monitoredServiceIndicator, String healthSourceIndicator) {
     List<String> serviceLevelIndicatorIdentifiers = new ArrayList<>();
@@ -224,16 +259,16 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
 
   private void generateNameAndIdentifier(
       String serviceLevelObjectiveIdentifier, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO) {
-    serviceLevelIndicatorDTO.setName(
-        serviceLevelObjectiveIdentifier + "_" + serviceLevelIndicatorDTO.getSpec().getSpec().getMetricName());
-    serviceLevelIndicatorDTO.setIdentifier(
-        serviceLevelObjectiveIdentifier + "_" + serviceLevelIndicatorDTO.getSpec().getSpec().getMetricName());
+    serviceLevelIndicatorDTO.setName(serviceLevelObjectiveIdentifier + "_"
+        + ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec().getMetricName());
+    serviceLevelIndicatorDTO.setIdentifier(serviceLevelObjectiveIdentifier + "_"
+        + ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec().getMetricName());
   }
 
   @Override
   public List<ServiceLevelIndicatorDTO> get(ProjectParams projectParams, List<String> serviceLevelIndicators) {
     List<ServiceLevelIndicator> serviceLevelIndicatorList = getEntities(projectParams, serviceLevelIndicators);
-    return serviceLevelIndicatorList.stream().map(this::sliEntityToDTO).collect(Collectors.toList());
+    return serviceLevelIndicatorList.stream().map(this::convertEntityToDTO).collect(Collectors.toList());
   }
 
   @Override
@@ -321,7 +356,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String monitoredServiceIndicator, String healthSourceIndicator,
       TimePeriod timePeriod, TimePeriod currentTimePeriod, String serviceLevelObjectiveIdentifier) {
     UpdatableEntity<ServiceLevelIndicator, ServiceLevelIndicator> updatableEntity =
-        serviceLevelIndicatorMapBinder.get(serviceLevelIndicatorDTO.getSpec().getType());
+        serviceLevelIndicatorEntityAndDTOTransformer.getUpdatableEntity(serviceLevelIndicatorDTO);
     ServiceLevelIndicator serviceLevelIndicator =
         getServiceLevelIndicator(projectParams, serviceLevelIndicatorDTO.getIdentifier());
     UpdateOperations<ServiceLevelIndicator> updateOperations =
@@ -400,6 +435,10 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         projectParams, serviceLevelIndicatorDTO, monitoredServiceIndicator, healthSourceIndicator, isEnabled);
   }
 
+  private ServiceLevelIndicatorDTO convertEntityToDTO(ServiceLevelIndicator serviceLevelIndicator) {
+    return serviceLevelIndicatorEntityAndDTOTransformer.getDto(serviceLevelIndicator);
+  }
+
   @Override
   public ServiceLevelIndicator getServiceLevelIndicator(ProjectParams projectParams, String identifier) {
     return hPersistence.createQuery(ServiceLevelIndicator.class)
@@ -441,10 +480,6 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
     return query.asList().stream().map(ServiceLevelIndicator::getIdentifier).collect(Collectors.toList());
   }
 
-  private ServiceLevelIndicatorDTO sliEntityToDTO(ServiceLevelIndicator serviceLevelIndicator) {
-    return serviceLevelIndicatorEntityAndDTOTransformer.getDto(serviceLevelIndicator);
-  }
-
   private Map<String, MetricGraph> getMetricGraphs(
       List<TimeSeriesRecord> timeSeriesRecords, List<String> metricIdentifiers, Instant startTime, Instant endTime) {
     Map<String, List<DataPoints>> metricToDataPoints =
@@ -468,8 +503,51 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                .metricIdentifier(entry.getKey())
                .startTime(startTime.toEpochMilli())
                .endTime(endTime.toEpochMilli())
-               .dataPoints(entry.getValue())
+               .dataPoints(
+                   entry.getValue()
+                       .stream()
+                       .sorted(
+                           (dataPoint1, dataPoint2) -> dataPoint1.getTimeStamp() < dataPoint2.getTimeStamp() ? -1 : 1)
+                       .collect(Collectors.toList()))
                .build()));
+  }
+
+  private MetricOnboardingGraph.RatioMetricPercentageGraph getMetricPercentageGraph(
+      List<TimeSeriesRecord> timeSeriesRecords, List<String> metricIdentifiers, Instant startTime, Instant endTime,
+      RatioSLIMetricEventType eventType) {
+    if (metricIdentifiers.size() != 2) {
+      return null;
+    }
+    List<DataPoints> dataPoints = new ArrayList<>();
+    Map<Long, Double> metric1ValuesMap = new HashMap<>();
+
+    for (TimeSeriesRecord record : timeSeriesRecords) {
+      if (record.getMetricIdentifier().equals(metricIdentifiers.get(0))) {
+        metric1ValuesMap.put(record.getTimestamp(), record.getMetricValue());
+      }
+    }
+
+    for (TimeSeriesRecord record : timeSeriesRecords) {
+      if (record.getMetricIdentifier().equals(metricIdentifiers.get(1))) {
+        long timestamp = record.getTimestamp();
+        if (metric1ValuesMap.containsKey(timestamp)) {
+          double ratio;
+          if (eventType.equals(RatioSLIMetricEventType.GOOD)) {
+            ratio = metric1ValuesMap.get(timestamp) * 100 / record.getMetricValue();
+          } else {
+            ratio = (1 - (metric1ValuesMap.get(timestamp) / record.getMetricValue())) * 100;
+          }
+          dataPoints.add(DataPoints.builder().timeStamp(timestamp).value(ratio).build());
+        }
+      }
+    }
+    return MetricOnboardingGraph.RatioMetricPercentageGraph.builder()
+        .metricIdentifier1(metricIdentifiers.get(0))
+        .metricIdentifier2(metricIdentifiers.get(1))
+        .startTime(startTime.toEpochMilli())
+        .endTime(endTime.toEpochMilli())
+        .dataPoints(dataPoints)
+        .build();
   }
 
   @Override
@@ -494,5 +572,25 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                             .filter(ServiceLevelIndicatorKeys.monitoredServiceIdentifier, monitoredServiceIdentifier),
         hPersistence.createUpdateOperations(ServiceLevelIndicator.class)
             .set(ServiceLevelIndicatorKeys.enabled, isEnabled));
+  }
+
+  @Override
+  public void enqueueDataCollectionFailureInstanceAndTriggerAnalysis(
+      String verificationTaskId, Instant startTime, Instant endTime, ServiceLevelIndicator serviceLevelIndicator) {
+    entityUnavailabilityStatusesService.create(ProjectParams.builder()
+                                                   .accountIdentifier(serviceLevelIndicator.getAccountId())
+                                                   .orgIdentifier(serviceLevelIndicator.getOrgIdentifier())
+                                                   .projectIdentifier(serviceLevelIndicator.getProjectIdentifier())
+                                                   .build(),
+        Collections.singletonList(EntityUnavailabilityStatusesDTO.builder()
+                                      .orgIdentifier(serviceLevelIndicator.getOrgIdentifier())
+                                      .projectIdentifier(serviceLevelIndicator.getProjectIdentifier())
+                                      .entityType(EntityType.SLO)
+                                      .entityId(serviceLevelIndicator.getUuid())
+                                      .status(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
+                                      .startTime(startTime.getEpochSecond())
+                                      .endTime(endTime.getEpochSecond())
+                                      .build()));
+    orchestrationService.queueAnalysis(verificationTaskId, startTime, endTime);
   }
 }

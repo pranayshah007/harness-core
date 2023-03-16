@@ -10,7 +10,6 @@ package io.harness.pms.rbac;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.EntityType;
 import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.AccessControlDTO;
@@ -160,7 +159,7 @@ public class PipelineRbacHelper {
   }
 
   public PermissionCheckDTO convertToPermissionCheckDTO(EntityDetail entityDetail) {
-    if (entityDetail.getType().equals(EntityType.TEMPLATE)) {
+    if (entityDetail.getEntityRef() instanceof NGTemplateReference) {
       NGTemplateReference templateReference = (NGTemplateReference) entityDetail.getEntityRef();
       return PermissionCheckDTO.builder()
           .permission(PipelineReferredEntityPermissionHelper.getPermissionForGivenType(entityDetail.getType(), false))

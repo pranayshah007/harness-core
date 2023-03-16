@@ -85,6 +85,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                       .basePath(UUIDGenerator.generateUuid())
                       .secretEngineName(UUIDGenerator.generateUuid())
                       .secretEngineVersion(1)
+                      .namespace(UUIDGenerator.generateUuid())
                       .build();
     hashicorpVaultEncryptor = new HashicorpVaultEncryptor(HTimeLimiter.create());
     mockStatic(VaultRestClientFactory.class);
@@ -566,14 +567,14 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
              vaultConfig.getSecretEngineName(), vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
         .thenAnswer(invocationOnMock -> plainText);
     when(vaultRestClient.deleteSecretPermanentely(
-             vaultConfig.getAuthToken(), vaultConfig.getSecretEngineName(), fullPath))
+             vaultConfig.getAuthToken(), vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(), fullPath))
         .thenThrow(new HashiCorpVaultRuntimeException("error: Permission denied"));
     EncryptedRecord encryptedRecord =
         hashicorpVaultEncryptor.renameSecret(vaultConfig.getAccountId(), name, oldRecord, vaultConfig);
     assertThat(encryptedRecord).isNotNull();
     assertThat(encryptedRecord.getEncryptionKey()).isEqualTo(name);
     assertThat(encryptedRecord.getEncryptedValue()).isEqualTo(name.toCharArray());
-    verify(vaultRestClient, times(1)).deleteSecretPermanentely(any(), any(), any());
+    verify(vaultRestClient, times(1)).deleteSecretPermanentely(any(), eq(vaultConfig.getNamespace()), any(), any());
   }
 
   @Test
@@ -587,11 +588,11 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(encryptionKey)
                                     .build();
     when(vaultRestClient.deleteSecretPermanentely(
-             vaultConfig.getAuthToken(), vaultConfig.getSecretEngineName(), fullPath))
+             vaultConfig.getAuthToken(), vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(), fullPath))
         .thenReturn(true);
     boolean deleted = hashicorpVaultEncryptor.deleteSecret(vaultConfig.getAccountId(), oldRecord, vaultConfig);
     assertThat(deleted).isEqualTo(true);
-    verify(vaultRestClient, times(1)).deleteSecretPermanentely(any(), any(), any());
+    verify(vaultRestClient, times(1)).deleteSecretPermanentely(any(), eq(vaultConfig.getNamespace()), any(), any());
   }
 
   @Test
@@ -605,11 +606,11 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(encryptionKey)
                                     .build();
     when(vaultRestClient.deleteSecretPermanentely(
-             vaultConfig.getAuthToken(), vaultConfig.getSecretEngineName(), fullPath))
+             vaultConfig.getAuthToken(), vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(), fullPath))
         .thenThrow(new HashiCorpVaultRuntimeException("error: Permission denied"));
     assertThatThrownBy(() -> hashicorpVaultEncryptor.deleteSecret(vaultConfig.getAccountId(), oldRecord, vaultConfig))
         .isInstanceOf(HashiCorpVaultRuntimeException.class);
-    verify(vaultRestClient, times(1)).deleteSecretPermanentely(any(), any(), any());
+    verify(vaultRestClient, times(1)).deleteSecretPermanentely(any(), eq(vaultConfig.getNamespace()), any(), any());
   }
 
   @Test
@@ -623,7 +624,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(encryptionKey)
                                     .build();
     when(vaultRestClient.deleteSecretPermanentely(
-             vaultConfig.getAuthToken(), vaultConfig.getSecretEngineName(), fullPath))
+             vaultConfig.getAuthToken(), vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(), fullPath))
         .thenThrow(new HashiCorpVaultRuntimeException("error: Permission denied"));
     assertThatThrownBy(() -> hashicorpVaultEncryptor.deleteSecret(vaultConfig.getAccountId(), oldRecord, vaultConfig))
         .isInstanceOf(HashiCorpVaultRuntimeException.class);

@@ -20,6 +20,8 @@ public class UserDBOMapper {
   public static UserDBO toDBO(User object) {
     return UserDBO.builder()
         .identifier(object.getIdentifier())
+        .email(object.getEmail())
+        .name(object.getName())
         .scopeIdentifier(object.getScopeIdentifier())
         .createdAt(object.getCreatedAt())
         .lastModifiedAt(object.getLastModifiedAt())
@@ -30,6 +32,8 @@ public class UserDBOMapper {
   public static User fromDBO(UserDBO object) {
     return User.builder()
         .identifier(object.getIdentifier())
+        .email(object.getEmail())
+        .name(object.getName())
         .scopeIdentifier(object.getScopeIdentifier())
         .createdAt(object.getCreatedAt())
         .lastModifiedAt(object.getLastModifiedAt())

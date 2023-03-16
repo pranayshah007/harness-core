@@ -204,7 +204,7 @@ public class CloudWatchStateTest extends APMStateVerificationTestBase {
 
     spyState.triggerAnalysisDataCollection(executionContext, analysisContext, executionData, hosts);
     ArgumentCaptor<DelegateTask> argument = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(argument.capture());
+    verify(delegateService).queueTaskV2(argument.capture());
     TaskData taskData = argument.getValue().getData();
     Object parameters[] = taskData.getParameters();
     assertThat(1).isEqualTo(parameters.length);
@@ -247,7 +247,7 @@ public class CloudWatchStateTest extends APMStateVerificationTestBase {
 
     spyState.triggerAnalysisDataCollection(executionContext, analysisContext, executionData, hosts);
     ArgumentCaptor<DelegateTask> argument = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(argument.capture());
+    verify(delegateService).queueTaskV2(argument.capture());
     TaskData taskData = argument.getValue().getData();
     Object parameters[] = taskData.getParameters();
     assertThat(1).isEqualTo(parameters.length);

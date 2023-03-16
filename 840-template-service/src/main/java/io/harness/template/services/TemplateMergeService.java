@@ -18,10 +18,10 @@ public interface TemplateMergeService {
       String versionLabel, boolean loadFromCache);
 
   TemplateMergeResponseDTO applyTemplatesToYaml(String accountId, String orgId, String projectId, String yaml,
-      boolean getMergedYamlWithTemplateField, boolean loadFromCache);
+      boolean getMergedYamlWithTemplateField, boolean loadFromCache, boolean appendInputSetValidator);
 
   TemplateMergeResponseDTO applyTemplatesToYamlV2(String accountId, String orgId, String projectId, String yaml,
-      boolean getMergedYamlWithTemplateField, boolean loadFromCache);
+      boolean getMergedYamlWithTemplateField, boolean loadFromCache, boolean appendInputSetValidator);
 
   TemplateRetainVariablesResponse mergeTemplateInputs(String newTemplateInputs, String originalTemplateInputs);
 }

@@ -14,6 +14,6 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface StepDetailsInfo {
   default String toViewJson() {
-    return RecastOrchestrationUtils.toJson(this);
+    return RecastOrchestrationUtils.pruneRecasterAdditions(this);
   }
 }

@@ -16,15 +16,9 @@ Parameters:
   RoleName:
     Type: String
     Default: HarnessCERole
-    Description: "Must begin with Harness e.g., HarnessCERole, HarnessManagedRole"
-    AllowedPattern: "^Harness(.*)$"
-    ConstraintDescription: "Malformed input-Parameter RoleName must begin with Harness, e.g., HarnessCERole"
   LambdaExecutionRoleName:
     Type: String
     Default: HarnessCELambdaExecutionRole
-    Description: "Must begin with Harness e.g., HarnessCELambdaExecutionRole"
-    AllowedPattern: "^Harness(.*)$"
-    ConstraintDescription: "Malformed input-Parameter RoleName must be of the pattern /^Harness(.*)$/ , e.g., HarnessCELambdaExecutionRole"
   BillingEnabled:
     Description: Whether CostAndUsage Report feature is enabled or not.
     Default: false

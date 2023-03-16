@@ -8,7 +8,6 @@
 package io.harness.ngtriggers.resource;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Long.parseLong;
@@ -24,21 +23,24 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
-import io.harness.ngtriggers.beans.dto.ValidatePipelineInputsResponseDTO;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
+import io.harness.ngtriggers.beans.source.GitMoveOperationType;
+import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.ngtriggers.exceptions.InvalidTriggerYamlException;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.mapper.NGTriggerEventHistoryMapper;
@@ -48,6 +50,7 @@ import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.rest.RestResponse;
+import io.harness.security.annotations.InternalApi;
 import io.harness.utils.CryptoUtils;
 import io.harness.utils.PageUtils;
 
@@ -55,9 +58,9 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.swagger.v3.oas.annotations.Hidden;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -68,7 +71,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.util.CollectionUtils;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @PipelineServiceAuth
@@ -101,7 +103,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       if (ignoreError) {
         createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity());
       } else {
-        ngTriggerService.validateInputSets(triggerDetails);
+        ngTriggerService.validatePipelineRef(triggerDetails);
         createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity());
       }
       return ResponseDTO.newResponse(
@@ -121,7 +123,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
 
     if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException(String.format("Trigger %s does not exist", triggerIdentifier));
+      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
     }
 
     return ResponseDTO.newResponse(ngTriggerEntity.get().getVersion().toString(),
@@ -140,7 +142,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException("Trigger doesn't not exists");
+      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
     }
 
     try {
@@ -154,7 +156,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       if (ignoreError) {
         updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
       } else {
-        ngTriggerService.validateInputSets(triggerDetails);
+        ngTriggerService.validatePipelineRef(triggerDetails);
         updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
       }
       return ResponseDTO.newResponse(
@@ -179,8 +181,13 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   public ResponseDTO<Boolean> delete(String ifMatch, @NotNull @AccountIdentifier String accountIdentifier,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String targetIdentifier, String triggerIdentifier) {
-    return ResponseDTO.newResponse(ngTriggerService.delete(accountIdentifier, orgIdentifier, projectIdentifier,
-        targetIdentifier, triggerIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null));
+    boolean triggerDeleted = ngTriggerService.delete(accountIdentifier, orgIdentifier, projectIdentifier,
+        targetIdentifier, triggerIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null);
+    if (triggerDeleted) {
+      ngTriggerEventsService.deleteTriggerEventHistory(
+          accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier);
+    }
+    return ResponseDTO.newResponse(triggerDeleted);
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
@@ -211,28 +218,11 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       @NotNull @ResourceIdentifier String targetIdentifier) {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
-
     if (!ngTriggerEntity.isPresent()) {
       return ResponseDTO.newResponse(null);
     }
-
-    TriggerDetails triggerDetails = ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier,
-        projectIdentifier, targetIdentifier, ngTriggerEntity.get().getIdentifier(), ngTriggerEntity.get().getYaml(),
-        ngTriggerEntity.get().getWithServiceV2());
-    boolean isPipelineInputOutdated = false;
-    if (triggerDetails.getNgTriggerConfigV2() != null
-        && isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
-        && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
-      // Only validate pipeline inputs if trigger is not for remote pipeline and not using input sets
-      Map<String, Map<String, String>> errorMap = ngTriggerService.validatePipelineRef(triggerDetails);
-      if (!CollectionUtils.isEmpty(errorMap)) {
-        isPipelineInputOutdated = true;
-      }
-    }
-
     return ResponseDTO.newResponse(ngTriggerEntity.get().getVersion().toString(),
-        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(
-            ngTriggerEntity.get(), true, true, isPipelineInputOutdated));
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity.get(), true, true, false));
   }
 
   @Timed
@@ -248,39 +238,13 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   }
 
   @Override
-  public ResponseDTO<ValidatePipelineInputsResponseDTO> validatePipelineInputs(
-      @NotNull @AccountIdentifier String accountIdentifier, @NotNull @OrgIdentifier String orgIdentifier,
-      @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String targetIdentifier,
-      String triggerIdentifier) {
-    Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
-        accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
-    if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException(String.format("Trigger %s doesn't not exists", triggerIdentifier));
-    }
-    try {
-      TriggerDetails triggerDetails =
-          ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier,
-              triggerIdentifier, ngTriggerEntity.get().getYaml(), ngTriggerEntity.get().getWithServiceV2());
-
-      Map<String, Map<String, String>> errorMap = ngTriggerService.validatePipelineRef(triggerDetails);
-      if (!CollectionUtils.isEmpty(errorMap)) {
-        return ResponseDTO.newResponse(
-            ValidatePipelineInputsResponseDTO.builder().validYaml(false).errorMap(errorMap).build());
-      }
-    } catch (Exception exception) {
-      throw new InvalidRequestException("Failed while validating trigger yaml: ", exception);
-    }
-    return ResponseDTO.newResponse(ValidatePipelineInputsResponseDTO.builder().validYaml(true).build());
-  }
-
-  @Override
   public ResponseDTO<Page<NGTriggerEventHistoryDTO>> getTriggerEventHistory(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String targetIdentifier, String triggerIdentifier,
       String searchTerm, int page, int size, List<String> sort) {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException(String.format("Trigger %s doesn't not exists", triggerIdentifier));
+      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
     }
 
     Criteria criteria = ngTriggerEventsService.formCriteria(accountIdentifier, orgIdentifier, projectIdentifier,
@@ -308,11 +272,27 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
-      throw new InvalidRequestException(String.format("Trigger %s doesn't not exists", triggerIdentifier));
+      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
     }
     TriggerDetails triggerDetails =
         ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier,
             triggerIdentifier, ngTriggerEntity.get().getYaml(), ngTriggerEntity.get().getWithServiceV2());
     return ResponseDTO.newResponse(ngTriggerService.getTriggerYamlDiff(triggerDetails));
+  }
+
+  @Override
+  @Hidden
+  public ResponseDTO<NGTriggerConfigV2> getNGTriggerConfigV2() {
+    return null;
+  }
+
+  @Override
+  @InternalApi
+  public ResponseDTO<TriggerUpdateCount> updateBranchName(@NotNull @AccountIdentifier String accountIdentifier,
+      @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
+      @NotNull @ResourceIdentifier String targetIdentifier, GitMoveOperationType operationType,
+      String pipelineBranchName) {
+    return ResponseDTO.newResponse(ngTriggerService.updateBranchName(
+        accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, operationType, pipelineBranchName));
   }
 }

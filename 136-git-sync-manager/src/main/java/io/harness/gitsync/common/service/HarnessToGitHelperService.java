@@ -17,6 +17,8 @@ import io.harness.gitsync.CreateFileResponse;
 import io.harness.gitsync.CreatePRRequest;
 import io.harness.gitsync.CreatePRResponse;
 import io.harness.gitsync.FileInfo;
+import io.harness.gitsync.GetBatchFilesRequest;
+import io.harness.gitsync.GetBatchFilesResponse;
 import io.harness.gitsync.GetBranchHeadCommitRequest;
 import io.harness.gitsync.GetBranchHeadCommitResponse;
 import io.harness.gitsync.GetFileRequest;
@@ -62,4 +64,6 @@ public interface HarnessToGitHelperService {
   GetBranchHeadCommitResponse getBranchHeadCommitDetails(GetBranchHeadCommitRequest getBranchHeadCommitRequest);
 
   ListFilesResponse listFiles(ListFilesRequest listFilesRequest);
+
+  GetBatchFilesResponse getBatchFiles(GetBatchFilesRequest getBatchFilesRequest);
 }

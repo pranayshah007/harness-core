@@ -293,7 +293,7 @@ public class VaultTest extends WingsBaseTest {
 
     when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(kmsEncryptor);
     when(vaultEncryptorsRegistry.getVaultEncryptor(any())).thenReturn(vaultEncryptor);
-    when(delegateProxyFactory.get(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
         .thenReturn(secretManagementDelegateService);
     FieldUtils.writeField(vaultService, "delegateProxyFactory", delegateProxyFactory, true);
     FieldUtils.writeField(secretManager, "vaultService", vaultService, true);

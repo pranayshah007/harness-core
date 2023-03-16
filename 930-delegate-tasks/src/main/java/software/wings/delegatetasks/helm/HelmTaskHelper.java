@@ -56,8 +56,8 @@ import io.harness.helm.HelmCliCommandType;
 import io.harness.k8s.model.HelmVersion;
 
 import software.wings.annotation.EncryptableSetting;
-import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.dto.HelmChart;
 import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
 import software.wings.beans.settings.helm.GCSHelmRepoConfig;

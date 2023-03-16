@@ -7,10 +7,15 @@
 
 package io.harness.cdng.elastigroup;
 
+import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
@@ -63,11 +68,7 @@ public class ElastigroupSetupStepTest extends CDNGTestBase {
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
   public void executeElastigroupTaskTest() {
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                            .build();
+    Ambiance ambiance = anAmbiance();
     String elastigroupJson = "elastigroupJson";
     ElastigroupFixedInstances elastigroupFixedInstances =
         ElastigroupFixedInstances.builder()
@@ -142,11 +143,7 @@ public class ElastigroupSetupStepTest extends CDNGTestBase {
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
   public void finalizeExecutionWithSecurityContextTest() throws Exception {
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                            .build();
+    Ambiance ambiance = anAmbiance();
     String elastigroupJson = "elastigroupJson";
     ElastigroupFixedInstances elastigroupFixedInstances =
         ElastigroupFixedInstances.builder()
@@ -199,5 +196,76 @@ public class ElastigroupSetupStepTest extends CDNGTestBase {
     assertThat(((ElastigroupSetupDataOutcome) stepResponse.getStepOutcomes().stream().findFirst().get().getOutcome())
                    .getElastigroupNamePrefix())
         .isEqualTo(elastigroupNamePrefix);
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void executeElastigroupTaskQueueTaskCurrentRunningTest() throws Exception {
+    // Given
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder()
+            .spec(ElastigroupSetupStepParameters.infoBuilder()
+                      .name(ParameterField.createValueField("name"))
+                      .instances(ElastigroupInstances.builder().type(ElastigroupInstancesType.CURRENT_RUNNING).build())
+                      .build())
+            .build();
+    ElastigroupExecutionPassThroughData passThroughData =
+        ElastigroupExecutionPassThroughData.builder().elastigroupConfiguration("{dummy-json:config}").build();
+
+    when(elastigroupStepCommonHelper.generateConfigFromJson(any()))
+        .thenReturn(ElastiGroup.builder().capacity(ElastiGroupCapacity.builder().build()).build());
+
+    // When
+    elastigroupSetupStep.executeElastigroupTask(
+        anAmbiance(), stepElementParameters, passThroughData, UnitProgressData.builder().build());
+
+    // Then
+    verify(elastigroupStepCommonHelper)
+        .queueElastigroupTask(eq(stepElementParameters), any(), eq(anAmbiance()), eq(passThroughData), eq(true),
+            eq(TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG));
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void executeElastigroupTaskQueueTaskFixedTest() throws Exception {
+    // Given
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder()
+            .spec(ElastigroupSetupStepParameters.infoBuilder()
+                      .name(ParameterField.createValueField("name"))
+                      .instances(ElastigroupInstances.builder()
+                                     .type(ElastigroupInstancesType.FIXED)
+                                     .spec(ElastigroupFixedInstances.builder()
+                                               .min(ParameterField.createValueField(1))
+                                               .desired(ParameterField.createValueField(2))
+                                               .max(ParameterField.createValueField(4))
+                                               .build())
+                                     .build())
+                      .build())
+            .build();
+    ElastigroupExecutionPassThroughData passThroughData =
+        ElastigroupExecutionPassThroughData.builder().elastigroupConfiguration("{dummy-json:config}").build();
+
+    when(elastigroupStepCommonHelper.generateConfigFromJson(any()))
+        .thenReturn(ElastiGroup.builder().capacity(ElastiGroupCapacity.builder().build()).build());
+
+    // When
+    elastigroupSetupStep.executeElastigroupTask(
+        anAmbiance(), stepElementParameters, passThroughData, UnitProgressData.builder().build());
+
+    // Then
+    verify(elastigroupStepCommonHelper)
+        .queueElastigroupTask(eq(stepElementParameters), any(), eq(anAmbiance()), eq(passThroughData), eq(true),
+            eq(TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG));
+  }
+
+  private Ambiance anAmbiance() {
+    return Ambiance.newBuilder()
+        .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
+        .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
+        .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+        .build();
   }
 }

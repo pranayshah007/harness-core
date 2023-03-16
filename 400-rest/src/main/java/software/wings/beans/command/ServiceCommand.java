@@ -9,6 +9,7 @@ package software.wings.beans.command;
 
 import static software.wings.beans.EntityVersion.Builder.anEntityVersion;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
+import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
@@ -22,6 +23,8 @@ import software.wings.beans.Base;
 import software.wings.beans.EntityVersion;
 import software.wings.beans.template.TemplateMetadata;
 import software.wings.beans.template.dto.ImportedTemplateDetails;
+import software.wings.ngmigration.CgBasicInfo;
+import software.wings.ngmigration.NGMigrationEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -45,7 +48,7 @@ import lombok.experimental.FieldNameConstants;
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "ServiceCommandKeys")
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
-public class ServiceCommand extends Base {
+public class ServiceCommand extends Base implements NGMigrationEntity {
   public static final String TEMPLATE_UUID_KEY = "templateUuid";
 
   private String name;
@@ -315,6 +318,17 @@ public class ServiceCommand extends Base {
         .withTemplateVersion(templateVersion)
         .withTemplateUuid(templateUuid)
         .withCommand(getCommand().cloneInternal())
+        .build();
+  }
+
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getServiceId() + "::" + getName())
+        .name(getName())
+        .type(SERVICE_COMMAND_TEMPLATE)
+        .appId(getAppId())
+        .accountId(getAccountId())
         .build();
   }
 

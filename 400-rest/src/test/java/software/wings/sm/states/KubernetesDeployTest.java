@@ -70,6 +70,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.command.CommandExecutionResult;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
@@ -183,6 +184,7 @@ public class KubernetesDeployTest extends WingsBaseTest {
   @Mock private ContainerMasterUrlHelper containerMasterUrlHelper;
   @Mock private ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks
   private KubernetesDeploy kubernetesDeploy = aKubernetesDeploy(STATE_NAME)
@@ -318,7 +320,8 @@ public class KubernetesDeployTest extends WingsBaseTest {
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
 
-    when(delegateProxyFactory.get(eq(ContainerService.class), any(SyncTaskContext.class))).thenReturn(containerService);
+    when(delegateProxyFactory.getV2(eq(ContainerService.class), any(SyncTaskContext.class)))
+        .thenReturn(containerService);
     when(configuration.getPortal()).thenReturn(portalConfig);
     when(portalConfig.getUrl()).thenReturn("http://www.url.com");
     when(artifactService.get(any())).thenReturn(anArtifact().build());
@@ -361,7 +364,7 @@ public class KubernetesDeployTest extends WingsBaseTest {
     assertThat(response.getCorrelationIds()).isNotNull().hasSize(1);
     verify(activityService).save(any(Activity.class));
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     CommandExecutionContext executionContext = (CommandExecutionContext) delegateTask.getData().getParameters()[1];
     KubernetesResizeParams params = (KubernetesResizeParams) executionContext.getContainerResizeParams();

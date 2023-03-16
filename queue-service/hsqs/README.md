@@ -82,9 +82,12 @@ Initialize service client config for queue Service in config.yaml
 
 ```
 queueServiceClientConfig:
-  baseUrl: http://localhost:9091/
-  connectTimeOutSeconds: 15
-  readTimeOutSeconds: 15
+    httpClientConfig:
+      baseUrl: http://localhost:9091/
+      connectTimeOutSeconds: 15
+      readTimeOutSeconds: 15
+    queueServiceSecret: abc
+    envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
 ```
 
 You can use the hsqs retrofit client present inside clients/queue-service/java-client

@@ -89,6 +89,9 @@ grpcClientConfigs:
   cv:
     target: localhost:12401
     authority: localhost
+  srm:
+    target: localhost:12401
+    authority: localhost
   ci:
     target: localhost:12301
     authority: localhost
@@ -114,6 +117,12 @@ yamlSchemaClientConfig:
         readTimeOutSeconds: 15
       secret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
     cv:
+      serviceHttpClientConfig:
+        baseUrl: http://localhost:6457/cv/api/
+        connectTimeOutSeconds: 15
+        readTimeOutSeconds: 15
+      secret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
+    srm:
       serviceHttpClientConfig:
         baseUrl: http://localhost:6457/cv/api/
         connectTimeOutSeconds: 15
@@ -198,16 +207,17 @@ pipelineServiceClientConfig:
 
 templateServiceClientConfig:
   baseUrl: http://localhost:15001/api/
-  connectTimeOutSeconds: 30
-  readTimeOutSeconds: 30
-
+  connectTimeOutSeconds: 120
+  readTimeOutSeconds: 120
 
 queueServiceClientConfig:
-  baseUrl: http://localhost:3457/api/
-  connectTimeOutSeconds: 15
-  readTimeOutSeconds: 15
+  httpClientConfig:
+    baseUrl: http://localhost:9091/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+  envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
 
-queueServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 templateServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
@@ -293,6 +303,8 @@ orchestrationStepConfig:
     addonImage: harness/ci-addon:1.14.19
     liteEngineImage: harness/ci-lite-engine:1.14.22
     isLocal: false
+    logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
+
 
 shouldDeployWithGitSync: true
 
@@ -544,3 +556,29 @@ eventsFrameworkSnapshotDebezium:
       enabled: false
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
+
+
+allowDifferentReposForPipelineAndInputSets: ${ALLOW_DIFFERENT_REPOS_FOR_PIPELINE_AND_INPUT_SETS:-false}
+
+disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-false}
+
+cfClientConfig:
+  apiKey: ""
+  configUrl: "https://config.feature-flags.uat.harness.io/api/1.0"
+  eventUrl: "https://event.feature-flags.uat.harness.io/api/1.0"
+  analyticsEnabled: true
+  connectionTimeout: 10000
+  readTimeout: 45000
+  bufferSize: 10240
+  retries: 6
+  sleepInterval: 5000
+
+featureFlagConfig:
+  featureFlagSystem: LOCAL
+  syncFeaturesToCF: false
+
+pipelineAsyncValidationPoolConfig:
+  corePoolSize: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_CORE_SIZE:-2}
+  maxPoolSize: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_MAX_SIZE:-25}
+  idleTime: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}

@@ -12,24 +12,19 @@ import (
 	fs "github.com/harness/harness-core/commons/go/lib/filesystem"
 	cgp "github.com/harness/harness-core/product/ci/addon/parser/cg"
 	"github.com/harness/harness-core/product/ci/common/avro"
+	"github.com/harness/harness-core/product/ci/common/external"
 	"github.com/pkg/errors"
 	"io"
 	"path/filepath"
 	"strings"
 
-	"github.com/harness/harness-core/product/ci/common/external"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
 	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"go.uber.org/zap"
 )
 
 var (
-	remoteTiClient = external.GetTiHTTPClient
-	getOrgId       = external.GetOrgId
-	getProjectId   = external.GetProjectId
-	getPipelineId  = external.GetPipelineId
-	getBuildId     = external.GetBuildId
-	getStageId     = external.GetStageId
+	getRemoteTiClient = external.GetTiHTTPClient
 )
 
 const (
@@ -49,48 +44,24 @@ func NewTiProxyHandler(log *zap.SugaredLogger) pb.TiProxyServer {
 // SelectTests gets the list of selected tests to be run.
 // TODO: Stream the response as there is a 4MB limit on message sizes in gRPC
 func (h *tiProxyHandler) SelectTests(ctx context.Context, req *pb.SelectTestsRequest) (*pb.SelectTestsResponse, error) {
-	var err error
-	tc, err := remoteTiClient()
-	if err != nil {
-		h.log.Errorw("could not create a client to the TI service", zap.Error(err))
-		return nil, err
-	}
-	step := req.GetStepId()
-	if step == "" {
-		return nil, errors.New("step ID not present in request")
-	}
-	sha := req.GetSha() // may not be set for manual execution
+	// TI Client
 	repo := req.GetRepo()
-	if repo == "" {
-		return nil, errors.New("repo not present in request")
-	}
-	source := req.GetSourceBranch() // may not be set for manual execution
+	sha := req.GetSha()
+	commitLink := ""
+	skipVerify := false
+	tiClient := getRemoteTiClient(repo, sha, commitLink, skipVerify)
+
+	// SelectTests API call
+	stepID := req.GetStepId()
+	source := req.GetSourceBranch()
 	target := req.GetTargetBranch()
-	if target == "" {
-		return nil, errors.New("target branch not present in request")
-	}
 	body := req.GetBody()
-	org, err := getOrgId()
+	var tiReq *types.SelectTestsReq
+	err := json.Unmarshal([]byte(body), &tiReq)
 	if err != nil {
 		return nil, err
 	}
-	project, err := getProjectId()
-	if err != nil {
-		return nil, err
-	}
-	pipeline, err := getPipelineId()
-	if err != nil {
-		return nil, err
-	}
-	build, err := getBuildId()
-	if err != nil {
-		return nil, err
-	}
-	stage, err := getStageId()
-	if err != nil {
-		return nil, err
-	}
-	selection, err := tc.SelectTests(ctx, org, project, pipeline, build, stage, step, repo, sha, source, target, body)
+	selection, err := tiClient.SelectTests(ctx, stepID, source, target, tiReq)
 	if err != nil {
 		return nil, err
 	}
@@ -106,17 +77,9 @@ func (h *tiProxyHandler) SelectTests(ctx context.Context, req *pb.SelectTestsReq
 
 // WriteTests writes tests to the TI service.
 func (h *tiProxyHandler) WriteTests(stream pb.TiProxy_WriteTestsServer) error {
-	var err error
-	tc, err := remoteTiClient()
-	if err != nil {
-		h.log.Errorw("could not create a client to the TI service", zap.Error(err))
-		return err
-	}
+	// Stream all the test results
 	var tests []*types.TestCase
-	stepId := ""
-	repo := ""
-	sha := ""
-	commitLink := ""
+	var stepID, repo, sha, commitLink string
 	for {
 		msg, err := stream.Recv()
 		if err == io.EOF {
@@ -126,7 +89,7 @@ func (h *tiProxyHandler) WriteTests(stream pb.TiProxy_WriteTestsServer) error {
 			h.log.Errorw("received error from client stream while trying to receive test case data to upload", zap.Error(err))
 			continue
 		}
-		stepId = msg.GetStepId()
+		stepID = msg.GetStepId()
 		repo = msg.GetRepo()
 		sha = msg.GetSha()
 		commitLink = msg.GetCommitLink()
@@ -140,31 +103,14 @@ func (h *tiProxyHandler) WriteTests(stream pb.TiProxy_WriteTestsServer) error {
 			tests = append(tests, t)
 		}
 	}
-	if stepId == "" {
-		return errors.New("step ID not present in response")
-	}
-	org, err := getOrgId()
-	if err != nil {
-		return err
-	}
-	project, err := getProjectId()
-	if err != nil {
-		return err
-	}
-	pipeline, err := getPipelineId()
-	if err != nil {
-		return err
-	}
-	build, err := getBuildId()
-	if err != nil {
-		return err
-	}
-	stage, err := getStageId()
-	if err != nil {
-		return err
-	}
+
+	// TI Client
+	skipVerify := false
+	tiClient := getRemoteTiClient(repo, sha, commitLink, skipVerify)
+
+	// Write API call
 	report := "junit" // get from proto if we need other reports in the future
-	err = tc.Write(stream.Context(), org, project, pipeline, build, stage, stepId, report, repo, sha, commitLink, tests)
+	err := tiClient.Write(stream.Context(), stepID, report, tests)
 	if err != nil {
 		h.log.Errorw("could not write test cases: ", zap.Error(err))
 		return err
@@ -179,61 +125,28 @@ func (h *tiProxyHandler) WriteTests(stream pb.TiProxy_WriteTestsServer) error {
 }
 
 func (h *tiProxyHandler) UploadCg(ctx context.Context, req *pb.UploadCgRequest) (*pb.UploadCgResponse, error) {
-	step := req.GetStepId()
-	res := &pb.UploadCgResponse{}
-	if step == "" {
-		return res, fmt.Errorf("step ID not present in request")
-	}
-	sha := req.GetSha()
+	// TI Client
 	repo := req.GetRepo()
-	if repo == "" {
-		return res, fmt.Errorf("repo not present in request")
-	}
-	source := req.GetSource()
-	if source == "" {
-		return res, fmt.Errorf("source branch not present in request")
-	}
-	target := req.GetTarget()
-	if target == "" {
-		return res, fmt.Errorf("target branch not present in request")
-	}
-	timeMs := req.GetTimeMs()
-	client, err := remoteTiClient()
-	if err != nil {
-		return res, errors.Wrap(err, "failed to create tiClient")
-	}
-	org, err := getOrgId()
-	if err != nil {
-		return res, errors.Wrap(err, "org id not found")
-	}
-	project, err := getProjectId()
-	if err != nil {
-		return res, errors.Wrap(err, "project id not found")
-	}
-	pipeline, err := getPipelineId()
-	if err != nil {
-		return res, errors.Wrap(err, "pipeline id not found")
-	}
-	build, err := getBuildId()
-	if err != nil {
-		return res, errors.Wrap(err, "build id not found")
-	}
-	stage, err := getStageId()
-	if err != nil {
-		return res, errors.Wrap(err, "stage id not found")
-	}
+	sha := req.GetSha()
+	commitLink := ""
+	skipVerify := false
+	tiClient := getRemoteTiClient(repo, sha, commitLink, skipVerify)
 
-	//Upload callgraph to TI server
+	// UploadCg API call
+	stepID := req.GetStepId()
+	source := req.GetSource()
+	target := req.GetTarget()
+	timeMs := req.GetTimeMs()
 	encCg, msg, err := h.getEncodedData(req)
 	if err != nil {
-		return res, errors.Wrap(err, "failed to get avro encoded callgraph")
+		return nil, errors.Wrap(err, "failed to get avro encoded callgraph")
 	}
-	res.CgMsg = msg
-	err = client.UploadCg(ctx, org, project, pipeline, build, stage, step, repo, sha, source, target, timeMs, encCg)
+
+	err = tiClient.UploadCg(ctx, stepID, source, target, timeMs, encCg)
 	if err != nil {
-		return res, errors.Wrap(err, "failed to upload cg to ti server")
+		return nil, errors.Wrap(err, "failed to upload cg to ti server")
 	}
-	return res, nil
+	return &pb.UploadCgResponse{CgMsg: msg}, nil
 }
 
 // getCgFiles return list of cg files in given directory
@@ -254,19 +167,21 @@ func (h *tiProxyHandler) getCgFiles(dir, ext1, ext2 string) ([]string, []string,
 
 // DownloadLink calls TI service to provide download link(s) for given input
 func (h *tiProxyHandler) DownloadLink(ctx context.Context, req *pb.DownloadLinkRequest) (*pb.DownloadLinkResponse, error) {
-	var err error
-	tc, err := remoteTiClient()
-	if err != nil {
-		h.log.Errorw("could not create a client to the TI service", zap.Error(err))
-		return nil, err
-	}
+	// TI Client
+	repo := ""
+	sha := ""
+	commitLink := ""
+	skipVerify := false
+	tiClient := getRemoteTiClient(repo, sha, commitLink, skipVerify)
+
+	// DownloadLink API call
 	language := req.GetLanguage()
 	os := req.GetOs()
 	arch := req.GetArch()
 	framework := req.GetFramework()
 	version := req.GetVersion()
 	env := req.GetEnv()
-	link, err := tc.DownloadLink(ctx, language, os, arch, framework, version, env)
+	link, err := tiClient.DownloadLink(ctx, language, os, arch, framework, version, env)
 	if err != nil {
 		return nil, err
 	}
@@ -315,31 +230,21 @@ func (h *tiProxyHandler) getEncodedData(req *pb.UploadCgRequest) ([]byte, string
 
 // GetTestTimes gets the test timing data from the TI service
 func (h *tiProxyHandler) GetTestTimes(ctx context.Context, req *pb.GetTestTimesRequest) (*pb.GetTestTimesResponse, error) {
-	// Create a TI client
-	var err error
-	tc, err := remoteTiClient()
-	if err != nil {
-		h.log.Errorw("could not create a client to the TI service", zap.Error(err))
-		return nil, err
-	}
+	// TI Client
+	repo := ""
+	sha := ""
+	commitLink := ""
+	skipVerify := false
+	tiClient := getRemoteTiClient(repo, sha, commitLink, skipVerify)
 
-	// Arguments for TI API
-	org, err := getOrgId()
-	if err != nil {
-		return nil, err
-	}
-	project, err := getProjectId()
-	if err != nil {
-		return nil, err
-	}
-	pipeline, err := getPipelineId()
-	if err != nil {
-		return nil, err
-	}
+	// GetTestTimes API call
 	reqBody := req.GetBody()
-
-	// Call TI API
-	timeMap, err := tc.GetTestTimes(ctx, org, project, pipeline, reqBody)
+	var tiReq *types.GetTestTimesReq
+	err := json.Unmarshal([]byte(reqBody), &tiReq)
+	if err != nil {
+		return nil, err
+	}
+	timeMap, err := tiClient.GetTestTimes(ctx, tiReq)
 	if err != nil {
 		return nil, err
 	}

@@ -127,7 +127,7 @@ public class GitProcessingRequestServiceImpl implements GitProcessingRequestServ
   public boolean deleteByAccount(String accountId) {
     Criteria criteria = new Criteria();
     criteria.and(GitProcessingRequestKeys.accountId).is(accountId);
-    mongoTemplate.findAllAndRemove(new Query(criteria), GitProcessRequest.class);
+    mongoTemplate.remove(new Query(criteria), GitProcessRequest.class);
     return true;
   }
 

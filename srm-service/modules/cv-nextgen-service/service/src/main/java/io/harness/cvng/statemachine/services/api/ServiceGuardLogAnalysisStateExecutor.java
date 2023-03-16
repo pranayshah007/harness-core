@@ -11,6 +11,7 @@ import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
+import io.harness.cvng.statemachine.entities.DeploymentLogAnalysisState;
 import io.harness.cvng.statemachine.entities.ServiceGuardLogAnalysisState;
 import io.harness.cvng.statemachine.entities.ServiceGuardTrendAnalysisState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
@@ -19,6 +20,11 @@ import java.util.Arrays;
 import java.util.Map;
 
 public class ServiceGuardLogAnalysisStateExecutor extends LogAnalysisStateExecutor<ServiceGuardLogAnalysisState> {
+  @Override
+  public void handleFinalStatuses(DeploymentLogAnalysisState analysisState) {
+    // no - op
+  }
+
   @Override
   protected String scheduleAnalysis(AnalysisInput analysisInput) {
     return logAnalysisService.scheduleServiceGuardLogAnalysisTask(analysisInput);

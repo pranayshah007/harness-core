@@ -298,7 +298,7 @@ public class CloudFormationCreateStackState extends CloudFormationState {
       setTimeOutOnRequest(request);
       DelegateTask delegateTask = getCreateStackDelegateTask(executionContext, awsConfig, activityId, request);
 
-      String delegateTaskId = delegateService.queueTask(delegateTask);
+      String delegateTaskId = delegateService.queueTaskV2(delegateTask);
       appendDelegateTaskDetails(executionContext, delegateTask);
 
       return ExecutionResponse.builder()
@@ -396,7 +396,7 @@ public class CloudFormationCreateStackState extends CloudFormationState {
 
   private ExecutionResponse queueFetchFileTask(
       ExecutionContextImpl executionContext, String activityId, DelegateTask fetchFileTask) {
-    delegateService.queueTask(fetchFileTask);
+    delegateService.queueTaskV2(fetchFileTask);
     appendDelegateTaskDetails(executionContext, fetchFileTask);
 
     return ExecutionResponse.builder()

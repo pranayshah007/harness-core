@@ -10,8 +10,8 @@ package io.harness.jobs.workflow.timeseries;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 import static software.wings.delegatetasks.AbstractDelegateDataCollectionTask.PREDECTIVE_HISTORY_MINUTES;
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
@@ -61,7 +61,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 
@@ -209,8 +211,19 @@ public class WorkflowTimeSeriesAnalysisJob implements Handler<AnalysisContext> {
                                                                     .build();
 
           NewRelicMetricAnalysisValue metricAnalysisValue =
-              metricValueDefinition.analyze(metric.getValue(), controlRecordsByMetric.get(metricName));
-          metricAnalysisValue.setHostAnalysisValues(metricValueDefinition.getTestHostValues(metric.getValue()));
+              metricValueDefinition.analyze(CollectionUtils.emptyIfNull(metric.getValue())
+                                                .stream()
+                                                .map(NewRelicMetricDataRecord::toDto)
+                                                .collect(Collectors.toSet()),
+                  CollectionUtils.emptyIfNull(controlRecordsByMetric.get(metricName))
+                      .stream()
+                      .map(NewRelicMetricDataRecord::toDto)
+                      .collect(Collectors.toSet()));
+          metricAnalysisValue.setHostAnalysisValues(
+              metricValueDefinition.getTestHostValues(CollectionUtils.emptyIfNull(metric.getValue())
+                                                          .stream()
+                                                          .map(NewRelicMetricDataRecord::toDto)
+                                                          .collect(Collectors.toSet())));
           metricAnalysis.addNewRelicMetricAnalysisValue(metricAnalysisValue);
 
           if (metricAnalysisValue.getRiskLevel().compareTo(metricAnalysis.getRiskLevel()) < 0) {

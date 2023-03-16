@@ -10,6 +10,7 @@ package io.harness.pms.approval.jira;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -25,11 +26,17 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
+import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
+import io.harness.encryption.SecretRefData;
 import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.exception.HarnessJiraException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.ng.core.NGAccessWithEncryptionConsumer;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
@@ -51,6 +58,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -99,13 +107,40 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
 
     JiraApprovalInstance instance = getJiraApprovalInstance(ambiance);
     aStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Collections.EMPTY_LIST);
-    doReturn(JiraConnectorDTO.builder().build())
+    doReturn(JiraConnectorDTO.builder()
+                 .username("USERNAME")
+                 .jiraUrl("url")
+                 .passwordRef(SecretRefData.builder().build())
+                 .build())
         .when(jiraApprovalHelperService)
         .getJiraConnector(eq(accountId), eq(orgIdentifier), eq(projectIdentifier), any());
-
+    ArgumentCaptor<NGAccessWithEncryptionConsumer> requestArgumentCaptorForSecretService =
+        ArgumentCaptor.forClass(NGAccessWithEncryptionConsumer.class);
     jiraApprovalHelperService.handlePollingEvent(instance);
 
     verify(ngDelegate2TaskExecutor, times(1)).queueTask(any(), any(), any());
+    verify(secretManagerClient).getEncryptionDetails(any(), requestArgumentCaptorForSecretService.capture());
+    assertTrue(requestArgumentCaptorForSecretService.getValue().getDecryptableEntity() instanceof JiraConnectorDTO);
+
+    // since auth object is present, then decrypt-able entity will be JiraAuthCredentialsDTO
+    doReturn(JiraConnectorDTO.builder()
+                 .username("username")
+                 .jiraUrl("url")
+                 .passwordRef(SecretRefData.builder().build())
+                 .auth(JiraAuthenticationDTO.builder()
+                           .authType(JiraAuthType.USER_PASSWORD)
+                           .credentials(JiraUserNamePasswordDTO.builder()
+                                            .username("username")
+                                            .passwordRef(SecretRefData.builder().build())
+                                            .build())
+                           .build())
+                 .build())
+        .when(jiraApprovalHelperService)
+        .getJiraConnector(eq(accountId), eq(orgIdentifier), eq(projectIdentifier), any());
+    jiraApprovalHelperService.handlePollingEvent(instance);
+    verify(secretManagerClient, times(2)).getEncryptionDetails(any(), requestArgumentCaptorForSecretService.capture());
+    assertTrue(
+        requestArgumentCaptorForSecretService.getValue().getDecryptableEntity() instanceof JiraAuthCredentialsDTO);
   }
 
   @Test

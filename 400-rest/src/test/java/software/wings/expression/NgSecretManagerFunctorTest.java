@@ -9,6 +9,8 @@ package software.wings.expression;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.utils.SecretUtils.getBase64SecretIdentifier;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
@@ -38,6 +40,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.VaultConfig;
 import software.wings.service.intfc.security.SecretManager;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,7 +54,7 @@ public class NgSecretManagerFunctorTest extends WingsBaseTest {
   @Mock private SecretManagerClientService ngSecretService;
   @Mock private DelegateMetricsService delegateMetricsService;
   @Inject private SecretManager secretManager;
-  @Mock private javax.cache.Cache<String, EncryptedDataDetails> secretsCache;
+  @Mock private Cache<String, EncryptedDataDetails> secretsCache;
   private static String ORG_ID = "orgId";
   private static String PROJECT_ID = "projectId";
 
@@ -201,12 +204,59 @@ public class NgSecretManagerFunctorTest extends WingsBaseTest {
     }
   }
 
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testObtainSecretFileAsString() {
+    final String secretIdentifier = "fileIdentifier";
+    int token = HashGenerator.generateIntegerHash();
+    NgSecretManagerFunctor ngSecretManagerFunctor = buildFunctor(token);
+    assertFunctor(ngSecretManagerFunctor);
+
+    List<EncryptedDataDetail> encryptedDataDetails = generateEncryptedDataDetails();
+    when(ngSecretService.getEncryptionDetails(any(BaseNGAccess.class), any(SecretVariableDTO.class)))
+        .thenReturn(encryptedDataDetails);
+
+    String decryptedValue = (String) ngSecretManagerFunctor.obtainSecretFileAsString(secretIdentifier, token);
+    assertThat(decryptedValue).isNotNull().startsWith("${secretDelegate.obtain(");
+    assertDelegateDecryptedSecretFile(secretIdentifier, ngSecretManagerFunctor, decryptedValue);
+    verify(ngSecretService, times(1)).getEncryptionDetails(any(BaseNGAccess.class), any(SecretVariableDTO.class));
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testObtainSecretFileAsBase64() {
+    final String secretIdentifier = "secretIdentifier";
+    int token = HashGenerator.generateIntegerHash();
+    NgSecretManagerFunctor ngSecretManagerFunctor = buildFunctor(token);
+    assertFunctor(ngSecretManagerFunctor);
+
+    List<EncryptedDataDetail> encryptedDataDetails = generateEncryptedDataDetails();
+    when(ngSecretService.getEncryptionDetails(any(BaseNGAccess.class), any(SecretVariableDTO.class)))
+        .thenReturn(encryptedDataDetails);
+
+    String decryptedValue = (String) ngSecretManagerFunctor.obtainSecretFileAsBase64(secretIdentifier, token);
+    assertThat(decryptedValue).isNotNull().startsWith("${secretDelegate.obtainBase64(");
+    assertDelegateDecryptedSecretFile(
+        getBase64SecretIdentifier(secretIdentifier), ngSecretManagerFunctor, decryptedValue);
+    verify(ngSecretService, times(1)).getEncryptionDetails(any(BaseNGAccess.class), any(SecretVariableDTO.class));
+  }
+
   private void assertDelegateDecryptedValue(
       String secretName, NgSecretManagerFunctor ngSecretManagerFunctor, String decryptedValue) {
     assertThat(decryptedValue).isNotNull().startsWith("${secretDelegate.obtain(");
     assertThat(decryptedValue).isNotNull().contains(String.valueOf(ngSecretManagerFunctor.getExpressionFunctorToken()));
     assertThat(ngSecretManagerFunctor.getEvaluatedDelegateSecrets()).isNotEmpty().containsKey(secretName);
     assertThat(ngSecretManagerFunctor.getEvaluatedDelegateSecrets().get(secretName)).isNotEmpty();
+    assertThat(ngSecretManagerFunctor.getEncryptionConfigs()).isNotEmpty();
+  }
+
+  private void assertDelegateDecryptedSecretFile(
+      String secretIdentifier, NgSecretManagerFunctor ngSecretManagerFunctor, String decryptedValue) {
+    assertThat(decryptedValue).isNotNull().contains(String.valueOf(ngSecretManagerFunctor.getExpressionFunctorToken()));
+    assertThat(ngSecretManagerFunctor.getEvaluatedDelegateSecrets()).isNotEmpty().containsKey(secretIdentifier);
+    assertThat(ngSecretManagerFunctor.getEvaluatedDelegateSecrets().get(secretIdentifier)).isNotEmpty();
     assertThat(ngSecretManagerFunctor.getEncryptionConfigs()).isNotEmpty();
   }
 }

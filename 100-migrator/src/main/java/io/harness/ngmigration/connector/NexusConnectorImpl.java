@@ -20,7 +20,7 @@ import io.harness.delegate.beans.connector.nexusconnector.NexusAuthenticationDTO
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.config.NexusConfig;

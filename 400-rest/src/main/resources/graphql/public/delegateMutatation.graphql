@@ -86,6 +86,7 @@ type Delegate {
   excludeScopes: [DelegateScope]
   tags: [String]
   supportedTasks: [String]
+  disconnected: Boolean
 }
 
 type AddDelegateScopePayload {

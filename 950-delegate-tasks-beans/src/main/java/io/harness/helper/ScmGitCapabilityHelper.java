@@ -28,11 +28,16 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.DX)
 public class ScmGitCapabilityHelper {
   public List<ExecutionCapability> getHttpConnectionCapability(ScmConnector scmConnector) {
+    return getHttpConnectionCapability(scmConnector, true);
+  }
+
+  public List<ExecutionCapability> getHttpConnectionCapability(
+      ScmConnector scmConnector, boolean includeDelegateSelectors) {
     GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(scmConnector);
     if (gitConfigDTO.getGitAuthType().equals(GitAuthType.HTTP)) {
       List<ExecutionCapability> executionCapabilities = new ArrayList<>();
       executionCapabilities.add(HttpConnectionExecutionCapability.builder().url(scmConnector.getUrl()).build());
-      if (isNotEmpty(gitConfigDTO.getDelegateSelectors())) {
+      if (includeDelegateSelectors && isNotEmpty(gitConfigDTO.getDelegateSelectors())) {
         executionCapabilities.add(SelectorCapability.builder().selectors(gitConfigDTO.getDelegateSelectors()).build());
       }
       return executionCapabilities;

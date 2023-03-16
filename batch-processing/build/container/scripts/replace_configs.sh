@@ -261,6 +261,10 @@ if [[ "" != "$AWS_ACCOUNT_TAGS_COLLECTION_JOB_ENABLED" ]]; then
   export AWS_ACCOUNT_TAGS_COLLECTION_JOB_ENABLED; yq -i '.awsAccountTagsCollectionJobConfig.enabled=env(AWS_ACCOUNT_TAGS_COLLECTION_JOB_ENABLED)' $CONFIG_FILE
 fi
 
+if [[ "" != "$GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME" ]]; then
+  export GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME; yq -i '.gcpConfig.bigQueryUpdatePubSubTopic.subscriptionName=env(GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME)' $CONFIG_FILE
+fi
+
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
 replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
 replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
@@ -280,5 +284,13 @@ replace_key_value awsCurBilling "$AWS_CUR_BILLING"
 
 replace_key_value gcpConfig.gcpProjectId "$GCP_PROJECT_ID"
 replace_key_value gcpConfig.gcpAwsConnectorCrudPubSubTopic "$GCP_AWS_CONNECTOR_CRUD_PUBSUB_TOPIC"
+replace_key_value gcpConfig.bigQueryUpdatePubSubTopic.enabled "$GCP_BQ_UPDATE_BATCH_ENABLED"
 
 replace_key_value currencyPreferences.historicalUpdateMonthsCount "$CURRENCY_PREFERENCE_HISTORICAL_UPDATE_MONTHS_COUNT"
+replace_key_value deployMode "$DEPLOY_MODE"
+
+replace_key_value clickHouseConfig.url "$CLICKHOUSE_URL"
+replace_key_value clickHouseConfig.username "$CLICKHOUSE_USERNAME"
+replace_key_value clickHouseConfig.password "$CLICKHOUSE_PASSWORD"
+
+replace_key_value isClickHouseEnabled "$CLICKHOUSE_ENABLED"

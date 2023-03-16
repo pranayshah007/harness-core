@@ -232,6 +232,7 @@ public class AzureHelperServiceTest extends WingsBaseTest {
     when(clientSecretCredentialBuilder.clientSecret(any())).thenReturn(clientSecretCredentialBuilder);
     when(clientSecretCredentialBuilder.clientId(any())).thenReturn(clientSecretCredentialBuilder);
     when(clientSecretCredentialBuilder.tenantId(any())).thenReturn(clientSecretCredentialBuilder);
+    when(clientSecretCredentialBuilder.authorityHost(any())).thenReturn(clientSecretCredentialBuilder);
 
     ClientSecretCredential tokenCredentials = mock(ClientSecretCredential.class);
     whenNew(ClientSecretCredential.class).withAnyArguments().thenReturn(tokenCredentials);
@@ -246,8 +247,12 @@ public class AzureHelperServiceTest extends WingsBaseTest {
 
     when(accessToken.getToken()).thenReturn("token");
 
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+    AzureConfig azureConfig = AzureConfig.builder()
+                                  .clientId("clientId")
+                                  .tenantId("tenantId")
+                                  .key("key".toCharArray())
+                                  .azureEnvironmentType(AZURE)
+                                  .build();
     azureDelegateHelperService.getAzureBearerAuthToken(azureConfig);
     ArgumentCaptor<TokenRequestContext> captor = ArgumentCaptor.forClass(TokenRequestContext.class);
     verify(tokenCredentials).getToken(captor.capture());

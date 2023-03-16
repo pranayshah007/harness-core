@@ -9,15 +9,13 @@ package io.harness.cdng.service.steps;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.data.structure.CollectionUtils;
-import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
-import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -37,11 +35,6 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceConfigStep implements ChildExecutable<ServiceConfigStepParameters> {
-  public static final StepType STEP_TYPE = StepType.newBuilder()
-                                               .setType(ExecutionNodeType.SERVICE_CONFIG.getName())
-                                               .setStepCategory(StepCategory.STEP)
-                                               .build();
-
   @Inject private ServiceStepsHelper serviceStepsHelper;
   @Inject private OutcomeService outcomeService;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;

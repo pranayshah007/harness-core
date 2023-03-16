@@ -119,7 +119,7 @@ public interface WorkflowService extends OwnedByApplication, SettingsServiceMani
 
   PageResponse<StateMachine> listStateMachines(PageRequest<StateMachine> req);
 
-  List<Workflow> list(String accountId, List<String> projectFields);
+  List<Workflow> list(String accountId, List<String> projectFields, String queryHint);
 
   Map<StateTypeScope, List<Stencil>> stencils(
       String appId, String workflowId, String phaseId, StateTypeScope... stateTypeScopes);

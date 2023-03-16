@@ -105,3 +105,18 @@ features:
       ENTERPRISE:
         restrictionType: AVAILABILITY
         enabled: true
+  - name: CACHE_SIZE_ALLOWANCE
+    description: Total size of cache can be store in Harness in Bytes
+    restrictions:
+      FREE:
+        restrictionType: LICENSE_STATIC_LIMIT
+        fieldName: cacheSizeAllowanceInBytes
+        clientName: cimanager
+      TEAM:
+        restrictionType: LICENSE_STATIC_LIMIT
+        fieldName: cacheSizeAllowanceInBytes
+        clientName: cimanager
+      ENTERPRISE:
+        restrictionType: LICENSE_STATIC_LIMIT
+        fieldName: cacheSizeAllowanceInBytes
+        clientName: cimanager

@@ -12,13 +12,14 @@ import static io.harness.yaml.extended.ci.codebase.Build.builder;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.build.BuildStatusUpdateParameter;
-import io.harness.beans.build.BuildStatusUpdateParameter.BuildStatusUpdateParameterBuilder;
 import io.harness.beans.execution.BranchWebhookEvent;
-import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
 import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
+import io.harness.beans.yaml.extended.CIShellType;
+import io.harness.beans.yaml.extended.ImagePullPolicy;
+import io.harness.beans.yaml.extended.beans.PullPolicy;
+import io.harness.beans.yaml.extended.beans.Shell;
 import io.harness.beans.yaml.extended.clone.Clone;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
@@ -31,9 +32,8 @@ import io.harness.beans.yaml.extended.platform.V1.PlatformV1;
 import io.harness.beans.yaml.extended.runtime.V1.RuntimeV1;
 import io.harness.beans.yaml.extended.runtime.V1.VMRuntimeV1;
 import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.states.codebase.ScmGitRefManager;
-import io.harness.cimanager.stages.V1.IntegrationStageNodeV1;
+import io.harness.ci.utils.WebhookTriggerProcessorUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.InvalidRequestException;
@@ -44,10 +44,9 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.plan.Dependency;
-import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStoreType;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
-import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.contracts.plan.TriggerType;
+import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
 import io.harness.pms.yaml.ParameterField;
@@ -110,10 +109,10 @@ public class CIPlanCreatorUtils {
             .prCloneStrategy(ParameterField.createValueField(repository.getStrategy().toPRCloneStrategy()));
     switch (pipelineStoreType) {
       case REMOTE:
-        codeBaseBuilder = buildCodebaseForRemotePipeline(ngAccess, ctx, repository, codeBaseBuilder);
+        codeBaseBuilder = buildCodebaseForRemotePipeline(ctx, ngAccess, repository, codeBaseBuilder);
         break;
       case INLINE:
-        codeBaseBuilder = buildCodebaseForInlinePipeline(ngAccess, repository, codeBaseBuilder);
+        codeBaseBuilder = buildCodebaseForInlinePipeline(ctx, ngAccess, repository, codeBaseBuilder);
         break;
       default:
         throw new InvalidRequestException("Invalid Pipeline Store Type : " + pipelineStoreType);
@@ -153,34 +152,6 @@ public class CIPlanCreatorUtils {
     }
     byte[] bytes = dependency.getMetadataMap().get(key).toByteArray();
     return EmptyPredicate.isEmpty(bytes) ? Optional.empty() : Optional.of(kryoSerializer.asObject(bytes));
-  }
-
-  public ExecutionSource buildExecutionSource(PlanCreationContext ctx, CodeBase codeBase, String identifier) {
-    if (codeBase == null) {
-      return null;
-    }
-    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-    ExecutionTriggerInfo triggerInfo = planCreationContextValue.getMetadata().getTriggerInfo();
-    TriggerPayload triggerPayload = planCreationContextValue.getTriggerPayload();
-    return IntegrationStageUtils.buildExecutionSource(triggerInfo, triggerPayload, identifier, codeBase.getBuild(),
-        codeBase.getConnectorRef().getValue(), connectorUtils, ctx, codeBase);
-  }
-
-  public BuildStatusUpdateParameter getBuildStatusUpdateParameter(
-      IntegrationStageNodeV1 stageNode, CodeBase codebase, ExecutionSource executionSource) {
-    if (codebase == null) {
-      return null;
-    }
-    BuildStatusUpdateParameterBuilder builder = BuildStatusUpdateParameter.builder()
-                                                    .connectorIdentifier(codebase.getConnectorRef().getValue())
-                                                    .repoName(codebase.getRepoName().getValue())
-                                                    .name(stageNode.getName())
-                                                    .identifier(stageNode.getIdentifier());
-
-    if (executionSource != null && executionSource.getType() == ExecutionSource.Type.WEBHOOK) {
-      builder = builder.sha(retrieveLastCommitSha((WebhookExecutionSource) executionSource));
-    }
-    return builder.build();
   }
 
   public static List<YamlField> getStepYamlFields(YamlField yamlField) {
@@ -223,13 +194,55 @@ public class CIPlanCreatorUtils {
     }
   }
 
+  public static ParameterField<CIShellType> getShell(ParameterField<Shell> shellParameterField) {
+    if (ParameterField.isBlank(shellParameterField)) {
+      return ParameterField.ofNull();
+    }
+    return shellParameterField.isExpression()
+        ? ParameterField.createExpressionField(
+            true, shellParameterField.getExpressionValue(), shellParameterField.getInputSetValidator(), true)
+        : ParameterField.createValueField(shellParameterField.getValue().toShellType());
+  }
+
+  public static ParameterField<ImagePullPolicy> getImagePullPolicy(ParameterField<PullPolicy> pullParameterField) {
+    if (ParameterField.isBlank(pullParameterField)) {
+      return ParameterField.ofNull();
+    }
+    return pullParameterField.isExpression()
+        ? ParameterField.createExpressionField(
+            true, pullParameterField.getExpressionValue(), pullParameterField.getInputSetValidator(), true)
+        : ParameterField.createValueField(pullParameterField.getValue().toImagePullPolicy());
+  }
+
+  public boolean shouldCloneManually(PlanCreationContext ctx, CodeBase codeBase) {
+    if (codeBase == null) {
+      return false;
+    }
+
+    switch (ctx.getTriggerInfo().getTriggerType()) {
+      case WEBHOOK:
+        Dependency globalDependency = ctx.getMetadata().getGlobalDependency();
+        Optional<Object> optionalRepository =
+            getDeserializedObjectFromDependency(globalDependency, YAMLFieldNameConstants.REPOSITORY);
+        Repository repository = (Repository) optionalRepository.orElse(Repository.builder().build());
+        if (ParameterField.isNull(repository.getReference())) {
+          return false;
+        }
+        break;
+      default:
+    }
+    return true;
+  }
+
   private CodeBaseBuilder buildCodebaseForRemotePipeline(
-      BaseNGAccess ngAccess, PlanCreationContext ctx, Repository repository, CodeBaseBuilder builder) {
+      PlanCreationContext ctx, BaseNGAccess ngAccess, Repository repository, CodeBaseBuilder builder) {
     GitSyncBranchContext gitSyncBranchContext = deserializeGitSyncBranchContext(ctx.getGitSyncBranchContext());
     if (gitSyncBranchContext == null) {
       throw new InvalidRequestException("Git sync data cannot be null for remote pipeline");
     }
-    boolean connectorOverride = !ParameterField.isBlank(repository.getConnector());
+    boolean connectorOverride = !ParameterField.isBlank(repository.getConnector())
+        && !repository.getConnector().fetchFinalValue().equals(
+            ctx.getMetadata().getMetadata().getPipelineConnectorRef());
     ParameterField<String> repoName = !connectorOverride && ParameterField.isBlank(repository.getName())
         ? ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getRepoName())
         : repository.getName();
@@ -238,50 +251,80 @@ public class CIPlanCreatorUtils {
         : repository.getConnector();
     return builder
         .build(ParameterField.createValueField(
-            getBuildForRemotePipeline(ngAccess, repository, gitSyncBranchContext, connectorOverride)))
+            getBuildForRemotePipeline(ctx, ngAccess, repository, gitSyncBranchContext, connectorOverride)))
         .repoName(repoName)
         .connectorRef(connector);
   }
 
   private CodeBaseBuilder buildCodebaseForInlinePipeline(
-      BaseNGAccess ngAccess, Repository repository, CodeBaseBuilder builder) {
+      PlanCreationContext ctx, BaseNGAccess ngAccess, Repository repository, CodeBaseBuilder builder) {
     if (ParameterField.isBlank(repository.getConnector())) {
       throw new InvalidRequestException("Connector should not be empty for inline pipeline");
     }
-    return builder.build(ParameterField.createValueField(getBuild(ngAccess, repository)))
+    return builder.build(ParameterField.createValueField(getBuild(ctx, ngAccess, repository)))
         .connectorRef(repository.getConnector())
         .repoName(repository.getName());
   }
 
-  private Build getBuildForRemotePipeline(BaseNGAccess ngAccess, Repository repository,
+  private Build getBuildForRemotePipeline(PlanCreationContext ctx, BaseNGAccess ngAccess, Repository repository,
       GitSyncBranchContext gitSyncBranchContext, boolean connectorOverride) {
     BuildBuilder builder = builder();
     ParameterField<Reference> referenceField = repository.getReference();
-    if (!connectorOverride && ParameterField.isNull(referenceField)) {
-      return builder.type(BuildType.BRANCH)
-          .spec(BranchBuildSpec.builder()
-                    .branch(ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getBranch()))
-                    .build())
-          .build();
-    }
-    return getBuild(ngAccess, repository);
-  }
-
-  private Build getBuild(BaseNGAccess ngAccess, Repository repository) {
-    BuildBuilder builder = builder();
-    ParameterField<Reference> referenceField = repository.getReference();
-    // if reference is null, try to fetch default branch and clone with that
-
-    if (ParameterField.isNull(referenceField)
-        || (referenceField.getValue().getType() == ReferenceType.BRANCH
-            && isEmpty(referenceField.getValue().getValue()))) {
-      Optional<String> optionalDefaultBranch = getDefaultBranchIfApplicable(ngAccess, repository);
-      if (optionalDefaultBranch.isPresent()) {
+    if (ctx.getTriggerInfo().getTriggerType() != TriggerType.WEBHOOK) {
+      if (!connectorOverride && ParameterField.isNull(referenceField)) {
         return builder.type(BuildType.BRANCH)
-            .spec(
-                BranchBuildSpec.builder().branch(ParameterField.createValueField(optionalDefaultBranch.get())).build())
+            .spec(BranchBuildSpec.builder()
+                      .branch(ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getBranch()))
+                      .build())
             .build();
       }
+    }
+    return getBuild(ctx, ngAccess, repository);
+  }
+
+  private Build getBuild(PlanCreationContext ctx, BaseNGAccess ngAccess, Repository repository) {
+    BuildBuilder builder = builder();
+    ParameterField<Reference> referenceField = repository.getReference();
+
+    switch (ctx.getTriggerInfo().getTriggerType()) {
+      case WEBHOOK:
+        if (ParameterField.isNull(referenceField)) {
+          ParsedPayload parsedPayload = ctx.getTriggerPayload().getParsedPayload();
+          WebhookExecutionSource webhookExecutionSource =
+              WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
+          switch (webhookExecutionSource.getWebhookEvent().getType()) {
+            case PR:
+              PRWebhookEvent prWebhookEvent = (PRWebhookEvent) webhookExecutionSource.getWebhookEvent();
+              return builder.type(BuildType.PR)
+                  .spec(PRBuildSpec.builder()
+                            .number(ParameterField.createValueField(String.valueOf(prWebhookEvent.getPullRequestId())))
+                            .build())
+                  .build();
+            case BRANCH:
+              BranchWebhookEvent branchWebhookEvent = (BranchWebhookEvent) webhookExecutionSource.getWebhookEvent();
+              return builder.type(BuildType.BRANCH)
+                  .spec(BranchBuildSpec.builder()
+                            .branch(ParameterField.createValueField(branchWebhookEvent.getBranchName()))
+                            .build())
+                  .build();
+            default:
+          }
+        }
+        break;
+      default:
+        // if reference is null, try to fetch default branch and clone with that
+        if (ParameterField.isNull(referenceField)
+            || (referenceField.getValue().getType() == ReferenceType.BRANCH
+                && isEmpty(referenceField.getValue().getValue()))) {
+          Optional<String> optionalDefaultBranch = getDefaultBranchIfApplicable(ngAccess, repository);
+          if (optionalDefaultBranch.isPresent()) {
+            return builder.type(BuildType.BRANCH)
+                .spec(BranchBuildSpec.builder()
+                          .branch(ParameterField.createValueField(optionalDefaultBranch.get()))
+                          .build())
+                .build();
+          }
+        }
     }
 
     Reference reference = referenceField.getValue();
@@ -319,8 +362,8 @@ public class CIPlanCreatorUtils {
           connectorIdentifier);
       return Optional.of(defaultBranch);
     } catch (Exception ex) {
-      log.error(String.format("Cannot find default branch for connector: %s", connectorIdentifier));
-      throw ex;
+      throw new InvalidRequestException(
+          String.format("Cannot find default branch for connector: %s", connectorIdentifier));
     }
   }
 

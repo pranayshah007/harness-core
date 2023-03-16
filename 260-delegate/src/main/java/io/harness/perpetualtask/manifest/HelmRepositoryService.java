@@ -16,7 +16,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.exception.ManifestCollectionException;
 import io.harness.delegate.task.manifests.request.ManifestCollectionParams;
 
-import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.dto.HelmChart;
 import software.wings.delegatetasks.helm.HelmTaskHelper;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;

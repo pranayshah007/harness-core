@@ -32,7 +32,6 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -81,9 +80,14 @@ public class FileReferenceServiceImpl implements FileReferenceService {
   @Override
   public void validateReferenceByAndThrow(NGFile fileOrFolder) {
     if (NGFileType.FOLDER.equals(fileOrFolder.getType())) {
+      Long count = countEntitiesReferencingFile(fileOrFolder);
+      if (count > 0L) {
+        throw new ReferencedEntityException(
+            format("Folder [%s] is referenced by %s other entities and can not be deleted.",
+                fileOrFolder.getIdentifier(), count));
+      }
       List<String> folderChildrenFQNs = fileStructureService.listFolderChildrenFQNs(fileOrFolder);
-
-      Long count = entitySetupUsageService.countReferredByEntitiesByFQNsIn(
+      count = entitySetupUsageService.countReferredByEntitiesByFQNsIn(
           fileOrFolder.getAccountIdentifier(), folderChildrenFQNs);
       if (count > 0L) {
         throw new ReferencedEntityException(format(
@@ -101,19 +105,6 @@ public class FileReferenceServiceImpl implements FileReferenceService {
     }
   }
 
-  public List<EntitySetupUsageDTO> getAllReferencedByInScope(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, SearchPageParams pageParams, EntityType entityType, String referredByEntityName) {
-    String referredEntityFQScope = IdentifierRef.builder()
-                                       .accountIdentifier(accountIdentifier)
-                                       .orgIdentifier(orgIdentifier)
-                                       .projectIdentifier(projectIdentifier)
-                                       .build()
-                                       .getFullyQualifiedScopeIdentifier();
-    return entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(
-        Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), referredEntityFQScope, EntityType.FILES,
-        entityType, referredByEntityName, Sort.by(Sort.Direction.ASC, EntitySetupUsageKeys.referredByEntityName));
-  }
-
   public List<String> getAllFileIdentifiersReferencedByInScope(
       Scope scope, EntityType entityType, String referredByEntityName) {
     String referredEntityFQScope = IdentifierRef.builder()
@@ -122,14 +113,8 @@ public class FileReferenceServiceImpl implements FileReferenceService {
                                        .projectIdentifier(scope.getProjectIdentifier())
                                        .build()
                                        .getFullyQualifiedScopeIdentifier();
-    List<EntitySetupUsageDTO> referredFiles =
-        entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(scope, referredEntityFQScope, EntityType.FILES,
-            entityType, referredByEntityName, Sort.by(Sort.Direction.ASC, EntitySetupUsageKeys.referredByEntityName));
-
-    return referredFiles.stream()
-        .filter(i -> i.getReferredEntity() != null && i.getReferredEntity().getEntityRef() != null)
-        .map(i -> i.getReferredEntity().getEntityRef().getIdentifier())
-        .distinct()
-        .collect(Collectors.toList());
+    return entitySetupUsageService.listAllReferredEntityIdentifiersPerReferredEntityScope(scope, referredEntityFQScope,
+        EntityType.FILES, entityType, referredByEntityName,
+        Sort.by(Sort.Direction.ASC, EntitySetupUsageKeys.referredByEntityName));
   }
 }

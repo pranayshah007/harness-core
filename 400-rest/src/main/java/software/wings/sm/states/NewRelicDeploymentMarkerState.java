@@ -110,17 +110,17 @@ public class NewRelicDeploymentMarkerState extends AbstractAnalysisState {
     String correlationId = UUID.randomUUID().toString();
 
     String delegateTaskId =
-        delegateService.queueTask(DelegateTask.builder()
-                                      .accountId(context.getApp().getAccountId())
-                                      .waitId(correlationId)
-                                      .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, context.getApp().getAppId())
-                                      .data(TaskData.builder()
-                                                .async(true)
-                                                .taskType(TaskType.NEWRELIC_POST_DEPLOYMENT_MARKER.name())
-                                                .parameters(new Object[] {dataCollectionInfo})
-                                                .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                                                .build())
-                                      .build());
+        delegateService.queueTaskV2(DelegateTask.builder()
+                                        .accountId(context.getApp().getAccountId())
+                                        .waitId(correlationId)
+                                        .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, context.getApp().getAppId())
+                                        .data(TaskData.builder()
+                                                  .async(true)
+                                                  .taskType(TaskType.NEWRELIC_POST_DEPLOYMENT_MARKER.name())
+                                                  .parameters(new Object[] {dataCollectionInfo})
+                                                  .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                                                  .build())
+                                        .build());
 
     final NewRelicMarkerExecutionData executionData =
         NewRelicMarkerExecutionData.builder().payload(body).evaluatedPayload(evaluatedBody).build();

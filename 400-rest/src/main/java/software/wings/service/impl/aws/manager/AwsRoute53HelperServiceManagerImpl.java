@@ -73,7 +73,7 @@ public class AwsRoute53HelperServiceManagerImpl implements AwsRoute53HelperServi
                       .build())
             .build();
     try {
-      DelegateResponseData notifyResponseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData notifyResponseData = delegateService.executeTaskV2(delegateTask);
       helper.validateDelegateSuccessForSyncTask(notifyResponseData);
       return (AwsResponse) notifyResponseData;
     } catch (InterruptedException ex) {

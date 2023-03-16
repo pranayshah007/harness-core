@@ -9,6 +9,8 @@ package software.wings.service.impl.ldap;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.OwnedBy;
 
 import software.wings.helpers.ext.ldap.LdapResponse;
@@ -28,7 +30,7 @@ public class ExecuteLdapUserExistsRequest implements Function<LdapUserExistsRequ
   @Override
   public LdapUserExistsResponse apply(LdapUserExistsRequest ldapUserExistsRequest) {
     Status searchStatus;
-    String searchStatusMsg = null;
+    String searchStatusMessage = null;
 
     LdapSearch ldapSearch = ldapUserExistsRequest.getLdapSearch();
     String identifier = ldapUserExistsRequest.getIdentifier();
@@ -40,13 +42,15 @@ public class ExecuteLdapUserExistsRequest implements Function<LdapUserExistsRequ
       dn = resolver.resolve(new User(identifier));
       searchStatus = Status.SUCCESS;
     } catch (LdapException le) {
-      log.error("LdapException exception occured when executing user exits request for baseDN = {}, searchFilter = {} ",
-          ldapUserConfig.getSearchFilter(), ldapUserConfig.getSearchFilter());
+      String defaultErrorMessage = String.format(
+          "LdapException exception occurred when executing user exists request for baseDN = %s, searchFilter = %s",
+          ldapUserConfig.getBaseDN(), ldapUserConfig.getSearchFilter());
+      log.error(defaultErrorMessage, le);
       searchStatus = Status.FAILURE;
-      searchStatusMsg = le.getResultCode().toString();
+      searchStatusMessage = isNull(le.getMessage()) ? defaultErrorMessage : le.getMessage();
     }
 
-    LdapResponse ldapResponse = LdapResponse.builder().status(searchStatus).message(searchStatusMsg).build();
+    LdapResponse ldapResponse = LdapResponse.builder().status(searchStatus).message(searchStatusMessage).build();
 
     return new LdapUserExistsResponse(ldapUserConfig, ldapResponse, dn);
   }

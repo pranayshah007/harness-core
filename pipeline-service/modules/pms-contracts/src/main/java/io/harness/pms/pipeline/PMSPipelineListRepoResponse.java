@@ -7,7 +7,7 @@
 
 package io.harness.pms.pipeline;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 
@@ -26,7 +26,7 @@ import lombok.Value;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @ApiModel("PMSPipelineListRepoResponse")
 @Schema(name = "PMSPipelineListRepoResponse", description = "This is the list of repositories for pipelines created.")
-@OwnedBy(PL)
+@OwnedBy(PIPELINE)
 public class PMSPipelineListRepoResponse {
   @Hidden @Schema(description = "Contains the list of repositories from the execution") List<String> repositories;
 }

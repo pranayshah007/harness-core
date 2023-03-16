@@ -1,0 +1,22 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          name: Deploy Aws Lambda
+          identifier: deployawslambda
+          type: AwsLambdaDeploy
+          timeout: 10m
+          spec: {}
+    rollbackSteps:
+      - step:
+          name: Aws Lambda rollback
+          identifier: awslambdarollback
+          type: AwsLambdaRollback
+          timeout: 10m
+          spec: {}

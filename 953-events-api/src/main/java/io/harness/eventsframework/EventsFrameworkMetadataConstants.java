@@ -30,6 +30,10 @@ public final class EventsFrameworkMetadataConstants {
   public static final String ORGANIZATION_ENTITY = "organization";
   public static final String CONNECTOR_ENTITY = "connector";
   public static final String SERVICEACCOUNT_ENTITY = "serviceaccount";
+  public static final String TERRAFORM_CONFIG_ENTITY = "terraformconfig";
+  public static final String TERRAGRUNT_CONFIG_ENTITY = "terragruntconfig";
+  public static final String CLOUDFORMATION_CONFIG_ENTITY = "cloudformationconfig";
+  public static final String AZURE_ARM_CONFIG_ENTITY = "azurearmconfig";
   public static final String SECRET_ENTITY = "secret";
   public static final String VARIABLE_ENTITY = "variable";
   public static final String USER_ENTITY = "user";
@@ -55,6 +59,9 @@ public final class EventsFrameworkMetadataConstants {
   public static final String FREEZE_CONFIG = "freezeConfig";
 
   public static final String GIT_COMMIT = "gitCommit";
+  public static final String CD_TELEMETRY = "cdTelemetry";
+
+  public static final String LICENSE_MODULES = "licenseModule";
   public static final String SIGNUP_TOKEN = "signupToken";
   public static final String POLLING_DOCUMENT = "pollingDocument";
   public static final String GIT_TO_HARNESS_PROGRESS = "gitToHarnessProgress";
@@ -90,4 +97,5 @@ public final class EventsFrameworkMetadataConstants {
 
   // CCM
   public static final String CCM_FOLDER = "ccmFolder";
+  public static final String CCM_RULE = "ccmRule";
 }

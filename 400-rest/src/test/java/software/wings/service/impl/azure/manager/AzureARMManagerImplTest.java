@@ -51,7 +51,7 @@ public class AzureARMManagerImplTest extends CategoryTest {
         AzureARMListSubscriptionLocationsResponse.builder().locations(LOCATIONS).build();
     AzureTaskExecutionResponse azureTaskExecutionResponse = getAzureTaskExecutionResponse(azureTaskResponse);
 
-    doReturn(azureTaskExecutionResponse).when(mockDelegateService).executeTask(any());
+    doReturn(azureTaskExecutionResponse).when(mockDelegateService).executeTaskV2(any());
 
     List<String> response =
         service.listSubscriptionLocations(getAzureConfig(), Collections.emptyList(), APP_ID, SUBSCRIPTION_ID);
@@ -75,7 +75,7 @@ public class AzureARMManagerImplTest extends CategoryTest {
         AzureARMListManagementGroupResponse.builder().mngGroups(mngGroups).build();
     AzureTaskExecutionResponse azureTaskExecutionResponse = getAzureTaskExecutionResponse(azureTaskResponse);
 
-    doReturn(azureTaskExecutionResponse).when(mockDelegateService).executeTask(any());
+    doReturn(azureTaskExecutionResponse).when(mockDelegateService).executeTaskV2(any());
 
     List<ManagementGroupData> response =
         service.listManagementGroups(getAzureConfig(), Collections.emptyList(), APP_ID);
@@ -98,7 +98,7 @@ public class AzureARMManagerImplTest extends CategoryTest {
         AzureARMListSubscriptionLocationsResponse.builder().locations(LOCATIONS).build();
     AzureTaskExecutionResponse azureTaskExecutionResponse = getAzureTaskExecutionResponse(azureTaskResponse);
 
-    doReturn(azureTaskExecutionResponse).when(mockDelegateService).executeTask(any());
+    doReturn(azureTaskExecutionResponse).when(mockDelegateService).executeTaskV2(any());
 
     List<String> response = service.listAzureCloudProviderLocations(getAzureConfig(), Collections.emptyList(), APP_ID);
 

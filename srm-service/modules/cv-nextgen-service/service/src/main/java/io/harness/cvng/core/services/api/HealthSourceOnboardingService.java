@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.services.api;
 
+import io.harness.cvng.core.beans.healthsource.HealthSourceParamValuesRequest;
+import io.harness.cvng.core.beans.healthsource.HealthSourceParamValuesResponse;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsRequest;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsResponse;
 import io.harness.cvng.core.beans.healthsource.LogRecordsResponse;
@@ -42,4 +44,7 @@ public interface HealthSourceOnboardingService {
    * @return list of log records
    */
   LogRecordsResponse fetchLogData(QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams);
+
+  HealthSourceParamValuesResponse fetchHealthSourceParamValues(
+      HealthSourceParamValuesRequest healthSourceParamValuesRequest, ProjectParams projectParams);
 }

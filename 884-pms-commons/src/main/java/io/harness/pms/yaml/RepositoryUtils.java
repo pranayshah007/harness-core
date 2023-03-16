@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.merger.helpers.InputSetYamlHelperV1;
 import io.harness.yaml.repository.Reference;
 import io.harness.yaml.repository.Repository;
 import io.harness.yaml.utils.JsonPipelineUtils;
@@ -52,7 +53,7 @@ public class RepositoryUtils {
   public Optional<Reference> getReferenceFromInputPayload(String inputPayload) {
     Reference reference = null;
     if (EmptyPredicate.isNotEmpty(inputPayload)) {
-      JsonNode inputPayloadNode = JsonPipelineUtils.readTree(inputPayload);
+      JsonNode inputPayloadNode = InputSetYamlHelperV1.getInputSetJsonNode(inputPayload);
       if (inputPayloadNode != null && inputPayloadNode.has(YAMLFieldNameConstants.REPOSITORY)) {
         JsonNode inputRepositoryNode = inputPayloadNode.get(YAMLFieldNameConstants.REPOSITORY);
         if (inputRepositoryNode != null && inputRepositoryNode.isObject()

@@ -23,6 +23,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
@@ -33,10 +34,14 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.resourcegroup.ResourceGroupEntityChangeDTO;
 import io.harness.ng.beans.PageRequest;
+import io.harness.outbox.api.OutboxService;
 import io.harness.resourcegroup.ResourceGroupTestBase;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v2.remote.mapper.ResourceGroupMapper;
+import io.harness.resourcegroup.framework.v2.repositories.spring.ResourceGroupV2Repository;
 import io.harness.resourcegroup.framework.v2.service.ResourceGroupService;
+import io.harness.resourcegroup.framework.v2.service.impl.ResourceGroupServiceImpl;
+import io.harness.resourcegroup.framework.v2.service.impl.ResourceGroupValidatorImpl;
 import io.harness.resourcegroup.v1.remote.dto.ManagedFilter;
 import io.harness.resourcegroup.v1.remote.dto.ResourceGroupFilterDTO;
 import io.harness.resourcegroup.v1.remote.dto.ResourceSelectorFilter;
@@ -62,12 +67,18 @@ import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
 public class ResourceGroupSyncConciliationJobTest extends ResourceGroupTestBase {
   private Consumer redisConsumer;
+  @Inject ResourceGroupV2Repository resourceGroupV2Repository;
+  @Inject ResourceGroupValidatorImpl resourceGroupValidatorImpl;
+  @Inject OutboxService outboxService;
+  @Inject TransactionTemplate transactionTemplate;
+  AccessControlClient accessControlClient;
   @Inject private Map<String, Resource> resourceMap;
-  @Inject private ResourceGroupService resourceGroupService;
+  private ResourceGroupService resourceGroupService;
   private ResourceGroupService resourceGroupServiceMock;
   private String serviceId;
   private ResourceGroupSyncConciliationJob resourceGroupSyncConciliationJob;
@@ -77,11 +88,15 @@ public class ResourceGroupSyncConciliationJobTest extends ResourceGroupTestBase 
   public void setup() {
     redisConsumer = mock(Consumer.class);
     resourceGroupServiceMock = mock(ResourceGroupService.class);
+    accessControlClient = mock(AccessControlClient.class);
+    resourceGroupService = new ResourceGroupServiceImpl(
+        resourceGroupV2Repository, resourceGroupValidatorImpl, outboxService, transactionTemplate, accessControlClient);
     serviceId = "ResourceGroupService";
     resourceGroupSyncConciliationJob =
         new ResourceGroupSyncConciliationJob(redisConsumer, resourceMap, resourceGroupService, serviceId);
     resourceGroupSyncConciliationJobMockService =
         new ResourceGroupSyncConciliationJob(redisConsumer, resourceMap, resourceGroupServiceMock, serviceId);
+    when(accessControlClient.hasAccess(any(), any(), any())).thenReturn(true);
   }
 
   private Map<String, String> getMetadataMap(String accountIdentifier, String entityType, String action) {

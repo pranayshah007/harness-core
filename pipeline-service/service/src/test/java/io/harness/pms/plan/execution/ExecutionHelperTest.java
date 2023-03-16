@@ -13,6 +13,7 @@ import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
@@ -44,6 +45,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStoreType;
@@ -58,7 +60,6 @@ import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.service.PMSPipelineService;
-import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PMSYamlSchemaService;
 import io.harness.pms.pipeline.service.PipelineEnforcementService;
@@ -97,8 +98,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 public class ExecutionHelperTest extends CategoryTest {
   @InjectMocks ExecutionHelper executionHelper;
   @Mock PMSPipelineService pmsPipelineService;
+
   @Mock PipelineMetadataService pipelineMetadataService;
-  @Mock PMSPipelineServiceHelper pmsPipelineServiceHelper;
 
   @Mock PipelineGovernanceService pipelineGovernanceService;
   @Mock TriggeredByHelper triggeredByHelper;
@@ -114,6 +115,7 @@ public class ExecutionHelperTest extends CategoryTest {
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
   @Mock PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   @Mock PmsFeatureFlagHelper featureFlagService;
+  @Mock RollbackModeExecutionHelper rollbackModeExecutionHelper;
 
   String accountId = "accountId";
   String orgId = "orgId";
@@ -156,12 +158,14 @@ public class ExecutionHelperTest extends CategoryTest {
       + "      identifier: \"s2\"\n"
       + "      description: \"desc\"\n"
       + "  allowStageExecutions: true\n";
+
   String mergedPipelineYamlForS2 = "pipeline:\n"
       + "  stages:\n"
       + "  - stage:\n"
       + "      identifier: \"s2\"\n"
       + "      description: \"desc\"\n"
       + "  allowStageExecutions: true\n";
+
   String mergedPipelineYamlForS2WithExpression = "pipeline:\n"
       + "  stages:\n"
       + "  - stage:\n"
@@ -170,6 +174,7 @@ public class ExecutionHelperTest extends CategoryTest {
       + "  allowStageExecutions: true\n";
   String originalExecutionId = "originalExecutionId";
   String generatedExecutionId = "newExecId";
+  String pipelineYamlV1;
 
   PipelineEntity pipelineEntity;
   PipelineEntity pipelineEntityWithExpressions;
@@ -177,6 +182,8 @@ public class ExecutionHelperTest extends CategoryTest {
   ExecutionTriggerInfo executionTriggerInfo;
   ExecutionPrincipalInfo executionPrincipalInfo;
   MockedStatic<UUIDGenerator> aStatic;
+
+  public ExecutionHelperTest() throws IOException {}
 
   @Before
   public void setUp() {
@@ -204,6 +211,8 @@ public class ExecutionHelperTest extends CategoryTest {
     doNothing().when(pipelineEnforcementService).validateExecutionEnforcementsBasedOnStage(anyString(), any());
     aStatic = Mockito.mockStatic(UUIDGenerator.class);
     aStatic.when(UUIDGenerator::generateUuid).thenReturn(generatedExecutionId);
+
+    pipelineYamlV1 = readFile("simplified-pipeline.yaml");
   }
 
   @After
@@ -286,8 +295,9 @@ public class ExecutionHelperTest extends CategoryTest {
     String mergedYaml = InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineEntity.getYaml(), runtimeInputYaml, true);
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-            pipelineEntity.getProjectIdentifier(), mergedYaml, true, false, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
+            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), mergedYaml, true, false,
+            BOOLEAN_FALSE_VALUE);
     ExecArgs execArgs =
         executionHelper.buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(), null,
             executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false);
@@ -295,6 +305,7 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.UNDEFINED);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
     assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(PipelineVersion.V0);
+    assertThat(execArgs.getMetadata().getExecutionMode()).isEqualTo(ExecutionMode.NORMAL);
 
     PlanExecutionMetadata planExecutionMetadata = execArgs.getPlanExecutionMetadata();
     assertThat(planExecutionMetadata.getPlanExecutionId()).isEqualTo(generatedExecutionId);
@@ -320,8 +331,9 @@ public class ExecutionHelperTest extends CategoryTest {
     String mergedYaml = InputSetMergeHelper.mergeInputSetIntoPipeline(inlinePipeline.getYaml(), runtimeInputYaml, true);
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(inlinePipeline.getAccountId(), inlinePipeline.getOrgIdentifier(),
-            inlinePipeline.getProjectIdentifier(), mergedYaml, true, false, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipelineAndAppendInputSetValidators(inlinePipeline.getAccountId(),
+            inlinePipeline.getOrgIdentifier(), inlinePipeline.getProjectIdentifier(), mergedYaml, true, false,
+            BOOLEAN_FALSE_VALUE);
     ExecArgs execArgs =
         executionHelper.buildExecutionArgs(inlinePipeline, moduleType, runtimeInputYaml, Collections.emptyList(), null,
             executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false);
@@ -354,8 +366,9 @@ public class ExecutionHelperTest extends CategoryTest {
     String mergedYaml = InputSetMergeHelper.mergeInputSetIntoPipeline(remotePipeline.getYaml(), runtimeInputYaml, true);
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(remotePipeline.getAccountId(), remotePipeline.getOrgIdentifier(),
-            remotePipeline.getProjectIdentifier(), mergedYaml, true, false, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipelineAndAppendInputSetValidators(remotePipeline.getAccountId(),
+            remotePipeline.getOrgIdentifier(), remotePipeline.getProjectIdentifier(), mergedYaml, true, false,
+            BOOLEAN_FALSE_VALUE);
     ExecArgs execArgs =
         executionHelper.buildExecutionArgs(remotePipeline, moduleType, runtimeInputYaml, Collections.emptyList(), null,
             executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false);
@@ -386,8 +399,9 @@ public class ExecutionHelperTest extends CategoryTest {
     String mergedYaml = InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineEntity.getYaml(), runtimeInputYaml, true);
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-            pipelineEntity.getProjectIdentifier(), mergedYaml, true, false, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
+            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), mergedYaml, true, false,
+            BOOLEAN_FALSE_VALUE);
     ExecArgs execArgs =
         executionHelper.buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(), null,
             executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false);
@@ -404,7 +418,7 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getProcessedYaml()).isEqualTo(YamlUtils.injectUuid(mergedPipelineYaml));
 
     verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
-    verify(pmsGitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal(pipelineEntity, null, null);
+    verify(pmsGitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal(pipelineEntity, null, null, null);
     verify(pmsYamlSchemaService, times(0)).validateYamlSchema(accountId, orgId, projectId, pipelineYaml);
     verify(pmsYamlSchemaService, times(1)).validateYamlSchema(accountId, orgId, projectId, mergedPipelineYaml);
     verify(pipelineRbacServiceImpl, times(1))
@@ -427,8 +441,9 @@ public class ExecutionHelperTest extends CategoryTest {
     String mergedYaml = InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineEntity.getYaml(), runtimeInputYaml, true);
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-            pipelineEntity.getProjectIdentifier(), mergedYaml, true, false, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
+            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), mergedYaml, true, false,
+            BOOLEAN_FALSE_VALUE);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml,
         Collections.singletonList("s2"), null, executionTriggerInfo, null,
         RetryExecutionParameters.builder().isRetry(false).build(), false, false);
@@ -450,7 +465,17 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(pipelineGovernanceService, times(1))
         .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYamlForS2, true);
 
-    buildExecutionMetadataVerifications(pipelineEntity);
+    verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
+    verify(pmsGitSyncHelper, times(1))
+        .getGitSyncBranchContextBytesThreadLocal(pipelineEntity, pipelineEntity.getStoreType(), null, null);
+    verify(pmsYamlSchemaService, times(1)).validateYamlSchema(accountId, orgId, projectId, mergedPipelineYaml);
+    if (pipelineEntity.getStoreType() != StoreType.REMOTE) {
+      verify(pipelineRbacServiceImpl, times(1))
+          .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, mergedPipelineYaml);
+    }
+    verify(pipelineRbacServiceImpl, times(0))
+        .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, pipelineYaml);
+    verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
   }
 
   @Test
@@ -466,7 +491,7 @@ public class ExecutionHelperTest extends CategoryTest {
             .build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntityWithExpressions.getAccountId(),
+        .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntityWithExpressions.getAccountId(),
             pipelineEntityWithExpressions.getOrgIdentifier(), pipelineEntityWithExpressions.getProjectIdentifier(),
             pipelineYamlWithExpressions, true, true, BOOLEAN_FALSE_VALUE);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntityWithExpressions, moduleType, null,
@@ -490,7 +515,7 @@ public class ExecutionHelperTest extends CategoryTest {
 
     verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
     verify(pmsGitSyncHelper, times(1))
-        .getGitSyncBranchContextBytesThreadLocal(pipelineEntityWithExpressions, null, null);
+        .getGitSyncBranchContextBytesThreadLocal(pipelineEntityWithExpressions, null, null, null);
     verify(pmsYamlSchemaService, times(1)).validateYamlSchema(accountId, orgId, projectId, pipelineYamlWithExpressions);
     verify(pipelineRbacServiceImpl, times(1))
         .extractAndValidateStaticallyReferredEntities(
@@ -500,10 +525,29 @@ public class ExecutionHelperTest extends CategoryTest {
         .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYamlForS2WithExpression, true);
   }
 
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testBuildExecutionArgsWithError() {
+    // this will throw a WingsException in the try block, and the first catch block should be invoked
+    assertThatThrownBy(()
+                           -> executionHelper.buildExecutionArgs(pipelineEntity, "CD", null, Collections.emptyList(),
+                               Collections.emptyMap(), null, null, null, false, true))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Debug executions are not allowed for pipeline [pipelineId]");
+
+    // this will throw an NPE in the try block, and the second catch block should be invoked
+    assertThatThrownBy(()
+                           -> executionHelper.buildExecutionArgs(
+                               pipelineEntity, null, null, null, null, null, null, null, false, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Failed to start execution for Pipeline.");
+  }
+
   private void buildExecutionArgsMocks() {
     doReturn(executionPrincipalInfo).when(principalInfoHelper).getPrincipalInfoFromSecurityContext();
     doReturn(394).when(pipelineMetadataService).incrementRunSequence(any());
-    doReturn(null).when(pmsGitSyncHelper).getGitSyncBranchContextBytesThreadLocal(pipelineEntity, null, null);
+    doReturn(null).when(pmsGitSyncHelper).getGitSyncBranchContextBytesThreadLocal(pipelineEntity, null, null, null);
     doReturn(true).when(pmsYamlSchemaService).validateYamlSchema(accountId, orgId, projectId, mergedPipelineYaml);
     doNothing()
         .when(pipelineRbacServiceImpl)
@@ -523,7 +567,8 @@ public class ExecutionHelperTest extends CategoryTest {
   private void buildExecutionMetadataVerifications(PipelineEntity pipelineEntity) {
     verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
     verify(pmsGitSyncHelper, times(1))
-        .getGitSyncBranchContextBytesThreadLocal(pipelineEntity, pipelineEntity.getStoreType(), null);
+        .getGitSyncBranchContextBytesThreadLocal(
+            pipelineEntity, pipelineEntity.getStoreType(), null, pipelineEntity.getConnectorRef());
     verify(pmsYamlSchemaService, times(0)).validateYamlSchema(accountId, orgId, projectId, pipelineYaml);
     verify(pmsYamlSchemaService, times(1)).validateYamlSchema(accountId, orgId, projectId, mergedPipelineYaml);
     if (pipelineEntity.getStoreType() != StoreType.REMOTE) {
@@ -553,7 +598,8 @@ public class ExecutionHelperTest extends CategoryTest {
         + "      serviceRef: \"svc_v2\"\n";
     doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(resolvedYaml).build())
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(any(), any(), any(), any(), anyBoolean(), anyBoolean(), any());
+        .resolveTemplateRefsInPipelineAndAppendInputSetValidators(
+            any(), any(), any(), any(), anyBoolean(), anyBoolean(), any());
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .accountId(accountId)
                                         .orgIdentifier(orgId)
@@ -561,7 +607,7 @@ public class ExecutionHelperTest extends CategoryTest {
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
                                         .build();
-    executionHelper.getPipelineYamlAndValidate(mergedRuntimeInputYaml, pipelineEntity);
+    executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities(mergedRuntimeInputYaml, pipelineEntity);
     verify(pipelineRbacServiceImpl, times(1))
         .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, mergedRuntimeInputYaml);
     verify(pipelineRbacServiceImpl, times(0))
@@ -582,11 +628,6 @@ public class ExecutionHelperTest extends CategoryTest {
         + "  - stage:\n"
         + "      identifier: \"s1\"\n"
         + "      description: \"a\"\n";
-    String mergedYamlWithoutValidators = "pipeline:\n"
-        + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      description: \"a\"\n";
     String mergedYamlWithValidators = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
@@ -598,11 +639,10 @@ public class ExecutionHelperTest extends CategoryTest {
                                         .projectIdentifier(projectId)
                                         .yaml(pipelineYamlWithAllowedValues)
                                         .build();
-    TemplateMergeResponseDTO response = executionHelper.getPipelineYamlAndValidate(runtimeInputYaml, pipelineEntity);
+    TemplateMergeResponseDTO response =
+        executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities(runtimeInputYaml, pipelineEntity);
     assertThat(response.getMergedPipelineYaml()).isEqualTo(mergedYamlWithValidators);
     assertThat(response.getMergedPipelineYamlWithTemplateRef()).isEqualTo(mergedYamlWithValidators);
-    verify(pmsYamlSchemaService, times(1)).validateYamlSchema(accountId, orgId, projectId, mergedYamlWithValidators);
-    verify(pmsYamlSchemaService, times(0)).validateYamlSchema(accountId, orgId, projectId, mergedYamlWithoutValidators);
   }
 
   @Test
@@ -618,7 +658,7 @@ public class ExecutionHelperTest extends CategoryTest {
                                 .runSequence(394)
                                 .storeType(StoreType.INLINE)
                                 .build();
-    executionHelper.getPipelineYamlAndValidate("", inline);
+    executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities("", inline);
 
     doThrow(
         new InvalidRequestException(
@@ -634,7 +674,7 @@ public class ExecutionHelperTest extends CategoryTest {
                                 .runSequence(394)
                                 .storeType(StoreType.REMOTE)
                                 .build();
-    executionHelper.getPipelineYamlAndValidate("", remote);
+    executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities("", remote);
   }
 
   @Test
@@ -650,7 +690,8 @@ public class ExecutionHelperTest extends CategoryTest {
                                         .projectIdentifier(projectId)
                                         .yaml(pipelineYaml)
                                         .build();
-    assertThatThrownBy(() -> executionHelper.getPipelineYamlAndValidate(inputSetYaml, pipelineEntity))
+    assertThatThrownBy(
+        () -> executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities(inputSetYaml, pipelineEntity))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -678,9 +719,11 @@ public class ExecutionHelperTest extends CategoryTest {
 
     doReturn(templateMergeResponse)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-            pipelineEntity.getProjectIdentifier(), yamlWithTempRef, true, false, BOOLEAN_FALSE_VALUE);
-    TemplateMergeResponseDTO templateMergeResponseDTO = executionHelper.getPipelineYamlAndValidate("", pipelineEntity);
+        .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
+            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), yamlWithTempRef, true, false,
+            BOOLEAN_FALSE_VALUE);
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities("", pipelineEntity);
     assertThat(templateMergeResponseDTO.getMergedPipelineYaml())
         .isEqualTo(templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef());
   }
@@ -716,6 +759,48 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(planCreatorMergeService, times(1))
         .createPlanVersioned(accountId, orgId, projectId, PipelineVersion.V0, executionMetadata, planExecutionMetadata);
     verify(orchestrationService, times(1)).startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
+    verify(rollbackModeExecutionHelper, times(0)).transformPlanForRollbackMode(any(), anyString(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testStartExecutionInPostExecutionRollbackMode() throws IOException {
+    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
+                                              .setHarnessVersion(PipelineVersion.V0)
+                                              .setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK)
+                                              .build();
+    PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().build();
+    String startingNodeId = "startingNodeId";
+    PlanCreationBlobResponse planCreationBlobResponse =
+        PlanCreationBlobResponse.newBuilder().setStartingNodeId(startingNodeId).build();
+    doReturn(planCreationBlobResponse)
+        .when(planCreatorMergeService)
+        .createPlanVersioned(accountId, orgId, projectId, PipelineVersion.V0, executionMetadata, planExecutionMetadata);
+
+    PlanExecution planExecution = PlanExecution.builder().build();
+    Plan plan = PlanExecutionUtils.extractPlan(planCreationBlobResponse);
+    MockedStatic<PlanExecutionUtils> aStatic = Mockito.mockStatic(PlanExecutionUtils.class);
+    aStatic.when(() -> PlanExecutionUtils.extractPlan(planCreationBlobResponse)).thenReturn(plan);
+    ImmutableMap<String, String> abstractions = ImmutableMap.<String, String>builder()
+                                                    .put(SetupAbstractionKeys.accountId, accountId)
+                                                    .put(SetupAbstractionKeys.orgIdentifier, orgId)
+                                                    .put(SetupAbstractionKeys.projectIdentifier, projectId)
+                                                    .build();
+    doReturn(plan)
+        .when(rollbackModeExecutionHelper)
+        .transformPlanForRollbackMode(plan, "prevId", Collections.emptyList(), ExecutionMode.POST_EXECUTION_ROLLBACK);
+    doReturn(planExecution)
+        .when(orchestrationService)
+        .startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
+    PlanExecution createdPlanExecution = executionHelper.startExecution(
+        accountId, orgId, projectId, executionMetadata, planExecutionMetadata, false, null, "prevId", null);
+    assertThat(createdPlanExecution).isEqualTo(planExecution);
+    verify(planCreatorMergeService, times(1))
+        .createPlanVersioned(accountId, orgId, projectId, PipelineVersion.V0, executionMetadata, planExecutionMetadata);
+    verify(orchestrationService, times(1)).startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
+    verify(rollbackModeExecutionHelper, times(1))
+        .transformPlanForRollbackMode(plan, "prevId", Collections.emptyList(), ExecutionMode.POST_EXECUTION_ROLLBACK);
   }
 
   @Test
@@ -745,10 +830,45 @@ public class ExecutionHelperTest extends CategoryTest {
   private void buildExecutionMetadataVerificationsWithV1Version(PipelineEntity pipelineEntity) {
     verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
     verify(pmsGitSyncHelper, times(1))
-        .getGitSyncBranchContextBytesThreadLocal(pipelineEntity, pipelineEntity.getStoreType(), null);
+        .getGitSyncBranchContextBytesThreadLocal(pipelineEntity, pipelineEntity.getStoreType(), null, null);
     verify(pmsYamlSchemaService, times(0)).validateYamlSchema(accountId, orgId, projectId, pipelineYaml);
     verify(pipelineRbacServiceImpl, times(0))
         .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, pipelineYaml);
+    verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testBuildExecutionArgsV1Yaml() {
+    doReturn(executionPrincipalInfo).when(principalInfoHelper).getPrincipalInfoFromSecurityContext();
+    pipelineEntity.setYaml(pipelineYamlV1);
+    pipelineEntity.setHarnessVersion(PipelineVersion.V1);
+    ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, "", Collections.emptyList(),
+        null, executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false);
+    assertThat(execArgs.getMetadata().getExecutionUuid()).isEqualTo(generatedExecutionId);
+    assertThat(execArgs.getMetadata().getTriggerInfo()).isEqualTo(executionTriggerInfo);
+    assertThat(execArgs.getMetadata().getModuleType()).isEqualTo(moduleType);
+    assertThat(execArgs.getMetadata().getPipelineIdentifier()).isEqualTo(pipelineId);
+    assertThat(execArgs.getMetadata().getPrincipalInfo()).isEqualTo(executionPrincipalInfo);
+    assertThat(execArgs.getMetadata().getGitSyncBranchContext().size()).isEqualTo(0);
+    assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.UNDEFINED);
+    assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
+    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(PipelineVersion.V1);
+
+    PlanExecutionMetadata planExecutionMetadata = execArgs.getPlanExecutionMetadata();
+    assertThat(planExecutionMetadata.getPlanExecutionId()).isEqualTo(generatedExecutionId);
+    assertThat(planExecutionMetadata.getInputSetYaml()).isEmpty();
+    assertThat(planExecutionMetadata.getYaml()).isEqualTo(pipelineYamlV1);
+    assertThat(planExecutionMetadata.getStagesExecutionMetadata().isStagesExecution()).isFalse();
+    verify(pipelineGovernanceService, times(1))
+        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, pipelineYamlV1, true);
+    verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
+    verify(pmsGitSyncHelper, times(1))
+        .getGitSyncBranchContextBytesThreadLocal(pipelineEntity, pipelineEntity.getStoreType(), null, null);
+    verify(pmsYamlSchemaService, times(0)).validateYamlSchema(accountId, orgId, projectId, pipelineYamlV1);
+    verify(pipelineRbacServiceImpl, times(0))
+        .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, pipelineYamlV1);
     verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
   }
 

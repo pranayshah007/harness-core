@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.SplunkSavedSearch;
@@ -28,7 +28,7 @@ import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SplunkConfig;
 import software.wings.beans.SyncTaskContext;
-import software.wings.service.impl.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.AnalysisServiceImpl;
 import software.wings.service.impl.analysis.LogElement;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;
@@ -73,7 +73,7 @@ public class SplunkAnalysisServiceImpl extends AnalysisServiceImpl implements Sp
     List<EncryptedDataDetail> encryptedDataDetails = getEncryptionDetails(settingAttribute);
     SyncTaskContext taskContext = getSyncTaskContext(accountId);
     List<LogElement> responseWithoutHost =
-        delegateProxyFactory.get(SplunkDelegateService.class, taskContext)
+        delegateProxyFactory.getV2(SplunkDelegateService.class, taskContext)
             .getLogResults((SplunkConfig) settingAttribute.getValue(), encryptedDataDetails,
                 setupTestNodeData.getQuery(), setupTestNodeData.getHostNameField(), null, startTime, endTime,
                 apiCallLog, 0, setupTestNodeData.isAdvancedQuery());
@@ -96,7 +96,7 @@ public class SplunkAnalysisServiceImpl extends AnalysisServiceImpl implements Sp
 
     String hostName = mlServiceUtils.getHostName(setupTestNodeData);
     List<LogElement> responseWithHost =
-        delegateProxyFactory.get(SplunkDelegateService.class, taskContext)
+        delegateProxyFactory.getV2(SplunkDelegateService.class, taskContext)
             .getLogResults((SplunkConfig) settingAttribute.getValue(), encryptedDataDetails,
                 setupTestNodeData.getQuery(), setupTestNodeData.getHostNameField(), hostName, startTime, endTime,
                 apiCallLog, 0, setupTestNodeData.isAdvancedQuery());
@@ -119,7 +119,7 @@ public class SplunkAnalysisServiceImpl extends AnalysisServiceImpl implements Sp
     List<EncryptedDataDetail> encryptedDataDetails =
         ngSecretService.getEncryptionDetails(basicNGAccessObject, splunkConnectorDTO);
     SyncTaskContext taskContext = getSyncTaskContext(splunkConnectorDTO.getAccountId());
-    return delegateProxyFactory.get(SplunkDelegateService.class, taskContext)
+    return delegateProxyFactory.getV2(SplunkDelegateService.class, taskContext)
         .getSavedSearches(splunkConnectorDTO, encryptedDataDetails, requestGuid);
   }
 
@@ -134,7 +134,7 @@ public class SplunkAnalysisServiceImpl extends AnalysisServiceImpl implements Sp
     List<EncryptedDataDetail> encryptedDataDetails =
         ngSecretService.getEncryptionDetails(basicNGAccessObject, splunkConnectorDTO);
     SyncTaskContext taskContext = getSyncTaskContext(splunkConnectorDTO.getAccountId());
-    return delegateProxyFactory.get(SplunkDelegateService.class, taskContext)
+    return delegateProxyFactory.getV2(SplunkDelegateService.class, taskContext)
         .getValidationResponse(splunkConnectorDTO, encryptedDataDetails, query, requestGuid);
   }
 

@@ -21,6 +21,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
@@ -208,7 +209,7 @@ public class PipelineStageStepTest extends CategoryTest {
     doReturn(Optional.of(NodeExecution.builder().ambiance(ambiance).build()))
         .when(nodeExecutionService)
         .getPipelineNodeExecutionWithProjections(
-            output.getChildExecutionId(), Collections.singleton(NodeExecution.NodeExecutionKeys.ambiance));
+            output.getChildExecutionId(), Collections.singleton(NodeExecutionKeys.ambiance));
 
     stepResponse = pipelineStageStep.handleAsyncResponse(ambiance, stepParameters, responseDataMap);
 

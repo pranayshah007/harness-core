@@ -8,14 +8,14 @@
 package io.harness.cdng.service.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtimeEmptyStringAllowed;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.validation.OneOfField;
+import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
@@ -24,6 +24,7 @@ import io.harness.yaml.core.VariableExpression;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.Map;
+import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -34,7 +35,6 @@ import lombok.experimental.FieldNameConstants;
 @SimpleVisitorHelper(helperClass = ServiceEntityVisitorHelperV2.class)
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.cdng.service.beans.ServiceYamlV2")
-@OneOfField(fields = {"serviceRef", "useFromStage"})
 @FieldNameConstants(innerTypeName = "keys")
 public class ServiceYamlV2 implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
@@ -43,12 +43,14 @@ public class ServiceYamlV2 implements Visitable {
   private String uuid;
 
   // For New Service Yaml
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> serviceRef;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Pattern(regexp = NGRegexValidatorConstants.NON_EMPTY_STRING_PATTERN)
+  private ParameterField<String> serviceRef;
 
   @VariableExpression(skipVariableExpression = true) private ServiceUseFromStageV2 useFromStage;
 
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
-  @YamlSchemaTypes(expression)
+  @YamlSchemaTypes({runtimeEmptyStringAllowed})
   ParameterField<Map<String, Object>> serviceInputs;
 
   // For Visitor Framework Impl

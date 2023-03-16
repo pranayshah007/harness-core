@@ -111,6 +111,7 @@ import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.manifests.request.CustomManifestFetchConfig;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.deployment.InstanceDetails;
 import io.harness.exception.HelmClientException;
 import io.harness.exception.InvalidRequestException;
@@ -321,6 +322,7 @@ public class HelmDeployStateTest extends CategoryTest {
   @Mock private FeatureService featureService;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private TemplateExpressionProcessor templateExpressionProcessor;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Spy @InjectMocks private K8sStateHelper k8sStateHelper;
 
@@ -449,7 +451,7 @@ public class HelmDeployStateTest extends CategoryTest {
     when(containerDeploymentHelper.getContainerServiceParams(any(), any(), any())).thenReturn(containerServiceParams);
     when(artifactCollectionUtils.fetchContainerImageDetails(any(), any())).thenReturn(ImageDetails.builder().build());
 
-    when(delegateService.executeTask(any()))
+    when(delegateService.executeTaskV2(any()))
         .thenReturn(HelmCommandExecutionResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .helmCommandResponse(HelmReleaseHistoryCommandResponse.builder().build())
@@ -511,11 +513,11 @@ public class HelmDeployStateTest extends CategoryTest {
     assertStateExecutionResponse(executionResponse);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertExecutedDelegateTask(delegateTask);
 
-    verify(delegateService).executeTask(any());
+    verify(delegateService).executeTaskV2(any());
     verify(gitConfigHelperService, times(1)).renderGitConfig(any(), any());
     verify(gitFileConfigHelperService, times(1)).renderGitFileConfig(any(), any());
     verify(stateExecutionService, times(2)).appendDelegateTaskDetails(any(), any(DelegateTaskDetails.class));
@@ -556,13 +558,13 @@ public class HelmDeployStateTest extends CategoryTest {
     verify(applicationManifestUtils, times(0))
         .applyK8sValuesLocationBasedHelmChartOverride(any(), any(Map.class), any());
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(2)).queueTask(captor.capture());
+    verify(delegateService, times(2)).queueTaskV2(captor.capture());
     List<DelegateTask> delegateTasks = captor.getAllValues();
 
     assertExecutedDelegateTask(delegateTasks.get(0));
     assertExecutedDelegateTask(delegateTasks.get(1));
 
-    verify(delegateService, times(2)).executeTask(any());
+    verify(delegateService, times(2)).executeTaskV2(any());
   }
 
   private void assertStateExecutionResponse(ExecutionResponse executionResponse) {
@@ -623,7 +625,7 @@ public class HelmDeployStateTest extends CategoryTest {
                         .chartVersion(CHART_VERSION)
                         .build());
 
-    when(delegateService.executeTask(any())).thenReturn(RemoteMethodReturnValueData.builder().build());
+    when(delegateService.executeTaskV2(any())).thenReturn(RemoteMethodReturnValueData.builder().build());
 
     helmDeployState.execute(context);
   }
@@ -634,7 +636,7 @@ public class HelmDeployStateTest extends CategoryTest {
   public void testEmptyHelmChartSpec() {
     helmDeployState.execute(context);
     verify(serviceResourceService).getHelmChartSpecification(APP_ID, SERVICE_ID);
-    verify(delegateService, never()).queueTask(any());
+    verify(delegateService, never()).queueTaskV2(any());
   }
 
   @Test
@@ -651,7 +653,7 @@ public class HelmDeployStateTest extends CategoryTest {
         (HelmDeployStateExecutionData) executionResponse.getStateExecutionData();
     assertThat(helmDeployStateExecutionData.getChartName()).isEqualTo(null);
     assertThat(helmDeployStateExecutionData.getChartRepositoryUrl()).isEqualTo(null);
-    verify(delegateService).queueTask(any());
+    verify(delegateService).queueTaskV2(any());
     verify(gitConfigHelperService).convertToRepoGitConfig(any(GitConfig.class), any());
   }
 
@@ -669,7 +671,7 @@ public class HelmDeployStateTest extends CategoryTest {
         (HelmDeployStateExecutionData) executionResponse.getStateExecutionData();
     assertThat(helmDeployStateExecutionData.getChartName()).isEqualTo(null);
     assertThat(helmDeployStateExecutionData.getChartRepositoryUrl()).isEqualTo(null);
-    verify(delegateService).queueTask(any());
+    verify(delegateService).queueTaskV2(any());
     verify(gitConfigHelperService, times(0)).convertToRepoGitConfig(any(GitConfig.class), anyString());
   }
 
@@ -810,7 +812,7 @@ public class HelmDeployStateTest extends CategoryTest {
     assertThat(helmDeployStateExecutionData.getCommandFlags()).isEqualTo(COMMAND_FLAGS);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     verifyDelegateSelectorInDelegateTaskParams(delegateTask);
@@ -844,7 +846,7 @@ public class HelmDeployStateTest extends CategoryTest {
     assertThat(helmDeployStateExecutionData.getCommandFlags()).isEqualTo(COMMAND_FLAGS);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     HelmRollbackCommandRequest helmRollbackCommandRequest =
@@ -1057,7 +1059,7 @@ public class HelmDeployStateTest extends CategoryTest {
         .createGitFetchFilesTaskParams(context, app, appManifestMap);
 
     ArgumentCaptor<DelegateTask> delegateTaskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    doReturn("taskId").when(delegateService).queueTask(delegateTaskCaptor.capture());
+    doReturn("taskId").when(delegateService).queueTaskV2(delegateTaskCaptor.capture());
     doReturn(true).when(applicationManifestUtils).isValuesInGit(appManifestMap);
     helmDeployState.handleAsyncResponse(context, responseDataMap);
     DelegateTask task = delegateTaskCaptor.getValue();
@@ -1076,7 +1078,7 @@ public class HelmDeployStateTest extends CategoryTest {
         HelmValuesFetchTaskResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
     Map<String, ResponseData> responseDataMap = ImmutableMap.of(ACTIVITY_ID, response);
     ArgumentCaptor<DelegateTask> delegateTaskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    doReturn("taskId").when(delegateService).queueTask(delegateTaskCaptor.capture());
+    doReturn("taskId").when(delegateService).queueTaskV2(delegateTaskCaptor.capture());
 
     doReturn(false).when(applicationManifestUtils).isValuesInGit(appManifestMap);
     helmDeployState.handleAsyncResponse(context, responseDataMap);
@@ -1116,7 +1118,7 @@ public class HelmDeployStateTest extends CategoryTest {
     helmDeployState.execute(context);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     HelmInstallCommandRequest helmInstallCommandRequest =
         (HelmInstallCommandRequest) delegateTask.getData().getParameters()[0];
@@ -1127,7 +1129,7 @@ public class HelmDeployStateTest extends CategoryTest {
     helmDeployState.execute(context);
 
     captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(2)).queueTask(captor.capture());
+    verify(delegateService, times(2)).queueTaskV2(captor.capture());
     delegateTask = captor.getValue();
     helmInstallCommandRequest = (HelmInstallCommandRequest) delegateTask.getData().getParameters()[0];
     String renderedValuesFile = "# imageName: IMAGE_NAME\n"
@@ -1414,7 +1416,7 @@ public class HelmDeployStateTest extends CategoryTest {
     verify(applicationManifestUtils, times(1))
         .applyK8sValuesLocationBasedHelmChartOverride(
             serviceHelmChartManifest, helmOverrideManifestMap, K8sValuesLocation.EnvironmentGlobal);
-    verify(delegateService, times(1)).queueTask(delegateTaskCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(delegateTaskCaptor.capture());
 
     DelegateTask task = delegateTaskCaptor.getValue();
     assertThat(task.getSetupAbstractions().get(Cd1SetupFields.APP_ID_FIELD)).isEqualTo(APP_ID);
@@ -1615,7 +1617,7 @@ public class HelmDeployStateTest extends CategoryTest {
     attribute.setValue(GitConfig.builder().build());
     helmDeployState.executeHelmTask(context, ACTIVITY_ID, emptyMap(), emptyMap());
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(taskCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(taskCaptor.capture());
 
     HelmInstallCommandRequest request = (HelmInstallCommandRequest) taskCaptor.getValue().getData().getParameters()[0];
     assertThat(request.getGitConfig()).isEqualTo(attribute.getValue());
@@ -1661,7 +1663,7 @@ public class HelmDeployStateTest extends CategoryTest {
         .getAppManifestFromFromExecutionContextHelmChart(context, serviceElement.getUuid());
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     verifyDelegateSelectorInDelegateTaskParams(delegateTask);
@@ -1737,7 +1739,7 @@ public class HelmDeployStateTest extends CategoryTest {
   public void testGetPreviousReleaseVersionFromInvalidResponse() throws Exception {
     GitConfig gitConfig = GitConfig.builder().build();
     KubernetesClusterConfig k8sClusterConfig = KubernetesClusterConfig.builder().build();
-    doReturn(new DelegateResponseData() {}).when(delegateService).executeTask(any(DelegateTask.class));
+    doReturn(new DelegateResponseData() {}).when(delegateService).executeTaskV2(any(DelegateTask.class));
 
     String helmV2ExpectedMessage = "Make sure that the helm client and tiller is installed";
     testGetPreviousReleaseVersionInvalidResponse(HelmVersion.V2, null, mock(SettingValue.class), helmV2ExpectedMessage);
@@ -1851,7 +1853,7 @@ public class HelmDeployStateTest extends CategoryTest {
     ExecutionResponse executionResponse = helmDeployState.execute(contextSpy);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     verifyDelegateSelectorInDelegateTaskParams(delegateTask);
@@ -1931,7 +1933,7 @@ public class HelmDeployStateTest extends CategoryTest {
     helmDeployState.executeInternal(context);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(captor.capture());
+    verify(delegateService, times(1)).queueTaskV2(captor.capture());
     DelegateTask queuedTask = captor.getValue();
     assertThat(queuedTask.isSelectionLogsTrackingEnabled())
         .isEqualTo(helmDeployState.isSelectionLogsTrackingForTasksEnabled());
@@ -2015,7 +2017,7 @@ public class HelmDeployStateTest extends CategoryTest {
         .when(applicationManifestUtils)
         .getValuesFilesFromCustomFetchValuesResponse(context, appManifestMap, successfulFetchResponse, VALUES_YAML_KEY);
     ArgumentCaptor<DelegateTask> delegateTaskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    doReturn("taskId").when(delegateService).queueTask(delegateTaskCaptor.capture());
+    doReturn("taskId").when(delegateService).queueTaskV2(delegateTaskCaptor.capture());
     doReturn(false).when(applicationManifestUtils).isValuesInGit(appManifestMap);
 
     spyDeployState.handleAsyncResponse(context, responseDataMap);

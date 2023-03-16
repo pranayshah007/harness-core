@@ -16,11 +16,9 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
-import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateApproval;
 import io.harness.delegate.beans.DelegateApprovalResponse;
-import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateDTO;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
@@ -145,9 +143,6 @@ public interface DelegateService extends OwnedByAccount {
   DelegateRegisterResponse register(@Valid DelegateParams delegateParams, boolean isConnectedUsingMtls);
 
   void unregister(String accountId, DelegateUnregisterRequest request);
-
-  void registerHeartbeat(
-      String accountId, String delegateId, DelegateConnectionHeartbeat heartbeat, ConnectionMode mode);
 
   DelegateProfileParams checkForProfile(String accountId, String delegateId, String profileId, long lastUpdatedAt);
 

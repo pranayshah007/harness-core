@@ -117,7 +117,7 @@ public class ManifestCollectionResponseHandler {
     applicationManifestService.updateFailedAttempts(accountId, appManifestId, 0);
     alertService.closeAlert(appManifest.getAccountId(), null, AlertType.MANIFEST_COLLECTION_FAILED,
         ManifestCollectionFailedAlert.builder().appManifestId(appManifest.getUuid()).build());
-    List<HelmChart> manifestsCollected = manifestCollectionResponse.getHelmCharts();
+    List<HelmChart> manifestsCollected = HelmChart.fromDtos(manifestCollectionResponse.getHelmCharts());
     Set<String> toBeDeletedVersions = manifestCollectionResponse.getToBeDeletedKeys();
 
     if (isNotEmpty(toBeDeletedVersions)) {

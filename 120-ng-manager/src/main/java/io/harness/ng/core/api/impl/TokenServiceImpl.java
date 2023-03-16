@@ -175,6 +175,7 @@ public class TokenServiceImpl implements TokenService {
     Preconditions.checkState(optionalToken.isPresent(), "No token present with identifier: " + identifier);
     return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       tokenRepository.deleteById(optionalToken.get().getUuid());
+      tokenValidationHelper.invalidateApiKeyToken(optionalToken.get().getUuid());
       outboxService.save(new TokenDeleteEvent(TokenDTOMapper.getDTOFromToken(optionalToken.get())));
       return true;
     }));

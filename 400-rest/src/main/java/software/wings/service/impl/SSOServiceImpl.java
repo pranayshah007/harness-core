@@ -456,7 +456,7 @@ public class SSOServiceImpl implements SSOService {
                                             .appId(GLOBAL_APP_ID)
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                             .build();
-      return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
+      return delegateProxyFactory.getV2(LdapDelegateService.class, syncTaskContext)
           .validateLdapConnectionSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), encryptedDataDetail);
     } finally {
       deleteTempSecret(temporaryEncryption, encryptedDataDetail, accountId);
@@ -476,7 +476,7 @@ public class SSOServiceImpl implements SSOService {
                                             .appId(GLOBAL_APP_ID)
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                             .build();
-      return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
+      return delegateProxyFactory.getV2(LdapDelegateService.class, syncTaskContext)
           .validateLdapUserSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), encryptedDataDetail);
     } finally {
       deleteTempSecret(temporaryEncryption, encryptedDataDetail, accountId);
@@ -496,7 +496,7 @@ public class SSOServiceImpl implements SSOService {
                                             .appId(GLOBAL_APP_ID)
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                             .build();
-      return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
+      return delegateProxyFactory.getV2(LdapDelegateService.class, syncTaskContext)
           .validateLdapGroupSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), encryptedDataDetail);
     } finally {
       deleteTempSecret(temporaryEncryption, encryptedDataDetail, accountId);
@@ -523,7 +523,7 @@ public class SSOServiceImpl implements SSOService {
                                             .appId(GLOBAL_APP_ID)
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                             .build();
-      return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
+      return delegateProxyFactory.getV2(LdapDelegateService.class, syncTaskContext)
           .authenticate(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), settingsEncryptedDataDetail, identifier,
               passwordEncryptedDataDetail);
     } finally {
@@ -545,7 +545,7 @@ public class SSOServiceImpl implements SSOService {
                                           .appId(GLOBAL_APP_ID)
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                           .build();
-    return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(LdapDelegateService.class, syncTaskContext)
         .searchGroupsByName(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), encryptedDataDetail, nameQuery);
   }
 

@@ -84,4 +84,12 @@ public class ShellScriptFunctor implements ExpressionFunctor {
   public String enclose(String enclosingString, String input) {
     return enclosingString + input + enclosingString;
   }
+
+  public String escapeChars(String input, String charsList) {
+    for (int i = 0; i < charsList.length(); i++) {
+      char ch = charsList.charAt(i);
+      input = input.replace(Character.toString(ch), "\\" + ch);
+    }
+    return input;
+  }
 }

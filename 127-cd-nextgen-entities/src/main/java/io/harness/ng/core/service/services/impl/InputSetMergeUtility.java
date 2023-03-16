@@ -78,9 +78,9 @@ public class InputSetMergeUtility {
     JsonNode oldInputJsonNode = addDummyRootToJsonNode(readTree(oldInputsYaml), mapper);
     JsonNode newInputJsonNode = addDummyRootToJsonNode(readTree(newInputsYaml), mapper);
 
-    String mergedYaml =
-        MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(YamlPipelineUtils.writeYamlString(oldInputJsonNode),
-            YamlPipelineUtils.writeYamlString(newInputJsonNode), false);
+    String mergedYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+        YamlPipelineUtils.writeYamlString(oldInputJsonNode), YamlPipelineUtils.writeYamlString(newInputJsonNode), false,
+        true);
     JsonNode mergedYamlNode = readTree(mergedYaml);
     return mergedYamlNode == null ? null : YamlPipelineUtils.writeYamlString(mergedYamlNode.get(DUMMY_NODE));
   }

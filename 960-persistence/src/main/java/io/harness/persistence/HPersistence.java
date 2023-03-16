@@ -7,6 +7,7 @@
 
 package io.harness.persistence;
 
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -23,6 +24,7 @@ import com.mongodb.MongoSocketReadException;
 import com.mongodb.ReadPreference;
 import com.mongodb.Tag;
 import com.mongodb.TagSet;
+import com.mongodb.client.MongoClient;
 import dev.morphia.AdvancedDatastore;
 import dev.morphia.FindAndModifyOptions;
 import dev.morphia.query.CountOptions;
@@ -34,6 +36,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +46,6 @@ public interface HPersistence extends HealthMonitor {
   Store DEFAULT_STORE = Store.builder().name("default").build();
   Store CG_HARNESS_STORE = Store.builder().name(DbAliases.HARNESS).build();
   Store ANALYTIC_STORE = Store.builder().name(ANALYTICS_STORE_NAME).build();
-
   static Logger logger() {
     return LoggerFactory.getLogger(HPersistence.class);
   }
@@ -67,6 +69,8 @@ public interface HPersistence extends HealthMonitor {
    */
   AdvancedDatastore getDatastore(Store store);
 
+  MongoClient getNewMongoClient(Store store);
+
   /**
    * Gets the datastore.
    *
@@ -78,7 +82,22 @@ public interface HPersistence extends HealthMonitor {
     return getDatastore(entity.getClass());
   }
 
+  default AdvancedDatastore getDatastore(PersistentEntity entity, boolean isMigrationEnabled) {
+    if (isMigrationEnabled) {
+      Optional<Store> secondaryStore = getSecondaryStore(entity.getClass());
+      if (secondaryStore.isPresent()) {
+        return getDatastore(secondaryStore.get());
+      }
+      logger().warn("Serious: Trying to migrate data without secondaryStore.");
+    }
+    return getDatastore(getPrimaryStore(entity.getClass()));
+  }
+
   Map<Class, Store> getClassStores();
+
+  Map<Class, Store> getSecondaryClassStores();
+
+  boolean isMigrationEnabled(String className);
 
   /**
    * Gets the datastore.
@@ -89,14 +108,19 @@ public interface HPersistence extends HealthMonitor {
    */
 
   default AdvancedDatastore getDatastore(Class cls) {
-    return getDatastore(getClassStores().computeIfAbsent(cls, klass -> {
-      return Arrays.stream(cls.getDeclaredAnnotations())
-          .filter(annotation -> annotation.annotationType().equals(StoreIn.class))
-          .map(annotation -> ((StoreIn) annotation).value())
-          .map(name -> Store.builder().name(name).build())
-          .findFirst()
-          .orElseGet(() -> DEFAULT_STORE);
-    }));
+    Optional<Store> secondaryStore = getSecondaryStore(cls);
+    if (secondaryStore.isPresent() && isMigrationEnabled(cls.getName())) {
+      return getDatastore(secondaryStore.get());
+    }
+    return getDatastore(getPrimaryStore(cls));
+  }
+
+  default AdvancedDatastore getDatastore(Class cls, boolean isMigrationEnabled) {
+    Optional<Store> secondaryStore = getSecondaryStore(cls);
+    if (secondaryStore.isPresent() && isMigrationEnabled) {
+      return getDatastore(secondaryStore.get());
+    }
+    return getDatastore(getPrimaryStore(cls));
   }
 
   default AdvancedDatastore getDefaultAnalyticsDatastore(Class cls) {
@@ -115,6 +139,33 @@ public interface HPersistence extends HealthMonitor {
       return getDatastore(ANALYTIC_STORE);
     }
     return getDatastore(classStore);
+  }
+
+  default Store getPrimaryStore(Class cls) {
+    return getClassStores().computeIfAbsent(cls,
+        klass
+        -> Arrays.stream(cls.getDeclaredAnnotations())
+               .filter(annotation -> annotation.annotationType().equals(StoreIn.class))
+               .map(annotation -> ((StoreIn) annotation).value())
+               .map(name -> Store.builder().name(name).build())
+               .findFirst()
+               .orElse(DEFAULT_STORE));
+  }
+
+  default Optional<Store> getSecondaryStore(Class cls) {
+    // using default_store as a marker so that we don't have to compute secondaryStore on each query
+    Store secondaryStore = getSecondaryClassStores().computeIfAbsent(cls,
+        klass
+        -> Arrays.stream(cls.getDeclaredAnnotations())
+               .filter(annotation -> annotation.annotationType().equals(SecondaryStoreIn.class))
+               .map(annotation -> ((SecondaryStoreIn) annotation).value())
+               .map(name -> Store.builder().name(name).build())
+               .findFirst()
+               .orElse(DEFAULT_STORE));
+    if (secondaryStore != DEFAULT_STORE) {
+      return Optional.of(secondaryStore);
+    }
+    return Optional.empty();
   }
 
   /**
@@ -159,6 +210,8 @@ public interface HPersistence extends HealthMonitor {
    */
   <T extends PersistentEntity> Query<T> createQuery(Class<T> cls);
 
+  <T extends PersistentEntity> Query<T> createQuery(Class<T> cls, boolean isMigrationEnabled);
+
   /**
    * Creates the query for analytics.
    *
@@ -187,6 +240,9 @@ public interface HPersistence extends HealthMonitor {
    */
   <T extends PersistentEntity> Query<T> createQuery(Class<T> cls, Set<QueryChecks> queryChecks);
 
+  <T extends PersistentEntity> Query<T> createQuery(
+      Class<T> cls, Set<QueryChecks> queryChecks, boolean isMigrationEnabled);
+
   /**
    * Creates the query.
    *
@@ -214,6 +270,8 @@ public interface HPersistence extends HealthMonitor {
    */
   <T extends PersistentEntity> UpdateOperations<T> createUpdateOperations(Class<T> cls);
 
+  <T extends PersistentEntity> UpdateOperations<T> createUpdateOperations(Class<T> cls, boolean isMigrationEnabled);
+
   /**
    * Convert DBObject to java entity.
    *
@@ -229,6 +287,8 @@ public interface HPersistence extends HealthMonitor {
    * @return the key of the entity
    */
   <T extends PersistentEntity> String save(T entity);
+
+  <T extends PersistentEntity> String save(T entity, boolean isMigrationEnabled);
 
   /**
    * Save.
@@ -279,6 +339,8 @@ public interface HPersistence extends HealthMonitor {
    */
   <T extends PersistentEntity> T get(Class<T> cls, String id);
 
+  <T extends PersistentEntity> T get(Class<T> cls, String id, boolean isMigrationEnabled);
+
   /**
    * Delete.
    *
@@ -303,6 +365,8 @@ public interface HPersistence extends HealthMonitor {
    * @return true, if successful
    */
   <T extends PersistentEntity> boolean deleteOnServer(Query<T> query);
+
+  <T extends PersistentEntity> boolean deleteOnServer(Query<T> query, boolean isMigrationEnabled);
 
   /**
    * Delete.
@@ -345,6 +409,8 @@ public interface HPersistence extends HealthMonitor {
    */
   <T extends PersistentEntity> UpdateResults update(T ent, UpdateOperations<T> ops);
 
+  <T extends PersistentEntity> UpdateResults update(T ent, UpdateOperations<T> ops, boolean isMigrationEnabled);
+
   /**
    * Update.
    *
@@ -353,6 +419,9 @@ public interface HPersistence extends HealthMonitor {
    * @return the update results
    */
   <T extends PersistentEntity> UpdateResults update(Query<T> updateQuery, UpdateOperations<T> updateOperations);
+
+  <T extends PersistentEntity> UpdateResults update(
+      Query<T> updateQuery, UpdateOperations<T> updateOperations, boolean isMigrationEnabled);
 
   FindAndModifyOptions returnNewOptions = new FindAndModifyOptions().upsert(false).returnNew(true);
   FindAndModifyOptions returnOldOptions = new FindAndModifyOptions().upsert(false).returnNew(false);
@@ -368,6 +437,9 @@ public interface HPersistence extends HealthMonitor {
   <T extends PersistentEntity> T findAndModify(
       Query<T> query, UpdateOperations<T> updateOperations, FindAndModifyOptions findAndModifyOptions);
 
+  <T extends PersistentEntity> T findAndModify(Query<T> query, UpdateOperations<T> updateOperations,
+      FindAndModifyOptions findAndModifyOptions, boolean isMigrationEnabled);
+
   /**
    * Find and modify data that is system and it should not refresh any of the trackers.
    *
@@ -378,6 +450,9 @@ public interface HPersistence extends HealthMonitor {
    */
   <T extends PersistentEntity> T findAndModifySystemData(
       Query<T> query, UpdateOperations<T> updateOperations, FindAndModifyOptions findAndModifyOptions);
+
+  <T extends PersistentEntity> T findAndModifySystemData(Query<T> query, UpdateOperations<T> updateOperations,
+      FindAndModifyOptions findAndModifyOptions, boolean isMigrationEnabled);
 
   /**
    * Find and delete.

@@ -16,6 +16,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.model.AzureConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
@@ -268,6 +269,11 @@ public class AzureNetworkClientImplTest extends CategoryTest {
   }
 
   private AzureConfig getAzureComputeConfig() {
-    return AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+    return AzureConfig.builder()
+        .clientId("clientId")
+        .tenantId("tenantId")
+        .key("key".toCharArray())
+        .azureEnvironmentType(AzureEnvironmentType.AZURE)
+        .build();
   }
 }

@@ -43,6 +43,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GitClientException;
 import io.harness.exception.YamlException;
+import io.harness.git.GitFetchMetadataLocalThread;
 import io.harness.git.model.GitFile;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -73,20 +74,24 @@ public class ScmFetchFilesHelper {
   @Inject private ScmDelegateClient scmDelegateClient;
   @Inject private ScmServiceClient scmServiceClient;
   private static final List<String> ROOT_DIRECTORY_PATHS = Arrays.asList(".", "/");
-
+  private static final String DEFAULT_FETCH_IDENTIFIER = "--default";
   public GitFetchFilesResult fetchFilesFromRepoWithScm(
       GitFileConfig gitFileConfig, GitConfig gitConfig, List<String> filePathList) {
+    return fetchFilesFromRepoWithScm(DEFAULT_FETCH_IDENTIFIER, gitFileConfig, gitConfig, filePathList);
+  }
+  public GitFetchFilesResult fetchFilesFromRepoWithScm(
+      String identifier, GitFileConfig gitFileConfig, GitConfig gitConfig, List<String> filePathList) {
     ScmConnector scmConnector = getScmConnector(gitConfig);
     FileContentBatchResponse fileBatchContentResponse;
 
     fileBatchContentResponse = fetchFilesByFilePaths(gitFileConfig, filePathList, scmConnector);
-
+    GitFetchMetadataLocalThread.putCommitId(identifier, fileBatchContentResponse.getCommitId());
     List<GitFile> gitFiles =
         fileBatchContentResponse.getFileBatchContentResponse()
             .getFileContentsList()
             .stream()
             .filter(fileContent -> {
-              if (fileContent.getStatus() != 200) {
+              if (fileContent.getStatus() != 200 || isNotEmpty(fileContent.getError())) {
                 throwFailedToFetchFileException(gitFileConfig, fileContent);
                 return false;
               } else {

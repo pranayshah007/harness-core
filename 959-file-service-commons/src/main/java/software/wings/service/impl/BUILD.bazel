@@ -32,7 +32,7 @@ java_library(
         "@maven//:jakarta_validation_jakarta_validation_api",
         "@maven//:org_apache_commons_commons_lang3",
         "@maven//:org_mongodb_bson",
-        "@maven//:org_mongodb_mongo_java_driver",
+        "@maven//:org_mongodb_mongodb_driver_core",
         "@maven//:org_mongodb_morphia_morphia",
     ],
 )

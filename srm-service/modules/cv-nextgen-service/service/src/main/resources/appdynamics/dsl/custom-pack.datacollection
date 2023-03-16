@@ -42,7 +42,7 @@ while Var:index !=  Var:lengthOfItems {
                     Var hostIndex =  Env:serviceInstanceIndexes[Var:index]
                     Var metricPathSplit = Var:metricPath.split("|")
                     Var hostname = Var:metricPathSplit[Var:hostIndex]
-                    Var tsRecord = new TimeseriesRecord(txnName=Var:metricName, metricIdentifier=Var:metricIdentifier, metricName=Var:metricName, metricValue=Var:value, timestamp=Var:timestamp, host=Var:hostname)
+                    Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifier, metricName=Var:metricName, metricValue=Var:value, timestamp=Var:timestamp, host=Var:hostname)
                     Var:metricsToReturn.append(Var:tsRecord)
                 }
              }

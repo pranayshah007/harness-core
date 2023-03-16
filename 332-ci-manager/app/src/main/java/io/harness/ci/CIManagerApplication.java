@@ -22,6 +22,7 @@ import io.harness.Microservice;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.SCMGrpcClientModule;
+import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.migration.CIManagerMigrationProvider;
 import io.harness.authorization.AuthorizationServiceHeader;
@@ -42,6 +43,7 @@ import io.harness.ci.registrars.ExecutionRegistrar;
 import io.harness.ci.serializer.CiExecutionRegistrars;
 import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.core.ci.services.CIActiveCommitterUsageImpl;
+import io.harness.core.ci.services.CICacheAllowanceImpl;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
@@ -64,6 +66,11 @@ import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
+import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
+import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
+import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
+import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
+import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
@@ -134,6 +141,8 @@ import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
+import io.dropwizard.jersey.errors.EarlyEofExceptionMapper;
+import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
@@ -293,9 +302,10 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     registerMigrations(injector);
     registerResources(environment, injector);
     registerWaitEnginePublishers(injector);
-    registerManagedBeans(environment, injector);
+    registerManagedBeans(environment, injector, configuration);
     registerHealthCheck(environment, injector);
     registerAuthFilters(configuration, environment, injector);
+    registerExceptionMappers(environment);
     registerCorrelationFilter(environment, injector);
     registerStores(configuration, injector);
     registerYamlSdk(injector);
@@ -310,7 +320,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     }
 
     log.info("CIManagerApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
-    initializeCiManagerMonitoring(injector);
+    initializeCiManagerMonitoring(configuration, injector);
 
     initializePluginPublisher(injector);
     registerOasResource(configuration, environment, injector);
@@ -438,11 +448,14 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
         .scheduleWithFixedDelay(injector.getInstance(ProgressUpdateService.class), 0L, 5L, TimeUnit.SECONDS);
   }
 
-  private void registerManagedBeans(Environment environment, Injector injector) {
+  private void registerManagedBeans(Environment environment, Injector injector, CIManagerConfiguration config) {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
-    environment.lifecycle().manage(injector.getInstance(CIExecutionPoller.class));
+    boolean local = config.getCiExecutionServiceConfig().isLocal();
+    if (!local) {
+      environment.lifecycle().manage(injector.getInstance(CIExecutionPoller.class));
+    }
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
   }
@@ -507,6 +520,16 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
           injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
     }
   }
+  private void registerExceptionMappers(Environment environment) {
+    environment.jersey().register(JerseyViolationExceptionMapperV2.class);
+    environment.jersey().register(GenericExceptionMapperV2.class);
+    environment.jersey().register(new JsonProcessingExceptionMapper(true));
+    environment.jersey().register(EarlyEofExceptionMapper.class);
+    environment.jersey().register(NGAccessDeniedExceptionMapper.class);
+    environment.jersey().register(WingsExceptionMapperV2.class);
+    environment.jersey().register(NotFoundExceptionMapper.class);
+    environment.jersey().register(NotAllowedExceptionMapper.class);
+  }
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
@@ -557,15 +580,18 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
                     .put(FeatureRestrictionName.MAX_TOTAL_BUILDS, TotalBuildsRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MAX_BUILDS_PER_MONTH, BuildsPerMonthRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MAX_BUILDS_PER_DAY, BuildsPerDayRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.CACHE_SIZE_ALLOWANCE, CICacheAllowanceImpl.class)
                     .build())
             .build();
     injector.getInstance(EnforcementSdkRegisterService.class)
         .initialize(restrictionUsageRegisterConfiguration, customConfig);
   }
 
-  private void initializeCiManagerMonitoring(Injector injector) {
-    log.info("Initializing CI Manager Monitoring");
-    injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
+  private void initializeCiManagerMonitoring(CIManagerConfiguration config, Injector injector) {
+    if (BooleanUtils.isTrue(config.getEnableTelemetry())) {
+      log.info("Initializing CI Manager Monitoring");
+      injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
+    }
   }
 
   private void initializePluginPublisher(Injector injector) {

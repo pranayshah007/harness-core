@@ -9,8 +9,8 @@ package io.harness.repositories.fullSync;
 
 import io.harness.gitsync.core.fullsync.entity.GitFullSyncJob;
 
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
-import java.util.List;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -19,5 +19,5 @@ public interface FullSyncJobRepositoryCustom {
 
   GitFullSyncJob find(Criteria criteria);
 
-  List<GitFullSyncJob> deleteAll(Criteria criteria);
+  DeleteResult deleteAll(Criteria criteria);
 }

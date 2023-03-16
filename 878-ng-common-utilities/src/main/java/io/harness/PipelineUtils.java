@@ -24,14 +24,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 // Todo: Split and move to respective service
 public class PipelineUtils {
-  public String getBuildDetailsUrl(NGAccess ngAccess, String pipelineId, String executionId, String ngBaseUrl) {
+  public String getBuildDetailsUrl(NGAccess ngAccess, String pipelineId, String executionId, String ngBaseUrl,
+      String stageSetupId, String stageExecutionId) {
     String detailsUrl = new StringBuilder(ngBaseUrl)
                             .append(String.format("/account/%s", ngAccess.getAccountIdentifier()))
                             .append(String.format("/ci/orgs/%s", ngAccess.getOrgIdentifier()))
                             .append(String.format("/projects/%s", ngAccess.getProjectIdentifier()))
                             .append(String.format("/pipelines/%s", pipelineId))
                             .append(String.format("/executions/%s", executionId))
-                            .append("/pipeline")
+                            .append("/pipeline?")
+                            .append(String.format("stage=%s", stageSetupId))
+                            .append(String.format("&stageExecId=%s", stageExecutionId))
                             .toString();
     log.info("DetailsUrl is: [{}]", detailsUrl);
     return detailsUrl;

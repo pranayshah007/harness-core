@@ -15,4 +15,5 @@ message UserDTO {
   string name = 5;
   string email = 6;
   bool locked = 7;
+  bool isTwoFactorAuthenticationEnabled = 8;
 }

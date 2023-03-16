@@ -32,6 +32,7 @@ import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.AppManifestSummary;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -39,10 +40,11 @@ import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.manifest.NgManifestFactory;
 import io.harness.ngmigration.service.manifest.NgManifestService;
+import io.harness.ngmigration.utils.CaseFormat;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.JsonUtils;
 
@@ -59,6 +61,7 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.ApplicationManifestService;
+import software.wings.service.intfc.ServiceResourceService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -78,6 +81,7 @@ import org.apache.commons.lang3.StringUtils;
 public class ManifestMigrationService extends NgMigrationService {
   @Inject private ApplicationManifestService applicationManifestService;
   @Inject private NgManifestFactory manifestFactory;
+  @Inject private ServiceResourceService serviceResourceService;
 
   @Inject private ServiceVariableMigrationService serviceVariableMigrationService;
 
@@ -151,10 +155,10 @@ public class ManifestMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     ApplicationManifest applicationManifest = (ApplicationManifest) entities.get(entityId).getEntity();
-    List<NGYamlFile> yamlFiles = getYamlFilesForManifest(applicationManifest, inputDTO, entities);
+    List<NGYamlFile> yamlFiles = getYamlFilesForManifest(applicationManifest, inputDTO, entities, migratedEntities);
     String serviceId = applicationManifest.getServiceId();
     String envId = applicationManifest.getEnvId();
     if (StringUtils.isNoneBlank(serviceId, envId)
@@ -173,18 +177,18 @@ public class ManifestMigrationService extends NgMigrationService {
       NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
           ((NGServiceOverrideConfig) override.getYaml()).getServiceOverrideInfoConfig();
 
-      List<ManifestConfigWrapper> manifestConfigWrapperList =
-          getManifests(Collections.singleton(entityId), inputDTO, entities, migratedEntities);
+      List<ManifestConfigWrapper> manifestConfigWrapperList = getManifests(Collections.singleton(entityId), inputDTO,
+          entities, migratedEntities, null, inputDTO.getIdentifierCaseFormat());
       if (EmptyPredicate.isNotEmpty(manifestConfigWrapperList)) {
         serviceOverrideInfoConfig.getManifests().addAll(manifestConfigWrapperList);
       }
-      return yamlFiles;
+      return YamlGenerationDetails.builder().yamlFileList(yamlFiles).build();
     }
-    return yamlFiles;
+    return YamlGenerationDetails.builder().yamlFileList(yamlFiles).build();
   }
 
-  private List<NGYamlFile> getYamlFilesForManifest(
-      ApplicationManifest applicationManifest, MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities) {
+  private List<NGYamlFile> getYamlFilesForManifest(ApplicationManifest applicationManifest, MigrationInputDTO inputDTO,
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     String serviceId = applicationManifest.getServiceId();
     String envId = applicationManifest.getEnvId();
     List<ManifestFile> manifestFiles =
@@ -205,10 +209,11 @@ public class ManifestMigrationService extends NgMigrationService {
       Environment environment = (Environment) envNode.getEntity();
       envName = environment.getName();
     }
-    return getYamlFiles(inputDTO, applicationManifest, manifestFiles, envName, serviceName);
+    return getYamlFiles(inputDTO, entities, migratedEntities, applicationManifest, manifestFiles, envName, serviceName);
   }
 
-  private List<NGYamlFile> getYamlFiles(MigrationInputDTO inputDTO, ApplicationManifest applicationManifest,
+  private List<NGYamlFile> getYamlFiles(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, ApplicationManifest applicationManifest,
       List<ManifestFile> manifestFiles, String envName, String serviceName) {
     if (isEmpty(manifestFiles)) {
       return new ArrayList<>();
@@ -227,10 +232,11 @@ public class ManifestMigrationService extends NgMigrationService {
     return manifestFiles.stream()
         .map(manifestFile -> {
           // TODO: Fix the identifier & name
-          String identifier = MigratorUtility.generateManifestIdentifier(prefix + manifestFile.getFileName());
+          String identifier = MigratorUtility.generateManifestIdentifier(
+              prefix + manifestFile.getFileName(), inputDTO.getIdentifierCaseFormat());
           if (applicationManifest.getKind().equals(AppManifestKind.VALUES)) {
-            identifier =
-                MigratorUtility.generateManifestIdentifier(prefix + " ValuesOverride " + manifestFile.getFileName());
+            identifier = MigratorUtility.generateManifestIdentifier(
+                prefix + " ValuesOverride " + manifestFile.getFileName(), inputDTO.getIdentifierCaseFormat());
           }
           String name = identifier;
           if (MigratorUtility.endsWithIgnoreCase(identifier, "yaml", "yml")) {
@@ -238,8 +244,8 @@ public class ManifestMigrationService extends NgMigrationService {
                 ? identifier.substring(0, identifier.length() - 4) + ".yaml"
                 : identifier.substring(0, identifier.length() - 3) + ".yml";
           }
-          String content =
-              (String) MigratorExpressionUtils.render(manifestFile.getFileContent(), inputDTO.getCustomExpressions());
+          String content = (String) MigratorExpressionUtils.render(entities, migratedEntities,
+              manifestFile.getFileContent(), inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
           return NGYamlFile.builder()
               .type(NGMigrationEntityType.MANIFEST)
               .filename(null)
@@ -269,7 +275,8 @@ public class ManifestMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     return null;
   }
 
@@ -279,7 +286,8 @@ public class ManifestMigrationService extends NgMigrationService {
   }
 
   public List<ManifestConfigWrapper> getManifests(Set<CgEntityId> manifestEntityIds, MigrationInputDTO inputDTO,
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Service service,
+      CaseFormat identifierCaseFormat) {
     if (isEmpty(manifestEntityIds)) {
       return new ArrayList<>();
     }
@@ -288,18 +296,22 @@ public class ManifestMigrationService extends NgMigrationService {
     for (CgEntityId manifestEntityId : manifestEntityIds) {
       CgEntityNode manifestNode = entities.get(manifestEntityId);
       ApplicationManifest applicationManifest = (ApplicationManifest) manifestNode.getEntity();
-      MigratorExpressionUtils.render(applicationManifest, inputDTO.getCustomExpressions());
+      if (null != applicationManifest && null == service && isNotEmpty(applicationManifest.getServiceId())) {
+        service = serviceResourceService.get(applicationManifest.getAppId(), applicationManifest.getServiceId());
+      }
+      MigratorExpressionUtils.render(entities, migratedEntities, applicationManifest, inputDTO.getCustomExpressions(),
+          inputDTO.getIdentifierCaseFormat());
       BaseProvidedInput manifestInput =
           inputDTO.getOverrides() == null ? null : inputDTO.getOverrides().get(manifestEntityId);
       ManifestProvidedEntitySpec entitySpec = null;
       if (manifestInput != null && manifestInput.getSpec() != null) {
         entitySpec = JsonUtils.treeToValue(manifestInput.getSpec(), ManifestProvidedEntitySpec.class);
       }
-      List<NGYamlFile> files = getYamlFilesForManifest(applicationManifest, inputDTO, entities);
-      NgManifestService ngManifestService = manifestFactory.getNgManifestService(applicationManifest);
+      List<NGYamlFile> files = getYamlFilesForManifest(applicationManifest, inputDTO, entities, migratedEntities);
+      NgManifestService ngManifestService = manifestFactory.getNgManifestService(applicationManifest, service);
 
       List<ManifestConfigWrapper> manifestConfigWrapper = ngManifestService.getManifestConfigWrapper(
-          applicationManifest, entities, migratedEntities, entitySpec, files);
+          applicationManifest, entities, migratedEntities, entitySpec, files, identifierCaseFormat);
       ngManifests.addAll(manifestConfigWrapper);
     }
     return ngManifests;
@@ -337,6 +349,27 @@ public class ManifestMigrationService extends NgMigrationService {
       } else {
         gitStore.setPaths(MigratorUtility.splitWithComma(gitFileConfig.getFilePath()));
       }
+    }
+    return gitStore;
+  }
+
+  public GitStore getGitStoreWithFilePaths(GitFileConfig gitFileConfig, NgEntityDetail connector) {
+    GitStore gitStore =
+        GitStore.builder()
+            .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
+            .gitFetchType(StringUtils.isNotBlank(gitFileConfig.getBranch()) ? FetchType.BRANCH : FetchType.COMMIT)
+            .build();
+    if (StringUtils.isNotBlank(gitFileConfig.getRepoName())) {
+      gitStore.setRepoName(ParameterField.createValueField(gitFileConfig.getRepoName()));
+    }
+
+    if (StringUtils.isNotBlank(gitFileConfig.getBranch())) {
+      gitStore.setBranch(ParameterField.createValueField(gitFileConfig.getBranch()));
+    } else {
+      gitStore.setCommitId(ParameterField.createValueField(gitFileConfig.getCommitId()));
+    }
+    if (isNotEmpty(gitFileConfig.getFilePathList())) {
+      gitStore.setPaths(ParameterField.createValueField(gitFileConfig.getFilePathList()));
     }
     return gitStore;
   }

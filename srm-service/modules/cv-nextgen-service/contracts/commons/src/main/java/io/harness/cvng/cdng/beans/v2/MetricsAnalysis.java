@@ -23,8 +23,9 @@ public class MetricsAnalysis {
   String metricName;
   String transactionGroup;
   MetricType metricType;
-  String healthSourceIdentifier;
+  HealthSource healthSource;
   List<MetricThreshold> thresholds;
   AnalysisResult analysisResult;
   List<AnalysedDeploymentTestDataNode> testDataNodes;
+  String deeplinkURL;
 }

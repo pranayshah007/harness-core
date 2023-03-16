@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2021 Harness Inc. All rights reserved.
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
@@ -8,31 +9,28 @@ set -xe
 export BRANCH_PREFIX=`echo ${ghprbTargetBranch} | sed 's/\(........\).*/\1/g'`
 echo "INFO: BRANCH_PREFIX=$BRANCH_PREFIX"
 
-service_folders=("pipeline-service" "access-control" "platform-service" )
+service_folders=("pipeline-service" "access-control" "platform-service" "batch-processing" "ce-nextgen" "audit-event-streaming")
 
 #Need confirmation for below services reference path of build.properties
-#"ce-nextgen" "260-delegate" "315-sto-manager" "debezium-service"
+#"260-delegate" "315-sto-manager" "debezium-service"
 
-if [[ "${BRANCH_PREFIX}" != "release/" ]]
-  then
-    export VERSION_FILE=build.properties
+#Get path of build.properties file for dedicated services
+if [[ "${BRANCH_PREFIX}" != "release/" ]]; then
+  export VERSION_FILE=build.properties
 else
   for i in "${service_folders[@]}"; do
     if [[ "${ghprbTargetBranch}" == "release/$i/"* ]]; then
-        export VERSION_FILE=$i/build.properties
-        break
+      export VERSION_FILE=$i/build.properties
+      break
     elif [[ "${ghprbTargetBranch}" == "release/ci-manager/"* ]]; then
       export VERSION_FILE=332-ci-manager/build.properties
       break
     elif [[ "${ghprbTargetBranch}" == "release/delegate/"* ]]; then
       export VERSION_FILE=260-delegate/build.properties
       break
-    elif [[ "${ghprbTargetBranch}" == "release/batch-processing/"* ]]; then
-          export VERSION_FILE=batch-processing/build.properties
-          break
-    elif [[ "${ghprbTargetBranch}" == "release/ce-nextgen/"* ]]; then
-          export VERSION_FILE=ce-nextgen/build.properties
-          break
+    elif [[ "${ghprbTargetBranch}" == "release/sto-manager/"* ]];then
+      export VERSION_FILE=315-sto-manager/build.properties
+      break
     else
       export VERSION_FILE=build.properties
     fi
@@ -58,21 +56,22 @@ echo "INFO: $?: VERSION_DIFF=$VERSION_DIFF"
 PATCH_DIFF=$(git diff temp246_test..${ghprbTargetBranch} -- ${VERSION_FILE} | { grep  "+build.patch=$PATCH" || true;})
 echo "INFO: $?: PATCH_DIFF=$PATCH_DIFF"
 
-if [ "${BRANCH_PREFIX}" = "release/" ] && [ ! $VERSION_DIFF ] && [ ! $PATCH_DIFF ]
-then
 
+if [[ "${ghprbTargetBranch}" == "release/pipeline-service/"* ]] && [ ! $PATCH_DIFF ]; then
+       echo "ERROR:  build.patch must be incremented."
+       exit 1
+elif [ "${BRANCH_PREFIX}" = "release/" ] && [ ! $VERSION_DIFF ] && [ ! $PATCH_DIFF ]
+then
   echo "ERROR:  Either build.number or build.patch must be incremented."
   exit 1
 
 elif [ "${BRANCH_PREFIX}" = "release/" ] && [ $VERSION_DIFF ]
 then
-
   echo "INFO:  OLD VERSION INFO."
   git diff temp246_test..${ghprbTargetBranch} -- ${VERSION_FILE} | grep "\-build.number=$OLD_VERSION"
 
 elif [ "${BRANCH_PREFIX}" = "release/" ] && [ $PATCH_DIFF ]
 then
-
   echo "INFO:  OLD PATCH INFO."
   export OLD_PATCH=$(printf %03d $(( ${PATCH}-1 )) )
   git diff temp246_test..${ghprbTargetBranch} -- ${VERSION_FILE} | grep "+build.patch=$PATCH"

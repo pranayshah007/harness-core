@@ -84,6 +84,10 @@ public class TriggerFilterStore {
       } else if (AZURE_REPO.name().equals(webhookPayloadData.getOriginalEvent().getSourceRepoType())) {
         return getTriggerFiltersAzureRepoIssueCommentList();
       }
+    } else if (webhookPayloadData.getParseWebhookResponse().hasRelease()) {
+      if (GITHUB.name().equals(webhookPayloadData.getOriginalEvent().getSourceRepoType())) {
+        return getTriggerFiltersGithubReleaseList();
+      }
     }
     return getWebhookGitTriggerFiltersDefaultList();
   }
@@ -117,5 +121,10 @@ public class TriggerFilterStore {
     return Arrays.asList(accountTriggerFilter, sourceRepoTypeTriggerFilter, eventActionTriggerFilter,
         headerTriggerFilter, jexlConditionsTriggerFilter, gitWebhookTriggerRepoFilter, issueCommentTriggerFilter,
         filepathTriggerFilter);
+  }
+
+  List<TriggerFilter> getTriggerFiltersGithubReleaseList() {
+    return Arrays.asList(accountTriggerFilter, sourceRepoTypeTriggerFilter, eventActionTriggerFilter,
+        payloadConditionsTriggerFilter, headerTriggerFilter, jexlConditionsTriggerFilter, gitWebhookTriggerRepoFilter);
   }
 }

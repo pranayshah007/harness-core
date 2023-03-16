@@ -33,6 +33,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.apiclient.ApiClientFactoryImpl;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.kubectl.GetCommand;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.Kind;

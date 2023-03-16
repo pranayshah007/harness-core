@@ -164,7 +164,7 @@ EOF""" % code,
             visibility = ["//visibility:public"],
             jvm_flags = [
                 "$(HARNESS_ARGS)",
-                "-Xmx4G",
+                "-Xmx16G",
                 "-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
             ],

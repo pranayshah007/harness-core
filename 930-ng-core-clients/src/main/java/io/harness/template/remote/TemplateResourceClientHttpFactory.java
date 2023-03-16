@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.AbstractHttpClientFactory;
+import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
@@ -27,6 +28,14 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDC)
 public class TemplateResourceClientHttpFactory
     extends AbstractHttpClientFactory implements Provider<TemplateResourceClient> {
+  public TemplateResourceClientHttpFactory(ServiceHttpClientConfig templateServiceConfig, String serviceSecret,
+      ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId,
+      boolean enableCircuitBreaker, ClientMode clientMode) {
+    super(templateServiceConfig, serviceSecret, tokenGenerator, kryoConverterFactory, clientId, enableCircuitBreaker,
+        clientMode);
+    log.info("secretManagerConfig {}", templateServiceConfig);
+  }
+
   public TemplateResourceClientHttpFactory(ServiceHttpClientConfig templateServiceConfig, String serviceSecret,
       ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId) {
     super(templateServiceConfig, serviceSecret, tokenGenerator, kryoConverterFactory, clientId);

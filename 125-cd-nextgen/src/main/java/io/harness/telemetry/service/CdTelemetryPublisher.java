@@ -126,4 +126,8 @@ public class CdTelemetryPublisher {
   List<AccountDTO> getAllAccounts() {
     return CGRestUtils.getResponse(accountClient.getAllAccounts());
   }
+
+  public void deleteByAccount(String accountId) {
+    cdTelemetryStatusRepository.deleteAllByAccountId(accountId);
+  }
 }

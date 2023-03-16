@@ -19,13 +19,17 @@ import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.BucketPolicy;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 
 @Slf4j
 public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperService {
@@ -41,8 +45,31 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
              new CloseableAmazonWebServiceClient(awsClient.getAmazonS3Client(credentialsProvider))) {
       BucketPolicy bucketPolicy = closeableAmazonS3Client.getClient().getBucketPolicy(awsS3Bucket);
-      String policyText = bucketPolicy.getPolicyText();
-      CEBucketPolicyJson policyJson = new Gson().fromJson(policyText, CEBucketPolicyJson.class);
+      CEBucketPolicyJson policyJson;
+      if (bucketPolicy == null || StringUtils.isEmpty(bucketPolicy.getPolicyText())) {
+        policyJson = initializeBucketPolicy(awsS3Bucket);
+      } else {
+        String policyText = bucketPolicy.getPolicyText();
+        try {
+          policyJson = new Gson().fromJson(policyText, CEBucketPolicyJson.class);
+        } catch (Exception e) {
+          log.info("Handled exception while updating bucket policy: ", e);
+          JSONObject jsonObject = new JSONObject(policyText);
+          List<String> awsPrincipalRoleList = List.of(
+              jsonObject.getJSONArray("Statement").getJSONObject(0).getJSONObject("Principal").getString("AWS"));
+          jsonObject.getJSONArray("Statement")
+              .getJSONObject(0)
+              .getJSONObject("Principal")
+              .put("AWS", awsPrincipalRoleList);
+          jsonObject.getJSONArray("Statement")
+              .getJSONObject(1)
+              .getJSONObject("Principal")
+              .put("AWS", awsPrincipalRoleList);
+          log.info(jsonObject.toString());
+          policyJson = new Gson().fromJson(jsonObject.toString(), CEBucketPolicyJson.class);
+        }
+      }
+      log.info(policyJson.toString());
       List<CEBucketPolicyStatement> listStatements = new ArrayList<>();
       for (CEBucketPolicyStatement statement : policyJson.getStatement()) {
         Map<String, List<String>> principal = statement.getPrincipal();
@@ -64,5 +91,34 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
       throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
     }
     return true;
+  }
+
+  public CEBucketPolicyJson initializeBucketPolicy(String awsS3BucketName) throws JsonProcessingException {
+    CEBucketPolicyJson ceBucketPolicyJson =
+        CEBucketPolicyJson.builder()
+            .Statement(List.of(CEBucketPolicyStatement.builder()
+                                   .Sid("DelegateS3Access")
+                                   .Effect("Allow")
+                                   .Principal(new HashMap<>() {
+                                     { put("AWS", new ArrayList<>()); }
+                                   })
+                                   .Action(List.of("s3:PutObject", "s3:PutObjectAcl"))
+                                   .Resource(List.of(String.format("arn:aws:s3:::%s/${aws:userid}", awsS3BucketName),
+                                       String.format("arn:aws:s3:::%s/${aws:userid}/*", awsS3BucketName)))
+                                   .build(),
+                CEBucketPolicyStatement.builder()
+                    .Sid("AllowStatement3")
+                    .Effect("Allow")
+                    .Principal(new HashMap<>() {
+                      { put("AWS", new ArrayList<>()); }
+                    })
+                    .Action("s3:ListBucket")
+                    .Resource(String.format("arn:aws:s3:::%s", awsS3BucketName))
+                    .Condition(Map.of("StringLike", Map.of("s3:prefix", "${aws:userid}/*")))
+                    .build()))
+            .Version("2012-10-17")
+            .build();
+    log.info(ceBucketPolicyJson.toString());
+    return ceBucketPolicyJson;
   }
 }

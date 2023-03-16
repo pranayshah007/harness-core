@@ -7,6 +7,8 @@
 
 package io.harness.shell;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.LogLevel.ERROR;
@@ -179,6 +181,30 @@ public abstract class AbstractScriptExecutor implements BaseScriptExecutor {
   protected void saveExecutionLogWarn(String line) {
     if (shouldSaveExecutionLogs) {
       logCallback.saveExecutionLog(line, WARN, RUNNING);
+    }
+  }
+
+  protected void validateExportedVariables(@NotNull Map<String, String> envVariablesMap) {
+    StringBuilder emptySb = new StringBuilder();
+    StringBuilder hyphenSb = new StringBuilder();
+
+    for (Map.Entry<String, String> variable : envVariablesMap.entrySet()) {
+      if (isEmpty(variable.getValue())) {
+        emptySb.append(variable.getKey()).append(",");
+      }
+      if (variable.getKey().contains("-")) {
+        hyphenSb.append(variable.getKey()).append(",");
+      }
+    }
+
+    if (isNotEmpty(emptySb.toString())) {
+      saveExecutionLogWarn("Warning: following variables have resolved to empty values: "
+          + emptySb.substring(0, emptySb.length() - 1) + "\nCheck if these are assigned correctly in the script.");
+    }
+
+    if (isNotEmpty(hyphenSb.toString())) {
+      saveExecutionLogWarn("Warning: following variables have hyphens in variable values: "
+          + hyphenSb.substring(0, hyphenSb.length() - 1) + "\nBash does not support hyphen(-) in variable names.");
     }
   }
 

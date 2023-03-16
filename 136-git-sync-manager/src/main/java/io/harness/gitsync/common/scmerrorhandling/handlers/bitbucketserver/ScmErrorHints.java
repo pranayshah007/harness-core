@@ -30,4 +30,7 @@ public class ScmErrorHints {
 
   public static final String WRONG_REPO_OR_BRANCH =
       "Please check if the provided branch<BRANCH> or the Bitbucket repo name<REPO> are valid.";
+
+  public static final String RATE_LIMIT =
+      "Please check the number of requests, you have reached your account's rate limit for too many requests.";
 }

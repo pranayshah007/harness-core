@@ -8,6 +8,7 @@
 package io.harness.batch.processing.dao.impl;
 
 import static io.harness.ccm.commons.beans.InstanceType.K8S_PV;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HPersistence.upsertReturnOldOptions;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.persistence.HQuery.excludeAuthorityCount;
@@ -35,6 +36,7 @@ import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -147,9 +149,20 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
   }
 
   @Override
-  public List<InstanceData> fetchActivePVList(String accountId, Instant startTime, Instant endTime) {
-    Query<InstanceData> query = getActiveInstanceQuery(accountId, startTime, endTime, singletonList(K8S_PV));
-    return query.asList();
+  public List<InstanceData> fetchActivePVList(
+      String accountId, Set<String> clusterIds, Instant startTime, Instant endTime) {
+    Query<InstanceData> query;
+    if (isEmpty(clusterIds)) {
+      query = getActiveInstanceQuery(accountId, startTime, endTime, singletonList(K8S_PV));
+      return query.asList();
+    } else {
+      List<InstanceData> instanceDataList = new ArrayList<>();
+      for (String clusterId : clusterIds) {
+        instanceDataList.addAll(getInstanceDataListsOfTypesAndClusterIdWithoutBatchSize(
+            accountId, startTime, endTime, singletonList(K8S_PV), clusterId));
+      }
+      return instanceDataList;
+    }
   }
 
   @Override
@@ -291,5 +304,21 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
                                     .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.clusterId + ","
                                         + InstanceDataKeys.activeInstanceIterator);
     return query.asList(new FindOptions().limit(batchSize));
+  }
+
+  public List<InstanceData> getInstanceDataListsOfTypesAndClusterIdWithoutBatchSize(
+      String accountId, Instant startTime, Instant endTime, List<InstanceType> instanceTypes, String clusterId) {
+    Query<InstanceData> query = hPersistence.createQuery(InstanceData.class, excludeCount)
+                                    .filter(InstanceDataKeys.accountId, accountId)
+                                    .filter(InstanceDataKeys.clusterId, clusterId)
+                                    .field(InstanceDataKeys.activeInstanceIterator)
+                                    .greaterThanOrEq(startTime)
+                                    .field(InstanceDataKeys.usageStartTime)
+                                    .lessThanOrEq(endTime)
+                                    .field(InstanceDataKeys.instanceType)
+                                    .in(instanceTypes)
+                                    .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.clusterId + ","
+                                        + InstanceDataKeys.activeInstanceIterator);
+    return query.asList();
   }
 }

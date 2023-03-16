@@ -280,7 +280,7 @@ public class IdentifierRefHelperTest extends CategoryTest {
     assertThatThrownBy(
         () -> IdentifierRefHelper.getIdentifierRefOrThrowException("org.templ1", "Account", null, null, "template"))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The org level template cannot be used at account level");
+        .hasMessage("The org level template cannot be used at account level. Ref: [org.templ1]");
   }
 
   @Test
@@ -297,7 +297,7 @@ public class IdentifierRefHelperTest extends CategoryTest {
     assertThatThrownBy(
         () -> IdentifierRefHelper.getIdentifierRefOrThrowException("templ1", "Account", "Org", null, "template"))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The project level template cannot be used at org level");
+        .hasMessage("The project level template cannot be used at org level. Ref: [templ1]");
   }
 
   @Test
@@ -307,7 +307,7 @@ public class IdentifierRefHelperTest extends CategoryTest {
     assertThatThrownBy(
         () -> IdentifierRefHelper.getIdentifierRefOrThrowException("templ1", "Account", null, null, "template"))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The project level template cannot be used at account level");
+        .hasMessage("The project level template cannot be used at account level. Ref: [templ1]");
   }
 
   @Test
@@ -317,7 +317,7 @@ public class IdentifierRefHelperTest extends CategoryTest {
     assertThatThrownBy(
         () -> IdentifierRefHelper.getIdentifierRefOrThrowException("templ1", "Account", null, null, "service"))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The project level service cannot be used at account level");
+        .hasMessage("The project level service cannot be used at account level. Ref: [templ1]");
   }
 
   @Test
@@ -347,7 +347,7 @@ public class IdentifierRefHelperTest extends CategoryTest {
                            -> IdentifierRefHelper.getIdentifierRefOrThrowException(
                                identifier, accountIdentifier, orgIdentifier, "", "template"))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The project level template cannot be used at org level");
+        .hasMessage("The project level template cannot be used at org level. Ref: [identifier]");
 
     assertThatThrownBy(()
                            -> IdentifierRefHelper.getIdentifierRefOrThrowException(
@@ -374,7 +374,7 @@ public class IdentifierRefHelperTest extends CategoryTest {
                            -> IdentifierRefHelper.getIdentifierRefOrThrowException(
                                "org." + identifier, accountIdentifier, "", null, "template"))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The org level template cannot be used at account level");
+        .hasMessage("The org level template cannot be used at account level. Ref: [org.identifier]");
 
     assertThatThrownBy(()
                            -> IdentifierRefHelper.getIdentifierRefOrThrowException(

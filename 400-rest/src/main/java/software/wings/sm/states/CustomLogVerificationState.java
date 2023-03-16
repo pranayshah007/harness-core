@@ -216,7 +216,7 @@ public class CustomLogVerificationState extends AbstractLogAnalysisState {
             .executionData(data)
             .build(),
         waitId);
-    return delegateService.queueTask(delegateTask);
+    return delegateService.queueTaskV2(delegateTask);
   }
 
   @Override

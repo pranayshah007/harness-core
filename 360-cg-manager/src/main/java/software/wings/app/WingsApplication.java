@@ -16,6 +16,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.lock.mongo.MongoPersistentLocker.LOCKS_STORE;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.microservice.NotifyEngineTarget.GENERAL;
+import static io.harness.ng.DbAliases.DMS;
 import static io.harness.persistence.HPersistence.ANALYTICS_STORE_NAME;
 import static io.harness.time.DurationUtils.durationTillDayTime;
 import static io.harness.waiter.OrchestrationNotifyEventListener.ORCHESTRATION;
@@ -67,6 +68,7 @@ import io.harness.delegate.heartbeat.stream.DelegateStreamHeartbeatService;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
 import io.harness.delegate.resources.DelegateTaskResource;
 import io.harness.delegate.resources.DelegateTaskResourceV2;
+import io.harness.delegate.resources.core.CoreDelegateResource;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.telemetry.DelegateTelemetryPublisher;
 import io.harness.dms.DmsModule;
@@ -74,8 +76,6 @@ import io.harness.event.EventsModule;
 import io.harness.event.listener.EventListener;
 import io.harness.event.reconciliation.service.DeploymentReconExecutorService;
 import io.harness.event.reconciliation.service.DeploymentReconTask;
-import io.harness.event.reconciliation.service.LookerEntityReconExecutorService;
-import io.harness.event.reconciliation.service.LookerEntityReconTask;
 import io.harness.event.usagemetrics.EventsModuleHelper;
 import io.harness.eventframework.dms.DmsEventConsumerService;
 import io.harness.eventframework.dms.DmsObserverEventProducer;
@@ -95,6 +95,7 @@ import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.iterator.DelegateDisconnectDetectorIterator;
 import io.harness.iterator.FailDelegateTaskIterator;
+import io.harness.iterator.FailDelegateTaskIteratorOnDMS;
 import io.harness.iterator.IteratorExecutionHandler;
 import io.harness.iterator.IteratorExecutionHandlerImpl;
 import io.harness.lock.AcquiredLock;
@@ -108,6 +109,7 @@ import io.harness.metrics.MetricRegistryModule;
 import io.harness.metrics.jobs.RecordMetricsJob;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.migrations.MigrationModule;
+import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.QuartzCleaner;
 import io.harness.mongo.tracing.TraceMode;
@@ -152,6 +154,7 @@ import io.harness.queue.consumers.GeneralEventConsumerCg;
 import io.harness.queue.consumers.NotifyEventConsumerCg;
 import io.harness.queue.publishers.CgGeneralEventPublisher;
 import io.harness.queue.publishers.CgNotifyEventPublisher;
+import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.reflection.HarnessReflections;
 import io.harness.request.RequestContextFilter;
 import io.harness.scheduler.PersistentScheduler;
@@ -160,7 +163,6 @@ import io.harness.secrets.SecretMigrationEventListener;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.CurrentGenRegistrars;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.service.DelegateServiceModule;
 import io.harness.service.impl.DelegateNgTokenServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
@@ -233,6 +235,7 @@ import software.wings.scheduler.events.segment.SegmentGroupEventJob;
 import software.wings.scheduler.marketplace.gcp.GCPBillingHandler;
 import software.wings.scheduler.persistance.PersistentLockCleanup;
 import software.wings.search.framework.ElasticsearchSyncService;
+import software.wings.search.redisConsumer.ApplicationTimeScaleRedisChangeEventConsumer;
 import software.wings.security.AuthResponseFilter;
 import software.wings.security.AuthRuleFilter;
 import software.wings.security.AuthenticationFilter;
@@ -875,6 +878,8 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     CacheModule cacheModule = new CacheModule(configuration.getCacheConfig());
     modules.add(cacheModule);
+    modules.add(new DelegateServiceCacheModule(
+        configuration.getDelegateServiceRedisConfig(), configuration.isEnableRedisForDelegateService()));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -937,7 +942,8 @@ public class WingsApplication extends Application<MainConfiguration> {
     modules.add(new IndexMigratorModule());
     modules.add(new YamlModule());
     modules.add(new ManagerQueueModule());
-    modules.add(new ManagerEventsFrameworkModule(configuration.getEventsFrameworkConfiguration()));
+    modules.add(new ManagerEventsFrameworkModule(
+        configuration.getEventsFrameworkConfiguration(), configuration.getDebeziumConsumerConfigs()));
 
     modules.add(new ManagerExecutorModule());
     modules.add(new TemplateModule());
@@ -1124,6 +1130,11 @@ public class WingsApplication extends Application<MainConfiguration> {
         && !configuration.getEventsMongo().getUri().equals(configuration.getMongoConnectionFactory().getUri())) {
       persistence.register(Store.builder().name("events").build(), configuration.getEventsMongo().getUri());
     }
+
+    if (isNotEmpty(configuration.getDmsMongo().getUri())
+        && !configuration.getDmsMongo().getUri().equals(configuration.getMongoConnectionFactory().getUri())) {
+      persistence.register(Store.builder().name(DMS).build(), configuration.getDmsMongo().getUri());
+    }
   }
 
   private void registerDataStores(Injector injector) {
@@ -1160,7 +1171,8 @@ public class WingsApplication extends Application<MainConfiguration> {
             .filter(klazz
                 -> StringUtils.startsWithAny(klazz.getPackage().getName(), AppResource.class.getPackage().getName(),
                     DelegateTaskResource.class.getPackage().getName(),
-                    DelegateTaskResourceV2.class.getPackage().getName()))
+                    DelegateTaskResourceV2.class.getPackage().getName(),
+                    CoreDelegateResource.class.getPackage().getName()))
             .collect(Collectors.toSet());
 
     if (!configuration.isGraphQLEnabled()) {
@@ -1270,6 +1282,8 @@ public class WingsApplication extends Application<MainConfiguration> {
     RedisConsumerControllerCg controller = injector.getInstance(RedisConsumerControllerCg.class);
     controller.register(injector.getInstance(NotifyEventConsumerCg.class), listenerConfig.getNotifyConsumerCount());
     controller.register(injector.getInstance(GeneralEventConsumerCg.class), listenerConfig.getGeneralConsumerCount());
+    controller.register(injector.getInstance(ApplicationTimeScaleRedisChangeEventConsumer.class),
+        configuration.getDebeziumConsumerConfigs().getApplicationTimescaleStreaming().getThreads());
   }
 
   private void scheduleJobsManager(
@@ -1298,9 +1312,6 @@ public class WingsApplication extends Application<MainConfiguration> {
               configuration.getDataReconciliationConfig().getDuration(), TimeUnit.SECONDS);
     }
 
-    injector.getInstance(LookerEntityReconExecutorService.class)
-        .scheduleWithFixedDelay(
-            injector.getInstance(LookerEntityReconTask.class), random.nextInt(60), 15 * 60L, TimeUnit.SECONDS);
     ImmutableList<Class<? extends AccountDataRetentionEntity>> classes =
         ImmutableList.<Class<? extends AccountDataRetentionEntity>>builder()
             .add(WorkflowExecution.class)
@@ -1355,6 +1366,11 @@ public class WingsApplication extends Application<MainConfiguration> {
           new Schedulable("Failed to dequeue delegate task", injector.getInstance(DelegateTaskQueueService.class)), 0L,
           15L, TimeUnit.SECONDS);
     }
+
+    delegateExecutor.scheduleWithFixedDelay(
+        new Schedulable("Failed while auto revoking delegate tokens",
+            () -> injector.getInstance(DelegateNgTokenServiceImpl.class).autoRevokeExpiredTokens()),
+        1L, 1L, TimeUnit.HOURS);
   }
 
   public void registerObservers(MainConfiguration configuration, Injector injector, Environment environment) {
@@ -1510,6 +1526,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(PerpetualTaskRecordHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(DelegateDisconnectDetectorIterator.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(FailDelegateTaskIterator.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(FailDelegateTaskIteratorOnDMS.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(DelegateTelemetryPublisher.class).registerIterator(iteratorExecutionHandler);
   }
 

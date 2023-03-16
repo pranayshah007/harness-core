@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
@@ -41,6 +42,7 @@ import org.mockito.MockitoAnnotations;
 public class InputSetsApiUtilsTest extends CategoryTest {
   private InputSetsApiUtils inputSetsApiUtils;
   @Mock private PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Mock private NGSettingsClient ngSettingsClient;
   String identifier = randomAlphabetic(10);
   String name = randomAlphabetic(10);
   String account = "accountId";
@@ -48,7 +50,7 @@ public class InputSetsApiUtilsTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    inputSetsApiUtils = new InputSetsApiUtils(pmsFeatureFlagHelper);
+    inputSetsApiUtils = new InputSetsApiUtils(pmsFeatureFlagHelper, ngSettingsClient);
   }
 
   private String readFile(String filename) {

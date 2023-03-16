@@ -66,12 +66,12 @@ public class SlackNotificationServiceTest extends WingsBaseTest {
   public void shouldSendMessageFromDelegate() {
     when(accountService.isCertValidationRequired(any())).thenReturn(false);
     when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
-    when(delegateProxyFactory.get(any(Class.class), any(SyncTaskContext.class))).thenReturn(slackMessageSender);
+    when(delegateProxyFactory.getV2(any(Class.class), any(SyncTaskContext.class))).thenReturn(slackMessageSender);
     doNothing().when(slackMessageSender).send(any(SlackMessage.class), anyBoolean(), anyBoolean());
 
     slackNotificationService.sendMessage(
         new SlackNotificationSetting("name", "url"), "abc", "sender", "message", "accountId");
-    verify(delegateProxyFactory, times(1)).get(any(), any());
+    verify(delegateProxyFactory, times(1)).getV2(any(), any());
   }
 
   @Test
@@ -81,12 +81,12 @@ public class SlackNotificationServiceTest extends WingsBaseTest {
     when(accountService.isCertValidationRequired(any())).thenReturn(false);
     when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
     when(featureFlagService.isGlobalEnabled(any())).thenReturn(true);
-    when(delegateProxyFactory.get(any(Class.class), any(SyncTaskContext.class))).thenReturn(slackMessageSender);
+    when(delegateProxyFactory.getV2(any(Class.class), any(SyncTaskContext.class))).thenReturn(slackMessageSender);
     doNothing().when(slackMessageSender).sendJSON(any(SlackMessageJSON.class));
 
     List<String> slackWebhookUrls = ImmutableList.of("http://webhook.com");
     slackNotificationService.sendJSONMessage("message", slackWebhookUrls, "account-id");
-    verify(delegateProxyFactory, times(1)).get(any(), any());
+    verify(delegateProxyFactory, times(1)).getV2(any(), any());
     verify(slackMessageSender, times(1)).sendJSON(any(SlackMessageJSON.class));
   }
 
@@ -101,7 +101,7 @@ public class SlackNotificationServiceTest extends WingsBaseTest {
 
     List<String> slackWebhookUrls = ImmutableList.of("http://webhook.com");
     slackNotificationService.sendJSONMessage("message", slackWebhookUrls, "account-id");
-    verify(delegateProxyFactory, times(0)).get(any(), any());
+    verify(delegateProxyFactory, times(0)).getV2(any(), any());
     verify(slackMessageSender, times(1)).sendJSON(any(SlackMessageJSON.class));
   }
 
@@ -111,7 +111,7 @@ public class SlackNotificationServiceTest extends WingsBaseTest {
   public void shouldSendMessageFromManager() {
     when(accountService.isCertValidationRequired(any())).thenReturn(false);
     when(featureFlagService.isEnabled(any(), anyString())).thenReturn(false);
-    when(delegateProxyFactory.get(any(Class.class), any(SyncTaskContext.class))).thenReturn(slackMessageSender);
+    when(delegateProxyFactory.getV2(any(Class.class), any(SyncTaskContext.class))).thenReturn(slackMessageSender);
     doNothing().when(slackMessageSender).send(any(SlackMessage.class), anyBoolean(), anyBoolean());
 
     slackNotificationService.sendMessage(
@@ -125,14 +125,14 @@ public class SlackNotificationServiceTest extends WingsBaseTest {
   public void shouldNotSendMessageIfWebhookUrlIsEmpty() {
     when(accountService.isCertValidationRequired(any())).thenReturn(false);
     when(featureFlagService.isEnabled(any(), anyString())).thenReturn(false);
-    when(delegateProxyFactory.get(any(Class.class), any(SyncTaskContext.class))).thenReturn(slackMessageSender);
+    when(delegateProxyFactory.getV2(any(Class.class), any(SyncTaskContext.class))).thenReturn(slackMessageSender);
     doNothing().when(slackMessageSender).send(any(SlackMessage.class), anyBoolean(), anyBoolean());
 
     slackNotificationService.sendMessage(
         new SlackNotificationSetting("name", ""), "abc", "sender", "message", "accountId");
     verify(slackMessageSender, times(0)).send(any(SlackMessage.class), anyBoolean(), anyBoolean());
     verify(slackMessageSender, times(0)).send(any(SlackMessage.class), anyBoolean(), anyBoolean());
-    verify(delegateProxyFactory, times(0)).get(any(), any());
+    verify(delegateProxyFactory, times(0)).getV2(any(), any());
   }
 
   @Test
@@ -141,12 +141,12 @@ public class SlackNotificationServiceTest extends WingsBaseTest {
   public void shouldSendMessageFromDelegateWithCertValidation() {
     when(accountService.isCertValidationRequired(any())).thenReturn(true);
     when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
-    when(delegateProxyFactory.get(any(Class.class), any(SyncTaskContext.class))).thenReturn(slackMessageSender);
+    when(delegateProxyFactory.getV2(any(Class.class), any(SyncTaskContext.class))).thenReturn(slackMessageSender);
     doNothing().when(slackMessageSender).send(any(SlackMessage.class), anyBoolean(), anyBoolean());
 
     slackNotificationService.sendMessage(
         new SlackNotificationSetting("name", "url"), "abc", "sender", "message", "accountId");
-    verify(delegateProxyFactory, times(1)).get(any(), any());
+    verify(delegateProxyFactory, times(1)).getV2(any(), any());
   }
 
   @Test
@@ -155,7 +155,7 @@ public class SlackNotificationServiceTest extends WingsBaseTest {
   public void shouldSendMessageFromManagerWithCertValidation() {
     when(accountService.isCertValidationRequired(any())).thenReturn(true);
     when(featureFlagService.isEnabled(any(), anyString())).thenReturn(false);
-    when(delegateProxyFactory.get(any(Class.class), any(SyncTaskContext.class))).thenReturn(slackMessageSender);
+    when(delegateProxyFactory.getV2(any(Class.class), any(SyncTaskContext.class))).thenReturn(slackMessageSender);
     doNothing().when(slackMessageSender).send(any(SlackMessage.class), anyBoolean(), anyBoolean());
 
     slackNotificationService.sendMessage(

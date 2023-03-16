@@ -12,10 +12,10 @@ import io.harness.cvng.analysis.beans.Risk;
 import java.util.Objects;
 
 public enum AnalysisResult {
-  HEALTHY,
   NO_ANALYSIS,
-  UNHEALTHY,
-  WARNING;
+  HEALTHY,
+  WARNING,
+  UNHEALTHY;
 
   public static AnalysisResult fromRisk(Risk risk) {
     AnalysisResult analysisResult = NO_ANALYSIS;

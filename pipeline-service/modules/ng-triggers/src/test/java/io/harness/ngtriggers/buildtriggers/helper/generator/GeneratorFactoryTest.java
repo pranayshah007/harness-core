@@ -33,6 +33,7 @@ import io.harness.ngtriggers.buildtriggers.helpers.generator.GcrPollingItemGener
 import io.harness.ngtriggers.buildtriggers.helpers.generator.GeneratorFactory;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.GitPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.GithubPackagesPollingItemGenerator;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.GoogleCloudStoragePollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.HttpHelmPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.JenkinsPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.Nexus2RegistryPollingItemGenerator;
@@ -66,8 +67,9 @@ public class GeneratorFactoryTest extends CategoryTest {
   private ArtifactoryRegistryPollingItemGenerator artifactoryRegistryPollingItemGenerator;
   private JenkinsPollingItemGenerator jenkinsPollingItemGenerator;
   private AMIPollingItemGenerator amiPollingItemGenerator;
-
   private GitPollingItemGenerator gitPollingItemGenerator;
+  private GoogleCloudStoragePollingItemGenerator googleCloudStoragePollingItemGenerator;
+
   private GeneratorFactory generatorFactory;
   @InjectMocks private NGTriggerElementMapper ngTriggerElementMapper;
   private ClassLoader classLoader;
@@ -98,12 +100,13 @@ public class GeneratorFactoryTest extends CategoryTest {
     AzureArtifactsPollingItemGenerator azureArtifactsPollingItemGenerator =
         new AzureArtifactsPollingItemGenerator(buildTriggerHelper);
     AMIPollingItemGenerator amiPollingItemGenerator = new AMIPollingItemGenerator(buildTriggerHelper);
-    generatorFactory = new GeneratorFactory(buildTriggerHelper, httpHelmPollingItemGenerator,
-        s3HelmPollingItemGenerator, s3PollingItemGenerator, gcsHelmPollingItemGenerator, gcrPollingItemGenerator,
-        ecrPollingItemGenerator, dockerRegistryPollingItemGenerator, artifactoryRegistryPollingItemGenerator,
-        acrPollingItemGenerator, jenkinsPollingItemGenerator, gitPollingItemGenerator, customPollingItemGenerator,
-        garPollingItemGenerator, githubPackagesPollingItemGenerator, nexus2RegistryPollingItemGenerator,
-        nexus3PollingItemGenerator, azureArtifactsPollingItemGenerator, amiPollingItemGenerator);
+    generatorFactory =
+        new GeneratorFactory(buildTriggerHelper, httpHelmPollingItemGenerator, s3HelmPollingItemGenerator,
+            s3PollingItemGenerator, gcsHelmPollingItemGenerator, gcrPollingItemGenerator, ecrPollingItemGenerator,
+            dockerRegistryPollingItemGenerator, artifactoryRegistryPollingItemGenerator, acrPollingItemGenerator,
+            jenkinsPollingItemGenerator, gitPollingItemGenerator, customPollingItemGenerator, garPollingItemGenerator,
+            githubPackagesPollingItemGenerator, nexus2RegistryPollingItemGenerator, nexus3PollingItemGenerator,
+            azureArtifactsPollingItemGenerator, amiPollingItemGenerator, googleCloudStoragePollingItemGenerator);
 
     classLoader = getClass().getClassLoader();
   }

@@ -77,7 +77,7 @@ public class GcpHelperServiceManagerTest extends WingsBaseTest {
             .connectorValidationResult(ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
             .build())
         .when(delegateService)
-        .executeTask(any(DelegateTask.class));
+        .executeTaskV2(any(DelegateTask.class));
 
     final GcpConfig gcpConfig = GcpConfig.builder()
                                     .accountId(ACCOUNT_ID)
@@ -89,7 +89,7 @@ public class GcpHelperServiceManagerTest extends WingsBaseTest {
 
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
 
-    verify(delegateService, times(1)).executeTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService, times(1)).executeTaskV2(delegateTaskArgumentCaptor.capture());
 
     final DelegateTask delegateTask = delegateTaskArgumentCaptor.getValue();
 

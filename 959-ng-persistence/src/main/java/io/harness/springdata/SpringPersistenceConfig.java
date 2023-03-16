@@ -21,8 +21,8 @@ import io.harness.reflection.HarnessReflections;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
-import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoClient;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -33,15 +33,17 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.annotation.TypeAlias;
-import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.domain.AuditorAware;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
-import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
+import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.convert.DbRefResolver;
+import org.springframework.data.mongodb.core.convert.DefaultDbRefResolver;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
+import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.guice.annotation.GuiceModule;
 
@@ -51,7 +53,7 @@ import org.springframework.guice.annotation.GuiceModule;
     includeFilters = @ComponentScan.Filter(HarnessRepo.class), mongoTemplateRef = "primary")
 @EnableMongoAuditing
 @OwnedBy(HarnessTeam.PL)
-public class SpringPersistenceConfig extends AbstractMongoConfiguration {
+public class SpringPersistenceConfig extends AbstractMongoClientConfiguration {
   protected final Injector injector;
   protected final List<Class<? extends Converter<?, ?>>> springConverters;
   protected final MongoConfig mongoConfig;
@@ -76,14 +78,24 @@ public class SpringPersistenceConfig extends AbstractMongoConfiguration {
 
   @Bean(name = "primary")
   @Primary
-  public MongoTemplate mongoTemplate() throws Exception {
-    MappingMongoConverter mappingMongoConverter = mappingMongoConverter();
-    mappingMongoConverter.setMapKeyDotReplacement(DOT_REPLACEMENT);
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig);
+  public MongoTemplate mongoTemplate(MongoDatabaseFactory databaseFactory, MappingMongoConverter converter) {
+    return new HMongoTemplate(databaseFactory, converter, mongoConfig);
   }
 
   @Bean
-  MongoTransactionManager transactionManager(MongoDbFactory dbFactory) {
+  public MappingMongoConverter mappingMongoConverter(MongoDatabaseFactory databaseFactory,
+      MongoCustomConversions customConversions, MongoMappingContext mappingContext) {
+    DbRefResolver dbRefResolver = new DefaultDbRefResolver(databaseFactory);
+    MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver, mappingContext);
+    converter.setCustomConversions(customConversions);
+    converter.setCodecRegistryProvider(databaseFactory);
+    converter.setMapKeyDotReplacement(DOT_REPLACEMENT);
+
+    return converter;
+  }
+
+  @Bean
+  MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
     return new MongoTransactionManager(dbFactory);
   }
 
@@ -98,7 +110,7 @@ public class SpringPersistenceConfig extends AbstractMongoConfiguration {
   }
 
   @Bean
-  public CustomConversions customConversions() {
+  public MongoCustomConversions customConversions() {
     List<?> converterInstances = springConverters.stream().map(injector::getInstance).collect(Collectors.toList());
     return new MongoCustomConversions(converterInstances);
   }

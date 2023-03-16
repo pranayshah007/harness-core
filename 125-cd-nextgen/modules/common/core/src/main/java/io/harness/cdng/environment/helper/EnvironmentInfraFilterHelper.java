@@ -31,6 +31,7 @@ import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.gitops.models.Cluster;
 import io.harness.gitops.models.ClusterQuery;
 import io.harness.gitops.remote.GitopsResourceClient;
@@ -44,8 +45,10 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.RetryUtils;
+import io.harness.utils.ScopeWiseIds;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -104,6 +107,19 @@ public class EnvironmentInfraFilterHelper {
    */
   public List<io.harness.gitops.models.Cluster> fetchClustersFromGitOps(
       String accountId, String orgId, String projectId, Set<String> clsRefs) {
+    List<io.harness.gitops.models.Cluster> clusters = new ArrayList<>();
+    ScopeWiseIds scopeWiseIds = FullyQualifiedIdentifierHelper.getScopeWiseIds(accountId, orgId, projectId, clsRefs);
+    clusters.addAll(getClusters(accountId, orgId, projectId, scopeWiseIds.getProjectScopedIds()));
+    clusters.addAll(getClusters(accountId, orgId, null, scopeWiseIds.getOrgScopedIds()));
+    clusters.addAll(getClusters(accountId, null, null, scopeWiseIds.getAccountScopedIds()));
+    return clusters;
+  }
+
+  @NotNull
+  private List<Cluster> getClusters(String accountId, String orgId, String projectId, List<String> clsRefs) {
+    if (isEmpty(clsRefs)) {
+      return new ArrayList<>();
+    }
     Map<String, Object> filter = ImmutableMap.of("identifier", ImmutableMap.of("$in", clsRefs));
     final ClusterQuery query = ClusterQuery.builder()
                                    .accountId(accountId)
@@ -116,13 +132,12 @@ public class EnvironmentInfraFilterHelper {
     final Response<PageResponse<Cluster>> response =
         Failsafe.with(retryPolicyForGitopsClustersFetch).get(() -> gitopsResourceClient.listClusters(query).execute());
 
-    List<io.harness.gitops.models.Cluster> clusterList;
     if (response.isSuccessful() && response.body() != null) {
-      clusterList = CollectionUtils.emptyIfNull(response.body().getContent());
+      return CollectionUtils.emptyIfNull(response.body().getContent());
     } else {
+      log.error("Failed to fetch clusters from gitops-service {}", response.errorBody());
       throw new InvalidRequestException("Failed to fetch clusters from gitops-service, cannot apply filter");
     }
-    return clusterList;
   }
 
   /**
@@ -135,35 +150,40 @@ public class EnvironmentInfraFilterHelper {
    */
   public List<io.harness.cdng.gitops.entity.Cluster> getNGClusters(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> envRefs) {
-    Page<io.harness.cdng.gitops.entity.Cluster> clusters =
-        clusterService.listAcrossEnv(0, PAGE_SIZE, accountIdentifier, orgIdentifier, projectIdentifier, envRefs);
-
-    if (isEmpty(clusters.getContent())) {
-      log.info("There are no gitOpsClusters linked to Environments");
-    }
-
-    return CollectionUtils.emptyIfNull(clusters.getContent());
+    return clusterService.listAcrossEnv(0, PAGE_SIZE, accountIdentifier, orgIdentifier, projectIdentifier, envRefs);
   }
 
-  public Set<Environment> getAllEnvironmentsInProject(
+  public Set<Environment> getAllEnvironmentsFromAllScopes(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    // Fetch All Environments
+    Set<Environment> envs = new HashSet<>();
+
+    envs.addAll(getAllEnvs(accountIdentifier, orgIdentifier, projectIdentifier));
+    envs.addAll(getAllEnvs(accountIdentifier, orgIdentifier, null));
+    envs.addAll(getAllEnvs(accountIdentifier, null, null));
+
+    if (isEmpty(envs)) {
+      throw new InvalidRequestException("No environments found at Project/Org/Account Levels", WingsException.USER);
+    }
+    return envs;
+  }
+
+  @NotNull
+  private Set<Environment> getAllEnvs(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     Criteria criteria =
         CoreCriteriaUtils.createCriteriaForGetList(accountIdentifier, orgIdentifier, projectIdentifier, false);
-
     PageRequest pageRequest = PageRequest.of(0, PAGE_SIZE, Sort.by(Sort.Direction.DESC, EnvironmentKeys.createdAt));
-    Page<Environment> allEnvsInProject = environmentService.list(criteria, pageRequest);
-    if (isEmpty(allEnvsInProject.getContent())) {
-      throw new InvalidRequestException("No environments exists in the project");
+    Page<Environment> envPageResponse = environmentService.list(criteria, pageRequest);
+    if (isNotEmpty(envPageResponse.getContent())) {
+      return new HashSet<>(envPageResponse.getContent());
     }
-    return new HashSet<>(allEnvsInProject.getContent());
+    return new HashSet<>();
   }
 
   public Set<InfrastructureEntity> getInfrastructureForEnvironmentList(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String envIdentifier, ServiceDefinitionType deploymentType) {
+      String projectIdentifier, String envRef, ServiceDefinitionType deploymentType) {
     List<InfrastructureEntity> infrastructureEntityList =
         infrastructureEntityService.getAllInfrastructureFromEnvRefAndDeploymentType(
-            accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, deploymentType);
+            accountIdentifier, orgIdentifier, projectIdentifier, envRef, deploymentType);
     return new HashSet<>(infrastructureEntityList);
   }
 
@@ -229,7 +249,7 @@ public class EnvironmentInfraFilterHelper {
     if (featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS)) {
       if (EnvironmentInfraFilterUtils.areFiltersPresent(environments)) {
         Set<Environment> allPossibleEnvs =
-            getAllEnvironmentsInProject(accountIdentifier, orgIdentifier, projectIdentifier);
+            getAllEnvironmentsFromAllScopes(accountIdentifier, orgIdentifier, projectIdentifier);
         List<EnvironmentYamlV2> finalyamlV2List =
             processFilteringForEnvironmentsLevelFilters(accountIdentifier, orgIdentifier, projectIdentifier,
                 environments.getFilters(), environments.getValues(), allPossibleEnvs, deploymentType);
@@ -248,14 +268,23 @@ public class EnvironmentInfraFilterHelper {
                   environmentGroup.getEnvGroupRef().getValue(), projectIdentifier, orgIdentifier));
         }
 
-        List<Environment> allPossibleEnvs = environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(
-            accountIdentifier, orgIdentifier, projectIdentifier, entity.get().getEnvIdentifiers());
+        List<Environment> allPossibleEnvs =
+            environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(accountIdentifier,
+                entity.get().getOrgIdentifier(), entity.get().getProjectIdentifier(), entity.get().getEnvIdentifiers());
 
+        updateEnvironmentsWithEnvGroupScope(environmentGroup.getEnvGroupRef(), environmentGroup.getEnvironments());
         List<EnvironmentYamlV2> finalyamlV2List = processFilteringForEnvironmentsLevelFilters(accountIdentifier,
             orgIdentifier, projectIdentifier, environmentGroup.getFilters(), environmentGroup.getEnvironments(),
             new HashSet<>(allPossibleEnvs), deploymentType);
         // Set the filtered envYamlV2 in the environmentGroup yaml so normal processing continues
         environmentGroup.setEnvironments(ParameterField.createValueField(finalyamlV2List));
+      }
+    } else {
+      if (EnvironmentInfraFilterUtils.areFiltersPresent(environments)
+          || EnvironmentInfraFilterUtils.areFiltersPresent(environmentGroup)) {
+        throw new InvalidRequestException(
+            "Pipeline contains filters but Feature Flag: [CDS_FILTER_INFRA_CLUSTERS_ON_TAGS] is disabled. Please enable the FF or remove Filters.",
+            WingsException.USER);
       }
     }
   }
@@ -320,7 +349,7 @@ public class EnvironmentInfraFilterHelper {
     List<EnvironmentYamlV2> environmentYamlV2List = new ArrayList<>();
     for (Environment env : filteredEnvs) {
       environmentYamlV2List.addAll(getEnvYamlV2AfterFiltering(
-          accountIdentifier, orgIdentifier, projectIdentifier, filterYamls, env.getIdentifier(), deploymentType));
+          accountIdentifier, orgIdentifier, projectIdentifier, filterYamls, env.fetchRef(), deploymentType));
     }
     if (isEmpty(environmentYamlV2List)) {
       throw new InvalidRequestException("No Infrastructures found after applying filtering");
@@ -329,13 +358,13 @@ public class EnvironmentInfraFilterHelper {
   }
 
   private List<EnvironmentYamlV2> getEnvYamlV2AfterFiltering(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, List<FilterYaml> filterYamls, String envId, ServiceDefinitionType deploymentType) {
+      String projectIdentifier, List<FilterYaml> filterYamls, String envRef, ServiceDefinitionType deploymentType) {
     List<EnvironmentYamlV2> environmentYamlV2List = new ArrayList<>();
-    Set<InfrastructureEntity> infrastructureEntitySet =
-        getInfrastructureForEnvironmentList(accountIdentifier, orgIdentifier, projectIdentifier, envId, deploymentType);
+    Set<InfrastructureEntity> infrastructureEntitySet = getInfrastructureForEnvironmentList(
+        accountIdentifier, orgIdentifier, projectIdentifier, envRef, deploymentType);
 
     if (isNotEmpty(infrastructureEntitySet)) {
-      List<EnvironmentYamlV2> temp = filterInfras(filterYamls, envId, infrastructureEntitySet);
+      List<EnvironmentYamlV2> temp = filterInfras(filterYamls, envRef, infrastructureEntitySet);
       environmentYamlV2List.addAll(temp);
     }
     return environmentYamlV2List;
@@ -425,15 +454,33 @@ public class EnvironmentInfraFilterHelper {
           envGroupYaml.getEnvGroupRef().getValue(), projectIdentifier, orgIdentifier));
     }
 
-    List<Environment> allPossibleEnvs = environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(
-        accountIdentifier, orgIdentifier, projectIdentifier, entity.get().getEnvIdentifiers());
+    EnvironmentGroupEntity environmentGroupEntity = entity.get();
 
     if (ParameterField.isNotNull(envGroupYaml.getFilters()) && isNotEmpty(envGroupYaml.getFilters().getValue())) {
+      List<Environment> allPossibleEnvs = environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(
+          accountIdentifier, environmentGroupEntity.getOrgIdentifier(), environmentGroupEntity.getProjectIdentifier(),
+          environmentGroupEntity.getEnvIdentifiers());
       return processFiltersOnAllEnvs(
           serviceTags, accountIdentifier, orgIdentifier, projectIdentifier, allPossibleEnvs, envGroupYaml.getFilters());
     }
+    updateEnvironmentsWithEnvGroupScope(envGroupYaml.getEnvGroupRef(), envGroupYaml.getEnvironments());
     return processClusterFiltersInEnvs(
         serviceTags, accountIdentifier, orgIdentifier, projectIdentifier, envGroupYaml.getEnvironments());
+  }
+
+  private void updateEnvironmentsWithEnvGroupScope(
+      @javax.validation.constraints.NotNull ParameterField<String> envGroupRef,
+      ParameterField<List<EnvironmentYamlV2>> environments) {
+    if (ParameterField.isNull(environments) || isEmpty(environments.getValue())) {
+      return;
+    }
+    for (EnvironmentYamlV2 environmentYamlV2 : environments.getValue()) {
+      ParameterField<String> environmentRef = environmentYamlV2.getEnvironmentRef();
+      if (!ParameterField.isNull(environmentRef) && isNotEmpty(environmentRef.getValue())) {
+        String envRefWithScope = EnvironmentStepsUtils.inheritEnvGroupScope(environmentRef.getValue(), envGroupRef);
+        environmentRef.setValue(envRefWithScope);
+      }
+    }
   }
 
   @NotNull
@@ -444,11 +491,15 @@ public class EnvironmentInfraFilterHelper {
                                .map(environmentYamlV2 -> environmentYamlV2.getEnvironmentRef().getValue())
                                .collect(Collectors.toList());
 
-    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(
+    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
         accountIdentifier, orgIdentifier, projectIdentifier, envRefs);
 
+    if (isEmpty(environments)) {
+      throw new InvalidRequestException("No environments found for refs: " + envRefs);
+    }
+
     Map<String, Environment> envMapping =
-        emptyIfNull(environments).stream().collect(Collectors.toMap(Environment::getIdentifier, Function.identity()));
+        emptyIfNull(environments).stream().collect(Collectors.toMap(Environment::fetchRef, Function.identity()));
 
     List<EnvClusterRefs> envClusterRefs = new ArrayList<>();
     for (EnvironmentYamlV2 environmentYamlV2 : envYamls.getValue()) {
@@ -470,7 +521,7 @@ public class EnvironmentInfraFilterHelper {
   private EnvClusterRefs getEnvClusterRef(Map<String, Environment> envMapping, EnvironmentYamlV2 envYamlV2) {
     Environment environment = envMapping.get(envYamlV2.getEnvironmentRef().getValue());
     return EnvClusterRefs.builder()
-        .envRef(environment.getIdentifier())
+        .envRef(environment.fetchRef())
         .envName(environment.getName())
         .envType(environment.getType().name())
         .clusterRefs(new HashSet<>(getClusterRefs(envYamlV2)))
@@ -517,12 +568,15 @@ public class EnvironmentInfraFilterHelper {
                                            .map(io.harness.cdng.gitops.entity.Cluster::getClusterRef)
                                            .collect(Collectors.toList());
 
-    envClusterRefs.add(EnvClusterRefs.builder()
-                           .envRef(environment.getIdentifier())
-                           .envName(environment.getName())
-                           .envType(environment.getType().name())
-                           .clusterRefs(new HashSet<>(filteredClusterRefs))
-                           .build());
+    if (isNotEmpty(filteredClusterRefs)) {
+      envClusterRefs.add(EnvClusterRefs.builder()
+                             .envRef(environment.fetchRef())
+                             .envName(environment.getName())
+                             .envType(environment.getType().name())
+                             .clusterRefs(new HashSet<>(filteredClusterRefs))
+                             .build());
+    }
+
     return envClusterRefs;
   }
 
@@ -537,7 +591,7 @@ public class EnvironmentInfraFilterHelper {
     // Environment Filtering applied
     Set<Environment> filteredEnvs = EnvironmentInfraFilterUtils.applyFiltersOnEnvs(new HashSet<>(allEnvs), filterYamls);
 
-    List<String> filteredEnvRefs = filteredEnvs.stream().map(Environment::getIdentifier).collect(Collectors.toList());
+    List<String> filteredEnvRefs = filteredEnvs.stream().map(Environment::fetchRef).collect(Collectors.toList());
 
     List<io.harness.cdng.gitops.entity.Cluster> ngclusters =
         getNGClusters(accountIdentifier, orgIdentifier, projectIdentifier, filteredEnvRefs);
@@ -556,16 +610,20 @@ public class EnvironmentInfraFilterHelper {
     List<EnvClusterRefs> envClusterRefs = new ArrayList<>();
     for (Environment env : filteredEnvs) {
       List<io.harness.cdng.gitops.entity.Cluster> clustersInEnv =
-          filteredClusters.stream().filter(e -> e.getEnvRef().equals(env.getIdentifier())).collect(Collectors.toList());
+          filteredClusters.stream()
+              .filter(e -> e.getEnvRef() != null && e.fetchEnvRef().equals(env.fetchRef()))
+              .collect(Collectors.toList());
       List<String> filteredClusterRefs =
           clustersInEnv.stream().map(io.harness.cdng.gitops.entity.Cluster::getClusterRef).collect(Collectors.toList());
 
-      envClusterRefs.add(EnvClusterRefs.builder()
-                             .envRef(env.getIdentifier())
-                             .envName(env.getName())
-                             .envType(env.getType().name())
-                             .clusterRefs(new HashSet<>(filteredClusterRefs))
-                             .build());
+      if (isNotEmpty(filteredClusterRefs)) {
+        envClusterRefs.add(EnvClusterRefs.builder()
+                               .envRef(env.fetchRef())
+                               .envName(env.getName())
+                               .envType(env.getType().name())
+                               .clusterRefs(new HashSet<>(filteredClusterRefs))
+                               .build());
+      }
     }
     if (isEmpty(envClusterRefs)) {
       throw new InvalidRequestException("No Clusters found after applying filtering.");
@@ -576,7 +634,7 @@ public class EnvironmentInfraFilterHelper {
   public List<EnvClusterRefs> filterEnvsAndClusters(EnvironmentsYaml environmentsYaml, List<NGTag> serviceTags,
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     List<Environment> allPossibleEnvs =
-        new ArrayList<>(getAllEnvironmentsInProject(accountIdentifier, orgIdentifier, projectIdentifier));
+        new ArrayList<>(getAllEnvironmentsFromAllScopes(accountIdentifier, orgIdentifier, projectIdentifier));
 
     if (ParameterField.isNotNull(environmentsYaml.getFilters())
         && isNotEmpty(environmentsYaml.getFilters().getValue())) {

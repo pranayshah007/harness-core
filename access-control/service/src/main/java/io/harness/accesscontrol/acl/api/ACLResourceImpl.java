@@ -10,17 +10,17 @@ package io.harness.accesscontrol.acl.api;
 import static io.harness.accesscontrol.acl.api.AccessControlResourceUtils.checkPreconditions;
 import static io.harness.accesscontrol.acl.api.AccessControlResourceUtils.checkResourcePreconditions;
 import static io.harness.accesscontrol.acl.api.AccessControlResourceUtils.getAccessControlDTO;
-import static io.harness.accesscontrol.acl.api.AccessControlResourceUtils.serviceContextAndNoPrincipalInBody;
+import static io.harness.accesscontrol.acl.api.AccessControlResourceUtils.serviceContextAndOnlyServicePrincipalInBody;
 import static io.harness.accesscontrol.principals.PrincipalType.API_KEY;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
+import static io.harness.beans.FeatureName.PL_ALLOW_DIFFERENT_SERVICE_PRINCIPAL_IN_AUTH_TOKEN_AND_BODY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.accesscontrol.acl.ACLService;
 import io.harness.accesscontrol.acl.PermissionCheck;
 import io.harness.accesscontrol.acl.PermissionCheckResult;
 import io.harness.accesscontrol.acl.ResourceAttributeProvider;
-import io.harness.accesscontrol.commons.helpers.FeatureFlagHelperService;
 import io.harness.accesscontrol.preference.services.AccessControlPreferenceService;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.roleassignments.privileged.PrivilegedAccessCheck;
@@ -31,6 +31,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -58,7 +59,7 @@ public class ACLResourceImpl implements ACLResource {
   private final AccessControlPreferenceService accessControlPreferenceService;
   private final PrivilegedRoleAssignmentService privilegedRoleAssignmentService;
   private final ResourceAttributeProvider resourceAttributeProvider;
-  private final FeatureFlagHelperService featureFlagHelperService;
+  private final FeatureFlagService featureFlagService;
 
   private Optional<String> getAccountIdentifier(List<PermissionCheckDTO> permissionCheckDTOList) {
     if (permissionCheckDTOList.isEmpty()) {
@@ -89,10 +90,16 @@ public class ACLResourceImpl implements ACLResource {
                                          .accessControlList(new ArrayList<>())
                                          .build());
     }
-    boolean preconditionsValid = checkPreconditions(contextPrincipal, principalToCheckPermissionsFor);
+
+    boolean allowDifferentPrincipalInTokenAndBody =
+        featureFlagService.isGlobalEnabled(PL_ALLOW_DIFFERENT_SERVICE_PRINCIPAL_IN_AUTH_TOKEN_AND_BODY);
+
+    boolean preconditionsValid =
+        checkPreconditions(contextPrincipal, principalToCheckPermissionsFor, allowDifferentPrincipalInTokenAndBody);
     boolean resourcePreconditionsValid = checkResourcePreconditions(permissionChecksDTOs);
 
-    if (serviceContextAndNoPrincipalInBody(contextPrincipal, principalToCheckPermissionsFor)) {
+    if (serviceContextAndOnlyServicePrincipalInBody(
+            contextPrincipal, principalToCheckPermissionsFor, allowDifferentPrincipalInTokenAndBody)) {
       return ResponseDTO.newResponse(
           AccessCheckResponseDTO.builder()
               .principal(Principal.of(SERVICE, contextPrincipal.getName()))
@@ -135,7 +142,7 @@ public class ACLResourceImpl implements ACLResource {
     boolean useRoleAssignments = false;
     if (accountIdentifierOptional.isPresent()) {
       useRoleAssignments =
-          featureFlagHelperService.isEnabled(FeatureName.PL_SIMPLIFY_ACL_CHECK, accountIdentifierOptional.get());
+          featureFlagService.isEnabled(FeatureName.PL_SIMPLIFY_ACL_CHECK, accountIdentifierOptional.get());
     }
 
     if (notPresent(principalToCheckPermissionsFor)) {

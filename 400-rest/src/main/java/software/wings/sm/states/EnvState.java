@@ -716,7 +716,8 @@ public class EnvState extends State implements WorkflowState {
             stdParams.getWorkflowElement().setDescription(workflow.getDescription());
 
             if (featureFlagService.isEnabled(
-                    SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE, context.getAccountId())) {
+                    SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE, context.getAccountId())
+                && this.getWorkflowVariables() != null) {
               stdParams.getWorkflowElement().setVariables(new HashMap<>(this.getWorkflowVariables()));
               stdParams.setWorkflowVariables(this.getWorkflowVariables());
             }

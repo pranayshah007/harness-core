@@ -107,7 +107,7 @@ public class EnforcementMaxLimitValidatorTest extends CategoryTest {
 
     exceptionRule.expect(InvalidRequestException.class);
     exceptionRule.expectMessage(
-        String.format("%s cannot be greater than %s for your account plan", settingDTO.getName(), limit));
+        String.format("%s cannot be greater than %s for given account plan", settingDTO.getName(), limit));
     enforcementMaxLimitValidator.validate(accountIdentifier, featureRestrictionName, settingDTO, settingDTO);
   }
 
@@ -128,7 +128,7 @@ public class EnforcementMaxLimitValidatorTest extends CategoryTest {
         .thenReturn(request);
 
     exceptionRule.expect(InternalServerErrorException.class);
-    exceptionRule.expectMessage("Failed to update the setting. Please try again later.");
+    exceptionRule.expectMessage("Failed to fetch enforcement limits for the given account plan.");
     enforcementMaxLimitValidator.validate(accountIdentifier, featureRestrictionName, settingDTO, settingDTO);
   }
 
@@ -148,7 +148,7 @@ public class EnforcementMaxLimitValidatorTest extends CategoryTest {
         .thenReturn(request);
 
     exceptionRule.expect(InternalServerErrorException.class);
-    exceptionRule.expectMessage("Failed to update the setting. Please try again later.");
+    exceptionRule.expectMessage("Failed to fetch enforcement limits for the given account plan.");
     enforcementMaxLimitValidator.validate(accountIdentifier, featureRestrictionName, settingDTO, settingDTO);
   }
 
@@ -178,7 +178,7 @@ public class EnforcementMaxLimitValidatorTest extends CategoryTest {
         .thenReturn(request);
 
     exceptionRule.expect(InternalServerErrorException.class);
-    exceptionRule.expectMessage("Failed to update the setting. Please try again later.");
+    exceptionRule.expectMessage("Failed to fetch enforcement limits for the given account plan.");
     enforcementMaxLimitValidator.validate(accountIdentifier, featureRestrictionName, settingDTO, settingDTO);
   }
 }

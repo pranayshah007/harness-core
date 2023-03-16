@@ -80,7 +80,7 @@ public class DecryptGitApiAccessHelper {
                                                   .build();
     DelegateResponseData responseData = null;
     try {
-      responseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException e) {
       throw new DelegateNotAvailableException("Encountered error while decrypting secrets", WingsException.USER);
     } catch (Exception e) {

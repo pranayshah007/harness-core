@@ -67,7 +67,7 @@ public class InputSetErrorsHelper {
   public Map<String, InputSetErrorResponseDTOPMS> getUuidToErrorResponseMap(
       String pipelineYaml, String inputSetPipelineComponent) {
     String templateYaml = createTemplateFromPipeline(pipelineYaml);
-    Map<FQN, String> invalidFQNs = getInvalidFQNsInInputSet(templateYaml, inputSetPipelineComponent);
+    Map<FQN, String> invalidFQNs = getFQNsWithFailingValidatorsInInputSet(templateYaml, inputSetPipelineComponent);
     if (EmptyPredicate.isEmpty(invalidFQNs)) {
       return null;
     }
@@ -142,27 +142,39 @@ public class InputSetErrorsHelper {
   public Map<FQN, String> getInvalidFQNsInInputSet(String templateYaml, String inputSetPipelineCompYaml) {
     YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
     YamlConfig templateConfig = EmptyPredicate.isEmpty(templateYaml) ? null : new YamlConfig(templateYaml);
-    return getInvalidFQNsInInputSetFromTemplateConfig(templateConfig, inputSetConfig);
+    return getInvalidFQNsInInputSetFromTemplateConfig(templateConfig, inputSetConfig, false);
+  }
+
+  public Map<FQN, String> getFQNsWithFailingValidatorsInInputSet(String templateYaml, String inputSetPipelineCompYaml) {
+    YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
+    YamlConfig templateConfig = EmptyPredicate.isEmpty(templateYaml) ? null : new YamlConfig(templateYaml);
+    return getInvalidFQNsInInputSetFromTemplateConfig(templateConfig, inputSetConfig, true);
   }
 
   public Map<FQN, String> getInvalidFQNsInInputSet(YamlConfig pipelineYamlConfig, YamlConfig inputSetConfig) {
-    YamlConfig templateYamlConfig = RuntimeInputFormHelper.createRuntimeInputFormYamlConfig(pipelineYamlConfig, true);
-    return getInvalidFQNsInInputSetFromTemplateConfig(templateYamlConfig, inputSetConfig);
+    YamlConfig templateYamlConfig =
+        RuntimeInputFormHelper.createRuntimeInputFormYamlConfig(pipelineYamlConfig, true, false);
+    return getInvalidFQNsInInputSetFromTemplateConfig(templateYamlConfig, inputSetConfig, false);
   }
 
-  Map<FQN, String> getInvalidFQNsInInputSetFromTemplateConfig(YamlConfig templateConfig, YamlConfig inputSetConfig) {
+  Map<FQN, String> getInvalidFQNsInInputSetFromTemplateConfig(
+      YamlConfig templateConfig, YamlConfig inputSetConfig, boolean checkOnlyValidators) {
     Map<FQN, String> errorMap = new LinkedHashMap<>();
     Set<FQN> inputSetFQNs = new LinkedHashSet<>(inputSetConfig.getFqnToValueMap().keySet());
-    if (templateConfig == null || EmptyPredicate.isEmpty(templateConfig.getFqnToValueMap())) {
+    if (!checkOnlyValidators && (templateConfig == null || EmptyPredicate.isEmpty(templateConfig.getFqnToValueMap()))) {
       inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains any runtime input"));
       return errorMap;
+    } else if (templateConfig == null || EmptyPredicate.isEmpty(templateConfig.getFqnToValueMap())) {
+      // empty runtime input template means that all runtime input values are redundant, and hence no need to check for
+      // FQNs that fail any validator, because there is no validators in the pipeline yaml to begin with
+      return null;
     }
 
     templateConfig.getFqnToValueMap().keySet().forEach(key -> {
       if (inputSetFQNs.contains(key)) {
         Object templateValue = templateConfig.getFqnToValueMap().get(key);
         Object valueFromRuntimeInputYaml = inputSetConfig.getFqnToValueMap().get(key);
-        if (key.isType() || key.isIdentifierOrVariableName()) {
+        if (!checkOnlyValidators && (key.isType() || key.isIdentifierOrVariableName())) {
           if (!valueFromRuntimeInputYaml.toString().equals(templateValue.toString())) {
             // if the type is wrong, this means that the whole field for which the type is, is potentially (and most
             // probably) invalid. Hence, we need to mark all keys that are parallel to type as invalid. Same goes for
@@ -193,7 +205,9 @@ public class InputSetErrorsHelper {
         subMap.keySet().forEach(inputSetFQNs::remove);
       }
     });
-    inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Field not a runtime input"));
+    if (!checkOnlyValidators) {
+      inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Field not a runtime input"));
+    }
     return errorMap;
   }
 }

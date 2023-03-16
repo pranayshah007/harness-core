@@ -7,7 +7,7 @@
 
 package io.harness.audit.entities.streaming;
 
-import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationStatus;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -16,5 +16,5 @@ import lombok.Getter;
 @Builder
 public class StreamingDestinationFilterProperties {
   String searchTerm;
-  StatusEnum status;
+  StreamingDestinationStatus status;
 }

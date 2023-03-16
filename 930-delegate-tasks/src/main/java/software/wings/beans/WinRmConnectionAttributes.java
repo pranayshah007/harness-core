@@ -18,6 +18,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
 import io.harness.encryption.Encrypted;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.jersey.JsonViews;

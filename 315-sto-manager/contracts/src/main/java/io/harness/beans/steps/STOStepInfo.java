@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.nodes.security.DockerContentTrustScanNode;
 import io.harness.beans.steps.nodes.security.ExternalScanNode;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
+import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.SecurityStepInfo;
 import io.harness.beans.steps.stepinfo.security.AquaTrivyStepInfo;
@@ -60,8 +61,8 @@ import java.time.Duration;
 import java.util.List;
 
 @ApiModel(
-    subTypes = {RunStepInfo.class, BackgroundStepInfo.class, AquaTrivyStepInfo.class, AwsEcrStepInfo.class,
-        BanditStepInfo.class, BlackDuckStepInfo.class, BrakemanStepInfo.class, BurpStepInfo.class,
+    subTypes = {PluginStepInfo.class, RunStepInfo.class, BackgroundStepInfo.class, AquaTrivyStepInfo.class,
+        AwsEcrStepInfo.class, BanditStepInfo.class, BlackDuckStepInfo.class, BrakemanStepInfo.class, BurpStepInfo.class,
         CheckmarxStepInfo.class, DataTheoremStepInfo.class, DockerContentTrustScanNode.class, ExternalScanNode.class,
         FortifyOnDemandStepInfo.class, GrypeStepInfo.class, MendStepInfo.class, MetasploitStepInfo.class,
         NmapStepInfo.class, NiktoStepInfo.class, NessusStepInfo.class, NexusIQStepInfo.class, OpenvasStepInfo.class,

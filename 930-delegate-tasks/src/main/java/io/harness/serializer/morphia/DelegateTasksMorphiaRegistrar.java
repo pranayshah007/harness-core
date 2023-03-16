@@ -154,7 +154,6 @@ import software.wings.service.impl.elk.ElkDataCollectionInfoV2;
 import software.wings.service.impl.instana.InstanaDataCollectionInfo;
 import software.wings.service.impl.logz.LogzDataCollectionInfo;
 import software.wings.service.impl.newrelic.NewRelicDataCollectionInfoV2;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.impl.splunk.SplunkDataCollectionInfoV2;
 import software.wings.service.impl.stackdriver.StackDriverDataCollectionInfo;
 import software.wings.service.impl.stackdriver.StackDriverLogDataCollectionInfo;
@@ -171,7 +170,6 @@ import java.util.Set;
 public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
-    set.add(NewRelicMetricDataRecord.class);
     set.add(SecretChangeLog.class);
     set.add(EncryptedData.class);
     set.add(SecretUsageLog.class);

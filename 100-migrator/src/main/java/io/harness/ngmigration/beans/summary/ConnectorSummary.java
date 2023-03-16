@@ -9,6 +9,7 @@ package io.harness.ngmigration.beans.summary;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ngmigration.beans.TypeSummary;
 
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -22,10 +23,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ConnectorSummary extends BaseSummary {
   Map<String, Long> typeSummary;
+  Map<String, TypeSummary> typesSummary;
 
   @Builder
-  public ConnectorSummary(int count, Map<String, Long> typeSummary) {
+  public ConnectorSummary(int count, Map<String, Long> typeSummary, Map<String, TypeSummary> typesSummary) {
     super(count);
     this.typeSummary = typeSummary;
+    this.typesSummary = typesSummary;
   }
 }

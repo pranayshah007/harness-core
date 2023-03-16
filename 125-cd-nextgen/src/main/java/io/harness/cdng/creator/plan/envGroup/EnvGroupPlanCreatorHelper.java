@@ -15,7 +15,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
@@ -23,6 +22,7 @@ import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig.EnvGroupPlanCreat
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterUtils;
 import io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMapper;
+import io.harness.cdng.environment.helper.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.data.structure.EmptyPredicate;
@@ -68,8 +68,11 @@ public class EnvGroupPlanCreatorHelper {
           envGroupIdentifier, projectIdentifier, orgIdentifier));
     }
 
+    EnvironmentGroupEntity envGroupEntity = entity.get();
+    // Do not use org and project from context. Env scope is inferred from env group scope. It's not independent.
     List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(
-        accountIdentifier, orgIdentifier, projectIdentifier, entity.get().getEnvIdentifiers());
+        envGroupEntity.getAccountId(), envGroupEntity.getOrgIdentifier(), envGroupEntity.getProjectIdentifier(),
+        envGroupEntity.getEnvIdentifiers());
 
     Map<String, Environment> envMapping =
         emptyIfNull(environments).stream().collect(Collectors.toMap(Environment::getIdentifier, Function.identity()));
@@ -83,7 +86,7 @@ public class EnvGroupPlanCreatorHelper {
         for (Environment env : environments) {
           if (env == null) {
             throw new InvalidRequestException(format("Environment %s not found in environment group %s",
-                envGroupYaml.getEnvGroupRef().getValue(), entity.get().getIdentifier()));
+                envGroupYaml.getEnvGroupRef().getValue(), envGroupEntity.getIdentifier()));
           }
           EnvironmentYamlV2 envV2Yaml = envV2Yamls.stream()
                                             .filter(e -> e.getEnvironmentRef().getValue().equals(env.getIdentifier()))
@@ -99,7 +102,7 @@ public class EnvGroupPlanCreatorHelper {
 
           if (environment == null) {
             throw new InvalidRequestException(format("Environment %s not found in environment group %s",
-                envGroupYaml.getEnvGroupRef().getValue(), entity.get().getIdentifier()));
+                envGroupYaml.getEnvGroupRef().getValue(), envGroupEntity.getIdentifier()));
           }
           createEnvConfigs(envConfigsForEnvironments, envV2Yaml, environment);
         }
@@ -107,8 +110,8 @@ public class EnvGroupPlanCreatorHelper {
       }
     }
 
-    envGroupPlanCreatorConfigBuilder.name(entity.get().getName())
-        .identifier(entity.get().getIdentifier())
+    envGroupPlanCreatorConfigBuilder.name(envGroupEntity.getName())
+        .identifier(envGroupEntity.getIdentifier())
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
         .environmentGroupRef(envGroupYaml.getEnvGroupRef())

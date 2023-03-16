@@ -31,7 +31,6 @@ import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_SET_CREATE_AND_EDIT;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_SET_DELETE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_SET_VIEW;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_VIEW;
-import static io.harness.ccm.rbac.CCMResources.BUDGET;
 import static io.harness.ccm.rbac.CCMResources.COST_CATEGORY;
 import static io.harness.ccm.rbac.CCMResources.CURRENCY_PREFERENCE;
 import static io.harness.ccm.rbac.CCMResources.FOLDER;
@@ -40,91 +39,138 @@ import static io.harness.ccm.rbac.CCMResources.GOVERNANCE_RULE_ENFORCEMENT;
 import static io.harness.ccm.rbac.CCMResources.GOVERNANCE_RULE_SET;
 import static io.harness.ccm.rbac.CCMResources.PERSPECTIVE;
 
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 
 import com.google.inject.Inject;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class CCMRbacHelperImpl implements CCMRbacHelper {
   @Inject AccessControlClient accessControlClient;
-  private static final String PERMISSION_MISSING_MESSAGE = "User not Authorized: Missing permission %s on %s";
+  public static final String PERMISSION_MISSING_MESSAGE = "Missing permission %s on %s";
+  private static final String DESCRIPTIVE_PERMISSION_MISSING_MESSAGE =
+      "You do not have Permission to view %s. Permission to view %s is obtained by providing %s Permission against %s.";
+  private static final String ANOMALIES = "Anomalies";
+  private static final String RECOMMENDATIONS = "Recommendations";
   private static final String VIEW_PERMISSION = "View";
   private static final String EDIT_PERMISSION = "Create/Edit";
   private static final String DELETE_PERMISSION = "Delete";
   private static final String RESOURCE_COST_CATEGORY = "Cost Categories";
-  private static final String RESOURCE_FOLDER = "Folders";
+  public static final String RESOURCE_FOLDER = "Folders";
   private static final String RESOURCE_PERSPECTIVE = "Perspectives";
   private static final String RESOURCE_BUDGET = "Budgets";
   private static final String RESOURCE_CURRENCY_PREFERENCES = "Currency Preferences";
   private static final String RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE = "CloudAssetGovernance";
+  private static final String ALL_RESOURCES = "All Resources";
 
   @Override
-  public void checkFolderViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public void checkFolderViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(FOLDER, null), FOLDER_VIEW,
+        Resource.of(FOLDER, folderId), FOLDER_VIEW,
         String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_FOLDER));
   }
 
   @Override
-  public void checkFolderEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public void checkFolderEditPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(FOLDER, null), FOLDER_CREATE_AND_EDIT,
+        Resource.of(FOLDER, folderId), FOLDER_CREATE_AND_EDIT,
         String.format(PERMISSION_MISSING_MESSAGE, EDIT_PERMISSION, RESOURCE_FOLDER));
   }
 
   @Override
-  public void checkFolderDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public void checkFolderDeletePermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(FOLDER, null), FOLDER_DELETE,
+        Resource.of(FOLDER, folderId), FOLDER_DELETE,
         String.format(PERMISSION_MISSING_MESSAGE, DELETE_PERMISSION, RESOURCE_FOLDER));
   }
 
   @Override
-  public void checkPerspectiveViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(PERSPECTIVE, null), PERSPECTIVE_VIEW,
-        String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_PERSPECTIVE));
-    // Check if user has folder view permission
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(FOLDER, null), FOLDER_VIEW,
-        String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_FOLDER));
+  public Set<String> checkFolderIdsGivenPermission(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, Set<String> folderIds, String permission) {
+    // We check if user have access to all the folders
+    // We return all folderIds as is in that case
+    if (accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(FOLDER, null), permission)) {
+      return folderIds;
+    }
+    List<PermissionCheckDTO> permissionCheckDTOList =
+        folderIds.stream()
+            .map(folderId
+                -> PermissionCheckDTO.builder()
+                       .resourceScope(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier))
+                       .resourceType(FOLDER)
+                       .resourceIdentifier(folderId)
+                       .permission(permission)
+                       .build())
+            .collect(Collectors.toList());
+
+    List<AccessControlDTO> accessCheckResponseDTO =
+        accessControlClient.checkForAccess(permissionCheckDTOList).getAccessControlList();
+
+    if (accessCheckResponseDTO == null) {
+      return null;
+    }
+
+    return accessCheckResponseDTO.stream()
+        .filter(accessControlDTO -> accessControlDTO.isPermitted())
+        .map(accessControlDTO -> accessControlDTO.getResourceIdentifier())
+        .collect(Collectors.toSet());
   }
 
   @Override
-  public void checkPerspectiveEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public void checkPerspectiveViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(PERSPECTIVE, null), PERSPECTIVE_CREATE_AND_EDIT,
+        Resource.of(FOLDER, folderId), PERSPECTIVE_VIEW,
+        String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_PERSPECTIVE));
+  }
+
+  @Override
+  public void checkPerspectiveEditPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(FOLDER, folderId), PERSPECTIVE_CREATE_AND_EDIT,
         String.format(PERMISSION_MISSING_MESSAGE, EDIT_PERMISSION, RESOURCE_PERSPECTIVE));
   }
 
   @Override
   public void checkPerspectiveDeletePermission(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(PERSPECTIVE, null), PERSPECTIVE_DELETE,
+        Resource.of(FOLDER, folderId), PERSPECTIVE_DELETE,
         String.format(PERMISSION_MISSING_MESSAGE, DELETE_PERMISSION, RESOURCE_PERSPECTIVE));
   }
 
   @Override
-  public void checkBudgetViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public void checkBudgetViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(BUDGET, null), BUDGET_VIEW,
+        Resource.of(FOLDER, folderId), BUDGET_VIEW,
         String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_BUDGET));
-    checkPerspectiveOnlyViewPermission(accountIdentifier, orgIdentifier, projectIdentifier);
+    checkPerspectiveViewPermission(accountIdentifier, orgIdentifier, projectIdentifier, folderId);
   }
 
   @Override
-  public void checkBudgetEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public void checkBudgetEditPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(BUDGET, null), BUDGET_CREATE_AND_EDIT,
+        Resource.of(FOLDER, folderId), BUDGET_CREATE_AND_EDIT,
         String.format(PERMISSION_MISSING_MESSAGE, EDIT_PERMISSION, RESOURCE_BUDGET));
   }
 
   @Override
-  public void checkBudgetDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public void checkBudgetDeletePermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(BUDGET, null), BUDGET_DELETE,
+        Resource.of(FOLDER, folderId), BUDGET_DELETE,
         String.format(PERMISSION_MISSING_MESSAGE, DELETE_PERMISSION, RESOURCE_BUDGET));
   }
 
@@ -155,12 +201,18 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
   @Override
   public void checkRecommendationsViewPermission(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    checkPerspectiveOnlyViewPermission(accountIdentifier, orgIdentifier, projectIdentifier);
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(PERSPECTIVE, null), COST_OVERVIEW_VIEW,
+        String.format(DESCRIPTIVE_PERMISSION_MISSING_MESSAGE, RECOMMENDATIONS, RECOMMENDATIONS, COST_OVERVIEW_VIEW,
+            ALL_RESOURCES));
   }
 
   @Override
-  public void checkAnomalyViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    checkPerspectiveOnlyViewPermission(accountIdentifier, orgIdentifier, projectIdentifier);
+  public void checkAnomalyViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(FOLDER, folderId), PERSPECTIVE_VIEW,
+        String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_PERSPECTIVE));
   }
 
   @Override

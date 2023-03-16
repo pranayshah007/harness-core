@@ -8,6 +8,7 @@
 package io.harness.plancreator.stages.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -78,9 +79,15 @@ public class StageElementConfig {
   @ApiModelProperty(hidden = true)
   ParameterField<String> skipCondition;
 
-  @VariableExpression StageWhenCondition when;
+  @ApiModelProperty(dataType = SwaggerConstants.STAGE_WHEN_CLASSPATH)
+  @VariableExpression
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  ParameterField<StageWhenCondition> when;
 
-  @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
+  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
+  @VariableExpression(skipVariableExpression = true)
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  ParameterField<List<FailureStrategyConfig>> failureStrategies;
 
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("skipInstances")
@@ -91,7 +98,10 @@ public class StageElementConfig {
   @YamlSchemaTypes(value = {runtime})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @JsonProperty("strategy") StrategyConfig strategy;
+  @ApiModelProperty(dataType = SwaggerConstants.STRATEGY_CLASSPATH)
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  @JsonProperty("strategy")
+  ParameterField<StrategyConfig> strategy;
 
   @VariableExpression List<NGVariable> variables;
   @VariableExpression Map<String, String> tags;
@@ -104,8 +114,8 @@ public class StageElementConfig {
 
   @Builder
   public StageElementConfig(String uuid, String identifier, String name, ParameterField<String> description,
-      List<FailureStrategyConfig> failureStrategies, List<NGVariable> variables, String type, StageInfoConfig stageType,
-      ParameterField<String> skipCondition, StageWhenCondition when,
+      ParameterField<List<FailureStrategyConfig>> failureStrategies, List<NGVariable> variables, String type,
+      StageInfoConfig stageType, ParameterField<String> skipCondition, ParameterField<StageWhenCondition> when,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     this.uuid = uuid;
     this.identifier = identifier;

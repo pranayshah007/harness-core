@@ -9,6 +9,7 @@ package io.harness.filters;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.pms.yaml.ParameterField.isNotNull;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
 
@@ -50,8 +51,8 @@ public abstract class GenericStepPMSFilterJsonCreatorV2 implements FilterJsonCre
 
   @Override
   public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, AbstractStepNode yamlField) {
-    if (yamlField.getStrategy() != null) {
-      StrategyValidationUtils.validateStrategyNode(yamlField.getStrategy());
+    if (isNotNull(yamlField.getStrategy()) && yamlField.getStrategy().getValue() != null) {
+      StrategyValidationUtils.validateStrategyNode(yamlField.getStrategy().getValue());
     }
     if (WithConnectorRef.class.isAssignableFrom(yamlField.getStepSpecType().getClass())) {
       String accountIdentifier = filterCreationContext.getSetupMetadata().getAccountId();

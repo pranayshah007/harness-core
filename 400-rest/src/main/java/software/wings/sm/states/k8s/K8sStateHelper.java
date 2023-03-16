@@ -349,7 +349,7 @@ public class K8sStateHelper {
             .setupAbstraction(Cd1SetupFields.SERVICE_ID_FIELD, containerInfrastructureMapping.getServiceId())
             .build();
 
-    DelegateResponseData notifyResponseData = delegateService.executeTask(delegateTask);
+    DelegateResponseData notifyResponseData = delegateService.executeTaskV2(delegateTask);
     if (notifyResponseData instanceof ErrorNotifyResponseData) {
       throw new K8sPodSyncException(format("Failed to fetch PodList for release %s. Error: %s", releaseName,
           ((ErrorNotifyResponseData) notifyResponseData).getErrorMessage()));

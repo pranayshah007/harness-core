@@ -252,7 +252,7 @@ public abstract class ContainerServiceDeploy extends State {
               .selectionLogsTrackingEnabled(isSelectionLogsTrackingForTasksEnabled())
               .description("Kubernetes deploy task execution")
               .build();
-      String delegateTaskId = delegateService.queueTask(delegateTask);
+      String delegateTaskId = delegateService.queueTaskV2(delegateTask);
 
       appendDelegateTaskDetails(context, delegateTask);
       return ExecutionResponse.builder()

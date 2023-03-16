@@ -8,6 +8,7 @@
 package io.harness.cvng.beans;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
@@ -18,15 +19,15 @@ public enum TimeSeriesThresholdComparisonType {
   /**
    * A threshold that is divided by the previous build's value to yield a ratio.
    */
-  RATIO("ratio"),
+  @JsonProperty("ratio") RATIO("ratio"),
   /**
    * A threshold that is subtracted from the previous build's value to yield a delta.
    */
-  DELTA("delta"),
+  @JsonProperty("delta") DELTA("delta"),
   /**
    * A threshold that represents an absolute value to compare against rather than something in the previous build.
    */
-  ABSOLUTE("absolute-value");
+  @JsonProperty("absolute-value") ABSOLUTE("absolute-value");
 
   private String displayName;
 

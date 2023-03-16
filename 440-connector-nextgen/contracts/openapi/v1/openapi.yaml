@@ -468,24 +468,24 @@ components:
         name:
           type: string
           description: Connector name
-          pattern: '^[0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[0-9a-zA-Z-_ ]{0,127}$'
         identifier:
           type: string
           minLength: 1
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           description: Connector identifier
-          maxLength: 64
+          maxLength: 128
         description:
           type: string
           description: Connector description
         org:
           type: string
           description: Organization identifier for connector
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
         project:
           type: string
           description: Project identifier for connector
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
         tags:
           type: object
           additionalProperties:
@@ -1550,13 +1550,18 @@ components:
                   created: 1234567890
                   updated: 1234567890
       headers:
-        Link:
+        X-Total-Elements:
           schema:
-            type: string
-          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
-          examples:
-            sample:
-              value: '<{url}?page=2&limit=1>; rel="next", <{url}?page=1&limit=1>; rel="self", <{url}?page=0&limit=1>; rel="previous", '
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
   requestBodies:
     ConnectorRequest:
       content:
@@ -2035,7 +2040,8 @@ components:
       schema:
         type: integer
         default: 30
-      description: 'Pagination: Number of items to return'
+        maximum: 1000
+      description: 'Number of items to return per page.'
     SearchTerm:
       name: search_term
       in: query

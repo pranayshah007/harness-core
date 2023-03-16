@@ -211,14 +211,15 @@ public class K8sBGBaseHandler {
     // Todo: Investigate when this case is possible
     try {
       if (StringUtils.equals(primaryColor, stageColor)) {
-        executionLogCallback.saveExecutionLog("Primary and secondary service are at same color, No pruning required.");
+        executionLogCallback.saveExecutionLog(
+            "Primary and secondary service are at same color, No pruning required.", INFO, SUCCESS);
         return emptyList();
       }
       IK8sReleaseHistory oldReleaseHistory = prePruningInfo.getReleaseHistoryBeforeStageCleanUp();
 
       if (isEmpty(oldReleaseHistory)) {
         executionLogCallback.saveExecutionLog(
-            "No older releases are available in release history, No pruning Required.");
+            "No older releases are available in release history, No pruning Required.", INFO, SUCCESS);
         return emptyList();
       }
 
@@ -244,7 +245,7 @@ public class K8sBGBaseHandler {
       }
 
       if (isEmpty(resourcesPruned)) {
-        executionLogCallback.saveExecutionLog("No resources needed to be pruned", INFO, RUNNING);
+        executionLogCallback.saveExecutionLog("No resources needed to be pruned");
       }
       executionLogCallback.saveExecutionLog("Pruning step completed", INFO, SUCCESS);
       return resourcesPruned;

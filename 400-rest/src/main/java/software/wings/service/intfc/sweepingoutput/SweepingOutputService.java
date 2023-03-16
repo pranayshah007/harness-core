@@ -16,6 +16,7 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.deployment.InstanceDetails;
 
 import software.wings.api.InstanceElement;
+import software.wings.service.intfc.ownership.OwnedByApplication;
 import software.wings.sm.StateExecutionInstance;
 
 import dev.morphia.query.Query;
@@ -25,7 +26,7 @@ import javax.validation.constraints.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
-public interface SweepingOutputService {
+public interface SweepingOutputService extends OwnedByApplication {
   SweepingOutputInstance save(@Valid SweepingOutputInstance sweepingOutputInstance);
 
   void ensure(@Valid SweepingOutputInstance sweepingOutputInstance);

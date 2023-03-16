@@ -25,6 +25,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.EntityType;
@@ -72,6 +73,8 @@ public class PipelineResource {
   private WorkflowService workflowService;
   private PipelineService pipelineService;
   private AuthService authService;
+
+  @Inject private FeatureFlagService featureFlagService;
 
   /**
    * Instantiates a new pipeline resource.
@@ -158,6 +161,7 @@ public class PipelineResource {
     pipeline.setAppId(appId);
     pipeline.setUuid(pipelineId);
     authService.checkPipelinePermissionsForEnv(appId, pipeline, Action.UPDATE);
+
     try {
       return new RestResponse<>(pipelineService.update(pipeline, false, false));
     } catch (WingsException exception) {

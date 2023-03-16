@@ -52,7 +52,10 @@ public enum PlanExecutionInterruptType {
 
   @JsonProperty("ExpireAll") EXPIREALL("Expire Pipeline", InterruptType.EXPIRE_ALL, "ExpireAll"),
 
-  @JsonProperty("Retry") RETRY("Retry execution of  paused node in the current workflow", InterruptType.RETRY, "Retry");
+  @JsonProperty("Retry") RETRY("Retry execution of  paused node in the current workflow", InterruptType.RETRY, "Retry"),
+  @JsonProperty("MarkAsFailure")
+  MarkAsFailure(
+      "MarkFailed execution of paused node in the current workflow", InterruptType.MARK_FAILED, "MarkAsFailure");
 
   private String description;
   private InterruptType executionInterruptType;

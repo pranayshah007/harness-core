@@ -9,6 +9,7 @@ package io.harness.ci.states;
 
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +37,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -67,10 +69,10 @@ public class DockerStepTest extends CIExecutionTestBase {
   @Mock private ExecutionSweepingOutputService executionSweepingOutputResolver;
   private Ambiance ambiance;
   private StepElementParameters stepElementParameters;
+  private HashMap<String, String> setupAbstractions = new HashMap<>();
 
   @Before
   public void setUp() {
-    HashMap<String, String> setupAbstractions = new HashMap<>();
     setupAbstractions.put(SetupAbstractionKeys.accountId, "accountId");
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "projectId");
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "orgId");
@@ -186,6 +188,9 @@ public class DockerStepTest extends CIExecutionTestBase {
     when(executionSweepingOutputResolver.resolveOptional(
              ambiance, RefObjectUtils.getSweepingOutputRefObject("artifact-identifierId")))
         .thenReturn(OptionalSweepingOutput.builder().found(false).build());
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject("artifact_identifierId")))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
     StepResponse stepResponse = dockerStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(2);
@@ -195,6 +200,80 @@ public class DockerStepTest extends CIExecutionTestBase {
         assertThat(outcome.getStepArtifacts().getPublishedImageArtifacts().size()).isEqualTo(1);
         assertThat(outcome.getStepArtifacts().getPublishedImageArtifacts().get(0)).isEqualTo(expectedArtifact);
         assertThat(stepOutcome.getName()).isEqualTo("artifact_identifierId");
+      }
+    });
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void shouldHandleSuccessK8AsyncResponseWithArtifactsStepGroup() {
+    ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").setRunSequence(1).build())
+            .putAllSetupAbstractions(setupAbstractions)
+            .addLevels(Level.newBuilder()
+                           .setStepType(StepType.newBuilder().setType("STEP_GROUP").build())
+                           .setRuntimeId("runtimeStepGroupId")
+                           .setIdentifier("stepGroupId")
+                           .setOriginalIdentifier("originalStepGroupId")
+                           .setRetryIndex(1)
+                           .build())
+            .addLevels(Level.newBuilder()
+                           .setRuntimeId("runtimeId")
+                           .setIdentifier("identifierId")
+                           .setOriginalIdentifier("originalIdentifierId")
+                           .setRetryIndex(1)
+                           .build())
+            .build();
+    Map<String, ResponseData> responseDataMap = new HashMap<>();
+    ResponseData responseData =
+        StepStatusTaskResponseData.builder()
+            .stepStatus(
+                StepStatus.builder()
+                    .stepExecutionStatus(StepExecutionStatus.SUCCESS)
+                    .artifactMetadata(
+                        ArtifactMetadata.builder()
+                            .type(ArtifactMetadataType.DOCKER_ARTIFACT_METADATA)
+                            .spec(DockerArtifactMetadata.builder()
+                                      .dockerArtifacts(Collections.singletonList(DockerArtifactDescriptor.builder()
+                                                                                     .digest("digest")
+                                                                                     .imageName("imageName:1.0")
+                                                                                     .build()))
+                                      .registryUrl("https://index.docker.io/v1/")
+                                      .build())
+                            .build())
+                    .build())
+            .build();
+
+    responseDataMap.put(STEP_RESPONSE, responseData);
+
+    PublishedImageArtifact expectedArtifact = PublishedImageArtifact.builder()
+                                                  .imageName("imageName")
+                                                  .tag("1.0")
+                                                  .url("https://hub.docker.com/layers/test/1.0/images/digest/")
+                                                  .digest("digest")
+                                                  .build();
+
+    when(serializedResponseDataHelper.deserialize(responseData)).thenReturn(responseData);
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
+        .thenReturn(OptionalSweepingOutput.builder().found(true).output(K8StageInfraDetails.builder().build()).build());
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject("artifact-identifierId")))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject("artifact_identifierId")))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
+    StepResponse stepResponse = dockerStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(2);
+    stepResponse.getStepOutcomes().forEach(stepOutcome -> {
+      if (stepOutcome.getOutcome() instanceof CIStepArtifactOutcome) {
+        CIStepArtifactOutcome outcome = (CIStepArtifactOutcome) stepOutcome.getOutcome();
+        assertThat(outcome.getStepArtifacts().getPublishedImageArtifacts().size()).isEqualTo(1);
+        assertThat(outcome.getStepArtifacts().getPublishedImageArtifacts().get(0)).isEqualTo(expectedArtifact);
+        assertThat(stepOutcome.getName()).isEqualTo("artifact_stepGroupId_identifierId");
       }
     });
   }

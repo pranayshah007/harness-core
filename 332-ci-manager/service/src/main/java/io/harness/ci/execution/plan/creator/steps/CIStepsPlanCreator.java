@@ -9,15 +9,14 @@ package io.harness.ci.plan.creator.steps;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plancreator.V1.GitClonePlanCreator;
 import io.harness.ci.plancreator.V1.InitializeStepPlanCreatorV1;
-import io.harness.cimanager.stages.V1.IntegrationStageNodeV1;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependencies;
@@ -96,6 +95,7 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
                                 .putDependencies(curr.getUuid(), curr.getYamlPath())
                                 .putDependencyMetadata(curr.getUuid(),
                                     Dependency.newBuilder()
+                                        .putAllMetadata(ctx.getDependency().getMetadataMap())
                                         .putMetadata("nextId",
                                             ByteString.copyFrom(kryoSerializer.asBytes(steps.get(i + 1).getUuid())))
                                         .build())
@@ -106,7 +106,11 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
     YamlField curr = steps.get(steps.size() - 1);
     responseMap.put(curr.getUuid(),
         PlanCreationResponse.builder()
-            .dependencies(Dependencies.newBuilder().putDependencies(curr.getUuid(), curr.getYamlPath()).build())
+            .dependencies(Dependencies.newBuilder()
+                              .putDependencyMetadata(curr.getUuid(),
+                                  Dependency.newBuilder().putAllMetadata(ctx.getDependency().getMetadataMap()).build())
+                              .putDependencies(curr.getUuid(), curr.getYamlPath())
+                              .build())
             .build());
     return responseMap;
   }
@@ -129,8 +133,6 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
     if (optionalCodebase.isPresent()) {
       codeBase = (CodeBase) optionalCodebase.get();
     }
-    ExecutionSource executionSource =
-        ciPlanCreatorUtils.buildExecutionSource(ctx, codeBase, ctx.getCurrentField().getId());
     String gitCloneChildNodeID =
         createGitClonePlanCreator(ctx, responseMap, executionWrapperConfigs, codeBase, childNodeID);
     childNodeID = gitCloneChildNodeID != null ? gitCloneChildNodeID : childNodeID;
@@ -141,9 +143,9 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
     if (optionalStageNode.isEmpty()) {
       throw new InvalidRequestException("IntegrationStageNode cannot be empty");
     }
-    IntegrationStageNodeV1 stageNode = (IntegrationStageNodeV1) optionalStageNode.get();
+    AbstractStageNode stageNode = (AbstractStageNode) optionalStageNode.get();
     PlanCreationResponse planCreationResponse = initializeStepPlanCreatorV1.createPlan(
-        ctx, stageNode, codeBase, executionSource, infrastructure, executionWrapperConfigs, childNodeID);
+        ctx, stageNode, codeBase, infrastructure, executionWrapperConfigs, childNodeID);
     planCreationResponseMap.put(planCreationResponse.getPlanNode().getUuid(), planCreationResponse);
     planCreationResponseMap.putAll(responseMap);
   }

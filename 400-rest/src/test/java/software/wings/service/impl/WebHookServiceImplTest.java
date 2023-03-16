@@ -1287,7 +1287,7 @@ public class WebHookServiceImplTest extends WingsBaseTest {
         .encryptedDataDetails(ACCOUNT_ID, null, WEBHOOK_SECRET, null);
     doReturn(WebHookTriggerResponseData.builder().executionStatus(FAILED).build())
         .when(delegateService)
-        .executeTask(any(DelegateTask.class));
+        .executeTaskV2(any(DelegateTask.class));
 
     assertThatThrownBy(()
                            -> webHookServiceImpl.validateWebHook(WebhookSource.GITHUB, webhookTrigger,
@@ -1312,7 +1312,7 @@ public class WebHookServiceImplTest extends WingsBaseTest {
         .encryptedDataDetails(ACCOUNT_ID, null, WEBHOOK_SECRET, null);
     doReturn(WebHookTriggerResponseData.builder().executionStatus(SUCCESS).isWebhookAuthenticated(false).build())
         .when(delegateService)
-        .executeTask(any(DelegateTask.class));
+        .executeTaskV2(any(DelegateTask.class));
 
     assertThatThrownBy(()
                            -> webHookServiceImpl.validateWebHook(WebhookSource.GITHUB, webhookTrigger,
@@ -1351,7 +1351,7 @@ public class WebHookServiceImplTest extends WingsBaseTest {
         .encryptedDataDetails(ACCOUNT_ID, null, WEBHOOK_SECRET, null);
     doReturn(WebHookTriggerResponseData.builder().executionStatus(SUCCESS).isWebhookAuthenticated(true).build())
         .when(delegateService)
-        .executeTask(any(DelegateTask.class));
+        .executeTaskV2(any(DelegateTask.class));
 
     File file = new File("400-rest/src/test/resources/software/wings/service/impl/webhook/github_pull_request.json");
     String payLoad = FileUtils.readFileToString(file, Charset.defaultCharset());

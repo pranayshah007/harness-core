@@ -44,7 +44,7 @@ public class AwsS3HelperServiceManagerTest extends WingsBaseTest {
     List<String> bucketNames = ImmutableList.of("name_00", "name_01");
     doReturn(AwsS3ListBucketNamesResponse.builder().bucketNames(bucketNames).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     List<String> result = helper.listBucketNames(AwsConfig.builder().build(), emptyList());
     assertThat(result).isNotNull();
     assertThat(result.size()).isEqualTo(2);

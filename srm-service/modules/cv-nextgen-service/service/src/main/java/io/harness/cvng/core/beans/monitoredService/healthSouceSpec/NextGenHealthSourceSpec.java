@@ -76,7 +76,6 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
         .groupName(cvConfig.getGroupName())
         .build();
   }
-
   private Map<Key, CVConfig> getExistingCVConfigMap(List<CVConfig> existingCVConfigs) {
     switch (dataSourceType.getVerificationType()) {
       case TIME_SERIES:
@@ -134,6 +133,18 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
       uniqueQueryNames.add(query.getName());
     });
     if (dataSourceType.getVerificationType() == VerificationType.LOG) {
+      if (dataSourceType == DataSourceType.ELASTICSEARCH) {
+        queryDefinitions.forEach((QueryDefinition query) -> {
+          Preconditions.checkArgument(StringUtils.isNotBlank(query.getQueryParams().getMessageIdentifier()),
+              "message identifier does not match the expected pattern.");
+          Preconditions.checkArgument(StringUtils.isNotBlank(query.getQueryParams().getTimeStampFormat()),
+              "timestamp format does not match the expected pattern.");
+          Preconditions.checkArgument(StringUtils.isNotBlank(query.getQueryParams().getTimeStampIdentifier()),
+              "timestamp identifier does not match the expected pattern.");
+          Preconditions.checkArgument(
+              StringUtils.isNotBlank(query.getQueryParams().getIndex()), "index does not match the expected pattern.");
+        });
+      }
       queryDefinitions.forEach((QueryDefinition query)
                                    -> Preconditions.checkArgument(Objects.isNull(query.getMetricThresholds())
                                            || query.getMetricThresholds().size() == 0,
@@ -148,6 +159,7 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
       });
     }
   }
+
   @JsonIgnore
   public DataSourceType getDataSourceType() {
     return dataSourceType;
@@ -169,7 +181,7 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
           metricDefinitionMap.put(key, metricDefinitions);
         });
 
-        Map<Key, CVConfig> sumologicMetricCVConfigs = new HashMap<>();
+        Map<Key, CVConfig> metricCVConfigs = new HashMap<>();
         metricDefinitionMap.forEach((Key key, List<QueryDefinition> queryDefinitions) -> {
           NextGenMetricCVConfig nextGenMetricCVConfig =
               NextGenMetricCVConfig.builder()
@@ -189,9 +201,9 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
                   .build();
           nextGenMetricCVConfig.populateFromQueryDefinitions(queryDefinitions, key.getCategory());
           nextGenMetricCVConfig.addCustomMetricThresholds(queryDefinitions);
-          sumologicMetricCVConfigs.put(key, nextGenMetricCVConfig);
+          metricCVConfigs.put(key, nextGenMetricCVConfig);
         });
-        return sumologicMetricCVConfigs;
+        return metricCVConfigs;
       case LOG:
         return queryDefinitions.stream()
             .map(queryDefinition
@@ -207,6 +219,7 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
                        .query(queryDefinition.getQuery().trim())
                        .groupName(queryDefinition.getGroupName())
                        .queryIdentifier(queryDefinition.getIdentifier())
+                       .healthSourceParams(healthSourceParams.getHealthSourceParamsEntity())
                        .queryParams(queryDefinition.getQueryParams().getQueryParamsEntity())
                        .category(CVMonitoringCategory.ERRORS)
                        .monitoredServiceIdentifier(monitoredServiceIdentifier)

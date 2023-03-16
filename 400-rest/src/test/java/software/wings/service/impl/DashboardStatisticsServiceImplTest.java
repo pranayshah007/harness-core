@@ -710,7 +710,8 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
       List<Environment> envList = Lists.newArrayList();
       envList.add(Environment.Builder.anEnvironment().uuid(ENV_1_ID).name(ENV_NAME).appId(APP_1_ID).build());
       PageResponse<Environment> envsPageResponse = aPageResponse().withResponse(envList).build();
-      when(environmentService.list(any(PageRequest.class), anyBoolean(), any())).thenReturn(envsPageResponse);
+      when(environmentService.list(any(PageRequest.class), anyBoolean(), any(), anyBoolean()))
+          .thenReturn(envsPageResponse);
 
       List<InfrastructureMapping> infraList = Lists.newArrayList();
       InfrastructureMapping infra1 = new GcpKubernetesInfrastructureMapping();

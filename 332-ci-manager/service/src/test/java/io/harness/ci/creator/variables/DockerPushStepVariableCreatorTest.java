@@ -91,7 +91,8 @@ public class DockerPushStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.spec.buildArgs.hello",
             "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.spec.optimize",
             "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.spec.context",
-            "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.name");
+            "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.name",
+            "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -104,7 +105,6 @@ public class DockerPushStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.identifier",
             "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.type",
             "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.startTs",
-            "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.endTs",
-            "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.when");
+            "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.endTs");
   }
 }

@@ -20,7 +20,7 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO.GcpConne
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.beans.GcpConfig;
 import software.wings.beans.SettingAttribute;

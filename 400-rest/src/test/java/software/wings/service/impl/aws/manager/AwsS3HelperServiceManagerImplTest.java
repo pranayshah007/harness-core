@@ -44,7 +44,7 @@ public class AwsS3HelperServiceManagerImplTest extends CategoryTest {
     on(service).set("delegateService", mockDelegateService);
     doReturn(AwsS3ListBucketNamesResponse.builder().bucketNames(asList("b-0", "b-1")).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());

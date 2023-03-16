@@ -24,6 +24,8 @@ public class IteratorExecutionHandlerImpl implements IteratorExecutionHandler {
   private final HashMap<String, IteratorBaseHandler> iteratorHandlerMap;
   @Getter private final HashMap<String, IteratorState> iteratorState;
 
+  private static final int BATCH_SIZE_MULTIPLY_FACTOR = 2; // The factor by how much the batchSize should be increased
+  private static final int REDIS_LOCK_TIMEOUT_SECONDS = 5; // The lockTimeout is the duration a lock is held
   public static final String REDIS_BATCH = "REDIS_BATCH";
 
   /**
@@ -224,11 +226,22 @@ public class IteratorExecutionHandlerImpl implements IteratorExecutionHandler {
    * @param config provides the necessary configuration for the iterator.
    */
   private void createAndStartRedisBatchModeIterator(DynamicIteratorConfig config) {
+    int redisBatchSize = config.getRedisBatchSize();
+    int redisLockTimeout = config.getRedisLockTimeout();
+    if (redisBatchSize == 0) {
+      redisBatchSize = BATCH_SIZE_MULTIPLY_FACTOR * config.getThreadPoolSize();
+    }
+
+    if (redisLockTimeout == 0) {
+      redisLockTimeout = REDIS_LOCK_TIMEOUT_SECONDS;
+    }
     iteratorHandlerMap.get(config.getName())
         .createAndStartRedisBatchIterator(PersistenceIteratorFactory.RedisBatchExecutorOptions.builder()
                                               .name(config.getName())
                                               .poolSize(config.getThreadPoolSize())
-                                              .interval(getIntervalDuration(config.getTargetIntervalInSeconds()))
+                                              .batchSize(redisBatchSize)
+                                              .lockTimeout(redisLockTimeout)
+                                              .interval(getIntervalDuration(config.getThreadPoolIntervalInSeconds()))
                                               .build(),
             getNextIterationInterval(config));
   }

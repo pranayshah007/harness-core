@@ -268,7 +268,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
     PageResponse<UserGroup> res = wingsPersistence.query(UserGroup.class, req);
 
-    log.info("[SSO_SYNC]: Page response for user groups list: {}", res);
+    log.info("Page response for user groups list: {}", res);
 
     // Using a custom comparator since our mongo apis don't support alphabetical sorting with case insensitivity.
     // Currently, it only supports ASC and DSC.
@@ -338,10 +338,9 @@ public class UserGroupServiceImpl implements UserGroupService {
     Map<String, User> userMap = allUsersList.stream().collect(Collectors.toMap(User::getUuid, identity()));
     userGroups.forEach(userGroup -> {
       List<String> memberIds = userGroup.getMemberIds();
-      log.info("[SAML_SYNC]: User group: {}, has member IDs: {}", userGroup, memberIds);
+      log.info("User group: {}, has member IDs: {}", userGroup.getName(), memberIds);
       if (isEmpty(memberIds)) {
         userGroup.setMembers(new ArrayList<>());
-        log.info("[SAML_SYNC]: User group has empty memberIDs: {}", userGroup);
         return;
       }
       List<User> members = new ArrayList<>();
@@ -351,7 +350,7 @@ public class UserGroupServiceImpl implements UserGroupService {
           members.add(user);
         }
       });
-      log.info("[SAML_SYNC]: Members added- size: {}, members: {}", members.size(), members);
+      log.info("For user group: {} Members added- size: {}, members: {}", userGroup.getName(), members.size(), members);
       userGroup.setMembers(members);
     });
   }
@@ -453,10 +452,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   @Override
   public UserGroup get(String accountId, String userGroupId, boolean loadUsers) {
-    UserGroup userGroup = wingsPersistence.createQuery(UserGroup.class)
-                              .filter(UserGroupKeys.accountId, accountId)
-                              .filter(UserGroup.ID_KEY2, userGroupId)
-                              .get();
+    UserGroup userGroup = wingsPersistence.createQuery(UserGroup.class).filter(UserGroup.ID_KEY2, userGroupId).get();
     if (userGroup == null) {
       return null;
     }
@@ -555,10 +551,10 @@ public class UserGroupServiceImpl implements UserGroupService {
         : Sets.newHashSet(userGroupToUpdate.getMemberIds());
     newMemberIds.removeIf(EmptyPredicate::isEmpty);
 
-    log.info("[SAML_SYNC]: New member IDs: {}", newMemberIds);
+    log.info("New memberIds for user group {}: {}", userGroupToUpdate.getName(), newMemberIds);
 
     UserGroup existingUserGroup = get(userGroupToUpdate.getAccountId(), userGroupToUpdate.getUuid());
-    log.info("[SAML_SYNC]: Existing user group: {}", existingUserGroup);
+    log.info("Existing memberIds in user group {}: {}", existingUserGroup.getName(), existingUserGroup.getMemberIds());
 
     if (UserGroupUtils.isAdminUserGroup(existingUserGroup) && newMemberIds.isEmpty()) {
       throw new WingsException(
@@ -573,7 +569,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     setUnset(operations, UserGroupKeys.memberIds, newMemberIds);
     UserGroup updatedUserGroup = update(userGroupToUpdate, operations);
 
-    log.info("[SAML_SYNC]: Updated user group: {}", updatedUserGroup);
+    log.info("Updated user group: {}", updatedUserGroup.getName());
 
     // auditing addition/removal of users in/from user group
     if (toBeAudited) {
@@ -622,7 +618,7 @@ public class UserGroupServiceImpl implements UserGroupService {
       return userGroup;
     }
     List<User> groupMembers = userGroup.getMembers();
-    log.info("[SAML_SYNC]: Group members in the user group- {} are: {}", userGroup.getName(), groupMembers);
+    log.info("Group members in the user group- {} are: {}", userGroup.getName(), groupMembers);
 
     userGroup.getMemberIds().removeAll(members.stream().map(User::getUuid).collect(toList()));
     return updateMembers(userGroup, sendNotification, toBeAudited);
@@ -1105,13 +1101,16 @@ public class UserGroupServiceImpl implements UserGroupService {
   public void removeAppIdsFromAppPermissions(UserGroup userGroup, Set<String> appIds) {
     boolean isModified = false;
     boolean hasEmptyPermission = false;
+    log.info("[USERGROUP-DEBUG]: appIds to be deleted {} from usergroup {} accountId {}", appIds, userGroup.getUuid(),
+        userGroup.getAccountId());
 
     if (isEmpty(appIds)) {
       return;
     }
 
     Set<AppPermission> groupAppPermissions = userGroup.getAppPermissions();
-
+    log.info("[USERGROUP-DEBUG]: group app permissions {} for usergroup {} accountId {}", groupAppPermissions,
+        userGroup.getUuid(), userGroup.getAccountId());
     if (isEmpty(groupAppPermissions)) {
       return;
     }
@@ -1124,6 +1123,9 @@ public class UserGroupServiceImpl implements UserGroupService {
       AppFilter filter = permission.getAppFilter();
       Set<String> ids = filter.getIds();
 
+      log.info("[USERGROUP-DEBUG]: permission filter ids {} for usergroup {} accountId {}", ids, userGroup.getUuid(),
+          userGroup.getAccountId());
+
       if (ids != null && ids.removeIf(appIds::contains)) {
         isModified = true;
       }
@@ -1132,11 +1134,15 @@ public class UserGroupServiceImpl implements UserGroupService {
         hasEmptyPermission = true;
       }
     }
+    log.info("[USERGROUP-DEBUG]: hasEmptyPermission {} for usergroup {} accountId {}", hasEmptyPermission,
+        userGroup.getUuid(), userGroup.getAccountId());
 
     if (hasEmptyPermission) {
       removeEmptyAppPermissions(userGroup);
       isModified = true;
     }
+    log.info("[USERGROUP-DEBUG]: isModified {} for usergroup {} accountId {}", isModified, userGroup.getUuid(),
+        userGroup.getAccountId());
 
     if (isModified) {
       log.info("Pruning app ids from user group: " + userGroup.getUuid());
@@ -1349,7 +1355,9 @@ public class UserGroupServiceImpl implements UserGroupService {
   public void pruneByApplication(String appId) {
     Set<String> deletedIds = new HashSet<>();
     deletedIds.add(appId);
+
     String accountId = appService.getAccountIdByAppId(appId);
+    log.info("[USERGROUP-DEBUG]: deleted appId {} for account {}", appId, accountId);
     try (HIterator<UserGroup> userGroupIterator = new HIterator<>(wingsPersistence.createQuery(UserGroup.class)
                                                                       .filter(UserGroupKeys.accountId, accountId)
                                                                       .project(UserGroup.ID_KEY2, true)

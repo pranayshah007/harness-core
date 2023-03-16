@@ -53,6 +53,7 @@ import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
@@ -125,6 +126,7 @@ public class GcbStateTest extends CategoryTest {
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private StateExecutionServiceImpl stateExecutionService;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks private GcbState state = spy(new GcbState("gcb"));
 
@@ -174,7 +176,7 @@ public class GcbStateTest extends CategoryTest {
 
     state.executeInternal(context, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     assertThat(delegateTaskArgumentCaptor.getValue().isSelectionLogsTrackingEnabled()).isTrue();
     verify(stateExecutionService).appendDelegateTaskDetails(eq(null), any(DelegateTaskDetails.class));
   }
@@ -224,7 +226,7 @@ public class GcbStateTest extends CategoryTest {
             GcbTaskParams.builder().build(), null, false);
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(new GcpConfig());
-    when(delegateService.executeTask(any())).thenReturn(response);
+    when(delegateService.executeTaskV2(any())).thenReturn(response);
     when(settingService.get(any())).thenReturn(settingAttribute);
     when(secretManager.getEncryptionDetails(any(GcpConfig.class), any(), any())).thenReturn(emptyList());
     when(context.getStateExecutionData()).thenReturn(gcbExecutionData);
@@ -284,7 +286,7 @@ public class GcbStateTest extends CategoryTest {
     when(context.getStateExecutionInstanceId()).thenReturn("id");
     ExecutionResponse actual = state.startPollTask(context, delegateResponse);
     ArgumentCaptor<DelegateTask> delegateTaskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskCaptor.capture());
 
     assertThat(actual.isAsync()).isTrue();
     assertThat(actual.getStateExecutionData()).isEqualTo(gcbExecutionData);

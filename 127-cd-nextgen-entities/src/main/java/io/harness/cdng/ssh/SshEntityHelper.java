@@ -36,6 +36,7 @@ import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmInfrastructure;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.visitor.YamlTypes;
@@ -266,7 +267,13 @@ public class SshEntityHelper {
 
     try {
       InfrastructureConfig config = YamlPipelineUtils.read(yaml, InfrastructureConfig.class);
-      Infrastructure infrastructure = config.getInfrastructureDefinitionConfig().getSpec();
+      SshWinRmInfrastructure infrastructure =
+          (SshWinRmInfrastructure) config.getInfrastructureDefinitionConfig().getSpec();
+
+      if (infrastructure.getCredentialsRef() != null && infrastructure.getCredentialsRef().isExpression()) {
+        return;
+      }
+
       String credentialRef = getInfrastructureCredentialRef(infrastructure);
 
       if (deploymentType == ServiceDefinitionType.SSH) {

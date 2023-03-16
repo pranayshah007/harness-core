@@ -9,6 +9,7 @@ package io.harness.event.app;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
+import static io.harness.ng.DbAliases.DMS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -188,9 +189,15 @@ public class EventServiceApplication extends Application<EventServiceConfig> {
 
   private static void registerStores(EventServiceConfig config, Injector injector) {
     final String eventsMongoUri = config.getEventsMongo().getUri();
+    final String dmsMongoUri = config.getDmsMongo().getUri();
+
+    final HPersistence hPersistence = injector.getInstance(HPersistence.class);
+
     if (isNotEmpty(eventsMongoUri) && !eventsMongoUri.equals(config.getHarnessMongo().getUri())) {
-      final HPersistence hPersistence = injector.getInstance(HPersistence.class);
       hPersistence.register(EVENTS_STORE, config.getEventsMongo().getUri());
+    }
+    if (isNotEmpty(dmsMongoUri) && !dmsMongoUri.equals(config.getHarnessMongo().getUri())) {
+      hPersistence.register(Store.builder().name(DMS).build(), config.getDmsMongo().getUri());
     }
   }
 

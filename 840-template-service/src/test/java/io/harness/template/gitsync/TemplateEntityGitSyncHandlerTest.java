@@ -115,9 +115,9 @@ public class TemplateEntityGitSyncHandlerTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testSave() throws IOException {
-    doReturn(entity.withVersion(0L)).when(templateService).create(any(), anyBoolean(), anyString());
+    doReturn(entity.withVersion(0L)).when(templateService).create(any(), anyBoolean(), anyString(), anyBoolean());
     NGTemplateConfig templateConfig = templateEntityGitSyncHandler.save(ACCOUNT_ID, yaml);
-    verify(templateService, times(1)).create(any(), anyBoolean(), anyString());
+    verify(templateService, times(1)).create(any(), anyBoolean(), anyString(), anyBoolean());
     assertThat(templateConfig).isEqualTo(YamlPipelineUtils.read(yaml, NGTemplateConfig.class));
   }
 

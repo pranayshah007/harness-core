@@ -303,9 +303,8 @@ public class ArtifactCollectionState extends State {
     String waitId = generateUuid();
 
     // if collection enabled and buildno is empty, get last collected artifact from db and return.
-    if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && isBlank(evaluatedBuildNo)) {
-      Artifact lastCollectedArtifact =
-          artifactService.fetchLastCollectedApprovedArtifactForArtifactStream(artifactStream);
+    if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && (isBlank(evaluatedBuildNo) || isRegex())) {
+      Artifact lastCollectedArtifact = fetchCollectedArtifact(artifactStream, evaluatedBuildNo);
       if (lastCollectedArtifact != null) {
         return prepareResponseForLastCollectedArtifact(context, artifactStream, lastCollectedArtifact);
       }
@@ -382,7 +381,7 @@ public class ArtifactCollectionState extends State {
                                           .build());
     }
 
-    String delegateTaskId = delegateService.queueTask(delegateTaskBuilder.build());
+    String delegateTaskId = delegateService.queueTaskV2(delegateTaskBuilder.build());
 
     ArtifactCollectionExecutionData artifactCollectionExecutionData =
         ArtifactCollectionExecutionData.builder()
@@ -523,7 +522,7 @@ public class ArtifactCollectionState extends State {
                       .timeout(timeout)
                       .build());
 
-    String delegateTaskId = delegateService.queueTask(delegateTaskBuilder.build());
+    String delegateTaskId = delegateService.queueTaskV2(delegateTaskBuilder.build());
 
     AppManifestCollectionExecutionData appManifestCollectionExecutionData =
         AppManifestCollectionExecutionData.builder()
@@ -777,7 +776,7 @@ public class ArtifactCollectionState extends State {
       HelmCollectChartResponse helmCollectChartResponse = (HelmCollectChartResponse) notifyResponseData;
       if (CommandExecutionStatus.SUCCESS.equals(helmCollectChartResponse.getCommandExecutionStatus())
           && isNotEmpty(helmCollectChartResponse.getHelmCharts())) {
-        HelmChart helmChart = helmCollectChartResponse.getHelmCharts().get(0);
+        HelmChart helmChart = HelmChart.fromDto(helmCollectChartResponse.getHelmCharts().get(0));
         HelmChart savedHelmChart = helmChartService.createOrUpdateAppVersion(helmChart);
         AppManifestCollectionExecutionData appManifestCollectionExecutionData =
             AppManifestCollectionExecutionData.builder()

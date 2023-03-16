@@ -27,8 +27,10 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -87,7 +89,6 @@ public class HttpStepInfoTest extends CategoryTest {
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
-
   public void testGetSpecParametersForNullHeaders() {
     HttpStepInfo httpStepInfo =
         HttpStepInfo.infoBuilder()
@@ -155,5 +156,16 @@ public class HttpStepInfoTest extends CategoryTest {
     httpStepNode = YamlUtils.read(policySetExpression, AbstractStepNode.class);
     assertThat(httpStepNode).isNotNull();
     assertEquals(httpStepNode.getEnforce().getPolicySets().getValue().get(1), "<+step.name>");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testValidationForMandatoryFields() throws NoSuchFieldException {
+    Class<HttpBaseStepInfo> httpStepInfoClass = HttpBaseStepInfo.class;
+    Field urlField = httpStepInfoClass.getDeclaredField("url");
+    Field methodField = httpStepInfoClass.getDeclaredField("method");
+    assertThat(urlField.getAnnotation(NotNull.class)).isNotNull();
+    assertThat(methodField.getAnnotation(NotNull.class)).isNotNull();
   }
 }

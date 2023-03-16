@@ -962,7 +962,7 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
 
     String serviceNameOutput = ecsCommandTaskNGHelper.createStageService(ecsServiceDefinitionManifestContent,
         ecsScalableTargetManifestContentList, ecsScalingPolicyManifestContentList, ecsInfraConfig, logCallback,
-        timeoutInMillis, ecsBlueGreenCreateServiceRequest, taskDefinitionArn, targetGroupArn);
+        timeoutInMillis, ecsBlueGreenCreateServiceRequest.getTargetGroupArnKey(), taskDefinitionArn, targetGroupArn);
 
     assertThat(serviceNameOutput).isEqualTo(createServiceRequestBuilder.build().serviceName());
     verify(ecsCommandTaskNGHelper)

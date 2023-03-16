@@ -18,7 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionStatus;
 import io.harness.exception.InvalidRequestException;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.logging.AccountLogContext;
@@ -45,7 +45,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
 @Slf4j
-public class ApprovalPollingHandler extends IteratorPumpModeHandler implements Handler<ApprovalPollingJobEntity> {
+public class ApprovalPollingHandler
+    extends IteratorPumpAndRedisModeHandler implements Handler<ApprovalPollingJobEntity> {
   /*
    * TARGET_INTERVAL and PUMP_INTERVAL are not being used to start the executor
    * service for the iterator as its being configured from K8s configMap. Any
@@ -54,6 +55,7 @@ public class ApprovalPollingHandler extends IteratorPumpModeHandler implements H
    */
   public static final Duration TARGET_INTERVAL = ofMinutes(1);
   public static final Duration PUMP_INTERVAL = ofSeconds(10);
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(1);
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private JiraHelperService jiraHelperService;
@@ -73,12 +75,29 @@ public class ApprovalPollingHandler extends IteratorPumpModeHandler implements H
                            .clazz(ApprovalPollingJobEntity.class)
                            .fieldName(ApprovalPollingJobEntityKeys.nextIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofMinutes(1))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                            .handler(this)
                            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<ApprovalPollingJobEntity, MorphiaFilterExpander<ApprovalPollingJobEntity>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       ApprovalPollingHandler.class,
+                       MongoPersistenceIterator
+                           .<ApprovalPollingJobEntity, MorphiaFilterExpander<ApprovalPollingJobEntity>>builder()
+                           .clazz(ApprovalPollingJobEntity.class)
+                           .fieldName(ApprovalPollingJobEntityKeys.nextIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

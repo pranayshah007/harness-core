@@ -10,6 +10,7 @@ package io.harness.delegate.beans;
 import static java.time.Duration.ofDays;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -48,6 +49,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Builder
 @FieldNameConstants(innerTypeName = "DelegateKeys")
 @StoreIn(DbAliases.HARNESS)
+@SecondaryStoreIn(DbAliases.DMS)
 @Entity(value = "delegates", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.DEL)
@@ -87,7 +89,11 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private String delegateGroupId;
   private String delegateName;
   private String delegateProfileId;
+
+  //@TODO: Move below 2 to Redis
+  private String delegateConnectionId;
   @FdIndex private long lastHeartBeat;
+
   private String version;
   private transient String sequenceNum;
   private String delegateType;
@@ -97,6 +103,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private boolean proxy;
   private boolean ceEnabled;
   private DelegateCapacity delegateCapacity;
+  private boolean disconnected;
 
   private List<String> supportedTaskTypes;
 
@@ -106,7 +113,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   @Transient private String useJreVersion;
 
-  @Transient private String location;
+  private String location;
 
   private List<DelegateScope> includeScopes;
   private List<DelegateScope> excludeScopes;
@@ -187,6 +194,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
         .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
         .location(delegateParams.getLocation())
         .mtls(connectedUsingMtls)
+        .delegateConnectionId(delegateParams.getDelegateConnectionId())
         .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
         .supportedTaskTypes(delegateParams.getSupportedTaskTypes())
         .proxy(delegateParams.isProxy())

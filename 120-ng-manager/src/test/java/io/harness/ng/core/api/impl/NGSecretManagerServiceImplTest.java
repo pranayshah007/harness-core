@@ -173,7 +173,7 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
                                   .build());
     Call<RestResponse<Boolean>> request = mock(Call.class);
     doReturn(request).when(accountClient).isFeatureFlagEnabled(any(), any());
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenThrow(new DelegateServiceDriverException("Unknown error from delegate"));
     try {
       ngVaultService.listSecretEngines(vaultConfig);
@@ -194,7 +194,7 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
                                   .build());
     Call<RestResponse<Boolean>> request = mock(Call.class);
     doReturn(request).when(accountClient).isFeatureFlagEnabled(any(), any());
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenThrow(new DelegateServiceDriverException("Unexpected error occurred while submitting task.",
             new InvalidRequestException("No eligible delegates to execute task")));
     try {

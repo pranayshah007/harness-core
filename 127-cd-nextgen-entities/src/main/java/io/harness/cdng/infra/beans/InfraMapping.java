@@ -9,11 +9,14 @@ package io.harness.cdng.infra.beans;
 
 import io.harness.annotations.StoreIn;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
+import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
@@ -43,6 +46,9 @@ import dev.morphia.annotations.Entity;
       @JsonSubTypes.Type(value = CustomDeploymentInfrastructure.class, name = "custom-deployment"),
       @JsonSubTypes.Type(value = TanzuApplicationServiceInfrastructure.class, name = "tanzu-application-service"),
       @JsonSubTypes.Type(value = AsgInfrastructure.class, name = "Asg"),
+      @JsonSubTypes.Type(value = GoogleFunctionsInfrastructure.class, name = "GoogleCloudFunctions"),
+      @JsonSubTypes.Type(value = AwsSamInfrastructure.class, name = "AWS_SAM"),
+      @JsonSubTypes.Type(value = K8sAwsInfrastructure.class, name = "kubernetes-aws")
 })
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "infrastructureMapping")

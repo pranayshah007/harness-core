@@ -27,7 +27,7 @@ public interface InstanceDataDao {
   InstanceData fetchActiveInstanceData(
       String accountId, String clusterId, String instanceId, List<InstanceState> instanceState);
 
-  List<InstanceData> fetchActivePVList(String accountId, Instant startTime, Instant endTime);
+  List<InstanceData> fetchActivePVList(String accountId, Set<String> clusterIds, Instant startTime, Instant endTime);
 
   void updateInstanceActiveIterationTime(InstanceData instanceData);
 

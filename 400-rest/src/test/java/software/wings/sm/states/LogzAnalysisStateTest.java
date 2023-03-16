@@ -99,7 +99,7 @@ public class LogzAnalysisStateTest extends APMStateVerificationTestBase {
     logzAnalysisState.triggerAnalysisDataCollection(executionContext, executionData, hosts);
 
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(delegateTaskArgumentCaptor.capture());
 
     DelegateTask task = delegateTaskArgumentCaptor.getValue();
     LogzDataCollectionInfo dataCollectionInfo = (LogzDataCollectionInfo) task.getData().getParameters()[0];

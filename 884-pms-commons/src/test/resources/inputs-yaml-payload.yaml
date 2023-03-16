@@ -1,0 +1,8 @@
+version: 1
+name: set1
+inputs:
+  image: alpine
+repository:
+  reference:
+    type: branch
+    value: main

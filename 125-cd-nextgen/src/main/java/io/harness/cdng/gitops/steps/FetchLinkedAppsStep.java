@@ -32,6 +32,7 @@ import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.gitops.GitOpsFetchAppTaskParams;
 import io.harness.delegate.task.gitops.GitOpsFetchAppTaskResponse;
+import io.harness.encryption.Scope;
 import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -70,6 +71,7 @@ import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -82,6 +84,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.GITOPS)
@@ -143,10 +146,7 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
       }
 
       GitopsClustersOutcome gitopsClustersOutcome = (GitopsClustersOutcome) optionalGitOpsSweepingOutput.getOutput();
-      List<String> clusterIds = gitopsClustersOutcome.getClustersData()
-                                    .stream()
-                                    .map(GitopsClustersOutcome.ClusterData::getClusterId)
-                                    .collect(Collectors.toList());
+      List<String> scopedClusterIds = getScopedClusterIds(gitopsClustersOutcome);
 
       IdentifierRef identifierRef = IdentifierRef.builder()
                                         .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
@@ -155,7 +155,7 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
                                         .build();
 
       List<Application> applications =
-          fetchLinkedApps(gitOpsFetchAppTaskResponse.getAppName(), clusterIds, identifierRef);
+          fetchLinkedApps(gitOpsFetchAppTaskResponse.getAppName(), scopedClusterIds, identifierRef);
       populateAppUrls(applications, identifierRef);
 
       StepResponse.StepOutcome stepOutcome = null;
@@ -196,6 +196,25 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
     } finally {
       logStreamingStepClient.closeStream(LOG_KEY_SUFFIX);
     }
+  }
+
+  @VisibleForTesting
+  @NotNull
+  List<String> getScopedClusterIds(GitopsClustersOutcome gitopsClustersOutcome) {
+    if (gitopsClustersOutcome == null || gitopsClustersOutcome.getClustersData() == null) {
+      log.debug("No Gitops Clusters found");
+      return Collections.emptyList();
+    }
+    List<IdentifierRef> clusterIds = gitopsClustersOutcome.getClustersData()
+                                         .stream()
+                                         .map(clusterdata
+                                             -> IdentifierRef.builder()
+                                                    .identifier(clusterdata.getClusterId())
+                                                    .scope(Scope.fromString(clusterdata.getScope()))
+                                                    .build())
+                                         .collect(Collectors.toList());
+
+    return clusterIds.stream().map(IdentifierRef::buildScopedIdentifier).collect(Collectors.toList());
   }
 
   private void populateAppUrls(List<Application> applications, IdentifierRef identifierRef) {

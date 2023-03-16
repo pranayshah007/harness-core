@@ -7,9 +7,16 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.data.structure.CollectionUtils;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.StepOutput;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.expressions.step.ShellScriptStepFunctor;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
+import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.shell.ScriptType;
@@ -26,39 +33,61 @@ import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.GraphNode;
+import software.wings.beans.PhaseStep;
+import software.wings.beans.Variable;
+import software.wings.beans.WorkflowPhase;
+import software.wings.beans.template.Template;
+import software.wings.beans.template.command.ShellScriptTemplate;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.ShellScriptState;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-public class ShellScriptStepMapperImpl implements StepMapper {
+@Slf4j
+public class ShellScriptStepMapperImpl extends StepMapper {
+  @Inject SecretRefUtils secretRefUtils;
+
+  @Override
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
+  }
+
   @Override
   public Set<String> getExpressions(GraphNode graphNode) {
     ShellScriptState state = (ShellScriptState) getState(graphNode);
     if (StringUtils.isBlank(state.getScriptString())) {
       return Collections.emptySet();
     }
-    return MigratorExpressionUtils.extractAll(state.getScriptString());
+    return MigratorExpressionUtils.getExpressions(state);
   }
 
   @Override
-  public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
+  public List<CgEntityId> getReferencedEntities(
+      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+    List<CgEntityId> refs = new ArrayList<>();
     String templateId = graphNode.getTemplateUuid();
     if (StringUtils.isNotBlank(templateId)) {
-      return Collections.singletonList(
-          CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
+      refs.add(CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
     }
-    return Collections.emptyList();
+    refs.addAll(secretRefUtils.getSecretRefFromExpressions(accountId, getExpressions(graphNode)));
+    return refs;
   }
 
   @Override
@@ -68,26 +97,26 @@ public class ShellScriptStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     ShellScriptState state = new ShellScriptState(stepYaml.getName());
     state.parseProperties(properties);
     return state;
   }
 
   @Override
-  public TemplateStepNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
-    return defaultTemplateSpecMapper(migratedEntities, graphNode);
+  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
+    return defaultTemplateSpecMapper(context, phase, graphNode);
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     ShellScriptState state = (ShellScriptState) getState(graphNode);
     ShellScriptStepNode shellScriptStepNode = new ShellScriptStepNode();
-    baseSetup(graphNode, shellScriptStepNode);
+    baseSetup(graphNode, shellScriptStepNode, context.getIdentifierCaseFormat());
 
     if (StringUtils.isNotBlank(graphNode.getTemplateUuid())) {
-      throw new IllegalStateException("Trying to map template step to actual step");
+      log.error(String.format("Trying to link a step which is not a step template - %s", graphNode.getTemplateUuid()));
+      return null;
     }
 
     ExecutionTarget executionTarget = null;
@@ -158,5 +187,70 @@ public class ShellScriptStepMapperImpl implements StepMapper {
     // No going to compare output vars. Because more output does not impact execution of step.
     // Customers can compare multi similar outputs & they can combine the output.
     return true;
+  }
+
+  @Override
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
+    String sweepingOutputName = getSweepingOutputName(graphNode);
+    if (StringUtils.isEmpty(sweepingOutputName)) {
+      return Collections.emptyList();
+    }
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
+        .stream()
+        .map(exp
+            -> StepOutput.builder()
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
+                   .expression(exp)
+                   .build())
+        .map(ShellScriptStepFunctor::new)
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public boolean loopingSupported() {
+    return true;
+  }
+
+  public void overrideTemplateInputs(WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode,
+      NGYamlFile templateFile, JsonNode templateInputs) {
+    JsonNode envVars = templateInputs.at("/spec/environmentVariables");
+    CgEntityNode entityNode = context.getEntities().get(
+        CgEntityId.builder().type(NGMigrationEntityType.TEMPLATE).id(templateFile.getCgBasicInfo().getId()).build());
+    Template template = (Template) entityNode.getEntity();
+    ShellScriptTemplate scriptTemplate = (ShellScriptTemplate) template.getTemplateObject();
+    Set<String> expressions = MigratorExpressionUtils.getExpressions(scriptTemplate);
+    Map<String, Object> custom =
+        MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat());
+
+    Map<String, String> map = new HashMap<>();
+    for (String exp : expressions) {
+      if (exp.contains(".")) {
+        String value = (String) MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(),
+            "${" + exp + "}", custom, context.getIdentifierCaseFormat());
+        String key = exp.startsWith("context.") ? exp.replaceFirst("context\\.", "") : exp;
+        key = key.replace('.', '_');
+        map.put(key, value);
+      }
+    }
+    Map<String, String> stepVariables = CollectionUtils.emptyIfNull(graphNode.getTemplateVariables())
+                                            .stream()
+                                            .collect(Collectors.toMap(Variable::getName, Variable::getValue));
+    if (envVars instanceof ArrayNode) {
+      for (JsonNode env : envVars) {
+        String key = env.get("name").asText();
+        if (map.containsKey(key)) {
+          ((ObjectNode) env).put("value", map.get(key));
+        }
+        if (stepVariables.containsKey(key)) {
+          ((ObjectNode) env).put("value", stepVariables.get(key));
+        }
+      }
+    }
   }
 }

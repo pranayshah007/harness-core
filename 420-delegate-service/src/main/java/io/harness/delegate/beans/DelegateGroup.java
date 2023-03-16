@@ -10,6 +10,7 @@ package io.harness.delegate.beans;
 import static java.time.Duration.ofDays;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -42,11 +43,14 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Builder
 @FieldNameConstants(innerTypeName = "DelegateGroupKeys")
 @StoreIn(DbAliases.HARNESS)
+@SecondaryStoreIn(DbAliases.DMS)
 @Entity(value = "delegateGroups", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateGroup implements PersistentEntity, UuidAware {
   public static final Duration TTL = ofDays(7);
+  // Custom limit for delegate-name as 63 characters because kubernetes component name can be at most 63 characters.
+  public static final int MAX_LENGTH_SUPPORTED_BY_DELEGATE = 63;
 
   @Id @NotNull private String uuid;
 
@@ -76,7 +80,7 @@ public class DelegateGroup implements PersistentEntity, UuidAware {
 
   @FdTtlIndex private Date validUntil;
 
-  @EntityIdentifier private String identifier;
+  @EntityIdentifier(maxLength = MAX_LENGTH_SUPPORTED_BY_DELEGATE) private String identifier;
 
   private long upgraderLastUpdated;
 

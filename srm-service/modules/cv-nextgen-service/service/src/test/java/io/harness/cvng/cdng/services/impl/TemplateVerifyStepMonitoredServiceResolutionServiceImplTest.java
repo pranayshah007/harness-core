@@ -103,6 +103,26 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
+  public void testGetMonitoredServiceTemplateIdentifier() {
+    String templateIdentifier =
+        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+            .getMonitoredServiceTemplateIdentifier();
+    assertThat(templateIdentifier).isNotBlank();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetMonitoredServiceTemplateVersionLabel() {
+    String versionLabel =
+        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+            .getMonitoredServiceTemplateVersionLabel();
+    assertThat(versionLabel).isNotBlank();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
   public void testGetCVConfigs() {
     List<CVConfig> actualCvConfigs =
         templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)

@@ -10,22 +10,24 @@ package io.harness.delegate.ecs;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
-import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.aws.AwsNgConfigMapper;
-import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraType;
 import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.delegate.task.ecs.EcsTaskHelperBase;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
+import io.harness.delegate.task.ecs.request.EcsCommandRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingRollbackRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.ecs.EcsCommandUnitConstants;
@@ -34,6 +36,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
+import com.google.api.client.util.Lists;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,10 +45,6 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
-import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
-import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionResponse;
-import software.amazon.awssdk.services.ecs.model.TaskDefinition;
 
 public class EcsBlueGreenCreateServiceCommandTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -66,9 +65,8 @@ public class EcsBlueGreenCreateServiceCommandTaskHandlerTest extends CategoryTes
 
   @Mock private ILogStreamingTaskClient iLogStreamingTaskClient;
   @Mock private EcsTaskHelperBase ecsTaskHelperBase;
-  @Mock private EcsCommandTaskNGHelper ecsCommandTaskHelper;
   @Mock private LogCallback createServiceLogCallback;
-  @Mock private AwsNgConfigMapper awsNgConfigMapper;
+  @Mock private EcsDeploymentHelper ecsDeploymentHelper;
 
   @Spy @InjectMocks private EcsBlueGreenCreateServiceCommandTaskHandler ecsBlueGreenCreateServiceCommandTaskHandler;
 
@@ -92,54 +90,50 @@ public class EcsBlueGreenCreateServiceCommandTaskHandlerTest extends CategoryTes
                                         .cluster("cluster")
                                         .awsConnectorDTO(AwsConnectorDTO.builder().build())
                                         .build();
-    EcsBlueGreenCreateServiceRequest ecsBlueGreenCreateServiceRequest =
-        EcsBlueGreenCreateServiceRequest.builder()
-            .ecsInfraConfig(ecsInfraConfig)
-            .timeoutIntervalInMin(10)
-            .ecsTaskDefinitionManifestContent("taskDef")
-            .ecsServiceDefinitionManifestContent("serviceDef")
-            .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
-            .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_CREATE_SERVICE)
+    EcsCommandRequest ecsCommandRequest = EcsBlueGreenCreateServiceRequest.builder()
+                                              .ecsInfraConfig(ecsInfraConfig)
+                                              .timeoutIntervalInMin(10)
+                                              .ecsTaskDefinitionManifestContent("taskDef")
+                                              .ecsServiceDefinitionManifestContent("serviceDef")
+                                              .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
+                                              .ecsCommandType(EcsCommandTypeNG.ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE)
+                                              .ecsScalableTargetManifestContentList(Lists.newArrayList())
+                                              .ecsScalingPolicyManifestContentList(Lists.newArrayList())
+                                              .targetGroupArnKey("testarn")
+                                              .build();
+    EcsBlueGreenCreateServiceResponse ecsBlueGreenCreateServiceResponse =
+        EcsBlueGreenCreateServiceResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .ecsBlueGreenCreateServiceResult(EcsBlueGreenCreateServiceResult.builder()
+                                                 .loadBalancer(ecsLoadBalancerConfig.getLoadBalancer())
+                                                 .listenerRuleArn(ecsLoadBalancerConfig.getStageListenerRuleArn())
+                                                 .listenerArn(ecsLoadBalancerConfig.getStageListenerArn())
+                                                 .region("us-east-1")
+                                                 .build())
             .build();
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     doReturn(createServiceLogCallback)
         .when(ecsTaskHelperBase)
         .getLogCallback(iLogStreamingTaskClient, EcsCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
 
-    AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
-    doReturn(awsInternalConfig).when(awsNgConfigMapper).createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO());
-    RegisterTaskDefinitionRequest.Builder registerTaskDefinitionRequestBuilder =
-        RegisterTaskDefinitionRequest.builder().family("ecs").taskRoleArn("arn");
-    CreateServiceRequest.Builder createServiceRequestBuilder =
-        CreateServiceRequest.builder().serviceName("ecs").cluster("cluster");
-    doReturn(registerTaskDefinitionRequestBuilder)
-        .when(ecsCommandTaskHelper)
-        .parseYamlAsObject("taskDef", RegisterTaskDefinitionRequest.serializableBuilderClass());
-    doReturn(createServiceRequestBuilder)
-        .when(ecsCommandTaskHelper)
-        .parseYamlAsObject("serviceDef", CreateServiceRequest.serializableBuilderClass());
-    RegisterTaskDefinitionRequest registerTaskDefinitionRequest = registerTaskDefinitionRequestBuilder.build();
-    TaskDefinition taskDefinition =
-        TaskDefinition.builder().taskDefinitionArn("arn").revision(1).family("family").build();
-    RegisterTaskDefinitionResponse registerTaskDefinitionResponse =
-        RegisterTaskDefinitionResponse.builder().taskDefinition(taskDefinition).build();
-    doReturn(registerTaskDefinitionResponse)
-        .when(ecsCommandTaskHelper)
-        .createTaskDefinition(
-            registerTaskDefinitionRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+    doReturn(ecsBlueGreenCreateServiceResponse)
+        .when(ecsDeploymentHelper)
+        .deployStageService(eq(createServiceLogCallback), eq(ecsCommandRequest), anyList(), anyList(), anyString(),
+            anyString(), eq(null), eq(ecsLoadBalancerConfig), anyString());
 
-    EcsBlueGreenCreateServiceResponse ecsBlueGreenCreateServiceResponse =
+    EcsBlueGreenCreateServiceResponse actualEcsBlueGreenCreateServiceResponse =
         (EcsBlueGreenCreateServiceResponse) ecsBlueGreenCreateServiceCommandTaskHandler.executeTaskInternal(
-            ecsBlueGreenCreateServiceRequest, iLogStreamingTaskClient, commandUnitsProgress);
+            ecsCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
 
-    assertThat(ecsBlueGreenCreateServiceResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
-    assertThat(ecsBlueGreenCreateServiceResponse.getEcsBlueGreenCreateServiceResult().getRegion())
+    assertThat(actualEcsBlueGreenCreateServiceResponse.getCommandExecutionStatus())
+        .isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(actualEcsBlueGreenCreateServiceResponse.getEcsBlueGreenCreateServiceResult().getRegion())
         .isEqualTo(ecsInfraConfig.getRegion());
-    assertThat(ecsBlueGreenCreateServiceResponse.getEcsBlueGreenCreateServiceResult().getLoadBalancer())
+    assertThat(actualEcsBlueGreenCreateServiceResponse.getEcsBlueGreenCreateServiceResult().getLoadBalancer())
         .isEqualTo(ecsLoadBalancerConfig.getLoadBalancer());
-    assertThat(ecsBlueGreenCreateServiceResponse.getEcsBlueGreenCreateServiceResult().getListenerArn())
+    assertThat(actualEcsBlueGreenCreateServiceResponse.getEcsBlueGreenCreateServiceResult().getListenerArn())
         .isEqualTo(ecsLoadBalancerConfig.getStageListenerArn());
-    assertThat(ecsBlueGreenCreateServiceResponse.getEcsBlueGreenCreateServiceResult().getListenerRuleArn())
+    assertThat(actualEcsBlueGreenCreateServiceResponse.getEcsBlueGreenCreateServiceResult().getListenerRuleArn())
         .isEqualTo(ecsLoadBalancerConfig.getStageListenerRuleArn());
   }
 }

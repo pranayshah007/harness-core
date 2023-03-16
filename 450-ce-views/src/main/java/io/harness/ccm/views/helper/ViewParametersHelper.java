@@ -74,6 +74,7 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
 import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_TYPE;
 
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewField;
@@ -130,6 +131,7 @@ public class ViewParametersHelper {
   @Inject private BusinessMappingDataSourceHelper businessMappingDataSourceHelper;
   @Inject private CEViewService viewService;
   @Inject private ViewsQueryHelper viewsQueryHelper;
+  @Inject private BusinessMappingService businessMappingService;
 
   private static final String OTHERS = "Others";
   private static final String STANDARD_TIME_ZONE = "GMT";
@@ -470,8 +472,7 @@ public class ViewParametersHelper {
   public List<QLCEViewFieldInput> getInFieldsList(final List<String> fields) {
     final List<QLCEViewFieldInput> qlCEViewFieldInputs = new ArrayList<>();
     for (final String field : fields) {
-      qlCEViewFieldInputs.add(
-          QLCEViewFieldInput.builder().fieldId(field.toLowerCase()).fieldName(field.toLowerCase()).build());
+      qlCEViewFieldInputs.add(QLCEViewFieldInput.builder().fieldId(field).fieldName(field.toLowerCase()).build());
     }
     return qlCEViewFieldInputs;
   }
@@ -561,6 +562,14 @@ public class ViewParametersHelper {
       modifiedAggregations = aggregateFunctions;
     }
     return modifiedAggregations;
+  }
+
+  public List<QLCEViewAggregation> getCostAggregation(final boolean isClusterPerspective) {
+    final List<QLCEViewAggregation> costAggregation = new ArrayList<>();
+    final String costColumn = isClusterPerspective ? BILLING_AMOUNT : COST;
+    costAggregation.add(
+        QLCEViewAggregation.builder().columnName(costColumn).operationType(QLCEViewAggregateOperation.SUM).build());
+    return costAggregation;
   }
 
   public List<QLCEViewAggregation> getAggregationsForEntityStatsCostTrend(List<QLCEViewAggregation> aggregations) {
@@ -748,6 +757,18 @@ public class ViewParametersHelper {
     return entityGroupByFieldName;
   }
 
+  public String getEntityGroupByFieldId(final List<QLCEViewGroupBy> groupBy) {
+    String entityGroupByFieldName = OTHERS;
+    final Optional<String> groupByFieldId = groupBy.stream()
+                                                .filter(entry -> Objects.nonNull(entry.getEntityGroupBy()))
+                                                .map(entry -> entry.getEntityGroupBy().getFieldId())
+                                                .findFirst();
+    if (groupByFieldId.isPresent()) {
+      entityGroupByFieldName = groupByFieldId.get();
+    }
+    return entityGroupByFieldName;
+  }
+
   // ----------------------------------------------------------------------------------------------------------------
   // Methods used to determine table to be used
   // ----------------------------------------------------------------------------------------------------------------
@@ -834,12 +855,28 @@ public class ViewParametersHelper {
     return updatedViewConditions;
   }
 
-  public List<String> getBusinessMappingIdsFromRulesAndFilters(List<QLCEViewFilterWrapper> filters) {
+  public List<String> getBusinessMappingIds(List<QLCEViewFilterWrapper> filters, String groupByBusinessMappingId) {
+    Set<String> businessMappingIds = new HashSet<>();
     List<ViewRule> viewRules = getViewRules(filters);
-    Set<String> businessMappingIdsFromRules = viewsQueryHelper.getBusinessMappingIdsFromViewRules(viewRules);
-    List<String> businessMappingIdsFromRulesAndFilters = viewsQueryHelper.getBusinessMappingIdsFromFilters(filters);
-    businessMappingIdsFromRulesAndFilters.addAll(businessMappingIdsFromRules);
-    return businessMappingIdsFromRulesAndFilters;
+    businessMappingIds.addAll(viewsQueryHelper.getBusinessMappingIdsFromViewRules(viewRules));
+    businessMappingIds.addAll(new HashSet<>(viewsQueryHelper.getBusinessMappingIdsFromFilters(filters)));
+    if (Objects.nonNull(groupByBusinessMappingId) && !groupByBusinessMappingId.isEmpty()) {
+      businessMappingIds.add(groupByBusinessMappingId);
+    }
+    return new ArrayList<>(businessMappingIds);
+  }
+
+  public List<BusinessMapping> getSharedCostBusinessMappings(final List<String> businessMappingIds) {
+    final List<BusinessMapping> sharedCostBusinessMappings = new ArrayList<>();
+    if (!businessMappingIds.isEmpty()) {
+      businessMappingIds.forEach(businessMappingId -> {
+        final BusinessMapping businessMapping = businessMappingService.get(businessMappingId);
+        if (businessMapping != null && businessMapping.getSharedCosts() != null) {
+          sharedCostBusinessMappings.add(businessMapping);
+        }
+      });
+    }
+    return sharedCostBusinessMappings;
   }
 
   // ----------------------------------------------------------------------------------------------------------------

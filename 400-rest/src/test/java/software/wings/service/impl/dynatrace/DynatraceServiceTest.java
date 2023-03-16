@@ -60,7 +60,7 @@ public class DynatraceServiceTest extends CategoryTest {
     attribute.setValue(dynaTraceConfig);
 
     when(mockSettingsService.get(dynatraceSettingId)).thenReturn(attribute);
-    when(mockDelegateProxyFactory.get(any(), any())).thenReturn(dynatraceDelegateService);
+    when(mockDelegateProxyFactory.getV2(any(), any())).thenReturn(dynatraceDelegateService);
     when(dynatraceDelegateService.getServices(any(), any(), any(), any())).thenReturn(getDynatraceServiceList());
   }
 

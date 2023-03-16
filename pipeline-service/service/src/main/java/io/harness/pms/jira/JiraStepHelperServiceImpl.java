@@ -9,6 +9,8 @@ package io.harness.pms.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.IdentifierRef;
@@ -35,6 +37,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.jira.JiraIssueOutcome;
@@ -45,6 +48,7 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -93,7 +97,7 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
 
     JiraConnectorDTO connectorDTO = (JiraConnectorDTO) configDTO;
     paramsBuilder.jiraConnectorDTO(connectorDTO);
-    paramsBuilder.encryptionDetails(secretManagerClientService.getEncryptionDetails(ngAccess, connectorDTO));
+    paramsBuilder.encryptionDetails(getEncryptionDetails(connectorDTO, ngAccess));
     JiraTaskNGParameters params = paramsBuilder.build();
 
     TaskData taskData = TaskData.builder()
@@ -122,5 +126,12 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
                          .outcome(new JiraIssueOutcome(taskResponse.getIssue()))
                          .build())
         .build();
+  }
+
+  private List<EncryptedDataDetail> getEncryptionDetails(JiraConnectorDTO jiraNowConnectorDTO, NGAccess ngAccess) {
+    if (!isNull(jiraNowConnectorDTO.getAuth()) && !isNull(jiraNowConnectorDTO.getAuth().getCredentials())) {
+      return secretManagerClientService.getEncryptionDetails(ngAccess, jiraNowConnectorDTO.getAuth().getCredentials());
+    }
+    return secretManagerClientService.getEncryptionDetails(ngAccess, jiraNowConnectorDTO);
   }
 }

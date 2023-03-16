@@ -16,7 +16,7 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/executables:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/execution:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/featureFlag:module",
-        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/pipeline:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/pipeline/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/ssh/output:module",
         "//127-cd-nextgen-entities:module",
         "//878-ng-common-utilities:module",

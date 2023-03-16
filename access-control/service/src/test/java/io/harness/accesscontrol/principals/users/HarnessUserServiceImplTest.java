@@ -25,6 +25,7 @@ import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.rule.Owner;
 import io.harness.usermembership.remote.UserMembershipClient;
 
@@ -59,6 +60,8 @@ public class HarnessUserServiceImplTest extends AccessControlTestBase {
     User user = User.builder().identifier(identifier).scopeIdentifier(scope.toString()).build();
     when(userMembershipClient.isUserInScope(identifier, accountIdentifier, null, null).execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(Boolean.TRUE)));
+    when(userMembershipClient.getUser(identifier, accountIdentifier).execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(UserMetadataDTO.builder().build())));
     when(userService.createIfNotPresent(user)).thenReturn(user);
     harnessUserService.sync(identifier, scope);
     verify(userMembershipClient, atLeastOnce()).isUserInScope(identifier, accountIdentifier, null, null);
@@ -76,6 +79,8 @@ public class HarnessUserServiceImplTest extends AccessControlTestBase {
     User user = User.builder().identifier(identifier).scopeIdentifier(scope.toString()).build();
     when(userMembershipClient.isUserInScope(identifier, accountIdentifier, null, null).execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(Boolean.FALSE)));
+    when(userMembershipClient.getUser(identifier, accountIdentifier).execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(UserMetadataDTO.builder().build())));
     when(userService.deleteIfPresent(identifier, scope.toString())).thenReturn(Optional.of(user));
     harnessUserService.sync(identifier, scope);
     verify(userMembershipClient, atLeastOnce()).isUserInScope(identifier, accountIdentifier, null, null);

@@ -9,6 +9,7 @@ package io.harness.delegate.task.aws.asg;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AsgLoadBalancerConfig;
 
 import java.util.List;
 import java.util.Map;
@@ -19,8 +20,9 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class AsgBlueGreenPrepareRollbackDataResult {
-  Map<String, List<String>> asgManifestsDataForRollback;
   String prodAsgName;
   String asgName;
   AsgLoadBalancerConfig asgLoadBalancerConfig;
+  Map<String, List<String>> prodAsgManifestsDataForRollback;
+  Map<String, List<String>> stageAsgManifestsDataForRollback;
 }

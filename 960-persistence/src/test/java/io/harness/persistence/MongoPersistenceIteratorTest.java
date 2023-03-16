@@ -78,7 +78,7 @@ public class MongoPersistenceIteratorTest extends PersistenceTestBase {
             .build();
 
     TestPersistentIterable testPersistentIterable = TestPersistentIterable.builder().build();
-    assertThat(iterator.calculateSleepDuration(testPersistentIterable)).isEqualTo(Duration.ZERO);
+    assertThat(iterator.calculateSleepDuration(testPersistentIterable)).isEqualTo(maximumDelayForCheck);
   }
 
   @Test

@@ -12,6 +12,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.stepinfo.IACMStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
 import io.harness.pms.yaml.ParameterField;
@@ -50,7 +51,7 @@ public class IACMTerraformPlanInfo extends IACMStepInfo {
 
   @Override
   public TypeInfo getNonYamlInfo() {
-    return TypeInfo.builder().stepInfoType(CIStepInfoType.IACM_TERRAFORM_PLAN).build();
+    return TypeInfo.builder().stepInfoType(CIStepInfoType.IACM_TERRAFORM).build();
   }
 
   @Builder

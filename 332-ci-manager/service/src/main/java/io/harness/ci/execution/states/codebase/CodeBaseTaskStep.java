@@ -31,6 +31,8 @@ import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.sweepingoutputs.Build;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput.CodeBaseCommit;
+import io.harness.beans.sweepingoutputs.ContextElement;
+import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.utils.WebhookTriggerProcessorUtils;
@@ -98,7 +100,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
   @Override
   public TaskRequest obtainTask(
       Ambiance ambiance, CodeBaseTaskStepParameters stepParameters, StepInputPackage inputPackage) {
-    ExecutionSource executionSource = stepParameters.getExecutionSource();
+    ExecutionSource executionSource = getExecutionSource(ambiance, stepParameters.getExecutionSource());
     if (executionSource.getType() != MANUAL) {
       throw new CIStageExecutionException("{} type is not supported in codebase delegate task for scm api operation");
     }
@@ -133,12 +135,14 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
       scmGitRefTaskResponseData = responseDataSupplier.get();
       log.info("Successfully retrieved codebase info from returned delegate response");
     } catch (Exception ex) {
-      ManualExecutionSource manualExecutionSource = (ManualExecutionSource) stepParameters.getExecutionSource();
+      ManualExecutionSource manualExecutionSource =
+          (ManualExecutionSource) getExecutionSource(ambiance, stepParameters.getExecutionSource());
       String prNumber = manualExecutionSource.getPrNumber();
       if (scmGitRefTaskResponseData == null && isNotEmpty(prNumber)) {
+        log.error("Failed to retrieve codebase info from returned delegate response with PR number: " + prNumber, ex);
         throw new CIStageExecutionException("Failed to retrieve PrNumber: " + prNumber + " details");
       }
-      log.error("Failed to retrieve codebase info from returned delegate response");
+      log.error("Failed to retrieve codebase info from returned delegate response", ex);
     }
 
     saveScmResponseToSweepingOutput(ambiance, stepParameters, scmGitRefTaskResponseData);
@@ -148,7 +152,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
   @Override
   public StepResponse executeSync(Ambiance ambiance, CodeBaseTaskStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    ExecutionSource executionSource = stepParameters.getExecutionSource();
+    ExecutionSource executionSource = getExecutionSource(ambiance, stepParameters.getExecutionSource());
     CodebaseSweepingOutput codebaseSweepingOutput = null;
     String connectorRef = RunTimeInputHandler.resolveStringParameterV2(
         "connectorRef", STEP_TYPE.getType(), ambiance.getStageExecutionId(), stepParameters.getConnectorRef(), false);
@@ -157,9 +161,9 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
     if (executionSource.getType() == MANUAL) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
+      ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
       // fetch scm details via manager
       if (connectorUtils.hasApiAccess(connectorDetails)) {
-        ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
         String branch = manualExecutionSource.getBranch();
         String prNumber = manualExecutionSource.getPrNumber();
         String tag = manualExecutionSource.getTag();
@@ -178,8 +182,12 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
               .build();
         }
       } else {
+        if (isNotEmpty(manualExecutionSource.getPrNumber())) {
+          throw new CIStageExecutionException(
+              "PR build type is not supported when api access is disabled in git connector or clone codebase is false");
+        }
         String repoUrl = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, repoName);
-        codebaseSweepingOutput = buildManualCodebaseSweepingOutput((ManualExecutionSource) executionSource, repoUrl);
+        codebaseSweepingOutput = buildManualCodebaseSweepingOutput(manualExecutionSource, repoUrl);
       }
     } else if (executionSource.getType() == WEBHOOK) {
       codebaseSweepingOutput = buildWebhookCodebaseSweepingOutput((WebhookExecutionSource) executionSource);
@@ -197,7 +205,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
       codebaseSweepingOutput = buildPRCodebaseSweepingOutput(scmGitRefTaskResponseData);
     } else if (scmGitRefTaskResponseData != null
         && scmGitRefTaskResponseData.getGitRefType() == GitRefType.LATEST_COMMIT_ID) {
-      ManualExecutionSource manualExecutionSource = (ManualExecutionSource) stepParameters.getExecutionSource();
+      ManualExecutionSource manualExecutionSource =
+          (ManualExecutionSource) getExecutionSource(ambiance, stepParameters.getExecutionSource());
       codebaseSweepingOutput =
           buildCommitShaCodebaseSweepingOutput(scmGitRefTaskResponseData, manualExecutionSource.getTag());
     }
@@ -474,5 +483,18 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
       state = "closed";
     }
     return state;
+  }
+
+  private ExecutionSource getExecutionSource(Ambiance ambiance, ExecutionSource executionSource) {
+    if (executionSource != null) {
+      return executionSource;
+    }
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
+    if (!optionalSweepingOutput.isFound()) {
+      throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
+    }
+    StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
+    return stageDetails.getExecutionSource();
   }
 }

@@ -94,7 +94,6 @@ public class CVNGStepInfo implements CVStepInfoBase {
         .deploymentTag(spec.getDeploymentTag())
         .failOnNoAnalysis(spec.getFailOnNoAnalysis())
         .sensitivity(spec.getSensitivity())
-        .verificationJobBuilder(spec.getVerificationJobBuilder())
         .spec(spec)
         .monitoredService(monitoredService)
         .build();

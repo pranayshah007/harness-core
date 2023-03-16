@@ -52,4 +52,6 @@ public class TerraformExecuteStepRequest {
   long timeoutInMillis;
   boolean isTfPlanDestroy;
   String accountId;
+  boolean isTerraformCloudCli;
+  boolean skipTerraformRefresh; // NG
 }

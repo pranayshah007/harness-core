@@ -15,6 +15,9 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @OwnedBy(DX)
 public enum ConnectorType implements EntitySubtype {
@@ -65,7 +68,9 @@ public enum ConnectorType implements EntitySubtype {
   @JsonProperty("AzureArtifacts") AZURE_ARTIFACTS("AzureArtifacts"),
   @JsonProperty("Tas") TAS("Tas"),
 
-  @JsonProperty("Spot") SPOT("Spot");
+  @JsonProperty("Spot") SPOT("Spot"),
+  @JsonProperty("Bamboo") BAMBOO("Bamboo"),
+  @JsonProperty("TerraformCloud") TERRAFORM_CLOUD("TerraformCloud");
 
   private final String displayName;
 
@@ -95,5 +100,11 @@ public enum ConnectorType implements EntitySubtype {
 
   public static ConnectorType fromString(final String s) {
     return ConnectorType.getConnectorType(s);
+  }
+
+  public static Set<String> getArtifactConnectorTypes() {
+    return Stream.of(DOCKER, GCP, AWS, AZURE, ARTIFACTORY, NEXUS, GITHUB, AZURE_REPO, AZURE_ARTIFACTS)
+        .map(Enum::name)
+        .collect(Collectors.toSet());
   }
 }

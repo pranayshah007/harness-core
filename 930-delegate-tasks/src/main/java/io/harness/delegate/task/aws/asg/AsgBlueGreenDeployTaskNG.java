@@ -9,15 +9,12 @@ package io.harness.delegate.task.aws.asg;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.aws.asg.AsgPrepareRollbackDataCommandTaskHandler;
+import io.harness.delegate.aws.asg.AsgBlueGreenDeployCommandTaskHandler;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
-import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
 
 import com.google.inject.Inject;
@@ -28,7 +25,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @OwnedBy(HarnessTeam.CDP)
 public class AsgBlueGreenDeployTaskNG extends AbstractDelegateRunnableTask {
   @Inject private AsgDelegateTaskHelper asgDelegateTaskHelper;
-  @Inject private AsgPrepareRollbackDataCommandTaskHandler asgPrepareRollbackDataCommandTaskHandler;
+  @Inject private AsgBlueGreenDeployCommandTaskHandler taskHandler;
   public AsgBlueGreenDeployTaskNG(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
       BooleanSupplier preExecute) {
@@ -45,16 +42,7 @@ public class AsgBlueGreenDeployTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public AsgCommandResponse run(TaskParameters parameters) {
     AsgCommandRequest asgCommandRequest = (AsgCommandRequest) parameters;
-    // TODO
-    return AsgBlueGreenDeployResponse.builder()
-        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-        .unitProgressData(UnitProgressDataMapper.toUnitProgressData(CommandUnitsProgress.builder().build()))
-        .asgBlueGreenDeployResult(
-            AsgBlueGreenDeployResult.builder()
-                .asgName("app__2")
-                .autoScalingGroupContainer(AutoScalingGroupContainer.builder().autoScalingGroupName("app__2").build())
-                .build())
-        .build();
+    return asgDelegateTaskHelper.getAsgCommandResponse(taskHandler, asgCommandRequest, getLogStreamingTaskClient());
   }
 
   @Override

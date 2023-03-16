@@ -35,6 +35,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
 import io.harness.beans.execution.CIInitTaskArgs;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
@@ -50,14 +51,15 @@ import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.executable.CiAsyncExecutable;
 import io.harness.ci.execution.BackgroundTaskUtility;
+import io.harness.ci.execution.QueueExecutionUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.K8InitializeServiceUtils;
 import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.states.CIDelegateTaskExecutor;
 import io.harness.ci.utils.CIStagePlanCreationUtils;
+import io.harness.ci.validation.CIAccountValidationService;
 import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -81,7 +83,7 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.ngexception.CILiteEngineException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.helper.SerializedResponseDataHelper;
-import io.harness.hsqs.client.HsqsServiceClient;
+import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.EnqueueRequest;
 import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.licensing.Edition;
@@ -114,11 +116,13 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
+import io.harness.repositories.CIExecutionRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
 import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.steps.matrix.StrategyHelper;
+import io.harness.tasks.FailureResponseData;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.timeout.Timeout;
@@ -127,7 +131,6 @@ import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -140,7 +143,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import retrofit2.Response;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @OwnedBy(CI)
@@ -161,16 +164,19 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CIYAMLSanitizationService sanitizationService;
+  @Inject private CIAccountValidationService validationService;
   @Inject private BackgroundTaskUtility backgroundTaskUtility;
   @Inject private CILicenseService ciLicenseService;
   @Inject private StrategyHelper strategyHelper;
   @Inject private CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
 
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
-  @Inject private HsqsServiceClient hsqsServiceClient;
+  @Inject private HsqsClientService hsqsClientService;
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
 
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
+  @Inject QueueExecutionUtils queueExecutionUtils;
+  @Inject CIExecutionRepository ciExecutionRepository;
   private static final String DEPENDENCY_OUTCOME = "dependencies";
 
   @Override
@@ -187,37 +193,59 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     String logKey = getLogKey(ambiance);
     String taskId;
-
-    if (ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance))) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    addExecutionRecord(ambiance, stepParameters, accountId);
+    boolean queueConcurrencyEnabled =
+        ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance));
+    if (queueConcurrencyEnabled) {
       log.info("start executeAsyncAfterRbac for initialize step with queue");
       taskId = generateUuid();
       String topic = "ci";
+      String moduleName = "ci";
       String payload = RecastOrchestrationUtils.toJson(
           CIInitTaskArgs.builder().ambiance(ambiance).callbackId(taskId).stepElementParameters(stepParameters).build());
-      EnqueueRequest enqueueRequest = EnqueueRequest.builder()
-                                          .topic(topic)
-                                          .subTopic(AmbianceUtils.getAccountId(ambiance))
-                                          .producerName(topic)
-                                          .payload(payload)
-                                          .build();
+      EnqueueRequest enqueueRequest =
+          EnqueueRequest.builder().topic(topic).subTopic(accountId).producerName(moduleName).payload(payload).build();
       try {
-        Response<EnqueueResponse> execute = hsqsServiceClient.enqueue(enqueueRequest).execute();
-        log.info("build queued. response code {}", execute.code());
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+        EnqueueResponse execute = hsqsClientService.enqueue(enqueueRequest);
+        log.info("build queued. message id: {}", execute.getItemId());
+        if (StringUtils.isNotBlank(execute.getItemId())) {
+          ciExecutionRepository.updateQueueId(accountId, ambiance.getStageExecutionId(), execute.getItemId());
+        }
+      } catch (Exception e) {
+        log.info("failed to queue build", e);
+        throw new CIStageExecutionException(format("failed to process execution, queuing failed. runtime Id: {}",
+            AmbianceUtils.getStageRuntimeIdAmbiance(ambiance)));
       }
     } else {
       taskId = executeBuild(ambiance, stepParameters);
     }
-    InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
-        InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
 
-    sdkGraphVisualizationDataService.publishStepDetailInformation(
-        ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
-    return AsyncExecutableResponse.newBuilder()
-        .addCallbackIds(taskId)
-        .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
-        .build();
+    AsyncExecutableResponse.Builder responseBuilder =
+        AsyncExecutableResponse.newBuilder().addCallbackIds(taskId).addAllLogKeys(
+            CollectionUtils.emptyIfNull(singletonList(logKey)));
+
+    // Sending the status if feature flag is enabled
+    if (queueConcurrencyEnabled) {
+      return responseBuilder.setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED).build();
+    } else {
+      InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
+          InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
+
+      sdkGraphVisualizationDataService.publishStepDetailInformation(
+          ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
+    }
+
+    return responseBuilder.build();
+  }
+
+  private void addExecutionRecord(Ambiance ambiance, StepElementParameters stepParameters, String accountId) {
+    try {
+      queueExecutionUtils.addActiveExecutionBuild(
+          (InitializeStepInfo) stepParameters.getSpec(), accountId, ambiance.getStageExecutionId());
+    } catch (Exception ex) {
+      log.error("Failed to add Execution record for {}", ambiance.getStageExecutionId(), ex);
+    }
   }
 
   public String executeBuild(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -287,24 +315,36 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     ResponseData responseData = responseDataMap.entrySet().iterator().next().getValue();
     responseData = serializedResponseDataHelper.deserialize(responseData);
-    if (responseData instanceof ErrorNotifyResponseData) {
-      FailureData failureData =
-          FailureData.newBuilder()
-              .addFailureTypes(FailureType.APPLICATION_FAILURE)
-              .setLevel(Level.ERROR.name())
-              .setCode(GENERAL_ERROR.name())
-              .setMessage(emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
-                  new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage())))))
-              .build();
+    if (responseData instanceof ErrorNotifyResponseData || responseData instanceof FailureResponseData) {
+      String message;
+      if (responseData instanceof ErrorNotifyResponseData) {
+        if (((InitializeStepInfo) stepParameters.getSpec()).getInfrastructure().getType()
+            == Infrastructure.Type.KUBERNETES_DIRECT) {
+          message = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
+              new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage()))));
+        } else {
+          message = emptyIfNull(((ErrorNotifyResponseData) responseData).getErrorMessage());
+        }
+      } else if (responseData instanceof FailureResponseData) {
+        message = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
+            new CIStageExecutionException(((FailureResponseData) responseData).getErrorMessage()))));
+      } else {
+        throw new CIStageExecutionException("Unexpected response received while process CI execution");
+      }
+
+      FailureData failureData = FailureData.newBuilder()
+                                    .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                    .setLevel(Level.ERROR.name())
+                                    .setCode(GENERAL_ERROR.name())
+                                    .setMessage(message)
+                                    .build();
 
       return StepResponse.builder()
           .status(Status.FAILED)
-          .failureInfo(FailureInfo.newBuilder()
-                           .setErrorMessage("Delegate is not able to connect to created build farm")
-                           .addFailureData(failureData)
-                           .build())
+          .failureInfo(FailureInfo.newBuilder().addFailureData(failureData).build())
           .build();
     }
+
     CITaskExecutionResponse ciTaskExecutionResponse = (CITaskExecutionResponse) responseData;
     CITaskExecutionResponse.Type type = ciTaskExecutionResponse.getType();
     if (type == CITaskExecutionResponse.Type.K8) {
@@ -338,14 +378,15 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     validateFeatureFlags(initializeStepInfo, accountIdentifier);
     validateConnectors(
         initializeStepInfo, connectorsEntityDetails, accountIdentifier, orgIdentifier, projectIdentifier);
-    sanitizeExecution(initializeStepInfo);
+    sanitizeExecution(initializeStepInfo, accountIdentifier);
   }
 
-  private void sanitizeExecution(InitializeStepInfo initializeStepInfo) {
+  private void sanitizeExecution(InitializeStepInfo initializeStepInfo, String accountIdentifier) {
     List<ExecutionWrapperConfig> steps = initializeStepInfo.getExecutionElementConfig().getSteps();
     if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED
         || initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.HOSTED_VM) {
       sanitizationService.validate(steps);
+      validationService.isAccountValidForExecution(accountIdentifier);
     }
   }
   private void validateConnectors(InitializeStepInfo initializeStepInfo, List<EntityDetail> connectorEntitiesList,
@@ -500,8 +541,6 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     }
 
     for (ExecutionWrapperConfig config : executionElement.getSteps()) {
-      // Inject the envVariables before calling strategy expansion
-      IntegrationStageUtils.injectLoopEnvVariables(config);
       ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
           strategyHelper.expandExecutionWrapperConfig(config, maxExpansionLimit);
       expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());

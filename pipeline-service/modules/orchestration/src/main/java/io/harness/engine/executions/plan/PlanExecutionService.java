@@ -69,7 +69,8 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
    * @param fieldNames
    * @return
    */
-  CloseableIterator<PlanExecution> fetchPlanExecutionsByStatus(Set<Status> statuses, Set<String> fieldNames);
+  CloseableIterator<PlanExecution> fetchPlanExecutionsByStatusFromAnalytics(
+      Set<Status> statuses, Set<String> fieldNames);
 
   List<PlanExecution> findAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps(
       String accountId, String orgId, String projectId, long startTS, long endTS);
@@ -77,4 +78,10 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
   long countRunningExecutionsForGivenPipelineInAccount(String accountId, String pipelineIdentifier);
 
   PlanExecution findNextExecutionToRunInAccount(String accountId);
+
+  /**
+   * Deletes the planExecution and its related metadata
+   * @param planExecutionIds Ids of to be deleted planExecutions
+   */
+  void deleteAllPlanExecutionAndMetadata(Set<String> planExecutionIds);
 }

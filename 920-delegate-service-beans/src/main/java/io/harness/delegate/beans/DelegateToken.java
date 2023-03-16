@@ -9,6 +9,7 @@ package io.harness.delegate.beans;
 
 import static java.time.Duration.ofDays;
 
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -39,6 +40,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Data
 @Builder
 @StoreIn(DbAliases.HARNESS)
+@SecondaryStoreIn(DbAliases.DMS)
 @Entity(value = "delegateTokens", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "DelegateTokenKeys")
 @OwnedBy(HarnessTeam.DEL)
@@ -73,8 +75,10 @@ public class DelegateToken implements PersistentEntity, UuidAware, CreatedAtAwar
   @NotEmpty private String name;
   private EmbeddedUser createdBy;
   private long createdAt;
+  private Long revokeAfter;
   private DelegateTokenStatus status;
-  private String value;
+  @Deprecated private String value;
+  private String encryptedTokenId;
   private boolean isNg;
   private DelegateEntityOwner owner;
 

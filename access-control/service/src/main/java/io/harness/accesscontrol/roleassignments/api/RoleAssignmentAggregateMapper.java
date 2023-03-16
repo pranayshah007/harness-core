@@ -94,7 +94,7 @@ public class RoleAssignmentAggregateMapper {
     return scopeResponseDTO;
   }
 
-  public RoleAssignmentAggregate toDTO(RoleAssignment response, String principalName) {
+  public RoleAssignmentAggregate toDTO(RoleAssignment response, String principalName, String principalEmail) {
     Scope scope = scopeService.buildScopeFromScopeIdentifier(response.getScopeIdentifier());
     ScopeDTO scopeParams = ScopeMapper.toDTO(scope);
     Optional<ResourceGroupResponse> resourceGroupResponse = Optional.ofNullable(
@@ -106,6 +106,7 @@ public class RoleAssignmentAggregateMapper {
                        .scopeLevel(response.getPrincipalScopeLevel())
                        .identifier(response.getPrincipalIdentifier())
                        .name(principalName)
+                       .email(principalEmail)
                        .type(response.getPrincipalType())
                        .build())
         .disabled(response.isDisabled())

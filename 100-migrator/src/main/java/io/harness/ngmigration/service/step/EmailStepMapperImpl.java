@@ -7,7 +7,8 @@
 
 package io.harness.ngmigration.service.step;
 
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.email.EmailStepInfo;
 import io.harness.plancreator.steps.email.EmailStepNode;
@@ -15,8 +16,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 
 import software.wings.beans.GraphNode;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.EmailState;
 
@@ -24,7 +23,12 @@ import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
-public class EmailStepMapperImpl implements StepMapper {
+public class EmailStepMapperImpl extends StepMapper {
+  @Override
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
+  }
+
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.EMAIL;
@@ -32,18 +36,17 @@ public class EmailStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     EmailState state = new EmailState(stepYaml.getName());
     state.parseProperties(properties);
     return state;
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     EmailState state = (EmailState) getState(graphNode);
     EmailStepNode emailStepNode = new EmailStepNode();
-    baseSetup(graphNode, emailStepNode);
+    baseSetup(graphNode, emailStepNode, context.getIdentifierCaseFormat());
     EmailStepInfo emailStepInfo = EmailStepInfo.infoBuilder()
                                       .to(ParameterField.createValueField(state.getToAddress()))
                                       .cc(ParameterField.createValueField(state.getCcAddress()))

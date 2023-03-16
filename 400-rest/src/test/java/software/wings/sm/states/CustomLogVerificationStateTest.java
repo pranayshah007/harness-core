@@ -301,7 +301,7 @@ public class CustomLogVerificationStateTest extends WingsBaseTest {
     customLogVerificationState.triggerAnalysisDataCollection(context, executionData, hosts);
 
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(delegateTaskArgumentCaptor.capture());
 
     DelegateTask task = delegateTaskArgumentCaptor.getValue();
     CustomLogDataCollectionInfo dataCollectionInfo = (CustomLogDataCollectionInfo) task.getData().getParameters()[0];

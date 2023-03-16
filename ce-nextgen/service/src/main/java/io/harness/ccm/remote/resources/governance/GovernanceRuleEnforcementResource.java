@@ -25,6 +25,7 @@ import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.audittrails.events.RuleEnforcementCreateEvent;
 import io.harness.ccm.audittrails.events.RuleEnforcementDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleEnforcementUpdateEvent;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.scheduler.SchedulerClient;
 import io.harness.ccm.scheduler.SchedulerDTO;
 import io.harness.ccm.utils.LogAccountIdentifier;
@@ -36,16 +37,14 @@ import io.harness.ccm.views.helper.EnforcementCount;
 import io.harness.ccm.views.helper.EnforcementCountRequest;
 import io.harness.ccm.views.helper.ExecutionDetailRequest;
 import io.harness.ccm.views.helper.ExecutionDetails;
-import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
-import io.harness.ccm.views.service.RuleSetService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
+import io.harness.remote.GovernanceConfig;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.security.annotations.PublicApi;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
 
@@ -130,24 +129,24 @@ public class GovernanceRuleEnforcementResource {
   public static final String SCHEDULER_IS_DEBUG = "true";
   public static final String CODE_MESSAGE_BODY = "code: {}, message: {}, body: {}";
   private final RuleEnforcementService ruleEnforcementService;
-  // private final CCMRbacHelper rbacHelper
-  private final GovernanceRuleService ruleService;
-  private final RuleSetService ruleSetService;
+  private final CCMRbacHelper rbacHelper;
   private final TelemetryReporter telemetryReporter;
-  @Inject CENextGenConfiguration configuration;
+  private final CENextGenConfiguration configuration;
   @Inject SchedulerClient schedulerClient;
-  @Inject private OutboxService outboxService;
-  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
+  private final OutboxService outboxService;
+  private final TransactionTemplate transactionTemplate;
   private static final RetryPolicy<Object> transactionRetryRule = DEFAULT_RETRY_POLICY;
   public static final String MALFORMED_ERROR = "Request payload is malformed";
   @Inject
   public GovernanceRuleEnforcementResource(RuleEnforcementService ruleEnforcementService,
-      GovernanceRuleService governanceRuleService, RuleSetService ruleSetService, TelemetryReporter telemetryReporter) {
+      TelemetryReporter telemetryReporter, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
+      OutboxService outboxService, CENextGenConfiguration configuration, CCMRbacHelper rbacHelper) {
     this.ruleEnforcementService = ruleEnforcementService;
-    // this.rbacHelper rbacHelper
-    this.ruleService = governanceRuleService;
-    this.ruleSetService = ruleSetService;
+    this.rbacHelper = rbacHelper;
     this.telemetryReporter = telemetryReporter;
+    this.outboxService = outboxService;
+    this.transactionTemplate = transactionTemplate;
+    this.configuration = configuration;
   }
 
   @POST
@@ -165,7 +164,7 @@ public class GovernanceRuleEnforcementResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing Rule Enforcement object")
       @Valid CreateRuleEnforcementDTO createRuleEnforcementDTO) {
-    // to do rbacHelper checkRuleEnforcementEditPermission(accountId, null, null)
+    rbacHelper.checkRuleEnforcementEditPermission(accountId, null, null);
     if (createRuleEnforcementDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -186,24 +185,8 @@ public class GovernanceRuleEnforcementResource {
     if (ruleEnforcementService.listName(accountId, ruleEnforcement.getName(), true) != null) {
       throw new InvalidRequestException("Rule Enforcement with given name already exits");
     }
-    if (ruleEnforcement.getRuleIds() != null
-        && ruleEnforcement.getRuleIds().size() > configuration.getGovernanceConfig().getPoliciesInEnforcement()) {
-      throw new InvalidRequestException("Limit of number of rules in an enforcement is exceeded ");
-    }
-    if (ruleEnforcement.getRuleSetIDs() != null
-        && ruleEnforcement.getRuleSetIDs().size() > configuration.getGovernanceConfig().getPacksInEnforcement()) {
-      throw new InvalidRequestException("Limit of number of Rule Sets in an enforcement is exceeded ");
-    }
-    if (ruleEnforcement.getTargetAccounts().size() > configuration.getGovernanceConfig().getAccountLimit()) {
-      throw new InvalidRequestException("Limit of number of target accounts allowed per enforcement is exceeded ");
-    }
-
-    if (ruleEnforcement.getTargetRegions().size() > configuration.getGovernanceConfig().getRegionLimit()) {
-      throw new InvalidRequestException("Limit of target regions allowed per enforcement is exceeded ");
-    }
-
-    ruleService.check(accountId, ruleEnforcement.getRuleIds());
-    ruleSetService.check(accountId, ruleEnforcement.getRuleSetIDs());
+    GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
+    ruleEnforcementService.checkLimitsAndValidate(ruleEnforcement, governanceConfig);
     ruleEnforcementService.save(ruleEnforcement);
 
     // Insert a record in dkron
@@ -286,7 +269,7 @@ public class GovernanceRuleEnforcementResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("enforcementID") @Parameter(
           required = true, description = "Unique identifier for the rule enforcement") @NotNull @Valid String uuid) {
-    // rbacHelper checkRuleEnforcementDeletePermission(accountId, null, null)
+    rbacHelper.checkRuleEnforcementDeletePermission(accountId, null, null);
 
     if (configuration.getGovernanceConfig().isUseDkron()) {
       log.info("Use dkron is enabled in config");
@@ -328,7 +311,7 @@ public class GovernanceRuleEnforcementResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing rule enforcement object")
       @Valid CreateRuleEnforcementDTO createRuleEnforcementDTO) {
-    //  rbacHelper checkRuleEnforcementEditPermission(accountId, null, null)
+    rbacHelper.checkRuleEnforcementEditPermission(accountId, null, null);
     if (createRuleEnforcementDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -336,12 +319,8 @@ public class GovernanceRuleEnforcementResource {
     ruleEnforcement.setAccountId(accountId);
     RuleEnforcement ruleEnforcementFromMongo =
         ruleEnforcementService.listId(accountId, ruleEnforcement.getUuid(), false);
-    if (ruleEnforcement.getRuleIds() != null) {
-      ruleService.check(accountId, ruleEnforcement.getRuleIds());
-    }
-    if (ruleEnforcement.getRuleSetIDs() != null) {
-      ruleSetService.check(accountId, ruleEnforcement.getRuleSetIDs());
-    }
+    GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
+    ruleEnforcementService.checkLimitsAndValidate(ruleEnforcement, governanceConfig);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcement.getName());
@@ -361,10 +340,12 @@ public class GovernanceRuleEnforcementResource {
         log.error("Error in toggle'ing job from dkron", e);
       }
     }
+    ruleEnforcementService.update(ruleEnforcement);
+    RuleEnforcement updatedRuleEnforcement = ruleEnforcementService.listId(accountId, ruleEnforcement.getUuid(), false);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(
-          new RuleEnforcementUpdateEvent(accountId, ruleEnforcement.toDTO(), ruleEnforcementFromMongo.toDTO()));
-      return ruleEnforcementService.update(ruleEnforcement);
+          new RuleEnforcementUpdateEvent(accountId, updatedRuleEnforcement.toDTO(), ruleEnforcementFromMongo.toDTO()));
+      return updatedRuleEnforcement;
     })));
   }
   // TO DO add filter support
@@ -385,7 +366,7 @@ public class GovernanceRuleEnforcementResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing  Rule Enforcement  object") @Valid
       @NotNull CreateRuleEnforcementDTO createRuleEnforcementDTO) {
-    // rbacHelper checkRuleEnforcementViewPermission(accountId, null, null)
+    rbacHelper.checkRuleEnforcementViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(ruleEnforcementService.list(accountId));
   }
   // TO DO list rule information

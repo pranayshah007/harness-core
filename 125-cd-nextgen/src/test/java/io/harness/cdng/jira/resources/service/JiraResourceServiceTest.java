@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
@@ -31,7 +32,11 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
+import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
 import io.harness.delegate.task.jira.JiraSearchUserData;
 import io.harness.delegate.task.jira.JiraSearchUserParams;
 import io.harness.delegate.task.jira.JiraTaskNGParameters.JiraTaskNGParametersBuilder;
@@ -87,7 +92,7 @@ public class JiraResourceServiceTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector()));
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(false)));
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
         .thenReturn(Lists.newArrayList(EncryptedDataDetail.builder().build()));
   }
@@ -117,7 +122,26 @@ public class JiraResourceServiceTest extends CategoryTest {
     List<JiraProjectBasicNG> projects = Collections.emptyList();
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(JiraTaskNGResponse.builder().projects(projects).build());
+    ArgumentCaptor<DecryptableEntity> requestArgumentCaptorForSecretService =
+        ArgumentCaptor.forClass(DecryptableEntity.class);
     assertThat(jiraResourceService.getProjects(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER)).isEqualTo(projects);
+    verify(secretManagerClientService).getEncryptionDetails(any(), requestArgumentCaptorForSecretService.capture());
+    assertThat(requestArgumentCaptorForSecretService.getValue() instanceof JiraConnectorDTO).isTrue();
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetProjectsWithUpdatedConnectorFlow() {
+    List<JiraProjectBasicNG> projects = Collections.emptyList();
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(JiraTaskNGResponse.builder().projects(projects).build());
+    ArgumentCaptor<DecryptableEntity> requestArgumentCaptorForSecretService =
+        ArgumentCaptor.forClass(DecryptableEntity.class);
+    assertThat(jiraResourceService.getProjects(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER)).isEqualTo(projects);
+    verify(secretManagerClientService).getEncryptionDetails(any(), requestArgumentCaptorForSecretService.capture());
+    assertThat(requestArgumentCaptorForSecretService.getValue() instanceof JiraAuthCredentialsDTO).isTrue();
   }
 
   @Test
@@ -169,7 +193,26 @@ public class JiraResourceServiceTest extends CategoryTest {
     assertThat(captor.getValue().build().getJiraSearchUserParams()).isEqualTo(jiraSearchUserParams);
   }
 
-  private ConnectorResponseDTO getConnector() {
+  private ConnectorResponseDTO getConnector(boolean updatedYaml) {
+    if (updatedYaml) {
+      ConnectorInfoDTO connectorInfoDTO =
+          ConnectorInfoDTO.builder()
+              .connectorType(ConnectorType.JIRA)
+              .connectorConfig(JiraConnectorDTO.builder()
+                                   .jiraUrl("url")
+                                   .username("username")
+                                   .passwordRef(SecretRefData.builder().build())
+                                   .auth(JiraAuthenticationDTO.builder()
+                                             .authType(JiraAuthType.USER_PASSWORD)
+                                             .credentials(JiraUserNamePasswordDTO.builder()
+                                                              .username("username")
+                                                              .passwordRef(SecretRefData.builder().build())
+                                                              .build())
+                                             .build())
+                                   .build())
+              .build();
+      return ConnectorResponseDTO.builder().connector(connectorInfoDTO).build();
+    }
     ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
                                             .connectorType(ConnectorType.JIRA)
                                             .connectorConfig(JiraConnectorDTO.builder()

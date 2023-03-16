@@ -19,7 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
-import io.harness.hsqs.client.HsqsServiceClient;
+import io.harness.hsqs.client.HsqsClient;
 import io.harness.hsqs.client.model.AckRequest;
 import io.harness.hsqs.client.model.AckResponse;
 import io.harness.hsqs.client.model.DequeueRequest;
@@ -51,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTask>, Runnable {
-  @Inject private HsqsServiceClient hsqsServiceClient;
+  @Inject private HsqsClient hsqsServiceClient;
   @Inject private DelegateQueueServiceConfig delegateQueueServiceConfig;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private ResourceBasedDelegateSelectionCheckForTask delegateSelectionCheckForTask;
@@ -59,7 +59,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Inject
-  public DelegateTaskQueueService(HsqsServiceClient hsqsServiceClient) {
+  public DelegateTaskQueueService(HsqsClient hsqsServiceClient) {
     this.hsqsServiceClient = hsqsServiceClient;
   }
 
@@ -69,8 +69,10 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
    */
   @Override
   public void enqueue(DelegateTask delegateTask) {
-    try (AutoLogContext ignore = new TaskLogContext(delegateTask.getUuid(), delegateTask.getData().getTaskType(),
-             TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
+    String taskType = delegateTask.getData() != null ? delegateTask.getData().getTaskType()
+                                                     : delegateTask.getTaskDataV2().getTaskType();
+    try (AutoLogContext ignore = new TaskLogContext(
+             delegateTask.getUuid(), taskType, TaskType.valueOf(taskType).getTaskGroup().name(), OVERRIDE_ERROR)) {
       String topic = delegateQueueServiceConfig.getTopic();
       String task = referenceFalseKryoSerializer.asString(delegateTask);
       EnqueueRequest enqueueRequest = EnqueueRequest.builder()
@@ -130,13 +132,13 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     try {
       AckResponse response = hsqsServiceClient
                                  .ack(AckRequest.builder()
-                                          .itemID(itemId)
+                                          .itemId(itemId)
                                           .topic(delegateQueueServiceConfig.getTopic())
                                           .subTopic(accountId)
                                           .build())
                                  .execute()
                                  .body();
-      return Objects.requireNonNull(response).getItemID();
+      return Objects.requireNonNull(response).getItemId();
     } catch (IOException e) {
       log.error("Error while acknowledging delegate task ", e);
       return null;

@@ -62,6 +62,10 @@ public interface PMSPipelineService {
   Optional<PipelineEntity> getAndValidatePipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted);
 
+  PipelineGetResult getAndValidatePipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
+      boolean loadFromCache, boolean validateAsync);
+
   //  TODO: the variable loadFromFallbackBranch will be enforced upon to all users and this will be removed: @Adithya
   Optional<PipelineEntity> getAndValidatePipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean loadFromFallbackBranch, boolean loadFromCache);
@@ -83,6 +87,9 @@ public interface PMSPipelineService {
   Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache);
+
+  PipelineEntity getPipelineMetadata(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean getMetadataOnly);
 
   /**
    * Update pipeline (inline/remote) after doing validation - template resolution,

@@ -27,12 +27,14 @@ import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.Service;
@@ -97,11 +99,16 @@ public class ContainerTaskMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     ContainerTask serviceSpecification = (ContainerTask) entities.get(entityId).getEntity();
+    MigratorExpressionUtils.render(entities, migratedEntities, serviceSpecification, inputDTO.getCustomExpressions(),
+        inputDTO.getIdentifierCaseFormat());
     NGYamlFile yamlFile = getYamlFile(serviceSpecification, inputDTO, entities);
-    return yamlFile != null ? Collections.singletonList(yamlFile) : Collections.emptyList();
+    if (yamlFile == null) {
+      return null;
+    }
+    return YamlGenerationDetails.builder().yamlFileList(Collections.singletonList(yamlFile)).build();
   }
 
   private NGYamlFile getYamlFile(
@@ -133,7 +140,8 @@ public class ContainerTaskMigrationService extends NgMigrationService {
     String fileUsage = FileUsage.MANIFEST_FILE.name();
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
-    String identifier = MigratorUtility.generateManifestIdentifier(prefix + "EcsTaskDefSpec");
+    String identifier =
+        MigratorUtility.generateManifestIdentifier(prefix + "EcsTaskDefSpec", inputDTO.getIdentifierCaseFormat());
     String name = identifier + ".json";
     return NGYamlFile.builder()
         .type(NGMigrationEntityType.CONTAINER_TASK)
@@ -156,7 +164,8 @@ public class ContainerTaskMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     return null;
   }
 

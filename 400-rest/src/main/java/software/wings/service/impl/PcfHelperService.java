@@ -77,7 +77,7 @@ public class PcfHelperService {
     CfCommandExecutionResponse cfCommandExecutionResponse;
 
     try {
-      notifyResponseData = delegateService.executeTask(
+      notifyResponseData = delegateService.executeTaskV2(
           DelegateTask.builder()
               .accountId(pcfConfig.getAccountId())
               .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, SCOPE_WILDCARD)
@@ -149,7 +149,7 @@ public class PcfHelperService {
   private CfCommandExecutionResponse executeTaskOnDelegate(String pcfApplicationName, String organization, String space,
       PcfConfig pcfConfig, List<EncryptedDataDetail> encryptionDetails) throws InterruptedException {
     CfCommandExecutionResponse cfCommandExecutionResponse;
-    cfCommandExecutionResponse = delegateService.executeTask(
+    cfCommandExecutionResponse = delegateService.executeTaskV2(
         DelegateTask.builder()
             .accountId(pcfConfig.getAccountId())
             .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, GLOBAL_APP_ID)
@@ -215,7 +215,7 @@ public class PcfHelperService {
     List<EncryptedDataDetail> encryptionDetails = secretManager.getEncryptionDetails(pcfConfig, null, null);
     CfCommandExecutionResponse cfCommandExecutionResponse;
     try {
-      cfCommandExecutionResponse = delegateService.executeTask(
+      cfCommandExecutionResponse = delegateService.executeTaskV2(
           DelegateTask.builder()
               .accountId(pcfConfig.getAccountId())
               .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, GLOBAL_APP_ID)
@@ -254,7 +254,7 @@ public class PcfHelperService {
     List<EncryptedDataDetail> encryptionDetails = secretManager.getEncryptionDetails(pcfConfig, null, null);
     CfCommandExecutionResponse cfCommandExecutionResponse;
     try {
-      cfCommandExecutionResponse = delegateService.executeTask(
+      cfCommandExecutionResponse = delegateService.executeTaskV2(
           DelegateTask.builder()
               .accountId(pcfConfig.getAccountId())
               .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, GLOBAL_APP_ID)
@@ -299,7 +299,7 @@ public class PcfHelperService {
     List<EncryptedDataDetail> encryptionDetails = secretManager.getEncryptionDetails(pcfConfig, null, null);
     CfCommandExecutionResponse cfCommandExecutionResponse;
     try {
-      cfCommandExecutionResponse = delegateService.executeTask(
+      cfCommandExecutionResponse = delegateService.executeTaskV2(
           DelegateTask.builder()
               .accountId(pcfConfig.getAccountId())
               .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, GLOBAL_APP_ID)
@@ -338,7 +338,7 @@ public class PcfHelperService {
     List<EncryptedDataDetail> encryptionDetails = secretManager.getEncryptionDetails(pcfConfig, null, null);
     CfCommandExecutionResponse cfCommandExecutionResponse;
     try {
-      cfCommandExecutionResponse = delegateService.executeTask(
+      cfCommandExecutionResponse = delegateService.executeTaskV2(
           DelegateTask.builder()
               .accountId(pcfConfig.getAccountId())
               .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, GLOBAL_APP_ID)
@@ -378,7 +378,7 @@ public class PcfHelperService {
     List<EncryptedDataDetail> encryptionDetails = secretManager.getEncryptionDetails(pcfConfig, null, null);
     CfCommandExecutionResponse cfCommandExecutionResponse;
     try {
-      cfCommandExecutionResponse = delegateService.executeTask(
+      cfCommandExecutionResponse = delegateService.executeTaskV2(
           DelegateTask.builder()
               .accountId(pcfConfig.getAccountId())
               .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, GLOBAL_APP_ID)

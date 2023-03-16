@@ -77,7 +77,7 @@ public class ChaosServiceImpl implements ChaosService {
       requestBuilder.eligibleToExecuteDelegateIds(Collections.singletonList(chaosK8sRequest.getDelegateId()));
     }
 
-    String taskId = delegateGrpcClientWrapper.submitAsyncTask(requestBuilder.build(), Duration.ZERO);
+    String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(requestBuilder.build(), Duration.ZERO);
     log.info("Task Successfully queued with taskId: {}", taskId);
     waitNotifyEngine.waitForAllOn(NG_ORCHESTRATION, new ChaosNotifyCallback(chaosUid), taskId);
     return taskId;

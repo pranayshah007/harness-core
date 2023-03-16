@@ -603,7 +603,7 @@ public class AwsLambdaInstanceHandler extends InstanceHandler implements Instanc
             .encryptionDetails(encryptedDataDetails)
             .build();
 
-    return delegateProxyFactory.get(AwsCloudWatchHelperServiceDelegate.class, syncTaskContext)
+    return delegateProxyFactory.getV2(AwsCloudWatchHelperServiceDelegate.class, syncTaskContext)
         .getMetricStatistics(request);
   }
 

@@ -226,7 +226,7 @@ public class HelmChartServiceImpl implements HelmChartService {
 
     HelmChart helmChart = helmCollectChartResponse == null || isEmpty(helmCollectChartResponse.getHelmCharts())
         ? null
-        : helmCollectChartResponse.getHelmCharts().get(0);
+        : HelmChart.fromDto(helmCollectChartResponse.getHelmCharts().get(0));
 
     if (helmChart != null) {
       addCollectedHelmCharts(accountId, appManifestId, Collections.singletonList(helmChart));
@@ -249,7 +249,7 @@ public class HelmChartServiceImpl implements HelmChartService {
     if (helmCollectChartResponse == null) {
       return Collections.emptyList();
     }
-    return helmCollectChartResponse.getHelmCharts();
+    return HelmChart.fromDtos(helmCollectChartResponse.getHelmCharts());
   }
 
   @Override
@@ -300,7 +300,7 @@ public class HelmChartServiceImpl implements HelmChartService {
 
     HelmCollectChartResponse helmCollectChartResponse = null;
     try {
-      helmCollectChartResponse = delegateService.executeTask(delegateTask);
+      helmCollectChartResponse = delegateService.executeTaskV2(delegateTask);
     } catch (InterruptedException e) {
       log.error("Delegate Service execute task : fetchChartVersion" + e);
     }

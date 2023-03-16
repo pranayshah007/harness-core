@@ -32,6 +32,8 @@ import java.util.Set;
 
 @OwnedBy(CDC)
 public class EnvironmentYamlV2VisitorHelper implements ConfigValidator, EntityReferenceExtractor {
+  public static final String ENV_REF = "envRef";
+
   @Override
   public void validate(Object object, ValidationVisitor visitor) {
     // Nothing to validate.
@@ -61,6 +63,7 @@ public class EnvironmentYamlV2VisitorHelper implements ConfigValidator, EntityRe
               .setIdentifierRef(IdentifierRefProtoUtils.createIdentifierRefProtoFromIdentifierRef(identifierRef))
               .setType(EntityTypeProtoEnum.ENVIRONMENT)
               .build();
+      contextMap.put(ENV_REF, environmentRefString);
       result.add(entityDetail);
     } else {
       metadata.put(PreFlightCheckMetadata.EXPRESSION, environmentYamlV2.getEnvironmentRef().getExpressionValue());
@@ -71,6 +74,7 @@ public class EnvironmentYamlV2VisitorHelper implements ConfigValidator, EntityRe
               .setIdentifierRef(IdentifierRefProtoUtils.createIdentifierRefProtoFromIdentifierRef(identifierRef))
               .setType(EntityTypeProtoEnum.ENVIRONMENT)
               .build();
+      contextMap.put(ENV_REF, environmentYamlV2.getEnvironmentRef().getExpressionValue());
       result.add(entityDetail);
     }
     return result;

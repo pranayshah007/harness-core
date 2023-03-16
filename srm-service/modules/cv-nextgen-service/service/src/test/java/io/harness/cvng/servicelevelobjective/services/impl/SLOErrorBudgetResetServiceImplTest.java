@@ -18,9 +18,9 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -35,7 +35,7 @@ import org.junit.experimental.categories.Category;
 
 public class SLOErrorBudgetResetServiceImplTest extends CvNextGenTestBase {
   @Inject SLOErrorBudgetResetService sloErrorBudgetResetService;
-  @Inject ServiceLevelObjectiveService serviceLevelObjectiveService;
+  @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject MonitoredServiceService monitoredServiceService;
 
   BuilderFactory builderFactory;
@@ -44,7 +44,7 @@ public class SLOErrorBudgetResetServiceImplTest extends CvNextGenTestBase {
   public void setUp() throws Exception {
     builderFactory = BuilderFactory.getDefault();
     FieldUtils.writeField(sloErrorBudgetResetService, "clock", builderFactory.getClock(), true);
-    FieldUtils.writeField(serviceLevelObjectiveService, "clock", builderFactory.getClock(), true);
+    FieldUtils.writeField(serviceLevelObjectiveV2Service, "clock", builderFactory.getClock(), true);
   }
 
   @Test
@@ -52,9 +52,9 @@ public class SLOErrorBudgetResetServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testResetErrorBudget() {
     createMonitoredService();
-    ServiceLevelObjectiveResponse serviceLevelObjectiveResponse = serviceLevelObjectiveService.create(
-        builderFactory.getProjectParams(), builderFactory.getServiceLevelObjectiveDTOBuilder().build());
-    String sloIdentifier = serviceLevelObjectiveResponse.getServiceLevelObjectiveDTO().getIdentifier();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse = serviceLevelObjectiveV2Service.create(
+        builderFactory.getProjectParams(), builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build());
+    String sloIdentifier = serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO().getIdentifier();
     SLOErrorBudgetResetDTO sloErrorBudgetResetDTO =
         sloErrorBudgetResetService.resetErrorBudget(builderFactory.getProjectParams(),
             builderFactory.getSLOErrorBudgetResetDTOBuilder().serviceLevelObjectiveIdentifier(sloIdentifier).build());
@@ -78,9 +78,9 @@ public class SLOErrorBudgetResetServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetErrorBudgetResets() {
     createMonitoredService();
-    ServiceLevelObjectiveResponse serviceLevelObjectiveResponse = serviceLevelObjectiveService.create(
-        builderFactory.getProjectParams(), builderFactory.getServiceLevelObjectiveDTOBuilder().build());
-    String sloIdentifier = serviceLevelObjectiveResponse.getServiceLevelObjectiveDTO().getIdentifier();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse = serviceLevelObjectiveV2Service.create(
+        builderFactory.getProjectParams(), builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build());
+    String sloIdentifier = serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO().getIdentifier();
     SLOErrorBudgetResetDTO sloErrorBudgetResetDTO =
         sloErrorBudgetResetService.resetErrorBudget(builderFactory.getProjectParams(),
             builderFactory.getSLOErrorBudgetResetDTOBuilder().serviceLevelObjectiveIdentifier(sloIdentifier).build());
@@ -94,10 +94,10 @@ public class SLOErrorBudgetResetServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetErrorBudgetResetsMap() {
     createMonitoredService();
-    serviceLevelObjectiveService.create(builderFactory.getProjectParams(),
-        builderFactory.getServiceLevelObjectiveDTOBuilder().identifier("slo1").build());
-    serviceLevelObjectiveService.create(builderFactory.getProjectParams(),
-        builderFactory.getServiceLevelObjectiveDTOBuilder().identifier("slo2").build());
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(),
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("slo1").build());
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(),
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("slo2").build());
     sloErrorBudgetResetService.resetErrorBudget(builderFactory.getProjectParams(),
         builderFactory.getSLOErrorBudgetResetDTOBuilder().serviceLevelObjectiveIdentifier("slo1").build());
     sloErrorBudgetResetService.resetErrorBudget(builderFactory.getProjectParams(),
@@ -117,9 +117,9 @@ public class SLOErrorBudgetResetServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGlearErrorBudgetResets() {
     createMonitoredService();
-    ServiceLevelObjectiveResponse serviceLevelObjectiveResponse = serviceLevelObjectiveService.create(
-        builderFactory.getProjectParams(), builderFactory.getServiceLevelObjectiveDTOBuilder().build());
-    String sloIdentifier = serviceLevelObjectiveResponse.getServiceLevelObjectiveDTO().getIdentifier();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse = serviceLevelObjectiveV2Service.create(
+        builderFactory.getProjectParams(), builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build());
+    String sloIdentifier = serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO().getIdentifier();
     SLOErrorBudgetResetDTO sloErrorBudgetResetDTO =
         sloErrorBudgetResetService.resetErrorBudget(builderFactory.getProjectParams(),
             builderFactory.getSLOErrorBudgetResetDTOBuilder().serviceLevelObjectiveIdentifier(sloIdentifier).build());

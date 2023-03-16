@@ -12,7 +12,7 @@ import static io.harness.cdng.visitor.YamlTypes.K8S_CANARY_DEPLOY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.k8s.K8sDryRunManifestStepNode;
-import io.harness.cdng.k8s.K8sRollingStepParameters;
+import io.harness.cdng.k8s.K8sDryRunManifestStepParameters;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -44,7 +44,8 @@ public class K8sDryRunManifestStepPlanCreator extends CDPMSStepPlanCreatorV2<K8s
     final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
 
     String canaryStepFqn = getExecutionStepFqn(ctx.getCurrentField(), K8S_CANARY_DEPLOY);
-    ((K8sRollingStepParameters) ((StepElementParameters) stepParameters).getSpec()).setCanaryStepFqn(canaryStepFqn);
+    ((K8sDryRunManifestStepParameters) ((StepElementParameters) stepParameters).getSpec())
+        .setCanaryStepFqn(canaryStepFqn);
 
     return stepParameters;
   }

@@ -111,7 +111,7 @@ public class JiraHelperService {
                                     .build();
 
     try {
-      DelegateResponseData responseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData responseData = delegateService.executeTaskV2(delegateTask);
       if (responseData instanceof RemoteMethodReturnValueData) {
         RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
         if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
@@ -258,7 +258,7 @@ public class JiraHelperService {
                                                 .timeout(Long.max(timeoutMillis, JIRA_DELEGATE_TIMEOUT_MILLIS))
                                                 .build())
                                       .build();
-      DelegateResponseData responseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData responseData = delegateService.executeTaskV2(delegateTask);
 
       if (jiraTaskParameters.getJiraAction() == CHECK_APPROVAL && delegateTask != null) {
         log.info("Delegate task Id = {}, for Polling Jira Approval for IssueId {}", delegateTask.getUuid(),

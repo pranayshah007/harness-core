@@ -7,6 +7,7 @@
 
 package io.harness.pms.sdk.core.execution;
 
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.mockito.Matchers.any;
@@ -16,6 +17,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutableResponse;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.AddExecutableResponseRequest;
 import io.harness.pms.contracts.execution.events.AdviserResponseRequest;
 import io.harness.pms.contracts.execution.events.EventErrorRequest;
@@ -35,6 +37,7 @@ import io.harness.pms.contracts.plan.NodeExecutionEventType;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
 import io.harness.pms.sdk.core.AmbianceTestUtils;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
+import io.harness.pms.sdk.core.execution.async.AsyncProgressData;
 import io.harness.pms.sdk.core.response.publishers.SdkResponseEventPublisher;
 import io.harness.pms.sdk.core.steps.io.ResponseDataMapper;
 import io.harness.rule.Owner;
@@ -243,6 +246,28 @@ public class SdkNodeExecutionServiceImplTest extends PmsSdkCoreTestBase {
                 .setProgressRequest(
                     HandleProgressRequest.newBuilder()
                         .setProgressJson("{\"__recast\":\"io.harness.delegate.beans.logstreaming.UnitProgressData\"}")
+                        .setStatus(Status.NO_OP)
+                        .build())
+                .setAmbiance(ambiance)
+                .build());
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testHandleProgressResponseWithAsync() {
+    AsyncProgressData progressData = AsyncProgressData.builder().status(Status.ASYNC_WAITING).build();
+    Ambiance ambiance = AmbianceTestUtils.buildAmbiance();
+    sdkNodeExecutionService.handleProgressResponse(ambiance, progressData);
+    Mockito.verify(sdkResponseEventPublisher)
+        .publishEvent(
+            SdkResponseEventProto.newBuilder()
+                .setSdkResponseEventType(SdkResponseEventType.HANDLE_PROGRESS)
+                .setProgressRequest(
+                    HandleProgressRequest.newBuilder()
+                        .setProgressJson(
+                            "{\"__recast\":\"io.harness.pms.sdk.core.execution.async.AsyncProgressData\",\"status\":{\"__recast\":\"io.harness.pms.contracts.execution.Status\",\"__encodedValue\":\"ASYNC_WAITING\"}}")
+                        .setStatus(Status.ASYNC_WAITING)
                         .build())
                 .setAmbiance(ambiance)
                 .build());

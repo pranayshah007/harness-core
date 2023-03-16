@@ -55,7 +55,7 @@ public class BatchJobRunner {
   @Autowired private BatchMainConfig batchMainConfig;
 
   private Cache<CacheKey, Boolean> logErrorCache = Caffeine.newBuilder().expireAfterWrite(24, TimeUnit.HOURS).build();
-
+  public static final int TOTAL_INSTANCE_BILLING_HOURLY_JOBS_PER_MINUTE = 5;
   @Value
   private static class CacheKey {
     private String accountId;
@@ -88,7 +88,7 @@ public class BatchJobRunner {
     List<BatchJobType> dependentBatchJobs = batchJobType.getDependentBatchJobs();
     Instant startAt = batchJobScheduledDataService.fetchLastBatchJobScheduledTime(accountId, batchJobType);
     if (null == startAt) {
-      log.debug("Event not received for account {} ", accountId);
+      log.info("Event not received for account: {}, Job: {} ", accountId, batchJobType.name());
       return;
     }
     Instant endAt = Instant.now().minus(1, ChronoUnit.HOURS);
@@ -105,8 +105,28 @@ public class BatchJobRunner {
         new BatchJobScheduleTimeProvider(startAt, endAt, duration, chronoUnit);
     Instant startInstant = startAt;
     Instant jobsStartTime = Instant.now();
+
+    int clusterDataHourlyCounter = 0;
+    Instant clusterDataHourlyLastRunTime = Instant.now();
+
     while (batchJobScheduleTimeProvider.hasNext()) {
       Instant endInstant = batchJobScheduleTimeProvider.next();
+      if (batchJobType == BatchJobType.INSTANCE_BILLING_HOURLY) {
+        Instant currentTime = Instant.now();
+        if (clusterDataHourlyCounter < TOTAL_INSTANCE_BILLING_HOURLY_JOBS_PER_MINUTE
+            && currentTime.isAfter(clusterDataHourlyLastRunTime.plus(1, ChronoUnit.MINUTES))) {
+          clusterDataHourlyLastRunTime = currentTime;
+          clusterDataHourlyCounter = 0;
+          log.info("Job: currentTime: {}, updating counter to ZERO and clusterDataHourlyLastRunTime: {}", currentTime,
+              clusterDataHourlyLastRunTime);
+        }
+        if (clusterDataHourlyCounter >= TOTAL_INSTANCE_BILLING_HOURLY_JOBS_PER_MINUTE) {
+          log.info("Job: INSTANCE_BILLING_HOURLY has already run {} times in a minute. batchJobType: {}",
+              TOTAL_INSTANCE_BILLING_HOURLY_JOBS_PER_MINUTE, batchJobType.name());
+          return;
+        }
+        clusterDataHourlyCounter++;
+      }
       if (null != endInstant && checkDependentJobFinished(accountId, endInstant, dependentBatchJobs)
           && checkOutOfClusterDependentJobs(accountId, startInstant, endInstant, batchJobType)
           && checkClusterToBigQueryJobCompleted(accountId, batchJobType)) {

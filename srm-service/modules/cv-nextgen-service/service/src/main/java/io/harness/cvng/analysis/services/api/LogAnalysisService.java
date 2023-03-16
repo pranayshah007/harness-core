@@ -14,6 +14,7 @@ import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
 import io.harness.cvng.analysis.entities.LogAnalysisCluster;
 import io.harness.cvng.analysis.entities.LogAnalysisResult;
 import io.harness.cvng.analysis.entities.LogAnalysisResult.LogAnalysisTag;
+import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 public interface LogAnalysisService {
+  String scheduleDeploymentLogFeedbackTask(AnalysisInput input);
   String scheduleServiceGuardLogAnalysisTask(AnalysisInput input);
   String scheduleDeploymentLogAnalysisTask(AnalysisInput analysisInput);
   Map<String, ExecutionStatus> getTaskStatus(List<String> taskIds);
@@ -42,7 +44,7 @@ public interface LogAnalysisService {
   List<LogAnalysisResult> getAnalysisResults(String verificationTaskId, Instant startTime, Instant endTime);
   void saveAnalysis(String learningEngineTaskId, DeploymentLogAnalysisDTO deploymentLogAnalysisDTO);
   void logDeploymentVerificationProgress(AnalysisInput inputs, AnalysisStatus finalStatus);
-
+  List<LogFeedback> getLogFeedbackList(String verificationTaskId);
   List<LogAnalysisResult> getTopLogAnalysisResults(
       List<String> verificationTaskIds, Instant startTime, Instant endTime);
 }

@@ -1,0 +1,49 @@
+{
+  "type": "SumologicMetrics",
+  "version": "v2",
+  "identifier": "sumologic_metric_sample",
+  "name": "sumologic metric sample",
+  "spec": {
+    "connectorRef": "account.sumologic_try_2",
+    "queryDefinitions": [
+      {
+        "identifier": "sample_identifier",
+        "name": "sample_metric_name",
+        "groupName": "sample_group",
+        "metricThresholds": [
+          {
+            "metricName": "sample_metric_name",
+            "metricIdentifier": "sample_identifier",
+            "groupName": "sample_group",
+            "metricType": "string",
+            "spec": {
+              "action": "Ignore"
+            },
+            "criteria": {
+              "type": "Absolute",
+              "spec": {
+                "lessThan": 0,
+                "greaterThan": 0
+              }
+            },
+            "type": "IgnoreThreshold"
+          }
+        ],
+        "queryParams": {
+          "serviceInstanceField": "_sourceHost"
+        },
+        "liveMonitoringEnabled": false,
+        "continuousVerificationEnabled": true,
+        "sliEnabled": false,
+        "query": "metric=Mem_UsedPercent",
+        "riskProfile": {
+          "riskCategory": "Performance_Other",
+          "thresholdTypes": [
+            "ACT_WHEN_LOWER"
+          ]
+        }
+      }
+    ],
+    "healthSourceParams": {}
+  }
+}

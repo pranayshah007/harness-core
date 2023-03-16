@@ -179,15 +179,17 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
           double goodCount = timeStampToGoodValue.getOrDefault(sliRecord.getTimestamp(), 0.0);
           goodCount += objectivesDetail.getWeightagePercentage() / 100;
           timeStampToGoodValue.put(sliRecord.getTimestamp(), goodCount);
+          timeStampToTotalValue.put(
+              sliRecord.getTimestamp(), timeStampToTotalValue.getOrDefault(sliRecord.getTimestamp(), 0) + 1);
         } else if (SLIRecord.SLIState.BAD.equals(sliRecord.getSliState())
             || (SLIRecord.SLIState.NO_DATA.equals(sliRecord.getSliState())
                 && objectivesDetailSLIMissingDataTypeMap.get(objectivesDetail).equals(SLIMissingDataType.BAD))) {
           double badCount = timeStampToBadValue.getOrDefault(sliRecord.getTimestamp(), 0.0);
           badCount += objectivesDetail.getWeightagePercentage() / 100;
           timeStampToBadValue.put(sliRecord.getTimestamp(), badCount);
+          timeStampToTotalValue.put(
+              sliRecord.getTimestamp(), timeStampToTotalValue.getOrDefault(sliRecord.getTimestamp(), 0) + 1);
         }
-        timeStampToTotalValue.put(
-            sliRecord.getTimestamp(), timeStampToTotalValue.getOrDefault(sliRecord.getTimestamp(), 0) + 1);
       }
     }
   }

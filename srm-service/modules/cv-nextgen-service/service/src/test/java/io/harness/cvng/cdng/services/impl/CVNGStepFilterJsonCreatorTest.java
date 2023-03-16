@@ -14,6 +14,7 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -58,7 +59,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
@@ -95,7 +95,7 @@ public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
 
     ResponseDTO<CDStageMetaDataDTO> responseDTO = ResponseDTO.newResponse(
         CDStageMetaDataDTO.builder().serviceRef(serviceIdentifier).environmentRef(envIdentifier).build());
-    Mockito.when(cdStageMetaDataService.getServiceAndEnvironmentRef(any())).thenReturn(responseDTO);
+    when(cdStageMetaDataService.getServiceAndEnvironmentRef(any())).thenReturn(responseDTO);
 
     FieldUtils.writeField(verifyStepCvConfigServiceMap.get(MonitoredServiceSpecType.DEFAULT), "cdStageMetaDataService",
         cdStageMetaDataService, true);
@@ -107,6 +107,14 @@ public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testHandleNode_monitoredServiceDoesNotExist() {
+    ResponseDTO<CDStageMetaDataDTO> responseDTO =
+        ResponseDTO.newResponse(CDStageMetaDataDTO.builder()
+                                    .serviceEnvRef(CDStageMetaDataDTO.ServiceEnvRef.builder()
+                                                       .environmentRef(builderFactory.getContext().getEnvIdentifier())
+                                                       .serviceRef(builderFactory.getContext().getServiceIdentifier())
+                                                       .build())
+                                    .build());
+    when(cdStageMetaDataService.getServiceAndEnvironmentRef(any())).thenReturn(responseDTO);
     YAML_FILE_PATHS.forEach(yamlFilePath
         -> assertThatThrownBy(
             ()
@@ -130,6 +138,14 @@ public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
   public void testHandleNode_valid() throws IOException {
     MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    ResponseDTO<CDStageMetaDataDTO> responseDTO =
+        ResponseDTO.newResponse(CDStageMetaDataDTO.builder()
+                                    .serviceEnvRef(CDStageMetaDataDTO.ServiceEnvRef.builder()
+                                                       .environmentRef(monitoredServiceDTO.getEnvironmentRef())
+                                                       .serviceRef(monitoredServiceDTO.getServiceRef())
+                                                       .build())
+                                    .build());
+    when(cdStageMetaDataService.getServiceAndEnvironmentRef(any())).thenReturn(responseDTO);
     for (String yamlFilePath : YAML_FILE_PATHS) {
       FilterCreationResponse filterCreationResponse =
           cvngStepFilterJsonCreator.handleNode(FilterCreationContext.builder()
@@ -164,7 +180,7 @@ public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
     serviceIdentifier = "<+input>";
     ResponseDTO<CDStageMetaDataDTO> responseDTO = ResponseDTO.newResponse(
         CDStageMetaDataDTO.builder().serviceRef(serviceIdentifier).environmentRef(envIdentifier).build());
-    Mockito.when(cdStageMetaDataService.getServiceAndEnvironmentRef(any())).thenReturn(responseDTO);
+    when(cdStageMetaDataService.getServiceAndEnvironmentRef(any())).thenReturn(responseDTO);
     for (String yamlFilePath : YAML_FILE_PATHS) {
       YamlField yamlField = getVerifyStepYamlField(yamlFilePath, serviceIdentifier, envIdentifier);
       FilterCreationContextBuilder filterCreationContextBuilder =
@@ -224,6 +240,14 @@ public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
   public void testHandleNode_durationIsExpression() throws IOException {
     MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    ResponseDTO<CDStageMetaDataDTO> responseDTO =
+        ResponseDTO.newResponse(CDStageMetaDataDTO.builder()
+                                    .serviceEnvRef(CDStageMetaDataDTO.ServiceEnvRef.builder()
+                                                       .environmentRef(monitoredServiceDTO.getEnvironmentRef())
+                                                       .serviceRef(monitoredServiceDTO.getServiceRef())
+                                                       .build())
+                                    .build());
+    when(cdStageMetaDataService.getServiceAndEnvironmentRef(any())).thenReturn(responseDTO);
     for (String yamlFilePath : YAML_FILE_PATHS) {
       FilterCreationResponse filterCreationResponse =
           cvngStepFilterJsonCreator.handleNode(FilterCreationContext.builder()

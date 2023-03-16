@@ -35,5 +35,6 @@ public @interface EntityIdentifier {
 
   boolean allowBlank() default false;
   boolean allowScoped() default false;
-  int maxLength() default 64;
+
+  int maxLength() default 128;
 }

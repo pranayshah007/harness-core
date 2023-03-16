@@ -194,7 +194,7 @@ public class EcsDaemonServiceSetup extends State {
     executionLogCallback.saveExecutionLog(logMessage, CommandExecutionStatus.RUNNING);
 
     final DelegateTask gitFetchFileTask = createGitFetchFileAsyncTask(context, applicationManifestMap, activityId);
-    delegateService.queueTask(gitFetchFileTask);
+    delegateService.queueTaskV2(gitFetchFileTask);
 
     EcsSetupStateExecutionData stateExecutionData =
         createStateExecutionData(activityId, applicationManifestMap, context, ecsSetUpDataBag);

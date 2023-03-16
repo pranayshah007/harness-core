@@ -19,6 +19,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
 
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
@@ -34,7 +35,7 @@ import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
-import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
@@ -269,7 +270,17 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
           "There can be only a single manifest. Select one from " + String.join(", ", HELM_SUPPORTED_MANIFEST_TYPES),
           USER);
     }
-    return helmManifests.get(0);
+
+    ManifestOutcome helmChartManifest = helmManifests.get(0);
+    if (ManifestStoreType.HARNESS.equals(helmChartManifest.getStore().getKind())) {
+      if (manifestOutcomes.stream().anyMatch(
+              manifestOutcome -> ManifestStoreType.InheritFromManifest.equals(manifestOutcome.getStore().getKind()))) {
+        throw new InvalidRequestException(format(
+            "InheritFromManifest store type is not supported with Manifest identifier: %s, Manifest type: %s, Manifest store type: %s",
+            helmChartManifest.getIdentifier(), helmChartManifest.getType(), helmChartManifest.getStore().getKind()));
+      }
+    }
+    return helmChartManifest;
   }
 
   private List<ManifestOutcome> getOrderedManifestOutcome(Collection<ManifestOutcome> manifestOutcomes) {
@@ -356,8 +367,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
 
     Map<String, LocalStoreFetchFilesResult> localStoreFetchFilesResultMap =
         nativeHelmStepPassThroughData.getLocalStoreFileMapContents();
-    if (isNotEmpty(gitFetchFilesResultMap) || isNotEmpty(helmChartValuesFetchFilesResultMap)
-        || isNotEmpty(customFetchContent) || isNotEmpty(localStoreFetchFilesResultMap)) {
+    if (isNotEmpty(nativeHelmStepPassThroughData.getManifestOutcomeList())) {
       valuesFileContents.addAll(
           getManifestFilesContents(gitFetchFilesResultMap, nativeHelmStepPassThroughData.getManifestOutcomeList(),
               helmChartValuesFetchFilesResultMap, customFetchContent, localStoreFetchFilesResultMap));
@@ -399,12 +409,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
 
     List<ValuesManifestOutcome> aggregatedValuesManifest = new ArrayList<>();
     aggregatedValuesManifest.addAll(nativeHelmStepPassThroughData.getValuesManifestOutcomes());
-    List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
-    if (!isEmpty(stepOverrides)) {
-      for (ManifestOutcome manifestOutcome : stepOverrides) {
-        aggregatedValuesManifest.add((ValuesManifestOutcome) manifestOutcome);
-      }
-    }
+
     if (shouldExecuteGitFetchTask(aggregatedValuesManifest)) {
       nativeHelmStepPassThroughData.setShouldCloseFetchFilesStream(true);
       return executeValuesFetchTask(ambiance, stepElementParameters, aggregatedValuesManifest,
@@ -414,10 +419,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
       addValuesFileFromHelmChartManifest(helmValuesFetchFilesResultMap, valuesFileContents, helmChartIdentifier);
       List<ManifestOutcome> manifestOutcomeList = new ArrayList<>();
       manifestOutcomeList.addAll(aggregatedValuesManifest);
-      if (isNotEmpty(manifestOutcomeList)
-          && (isNotEmpty(helmValuesFetchFilesResultMap)
-              || isNotEmpty(nativeHelmStepPassThroughData.getCustomFetchContent())
-              || isNotEmpty(nativeHelmStepPassThroughData.getLocalStoreFileMapContents()))) {
+      if (isNotEmpty(manifestOutcomeList)) {
         valuesFileContents.addAll(getManifestFilesContents(new HashMap<>(), manifestOutcomeList,
             helmValuesFetchFilesResultMap, nativeHelmStepPassThroughData.getCustomFetchContent(),
             nativeHelmStepPassThroughData.getLocalStoreFileMapContents()));
@@ -471,12 +473,6 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
           k8sStepPassThroughData.getValuesManifestOutcomes(), updatedK8sStepPassThroughData, storeConfig);
     }
 
-    List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
-    if (!isEmpty(stepOverrides)) {
-      for (ManifestOutcome manifestOutcome : stepOverrides) {
-        aggregatedValuesManifest.add((ValuesManifestOutcome) manifestOutcome);
-      }
-    }
     if (shouldExecuteGitFetchTask(aggregatedValuesManifest)) {
       LinkedList<ValuesManifestOutcome> orderedValuesManifests = new LinkedList<>(aggregatedValuesManifest);
       if (ManifestStoreType.HARNESS.equals(k8sManifest.getStore().getKind())) {

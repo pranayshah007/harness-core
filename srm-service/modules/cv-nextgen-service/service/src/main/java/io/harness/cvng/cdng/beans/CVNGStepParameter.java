@@ -12,6 +12,7 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.common.base.Preconditions;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,7 +28,6 @@ public class CVNGStepParameter implements SpecParameters {
   ParameterField<String> deploymentTag;
   ParameterField<String> sensitivity;
   ParameterField<Boolean> failOnNoAnalysis;
-  VerificationJobBuilder verificationJobBuilder;
   VerificationJobSpec spec;
   MonitoredServiceNode monitoredService;
 
@@ -38,5 +38,9 @@ public class CVNGStepParameter implements SpecParameters {
   public String getEnvIdentifier() {
     Preconditions.checkNotNull(envIdentifier.getValue());
     return envIdentifier.getValue();
+  }
+  @ApiModelProperty(hidden = true)
+  public VerificationJobBuilder getVerificationJobBuilder() {
+    return spec.getVerificationJobBuilder();
   }
 }

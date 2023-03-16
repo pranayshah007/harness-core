@@ -65,6 +65,7 @@ import software.wings.service.intfc.instance.InstanceService;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.util.Durations;
 import java.util.List;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -168,6 +169,118 @@ public class ContainerInstanceSyncPerpetualTaskCreatorTest extends CategoryTest 
     infraMapping.setAccountId(ACCOUNT_ID);
     final List<String> perpetualTaskIds = perpetualTaskCreator.createPerpetualTasks(infraMapping);
     assertThat(perpetualTaskIds).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testCreatePerpetualTasksBackup() {
+    List<PerpetualTaskRecord> existingRecords =
+        asList(PerpetualTaskRecord.builder()
+                   .clientContext(PerpetualTaskClientContext.builder()
+                                      .clientParams(ImmutableMap.of(
+                                          CONTAINER_TYPE, "K8S", NAMESPACE, "namespace-1", RELEASE_NAME, "release-1"))
+                                      .build())
+                   .build());
+
+    List<PerpetualTaskRecord> perpetualTaskRecords = perpetualTaskCreator.createPerpetualTasksBackup(
+        asList(
+            DeploymentSummary.builder()
+                .appId(InstanceSyncTestConstants.APP_ID)
+                .accountId(InstanceSyncTestConstants.ACCOUNT_ID)
+                .infraMappingId(InstanceSyncTestConstants.INFRA_MAPPING_ID)
+                .deploymentInfo(K8sDeploymentInfo.builder().namespace("namespace-1").releaseName("release-1").build())
+                .build(),
+            DeploymentSummary.builder()
+                .appId(InstanceSyncTestConstants.APP_ID)
+                .accountId(InstanceSyncTestConstants.ACCOUNT_ID)
+                .infraMappingId(InstanceSyncTestConstants.INFRA_MAPPING_ID)
+                .deploymentInfo(K8sDeploymentInfo.builder().namespace("namespace-2").releaseName("release-2").build())
+                .build()),
+        existingRecords, infrastructureMapping);
+
+    assertThat(perpetualTaskRecords).isNotEmpty();
+    assertThat(perpetualTaskRecords.size()).isEqualTo(1);
+    assertThat(perpetualTaskRecords.get(0).getPerpetualTaskType()).isEqualTo("CONTAINER_INSTANCE_SYNC");
+    assertThat(perpetualTaskRecords.get(0).getClientContext().getClientParams().get("releaseName"))
+        .isEqualTo("release-2");
+    assertThat(perpetualTaskRecords.get(0).getClientContext().getClientParams().get("containerType")).isEqualTo("K8S");
+    assertThat(perpetualTaskRecords.get(0).getClientContext().getClientParams().get("namespace"))
+        .isEqualTo("namespace-2");
+    assertThat(perpetualTaskRecords.get(0).getClientContext().getClientParams().get("infrastructureMappingId"))
+        .isEqualTo("infraMapping_Id");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testRestorePerpetualTask() {
+    PerpetualTaskRecord perpetualTask = PerpetualTaskRecord.builder()
+                                            .accountId(ACCOUNT_ID)
+                                            .taskDescription("")
+                                            .clientContext(PerpetualTaskClientContext.builder()
+                                                               .clientParams(ImmutableMap.of(CONTAINER_TYPE, "K8S",
+                                                                   NAMESPACE, "namespace-1", RELEASE_NAME, "release-1"))
+                                                               .build())
+                                            .build();
+
+    List<PerpetualTaskRecord> existingPerpetualTasks =
+        asList(PerpetualTaskRecord.builder()
+                   .clientContext(PerpetualTaskClientContext.builder()
+                                      .clientParams(ImmutableMap.of(
+                                          CONTAINER_TYPE, "K8S", NAMESPACE, "namespace-2", RELEASE_NAME, "release-1"))
+                                      .build())
+                   .build(),
+            PerpetualTaskRecord.builder()
+                .clientContext(PerpetualTaskClientContext.builder()
+                                   .clientParams(ImmutableMap.of(
+                                       CONTAINER_TYPE, "K8S", NAMESPACE, "namespace-1", RELEASE_NAME, "release-2"))
+                                   .build())
+                .build());
+    doReturn("perpetual-task-id")
+        .when(perpetualTaskService)
+        .createTask(eq(PerpetualTaskType.CONTAINER_INSTANCE_SYNC), eq(InstanceSyncTestConstants.ACCOUNT_ID), any(),
+            any(), eq(false), eq(""));
+    Optional<String> PerpetualTaskRecordId =
+        perpetualTaskCreator.restorePerpetualTask(perpetualTask, existingPerpetualTasks);
+
+    assertThat(PerpetualTaskRecordId.get()).isEqualTo("perpetual-task-id");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testRestorePerpetualTaskFilter() {
+    PerpetualTaskRecord perpetualTask = PerpetualTaskRecord.builder()
+                                            .accountId(ACCOUNT_ID)
+                                            .taskDescription("")
+                                            .clientContext(PerpetualTaskClientContext.builder()
+                                                               .clientParams(ImmutableMap.of(CONTAINER_TYPE, "K8S",
+                                                                   NAMESPACE, "namespace-1", RELEASE_NAME, "release-1"))
+                                                               .build())
+                                            .build();
+
+    List<PerpetualTaskRecord> existingPerpetualTasks =
+        asList(PerpetualTaskRecord.builder()
+                   .clientContext(PerpetualTaskClientContext.builder()
+                                      .clientParams(ImmutableMap.of(
+                                          CONTAINER_TYPE, "K8S", NAMESPACE, "namespace-1", RELEASE_NAME, "release-1"))
+                                      .build())
+                   .build(),
+            PerpetualTaskRecord.builder()
+                .clientContext(PerpetualTaskClientContext.builder()
+                                   .clientParams(ImmutableMap.of(
+                                       CONTAINER_TYPE, "K8S", NAMESPACE, "namespace-1", RELEASE_NAME, "release-2"))
+                                   .build())
+                .build());
+    doReturn("perpetual-task-id")
+        .when(perpetualTaskService)
+        .createTask(eq(PerpetualTaskType.CONTAINER_INSTANCE_SYNC), eq(InstanceSyncTestConstants.ACCOUNT_ID), any(),
+            any(), eq(false), eq(""));
+    Optional<String> PerpetualTaskRecordId =
+        perpetualTaskCreator.restorePerpetualTask(perpetualTask, existingPerpetualTasks);
+
+    assertThat(PerpetualTaskRecordId.isEmpty()).isTrue();
   }
 
   @Test

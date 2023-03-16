@@ -18,17 +18,22 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfi
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
+import io.harness.connector.ConnectorDTO;
+import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.NexusArtifactStream;
 import software.wings.beans.config.NexusConfig;
+import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
@@ -64,6 +69,27 @@ public class NexusArtifactStreamMapper implements ArtifactStreamMapper {
         .build();
   }
 
+  @Override
+  public ArtifactType getArtifactType(Map<CgEntityId, NGYamlFile> migratedEntities, ArtifactStream artifactStream) {
+    if (artifactStream == null) {
+      return ArtifactType.NEXUS3_REGISTRY;
+    }
+    NGYamlFile ngYamlFile =
+        migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(artifactStream.getSettingId()).build());
+    if (ngYamlFile == null) {
+      return ArtifactType.NEXUS3_REGISTRY;
+    }
+    ConnectorDTO connectorDTO = (ConnectorDTO) ngYamlFile.getYaml();
+    NexusConnectorDTO connector = (NexusConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
+    return "3.x".equals(connector.getVersion()) ? ArtifactType.NEXUS3_REGISTRY : ArtifactType.NEXUS2_REGISTRY;
+  }
+
+  @Override
+  public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
+      Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
+    return null;
+  }
+
   private static NexusRegistryConfigSpec getNexusRegistryConfigSpec(NexusArtifactStream nexusArtifactStream) {
     switch (nexusArtifactStream.getRepositoryFormat()) {
       case DOCKER:
@@ -97,7 +123,6 @@ public class NexusArtifactStreamMapper implements ArtifactStreamMapper {
   private static ArtifactConfig getNexus3ArtifactConfig(NexusArtifactStream nexusArtifactStream,
       NexusRegistryConfigSpec nexusRegistryConfigSpec, NgEntityDetail ngConnector) {
     return NexusRegistryArtifactConfig.builder()
-        .primaryArtifact(true)
         .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(ngConnector)))
         .repository(ParameterField.createValueField(nexusArtifactStream.getJobname()))
         .repositoryFormat(ParameterField.createValueField(nexusArtifactStream.getRepositoryFormat()))
@@ -109,7 +134,6 @@ public class NexusArtifactStreamMapper implements ArtifactStreamMapper {
   private static Nexus2RegistryArtifactConfig getNexus2RegistryArtifactConfig(NexusArtifactStream nexusArtifactStream,
       NexusRegistryConfigSpec nexusRegistryConfigSpec, NgEntityDetail ngConnector) {
     return Nexus2RegistryArtifactConfig.builder()
-        .primaryArtifact(true)
         .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(ngConnector)))
         .repository(ParameterField.createValueField(nexusArtifactStream.getJobname()))
         .repositoryFormat(ParameterField.createValueField(nexusArtifactStream.getRepositoryFormat()))

@@ -8,9 +8,12 @@
 package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.ssh.SshWinRmConstants.FILE_STORE_SCRIPT_ERROR_MSG;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANIL;
+import static io.harness.rule.OwnerRule.IVAN;
 
+import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -18,9 +21,11 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FileReference;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
@@ -58,6 +63,7 @@ import io.harness.delegate.task.ssh.config.FileDelegateConfig;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.api.NGEncryptedDataService;
@@ -69,6 +75,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.data.OrchestrationRefType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -84,6 +91,8 @@ import io.harness.shell.ScriptType;
 import io.harness.ssh.FileSourceType;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.steps.shellscript.HarnessFileStoreSource;
+import io.harness.steps.shellscript.ShellScriptBaseSource;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
@@ -272,7 +281,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
   private HarnessStore getHarnessStore() {
     return HarnessStore.builder()
         .files(ParameterField.createValueField(
-            Collections.singletonList(String.format("%s:%s", Scope.ACCOUNT.getYamlRepresentation(), "fs"))))
+            Collections.singletonList(format("%s:%s", Scope.ACCOUNT.getYamlRepresentation(), "fs"))))
         .secretFiles(ParameterField.createValueField(Collections.singletonList("account.secret-ref")))
         .build();
   }
@@ -481,6 +490,29 @@ public class SshCommandStepHelperTest extends CategoryTest {
 
     assertCopyTaskParameters(taskParameters, taskEnv);
     assertThat(sshTaskParameters.getSshInfraDelegateConfig()).isEqualTo(emptyHostDelegateConfig);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetShellScriptFromHarnessFileStoreWithEmptyContent() {
+    String scopedFilePath = "account:/folder1/folder2/emptyScript";
+    ShellScriptSourceWrapper shellScriptSourceWrapper =
+        ShellScriptSourceWrapper.builder()
+            .type(ShellScriptBaseSource.HARNESS)
+            .spec(HarnessFileStoreSource.builder().file(ParameterField.createValueField(scopedFilePath)).build())
+            .build();
+    ShellScriptBaseSource spec = shellScriptSourceWrapper.getSpec();
+
+    when(cdExpressionResolver.updateExpressions(ambiance, spec)).thenReturn(spec);
+    when(
+        sshWinRmConfigFileHelper.fetchFileContent(FileReference.of(scopedFilePath, AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance))))
+        .thenReturn("");
+
+    assertThatThrownBy(() -> helper.getShellScript(ambiance, shellScriptSourceWrapper))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(format(FILE_STORE_SCRIPT_ERROR_MSG, scopedFilePath));
   }
 
   private void assertScriptTaskParameters(CommandTaskParameters taskParameters, Map<String, String> taskEnv) {

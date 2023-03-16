@@ -10,6 +10,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -53,8 +54,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nonnull;
@@ -132,11 +135,7 @@ public class TasEntityHelper {
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .executionTimeout(java.time.Duration.ofSeconds(customTimeoutInSec.orElse(defaultTimeoutInSecs)))
-            .taskSetupAbstraction(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier())
-            .taskSetupAbstraction(SetupAbstractionKeys.ng, "true")
-            .taskSetupAbstraction(
-                SetupAbstractionKeys.owner, ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
-            .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
+            .taskSetupAbstractions(getTaskSetupAbstraction(ngAccess))
             .taskParameters(params)
             .taskType(taskType.name())
             .taskSelectors(taskSelectors)
@@ -148,11 +147,30 @@ public class TasEntityHelper {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }
   }
+
+  private Map<String, String> getTaskSetupAbstraction(BaseNGAccess ngAccess) {
+    Map<String, String> owner = getNGTaskSetupAbstractionsWithOwner(
+        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    Map<String, String> abstractions = new HashMap<>(owner);
+    abstractions.put(SetupAbstractionKeys.ng, "true");
+    if (ngAccess.getOrgIdentifier() != null) {
+      abstractions.put(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier());
+    }
+    if (ngAccess.getProjectIdentifier() != null) {
+      abstractions.put(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier());
+    }
+    return abstractions;
+  }
+
   private LinkedHashMap<String, String> createLogStreamingAbstractions(BaseNGAccess ngAccess) {
     LinkedHashMap<String, String> logStreamingAbstractions = new LinkedHashMap<>();
     logStreamingAbstractions.put(SetupAbstractionKeys.accountId, ngAccess.getAccountIdentifier());
-    logStreamingAbstractions.put(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier());
-    logStreamingAbstractions.put(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier());
+    if (!isNull(ngAccess.getOrgIdentifier())) {
+      logStreamingAbstractions.put(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier());
+    }
+    if (!isNull(ngAccess.getProjectIdentifier())) {
+      logStreamingAbstractions.put(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier());
+    }
     return logStreamingAbstractions;
   }
   public OptionalSweepingOutput getSetupOutcome(Ambiance ambiance, String tasBGSetupFqn, String tasBasicSetupFqn,

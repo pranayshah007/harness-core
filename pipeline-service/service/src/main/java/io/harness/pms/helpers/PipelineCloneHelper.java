@@ -140,7 +140,9 @@ public class PipelineCloneHelper {
     }
 
     if (destPipelineName != null) {
-      JsonNodeUtils.updatePropertyInObjectNode(jsonNode, "name", destPipelineName);
+      if (jsonNode.has("name")) {
+        JsonNodeUtils.updatePropertyInObjectNode(jsonNode, "name", destPipelineName);
+      }
     } else {
       log.error(String.format("Error destination pipeline name is null for pipeline [%s]",
           clonePipelineDTO.getDestinationConfig().getPipelineIdentifier()));

@@ -24,18 +24,20 @@ import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.DataCollectionTask.DataCollectionTaskKeys;
 import io.harness.cvng.core.entities.DeploymentDataCollectionTask;
 import io.harness.cvng.core.entities.MetricCVConfig;
+import io.harness.cvng.core.entities.SLIDataCollectionTask;
 import io.harness.cvng.core.services.api.DataCollectionTaskManagementService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.ExecutionLogger;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
-import io.harness.cvng.metrics.CVNGMetricsUtils;
+import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.DataCollectionProgressLog;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
-import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.persistence.HPersistence;
 
@@ -70,9 +72,13 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       dataCollectionTaskManagementServiceMapBinder;
   @Inject private ExecutionLogService executionLogService;
 
+  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
+
   // TODO: this is creating reverse dependency. Find a way to get rid of this dependency.
   // Probabally by moving ProgressLog concept to a separate service and model.
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
+
+  @Inject private VerificationTaskService verificationTaskService;
 
   @Override
   public void save(DataCollectionTask dataCollectionTask) {
@@ -181,7 +187,6 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       return;
     }
     DataCollectionTask dataCollectionTask = getDataCollectionTask(result.getDataCollectionTaskId());
-    recordMetricsOnUpdateStatus(dataCollectionTask);
     ExecutionLogger executionLogger = executionLogService.getLogger(dataCollectionTask);
     executionLogger.log(
         dataCollectionTask.getLogLevel(), "Data collection task status: " + dataCollectionTask.getStatus());
@@ -216,20 +221,6 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       }
     } else {
       retry(dataCollectionTask);
-    }
-  }
-
-  private void recordMetricsOnUpdateStatus(DataCollectionTask dataCollectionTask) {
-    try (AutoMetricContext ignore = metricContextBuilder.getContext(dataCollectionTask, DataCollectionTask.class)) {
-      metricService.incCounter(CVNGMetricsUtils.getDataCollectionTaskStatusMetricName(dataCollectionTask.getStatus()));
-      metricService.recordDuration(
-          CVNGMetricsUtils.DATA_COLLECTION_TASK_TOTAL_TIME, dataCollectionTask.totalTime(clock.instant()));
-
-      if (dataCollectionTask.getLastPickedAt() != null) {
-        metricService.recordDuration(CVNGMetricsUtils.DATA_COLLECTION_TASK_WAIT_TIME, dataCollectionTask.waitTime());
-        metricService.recordDuration(
-            CVNGMetricsUtils.DATA_COLLECTION_TASK_RUNNING_TIME, dataCollectionTask.runningTime(clock.instant()));
-      }
     }
   }
 
@@ -272,6 +263,12 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
   }
 
   private void markDependentTasksFailed(DataCollectionTask task) {
+    if (task instanceof SLIDataCollectionTask) {
+      ServiceLevelIndicator serviceLevelIndicator =
+          serviceLevelIndicatorService.get(verificationTaskService.getSliId(task.getVerificationTaskId()));
+      serviceLevelIndicatorService.enqueueDataCollectionFailureInstanceAndTriggerAnalysis(
+          task.getVerificationTaskId(), task.getStartTime(), task.getEndTime(), serviceLevelIndicator);
+    }
     if (task instanceof DeploymentDataCollectionTask) {
       verificationJobInstanceService.logProgress(
           DataCollectionProgressLog.builder()
@@ -356,8 +353,24 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
 
   @Override
   public void updatePerpetualTaskStatus(DataCollectionTask dataCollectionTask) {
-    Optional<CVNGPerpetualTaskDTO> cvngPerpetualTaskDTO =
-        monitoringSourcePerpetualTaskService.getPerpetualTaskStatus(dataCollectionTask.getDataCollectionWorkerId());
+    Optional<CVNGPerpetualTaskDTO> cvngPerpetualTaskDTO;
+    try {
+      cvngPerpetualTaskDTO =
+          monitoringSourcePerpetualTaskService.getPerpetualTaskStatus(dataCollectionTask.getDataCollectionWorkerId());
+    } catch (Exception exception) {
+      DataCollectionTaskResult dataCollectionTaskResult =
+          DataCollectionTaskResult.builder()
+              .dataCollectionTaskId(dataCollectionTask.getUuid())
+              .status(DataCollectionExecutionStatus.FAILED)
+              .exception("Exception while getting MontioringSourcePerpetualTask status with workerId:"
+                  + dataCollectionTask.getDataCollectionWorkerId() + ". " + exception.getMessage())
+              .build();
+      updateTaskStatus(dataCollectionTaskResult, false);
+      log.error("Exception while getting MontioringSourcePerpetualTask status with workerId:"
+              + dataCollectionTask.getDataCollectionWorkerId(),
+          exception);
+      return;
+    }
     if (cvngPerpetualTaskDTO.isPresent()) {
       if (cvngPerpetualTaskDTO.get().getCvngPerpetualTaskUnassignedReason() != null) {
         DataCollectionTaskResult dataCollectionTaskResult =

@@ -124,7 +124,7 @@ public class AccountConnectorApiImpl implements AccountConnectorApi {
     List<ConnectorResponse> connectorResponses = connectorApiUtils.toConnectorResponses(connectorResponseDTOS);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
-        ApiUtils.addLinksHeader(responseBuilder, "/v1/connectors", connectorResponses.size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotalItems(), page, limit);
 
     return responseBuilderWithLinks.entity(connectorResponses).build();
   }

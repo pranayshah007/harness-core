@@ -17,7 +17,9 @@ type Config struct {
 
 	ServiceName string `envconfig:"HSQS_SERVICE_NAME" default:"queue_service"`
 
-	DisableAuth bool `envconfig:"HSQS_DISABLE_AUTH" default:"true"`
+	DisableAuth bool `envconfig:"HSQS_DISABLE_AUTH" default:"false"`
+
+	EnableHttpLogging bool `envconfig:"HSQS_ENABLE_HTTP_LOGGING" default:"false"`
 
 	EnableProfiler bool `envconfig:"HSQS_ENABLE_PROFILER"`
 
@@ -33,10 +35,21 @@ type Config struct {
 		CertPath   string `envconfig:"HSQS_REDIS_SSL_CA_CERT_PATH"`
 	}
 
-	Secret string `envconfig:"JWT_SECRET" default:"vhtftr5486786764563452fhtfthffuygiogyuyryr543432453"`
+	Secret string `envconfig:"JWT_SECRET" default:"ThisIsMyUniqueJwtQueueServiceSecret"`
 
 	PendingTimeout int `envconfig:"REDIS_PENDING_TIMEOUT" default:"10000"`
 	ClaimTimeout   int `envconfig:"REDIS_CLAIM_TIMEOUT" default:"10000"`
+
+	// AppDynamics defines AppDynamics configuration parameters
+	AppDynamicsConfig struct {
+		Enabled        bool   `envconfig:"APPDYNAMICS_ENABLED"`
+		Account        string `envconfig:"APPDYNAMICS_ACCOUNT"`
+		AccessKey      string `envconfig:"APPDYNAMICS_ACCESS_KEY"`
+		AppName        string `envconfig:"APPDYNAMICS_APP_NAME"`
+		TierName       string `envconfig:"APPDYNAMICS_TIER"`
+		ControllerHost string `envconfig:"APPDYNAMICS_CONTROLLER_HOST"`
+		ControllerPort uint16 `envconfig:"APPDYNAMICS_CONTROLLER_PORT"`
+	}
 }
 
 // Load loads the configuration from the environment.

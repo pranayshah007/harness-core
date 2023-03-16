@@ -10,8 +10,8 @@ package io.harness.ci.execution.queue;
 import lombok.Builder;
 import lombok.Value;
 
-@Builder
 @Value
+@Builder
 public class ProcessMessageResponse {
   Boolean success;
   String accountId;

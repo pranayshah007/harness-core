@@ -60,9 +60,11 @@ public class VerificationServiceConfiguration extends Configuration implements A
           .build();
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
   @JsonProperty("mongo") private MongoConfig mongoConnectionFactory = MongoConfig.builder().build();
+  @JsonProperty("dms-mongo") private MongoConfig dmsMongo = MongoConfig.builder().build();
   private int applicationPort;
   private boolean sslEnabled;
   private String managerUrl;
+
   @JsonProperty("scheduler") private SchedulerConfig schedulerConfig = new SchedulerConfig();
   @JsonProperty("dataStorageMode") private DataStorageMode dataStorageMode;
   @JsonProperty("cfClientConfig") private CfClientConfig cfClientConfig;
@@ -148,6 +150,9 @@ public class VerificationServiceConfiguration extends Configuration implements A
     List<String> dbAliases = new ArrayList<>();
     if (mongoConnectionFactory != null) {
       dbAliases.add(mongoConnectionFactory.getAliasDBName());
+    }
+    if (dmsMongo != null) {
+      dbAliases.add(dmsMongo.getAliasDBName());
     }
     return dbAliases;
   }

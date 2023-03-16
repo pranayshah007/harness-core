@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 
+import java.util.Set;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,4 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 @HarnessRepo
 @Transactional
 public interface ApprovalInstanceRepository
-    extends CrudRepository<ApprovalInstance, String>, ApprovalInstanceCustomRepository {}
+    extends CrudRepository<ApprovalInstance, String>, ApprovalInstanceCustomRepository {
+  /**
+   * Delete all ApprovalInstances for given nodeExecutionIds
+   * Uses - nodeExecutionId_1 idx
+   * @param nodeExecutionIds
+   */
+  long deleteAllByNodeExecutionIdIn(Set<String> nodeExecutionIds);
+}

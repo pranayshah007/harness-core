@@ -10,13 +10,13 @@ package io.harness.subscription.services;
 import io.harness.ModuleType;
 import io.harness.subscription.dto.CustomerDTO;
 import io.harness.subscription.dto.CustomerDetailDTO;
-import io.harness.subscription.dto.FfSubscriptionDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
 import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
+import io.harness.subscription.params.SubscriptionRequest;
 import io.harness.subscription.params.UsageKey;
 
 import java.util.EnumMap;
@@ -28,8 +28,7 @@ public interface SubscriptionService {
   InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO);
   void payInvoice(String invoiceId);
 
-  SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionDTO subscriptionDTO);
-  SubscriptionDetailDTO createFfSubscription(String accountIdentifier, FfSubscriptionDTO subscriptionDTO);
+  SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionRequest subscriptionRequest);
   SubscriptionDetailDTO updateSubscription(
       String accountIdentifier, String subscriptionId, SubscriptionDTO subscriptionDTO);
   void cancelSubscription(String accountIdentifier, String subscriptionId);

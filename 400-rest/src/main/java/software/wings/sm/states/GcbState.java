@@ -234,7 +234,7 @@ public class GcbState extends State implements SweepingOutputStateMixin {
       gcbTaskParams.setStartTs(System.currentTimeMillis());
     }
     DelegateTask delegateTask = delegateTaskOf(activityId, context, infrastructureMappingService, gcbTaskParams);
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     GcbExecutionData gcbExecutionData = GcbExecutionData.builder().activityId(activityId).build();
     gcbExecutionData.setTemplateVariable(templateUtils.processTemplateVariables(context, getTemplateVariables()));
@@ -319,7 +319,7 @@ public class GcbState extends State implements SweepingOutputStateMixin {
     parameters.setType(POLL);
     final String waitId = UUIDGenerator.generateUuid();
     DelegateTask delegateTask = delegateTaskOf(waitId, context, infrastructureMappingService, parameters);
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
     final GcbExecutionData gcbExecutionData = context.getStateExecutionData();
     return ExecutionResponse.builder()
@@ -353,7 +353,7 @@ public class GcbState extends State implements SweepingOutputStateMixin {
               .build();
       GcbDelegateResponse delegateResponse = null;
       try {
-        delegateResponse = delegateService.executeTask(
+        delegateResponse = delegateService.executeTaskV2(
             delegateTaskOf(((GcbExecutionData) context.getStateExecutionData()).getActivityId(), context,
                 infrastructureMappingService, params));
       } catch (InterruptedException e) {

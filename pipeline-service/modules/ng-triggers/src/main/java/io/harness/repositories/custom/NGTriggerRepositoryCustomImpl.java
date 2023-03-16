@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
+import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.ngtriggers.mapper.TriggerFilterHelper;
 import io.harness.springdata.PersistenceUtils;
 
@@ -25,6 +26,7 @@ import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -92,6 +94,37 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
         "[Retrying]: Failed hard deleting Trigger; attempt: {}", "[Failed]: Failed deleting Trigger; attempt: {}");
     return Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, NGTriggerEntity.class));
+  }
+
+  @Override
+  public TriggerUpdateCount updateTriggerYaml(List<NGTriggerEntity> ngTriggerEntityList) {
+    BulkOperations bulkOperations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, NGTriggerEntity.class);
+    for (NGTriggerEntity triggerEntity : ngTriggerEntityList) {
+      Update update = new Update();
+      update.set(NGTriggerEntityKeys.yaml, triggerEntity.getYaml());
+      Criteria criteria = Criteria.where(NGTriggerEntityKeys.accountId)
+                              .is(triggerEntity.getAccountId())
+                              .and(NGTriggerEntityKeys.orgIdentifier)
+                              .is(triggerEntity.getOrgIdentifier())
+                              .and(NGTriggerEntityKeys.projectIdentifier)
+                              .is(triggerEntity.getProjectIdentifier())
+                              .and(NGTriggerEntityKeys.targetIdentifier)
+                              .is(triggerEntity.getTargetIdentifier())
+                              .and(NGTriggerEntityKeys.identifier)
+                              .is(triggerEntity.getIdentifier());
+      bulkOperations.updateOne(new Query(criteria), update);
+    }
+    try {
+      long successTriggerUpdateCount = bulkOperations.execute().getModifiedCount();
+      long failedTriggerUpdateCount = ngTriggerEntityList.size() - successTriggerUpdateCount;
+      return TriggerUpdateCount.builder()
+          .failureCount(failedTriggerUpdateCount)
+          .successCount(successTriggerUpdateCount)
+          .build();
+    } catch (Exception ex) {
+      log.error("Error while updating trigger yaml", ex);
+      throw ex;
+    }
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

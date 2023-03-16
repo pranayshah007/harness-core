@@ -42,6 +42,8 @@ import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviser;
 import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviserParameters;
 import io.harness.pms.sdk.core.adviser.manualintervention.ManualInterventionAdviser;
 import io.harness.pms.sdk.core.adviser.manualintervention.ManualInterventionAdviserParameters;
+import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviser;
+import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviserParameters;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviser;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters;
 import io.harness.pms.sdk.core.adviser.retry.RetryAdviser;
@@ -133,7 +135,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
             .adviserObtainments(adviserObtainmentFromMetaData)
             .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
             .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
-                                                : RunInfoUtils.getRunCondition(stepElement.getWhen()))
+                                                : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()
                     .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
@@ -145,9 +147,10 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
     return PlanCreationResponse.builder().planNode(stepPlanNode).build();
   }
 
-  public static boolean containsOnlyAllErrorsInSomeConfig(List<FailureStrategyConfig> stageFailureStrategies) {
+  public static boolean containsOnlyAllErrorsInSomeConfig(
+      ParameterField<List<FailureStrategyConfig>> stageFailureStrategies) {
     boolean containsOnlyAllErrors = false;
-    for (FailureStrategyConfig failureStrategyConfig : stageFailureStrategies) {
+    for (FailureStrategyConfig failureStrategyConfig : stageFailureStrategies.getValue()) {
       if (failureStrategyConfig.getOnFailure().getErrors().size() == 1
           && failureStrategyConfig.getOnFailure().getErrors().get(0).getYamlName().contentEquals(
               NGFailureTypeConstants.ALL_ERRORS)) {
@@ -283,6 +286,15 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
           adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
                                         .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
                                         .build());
+          break;
+        case MARK_AS_FAILURE:
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(OnMarkFailureAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(OnMarkFailureAdviserParameters.builder()
+                                                                                .applicableFailureTypes(failureTypes)
+                                                                                .nextNodeId(nextNodeUuid)
+                                                                                .build())))
+                  .build());
           break;
         default:
           Switch.unhandled(actionType);
@@ -440,9 +452,10 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
         return RepairActionCode.MANUAL_INTERVENTION;
       case RETRY:
         return RepairActionCode.RETRY;
+      case MARK_AS_FAILURE:
+        return RepairActionCode.MARK_AS_FAILURE;
       default:
         throw new InvalidRequestException(
-
             action.toString() + " Failure action doesn't have corresponding RepairAction Code.");
     }
   }
@@ -465,17 +478,23 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
 
   private List<FailureStrategyConfig> getFailureStrategies(YamlNode node) {
     YamlField failureStrategy = node.getField(FAILURE_STRATEGIES);
-    List<FailureStrategyConfig> failureStrategyConfigs = null;
+    ParameterField<List<FailureStrategyConfig>> failureStrategyConfigs = null;
 
     try {
       if (failureStrategy != null) {
-        failureStrategyConfigs =
-            YamlUtils.read(failureStrategy.getNode().toString(), new TypeReference<List<FailureStrategyConfig>>() {});
+        failureStrategyConfigs = YamlUtils.read(
+            failureStrategy.getNode().toString(), new TypeReference<ParameterField<List<FailureStrategyConfig>>>() {});
       }
     } catch (IOException e) {
       throw new InvalidRequestException("Invalid yaml", e);
     }
-    return failureStrategyConfigs;
+    // If failureStrategies configured as <+input> and no value is given, failureStrategyConfigs.getValue() will still
+    // be null and handled as empty list
+    if (ParameterField.isNotNull(failureStrategyConfigs)) {
+      return failureStrategyConfigs.getValue();
+    } else {
+      return null;
+    }
   }
 
   // This is required as step can be inside stepGroup which can have Parallel and stepGroup itself can

@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,13 +23,13 @@ import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
+import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
@@ -79,16 +80,26 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   }
 
   @Override
-  public PipelineFilter getFilter(FilterCreationContext filterCreationContext, DeploymentStageNode yamlField) {
+  public PipelineFilter getFilter(
+      FilterCreationContext filterCreationContext, DeploymentStageNode deploymentStageNode) {
     CdFilterBuilder filterBuilder = CdFilter.builder();
 
-    final DeploymentStageConfig deploymentStageConfig = yamlField.getDeploymentStageConfig();
+    validateStrategy(deploymentStageNode);
+
+    final DeploymentStageConfig deploymentStageConfig = deploymentStageNode.getDeploymentStageConfig();
 
     validate(filterCreationContext, deploymentStageConfig);
     addServiceFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
     addInfraFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
 
     return filterBuilder.build();
+  }
+
+  private void validateStrategy(DeploymentStageNode stageNode) {
+    if (stageNode.getStrategy() != null && MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
+      throw new InvalidYamlRuntimeException(
+          "Looping Strategy and Multi Service/Environment configurations are not supported together in a single stage. Please use any one of these");
+    }
   }
 
   // This validation is added due to limitations of oneof wherein it introduces strict yaml checking breaking old
@@ -134,6 +145,11 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   }
 
   private void validateV2(FilterCreationContext filterCreationContext, DeploymentStageConfig deploymentStageConfig) {
+    if (usesServiceFromAnotherStage(deploymentStageConfig)
+        & hasNoSiblingStages(filterCreationContext.getCurrentField())) {
+      throw new InvalidYamlRuntimeException(
+          "cannot save a stage template that propagates service from another stage. Please remove useFromStage and set the serviceRef to fixed value or runtime or an expression and try again");
+    }
     if (deploymentStageConfig.getInfrastructure() != null) {
       throw new InvalidYamlRuntimeException(format(
           "infrastructure should not be present in stage [%s]. Please add environment or environment group instead",
@@ -145,6 +161,17 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
           format("deploymentType should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
+  }
+
+  private boolean hasNoSiblingStages(YamlField currentField) {
+    // spec -> stage -> null
+    return currentField != null && currentField.getNode().getParentNode() != null
+        && currentField.getNode().getParentNode().getParentNode() == null;
+  }
+
+  private boolean usesServiceFromAnotherStage(DeploymentStageConfig deploymentStageConfig) {
+    return deploymentStageConfig.getService() != null && deploymentStageConfig.getService().getUseFromStage() != null
+        && isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getStage());
   }
 
   private void addServiceFilters(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
@@ -200,7 +227,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     }
 
     if (ParameterField.isNotNull(env.getFilters()) && !env.getFilters().isExpression()
-        && EmptyPredicate.isNotEmpty(env.getFilters().getValue())) {
+        && isNotEmpty(env.getFilters().getValue())) {
       Set<Entity> unsupportedEntities = env.getFilters()
                                             .getValue()
                                             .stream()
@@ -331,6 +358,12 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
   private void addFiltersFromServiceV2(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
       ServiceYamlV2 service, ServiceDefinitionType deploymentType) {
+    if (service.getServiceRef() != null && isNotBlank(service.getServiceRef().getValue())
+        && service.getUseFromStage() != null) {
+      throw new InvalidRequestException(
+          "Only one of serviceRef and useFromStage fields are allowed in service. Please remove one and try again");
+    }
+
     if (service.getUseFromStage() != null) {
       if (isEmpty(service.getUseFromStage().getStage())) {
         throw new InvalidYamlRuntimeException(format(

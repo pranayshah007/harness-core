@@ -13,6 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.TemplateMoveConfigRequestDTO;
+import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
@@ -20,6 +23,7 @@ import io.harness.template.beans.FilterParamsDTO;
 import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.beans.TemplateListRepoResponse;
+import io.harness.template.beans.TemplateMoveConfigResponse;
 import io.harness.template.entity.TemplateEntity;
 
 import java.util.Optional;
@@ -30,7 +34,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(CDC)
 public interface NGTemplateService {
-  TemplateEntity create(TemplateEntity templateEntity, boolean setDefaultTemplate, String comments);
+  TemplateEntity create(
+      TemplateEntity templateEntity, boolean setDefaultTemplate, String comments, boolean isNewTemplate);
 
   TemplateEntity updateTemplateEntity(
       TemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate, String comments);
@@ -78,6 +83,9 @@ public interface NGTemplateService {
   boolean validateIdentifierIsUnique(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel);
 
+  boolean validateIsNewTemplateIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier);
+
   TemplateEntity updateGitFilePath(TemplateEntity templateEntity, String newFilePath);
 
   void checkLinkedTemplateAccess(
@@ -92,4 +100,11 @@ public interface NGTemplateService {
 
   TemplateListRepoResponse getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       boolean includeAllTemplatesAccessibleAtScope);
+
+  PageResponse<EntitySetupUsageDTO> listTemplateReferences(int page, int size, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel, String searchTerm,
+      boolean isStableTemplate);
+
+  TemplateMoveConfigResponse moveTemplateStoreTypeConfig(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, TemplateMoveConfigRequestDTO templateMoveConfigRequestDTO);
 }

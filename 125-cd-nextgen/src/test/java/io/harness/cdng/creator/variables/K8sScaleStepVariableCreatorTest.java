@@ -58,6 +58,7 @@ public class K8sScaleStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.execution.steps.K8s_Scale.spec.workload",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Scale.spec.instanceSelection.spec.count",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Scale.timeout",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Scale.spec.skipSteadyStateCheck");
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Scale.spec.skipSteadyStateCheck",
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Scale.when");
   }
 }

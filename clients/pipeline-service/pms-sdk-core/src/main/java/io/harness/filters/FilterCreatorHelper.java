@@ -70,8 +70,9 @@ public class FilterCreatorHelper {
         throw new InvalidYamlRuntimeException(
             String.format("Connector ref is not present for property: %s", fullQualifiedDomainName));
       }
-      IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
-          connectorRefString, accountIdentifier, orgIdentifier, projectIdentifier, metadata);
+      IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(connectorRefString,
+          accountIdentifier, orgIdentifier, projectIdentifier, metadata,
+          entityTypeProtoEnum != null ? entityTypeProtoEnum.toString().toLowerCase() : "entities");
       return EntityDetailProtoDTO.newBuilder()
           .setIdentifierRef(IdentifierRefProtoUtils.createIdentifierRefProtoFromIdentifierRef(identifierRef))
           .setType(entityTypeProtoEnum)

@@ -11,8 +11,8 @@ import static io.harness.auditevent.streaming.AuditEventStreamingConstants.ACCOU
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.AUDIT_EVENT_PUBLISHER_JOB;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.JOB_START_TIME_PARAMETER_KEY;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import io.harness.auditevent.streaming.services.StreamingDestinationService;
+
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -36,17 +36,19 @@ import org.springframework.scheduling.annotation.Scheduled;
 public class AuditEventJobScheduler {
   private final JobLauncher jobLauncher;
   @Qualifier(AUDIT_EVENT_PUBLISHER_JOB) private final Job auditEventPublisherJob;
+  private final StreamingDestinationService streamingDestinationService;
 
   @Autowired
-  public AuditEventJobScheduler(JobLauncher jobLauncher, Job auditEventPublisherJob) {
+  public AuditEventJobScheduler(
+      JobLauncher jobLauncher, Job auditEventPublisherJob, StreamingDestinationService streamingDestinationService) {
     this.jobLauncher = jobLauncher;
     this.auditEventPublisherJob = auditEventPublisherJob;
+    this.streamingDestinationService = streamingDestinationService;
   }
 
-  @Scheduled(cron = "0 */10 * * * *") // run every 10 min
+  @Scheduled(cron = "${jobCommonConfig.eventCollectionBatchJob.cron}")
   public void runEventCollectionBatchJob() {
-    // TODO: Replace with real logic of fetching account identifier based in stateful set logic
-    List<String> accountIdentifiers = new ArrayList<>();
+    List<String> accountIdentifiers = streamingDestinationService.distinctAccounts();
     accountIdentifiers.forEach(this::startJob);
   }
 

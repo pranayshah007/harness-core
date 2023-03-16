@@ -9,7 +9,6 @@ package io.harness.ng.core.deploymentstage;
 
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
@@ -23,44 +22,23 @@ import io.harness.rule.Owner;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
 import java.util.Objects;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
-@RunWith(Parameterized.class)
+@RunWith(JUnitParamsRunner.class)
 public class DeploymentStageConfigResourceTest extends CategoryTest {
-  public static final String SVC_REF = "SVC_REF";
   private final DeploymentStageConfigResource deploymentStageConfigResource = new DeploymentStageConfigResource();
-
-  private String cdStageYamlFilePath;
-  private String expectedSvcRef;
-  private String expectedEnvRef;
-
-  public DeploymentStageConfigResourceTest(String cdStageYamlFilePath, String expectedSvcRef, String expectedEnvRef) {
-    this.cdStageYamlFilePath = cdStageYamlFilePath;
-    this.expectedSvcRef = expectedSvcRef;
-    this.expectedEnvRef = expectedEnvRef;
-  }
-
-  @Parameterized.Parameters
-  public static Collection<Object[]> data() {
-    return asList(new Object[][] {{"deploymentstage/cdStageWithSvcEnvV1.yaml", "service1a", "environment1a"},
-        {"deploymentstage/cdParallelStagesWithInheritedService.yaml", "S1", "EnvFromStage2"},
-        {"deploymentstage/cdStageWithSvcEnvV2.yaml", "S2", "Env2"},
-        {"deploymentstage/cdStageWithSvcEnvV1WithRuntime.yaml", "<+input>", "environment1a"},
-        {"deploymentstage/cdParallelStagesWithInheritedServiceWithRuntime.yaml", "<+input>", "<+variable>"},
-        {"deploymentstage/cdStageWithSvcEnvV2WithRuntime.yaml", "<+variable>", "Env2"},
-        {"deploymentstage/cdStageWithMultiServiceEnvironment.yaml", "svc2one", "stagingInfra"},
-        {"deploymentstage/cdStageWithServicesAndEnvironmentsAsExpression.yaml", "<+input>", "<+input>"}});
-  }
 
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testGetCdStageMetadata() throws IOException {
+  @Parameters(method = "data")
+  public void testGetCdStageMetadata(String cdStageYamlFilePath, String expectedSvcRef, String expectedEnvRef)
+      throws IOException {
     final String cdStageYaml = readFile(cdStageYamlFilePath);
     CdDeployStageMetadataRequestDTO requestDTO =
         CdDeployStageMetadataRequestDTO.builder().stageIdentifier("S2").pipelineYaml(cdStageYaml).build();
@@ -73,6 +51,17 @@ public class DeploymentStageConfigResourceTest extends CategoryTest {
                        .serviceRef(expectedSvcRef)
                        .environmentRef(expectedEnvRef)
                        .build());
+  }
+
+  private Object[][] data() {
+    return new Object[][] {{"deploymentstage/cdStageWithSvcEnvV1.yaml", "service1a", "environment1a"},
+        {"deploymentstage/cdParallelStagesWithInheritedService.yaml", "S1", "EnvFromStage2"},
+        {"deploymentstage/cdStageWithSvcEnvV2.yaml", "S2", "Env2"},
+        {"deploymentstage/cdStageWithSvcEnvV1WithRuntime.yaml", "<+input>", "environment1a"},
+        {"deploymentstage/cdParallelStagesWithInheritedServiceWithRuntime.yaml", "<+input>", "<+variable>"},
+        {"deploymentstage/cdStageWithSvcEnvV2WithRuntime.yaml", "<+variable>", "Env2"},
+        {"deploymentstage/cdStageWithMultiServiceEnvironment.yaml", "svc2one", "stagingInfra"},
+        {"deploymentstage/cdStageWithServicesAndEnvironmentsAsExpression.yaml", "<+input>", "<+input>"}};
   }
 
   private String readFile(String filename) {

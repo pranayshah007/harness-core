@@ -10,7 +10,7 @@ package io.harness.cdng.aws.asg;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDAbstractStepInfo;
+import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AsgBlueGreenDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -53,8 +53,10 @@ public class AsgBlueGreenDeployStepInfo
   @Builder(builderMethodName = "infoBuilder")
   public AsgBlueGreenDeployStepInfo(ParameterField<String> loadBalancer, ParameterField<String> prodListener,
       ParameterField<String> prodListenerRuleArn, ParameterField<String> stageListener,
-      ParameterField<String> stageListenerRuleArn, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(loadBalancer, prodListener, prodListenerRuleArn, stageListener, stageListenerRuleArn, delegateSelectors);
+      ParameterField<String> stageListenerRuleArn, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<Boolean> useAlreadyRunningInstances) {
+    super(loadBalancer, prodListener, prodListenerRuleArn, stageListener, stageListenerRuleArn, delegateSelectors,
+        useAlreadyRunningInstances);
   }
 
   @Override
@@ -76,6 +78,7 @@ public class AsgBlueGreenDeployStepInfo
         .prodListenerRuleArn(prodListenerRuleArn)
         .stageListener(stageListener)
         .stageListenerRuleArn(stageListenerRuleArn)
+        .useAlreadyRunningInstances(useAlreadyRunningInstances)
         .build();
   }
 

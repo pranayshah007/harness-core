@@ -19,6 +19,8 @@ public class KustomizeExceptionConstants {
   // Kustomize error
   public static final String ACCUMULATING_RESOURCES = "accumulating resources";
   public static final String EVALSYMLINK_FAILURE = "evalsymlink failure";
+  public static final String RESOURCE_NOT_FOUND =
+      "Kustomize manifest resource not found ${RESOURCE_PATH} inside kustomize base directory";
 
   // Kustomize Hint
   public static String EVALSYMLINK_ERROR_HINT =

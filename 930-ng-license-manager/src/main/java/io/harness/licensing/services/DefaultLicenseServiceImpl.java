@@ -247,6 +247,11 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   }
 
   @Override
+  public void deleteByAccount(String accountIdentifier) {
+    moduleLicenseRepository.deleteAllByAccountIdentifier(accountIdentifier);
+  }
+
+  @Override
   public ModuleLicenseDTO startFreeLicense(
       String accountIdentifier, ModuleType moduleType, String referer, String gaClientId) {
     ModuleLicenseDTO trialLicenseDTO = licenseInterface.generateFreeLicense(accountIdentifier, moduleType);

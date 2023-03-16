@@ -26,6 +26,7 @@ public class K8sEventWatchDTO {
   Kubectl client;
   String eventInfoFormat;
   String eventErrorFormat;
+  String releaseName;
   List<KubernetesResourceId> resourceIds;
   String workingDirectory;
   boolean isErrorFrameworkEnabled;

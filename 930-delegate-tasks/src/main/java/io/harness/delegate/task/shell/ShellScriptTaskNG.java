@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.shell;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -66,21 +68,34 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
     if (taskParameters.isExecuteOnDelegate()) {
-      ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(taskParameters);
-      ScriptProcessExecutor executor =
-          shellExecutorFactory.getExecutor(shellExecutorConfig, this.getLogStreamingTaskClient(), commandUnitsProgress);
-      // TODO: check later
-      // if (taskParameters.isLocalOverrideFeatureFlag()) {
-      //   taskParameters.setScript(delegateLocalConfigService.replacePlaceholdersWithLocalConfig(taskParameters.getScript()));
-      // }
-      ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
-          taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null);
-      return ShellScriptTaskResponseNG.builder()
-          .executeCommandResponse(executeCommandResponse)
-          .status(executeCommandResponse.getStatus())
-          .errorMessage(getErrorMessage(executeCommandResponse.getStatus()))
-          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-          .build();
+      try {
+        ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(taskParameters);
+        ScriptProcessExecutor executor = shellExecutorFactory.getExecutor(
+            shellExecutorConfig, this.getLogStreamingTaskClient(), commandUnitsProgress);
+        // TODO: check later
+        // if (taskParameters.isLocalOverrideFeatureFlag()) {
+        //   taskParameters.setScript(delegateLocalConfigService.replacePlaceholdersWithLocalConfig(taskParameters.getScript()));
+        // }
+        ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
+            taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null);
+        return ShellScriptTaskResponseNG.builder()
+            .executeCommandResponse(executeCommandResponse)
+            .status(executeCommandResponse.getStatus())
+            .errorMessage(getErrorMessage(executeCommandResponse.getStatus()))
+            .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+            .build();
+      } catch (Exception e) {
+        log.error("Shell Script Failed to execute.", e);
+        return ShellScriptTaskResponseNG.builder()
+            .status(CommandExecutionStatus.FAILURE)
+            .errorMessage("Shell Script Failed to execute. Reason: " + e.getMessage())
+            .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+            .build();
+      } finally {
+        if (isNotEmpty(taskParameters.getExecutionId()) && isNotEmpty(taskParameters.getHost())) {
+          SshSessionManager.evictAndDisconnectCachedSession(taskParameters.getExecutionId(), taskParameters.getHost());
+        }
+      }
     } else {
       try {
         SshSessionConfig sshSessionConfig = getSshSessionConfig(taskParameters);

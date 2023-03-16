@@ -191,7 +191,7 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void fetchInvocationCountFromCloudWatch() {
     AwsCloudWatchHelperServiceDelegate mock = mock(AwsCloudWatchHelperServiceDelegate.class);
-    doReturn(mock).when(delegateProxyFactory).get(any(Class.class), any(SyncTaskContext.class));
+    doReturn(mock).when(delegateProxyFactory).getV2(any(Class.class), any(SyncTaskContext.class));
 
     awsLambdaInstanceHandler.fetchInvocationCountFromCloudWatch(
         "f1", new Date(), new Date(), "appid", "region", getAwsConfig(), getEncryptionDetails());

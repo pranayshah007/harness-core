@@ -183,8 +183,10 @@ public class K8sDryRunManifestStep extends TaskChainExecutableWithRollbackAndRba
           KubernetesExceptionExplanation.MANIFEST_SIZE_LIMIT,
           new UnsupportedOperationException("Unable to store k8s manifest dry run file as variable"));
     }
-    K8sDryRunManifestOutcome k8sDryRunManifestOutcome =
-        K8sDryRunManifestOutcome.builder().manifestDryRun(manifestDryRun).build();
+    K8sDryRunManifestOutcome k8sDryRunManifestOutcome = K8sDryRunManifestOutcome.builder()
+                                                            .manifestDryRun(manifestDryRun)
+                                                            .manifest(executionPassThroughData.getK8sGitFetchInfo())
+                                                            .build();
     executionSweepingOutputService.consume(
         ambiance, k8sDryRunManifestOutcome.OUTPUT_NAME, k8sDryRunManifestOutcome, StepOutcomeGroup.STEP.name());
     return stepResponseBuilder.status(Status.SUCCEEDED)

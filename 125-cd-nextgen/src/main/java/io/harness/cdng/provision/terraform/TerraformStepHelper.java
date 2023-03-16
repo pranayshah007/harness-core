@@ -14,7 +14,6 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
-import static io.harness.provision.TerraformConstants.TF_DESTROY_NAME_PREFIX;
 import static io.harness.validation.Validator.notEmptyCheck;
 
 import static java.lang.String.format;
@@ -25,6 +24,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
@@ -60,6 +60,7 @@ import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.AccountId;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
@@ -81,12 +82,16 @@ import io.harness.delegate.task.terraform.TerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
 import io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskParameters;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
+import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
@@ -143,11 +148,14 @@ import org.apache.commons.io.IOUtils;
 public class TerraformStepHelper {
   private static final String INHERIT_OUTPUT_FORMAT = "tfInheritOutput_%s";
   public static final String TF_NAME_PREFIX_NG = "tfPlan_%s_%s";
+  public static final String TF_DESTROY_NAME_PREFIX_NG = "tfDestroyPlan_%s_%s";
   private static final String TF_INHERIT_OUTPUT_FORMAT = "tfInheritOutput_%s_%s";
   public static final String TF_CONFIG_FILES = "TF_CONFIG_FILES";
   public static final String TF_VAR_FILES = "TF_VAR_FILES_%d";
   public static final String TF_BACKEND_CONFIG_FILE = "TF_BACKEND_CONFIG_FILE";
   public static final String USE_CONNECTOR_CREDENTIALS = "useConnectorCredentials";
+  public static final String TERRAFORM_CLOUD_CLI = "Terraform cloud CLI";
+  public static final String SKIP_REFRESH_COMMAND = "Skip Refresh Command";
 
   @Inject private HPersistence persistence;
   @Inject private K8sStepHelper k8sStepHelper;
@@ -164,6 +172,7 @@ public class TerraformStepHelper {
   @Inject private WaitNotifyEngine waitNotifyEngine;
 
   @Inject private FileStoreService fileStoreService;
+  @Inject DelegateServiceGrpcClient delegateServiceGrpcClient;
 
   public static Optional<EntityDetail> prepareEntityDetailForBackendConfigFiles(
       String accountId, String orgIdentifier, String projectIdentifier, TerraformBackendConfig config) {
@@ -572,7 +581,8 @@ public class TerraformStepHelper {
   }
 
   public String getTerraformPlanName(TerraformPlanCommand terraformPlanCommand, Ambiance ambiance, String provisionId) {
-    String prefix = TerraformPlanCommand.DESTROY == terraformPlanCommand ? TF_DESTROY_NAME_PREFIX : TF_NAME_PREFIX_NG;
+    String prefix =
+        TerraformPlanCommand.DESTROY == terraformPlanCommand ? TF_DESTROY_NAME_PREFIX_NG : TF_NAME_PREFIX_NG;
     return format(prefix, ambiance.getPlanExecutionId(), provisionId).replaceAll("_", "-");
   }
 
@@ -711,7 +721,7 @@ public class TerraformStepHelper {
   public void saveRollbackDestroyConfigInline(
       TerraformApplyStepParameters stepParameters, TerraformTaskNGResponse response, Ambiance ambiance) {
     validateApplyStepConfigFilesInline(stepParameters);
-    TerraformStepConfigurationParameters configuration = stepParameters.getConfiguration();
+    TerraformStepConfigurationInterface configuration = stepParameters.getConfiguration();
     TerraformExecutionDataParameters spec = configuration.getSpec();
     TerraformConfigBuilder builder =
         TerraformConfig.builder()
@@ -744,12 +754,14 @@ public class TerraformStepHelper {
       default:
         throw new InvalidRequestException(format("Unsupported store type: [%s]", storeConfigType));
     }
+
     builder.varFileConfigs(toTerraformVarFileConfig(spec.getVarFiles(), response, ambiance))
         .backendConfig(getBackendConfig(spec.getBackendConfig()))
         .backendConfigFileConfig(toTerraformBackendConfigFileConfig(spec.getBackendConfig(), response))
         .environmentVariables(getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
         .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
-        .targets(ParameterFieldHelper.getParameterFieldValue(spec.getTargets()));
+        .targets(ParameterFieldHelper.getParameterFieldValue(spec.getTargets()))
+        .isTerraformCloudCli(ParameterFieldHelper.getParameterFieldValue(spec.getIsTerraformCloudCli()));
 
     terraformConfigDAL.saveTerraformConfig(builder.build());
   }
@@ -822,6 +834,7 @@ public class TerraformStepHelper {
                                           .environmentVariables(rollbackConfig.getEnvironmentVariables())
                                           .workspace(rollbackConfig.getWorkspace())
                                           .targets(rollbackConfig.getTargets())
+                                          .isTerraformCloudCli(rollbackConfig.isTerraformCloudCli)
                                           .build();
 
     terraformConfigDAL.saveTerraformConfig(terraformConfig);
@@ -1130,5 +1143,25 @@ public class TerraformStepHelper {
     String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
     log.info("Task Successfully queued with taskId: {}", taskId);
     waitNotifyEngine.waitForAllOn(NG_ORCHESTRATION, new TerraformSecretCleanupTaskNotifyCallback(), taskId);
+  }
+
+  public void checkIfTaskIsSupportedByDelegate(
+      Ambiance ambiance, io.harness.delegate.TaskType taskType, String taskLogicName) {
+    AccountId accountIdentifier = AccountId.newBuilder().setId(AmbianceUtils.getAccountId(ambiance)).build();
+
+    boolean taskTypeSupported = delegateServiceGrpcClient.isTaskTypeSupported(accountIdentifier, taskType);
+    if (!taskTypeSupported) {
+      throw new InvalidRequestException(format("None of available delegates supports %s integration", taskLogicName));
+    }
+  }
+
+  public void checkIfTerraformCloudCliIsEnabled(
+      FeatureName featurename, boolean isTerraformCloudCli, Ambiance ambiance) {
+    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), featurename) && isTerraformCloudCli) {
+      throw new AccessDeniedException(
+          format("'%s' is not enabled for account '%s'. Please contact harness customer care to enable FF.",
+              FeatureName.CD_TERRAFORM_CLOUD_CLI_NG.name(), AmbianceUtils.getAccountId(ambiance)),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
+    }
   }
 }

@@ -8,6 +8,7 @@
 package io.harness.cvng.core.beans.monitoredService.healthSourceSpec;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,9 +18,13 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.core.beans.RiskCategory;
+import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NewRelicHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NewRelicHealthSourceSpec.NewRelicMetricDefinition;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.NewRelicCVConfig;
@@ -84,6 +89,48 @@ public class NewRelicHealthSourceSpecTest extends CvNextGenTestBase {
                                    .build();
 
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void getCVConfigUpdateResult_customMetricDefinition() {
+    NewRelicMetricDefinition newRelicMetricDefinition =
+        NewRelicMetricDefinition.builder()
+            .metricName("metricName")
+            .groupName("groupName")
+            .nrql("nrql")
+            .identifier("identifier")
+            .responseMapping(MetricResponseMapping.builder()
+                                 .metricValueJsonPath("metricValueJsonPath")
+                                 .timestampJsonPath("timestampJsonPath")
+                                 .build())
+            .riskProfile(RiskProfile.builder().riskCategory(RiskCategory.ERROR).build())
+            .build();
+    newRelicHealthSourceSpec.setMetricPacks(Collections.singleton(
+        TimeSeriesMetricPackDTO.builder().identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER).build()));
+    newRelicHealthSourceSpec.setNewRelicMetricDefinitions(Collections.singletonList(newRelicMetricDefinition));
+    CVConfigUpdateResult cvConfigUpdateResult = newRelicHealthSourceSpec.getCVConfigUpdateResult(accountId,
+        orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, monitoredServiceIdentifier, identifier,
+        name, Collections.emptyList(), metricPackService);
+    List<CVConfig> added = cvConfigUpdateResult.getAdded();
+
+    List<NewRelicCVConfig> newRelicCVConfigs = (List<NewRelicCVConfig>) (List<?>) added;
+    assertThat(newRelicCVConfigs).hasSize(1);
+    NewRelicCVConfig newRelicCVConfig = newRelicCVConfigs.get(0);
+    assertCommon(newRelicCVConfig);
+    assertThat(newRelicCVConfig.getMetricPack().getCategory()).isEqualTo(CVMonitoringCategory.ERRORS);
+    assertThat(newRelicCVConfig.getMetricPack().getMetrics().size()).isEqualTo(1);
+    assertThat(newRelicCVConfig.getMetricInfos().size()).isEqualTo(1);
+    assertThat(newRelicCVConfig.getMetricInfos().get(0).getIdentifier()).isEqualTo("identifier");
+    assertThat(newRelicCVConfig.getMetricInfos().get(0).getMetricName()).isEqualTo("metricName");
+    assertThat(newRelicCVConfig.getMetricInfos().get(0).getNrql()).isEqualTo("nrql");
+    assertThat(newRelicCVConfig.getMetricInfos().get(0).getResponseMapping().getTimestampJsonPath())
+        .isEqualTo("timestampJsonPath");
+    assertThat(newRelicCVConfig.getMetricInfos().get(0).getResponseMapping().getMetricValueJsonPath())
+        .isEqualTo("metricValueJsonPath");
+    assertThat(newRelicCVConfig.getGroupName()).isEqualTo("groupName");
+    assertThat(newRelicCVConfig.isCustomQuery()).isTrue();
   }
 
   @Test

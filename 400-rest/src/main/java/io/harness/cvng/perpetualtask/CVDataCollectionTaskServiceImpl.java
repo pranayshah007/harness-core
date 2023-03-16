@@ -322,7 +322,7 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
     }
 
     SyncTaskContext taskContext = getSyncTaskContext(accountId, orgIdentifier, projectIdentifier);
-    return delegateProxyFactory.get(CVNGDataCollectionDelegateService.class, taskContext)
+    return delegateProxyFactory.getV2(CVNGDataCollectionDelegateService.class, taskContext)
         .getDataCollectionResult(accountId, dataCollectionRequest, encryptedDataDetails);
   }
 
@@ -343,7 +343,7 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
     List<List<EncryptedDataDetail>> encryptedDataDetails =
         getEncryptedDataDetail(accountId, orgIdentifier, projectIdentifier, bundle);
     SyncTaskContext syncTaskContext = getSyncTaskContext(accountId, orgIdentifier, projectIdentifier);
-    return delegateProxyFactory.get(K8InfoDataService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(K8InfoDataService.class, syncTaskContext)
         .getNameSpaces(bundle, isNotEmpty(encryptedDataDetails) ? encryptedDataDetails.get(0) : null, filter);
   }
 
@@ -353,7 +353,7 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
     List<List<EncryptedDataDetail>> encryptedDataDetails =
         getEncryptedDataDetail(accountId, orgIdentifier, projectIdentifier, bundle);
     SyncTaskContext syncTaskContext = getSyncTaskContext(accountId, orgIdentifier, projectIdentifier);
-    return delegateProxyFactory.get(K8InfoDataService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(K8InfoDataService.class, syncTaskContext)
         .getWorkloads(namespace, bundle, isNotEmpty(encryptedDataDetails) ? encryptedDataDetails.get(0) : null, filter);
   }
 
@@ -363,7 +363,7 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
     List<List<EncryptedDataDetail>> encryptedDataDetails =
         getEncryptedDataDetail(accountId, orgIdentifier, projectIdentifier, bundle);
     SyncTaskContext syncTaskContext = getSyncTaskContext(accountId, orgIdentifier, projectIdentifier);
-    return delegateProxyFactory.get(K8InfoDataService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(K8InfoDataService.class, syncTaskContext)
         .checkCapabilityToGetEvents(bundle, isNotEmpty(encryptedDataDetails) ? encryptedDataDetails.get(0) : null);
   }
 }

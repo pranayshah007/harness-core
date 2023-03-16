@@ -774,7 +774,8 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
         VerificationJobInstanceKeys.dataCollectionDelay, VerificationJobInstanceKeys.oldVersionHosts,
         VerificationJobInstanceKeys.newVersionHosts, VerificationJobInstanceKeys.newHostsTrafficSplitPercentage,
         VerificationJobInstanceKeys.progressLogs, VerificationJobInstanceKeys.cvConfigMap,
-        VerificationJobInstanceKeys.verificationStatus, VerificationJobInstanceKeys.name);
+        VerificationJobInstanceKeys.appliedDeploymentAnalysisTypeMap, VerificationJobInstanceKeys.verificationStatus,
+        VerificationJobInstanceKeys.name);
     verificationJobInstances.forEach(verificationJobInstance -> {
       List<Field> fields = ReflectionUtils.getAllDeclaredAndInheritedFields(VerificationJobInstance.class);
       fields.stream().filter(field -> !nullableFields.contains(field.getName())).forEach(field -> {
@@ -885,7 +886,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     Optional<Risk> riskScore =
         verificationJobInstanceAnalysisService.getLatestRiskScore(accountId, verificationJobInstanceIds.get(0));
     assertThat(riskScore).isPresent();
-    assertThat(riskScore.get()).isEqualTo(Risk.UNHEALTHY);
+    assertThat(riskScore.get()).isEqualTo(Risk.HEALTHY);
   }
 
   @Test

@@ -24,6 +24,7 @@ import io.harness.rule.Owner;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.entities.ApprovalInstance.ApprovalInstanceKeys;
 
+import com.mongodb.client.result.DeleteResult;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -37,6 +38,7 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ApprovalInstanceCustomRepositoryImplTest extends OrchestrationStepsTestBase {
   @Mock MongoTemplate mongoTemplate;
+  @Mock DeleteResult deleteResult;
   ApprovalInstanceCustomRepository approvalInstanceCustomRepository;
   @Test
   @Owner(developers = SHALINI)

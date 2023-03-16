@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.conditionchecker;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.ngtriggers.conditionchecker.OperationEvaluator.DOES_NOT_CONTAIN_OPERATOR;
 import static io.harness.ngtriggers.conditionchecker.OperationEvaluator.ENDS_WITH_OPERATOR;
 import static io.harness.ngtriggers.conditionchecker.OperationEvaluator.EQUALS_OPERATOR;
 import static io.harness.ngtriggers.conditionchecker.OperationEvaluator.IN_OPERATOR;
@@ -89,5 +90,9 @@ public class ConditionEvaluatorTest extends CategoryTest {
         .isFalse();
 
     assertThat(ConditionEvaluator.evaluate("create_image xyz\r\n", "^create_image.*", REGEX_OPERATOR)).isTrue();
+
+    assertThat(ConditionEvaluator.evaluate("release/on-prem/2401", "master", DOES_NOT_CONTAIN_OPERATOR)).isTrue();
+    assertThat(ConditionEvaluator.evaluate("release/on-prem/2401", "release/on-prem", DOES_NOT_CONTAIN_OPERATOR))
+        .isFalse();
   }
 }

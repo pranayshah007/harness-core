@@ -87,7 +87,7 @@ public class PerpetualTaskRecordHandlerTest extends CategoryTest {
                                                   .delegateId(delegateId)
                                                   .delegateMetaInfo(DelegateMetaInfo.builder().id(delegateId).build())
                                                   .build();
-    when(delegateService.executeTask(isA(DelegateTask.class))).thenReturn(response);
+    when(delegateService.executeTaskV2(isA(DelegateTask.class))).thenReturn(response);
     perpetualTaskRecordHandler.assign(record);
     verify(perpetualTaskService).appointDelegate(eq(accountId), anyString(), eq(delegateId), anyLong());
   }
@@ -124,7 +124,7 @@ public class PerpetualTaskRecordHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldNotHandle() throws InterruptedException {
     RemoteMethodReturnValueData response = RemoteMethodReturnValueData.builder().build();
-    when(delegateService.executeTask(isA(DelegateTask.class))).thenReturn(response);
+    when(delegateService.executeTaskV2(isA(DelegateTask.class))).thenReturn(response);
     perpetualTaskRecordHandler.assign(record);
     verify(perpetualTaskService, times(0)).appointDelegate(eq(accountId), anyString(), eq(delegateId), anyLong());
   }

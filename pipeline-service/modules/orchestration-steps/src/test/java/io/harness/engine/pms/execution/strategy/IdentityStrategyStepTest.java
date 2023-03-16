@@ -104,6 +104,7 @@ public class IdentityStrategyStepTest extends CategoryTest {
                                    .ambiance(oldAmbiance)
                                    .status(Status.SUCCEEDED)
                                    .planNode(PlanNode.builder()
+                                                 .uuid("childId")
                                                  .stepType(StepType.newBuilder()
                                                                .setType(HttpStep.STEP_TYPE.getType())
                                                                .setStepCategory(HttpStep.STEP_TYPE.getStepCategory())
@@ -115,16 +116,25 @@ public class IdentityStrategyStepTest extends CategoryTest {
                                    .ambiance(oldAmbiance)
                                    .status(Status.SUCCEEDED)
                                    .planNode(PlanNode.builder()
+                                                 .uuid("childId2")
                                                  .stepType(StepType.newBuilder()
                                                                .setType(HttpStep.STEP_TYPE.getType())
                                                                .setStepCategory(HttpStep.STEP_TYPE.getStepCategory())
                                                                .build())
                                                  .build())
                                    .build());
-    childrenNodeExecutions.add(
-        NodeExecution.builder().uuid("uuid3").ambiance(oldAmbiance).status(Status.FAILED).build());
-    childrenNodeExecutions.add(
-        NodeExecution.builder().uuid("uuid4").ambiance(oldAmbiance).status(Status.ABORTED).build());
+    childrenNodeExecutions.add(NodeExecution.builder()
+                                   .uuid("uuid3")
+                                   .planNode(PlanNode.builder().uuid("childId3").build())
+                                   .ambiance(oldAmbiance)
+                                   .status(Status.FAILED)
+                                   .build());
+    childrenNodeExecutions.add(NodeExecution.builder()
+                                   .uuid("uuid4")
+                                   .planNode(PlanNode.builder().uuid("childId3").build())
+                                   .ambiance(oldAmbiance)
+                                   .status(Status.ABORTED)
+                                   .build());
 
     NodeExecution strategyNodeExecution =
         NodeExecution.builder()
@@ -239,12 +249,16 @@ public class IdentityStrategyStepTest extends CategoryTest {
   private void assertChildrenResponse(ChildrenExecutableResponse childrenExecutableResponse, List<Node> identityNodes,
       List<NodeExecution> childrenNodeExecutions) {
     List<String> nodeIds = identityNodes.stream().map(UuidAccess::getUuid).collect(Collectors.toList());
+    List<String> planNodeIds = childrenNodeExecutions.stream()
+                                   .filter(o -> StatusUtils.brokeAndAbortedStatuses().contains(o.getStatus()))
+                                   .map(o -> o.getNode().getUuid())
+                                   .collect(Collectors.toList());
     long successFulNodeExecutions = childrenNodeExecutions.stream()
                                         .filter(o -> !StatusUtils.brokeAndAbortedStatuses().contains(o.getStatus()))
                                         .count();
     int identityNodesCount = 0;
     for (ChildrenExecutableResponse.Child child : childrenExecutableResponse.getChildrenList()) {
-      if (!child.getChildNodeId().equals("childId")) {
+      if (!planNodeIds.contains(child.getChildNodeId())) {
         identityNodesCount++;
         assertTrue(nodeIds.contains(child.getChildNodeId()));
       }
@@ -252,5 +266,6 @@ public class IdentityStrategyStepTest extends CategoryTest {
     assertEquals(identityNodesCount, nodeIds.size());
     assertEquals(identityNodesCount, 2);
     assertEquals(successFulNodeExecutions, identityNodesCount);
+    assertEquals(nodeIds.size() + planNodeIds.size(), childrenNodeExecutions.size());
   }
 }

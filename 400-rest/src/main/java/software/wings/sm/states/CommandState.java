@@ -725,7 +725,7 @@ public class CommandState extends State {
             .setupAbstraction(Cd1SetupFields.SERVICE_ID_FIELD, serviceId)
             .selectionLogsTrackingEnabled(isSelectionLogsTrackingForTasksEnabled())
             .build();
-    delegateTaskId = delegateService.queueTask(delegateTask);
+    delegateTaskId = delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
     return delegateTaskId;
   }

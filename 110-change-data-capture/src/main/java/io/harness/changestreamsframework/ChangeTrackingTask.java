@@ -36,14 +36,17 @@ class ChangeTrackingTask implements Runnable {
   private MongoCollection<DBObject> collection;
   private ClientSession clientSession;
   private Class<? extends PersistentEntity> subscribedClass;
+  private int batchSize;
   private BsonDocument resumeToken;
 
   ChangeTrackingTask(ChangeStreamSubscriber changeStreamSubscriber, MongoCollection<DBObject> collection,
-      ClientSession clientSession, String tokenParam, Class<? extends PersistentEntity> subscribedClass) {
+      ClientSession clientSession, String tokenParam, Class<? extends PersistentEntity> subscribedClass,
+      int batchSize) {
     this.changeStreamSubscriber = changeStreamSubscriber;
     this.collection = collection;
     this.clientSession = clientSession;
     this.subscribedClass = subscribedClass;
+    this.batchSize = batchSize;
     if (tokenParam != null) {
       this.resumeToken =
           Document.parse(tokenParam).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
@@ -57,20 +60,8 @@ class ChangeTrackingTask implements Runnable {
   }
 
   private void openChangeStream(Consumer<ChangeStreamDocument<DBObject>> changeStreamDocumentConsumer) {
-    ChangeStreamIterable<DBObject> changeStreamIterable;
-    ChangeStreamIterable<DBObject> changeStreamIterableResumeToken;
-    if (Objects.isNull(clientSession)) {
-      changeStreamIterable = collection.watch();
-      changeStreamIterableResumeToken = collection.watch();
-    } else {
-      changeStreamIterable = collection.watch(clientSession);
-      changeStreamIterableResumeToken = collection.watch(clientSession);
-    }
-
-    changeStreamIterable =
-        changeStreamIterable.fullDocument(FullDocument.UPDATE_LOOKUP).maxAwaitTime(1, TimeUnit.MINUTES);
-    changeStreamIterableResumeToken =
-        changeStreamIterableResumeToken.fullDocument(FullDocument.UPDATE_LOOKUP).maxAwaitTime(1, TimeUnit.MINUTES);
+    ChangeStreamIterable<DBObject> changeStreamIterable = createChangeStream();
+    ChangeStreamIterable<DBObject> changeStreamIterableResumeToken = createChangeStream();
 
     MongoCursor<ChangeStreamDocument<DBObject>> mongoCursor = null;
     try {
@@ -100,6 +91,19 @@ class ChangeTrackingTask implements Runnable {
         mongoCursor.close();
       }
     }
+  }
+
+  private ChangeStreamIterable<DBObject> createChangeStream() {
+    ChangeStreamIterable<DBObject> changeStreamIterable;
+    if (Objects.isNull(clientSession)) {
+      changeStreamIterable = collection.watch();
+    } else {
+      changeStreamIterable = collection.watch(clientSession);
+    }
+
+    return changeStreamIterable.fullDocument(FullDocument.UPDATE_LOOKUP)
+        .batchSize(batchSize)
+        .maxAwaitTime(1, TimeUnit.MINUTES);
   }
 
   @Override

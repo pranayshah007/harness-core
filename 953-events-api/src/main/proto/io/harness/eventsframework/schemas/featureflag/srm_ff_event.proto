@@ -1,0 +1,36 @@
+// Copyright 2023 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.eventsframework.featureflag;
+
+option java_multiple_files = true;
+option go_package = "953_events_api";
+
+message FeatureFlagEvent {
+  string AccountID = 1;
+  string OrgIdentifier = 2;
+  string ProjectIdentifier = 3;
+  repeated string ServiceIdentifiers = 4;      // array of all services impacted
+  repeated string EnvironmentIdentifiers = 5;  // array of environments impacted
+  EventDetails EventDetails = 6;
+  int64 ExecutionTime = 7;  // unix timestamp in ms
+  string Type = 8;          // will always be FEATURE_FLAG for us
+}
+
+message EventDetails {
+  string Name = 1;                    // flag or service name
+  string Identifier = 2;              // flag or service identifier
+  string EventType = 3;               // flag_patch or group_patch
+  repeated string EventDetails = 4;   // friendly descriptions of changes made e.g. "Flag x turned off"
+  string ChangeEventDetailsLink = 5;  // link to the flag/segment that caused the change e.g. /cf/admin/features/bool2
+  string InternalLinkToEntity =
+      6;            // the link to the object diffs e.g.
+                    // /cf/admin/objects/ceb577bf-bc44-4108-a73c-0302d5ea68c8,deb522bf-bc44-4108-a73c-0302d5ea68c7
+  string User = 7;  // the user who performed the action
+}

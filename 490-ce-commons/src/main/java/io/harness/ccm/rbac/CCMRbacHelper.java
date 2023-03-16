@@ -7,18 +7,31 @@
 
 package io.harness.ccm.rbac;
 
+import java.util.Set;
+
 public interface CCMRbacHelper {
-  void checkFolderViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-  void checkFolderEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-  void checkFolderDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkFolderViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  void checkFolderEditPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  void checkFolderDeletePermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  Set<String> checkFolderIdsGivenPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      Set<String> folderIds, String permission);
 
-  void checkPerspectiveViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-  void checkPerspectiveEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-  void checkPerspectiveDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkPerspectiveViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  void checkPerspectiveEditPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  void checkPerspectiveDeletePermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
 
-  void checkBudgetViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-  void checkBudgetEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-  void checkBudgetDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkBudgetViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  void checkBudgetEditPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  void checkBudgetDeletePermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
 
   void checkCostCategoryViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkCostCategoryEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
@@ -26,7 +39,8 @@ public interface CCMRbacHelper {
 
   void checkRecommendationsViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-  void checkAnomalyViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkAnomalyViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
 
   boolean hasCostOverviewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 

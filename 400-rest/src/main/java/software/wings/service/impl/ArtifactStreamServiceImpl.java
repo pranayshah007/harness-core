@@ -9,6 +9,7 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.ARTIFACT_STREAM_METADATA_ONLY;
+import static io.harness.beans.FeatureName.SPG_ALLOW_TEMPLATE_ON_NEXUS_ARTIFACT;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -577,7 +578,8 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
               "Auto artifact collection cannot be enabled for parameterized artifact sources");
         }
         SettingValue settingValue = settingsService.getSettingValueById(accountId, artifactStream.getSettingId());
-        if (settingValue instanceof NexusConfig) {
+        if (settingValue instanceof NexusConfig
+            && !featureFlagService.isEnabled(SPG_ALLOW_TEMPLATE_ON_NEXUS_ARTIFACT, accountId)) {
           NexusConfig nexusConfig = (NexusConfig) settingValue;
           boolean isNexusThree = nexusConfig.getVersion() == null || nexusConfig.getVersion().equalsIgnoreCase("3.x");
           if (isNexusThree) {

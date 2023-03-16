@@ -41,8 +41,12 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.plan.utils.PlanResourceUtility;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
+import io.harness.utils.PipelineGitXHelper;
+import io.harness.utils.PipelineYamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -111,17 +115,6 @@ public class RetryExecutionHelper {
 
   public RetryInfo validateRetry(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId) {
-    Optional<PipelineEntity> updatedPipelineEntity =
-        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
-
-    if (!updatedPipelineEntity.isPresent()) {
-      return RetryInfo.builder()
-          .isResumable(false)
-          .errorMessage(
-              String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineIdentifier))
-          .build();
-    }
-
     // Checking if this is the latest execution
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         pmsExecutionService.getPipelineExecutionSummaryEntity(
@@ -134,6 +127,18 @@ public class RetryExecutionHelper {
           .build();
     }
 
+    PipelineGitXHelper.setupEntityDetails(pipelineExecutionSummaryEntity.getEntityGitDetails());
+
+    Optional<PipelineEntity> optionalPipelineEntity =
+        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
+    if (optionalPipelineEntity.isEmpty()) {
+      return RetryInfo.builder()
+          .isResumable(false)
+          .errorMessage(
+              String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineIdentifier))
+          .build();
+    }
+
     boolean inTimeLimit =
         PlanResourceUtility.validateInTimeLimitForRetry(pipelineExecutionSummaryEntity.getCreatedAt());
     if (!inTimeLimit) {
@@ -143,11 +148,11 @@ public class RetryExecutionHelper {
           .build();
     }
 
-    String updatedPipeline = updatedPipelineEntity.get().getYaml();
+    String updatedPipeline = optionalPipelineEntity.get().getYaml();
 
     Optional<PlanExecutionMetadata> byPlanExecutionId =
         planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
-    if (!byPlanExecutionId.isPresent()) {
+    if (byPlanExecutionId.isEmpty()) {
       return RetryInfo.builder()
           .isResumable(false)
           .errorMessage("No Plan Execution exists for id " + planExecutionId)
@@ -245,7 +250,7 @@ public class RetryExecutionHelper {
   }
 
   public String retryProcessedYaml(String previousProcessedYaml, String currentProcessedYaml, List<String> retryStages,
-      List<String> identifierOfSkipStages) throws IOException {
+      List<String> identifierOfSkipStages, String pipelineVersion) throws IOException {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
     JsonNode previousRootJsonNode = mapper.readTree(previousProcessedYaml);
@@ -255,64 +260,65 @@ public class RetryExecutionHelper {
       return currentProcessedYaml;
     }
     int stageCounter = 0;
-    JsonNode stagesNode = previousRootJsonNode.get("pipeline").get("stages");
+    JsonNode stagesNode = PipelineYamlUtils.getStagesNodeFromRootNode(previousRootJsonNode, pipelineVersion);
     // When strategy is defined in the stage, in that case we might not run some stages(under the strategy for that
     // stage). So we need to update the uuid for strategy node and next node.
     boolean isStrategyNodeProcessed = false;
     for (JsonNode stage : stagesNode) {
       // stage is not a part of parallel group
-      if (stage.get("stage") != null) {
+      if (!PipelineYamlUtils.isParallelNode(stage, pipelineVersion)) {
         // if the stage does not belongs to the retry stages and is to be skipped, copy the stage node from the
         // previous processed yaml
-        JsonNode previousExecutionStageNodeJson = stage.get("stage");
-        String stageIdentifier = previousExecutionStageNodeJson.get("identifier").textValue();
+        String stageIdentifier = PipelineYamlUtils.getIdentifierFromStageNode(stage, pipelineVersion);
         if (!retryStages.contains(stageIdentifier) && !isStrategyNodeProcessed) {
           identifierOfSkipStages.add(stageIdentifier);
-          ((ArrayNode) currentRootJsonNode.get("pipeline").get("stages")).set(stageCounter, stage);
+          ((ArrayNode) PipelineYamlUtils.getStagesNodeFromRootNode(currentRootJsonNode, pipelineVersion))
+              .set(stageCounter, stage);
           stageCounter = stageCounter + 1;
         } else {
           // need to copy only the uuid of the stage to be retry.
           JsonNode currentResumableStagejsonNode =
-              currentRootJsonNode.get("pipeline").get("stages").get(stageCounter).get("stage");
-          ((ObjectNode) currentResumableStagejsonNode).set("__uuid", previousExecutionStageNodeJson.get("__uuid"));
+              PipelineYamlUtils.getStagesNodeFromRootNode(currentRootJsonNode, pipelineVersion).get(stageCounter);
 
           // if this is true then pipeline is being retried from previous stage. And previous node had the strategy
-          // defined.
+          // defined. So we just need to replace the UUID of stage node.
           if (isStrategyNodeProcessed) {
+            ((ObjectNode) PipelineYamlUtils.getStageNodeFromStagesElement(
+                 currentResumableStagejsonNode, pipelineVersion))
+                .set(YAMLFieldNameConstants.UUID,
+                    PipelineYamlUtils.getStageNodeFromStagesElement(stage, pipelineVersion)
+                        .get(YAMLFieldNameConstants.UUID));
             break;
           }
-
-          JsonNode currentResumableStrategyJsonNode = currentResumableStagejsonNode.get("strategy");
-          // If strategy id defined then copy the strategyNode uuid and toggle isStrategyNodeProcessed so that we can
-          // copy next stage uuid in next iteration.
-          if (currentResumableStrategyJsonNode != null) {
-            ((ObjectNode) currentResumableStrategyJsonNode)
-                .set("__uuid", previousExecutionStageNodeJson.get("strategy").get("__uuid"));
-            stageCounter++;
-            isStrategyNodeProcessed = true;
-          } else {
-            break;
-          }
+          // Replacing all the UUIDs under the stage node. Strategy/Multi-deployment node's UUIDs will be replaced here.
+          YamlUtils.replaceFieldInJsonNodeFromAnotherJsonNode(
+              currentResumableStagejsonNode, stage, YAMLFieldNameConstants.UUID);
+          stageCounter++;
+          isStrategyNodeProcessed = true;
         }
       } else {
         // parallel group
-        if (!isRetryStagesInParallelStages(
-                stage.get("parallel"), retryStages, identifierOfSkipStages, isStrategyNodeProcessed)
+        if (!isRetryStagesInParallelStages(PipelineYamlUtils.getStagesNodeFromParallelNode(stage, pipelineVersion),
+                retryStages, identifierOfSkipStages, isStrategyNodeProcessed, pipelineVersion)
             && !isStrategyNodeProcessed) {
           // if the parallel group does not contain the retry stages, copy the whole parallel node
-          ((ArrayNode) currentRootJsonNode.get("pipeline").get("stages")).set(stageCounter, stage);
+          ((ArrayNode) PipelineYamlUtils.getStagesNodeFromRootNode(currentRootJsonNode, pipelineVersion))
+              .set(stageCounter, stage);
           stageCounter = stageCounter + 1;
         } else {
           // replace only those stages that needs to be skipped
-          ((ArrayNode) currentRootJsonNode.get("pipeline").get("stages"))
+          ((ArrayNode) PipelineYamlUtils.getStagesNodeFromRootNode(currentRootJsonNode, pipelineVersion))
               .set(stageCounter,
-                  replaceStagesInParallelGroup(stage.get("parallel"), retryStages,
-                      currentRootJsonNode.get("pipeline").get("stages").get(stageCounter), identifierOfSkipStages,
-                      isStrategyNodeProcessed));
+                  replaceStagesInParallelGroup(PipelineYamlUtils.getStagesNodeFromParallelNode(stage, pipelineVersion),
+                      retryStages,
+                      PipelineYamlUtils.getStagesNodeFromRootNode(currentRootJsonNode, pipelineVersion)
+                          .get(stageCounter),
+                      identifierOfSkipStages, isStrategyNodeProcessed, pipelineVersion));
 
           // replacing uuid for parallel node
-          ((ObjectNode) ((ArrayNode) currentRootJsonNode.get("pipeline").get("stages")).get(stageCounter))
-              .set("__uuid", stage.get("__uuid"));
+          ((ObjectNode) PipelineYamlUtils.getStagesNodeFromRootNode(currentRootJsonNode, pipelineVersion)
+                  .get(stageCounter))
+              .set(YAMLFieldNameConstants.UUID, stage.get(YAMLFieldNameConstants.UUID));
 
           break;
         }
@@ -323,25 +329,23 @@ public class RetryExecutionHelper {
 
   // Todo: Change here
   private JsonNode replaceStagesInParallelGroup(JsonNode parallelStage, List<String> retryStages,
-      JsonNode currentParallelStageNode, List<String> identifierOfSkipStages, boolean isStrategyNodeProcessed) {
+      JsonNode currentParallelStageNode, List<String> identifierOfSkipStages, boolean isStrategyNodeProcessed,
+      String pipelineVersion) {
     int stageCounter = 0;
     for (JsonNode stageNode : parallelStage) {
-      String stageIdentifier = stageNode.get("stage").get("identifier").textValue();
+      String stageIdentifier = PipelineYamlUtils.getIdentifierFromStageNode(stageNode, pipelineVersion);
       if (!retryStages.contains(stageIdentifier) && !isStrategyNodeProcessed) {
         identifierOfSkipStages.add(stageIdentifier);
-        ((ArrayNode) currentParallelStageNode.get("parallel")).set(stageCounter, stageNode);
+        ((ArrayNode) PipelineYamlUtils.getStagesNodeFromParallelNode(currentParallelStageNode, pipelineVersion))
+            .set(stageCounter, stageNode);
       } else {
         // replace only the uuid of the retry parallel stage
-        JsonNode currentResumableStagejsonNode =
-            currentParallelStageNode.get("parallel").get(stageCounter).get("stage");
-        ((ObjectNode) currentResumableStagejsonNode).set("__uuid", stageNode.get("stage").get("__uuid"));
-        JsonNode currentResumableStrategyJsonNode = currentResumableStagejsonNode.get("strategy");
-        // If strategy id defined then copy the strategyNode uuid
-        if (currentResumableStrategyJsonNode != null) {
-          ((ObjectNode) currentResumableStrategyJsonNode)
-              .set("__uuid", stageNode.get("stage").get("strategy").get("__uuid"));
-          isStrategyNodeProcessed = true;
-        }
+        JsonNode currentResumableStagejsonNode = PipelineYamlUtils.getStageNodeFromStagesNode(
+            (ArrayNode) PipelineYamlUtils.getStagesNodeFromParallelNode(currentParallelStageNode, pipelineVersion),
+            stageCounter, pipelineVersion);
+        // Replacing all the UUIDs under the stage node.
+        YamlUtils.replaceFieldInJsonNodeFromAnotherJsonNode(currentResumableStagejsonNode,
+            PipelineYamlUtils.getStageNodeFromStagesElement(stageNode, pipelineVersion), YAMLFieldNameConstants.UUID);
       }
       stageCounter++;
     }
@@ -350,10 +354,10 @@ public class RetryExecutionHelper {
   }
 
   private boolean isRetryStagesInParallelStages(JsonNode parallelStage, List<String> retryStages,
-      List<String> identifierOfSkipStages, boolean isStrategyNodeProcessed) {
+      List<String> identifierOfSkipStages, boolean isStrategyNodeProcessed, String pipelineVersion) {
     List<String> stagesIdentifierInParallelNode = new ArrayList<>();
     for (JsonNode stageNode : parallelStage) {
-      String stageIdentifier = stageNode.get("stage").get("identifier").textValue();
+      String stageIdentifier = PipelineYamlUtils.getIdentifierFromStageNode(stageNode, pipelineVersion);
       stagesIdentifierInParallelNode.add(stageIdentifier);
       if (retryStages.contains(stageIdentifier)) {
         return true;

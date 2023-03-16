@@ -30,7 +30,7 @@ import lombok.Value;
 public class ClaimVolume implements Volume {
   @Builder.Default @NotNull Volume.Type type = Type.CLAIM;
   @NotNull ClaimVolumeSpec spec;
-
+  @ApiModelProperty(hidden = true) String uuid;
   @Value
   @Builder
   @AllArgsConstructor

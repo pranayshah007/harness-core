@@ -9,7 +9,7 @@ package io.harness.ci.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanParameter;
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -99,7 +99,7 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
     }
 
     Map<String, String> envvars =
-        resolveMapParameter("envVariables", "RunTests", identifier, runTestsStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "RunTests", identifier, runTestsStepInfo.getEnvVariables(), false);
     if (!isEmpty(envvars)) {
       runTestsStepBuilder.putAllEnvironment(envvars);
     }

@@ -64,6 +64,8 @@ import io.harness.persistence.HPersistence;
 import io.harness.service.ScmServiceClient;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.SpotInstHelperServiceDelegateImpl;
+import io.harness.terraformcloud.TerraformCloudClient;
+import io.harness.terraformcloud.TerraformCloudClientImpl;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
@@ -145,6 +147,7 @@ public class ConnectorModule extends AbstractModule {
     bind(NGAccountSettingService.class).to(NGAccountSettingServiceImpl.class);
     bind(NGHostService.class).to(NGHostServiceImpl.class);
     bind(GoogleSecretManagerConnectorService.class).to(GoogleSecretManagerConnectorServiceImpl.class);
+    bind(TerraformCloudClient.class).to(TerraformCloudClientImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.CONNECTOR.toString()).to(ConnectorFilterPropertiesMapper.class);

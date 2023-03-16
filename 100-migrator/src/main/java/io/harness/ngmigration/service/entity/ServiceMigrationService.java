@@ -9,9 +9,14 @@ package io.harness.ngmigration.service.entity;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.encryption.Scope.PROJECT;
+import static io.harness.ngmigration.utils.MigratorUtility.containsEcsTask;
+import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_COMMAND_TEMPLATE_SEPARATOR;
 
+import static software.wings.api.DeploymentType.AMI;
+import static software.wings.api.DeploymentType.AZURE_WEBAPP;
 import static software.wings.api.DeploymentType.ECS;
 import static software.wings.beans.ConfigFile.DEFAULT_TEMPLATE_ID;
+import static software.wings.ngmigration.NGMigrationEntityType.AMI_STARTUP_SCRIPT;
 import static software.wings.ngmigration.NGMigrationEntityType.ARTIFACT_STREAM;
 import static software.wings.ngmigration.NGMigrationEntityType.CONFIG_FILE;
 import static software.wings.ngmigration.NGMigrationEntityType.CONTAINER_TASK;
@@ -19,6 +24,7 @@ import static software.wings.ngmigration.NGMigrationEntityType.ECS_SERVICE_SPEC;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
+import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -27,6 +33,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.configfile.ConfigFileWrapper;
+import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.data.structure.EmptyPredicate;
@@ -38,8 +45,12 @@ import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.TypeSummary;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.ServiceSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -49,9 +60,9 @@ import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.service.remote.ServiceResourceClient;
@@ -64,8 +75,10 @@ import software.wings.beans.Service;
 import software.wings.beans.ServiceVariableType;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.artifact.ArtifactStream;
+import software.wings.beans.command.ServiceCommand;
 import software.wings.beans.container.ContainerTask;
 import software.wings.beans.container.EcsServiceSpecification;
+import software.wings.beans.container.UserDataSpecification;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -101,6 +114,7 @@ public class ServiceMigrationService extends NgMigrationService {
   @Inject private ContainerTaskMigrationService containerTaskMigrationService;
   @Inject private ApplicationManifestService applicationManifestService;
   @Inject private ServiceResourceClient serviceResourceClient;
+  @Inject private AmiStartupScriptMigrationService amiStartupScriptMigrationService;
   @Inject ConfigService configService;
   @Inject ConfigFileMigrationService configFileMigrationService;
 
@@ -138,7 +152,18 @@ public class ServiceMigrationService extends NgMigrationService {
                                                   .map(entity -> ((Service) entity.getEntity()).getDeploymentType())
                                                   .filter(Objects::nonNull)
                                                   .collect(groupingBy(DeploymentType::name, counting()));
-    return new ServiceSummary(entities.size(), deploymentTypeSummary, artifactTypeSummary);
+    Map<String, TypeSummary> deploymentsSummary = new HashMap<>();
+    deploymentTypeSummary.forEach((key, value) -> {
+      deploymentsSummary.put(key,
+          TypeSummary.builder()
+              .status(
+                  ServiceV2Factory.getServiceV2Mapper(DeploymentType.valueOf(key), null, false).isMigrationSupported()
+                      ? SupportStatus.SUPPORTED
+                      : SupportStatus.UNSUPPORTED)
+              .count(value)
+              .build());
+    });
+    return new ServiceSummary(entities.size(), deploymentTypeSummary, artifactTypeSummary, deploymentsSummary);
   }
 
   @Override
@@ -197,6 +222,7 @@ public class ServiceMigrationService extends NgMigrationService {
         children.add(CgEntityId.builder().id(ecsServiceSpecification.getUuid()).type(ECS_SERVICE_SPEC).build());
       }
     }
+
     if (ECS == service.getDeploymentType() && processTaskDefs(applicationManifests)) {
       ContainerTask containerTask =
           serviceResourceService.getContainerTaskByDeploymentType(service.getAppId(), serviceId, ECS.name());
@@ -204,6 +230,28 @@ public class ServiceMigrationService extends NgMigrationService {
         children.add(CgEntityId.builder().id(containerTask.getUuid()).type(CONTAINER_TASK).build());
       }
     }
+
+    if (AMI == service.getDeploymentType() || AZURE_WEBAPP == service.getDeploymentType()) {
+      UserDataSpecification userDataSpecification =
+          serviceResourceService.getUserDataSpecification(service.getAppId(), serviceId);
+      if (null != userDataSpecification) {
+        children.add(CgEntityId.builder().id(userDataSpecification.getUuid()).type(AMI_STARTUP_SCRIPT).build());
+      }
+    }
+
+    if (isNotEmpty(service.getServiceCommands())) {
+      List<ServiceCommand> serviceCommands = service.getServiceCommands();
+      List<CgEntityId> serviceCommandTemplates =
+          serviceCommands.stream()
+              .map(sc
+                  -> CgEntityId.builder()
+                         .id(serviceId + SERVICE_COMMAND_TEMPLATE_SEPARATOR + sc.getName())
+                         .type(SERVICE_COMMAND_TEMPLATE)
+                         .build())
+              .collect(Collectors.toList());
+      children.addAll(serviceCommandTemplates);
+    }
+
     return DiscoveryNode.builder().entityNode(serviceEntityNode).children(children).build();
   }
 
@@ -258,15 +306,17 @@ public class ServiceMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     Service service = (Service) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, service.getName());
-    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String identifier = MigratorUtility.generateIdentifierDefaultName(
+        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
     String projectIdentifier = MigratorUtility.getProjectIdentifier(PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(PROJECT, inputDTO);
 
-    MigratorExpressionUtils.render(service, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(
+        entities, migratedEntities, service, inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
     Set<CgEntityId> manifests =
         graph.get(entityId).stream().filter(cgEntityId -> cgEntityId.getType() == MANIFEST).collect(Collectors.toSet());
     Set<CgEntityId> serviceDefs = graph.get(entityId)
@@ -277,6 +327,10 @@ public class ServiceMigrationService extends NgMigrationService {
                                    .stream()
                                    .filter(cgEntityId -> cgEntityId.getType() == CONTAINER_TASK)
                                    .collect(Collectors.toSet());
+    Set<CgEntityId> startupScriptDefs = graph.get(entityId)
+                                            .stream()
+                                            .filter(cgEntityId -> cgEntityId.getType() == AMI_STARTUP_SCRIPT)
+                                            .collect(Collectors.toSet());
     Set<CgEntityId> configFileIds =
         entities.values()
             .stream()
@@ -287,21 +341,31 @@ public class ServiceMigrationService extends NgMigrationService {
             .filter(configFile -> StringUtils.equals(configFile.getEntityId(), service.getUuid()))
             .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getUuid()).build())
             .collect(Collectors.toSet());
-    List<ManifestConfigWrapper> manifestConfigWrapperList =
-        manifestMigrationService.getManifests(manifests, inputDTO, entities, migratedEntities);
+    List<ManifestConfigWrapper> manifestConfigWrapperList = manifestMigrationService.getManifests(
+        manifests, inputDTO, entities, migratedEntities, service, inputDTO.getIdentifierCaseFormat());
     List<ManifestConfigWrapper> ecsServiceSpecs =
-        ecsServiceSpecMigrationService.getServiceSpec(serviceDefs, inputDTO, entities);
+        ecsServiceSpecMigrationService.getServiceSpec(serviceDefs, inputDTO, entities, migratedEntities);
     List<ManifestConfigWrapper> taskDefSpecs = containerTaskMigrationService.getTaskSpecs(taskDefs, inputDTO, entities);
+    List<StartupScriptConfiguration> startupScriptConfigurations =
+        amiStartupScriptMigrationService.getStartupScriptConfiguration(startupScriptDefs, inputDTO, entities);
     manifestConfigWrapperList.addAll(taskDefSpecs);
     manifestConfigWrapperList.addAll(ecsServiceSpecs);
 
     List<ConfigFileWrapper> configFileWrapperList =
         configFileMigrationService.getConfigFiles(configFileIds, inputDTO, entities, migratedEntities);
 
-    ServiceDefinition serviceDefinition = ServiceV2Factory.getService2Mapper(service).getServiceDefinition(
-        inputDTO, entities, graph, service, migratedEntities, manifestConfigWrapperList, configFileWrapperList);
+    ServiceDefinition serviceDefinition =
+        ServiceV2Factory.getService2Mapper(service, containsEcsTask(taskDefs, entities))
+            .getServiceDefinition(inputDTO, entities, graph, service, migratedEntities, manifestConfigWrapperList,
+                configFileWrapperList, startupScriptConfigurations);
     if (serviceDefinition == null) {
-      return Collections.emptyList();
+      return YamlGenerationDetails.builder()
+          .skipDetails(Collections.singletonList(NGSkipDetail.builder()
+                                                     .reason("Unsupported Service")
+                                                     .cgBasicInfo(service.getCgBasicInfo())
+                                                     .type(entityId.getType())
+                                                     .build()))
+          .build();
     }
 
     NGServiceConfig serviceYaml = NGServiceConfig.builder()
@@ -310,7 +374,7 @@ public class ServiceMigrationService extends NgMigrationService {
                                                                  .description(service.getDescription())
                                                                  .gitOpsEnabled(false)
                                                                  .identifier(identifier)
-                                                                 .tags(new HashMap<>())
+                                                                 .tags(MigratorUtility.getTags(service.getTagLinks()))
                                                                  .useFromStage(null)
                                                                  .serviceDefinition(serviceDefinition)
                                                                  .build())
@@ -327,11 +391,12 @@ public class ServiceMigrationService extends NgMigrationService {
                                 .cgBasicInfo(service.getCgBasicInfo())
                                 .build();
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
-    return Collections.singletonList(ngYamlFile);
+    return YamlGenerationDetails.builder().yamlFileList(Collections.singletonList(ngYamlFile)).build();
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     try {
       ServiceResponse response =
           NGRestUtils.getResponse(serviceResourceClient.getService(ngEntityDetail.getIdentifier(), accountIdentifier,
@@ -342,7 +407,7 @@ public class ServiceMigrationService extends NgMigrationService {
       ServiceResponseDTO responseDTO = response.getService();
       return YamlPipelineUtils.read(responseDTO.getYaml(), NGServiceConfig.class);
     } catch (Exception ex) {
-      log.error("Error when getting service - ", ex);
+      log.warn("Error when getting service - ", ex);
       return null;
     }
   }

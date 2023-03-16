@@ -7,6 +7,7 @@
 
 package io.harness.delegate.expression;
 
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.exception.FunctorException;
 import io.harness.expression.functors.ExpressionFunctor;
 
@@ -31,5 +32,11 @@ public class SecretDelegateFunctor implements ExpressionFunctor {
     }
     log.error("Unable to find secret details for {} ", secretDetailsUuid);
     throw new FunctorException("Secret details not found");
+  }
+
+  public Object obtainBase64(String secretDetailsUuid, int token) {
+    String base64SecretValue = EncodingUtils.encodeBase64((String) obtain(secretDetailsUuid, token));
+    secrets.put(secretDetailsUuid, base64SecretValue.toCharArray());
+    return base64SecretValue;
   }
 }

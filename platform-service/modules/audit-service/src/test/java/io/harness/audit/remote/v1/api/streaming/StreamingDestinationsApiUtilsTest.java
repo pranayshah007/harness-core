@@ -29,8 +29,8 @@ import io.harness.exception.UnknownEnumTypeException;
 import io.harness.rule.Owner;
 import io.harness.spec.server.audit.v1.model.AwsS3StreamingDestinationSpecDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
-import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationResponse;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationStatus;
 
 import java.util.Map;
 import org.apache.commons.lang3.RandomUtils;
@@ -68,7 +68,7 @@ public class StreamingDestinationsApiUtilsTest extends CategoryTest {
     StreamingDestinationFilterProperties filterProperties =
         streamingDestinationsApiUtils.getFilterProperties(searchTerm, statusString);
     assertThat(filterProperties).isNotNull();
-    assertThat(filterProperties.getStatus().value()).isEqualTo(statusString);
+    assertThat(filterProperties.getStatus().name()).isEqualTo(statusString);
     assertThat(filterProperties.getSearchTerm()).isEqualTo(searchTerm);
   }
 
@@ -103,7 +103,8 @@ public class StreamingDestinationsApiUtilsTest extends CategoryTest {
     String identifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     String name = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
     String connectorRef = "account." + randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
-    StatusEnum statusEnum = StatusEnum.values()[RandomUtils.nextInt(0, StatusEnum.values().length - 1)];
+    StreamingDestinationStatus statusEnum =
+        StreamingDestinationStatus.values()[RandomUtils.nextInt(0, StreamingDestinationStatus.values().length - 1)];
     Long createdAt = System.currentTimeMillis() - TIME_DIFFERENCE_IN_MILLS;
     Long lastModifiedAt = System.currentTimeMillis();
     StreamingDestination streamingDestination = AwsS3StreamingDestination.builder().bucket(bucket).build();

@@ -66,9 +66,11 @@ import io.harness.delegate.beans.ci.pod.PVCVolume;
 import io.harness.delegate.beans.ci.pod.PodToleration;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
+import io.harness.exception.GeneralException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -83,7 +85,8 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
-import io.harness.steps.plugin.ContainerStepInfo;
+import io.harness.steps.container.execution.ContainerExecutionConfig;
+import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.steps.plugin.infrastructure.volumes.ContainerVolume;
@@ -97,6 +100,7 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -123,6 +127,8 @@ public class K8sPodInitUtils {
 
   @Inject private PmsFeatureFlagHelper featureFlagHelper;
   @Inject private LogStreamingServiceConfiguration logStreamingServiceConfiguration;
+  @Inject ContainerExecutionConfig containerExecutionConfig;
+  @Inject LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
@@ -139,6 +145,9 @@ public class K8sPodInitUtils {
   private String getK8PodIdentifier(String identifier) {
     StringBuilder sb = new StringBuilder(15);
     for (char c : identifier.toCharArray()) {
+      if (c == '_') {
+        continue;
+      }
       if (isAsciiAlphanumeric(c)) {
         sb.append(toLowerCase(c));
       }
@@ -287,10 +296,17 @@ public class K8sPodInitUtils {
         .build();
   }
 
+  private List<Toleration> resolveTolerations(ParameterField<List<Toleration>> tolerations) {
+    if (tolerations == null || tolerations.isExpression() || tolerations.getValue() == null) {
+      return null;
+    } else {
+      return tolerations.getValue();
+    }
+  }
+
   public List<PodToleration> getPodTolerations(ParameterField<List<Toleration>> parameterizedTolerations) {
     List<PodToleration> podTolerations = new ArrayList<>();
-    List<Toleration> tolerations = null;
-    //                    Con.resolveTolerations(parameterizedTolerations);
+    List<Toleration> tolerations = resolveTolerations(parameterizedTolerations);
     if (tolerations == null) {
       return podTolerations;
     }
@@ -386,25 +402,37 @@ public class K8sPodInitUtils {
     OptionalSweepingOutput optionalSweepingOutput =
         executionSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(key));
     if (!optionalSweepingOutput.isFound()) {
-      executionSweepingOutputResolver.consume(ambiance, key, value, StepCategory.STEP.name());
+      executionSweepingOutputResolver.consume(ambiance, key, value, StepCategory.STEP_GROUP.name());
     }
   }
 
   public Map<String, String> getLogServiceEnvVariables(ContainerDetailsSweepingOutput k8PodDetails, String accountID) {
     Map<String, String> envVars = new HashMap<>();
-    final String logServiceBaseUrl = logStreamingServiceConfiguration.getBaseUrl();
-
+    final String logServiceBaseUrl = containerExecutionConfig.getLogStreamingContainerStepBaseUrl();
+    log.info("log base url {}", logServiceBaseUrl);
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy(format("[Retrying failed call to fetch log service token attempt: {}"),
             format("Failed to fetch log service token after retrying {} times"));
 
     // Make a call to the log service and get back the token
-    String logServiceToken = Failsafe.with(retryPolicy).get(() -> logStreamingServiceConfiguration.getServiceToken());
+    String logServiceToken = Failsafe.with(retryPolicy)
+                                 .get(()
+                                          -> getLogServiceToken(accountID, logServiceBaseUrl,
+                                              logStreamingServiceConfiguration.getServiceToken()));
 
     envVars.put(LOG_SERVICE_TOKEN_VARIABLE, logServiceToken);
     envVars.put(LOG_SERVICE_ENDPOINT_VARIABLE, logServiceBaseUrl);
 
     return envVars;
+  }
+
+  public String getLogServiceToken(String accountID, String url, String token) {
+    log.info("Initiating token request to log service: {}", url);
+    try {
+      return logStreamingStepClientFactory.retrieveLogStreamingAccountToken(accountID);
+    } catch (IOException e) {
+      throw new GeneralException("Token request to log service call failed", e);
+    }
   }
 
   public Map<String, String> getCommonStepEnvVariables(
@@ -491,7 +519,7 @@ public class K8sPodInitUtils {
     return EntityDetail.builder().entityRef(connectorRef).type(EntityType.SECRETS).build();
   }
 
-  public Pair<Integer, Integer> getStepRequest(ContainerStepInfo containerStepInfo, String accountId) {
+  public Pair<Integer, Integer> getStepRequest(ContainerStepSpec containerStepInfo, String accountId) {
     ContainerResource resources = ((ContainerK8sInfra) containerStepInfo.getInfrastructure()).getSpec().getResources();
     Integer containerCpuLimit =
         getContainerCpuLimit(resources, "Container", containerStepInfo.getIdentifier(), accountId);

@@ -14,6 +14,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.model.AzureConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
@@ -309,6 +310,11 @@ public class AzureAutoScaleSettingsClientImplTest extends CategoryTest {
   }
 
   private AzureConfig buildAzureConfig() {
-    return AzureConfig.builder().key("key".toCharArray()).clientId("clientId").tenantId("tenantId").build();
+    return AzureConfig.builder()
+        .key("key".toCharArray())
+        .clientId("clientId")
+        .tenantId("tenantId")
+        .azureEnvironmentType(AzureEnvironmentType.AZURE)
+        .build();
   }
 }

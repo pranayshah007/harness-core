@@ -228,7 +228,7 @@ public class EcsBGUpdateRoute53DNSWeightState extends State {
             .description("ECS Blue Green Update Route task execution")
             .build();
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
 
     return ExecutionResponse.builder()

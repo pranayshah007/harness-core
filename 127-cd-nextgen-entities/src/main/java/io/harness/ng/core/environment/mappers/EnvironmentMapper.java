@@ -12,9 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.join;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.checkDuplicateConfigFilesIdentifiersWithIn;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.checkDuplicateManifestIdentifiersWithIn;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
+import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.checkDuplicateConfigFilesIdentifiersWithIn;
+import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.checkDuplicateManifestIdentifiersWithIn;
+import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
@@ -52,6 +52,9 @@ import org.apache.commons.math3.util.Pair;
 public class EnvironmentMapper {
   ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
   Validator validator = factory.getValidator();
+
+  private static final String TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE =
+      "You cannot configure multiple Helm Repo Overrides at the Environment Level. Overrides provided: [%s]";
 
   public Environment toEnvironmentEntity(String accountId, EnvironmentRequestDTO environmentRequestDTO) {
     final Environment environment;
@@ -235,7 +238,8 @@ public class EnvironmentMapper {
       final NGEnvironmentGlobalOverride environmentGlobalOverride =
           ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride();
       checkDuplicateManifestIdentifiersWithIn(environmentGlobalOverride.getManifests());
-      validateNoMoreThanOneHelmOverridePresent(environmentGlobalOverride.getManifests());
+      validateNoMoreThanOneHelmOverridePresent(
+          environmentGlobalOverride.getManifests(), TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE);
       checkDuplicateConfigFilesIdentifiersWithIn(environmentGlobalOverride.getConfigFiles());
     }
   }
@@ -278,8 +282,9 @@ public class EnvironmentMapper {
               fromYaml.getNgEnvironmentInfoConfig().getType().toString(), environmentRequest.getType().toString()));
     }
     if (isNotEmpty(mismatchedEntries)) {
-      throw new InvalidRequestException(
-          "Found mismatch in following fields between yaml and requested value respectively: " + mismatchedEntries);
+      throw new InvalidRequestException(String.format(
+          "For the environment [name: %s, identifier: %s], Found mismatch in following fields between yaml and requested value respectively: %s",
+          environmentRequest.getName(), environmentRequest.getIdentifier(), mismatchedEntries));
     }
   }
 }

@@ -17,6 +17,7 @@ enum ShellType {
   BASH = 1;
   POWERSHELL = 2;
   PWSH = 3;
+  PYTHON = 4;
 }
 
 message StepContext {

@@ -331,6 +331,8 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
           saveExecutionLog("IOException:" + e, ERROR);
         }
       }
+
+      validateExportedVariables(envVariablesMap);
       executionDataBuilder.sweepingOutputEnvVariables(envVariablesMap);
 
       commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
@@ -349,6 +351,10 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
     } catch (RuntimeException e) {
       handleException(
           executionDataBuilder, envVariablesMap, e, format("Exception occurred in Script execution. Reason: %s", e));
+    } catch (Exception e) {
+      commandExecutionStatus = FAILURE;
+      handleException(
+          executionDataBuilder, envVariablesMap, e, format("Exception occurred while executing Script: %s", e));
     } finally {
       if (isEmpty(config.getWorkingDirectory())) {
         deleteDirectoryAndItsContentIfExists(workingDirectory.getAbsolutePath());
@@ -381,7 +387,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
 
   private void saveExecutionLog(String line, LogLevel level, CommandExecutionStatus commandExecutionStatus) {
     if (shouldSaveExecutionLogs) {
-      logCallback.saveExecutionLog(line, level, commandExecutionStatus);
+      logCallback.saveExecutionLog(line, level, commandExecutionStatus, false);
     }
   }
 

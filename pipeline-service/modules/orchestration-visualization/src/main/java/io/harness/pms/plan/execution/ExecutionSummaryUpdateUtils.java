@@ -72,26 +72,6 @@ public class ExecutionSummaryUpdateUtils {
     return updated;
   }
 
-  public boolean addPipelineUpdateCriteria(Update update, NodeExecution nodeExecution) {
-    if (OrchestrationUtils.isPipelineNode(nodeExecution)) {
-      ExecutionStatus status = ExecutionStatus.getExecutionStatus(nodeExecution.getStatus());
-      update.set(PlanExecutionSummaryKeys.internalStatus, nodeExecution.getStatus());
-      update.set(PlanExecutionSummaryKeys.status, status);
-      if (nodeExecution.getEndTs() != null) {
-        update.set(PlanExecutionSummaryKeys.endTs, nodeExecution.getEndTs());
-      }
-      if (status == ExecutionStatus.FAILED) {
-        update.set(PlanExecutionSummaryKeys.executionErrorInfo,
-            ExecutionErrorInfo.builder().message(nodeExecution.getFailureInfo().getErrorMessage()).build());
-        update.set(PlanExecutionSummaryKeys.failureInfo,
-            FailureInfoDTOConverter.toFailureInfoDTO(nodeExecution.getFailureInfo()));
-      }
-      return true;
-    }
-
-    return false;
-  }
-
   private boolean updateStageNode(Update update, NodeExecution nodeExecution, ExecutionStatus status, Level level) {
     // If the nodes is of type Identity, there is no need to update the status. We want to update the status only when
     // there is a PlanNode

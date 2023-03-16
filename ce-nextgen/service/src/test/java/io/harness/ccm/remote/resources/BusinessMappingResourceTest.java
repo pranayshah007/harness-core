@@ -27,9 +27,12 @@ import io.harness.ccm.views.businessMapping.entities.SharedCost;
 import io.harness.ccm.views.businessMapping.entities.SharedCostSplit;
 import io.harness.ccm.views.businessMapping.entities.SharingStrategy;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.dto.CostCategoryDeleteDTO;
+import io.harness.ccm.views.dto.LinkedPerspectives;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewRule;
+import io.harness.ccm.views.service.CEViewService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
@@ -56,12 +59,14 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RunWith(MockitoJUnitRunner.class)
 public class BusinessMappingResourceTest extends CategoryTest {
   @Mock private BusinessMappingService businessMappingService;
+  @Mock private CEViewService ceViewService;
   @Mock private OutboxService outboxService;
   @Mock private TransactionTemplate transactionTemplate;
   @Mock private CCMRbacHelper rbacHelper;
   @InjectMocks private BusinessMappingResource businessMappingResource;
   private BusinessMapping businessMapping;
   private BusinessMapping costCategoryDTO;
+  private LinkedPerspectives linkedPerspectives;
 
   @Captor private ArgumentCaptor<CostCategoryCreateEvent> costCategoryCreateEventArgumentCaptor;
   @Captor private ArgumentCaptor<CostCategoryUpdateEvent> costCategoryUpdateEventArgumentCaptor;
@@ -69,7 +74,8 @@ public class BusinessMappingResourceTest extends CategoryTest {
 
   @Before
   public void setUp() {
-    businessMapping = BusinessMappingHelper.getBusinessMapping(UUID.randomUUID().toString());
+    businessMapping = BusinessMappingHelperTest.getBusinessMapping(UUID.randomUUID().toString());
+    linkedPerspectives = LinkedPerspectives.builder().build();
     costCategoryDTO = businessMapping.toDTO();
   }
 
@@ -84,7 +90,7 @@ public class BusinessMappingResourceTest extends CategoryTest {
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
     final RestResponse<BusinessMapping> response =
-        businessMappingResource.save(BusinessMappingHelper.TEST_ACCOUNT_ID, businessMapping);
+        businessMappingResource.save(BusinessMappingHelperTest.TEST_ACCOUNT_ID, businessMapping);
     verify(businessMappingService).save(businessMapping);
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(costCategoryCreateEventArgumentCaptor.capture());
@@ -98,10 +104,10 @@ public class BusinessMappingResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testList() {
     final List<BusinessMapping> businessMappings = Collections.singletonList(businessMapping);
-    when(businessMappingService.list(BusinessMappingHelper.TEST_ACCOUNT_ID)).thenReturn(businessMappings);
+    when(businessMappingService.list(BusinessMappingHelperTest.TEST_ACCOUNT_ID)).thenReturn(businessMappings);
     final RestResponse<List<BusinessMapping>> response =
-        businessMappingResource.list(BusinessMappingHelper.TEST_ACCOUNT_ID);
-    verify(businessMappingService).list(BusinessMappingHelper.TEST_ACCOUNT_ID);
+        businessMappingResource.list(BusinessMappingHelperTest.TEST_ACCOUNT_ID);
+    verify(businessMappingService).list(BusinessMappingHelperTest.TEST_ACCOUNT_ID);
     assertThat(response.getResource()).isEqualTo(businessMappings);
   }
 
@@ -109,11 +115,11 @@ public class BusinessMappingResourceTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testGet() {
-    when(businessMappingService.get(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID))
+    when(businessMappingService.get(BusinessMappingHelperTest.TEST_ID, BusinessMappingHelperTest.TEST_ACCOUNT_ID))
         .thenReturn(businessMapping);
     final RestResponse<BusinessMapping> response =
-        businessMappingResource.get(BusinessMappingHelper.TEST_ACCOUNT_ID, BusinessMappingHelper.TEST_ID);
-    verify(businessMappingService).get(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID);
+        businessMappingResource.get(BusinessMappingHelperTest.TEST_ACCOUNT_ID, BusinessMappingHelperTest.TEST_ID);
+    verify(businessMappingService).get(BusinessMappingHelperTest.TEST_ID, BusinessMappingHelperTest.TEST_ACCOUNT_ID);
     assertThat(response.getResource()).isEqualTo(businessMapping);
   }
 
@@ -122,14 +128,14 @@ public class BusinessMappingResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdate() {
     when(businessMappingService.update(businessMapping)).thenReturn(businessMapping);
-    when(businessMappingService.get(businessMapping.getUuid(), BusinessMappingHelper.TEST_ACCOUNT_ID))
+    when(businessMappingService.get(businessMapping.getUuid(), BusinessMappingHelperTest.TEST_ACCOUNT_ID))
         .thenReturn(businessMapping);
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
     final RestResponse<String> response =
-        businessMappingResource.update(BusinessMappingHelper.TEST_ACCOUNT_ID, businessMapping);
+        businessMappingResource.update(BusinessMappingHelperTest.TEST_ACCOUNT_ID, businessMapping);
     verify(businessMappingService).update(businessMapping);
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(costCategoryUpdateEventArgumentCaptor.capture());
@@ -142,31 +148,34 @@ public class BusinessMappingResourceTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testDelete() {
-    when(businessMappingService.get(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID))
+    when(businessMappingService.get(BusinessMappingHelperTest.TEST_ID, BusinessMappingHelperTest.TEST_ACCOUNT_ID))
         .thenReturn(businessMapping);
-    when(businessMappingService.delete(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID))
+    when(businessMappingService.delete(BusinessMappingHelperTest.TEST_ID, BusinessMappingHelperTest.TEST_ACCOUNT_ID))
         .thenReturn(true);
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
-    final RestResponse<String> response =
-        businessMappingResource.delete(BusinessMappingHelper.TEST_ACCOUNT_ID, BusinessMappingHelper.TEST_ID);
-    verify(businessMappingService).delete(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID);
+    when(ceViewService.getViewsByBusinessMapping(
+             BusinessMappingHelperTest.TEST_ACCOUNT_ID, Collections.singletonList(BusinessMappingHelperTest.TEST_ID)))
+        .thenReturn(Collections.singletonList(linkedPerspectives));
+    final RestResponse<CostCategoryDeleteDTO> response =
+        businessMappingResource.delete(BusinessMappingHelperTest.TEST_ACCOUNT_ID, BusinessMappingHelperTest.TEST_ID);
+    verify(businessMappingService).delete(BusinessMappingHelperTest.TEST_ID, BusinessMappingHelperTest.TEST_ACCOUNT_ID);
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(costCategoryDeleteEventArgumentCaptor.capture());
     CostCategoryDeleteEvent costCategoryDeleteEvent = costCategoryDeleteEventArgumentCaptor.getValue();
     assertThat(costCategoryDTO).isEqualTo(costCategoryDeleteEvent.getCostCategoryDTO());
-    assertThat(response.getResource()).isEqualTo("Successfully deleted the Business Mapping");
+    assertThat(response.getResource().isDeleted()).isEqualTo(true);
   }
 
-  static final class BusinessMappingHelper {
+  static final class BusinessMappingHelperTest {
     public static final String TEST_ID = UUID.randomUUID().toString();
     public static final String TEST_ACCOUNT_ID = "TEST_ACCOUNT_ID";
     public static final String TEST_NAME_1 = "TEST_NAME_1";
     public static final String TEST_NAME_2 = "TEST_NAME_2";
 
-    private BusinessMappingHelper() {}
+    private BusinessMappingHelperTest() {}
 
     public static BusinessMapping getBusinessMapping(final String uuid) {
       return BusinessMapping.builder()
@@ -199,7 +208,7 @@ public class BusinessMappingResourceTest extends CategoryTest {
       final List<ViewRule> rules = getRules();
       final List<SharedCostSplit> splits = getSharedCostSplits();
       return Stream
-          .of(getSharedCost(TEST_NAME_1, rules, SharingStrategy.FIXED, splits),
+          .of(getSharedCost(TEST_NAME_1, rules, SharingStrategy.EQUAL, splits),
               getSharedCost(TEST_NAME_2, rules, SharingStrategy.PROPORTIONAL, splits))
           .collect(Collectors.toList());
     }

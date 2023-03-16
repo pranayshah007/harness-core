@@ -5,52 +5,48 @@ pipeline:
     - stage:
         identifier: stage1
         name: stage1
-        "__uuid": "oldUuid1"
+        __uuid: oldUuid1
     - stage:
         identifier: stage2
         name: stage2
-        "__uuid": "oldUuid2"
+        __uuid: oldUuid2
     - parallel:
         - stage:
             identifier: stage3
             name: stage3
-            "__uuid": "oldUuid3"
+            __uuid: oldUuid3
         - stage:
             identifier: stage4
             name: stage4
-            "__uuid": "oldUuid4"
+            __uuid: oldUuid4
         - stage:
             identifier: stage5
             name: stage5
-            "__uuid": "oldUuid5"
-      "__uuid": "oldParallel1"
+            __uuid: oldUuid5
+      __uuid: oldParallel1
     - stage:
         identifier: stage6
         name: stage6
-        "__uuid": "newUuid6"
+        __uuid: newUuid6
     - stage:
         identifier: stage7
         name: stage7
-        "__uuid": "newUuid7"
+        __uuid: newUuid7
     - parallel:
         - stage:
             identifier: stage8
             name: stage8
-            "__uuid": "newUuid8"
+            __uuid: newUuid8
         - stage:
             identifier: stage9
             name: stage9
-            "__uuid": "newUuid9"
-      "__uuid": "newParallel2"
+            __uuid: newUuid9
+      __uuid: newParallel2
     - stage:
         identifier: stage10
         name: stage10
-        "__uuid": "newUuid10"
+        __uuid: newUuid10
     - stage:
         identifier: stage7
         name: stage7
-        "__uuid": "newUuid10"
-
-
-
-
+        __uuid: newUuid10

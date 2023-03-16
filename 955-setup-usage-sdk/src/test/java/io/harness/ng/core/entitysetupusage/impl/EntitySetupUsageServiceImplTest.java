@@ -16,10 +16,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
-import io.harness.common.EntityReference;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
@@ -664,7 +664,7 @@ public class EntitySetupUsageServiceImplTest extends EntitySetupUsageTestBase {
   @Owner(developers = OwnerRule.VLAD)
   @Category(UnitTests.class)
   public void verifyListAllWhenReferreByTypeIsEmpty() {
-    List<EntitySetupUsageDTO> result = entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(
+    List<String> result = entitySetupUsageService.listAllReferredEntityIdentifiersPerReferredEntityScope(
         Scope.of(accountIdentifier, null, null), referredByEntityName, EntityType.FILES, null, null, null);
     assertThat(result).isEmpty();
   }

@@ -52,7 +52,7 @@ public class AwsCodeDeployHelperServiceManagerImplTest extends CategoryTest {
     on(service).set("delegateService", mockDelegateService);
     doReturn(AwsCodeDeployListAppResponse.builder().applications(asList("app_1", "app_2")).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -72,7 +72,7 @@ public class AwsCodeDeployHelperServiceManagerImplTest extends CategoryTest {
     on(service).set("delegateService", mockDelegateService);
     doReturn(AwsCodeDeployListDeploymentConfigResponse.builder().deploymentConfig(asList("conf_1", "conf_2")).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -93,7 +93,7 @@ public class AwsCodeDeployHelperServiceManagerImplTest extends CategoryTest {
     on(service).set("delegateService", mockDelegateService);
     doReturn(AwsCodeDeployListDeploymentGroupResponse.builder().deploymentGroups(asList("gp_1", "gp_2")).build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -116,7 +116,7 @@ public class AwsCodeDeployHelperServiceManagerImplTest extends CategoryTest {
                  .instances(asList(new Instance().withInstanceId("i-1234"), new Instance().withInstanceId("i-2345")))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());
@@ -140,7 +140,7 @@ public class AwsCodeDeployHelperServiceManagerImplTest extends CategoryTest {
                      AwsCodeDeployS3LocationData.builder().bucket("bucket").bundleType("bundle").key("key").build())
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());

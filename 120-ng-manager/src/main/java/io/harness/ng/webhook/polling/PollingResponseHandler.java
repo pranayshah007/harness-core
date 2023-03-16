@@ -22,6 +22,7 @@ import static io.harness.polling.contracts.Type.GCR;
 import static io.harness.polling.contracts.Type.GCS_HELM;
 import static io.harness.polling.contracts.Type.GITHUB_PACKAGES;
 import static io.harness.polling.contracts.Type.GOOGLE_ARTIFACT_REGISTRY;
+import static io.harness.polling.contracts.Type.GOOGLE_CLOUD_STORAGE_ARTIFACT;
 import static io.harness.polling.contracts.Type.HTTP_HELM;
 import static io.harness.polling.contracts.Type.JENKINS;
 import static io.harness.polling.contracts.Type.NEXUS2;
@@ -48,13 +49,17 @@ import io.harness.logging.AutoLogContext;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.NgPollingAutoLogContext;
 import io.harness.polling.artifact.ArtifactCollectionUtilsNg;
+import io.harness.polling.bean.ArtifactInfo;
+import io.harness.polling.bean.ArtifactPolledResponse;
+import io.harness.polling.bean.GitPollingPolledResponse;
+import io.harness.polling.bean.HelmChartManifestInfo;
+import io.harness.polling.bean.ManifestInfo;
+import io.harness.polling.bean.ManifestPolledResponse;
 import io.harness.polling.bean.PolledResponseResult;
 import io.harness.polling.bean.PolledResponseResult.PolledResponseResultBuilder;
 import io.harness.polling.bean.PollingDocument;
 import io.harness.polling.bean.artifact.AMIArtifactInfo;
 import io.harness.polling.bean.artifact.AcrArtifactInfo;
-import io.harness.polling.bean.artifact.ArtifactInfo;
-import io.harness.polling.bean.artifact.ArtifactPolledResponse;
 import io.harness.polling.bean.artifact.ArtifactoryRegistryArtifactInfo;
 import io.harness.polling.bean.artifact.AzureArtifactsInfo;
 import io.harness.polling.bean.artifact.CustomArtifactInfo;
@@ -63,14 +68,11 @@ import io.harness.polling.bean.artifact.EcrArtifactInfo;
 import io.harness.polling.bean.artifact.GARArtifactInfo;
 import io.harness.polling.bean.artifact.GcrArtifactInfo;
 import io.harness.polling.bean.artifact.GithubPackagesArtifactInfo;
+import io.harness.polling.bean.artifact.GoogleCloudStorageArtifactInfo;
 import io.harness.polling.bean.artifact.JenkinsArtifactInfo;
 import io.harness.polling.bean.artifact.Nexus2RegistryArtifactInfo;
 import io.harness.polling.bean.artifact.NexusRegistryArtifactInfo;
 import io.harness.polling.bean.artifact.S3ArtifactInfo;
-import io.harness.polling.bean.gitpolling.GitPollingPolledResponse;
-import io.harness.polling.bean.manifest.HelmChartManifestInfo;
-import io.harness.polling.bean.manifest.ManifestInfo;
-import io.harness.polling.bean.manifest.ManifestPolledResponse;
 import io.harness.polling.contracts.BuildInfo;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.polling.service.intfc.PollingPerpetualTaskService;
@@ -221,6 +223,10 @@ public class PollingResponseHandler {
     // If polled response is null, it means it was first time collecting output from perpetual task
     // There is no need to publish collected new keys in this case.
     if (savedResponse == null) {
+      log.info("This is a first time collecting output from perpetual task {} and accountId {}. "
+              + "Polled keys are not published",
+          pollingDocument.getPerpetualTaskId(), accountId);
+
       pollingService.updatePolledResponse(accountId, pollDocId,
           GitPollingPolledResponse.builder().allPolledKeys(new HashSet<>(unpublishedWebhookDeliveryIds)).build());
       return;
@@ -401,6 +407,10 @@ public class PollingResponseHandler {
       case AZURE_ARTIFACTS:
         polledResponseResultBuilder.name(((AzureArtifactsInfo) artifactInfo).getPackageName());
         polledResponseResultBuilder.type(AZURE_ARTIFACTS);
+        break;
+      case GOOGLE_CLOUD_STORAGE_ARTIFACT:
+        polledResponseResultBuilder.name(((GoogleCloudStorageArtifactInfo) artifactInfo).getArtifactPath());
+        polledResponseResultBuilder.type(GOOGLE_CLOUD_STORAGE_ARTIFACT);
         break;
       case AMI:
         polledResponseResultBuilder.name(((AMIArtifactInfo) artifactInfo).getVersion());

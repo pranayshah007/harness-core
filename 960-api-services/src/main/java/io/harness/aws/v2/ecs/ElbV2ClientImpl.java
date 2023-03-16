@@ -27,6 +27,8 @@ import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRule
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRulesResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeTargetGroupsRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeTargetGroupsResponse;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeTargetHealthRequest;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeTargetHealthResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyListenerRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyListenerResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyRuleRequest;
@@ -129,5 +131,18 @@ public class ElbV2ClientImpl extends AwsClientHelper implements ElbV2Client {
       super.handleException(exception);
     }
     return DescribeLoadBalancersResponse.builder().build();
+  }
+
+  @Override
+  public DescribeTargetHealthResponse describeTargetHealth(
+      AwsInternalConfig awsConfig, DescribeTargetHealthRequest request, String region) {
+    try (ElasticLoadBalancingV2Client elbClient = (ElasticLoadBalancingV2Client) getClient(awsConfig, region)) {
+      super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
+      return elbClient.describeTargetHealth(request);
+    } catch (Exception exception) {
+      super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
+      super.handleException(exception);
+    }
+    return DescribeTargetHealthResponse.builder().build();
   }
 }

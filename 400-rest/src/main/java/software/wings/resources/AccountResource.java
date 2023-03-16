@@ -44,9 +44,11 @@ import io.harness.marketplace.gcp.GcpMarketPlaceApiHandler;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.rest.RestResponse;
 import io.harness.scheduler.PersistentScheduler;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.LearningEngineAuth;
 import io.harness.security.annotations.PublicApi;
 import io.harness.seeddata.SampleDataProviderService;
+import io.harness.service.intfc.DelegateAuthService;
 
 import software.wings.beans.Account;
 import software.wings.beans.AccountEvent;
@@ -61,6 +63,8 @@ import software.wings.beans.TechStack;
 import software.wings.beans.User;
 import software.wings.features.api.FeatureService;
 import software.wings.licensing.LicenseService;
+import software.wings.scheduler.AccountJobProperties;
+import software.wings.scheduler.AccountJobType;
 import software.wings.scheduler.ServiceInstanceUsageCheckerJob;
 import software.wings.security.UserThreadLocal;
 import software.wings.security.annotations.ApiKeyAuthorized;
@@ -83,12 +87,14 @@ import com.google.inject.name.Named;
 import io.dropwizard.jersey.PATCH;
 import io.swagger.annotations.Api;
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -130,13 +136,16 @@ public class AccountResource {
   private final HarnessUserGroupService harnessUserGroupService;
   private final AdminLicenseHttpClient adminLicenseHttpClient;
 
+  private final DelegateAuthService delegateAuthService;
+
   @Inject
   public AccountResource(AccountService accountService, UserService userService,
       Provider<LicenseService> licenseServiceProvider, AccountPermissionUtils accountPermissionUtils,
       FeatureService featureService, @Named("BackgroundJobScheduler") PersistentScheduler jobScheduler,
       GcpMarketPlaceApiHandler gcpMarketPlaceApiHandler,
       Provider<SampleDataProviderService> sampleDataProviderServiceProvider, AuthService authService,
-      HarnessUserGroupService harnessUserGroupService, AdminLicenseHttpClient adminLicenseHttpClient) {
+      HarnessUserGroupService harnessUserGroupService, AdminLicenseHttpClient adminLicenseHttpClient,
+      DelegateAuthService delegateAuthService) {
     this.accountService = accountService;
     this.userService = userService;
     this.licenseServiceProvider = licenseServiceProvider;
@@ -148,6 +157,7 @@ public class AccountResource {
     this.authService = authService;
     this.harnessUserGroupService = harnessUserGroupService;
     this.adminLicenseHttpClient = adminLicenseHttpClient;
+    this.delegateAuthService = delegateAuthService;
   }
 
   @GET
@@ -358,6 +368,19 @@ public class AccountResource {
     return new RestResponse<>(accountService.setDefaultExperience(accountId, account.getDefaultExperience()));
   }
 
+  @PUT
+  @Hidden
+  @Path("{accountId}/cross-generation-access")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
+  @InternalApi
+  public RestResponse<Account> updateCrossGenerationAccessEnabled(@PathParam("accountId") @NotEmpty String accountId,
+      @QueryParam("crossGenerationAccessEnabled") @DefaultValue("false") boolean isCrossGenerationAccessEnabled) {
+    return new RestResponse<>(
+        accountService.updateCrossGenerationAccessEnabled(accountId, isCrossGenerationAccessEnabled, false));
+  }
+
   @POST
   @Path("/createSampleApplication")
   @Timed
@@ -537,7 +560,7 @@ public class AccountResource {
       @QueryParam("delegateToken") @NotNull String delegateToken, @QueryParam("delegateId") String delegateId,
       @QueryParam("delegateTokenName") String delegateTokenName,
       @QueryParam("agentMtlsAuthority") String agentMtlsAuthority) {
-    authService.validateDelegateToken(accountId, substringAfter(delegateToken, "Delegate "), delegateId,
+    delegateAuthService.validateDelegateToken(accountId, substringAfter(delegateToken, "Delegate "), delegateId,
         delegateTokenName, agentMtlsAuthority, false);
     return new RestResponse<>(true);
   }
@@ -722,6 +745,28 @@ public class AccountResource {
     }
   }
 
+  @POST
+  @Path("{accountId}/is-smp-account")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Boolean> updateIsSmpAccount(@PathParam("accountId") String accountId,
+      @QueryParam("customerAccountId") @NotNull String customerAccountId,
+      @QueryParam("isSmpAccount") @DefaultValue("false") boolean isSmpAccount) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(accountService.updateIsSmpAccount(customerAccountId, isSmpAccount));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder().message("User not allowed to update account smp status").build()))
+          .build();
+    }
+  }
+
   @GET
   @Path("{accountId}/reset-cache")
   public RestResponse<Boolean> resetCache(@PathParam("accountId") String accountId) {
@@ -738,6 +783,28 @@ public class AccountResource {
       return RestResponse.Builder.aRestResponse()
           .withResponseMessages(
               Lists.newArrayList(ResponseMessage.builder().message("User not allowed to reset cache").build()))
+          .build();
+    }
+  }
+
+  @POST
+  @Path("{accountId}/schedule-jobs")
+  public RestResponse<Boolean> scheduleAccountLevelJobs(@PathParam("accountId") String accountId,
+      @NotNull @QueryParam("targetAccountId") String targetAccountId,
+      @NotNull @QueryParam("jobTypes") List<AccountJobType> jobTypes,
+      @RequestBody @Valid @Parameter(description = "Properties of account jobs") AccountJobProperties jobProperties) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      accountService.scheduleAccountLevelJobs(targetAccountId, jobTypes, jobProperties);
+      return new RestResponse<>(Boolean.TRUE);
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to schedule jobs").build()))
           .build();
     }
   }

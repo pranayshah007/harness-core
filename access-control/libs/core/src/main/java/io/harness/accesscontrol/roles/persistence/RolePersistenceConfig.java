@@ -15,18 +15,22 @@ import io.harness.springdata.HMongoTemplate;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import java.util.concurrent.TimeUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
-import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
+import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 @OwnedBy(HarnessTeam.PL)
@@ -34,7 +38,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 @EnableMongoRepositories(basePackages = {"io.harness.accesscontrol.roles.persistence.repositories"},
     includeFilters = @ComponentScan.Filter(HarnessRepo.class))
 @EnableMongoAuditing
-public class RolePersistenceConfig extends AbstractMongoConfiguration {
+public class RolePersistenceConfig extends AbstractMongoClientConfiguration {
   private final MongoConfig mongoBackendConfiguration;
 
   @Inject
@@ -44,19 +48,26 @@ public class RolePersistenceConfig extends AbstractMongoConfiguration {
 
   @Override
   public MongoClient mongoClient() {
-    MongoClientOptions primaryMongoClientOptions =
-        MongoClientOptions.builder()
+    MongoClientSettings mongoClientSettings =
+        MongoClientSettings.builder()
+            .applyConnectionString(new ConnectionString(mongoBackendConfiguration.getUri()))
             .retryWrites(true)
-            .connectTimeout(mongoBackendConfiguration.getConnectTimeout())
-            .serverSelectionTimeout(mongoBackendConfiguration.getServerSelectionTimeout())
-            .socketTimeout(mongoBackendConfiguration.getSocketTimeout())
-            .maxConnectionIdleTime(mongoBackendConfiguration.getMaxConnectionIdleTime())
-            .connectionsPerHost(mongoBackendConfiguration.getConnectionsPerHost())
+            .applyToSocketSettings(
+                builder -> builder.connectTimeout(mongoBackendConfiguration.getConnectTimeout(), TimeUnit.MILLISECONDS))
+            .applyToClusterSettings(builder
+                -> builder.serverSelectionTimeout(
+                    mongoBackendConfiguration.getServerSelectionTimeout(), TimeUnit.MILLISECONDS))
+            .applyToSocketSettings(
+                builder -> builder.readTimeout(mongoBackendConfiguration.getSocketTimeout(), TimeUnit.MILLISECONDS))
+            .applyToConnectionPoolSettings(builder
+                -> builder.maxConnectionIdleTime(
+                    mongoBackendConfiguration.getMaxConnectionIdleTime(), TimeUnit.MILLISECONDS))
+            .applyToConnectionPoolSettings(
+                builder -> builder.maxSize(mongoBackendConfiguration.getConnectionsPerHost()))
             .readPreference(ReadPreference.primary())
             .build();
-    MongoClientURI uri =
-        new MongoClientURI(mongoBackendConfiguration.getUri(), MongoClientOptions.builder(primaryMongoClientOptions));
-    return new MongoClient(uri);
+
+    return MongoClients.create(mongoClientSettings);
   }
 
   @Override
@@ -65,13 +76,13 @@ public class RolePersistenceConfig extends AbstractMongoConfiguration {
   }
 
   @Bean
-  MongoTransactionManager transactionManager(MongoDbFactory dbFactory) {
+  MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
     return new MongoTransactionManager(dbFactory);
   }
 
   @Bean
-  public MongoTemplate mongoTemplate() throws Exception {
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter(), mongoBackendConfiguration);
+  public MongoTemplate mongoTemplate(MongoDatabaseFactory databaseFactory, MappingMongoConverter converter) {
+    return new HMongoTemplate(databaseFactory, converter, mongoBackendConfiguration);
   }
 
   @Override

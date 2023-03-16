@@ -20,6 +20,7 @@ import (
 	"github.com/drone/go-scm/scm/driver/gitea"
 	"github.com/drone/go-scm/scm/driver/github"
 	"github.com/drone/go-scm/scm/driver/gitlab"
+	"github.com/drone/go-scm/scm/driver/harness"
 	"github.com/drone/go-scm/scm/driver/stash"
 	"github.com/drone/go-scm/scm/transport"
 
@@ -118,6 +119,8 @@ func GetValidRef(p pb.Provider, inputRef, inputBranch string) (string, error) {
 		case *pb.Provider_BitbucketServer:
 			return inputBranch, nil
 		case *pb.Provider_Azure:
+			return inputBranch, nil
+		case *pb.Provider_Harness:
 			return inputBranch, nil
 		default:
 			return scm.ExpandRef(inputBranch, "refs/heads"), nil
@@ -218,6 +221,41 @@ func GetGitClient(p pb.Provider, log *zap.SugaredLogger) (client *scm.Client, er
 				},
 			},
 		}
+	case *pb.Provider_Harness:
+		switch p.GetHarness().Provider.(type) {
+		case *pb.HarnessProvider_HarnessJwt:
+			// gitness
+			client, err = harness.New(p.GetEndpoint(), p.GetHarness().GetHarnessJwt().GetAccount(), p.GetHarness().GetHarnessJwt().GetOrganization(), p.GetHarness().GetHarnessJwt().GetProject())
+			if err != nil {
+				log.Errorw("GetGitClient failure gitness", "endpoint", p.GetEndpoint(), zap.Error(err))
+				return nil, err
+			}
+			client.Client = &http.Client{
+				Transport: &transport.Custom{
+					Before: func(r *http.Request) {
+						r.Header.Set("Authorization", fmt.Sprintf("Basic %s", p.GetHarness().GetHarnessJwt().GetToken()))
+					},
+				},
+			}
+		case *pb.HarnessProvider_HarnessAccessToken:
+			client, err = harness.New(p.GetEndpoint(),
+				p.GetHarness().GetHarnessAccessToken().GetAccount(), p.GetHarness().GetHarnessAccessToken().GetOrganization(), p.GetHarness().GetHarnessAccessToken().GetProject())
+			if err != nil {
+				log.Errorw("GetGitClient failure Harness Platform", "endpoint", p.GetEndpoint(), zap.Error(err))
+				return nil, err
+			}
+			client.Client = &http.Client{
+				Transport: &transport.Custom{
+					Before: func(r *http.Request) {
+						r.Header.Set("x-api-key", p.GetHarness().GetHarnessAccessToken().GetAccessToken())
+					},
+				},
+			}
+
+		default:
+			log.Errorw("GetGitClient unsupported Harness provider", "endpoint", p.GetEndpoint())
+		}
+
 	default:
 		log.Errorw("GetGitClient unsupported git provider", "endpoint", p.GetEndpoint())
 		return nil, status.Errorf(codes.InvalidArgument, "Unsupported git provider")
@@ -248,6 +286,10 @@ func GetProvider(p pb.Provider) string {
 		return "bitbucket cloud"
 	case *pb.Provider_BitbucketServer:
 		return "bitbucket server"
+	case *pb.Provider_Azure:
+		return "azure"
+	case *pb.Provider_Harness:
+		return "harness"
 	default:
 		return "unknown provider"
 	}

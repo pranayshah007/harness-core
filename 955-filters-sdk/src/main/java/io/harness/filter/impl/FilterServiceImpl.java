@@ -16,7 +16,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
-import io.harness.encryption.ScopeHelper;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.FilterType;
@@ -27,6 +26,7 @@ import io.harness.filter.entity.Filter.FilterKeys;
 import io.harness.filter.mapper.FilterMapper;
 import io.harness.filter.service.FilterService;
 import io.harness.repositories.FilterRepository;
+import io.harness.scope.ScopeHelper;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.PrincipalType;
 import io.harness.security.dto.UserPrincipal;
@@ -36,6 +36,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
+import javax.ws.rs.NotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -168,7 +169,7 @@ public class FilterServiceImpl implements FilterService {
   }
 
   private void throwNoFilterExistsException(String orgIdentifier, String projectIdentifier, String identifier) {
-    throw new InvalidRequestException(format(
+    throw new NotFoundException(format(
         "No Filter exists with the identifier %s in org %s, project %s", identifier, orgIdentifier, projectIdentifier));
   }
 

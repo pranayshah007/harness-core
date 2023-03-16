@@ -167,7 +167,7 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
                                             .build();
 
         tfPlanEncryptedRecord = (EncryptedRecordData) encryptDecryptHelper.encryptFile(
-            planFile, planName, planTaskParameters.getPlanSecretManager(), planDelegateFile);
+            planFile, planTaskParameters.getPlanName(), planTaskParameters.getPlanSecretManager(), planDelegateFile);
         planLogCallback.saveExecutionLog("Terraform plan command successfully encrypted.\n");
 
         stateFileId = taskService.uploadStateFile(terragruntContext.getTerragruntWorkingDirectory(),
@@ -200,6 +200,12 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
               format("\nTerraform JSON plan will be available at: %s\n", tfPlanJsonFilePath), INFO,
               CommandExecutionStatus.RUNNING);
         }
+      }
+
+      if (TerragruntTaskRunType.RUN_ALL == planTaskParameters.getRunConfiguration().getRunType()
+          && planTaskParameters.isExportJsonPlan()) {
+        planLogCallback.saveExecutionLog(
+            "Terragrunt export json plan is not supported when Run Configuration is \"All Modules\"", LogLevel.WARN);
       }
 
       planLogCallback.saveExecutionLog(

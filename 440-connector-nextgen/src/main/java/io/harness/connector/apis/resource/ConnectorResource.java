@@ -81,6 +81,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -130,6 +131,7 @@ public class ConnectorResource {
   private static final String SOURCE_CATEGORY_KEY = "source_category";
   private final AccessControlClient accessControlClient;
   private ConnectorRbacHelper connectorRbacHelper;
+  private static final int MAX_LIMIT = 1000;
 
   @Inject
   public ConnectorResource(@Named("connectorDecoratorService") ConnectorService connectorService,
@@ -160,7 +162,7 @@ public class ConnectorResource {
           NGCommonEntityConstants.ORG_KEY) @io.harness.accesscontrol.OrgIdentifier String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @ProjectIdentifier @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @io.harness.accesscontrol.ProjectIdentifier String projectIdentifier,
-      @Parameter(description = "Connector Identifier") @EntityIdentifier(maxLength = 128) @PathParam(
+      @Parameter(description = "Connector Identifier") @EntityIdentifier @PathParam(
           NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier String connectorIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     Optional<ConnectorResponseDTO> connectorResponseDTO =
@@ -190,8 +192,8 @@ public class ConnectorResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-      @Parameter(description = "Connector ID") @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier(
-          maxLength = 128) String connectorIdentifier) {
+      @Parameter(description = "Connector ID") @QueryParam(
+          NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier String connectorIdentifier) {
     if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(connectorIdentifier)) {
       return ResponseDTO.newResponse(false);
     }
@@ -210,10 +212,12 @@ public class ConnectorResource {
       })
   @Deprecated
   public ResponseDTO<PageResponse<ConnectorResponseDTO>>
-  list(@Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
+  list(@Parameter(description = "Page number of navigation. By default, it is set to 0.") @QueryParam(
            NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(description = "Number of entries per page. The default value is 100") @QueryParam(
-          NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @Parameter(
+          description =
+              "Number of entries per page.The default number of entries per page is 100, while the maximum number allowed is 1000.")
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
@@ -230,11 +234,11 @@ public class ConnectorResource {
       @Parameter(description = "Filter Connectors by Source Category. Available Source Categories are "
               + "CLOUD_PROVIDER, SECRET_MANAGER, CLOUD_COST, ARTIFACTORY, CODE_REPO,  "
               + "MONITORING and TICKETING") @QueryParam(SOURCE_CATEGORY_KEY) ConnectorCategory sourceCategory,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @QueryParam("version") String version, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
-    return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(
-        page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, type, category, sourceCategory)));
+    return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(page, size, accountIdentifier, orgIdentifier,
+        projectIdentifier, searchTerm, type, category, sourceCategory, version)));
   }
 
   @POST
@@ -248,10 +252,12 @@ public class ConnectorResource {
         ApiResponse(responseCode = "default", description = "Returns the list of Connectors")
       })
   public ResponseDTO<PageResponse<ConnectorResponseDTO>>
-  list(@Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
+  list(@Parameter(description = "Page number of navigation. By default, it is set to 0.") @QueryParam(
            NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(description = "Number of entries per page. The default value is 100") @QueryParam(
-          NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @Parameter(
+          description =
+              "Number of entries per page. The default number of entries per page is 100, while the maximum number allowed is 1000.")
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(
@@ -292,10 +298,12 @@ public class ConnectorResource {
         ApiResponse(responseCode = "default", description = "Returns the list of Connectors")
       })
   public ResponseDTO<PageResponse<CombineCcmK8sConnectorResponseDTO>>
-  ccmK8sList(@Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
+  ccmK8sList(@Parameter(description = "Page number of navigation. By default, it is set to 0.") @QueryParam(
                  NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(description = "Number of entries per page. The default value is 100") @QueryParam(
-          NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @Parameter(
+          description =
+              "Number of entries per page. The default number of entries per page is 100, while the maximum number allowed is 1000.")
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(
@@ -498,8 +506,8 @@ public class ConnectorResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "URL of the repository, specify only in the case of Account Type"
               + " Git Connector") @QueryParam(NGCommonEntityConstants.REPO_URL) String repoURL,
-      @Parameter(description = "Connector ID") @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier(
-          maxLength = 128) String connectorIdentifier) {
+      @Parameter(description = "Connector ID") @PathParam(
+          NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier String connectorIdentifier) {
     return ResponseDTO.newResponse(connectorService.testGitRepoConnection(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, getDecodedString(repoURL)));
   }
@@ -556,8 +564,12 @@ public class ConnectorResource {
   public ResponseDTO<List<ConnectorResponseDTO>>
   listConnectorByFQN(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @RequestBody(
-          required = true, description = "List of ConnectorsFQN as strings") @Body List<String> connectorsFQN) {
+      @RequestBody(required = true,
+          description = "A list of connectors' FQNs as strings. A maximum of 1000 characters is allowed.")
+      @Body List<String> connectorsFQN) {
+    if (connectorsFQN.size() > MAX_LIMIT) {
+      throw new InvalidRequestException("The FQNs of the connectors should be less than or equal to 1000.");
+    }
     return ResponseDTO.newResponse(connectorService.listbyFQN(accountIdentifier, connectorsFQN));
   }
 
@@ -633,6 +645,9 @@ public class ConnectorResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam("connectorIdentifiers") List<String> connectorIdentifiers) {
+    if (connectorIdentifiers.size() > MAX_LIMIT) {
+      throw new InvalidRequestException("The number of connector identifiers should be less than or equal to 1000.");
+    }
     return ResponseDTO.newResponse(
         connectorService.getAttributes(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers));
   }

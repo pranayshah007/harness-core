@@ -50,6 +50,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MergeHelper {
   public final Set<String> acceptAllChildrenKeys = new HashSet<>(
       Arrays.asList("service", "environment", "template", "services", "environments", "environmentGroup"));
+  public static final String PATH_SEP = "/";
 
   public String mergeInputSetFormatYamlToOriginYaml(String originYaml, String inputSetFormatYaml) {
     return mergeRuntimeInputValuesIntoOriginalYaml(originYaml, inputSetFormatYaml, false);
@@ -67,6 +68,21 @@ public class MergeHelper {
       YamlConfig originalYamlConfig, YamlConfig inputSetConfig, boolean appendInputSetValidator) {
     return mergeRuntimeInputValuesIntoOriginalYamlInternal(
         originalYamlConfig, inputSetConfig, appendInputSetValidator, false);
+  }
+
+  public String mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(String baseYaml, String runtimeInputYaml,
+      boolean appendInputSetValidator, boolean checkIfPipelineValueIsRuntime) {
+    YamlConfig baseConfig = new YamlConfig(baseYaml);
+    YamlConfig runtimeConfig = new YamlConfig(runtimeInputYaml);
+    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        baseConfig, runtimeConfig, appendInputSetValidator, false, checkIfPipelineValueIsRuntime)
+        .getYaml();
+  }
+
+  public YamlConfig mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(YamlConfig originalYamlConfig,
+      YamlConfig inputSetConfig, boolean appendInputSetValidator, boolean checkIfPipelineValueIsRuntime) {
+    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        originalYamlConfig, inputSetConfig, appendInputSetValidator, false, checkIfPipelineValueIsRuntime);
   }
 
   public JsonNode mergeExecutionInputIntoOriginalYamlJsonNode(
@@ -87,6 +103,21 @@ public class MergeHelper {
 
   private YamlConfig mergeRuntimeInputValuesIntoOriginalYamlInternal(YamlConfig originalYamlConfig,
       YamlConfig inputSetConfig, boolean appendInputSetValidator, boolean isAtExecutionTime) {
+    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        originalYamlConfig, inputSetConfig, appendInputSetValidator, isAtExecutionTime, false);
+  }
+
+  // checkIfPipelineValueIsRuntime is supposed to be true if the values from inputSetConfig are to be merged only if the
+  // corresponding value in originalYamlConfig are <+input>. For example, if the originalYamlConfig is a pipeline yaml,
+  // then the runtime input values from inputSetConfig should be merged only if the corresponding value in
+  // originalYamlConfig is <+input>, because of which in this case the value of checkIfPipelineValueIsRuntime should be
+  // true. On the other hand, if originalYamlConfig is the merged yaml of a pipeline and an input set, and
+  // inputSetConfig is that of a second input set, then the values from inputSetConfig can override those from
+  // originalYamlConfig, because this second input set should be allowed to override the values given by the first input
+  // set. Hence, in this case checkIfPipelineValueIsRuntime is false
+  private YamlConfig mergeRuntimeInputValuesIntoOriginalYamlInternal(YamlConfig originalYamlConfig,
+      YamlConfig inputSetConfig, boolean appendInputSetValidator, boolean isAtExecutionTime,
+      boolean checkIfPipelineValueIsRuntime) {
     Map<FQN, Object> inputSetFQNMap = inputSetConfig.getFqnToValueMap();
 
     Map<FQN, Object> pipelineYamlFQNMap = originalYamlConfig.getFqnToValueMap();
@@ -95,6 +126,13 @@ public class MergeHelper {
       if (inputSetFQNMap.containsKey(key)) {
         Object valueFromRuntimeInputYaml = inputSetFQNMap.get(key);
         Object valueFromPipelineYaml = pipelineYamlFQNMap.get(key);
+        if (checkIfPipelineValueIsRuntime
+            && (!(valueFromPipelineYaml instanceof TextNode)
+                || !NGExpressionUtils.matchesInputSetPattern(((TextNode) valueFromPipelineYaml).asText()))) {
+          // if the value from the pipeline YAML is fixed, then we need to ignore the value from the runtime input yaml.
+          // The above if condition is true if the value from the pipeline YAML is fixed
+          return;
+        }
         // input sets can now have <+input> in them as we will not remove those fields anymore. So if the first input
         // set provides some value and the second does not, then the first value should and not be overriden by the
         // <+input> in the second input set
@@ -154,10 +192,17 @@ public class MergeHelper {
       }
     }
     for (FQN key : newKeys) {
+      // parent will have its key as one of the fields in acceptAllChildrenKeys. In case this parent itself is a runtime
+      // input, such as when "service" is an axis name, in that case we can ignore this part as all fields will be added
+      // anyway.
       FQN parent = key.getParent();
-      ObjectNode nodeForFQN = (ObjectNode) YamlSubMapExtractor.getNodeForFQN(yamlMap, parent);
-      if (!nodeForFQN.has(key.getFieldName())) {
-        nodeForFQN.putIfAbsent(key.getFieldName(), new TextNode("<+input>"));
+      JsonNode jsonNodeForParentFQN = YamlSubMapExtractor.getNodeForFQN(yamlMap, parent);
+      if (jsonNodeForParentFQN instanceof TextNode) {
+        continue;
+      }
+      ObjectNode objectNodeForParentFQN = (ObjectNode) jsonNodeForParentFQN;
+      if (!objectNodeForParentFQN.has(key.getFieldName())) {
+        objectNodeForParentFQN.putIfAbsent(key.getFieldName(), new TextNode("<+input>"));
         mergedYamlFQNMap.put(key, YamlSubMapExtractor.getNodeForFQN(runtimeInputYamlMap, key));
       }
     }
@@ -263,6 +308,11 @@ public class MergeHelper {
   }
 
   public String mergeUpdatesIntoJson(String pipelineJson, Map<String, String> fqnToJsonMap) {
+    return mergeUpdatesIntoJsonParametrisedOnPathSeparator(pipelineJson, fqnToJsonMap, PATH_SEP);
+  }
+
+  public String mergeUpdatesIntoJsonParametrisedOnPathSeparator(
+      String pipelineJson, Map<String, String> fqnToJsonMap, String pathSeparator) {
     YamlNode pipelineNode;
     try {
       pipelineNode = YamlUtils.readTree(pipelineJson).getNode();
@@ -278,7 +328,8 @@ public class MergeHelper {
       String content = fqnToJsonMap.get(fqn);
       content = removeNonASCII(content);
       try {
-        pipelineNode.replacePath(fqn, YamlUtils.readTree(content).getNode().getCurrJsonNode());
+        pipelineNode.replacePathParametrisedOnPathSeparator(
+            fqn, YamlUtils.readTree(content).getNode().getCurrJsonNode(), pathSeparator);
       } catch (IOException e) {
         log.error("Could not read json provided for the fqn: " + fqn + ". Json:\n" + content, e);
         throw new YamlException("Could not read json provided for the fqn: " + fqn);

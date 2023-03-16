@@ -10,7 +10,7 @@ package io.harness.gitsync.fullsync.mappers;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.EntityType;
-import io.harness.common.EntityReference;
+import io.harness.beans.EntityReference;
 import io.harness.gitsync.core.beans.GitFullSyncEntityInfo;
 import io.harness.gitsync.core.beans.GitFullSyncEntityInfo.SyncStatus;
 import io.harness.gitsync.fullsync.dtos.GitFullSyncEntityInfoDTO;

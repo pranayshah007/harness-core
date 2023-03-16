@@ -264,7 +264,7 @@ public abstract class ContainerServiceSetup extends State {
               .selectionLogsTrackingEnabled(isSelectionLogsTrackingForTasksEnabled())
               .description("Kubernetes service setup task execution")
               .build();
-      String delegateTaskId = delegateService.queueTask(delegateTask);
+      String delegateTaskId = delegateService.queueTaskV2(delegateTask);
 
       appendDelegateTaskDetails(context, delegateTask);
       return ExecutionResponse.builder()

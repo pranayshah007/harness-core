@@ -137,4 +137,16 @@ public class PMSInputSetFilterHelper {
         .and(InputSetEntityKeys.identifier)
         .is(identifier);
   }
+
+  public Criteria buildCriteriaForRepoListing(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    return Criteria.where(InputSetEntityKeys.accountId)
+        .is(accountId)
+        .and(InputSetEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(InputSetEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(InputSetEntityKeys.pipelineIdentifier)
+        .is(pipelineIdentifier);
+  }
 }

@@ -8,11 +8,11 @@
 package io.harness.cdng.gitSync;
 
 import io.harness.EntityType;
+import io.harness.beans.EntityReference;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity.EnvironmentGroupKeys;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.cdng.envGroup.mappers.EnvironmentGroupMapper;
-import io.harness.common.EntityReference;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.FileChange;

@@ -20,8 +20,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.provision.TerraformConstants.TF_DESTROY_NAME_PREFIX;
-import static io.harness.provision.TerraformConstants.TF_NAME_PREFIX;
 import static io.harness.validation.Validator.notEmptyCheck;
 
 import static java.lang.String.format;
@@ -29,7 +27,6 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -67,11 +64,8 @@ import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
 import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
 import io.harness.delegate.beans.terragrunt.response.TerragruntApplyTaskResponse;
 import io.harness.delegate.beans.terragrunt.response.TerragruntPlanTaskResponse;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.EntityDetail;
@@ -127,6 +121,8 @@ public class TerragruntStepHelper {
   private static final String TG_INHERIT_OUTPUT_FORMAT = "tgInheritOutput_%s_%s";
   public static final String DEFAULT_TIMEOUT = "10m";
   public static final String TERRAGRUNT_FILE_NAME_FORMAT = "terragrunt-${UUID}.tfvars";
+  public static final String TG_DESTROY_NAME_PREFIX_NG = "tgDestroyPlan_%s_%s";
+  public static final String TG_NAME_PREFIX_NG = "tgPlan_%s_%s";
 
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private FileServiceClientFactory fileService;
@@ -140,15 +136,6 @@ public class TerragruntStepHelper {
 
   public static StepType addStepType(String yamlType) {
     return StepType.newBuilder().setType(yamlType).setStepCategory(StepCategory.STEP).build();
-  }
-
-  public void checkIfTerragruntFeatureIsEnabled(Ambiance ambiance, String step) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.TERRAGRUNT_PROVISION_NG)) {
-      throw new AccessDeniedException(
-          format("'%s' is not enabled for account '%s'. Please contact harness customer care to enable FF '%s'.", step,
-              AmbianceUtils.getAccountId(ambiance), FeatureName.TERRAGRUNT_PROVISION_NG.name()),
-          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-    }
   }
 
   public static void addConnectorRef(
@@ -257,7 +244,7 @@ public class TerragruntStepHelper {
     }
   }
 
-  private boolean isExportCredentialForSourceModule(TerragruntConfigFilesWrapper configFiles, String type) {
+  public boolean isExportCredentialForSourceModule(TerragruntConfigFilesWrapper configFiles, String type) {
     String description = String.format("%s step", type);
     return configFiles.getModuleSource() != null
         && !ParameterField.isNull(configFiles.getModuleSource().getUseConnectorCredentials())
@@ -597,9 +584,10 @@ public class TerragruntStepHelper {
     }
   }
 
-  private String getTerragruntPlanName(
+  public String getTerragruntPlanName(
       TerragruntPlanCommand terragruntPlanCommand, Ambiance ambiance, String provisionId) {
-    String prefix = TerragruntPlanCommand.DESTROY == terragruntPlanCommand ? TF_DESTROY_NAME_PREFIX : TF_NAME_PREFIX;
+    String prefix =
+        TerragruntPlanCommand.DESTROY == terragruntPlanCommand ? TG_DESTROY_NAME_PREFIX_NG : TG_NAME_PREFIX_NG;
     return format(prefix, ambiance.getPlanExecutionId(), provisionId).replaceAll("_", "-");
   }
 

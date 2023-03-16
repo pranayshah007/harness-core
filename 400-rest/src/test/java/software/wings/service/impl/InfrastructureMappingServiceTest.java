@@ -1024,7 +1024,8 @@ public class InfrastructureMappingServiceTest extends WingsBaseTest {
         .thenReturn(singletonList(new Key<>(ServiceTemplate.class, "serviceTemplate", TEMPLATE_ID)));
     when(wingsPersistence.getWithAppId(InfrastructureMapping.class, APP_ID, INFRA_MAPPING_ID))
         .thenReturn(directKubernetesInfrastructureMapping);
-    when(delegateProxyFactory.get(eq(ContainerService.class), any(SyncTaskContext.class))).thenReturn(containerService);
+    when(delegateProxyFactory.getV2(eq(ContainerService.class), any(SyncTaskContext.class)))
+        .thenReturn(containerService);
     when(serviceResourceService.getDeploymentType(any(), any(), any())).thenReturn(DeploymentType.KUBERNETES);
     Map<String, Integer> activeCounts = new LinkedHashMap<>();
     activeCounts.put("app-name.service-name.env-name-1", 2);
@@ -1060,7 +1061,8 @@ public class InfrastructureMappingServiceTest extends WingsBaseTest {
         .thenReturn(singletonList(new Key<>(ServiceTemplate.class, "serviceTemplate", TEMPLATE_ID)));
     when(wingsPersistence.getWithAppId(InfrastructureMapping.class, APP_ID, INFRA_MAPPING_ID))
         .thenReturn(gcpKubernetesInfrastructureMapping);
-    when(delegateProxyFactory.get(eq(ContainerService.class), any(SyncTaskContext.class))).thenReturn(containerService);
+    when(delegateProxyFactory.getV2(eq(ContainerService.class), any(SyncTaskContext.class)))
+        .thenReturn(containerService);
     when(serviceResourceService.getDeploymentType(any(), any(), any())).thenReturn(DeploymentType.KUBERNETES);
     Map<String, Integer> activeCounts = new LinkedHashMap<>();
     activeCounts.put("app-name.service-name.env-name-1", 2);
@@ -1095,7 +1097,8 @@ public class InfrastructureMappingServiceTest extends WingsBaseTest {
         .thenReturn(singletonList(new Key<>(ServiceTemplate.class, "serviceTemplate", TEMPLATE_ID)));
     when(wingsPersistence.getWithAppId(InfrastructureMapping.class, APP_ID, INFRA_MAPPING_ID))
         .thenReturn(ecsInfrastructureMapping);
-    when(delegateProxyFactory.get(eq(ContainerService.class), any(SyncTaskContext.class))).thenReturn(containerService);
+    when(delegateProxyFactory.getV2(eq(ContainerService.class), any(SyncTaskContext.class)))
+        .thenReturn(containerService);
     when(serviceResourceService.getDeploymentType(any(), any(), any())).thenReturn(DeploymentType.ECS);
     Map<String, Integer> activeCounts = new LinkedHashMap<>();
     activeCounts.put("APP_NAME__SERVICE_NAME__ENV_NAME__1", 2);

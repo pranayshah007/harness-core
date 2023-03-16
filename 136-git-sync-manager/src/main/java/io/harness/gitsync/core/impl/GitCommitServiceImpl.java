@@ -132,9 +132,7 @@ public class GitCommitServiceImpl implements GitCommitService {
 
   @Override
   public void deleteByAccount(String accountId) {
-    Criteria criteria = new Criteria();
-    criteria.and(GitCommitKeys.accountIdentifier).is(accountId);
-    gitCommitRepository.deleteAll(gitCommitRepository.findAllByAccountIdentifier(accountId));
+    gitCommitRepository.deleteAllByAccountIdentifier(accountId);
   }
 
   // -------------------------- PRIVATE METHODS -------------------------------

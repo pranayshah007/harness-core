@@ -8,12 +8,15 @@
 package io.harness.auditevent.streaming.entities;
 
 import io.harness.annotations.StoreIn;
-import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.auditevent.streaming.beans.BatchFailureInfo;
+import io.harness.auditevent.streaming.beans.BatchStatus;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
@@ -23,7 +26,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -32,11 +37,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "StreamingBatchKeys")
 @StoreIn(DbAliases.AUDITS)
+@Entity(value = "streamingBatches", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("streamingBatches")
 @TypeAlias("StreamingBatch")
 public class StreamingBatch {
-  @Id String id;
+  @Id @dev.morphia.annotations.Id String id;
 
   @NotBlank String streamingDestinationIdentifier;
   @NotBlank String accountIdentifier;
@@ -45,23 +51,26 @@ public class StreamingBatch {
   Long lastSuccessfulRecordTimestamp;
   Long numberOfRecords;
   Long numberOfRecordsPublished;
+  Long lastStreamedAt;
   @NotNull BatchStatus status;
   int retryCount;
   @Valid BatchFailureInfo failureInfo;
+  @CreatedDate long createdAt;
+  @LastModifiedDate long lastModifiedAt;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("accountId_streamingDestinationIdentifier_unique_index")
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_streamingDestinationId_createdAt_index")
                  .field(StreamingBatchKeys.accountIdentifier)
                  .field(StreamingBatchKeys.streamingDestinationIdentifier)
-                 .unique(true)
+                 .descSortField(StreamingBatchKeys.createdAt)
                  .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("accountId_status_retryCount_index")
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_status_createdAt_index")
                  .field(StreamingBatchKeys.accountIdentifier)
                  .field(StreamingBatchKeys.status)
-                 .field(StreamingBatchKeys.retryCount)
+                 .descSortField(StreamingBatchKeys.createdAt)
                  .build())
         .build();
   }

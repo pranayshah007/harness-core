@@ -1,6 +1,11 @@
 pipeline:
   name: "Manager Service Deployment"
   identifier: managerServiceDeployment
+  variables:
+    - name: v1
+      type: Number
+      default: 1
+      value: <+input>
   stages:
     - stage:
         identifier: qaStage
@@ -484,7 +489,7 @@ pipeline:
               type: KubernetesDirect
               spec:
                 connectorRef: 2JrX8ESYSTWbhBTPBu7slQ
-                namespace: default
+                namespace: a.allowedValues(a, b)
                 releaseName: vaibhav
           execution:
             steps:

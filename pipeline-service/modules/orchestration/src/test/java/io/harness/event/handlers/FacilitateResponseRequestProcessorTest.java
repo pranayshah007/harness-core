@@ -8,9 +8,9 @@
 package io.harness.event.handlers;
 
 import static io.harness.rule.OwnerRule.SAHIL;
-import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -18,29 +18,29 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.eraro.ErrorCode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutionMode;
-import io.harness.pms.contracts.execution.events.AddStepDetailsInstanceRequest;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.FacilitatorResponseRequest;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
+import io.harness.pms.contracts.steps.io.StepResponseProto;
 import io.harness.rule.Owner;
-import io.harness.tasks.BinaryResponseData;
-import io.harness.waiter.WaitNotifyEngine;
 
-import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class FacilitateResponseRequestProcessorTest extends CategoryTest {
-  @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private io.harness.engine.OrchestrationEngine orchestrationEngine;
   @InjectMocks private FacilitateResponseRequestProcessor facilitateResponseRequestHandler;
 
@@ -49,38 +49,52 @@ public class FacilitateResponseRequestProcessorTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
   }
 
-  @After
-  public void verifyInteractions() {
-    Mockito.verifyNoMoreInteractions(waitNotifyEngine);
-  }
-
   @Test
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
-  @Ignore("Modify it to use orchestrationEngine inplace of waitEngine")
   public void testHandleAdviseEvent() {
     Ambiance ambiance = Ambiance.newBuilder().build();
-    FacilitatorResponseRequest request =
-        FacilitatorResponseRequest.newBuilder()
-            .setFacilitatorResponse(FacilitatorResponseProto.newBuilder().setExecutionMode(ExecutionMode.TASK).build())
-            .build();
+    // Facilitation success.
+    FacilitatorResponseRequest request = FacilitatorResponseRequest.newBuilder()
+                                             .setFacilitatorResponse(FacilitatorResponseProto.newBuilder()
+                                                                         .setIsSuccessful(true)
+                                                                         .setExecutionMode(ExecutionMode.TASK)
+                                                                         .build())
+                                             .build();
     SdkResponseEventProto sdkResponseEventInternal =
         SdkResponseEventProto.newBuilder().setAmbiance(ambiance).setFacilitatorResponseRequest(request).build();
     facilitateResponseRequestHandler.handleEvent(sdkResponseEventInternal);
-    verify(waitNotifyEngine)
-        .doneWith(request.getNotifyId(),
-            BinaryResponseData.builder().data(request.getFacilitatorResponse().toByteArray()).build());
-  }
+    // facilitation response is successful. So engine.processFacilitatorResponse will be invoked.
+    verify(orchestrationEngine, times(1))
+        .processFacilitatorResponse(sdkResponseEventInternal.getAmbiance(), request.getFacilitatorResponse());
 
-  @Test
-  @Owner(developers = SOUMYAJIT)
-  @Category(UnitTests.class)
-  public void shouldValidatehandleEvent() {
-    facilitateResponseRequestHandler.handleEvent(
-        SdkResponseEventProto.newBuilder()
-            .setStepDetailsInstanceRequest(
-                AddStepDetailsInstanceRequest.newBuilder().setStepDetails("{\"a\":\"b\"}").build())
-            .build());
-    verify(orchestrationEngine, times(1)).processStepResponse(any(), any());
+    // Facilitation failed.
+    request = FacilitatorResponseRequest.newBuilder()
+                  .setFacilitatorResponse(FacilitatorResponseProto.newBuilder()
+                                              .setIsSuccessful(false)
+                                              .setPassThroughData("Error during the facilitation")
+                                              .setExecutionMode(ExecutionMode.TASK)
+                                              .build())
+                  .build();
+    sdkResponseEventInternal =
+        SdkResponseEventProto.newBuilder().setAmbiance(ambiance).setFacilitatorResponseRequest(request).build();
+    facilitateResponseRequestHandler.handleEvent(sdkResponseEventInternal);
+    ArgumentCaptor<StepResponseProto> argumentCaptor = ArgumentCaptor.forClass(StepResponseProto.class);
+    // facilitation response is not successful. So engine.processStepResponse will be invoked with status=FAILED.
+    verify(orchestrationEngine, times(1))
+        .processStepResponse(eq(sdkResponseEventInternal.getAmbiance()), argumentCaptor.capture());
+    StepResponseProto stepResponseProto = argumentCaptor.getValue();
+
+    assertThat(stepResponseProto.getFailureInfo())
+        .isEqualTo(FailureInfo.newBuilder()
+                       .addFailureData(FailureData.newBuilder()
+                                           .setMessage(request.getFacilitatorResponse().getPassThroughData())
+                                           .setCode(ErrorCode.GENERAL_ERROR.name())
+                                           .setLevel(io.harness.eraro.Level.ERROR.name())
+                                           .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                           .build())
+                       .setErrorMessage(request.getFacilitatorResponse().getPassThroughData())
+                       .build());
+    assertThat(stepResponseProto.getStatus()).isEqualTo(Status.FAILED);
   }
 }

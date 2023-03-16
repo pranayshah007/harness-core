@@ -19,6 +19,7 @@ import io.harness.delegate.beans.DelegateAsyncTaskResponse.DelegateAsyncTaskResp
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.SerializedResponseData;
+import io.harness.maintenance.MaintenanceController;
 import io.harness.persistence.HPersistence;
 import io.harness.queue.QueueController;
 import io.harness.serializer.KryoSerializer;
@@ -63,7 +64,7 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
 
     boolean consumeResponse = true;
     if (enablePrimaryCheck && queueController != null) {
-      consumeResponse = queueController.isPrimary();
+      consumeResponse = shouldProcess();
     }
     final Stopwatch globalStopwatch = Stopwatch.createStarted();
     long loopStartTime = 0;
@@ -162,6 +163,10 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
     }
 
     return deleteSuccessful;
+  }
+
+  private boolean shouldProcess() {
+    return !MaintenanceController.getMaintenanceFlag() && queueController.isPrimary();
   }
 
   @Getter(lazy = true)

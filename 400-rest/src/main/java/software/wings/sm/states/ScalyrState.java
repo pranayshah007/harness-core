@@ -117,7 +117,7 @@ public class ScalyrState extends AbstractLogAnalysisState {
 
     String waitId = generateUuid();
     String infrastructureMappingId = context.fetchInfraMappingId();
-    return delegateService.queueTask(
+    return delegateService.queueTaskV2(
         DelegateTask.builder()
             .accountId(accountId)
             .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, context.getAppId())

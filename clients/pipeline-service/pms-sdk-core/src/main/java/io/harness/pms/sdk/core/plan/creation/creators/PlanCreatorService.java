@@ -267,7 +267,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
           if (!EmptyPredicate.isEmpty(executionInputTemplate)) {
             planForField.setExecutionInputTemplateInPlanNode(executionInputTemplate);
           }
-          PlanCreatorServiceHelper.decorateNodesWithStageFqn(field, planForField);
+          PlanCreatorServiceHelper.decorateNodesWithStageFqn(field, planForField, ctx.getYamlVersion());
           return planForField;
         } catch (Exception ex) {
           log.error(format("Error creating plan for node: %s", fullyQualifiedName), ex);

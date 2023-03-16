@@ -12,6 +12,7 @@ import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
 import static io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper.StoreConfigWrapperParameters;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.bool;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -86,13 +87,13 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
   @YamlSchemaTypes({string})
   @SkipAutoEvaluation
   ParameterField<Boolean> skipResourceVersioning;
+
+  @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> enableDeclarativeRollback;
   @Wither List<HelmManifestCommandFlag> commandFlags;
+  @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> subChartName;
 
   @Override
   public ManifestAttributes applyOverrides(ManifestAttributes overrideConfig) {
-    if (ManifestType.HelmRepoOverride.equals(overrideConfig.getKind())) {
-      return applyHelmRepoOverride(overrideConfig);
-    }
     HelmChartManifest helmChartManifest = (HelmChartManifest) overrideConfig;
     HelmChartManifest resultantManifest = this;
     if (helmChartManifest.getStore() != null && helmChartManifest.getStore().getValue() != null) {
@@ -125,16 +126,16 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
       resultantManifest = resultantManifest.withCommandFlags(new ArrayList<>(helmChartManifest.getCommandFlags()));
     }
 
-    return resultantManifest;
-  }
-
-  private ManifestAttributes applyHelmRepoOverride(ManifestAttributes overrideConfig) {
-    HelmRepoOverrideManifest helmRepoOverrideManifest = (HelmRepoOverrideManifest) overrideConfig;
-    if (helmRepoOverrideManifest.getStore() != null && helmRepoOverrideManifest.getStore().getValue() != null) {
-      StoreConfigWrapper storeConfigOverride = helmRepoOverrideManifest.getStore().getValue();
-      store = ParameterField.createValueField(store.getValue().applyOverrides(storeConfigOverride));
+    if (helmChartManifest.getSubChartName() != null) {
+      resultantManifest = resultantManifest.withSubChartName(helmChartManifest.getSubChartName());
     }
-    return this;
+
+    if (helmChartManifest.getEnableDeclarativeRollback() != null) {
+      resultantManifest =
+          resultantManifest.withEnableDeclarativeRollback(helmChartManifest.getEnableDeclarativeRollback());
+    }
+
+    return resultantManifest;
   }
 
   @Override
@@ -158,7 +159,7 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
   public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
     return new HelmChartManifestStepParameters(identifier,
         StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), chartName, chartVersion, helmVersion,
-        valuesPaths, skipResourceVersioning, commandFlags);
+        valuesPaths, skipResourceVersioning, commandFlags, subChartName, enableDeclarativeRollback);
   }
 
   @Value
@@ -171,5 +172,7 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
     ParameterField<List<String>> valuesPaths;
     ParameterField<Boolean> skipResourceVersioning;
     List<HelmManifestCommandFlag> commandFlags;
+    ParameterField<String> subChartName;
+    ParameterField<Boolean> enableDeclarativeRollback;
   }
 }

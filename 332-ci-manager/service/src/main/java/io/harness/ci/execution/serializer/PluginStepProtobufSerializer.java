@@ -8,13 +8,19 @@
 package io.harness.ci.serializer;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ENV_PREFIX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.execution.ExecutionSource;
+import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
@@ -31,6 +37,7 @@ import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashMap;
@@ -46,7 +53,7 @@ public class PluginStepProtobufSerializer implements ProtobufStepSerializer<Plug
 
   public UnitStep serializeStepWithStepParameters(PluginStepInfo pluginStepInfo, Integer port, String callbackId,
       String logKey, String identifier, ParameterField<Timeout> parameterFieldTimeout, String accountId,
-      String stepName) {
+      String stepName, ExecutionSource executionSource) {
     if (callbackId == null) {
       throw new CIStageExecutionException("CallbackId can not be null");
     }
@@ -61,6 +68,10 @@ public class PluginStepProtobufSerializer implements ProtobufStepSerializer<Plug
     Map<String, JsonNode> settings =
         resolveJsonNodeMapParameter("settings", "Plugin", identifier, pluginStepInfo.getSettings(), false);
     Map<String, String> envVarMap = new HashMap<>();
+    if (executionSource != null && executionSource.getType() == ExecutionSource.Type.MANUAL
+        && identifier.equals(GIT_CLONE_STEP_ID) && settings != null) {
+      resolveGitCloneDepth(settings, executionSource);
+    }
     if (!isEmpty(settings)) {
       for (Map.Entry<String, JsonNode> entry : settings.entrySet()) {
         String key = PLUGIN_ENV_PREFIX + entry.getKey().toUpperCase();
@@ -101,5 +112,17 @@ public class PluginStepProtobufSerializer implements ProtobufStepSerializer<Plug
         .setPlugin(pluginStep)
         .setLogKey(logKey)
         .build();
+  }
+
+  private void resolveGitCloneDepth(Map<String, JsonNode> settings, ExecutionSource executionSource) {
+    ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
+    if (isNotEmpty(manualExecutionSource.getBranch()) || isNotEmpty(manualExecutionSource.getTag())) {
+      if (!settings.containsKey(GIT_CLONE_DEPTH_ATTRIBUTE)) {
+        settings.put(GIT_CLONE_DEPTH_ATTRIBUTE, JsonNodeFactory.instance.textNode(GIT_CLONE_MANUAL_DEPTH.toString()));
+      }
+      if (settings.get(GIT_CLONE_DEPTH_ATTRIBUTE).asText().equals("0")) {
+        settings.remove(GIT_CLONE_DEPTH_ATTRIBUTE);
+      }
+    }
   }
 }

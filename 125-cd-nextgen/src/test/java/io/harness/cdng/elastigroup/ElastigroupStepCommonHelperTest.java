@@ -14,6 +14,7 @@ import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MI
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.GROUP_CONFIG_ELEMENT;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,11 +28,13 @@ import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupParametersFetchFailurePassThroughData;
+import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
 import io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchFailurePassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchPassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData;
@@ -41,6 +44,7 @@ import io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -50,6 +54,7 @@ import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
 import io.harness.delegate.beans.elastigroup.ElastigroupPreFetchResult;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
+import io.harness.delegate.beans.instancesync.info.SpotServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
@@ -92,6 +97,7 @@ import software.wings.beans.TaskType;
 import com.google.gson.Gson;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Rule;
@@ -111,6 +117,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Mock private ElastigroupEntityHelper elastigroupEntityHelper;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private StepHelper stepHelper;
+  @Mock private CDStepHelper cdStepHelper;
   @Mock protected OutcomeService outcomeService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private ElastigroupStepExecutor elastigroupStepExecutor;
@@ -118,6 +125,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Mock private ILogStreamingStepClient logStreamingStepClient;
   @Mock private FileStoreService fileStoreService;
   @Mock private StageExecutionInfoService stageExecutionInfoService;
+  @Mock private InstanceInfoService instanceInfoService;
 
   @InjectMocks private ElastigroupStepCommonHelper elastigroupStepCommonHelper;
 
@@ -794,6 +802,39 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
         .isNotNull()
         .extracting(FailureInfo::getErrorMessage, FailureInfo::getFailureTypesList)
         .containsExactly("an error message", singletonList(FailureType.APPLICATION_FAILURE));
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void saveSpotServerInstanceInfosToSweepingOutputTest() {
+    // Given
+    List<String> newEc2Instances = singletonList("ec2-instance-id");
+
+    when(cdStepHelper.getInfrastructureOutcome(any()))
+        .thenReturn(ElastigroupInfrastructureOutcome.builder().infrastructureKey("infra-key").build());
+
+    ElastigroupSetupDataOutcome setupOutcome =
+        ElastigroupSetupDataOutcome.builder()
+            .oldElastigroupOriginalConfig(ElastiGroup.builder().id(null).build())
+            .newElastigroupOriginalConfig(ElastiGroup.builder().id("new-elasti-id").build())
+            .build();
+
+    when(executionSweepingOutputService.resolveOptional(any(),
+             eq(RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME))))
+        .thenReturn(OptionalSweepingOutput.builder().found(true).output(setupOutcome).build());
+
+    // When
+    elastigroupStepCommonHelper.saveSpotServerInstanceInfosToSweepingOutput(newEc2Instances, emptyList(), anAmbiance());
+
+    // Then
+    verify(instanceInfoService)
+        .saveServerInstancesIntoSweepingOutput(eq(anAmbiance()),
+            eq(singletonList(SpotServerInstanceInfo.builder()
+                                 .infrastructureKey("infra-key")
+                                 .ec2InstanceId("ec2-instance-id")
+                                 .elastigroupId("new-elasti-id")
+                                 .build())));
   }
 
   private Ambiance anAmbiance() {

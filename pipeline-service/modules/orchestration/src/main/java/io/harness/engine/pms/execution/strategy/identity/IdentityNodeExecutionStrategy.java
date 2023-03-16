@@ -19,6 +19,7 @@ import io.harness.engine.pms.advise.AdviseHandlerFactory;
 import io.harness.engine.pms.advise.AdviserResponseHandler;
 import io.harness.engine.pms.advise.handlers.IgnoreFailureAdviseHandler;
 import io.harness.engine.pms.advise.handlers.InterventionWaitAdviserResponseHandler;
+import io.harness.engine.pms.advise.handlers.MarkAsFailureAdviseHandler;
 import io.harness.engine.pms.advise.handlers.MarkSuccessAdviseHandler;
 import io.harness.engine.pms.advise.handlers.RetryAdviserResponseHandler;
 import io.harness.engine.pms.commons.events.PmsEventSender;
@@ -169,16 +170,15 @@ public class IdentityNodeExecutionStrategy
     return adviserResponseHandler instanceof InterventionWaitAdviserResponseHandler
         || adviserResponseHandler instanceof MarkSuccessAdviseHandler
         || adviserResponseHandler instanceof RetryAdviserResponseHandler
-        || adviserResponseHandler instanceof IgnoreFailureAdviseHandler;
+        || adviserResponseHandler instanceof IgnoreFailureAdviseHandler
+        || adviserResponseHandler instanceof MarkAsFailureAdviseHandler;
   }
 
   @Override
   public void endNodeExecution(Ambiance ambiance) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    NodeExecution nodeExecution = nodeExecutionService.update(nodeExecutionId,
-        ops
-        -> ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis()),
-        NodeProjectionUtils.fieldsForExecutionStrategy);
+    NodeExecution nodeExecution =
+        nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForExecutionStrategy);
     if (isNotEmpty(nodeExecution.getNotifyId())) {
       Level level = AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance());
       StepResponseNotifyData responseData = StepResponseNotifyData.builder()

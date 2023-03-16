@@ -13,6 +13,7 @@ import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.ci.beans.entities.CIExecutionConfig;
 import io.harness.ci.beans.entities.CIExecutionImages;
+import io.harness.ci.beans.entities.CIExecutionImages.CIExecutionImagesBuilder;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.CIStepConfig;
 import io.harness.ci.config.Operation;
@@ -123,6 +124,9 @@ public class CIExecutionConfigService {
         break;
       case SECURITY:
         executionConfig.setSecurityImage(value);
+        break;
+      case SSCA_ORCHESTRATION:
+        executionConfig.setSscaOrchestrationTag(value);
         break;
       default:
         throw new BadRequestException(String.format("Field %s does not exist for infra type: K8", field));
@@ -274,6 +278,7 @@ public class CIExecutionConfigService {
         .cacheGCSTag(vmImageConfig.getCacheGCS())
         .cacheS3Tag(vmImageConfig.getCacheS3())
         .securityTag(vmImageConfig.getSecurity())
+        .sscaOrchestrationTag(vmImageConfig.getSscaOrchestration())
         .build();
   }
 
@@ -322,6 +327,7 @@ public class CIExecutionConfigService {
         .cacheGCSTag(vmImageConfig.getCacheGCS())
         .cacheS3Tag(vmImageConfig.getCacheS3())
         .securityTag(vmImageConfig.getSecurity())
+        .sscaOrchestrationTag(vmImageConfig.getSscaOrchestration())
         .build();
   }
 
@@ -343,6 +349,7 @@ public class CIExecutionConfigService {
         .cacheGCSTag(config.getCacheGCSConfig().getImage())
         .cacheS3Tag(config.getCacheS3Config().getImage())
         .securityTag(config.getSecurityConfig().getImage())
+        .sscaOrchestrationTag(config.getSscaOrchestrationConfig().getImage())
         .build();
   }
 
@@ -361,6 +368,7 @@ public class CIExecutionConfigService {
         .cacheGCSTag(config.getCacheGCSTag())
         .cacheS3Tag(config.getCacheS3Tag())
         .securityTag(config.getSecurityImage())
+        .sscaOrchestrationTag(config.getSscaOrchestrationTag())
         .build();
   }
 
@@ -383,6 +391,28 @@ public class CIExecutionConfigService {
     return deprecatedTags;
   }
 
+  public CIExecutionImages getDeprecatedImages(String accountId) {
+    Optional<CIExecutionConfig> configOptional = configRepository.findFirstByAccountIdentifier(accountId);
+    CIExecutionImagesBuilder builder = CIExecutionImages.builder();
+
+    if (configOptional.isPresent()) {
+      CIExecutionConfig ciExecutionConfig = configOptional.get();
+      String addonOverride = ciExecutionConfig.getAddOnImage();
+      String liteEngineOverride = ciExecutionConfig.getLiteEngineImage();
+      if (Strings.isNotBlank(addonOverride)) {
+        if (hasLowerMajorVersion(ciExecutionServiceConfig.getAddonImage(), addonOverride)) {
+          builder.addonTag(addonOverride);
+        }
+      }
+      if (Strings.isNotBlank(liteEngineOverride)) {
+        if (hasLowerMajorVersion(ciExecutionServiceConfig.getLiteEngineImage(), liteEngineOverride)) {
+          builder.liteEngineTag(liteEngineOverride);
+        }
+      }
+    }
+    return builder.build();
+  }
+
   private boolean checkForCIImage(String defaultImage, String customImage) {
     String defaultImageTag = defaultImage.split(":")[1];
     String customImageTag = customImage.split(":")[1];
@@ -390,6 +420,14 @@ public class CIExecutionConfigService {
     Version customVersion = Version.parseVersion(customImageTag);
     // we are supporting 2 back versions
     return defaultVersion.isLowerThanOrEqualTo(customVersion.nextMinor().nextMinor());
+  }
+
+  private boolean hasLowerMajorVersion(String defaultImage, String customImage) {
+    String defaultImageTag = defaultImage.split(":")[1];
+    String customImageTag = customImage.split(":")[1];
+    Version defaultVersion = Version.parseVersion(defaultImageTag);
+    Version customVersion = Version.parseVersion(customImageTag);
+    return customVersion.getMajor() <= defaultVersion.getMajor() - 1;
   }
 
   public StepImageConfig getPluginVersionForK8(CIStepInfoType stepInfoType, String accountId) {
@@ -464,6 +502,11 @@ public class CIExecutionConfigService {
           image = ciExecutionConfig.getGitCloneImage();
         }
         break;
+      case SSCA_ORCHESTRATION:
+        if (Strings.isNotBlank(ciExecutionConfig.getSscaOrchestrationTag())) {
+          image = ciExecutionConfig.getSscaOrchestrationTag();
+        }
+        break;
       default:
         throw new BadRequestException("Unexpected value: " + stepInfoType);
     }
@@ -501,6 +544,8 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getArtifactoryUploadConfig();
       case GIT_CLONE:
         return ciExecutionServiceConfig.getStepConfig().getGitCloneConfig();
+      case SSCA_ORCHESTRATION:
+        return ciExecutionServiceConfig.getStepConfig().getSscaOrchestrationConfig();
       default:
         throw new BadRequestException("Unexpected value: " + stepInfoType);
     }
@@ -582,6 +627,11 @@ public class CIExecutionConfigService {
           image = vmImageConfig.getIacmTerraform();
         }
         break;
+      case SSCA_ORCHESTRATION:
+        if (Strings.isNotBlank(vmImageConfig.getSscaOrchestration())) {
+          image = vmImageConfig.getSscaOrchestration();
+        }
+        break;
       default:
         throw new BadRequestException("Unexpected value: " + stepInfoType);
     }
@@ -616,8 +666,10 @@ public class CIExecutionConfigService {
         return vmImageConfig.getArtifactoryUpload();
       case GIT_CLONE:
         return vmImageConfig.getGitClone();
-      case IACM_TERRAFORM_PLAN:
+      case IACM_TERRAFORM:
         return vmImageConfig.getIacmTerraform();
+      case SSCA_ORCHESTRATION:
+        return vmImageConfig.getSscaOrchestration();
       default:
         throw new BadRequestException("Unexpected value: " + stepInfoType);
     }

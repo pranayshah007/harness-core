@@ -17,6 +17,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.time.EpochUtils.PST_ZONE_ID;
 import static io.harness.validation.Validator.notNullCheck;
 
+import static software.wings.beans.WorkflowExecution.ACCOUNTID_PIPEXECUTIONID_CREATEDAT;
+
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.groupingBy;
@@ -192,8 +194,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     FindOptions findOptions = new FindOptions();
-    findOptions.hint(
-        BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), "accountId_pipExecutionId_createdAt"));
+    findOptions.hint(BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), ACCOUNTID_PIPEXECUTIONID_CREATEDAT));
 
     List<WorkflowExecution> workflowExecutions = query.asList(findOptions);
 

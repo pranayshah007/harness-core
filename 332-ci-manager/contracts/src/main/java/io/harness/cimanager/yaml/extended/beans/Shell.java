@@ -40,6 +40,13 @@ public enum Shell {
     public CIShellType toShellType() {
       return CIShellType.PWSH;
     }
+  },
+  @JsonProperty("python")
+  PYTHON("python") {
+    @Override
+    public CIShellType toShellType() {
+      return CIShellType.PYTHON;
+    }
   };
 
   private final String yamlName;

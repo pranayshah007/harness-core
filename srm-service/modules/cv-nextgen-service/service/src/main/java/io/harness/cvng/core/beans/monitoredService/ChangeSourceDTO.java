@@ -11,24 +11,30 @@ import static io.harness.cvng.CVConstants.DATA_SOURCE_TYPE;
 
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.ChangeSourceDTODeserializer;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.ChangeSourceSpec;
 import io.harness.data.validator.EntityIdentifier;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
+@JsonDeserialize(using = ChangeSourceDTODeserializer.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
+@FieldNameConstants(innerTypeName = "ChangeSourceDTOKeys")
 public class ChangeSourceDTO {
   @NotEmpty String name;
   @NotEmpty @EntityIdentifier String identifier;
@@ -36,11 +42,7 @@ public class ChangeSourceDTO {
 
   boolean enabled;
 
-  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = DATA_SOURCE_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
-      visible = true)
-  @Valid
-  @NotNull
-  ChangeSourceSpec spec;
+  @Valid @NotNull ChangeSourceSpec spec;
 
   public ChangeCategory getCategory() {
     return type.getChangeCategory();

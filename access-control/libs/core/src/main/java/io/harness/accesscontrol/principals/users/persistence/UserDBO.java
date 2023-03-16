@@ -57,6 +57,8 @@ public class UserDBO implements PersistentRegularIterable, AccessControlEntity {
   @Setter @Id @dev.morphia.annotations.Id String id;
   @NotEmpty final String scopeIdentifier;
   @NotEmpty final String identifier;
+  @Setter String email;
+  @Setter String name;
 
   @Setter @CreatedDate Long createdAt;
   @Setter @LastModifiedDate Long lastModifiedAt;

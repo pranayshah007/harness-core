@@ -1,4 +1,4 @@
-summary: A deployment freeze <b>${BLACKOUT_WINDOW_NAME}</b> has been activated on ${START_TIME}. The freeze will end on ${END_TIME}.
+summary: A deployment freeze <b>${BLACKOUT_WINDOW_NAME}</b> has been activated on ${START_TIME}. The freeze will end on ${END_TIME}. ${CUSTOMIZED_MESSAGE}
 link:
     href: ${BLACKOUT_WINDOW_URL}
     text: ${BLACKOUT_WINDOW_NAME}

@@ -48,7 +48,7 @@ public class GcpHttpTransportHelperService {
     return GoogleNetHttpTransport.newTrustedTransport();
   }
 
-  private static HttpTransportFactory getHttpTransportFactory() {
+  public static HttpTransportFactory getHttpTransportFactory() {
     String proxyHost = Http.getProxyHostName();
     int proxyPort = Integer.parseInt(Http.getProxyPort());
     String proxyUsername = Http.getProxyUserName();

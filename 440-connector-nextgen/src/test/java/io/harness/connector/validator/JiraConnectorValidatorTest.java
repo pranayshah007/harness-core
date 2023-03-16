@@ -16,10 +16,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.beans.DecryptableEntity;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.helper.EncryptionHelper;
+import io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
+import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
+import io.harness.delegate.beans.connector.jira.JiraConnectionTaskParams;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.jira.connection.JiraTestConnectionTaskNGResponse;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
@@ -30,6 +36,7 @@ import io.harness.service.DelegateGrpcClientWrapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -94,5 +101,56 @@ public class JiraConnectorValidatorTest extends CategoryTest {
 
     assertThat(result.getStatus()).isEqualTo(FAILURE);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(any());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMANG)
+  @Category(UnitTests.class)
+  public void testGetTaskParametersWithoutAuthDTO() {
+    JiraConnectorDTO jiraConnectorDTO = JiraConnectorDTO.builder()
+                                            .username(USERNAME)
+                                            .jiraUrl(JIRA_URL)
+                                            .passwordRef(SecretRefData.builder().build())
+                                            .build();
+    when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
+
+    when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
+
+    JiraConnectionTaskParams params = (JiraConnectionTaskParams) connectorValidator.getTaskParameters(
+        jiraConnectorDTO, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(params.getJiraConnectorDTO()).isEqualTo(jiraConnectorDTO);
+    ArgumentCaptor<DecryptableEntity> requestArgumentCaptorForSecretService =
+        ArgumentCaptor.forClass(DecryptableEntity.class);
+    verify(encryptionHelper).getEncryptionDetail(requestArgumentCaptorForSecretService.capture(), any(), any(), any());
+    assertThat(requestArgumentCaptorForSecretService.getValue() instanceof JiraConnectorDTO).isTrue();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMANG)
+  @Category(UnitTests.class)
+  public void testGetTaskParametersWithAuthDTO() {
+    JiraConnectorDTO jiraConnectorDTO = JiraConnectorDTO.builder()
+                                            .username(USERNAME)
+                                            .jiraUrl(JIRA_URL)
+                                            .passwordRef(SecretRefData.builder().build())
+                                            .auth(JiraAuthenticationDTO.builder()
+                                                      .authType(JiraAuthType.USER_PASSWORD)
+                                                      .credentials(JiraUserNamePasswordDTO.builder()
+                                                                       .username(USERNAME)
+                                                                       .passwordRef(SecretRefData.builder().build())
+                                                                       .build())
+                                                      .build())
+                                            .build();
+    when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
+
+    when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
+
+    JiraConnectionTaskParams params = (JiraConnectionTaskParams) connectorValidator.getTaskParameters(
+        jiraConnectorDTO, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(params.getJiraConnectorDTO()).isEqualTo(jiraConnectorDTO);
+    ArgumentCaptor<DecryptableEntity> requestArgumentCaptorForSecretService =
+        ArgumentCaptor.forClass(DecryptableEntity.class);
+    verify(encryptionHelper).getEncryptionDetail(requestArgumentCaptorForSecretService.capture(), any(), any(), any());
+    assertThat(requestArgumentCaptorForSecretService.getValue() instanceof JiraAuthCredentialsDTO).isTrue();
   }
 }

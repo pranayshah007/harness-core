@@ -24,32 +24,34 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngtriggers.Constants;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
-import io.harness.ngtriggers.beans.dto.ValidatePipelineInputsResponseDTO;
+import io.harness.ngtriggers.beans.source.GitMoveOperationType;
+import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.PipelineResourceConstants;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.rest.RestResponse;
+import io.harness.security.annotations.InternalApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -98,17 +100,19 @@ public interface NGTriggerResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns details of the created Trigger.")
       })
-  @ApiImplicitParams({
-    @ApiImplicitParam(dataTypeClass = NGTriggerConfigV2.class,
-        dataType = "io.harness.ngtriggers.beans.config.NGTriggerConfigV2", paramType = "body")
-  })
   @ApiOperation(value = "Create Trigger", nickname = "createTrigger")
   ResponseDTO<NGTriggerResponseDTO>
   create(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-      @Parameter(description = "Identifier of the target pipeline") @NotNull @QueryParam("targetIdentifier")
-      @ResourceIdentifier String targetIdentifier, @NotNull @ApiParam(hidden = true, type = "") String yaml,
+      @Parameter(description = "Identifier of the target pipeline") @NotNull @QueryParam(
+          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
+      @NotNull @RequestBody(required = true, description = "Triggers YAML",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Create", summary = "Sample Create Trigger YAML",
+                         value = Constants.API_SAMPLE_TRIGGER_YAML, description = "Sample Triggers YAML"))
+          }) String yaml,
       @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError,
       @QueryParam("withServiceV2") @DefaultValue("false") boolean withServiceV2);
 
@@ -141,10 +145,6 @@ public interface NGTriggerResource {
         ApiResponse(responseCode = "default", description = "Returns the updated trigger")
       })
   @Path("/{triggerIdentifier}")
-  @ApiImplicitParams({
-    @ApiImplicitParam(dataTypeClass = NGTriggerConfigV2.class,
-        dataType = "io.harness.ngtriggers.beans.config.NGTriggerConfigV2", paramType = "body")
-  })
   @ApiOperation(value = "Update a trigger by identifier", nickname = "updateTrigger")
   ResponseDTO<NGTriggerResponseDTO>
   update(@HeaderParam(IF_MATCH) String ifMatch,
@@ -154,8 +154,10 @@ public interface NGTriggerResource {
       @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
           "targetIdentifier") @ResourceIdentifier String targetIdentifier,
       @PathParam("triggerIdentifier") String triggerIdentifier,
-      @NotNull @ApiParam(hidden = true, type = "") String yaml,
-      @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError);
+      @NotNull @RequestBody(required = true, description = "Triggers YAML", content = {
+        @Content(examples = @ExampleObject(name = "Update", summary = "Sample Update Trigger YAML",
+                     value = Constants.API_SAMPLE_TRIGGER_YAML, description = "Sample Triggers YAML"))
+      }) String yaml, @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError);
 
   @PUT
   @Hidden
@@ -271,20 +273,6 @@ public interface NGTriggerResource {
       NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
 
   @GET
-  @Path("{triggerIdentifier}/validatePipelineInputs")
-  @ApiOperation(hidden = true, value = "This validates whether yaml of trigger is valid or not",
-      nickname = "validatePipelineInputs")
-  @Hidden
-  ResponseDTO<ValidatePipelineInputsResponseDTO>
-  validatePipelineInputs(
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-      @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
-          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
-      @PathParam("triggerIdentifier") String triggerIdentifier);
-
-  @GET
   @Path("{triggerIdentifier}/eventHistory")
   @ApiOperation(value = "Get Trigger event history", nickname = "triggerEventHistory")
   @Operation(operationId = "triggerEventHistory", summary = "Get event history for a trigger",
@@ -323,4 +311,23 @@ public interface NGTriggerResource {
       @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
           "targetIdentifier") @ResourceIdentifier String targetIdentifier,
       @PathParam("triggerIdentifier") String triggerIdentifier);
+
+  @GET
+  @Path("/dummy-NGTriggerConfigV2-api")
+  @ApiOperation(value = "This is dummy api to expose NGTriggerConfigV2", nickname = "NGTriggerConfigV2")
+  @Hidden
+  ResponseDTO<NGTriggerConfigV2> getNGTriggerConfigV2();
+
+  @PUT
+  @Hidden
+  @Path("/update-branch-name")
+  @InternalApi
+  ResponseDTO<TriggerUpdateCount> updateBranchName(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
+          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
+      @QueryParam("operationType") GitMoveOperationType operationType,
+      @QueryParam("pipelineBranchName") String pipelineBranchName);
 }

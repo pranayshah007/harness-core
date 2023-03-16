@@ -15,6 +15,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
@@ -170,6 +171,7 @@ public class TimeSeriesDashboardServiceImpl implements TimeSeriesDashboardServic
           return;
         }
         if (!transactionMetricDataMap.containsKey(key)) {
+          DataSourceType dataSourceType = cvConfigIdToDataSourceTypeMap.get(record.getVerificationTaskId());
           transactionMetricDataMap.put(key,
               TimeSeriesMetricDataDTO.builder()
                   .metricName(metricName)
@@ -181,7 +183,9 @@ public class TimeSeriesDashboardServiceImpl implements TimeSeriesDashboardServic
                   .serviceIdentifier(monitoredServiceParams.getServiceIdentifier())
                   .monitoredServiceIdentifier(monitoredServiceParams.getMonitoredServiceIdentifier())
                   .metricType(record.getMetricType())
-                  .dataSourceType(cvConfigIdToDataSourceTypeMap.get(record.getVerificationTaskId()))
+                  .dataSourceType(dataSourceType)
+                  .monitoredServiceDataSourceType(
+                      MonitoredServiceDataSourceType.getMonitoredServiceDataSourceType(dataSourceType))
                   .build());
         }
         TimeSeriesMetricDataDTO timeSeriesMetricDataDTO = transactionMetricDataMap.get(key);

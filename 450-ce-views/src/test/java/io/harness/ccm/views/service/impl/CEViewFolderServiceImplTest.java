@@ -10,6 +10,8 @@ package io.harness.ccm.views.service.impl;
 import static io.harness.rule.OwnerRule.TRUNAPUSHPA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -77,12 +79,12 @@ public class CEViewFolderServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetFolders() {
     final List<CEViewFolder> ceViewFolders = Collections.singletonList(ceViewFolder());
-    doReturn(ceViewFolders).when(ceViewFolderDao).getFolders(any());
-    doReturn(ceViewFolders).when(ceViewFolderDao).getFolders(any(), any());
-    List<CEViewFolder> ceViewFoldersReturned = ceViewFolderService.getFolders(ACCOUNT_ID);
+    doReturn(ceViewFolders).when(ceViewFolderDao).getFolders(any(), anyString());
+    doReturn(ceViewFolders).when(ceViewFolderDao).getFolders(any(), anyList());
+    List<CEViewFolder> ceViewFoldersReturned = ceViewFolderService.getFolders(ACCOUNT_ID, "");
     assertThat(ceViewFoldersReturned.get(0).getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(ceViewFoldersReturned.get(0).getName()).isEqualTo(FOLDER_NAME);
-    ceViewFoldersReturned = ceViewFolderService.getFolders(ACCOUNT_ID);
+    ceViewFoldersReturned = ceViewFolderService.getFolders(ACCOUNT_ID, "");
     assertThat(ceViewFoldersReturned.get(0).getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(ceViewFoldersReturned.get(0).getName()).isEqualTo(FOLDER_NAME);
   }

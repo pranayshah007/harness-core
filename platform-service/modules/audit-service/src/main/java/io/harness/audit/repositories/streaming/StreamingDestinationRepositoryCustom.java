@@ -8,7 +8,9 @@
 package io.harness.audit.repositories.streaming;
 
 import io.harness.audit.entities.streaming.StreamingDestination;
+import io.harness.spec.server.audit.v1.model.StatusWiseCount;
 
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -17,4 +19,6 @@ public interface StreamingDestinationRepositoryCustom {
   Page<StreamingDestination> findAll(Criteria criteria, Pageable pageable);
 
   boolean deleteByCriteria(Criteria criteria);
+
+  List<StatusWiseCount> countByStatus(Criteria criteria);
 }

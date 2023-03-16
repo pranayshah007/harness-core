@@ -117,6 +117,8 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   private String managerTarget;
   private String managerAuthority;
   private CIExecutionServiceConfig ciExecutionServiceConfig;
+  private ServiceHttpClientConfig opaClientConfig;
+  private String policyManagerSecret;
 
   @JsonProperty("pmsSdkGrpcServerConfig") private GrpcServerConfig pmsSdkGrpcServerConfig;
   @JsonProperty("pmsGrpcClientConfig") private GrpcClientConfig pmsGrpcClientConfig;
@@ -126,6 +128,7 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   @JsonProperty("hostname") String hostname;
   @JsonProperty("basePathPrefix") String basePathPrefix;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
+  @JsonProperty("enableTelemetry") private Boolean enableTelemetry;
 
   public static Collection<Class<?>> getResourceClasses() {
     return HarnessReflections.get()

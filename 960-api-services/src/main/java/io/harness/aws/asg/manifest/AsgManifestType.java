@@ -18,4 +18,5 @@ public interface AsgManifestType {
   String AsgScalingPolicy = "AsgScalingPolicy";
   String AsgScheduledUpdateGroupAction = "AsgScheduledUpdateGroupAction";
   String AsgInstanceRefresh = "AsgInstanceRefresh";
+  String AsgSwapService = "AsgSwapService";
 }

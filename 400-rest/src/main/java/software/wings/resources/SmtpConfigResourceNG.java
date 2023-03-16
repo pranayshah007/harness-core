@@ -38,6 +38,9 @@ public class SmtpConfigResourceNG {
   @Consumes("application/x-kryo")
   public RestResponse<SmtpConfigResponse> getSmtpConfig(@QueryParam("accountId") String accountId) {
     SmtpConfig smtpConfig = emailHelperUtils.getSmtpConfig(accountId, true);
+    if (smtpConfig == null) {
+      return null;
+    }
     io.harness.notification.SmtpConfig notificationSmtpConfig =
         io.harness.notification.SmtpConfig.builder()
             .host(smtpConfig.getHost())

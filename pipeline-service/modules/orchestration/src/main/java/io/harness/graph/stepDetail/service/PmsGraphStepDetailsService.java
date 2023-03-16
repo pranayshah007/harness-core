@@ -16,6 +16,7 @@ import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
 import java.util.Map;
+import java.util.Set;
 
 // Todo: Rename to NodeExecutionInfoService
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -36,4 +37,11 @@ public interface PmsGraphStepDetailsService {
   ConcurrentChildInstance incrementCursor(String nodeExecutionId, Status status);
 
   ConcurrentChildInstance fetchConcurrentChildInstance(String nodeExecutionId);
+
+  /**
+   * Delete all nodeExecutionInfo for given nodeExecutionIds
+   * Uses - nodeExecutionId_unique_idx index
+   * @param nodeExecutionIds
+   */
+  void deleteNodeExecutionInfoForGivenIds(Set<String> nodeExecutionIds);
 }

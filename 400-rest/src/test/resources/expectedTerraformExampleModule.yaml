@@ -3,18 +3,13 @@ module "delegate" {
   version = "0.1.5"
 
   account_id = "1234567"
-  delegate_token = "xxxxxbbbbb"
+  delegate_token = "eHh4eHhiYmJiYgo="
   delegate_name = "terraform-delegate"
   namespace = "harness-delegate-ng"
   manager_endpoint = "https://app.harness.io"
   delegate_image = "delegate:latest"
   replicas = 1
   upgrader_enabled = false
-
-  # Additional optional values to pass to the helm chart
-  values = yamlencode({
-    javaOpts: "-Xms64M"
-  })
 }
 
 provider "helm" {

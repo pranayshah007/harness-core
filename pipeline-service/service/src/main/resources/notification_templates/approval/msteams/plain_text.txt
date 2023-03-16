@@ -28,6 +28,10 @@
                   "name": "Expires in",
                   "value": "${timeRemainingForApproval}"
              },
+             {
+                  "name": "Execution",
+                  "value": "[${pipelineExecutionLink}](${pipelineExecutionLink})"
+             },
       ],
     }
   ]

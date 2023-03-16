@@ -16,7 +16,7 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.event.usagemetrics.UsageMetricsService;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -36,7 +36,10 @@ import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class UsageMetricsHandler extends IteratorPumpModeHandler implements Handler<Account> {
+public class UsageMetricsHandler extends IteratorPumpAndRedisModeHandler implements Handler<Account> {
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(30);
+  private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(30);
+
   @Inject private UsageMetricsService usageMetricsService;
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
@@ -51,13 +54,30 @@ public class UsageMetricsHandler extends IteratorPumpModeHandler implements Hand
                            .clazz(Account.class)
                            .fieldName(AccountKeys.usageMetricsTaskIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofMinutes(30))
-                           .acceptableExecutionTime(ofSeconds(30))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
                            .handler(this)
                            .entityProcessController(new AccountLevelEntityProcessController(accountService))
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<Account, MorphiaFilterExpander<Account>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       UsageMetricsHandler.class,
+                       MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
+                           .clazz(Account.class)
+                           .fieldName(AccountKeys.usageMetricsTaskIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+                           .handler(this)
+                           .entityProcessController(new AccountLevelEntityProcessController(accountService))
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

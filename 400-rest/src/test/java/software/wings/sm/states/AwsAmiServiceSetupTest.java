@@ -191,7 +191,7 @@ public class AwsAmiServiceSetupTest extends WingsBaseTest {
     doReturn(userDataSpecification).when(mockServiceResourceService).getUserDataSpecification(any(), any());
     ExecutionResponse response = state.execute(mockContext);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockDelegateService).queueTask(captor.capture());
+    verify(mockDelegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getData().getParameters()).isNotNull();
@@ -212,7 +212,7 @@ public class AwsAmiServiceSetupTest extends WingsBaseTest {
     state.setAutoScalingGroupName(null);
     response = state.execute(mockContext);
     captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockDelegateService, times(2)).queueTask(captor.capture());
+    verify(mockDelegateService, times(2)).queueTaskV2(captor.capture());
     delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getData().getParameters()).isNotNull();
@@ -238,7 +238,7 @@ public class AwsAmiServiceSetupTest extends WingsBaseTest {
 
     state.execute(mockContext);
     captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockDelegateService, times(3)).queueTask(captor.capture());
+    verify(mockDelegateService, times(3)).queueTaskV2(captor.capture());
     delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getData().getParameters()).isNotNull();
@@ -249,7 +249,7 @@ public class AwsAmiServiceSetupTest extends WingsBaseTest {
     assertThat(params.getInfraMappingTargetGroupArns()).containsAll(stageTargetGroupArns);
 
     // Exception in execute
-    doThrow(new InvalidRequestException("Failed")).when(mockDelegateService).queueTask(any());
+    doThrow(new InvalidRequestException("Failed")).when(mockDelegateService).queueTaskV2(any());
     response = state.execute(mockContext);
     assertThat(response.getExecutionStatus()).isEqualTo(FAILED);
     assertThat(response.getStateExecutionData().getStatus()).isEqualTo(FAILED);

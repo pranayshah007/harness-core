@@ -51,12 +51,16 @@ public class SchemaConstants {
   public static final String RUNTIME_INPUT_PATTERN =
       "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$";
 
+  public static final String RUNTIME_INPUT_PATTERN_EMPTY_STRING_ALLOWED = "(" + RUNTIME_INPUT_PATTERN + "|^$"
+      + ")";
+
   // Only runtime input pattern. should not match execution input string. So doing negative lookahead for
   // .executionInput().
   // default, allowedValues and regex are allowed after <+input>
   public static final String RUNTIME_BUT_NOT_EXECUTION_TIME_PATTERN =
       "^<\\+input>((?!.*\\.executionInput\\(\\))(\\.)(allowedValues|default|regex)\\(.+?\\))*$";
-  public static final String INPUT_SET_PATTERN = "^" + EXPR_START_ESC + "input" + EXPR_END_ESC + ".*";
+  // Allow only <+input>
+  public static final String INPUT_SET_PATTERN = "^" + EXPR_START_ESC + "input" + EXPR_END_ESC + "$";
   // Simplifying the regex for expression. Anything between <+ and > will be considered as expression.
   public static final String EXPRESSION_PATTERN = "(" + EXPR_START_ESC + ".+" + EXPR_END_ESC + ".*)";
   // This should validate string patterns starting with optional + or - ([+-]?). Then at least one digit ([0-9]+). Then

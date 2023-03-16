@@ -7,17 +7,27 @@
 
 package io.harness.ci.utils;
 
+import static io.harness.ci.commonconstants.CIExecutionConstants.BASE_AZURE_HOSTNAME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.BASE_ECR_HOSTNAME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.BASE_GCR_HOSTNAME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HTTPS_URL;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
+import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.SecurityStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.config.StepImageConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.common.NGExpressionUtils;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.sto.config.STOImageConfig;
 import io.harness.sto.config.STOStepConfig;
@@ -27,6 +37,7 @@ import io.harness.yaml.core.variables.OutputNGVariable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class CIStepInfoUtils {
@@ -38,6 +49,15 @@ public class CIStepInfoUtils {
       return getVmPluginCustomStepImageConfig(step, ciExecutionConfigService, accountId);
     }
     return null;
+  }
+
+  public static String getPluginVersionForInfra(CIExecutionConfigService ciExecutionConfigService,
+      CIStepInfoType stepInfoType, String accountId, Infrastructure infrastructure) {
+    if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
+      return ciExecutionConfigService.getPluginVersionForK8(stepInfoType, accountId).getImage();
+    } else {
+      return ciExecutionConfigService.getPluginVersionForVM(stepInfoType, accountId);
+    }
   }
 
   public static ParameterField<Boolean> getPrivilegedMode(PluginCompatibleStep step) {
@@ -69,7 +89,7 @@ public class CIStepInfoUtils {
       case SECURITY:
         return ((SecurityStepInfo) step).getImagePullPolicy();
       default:
-        return null;
+        return new ParameterField<>();
     }
   }
 
@@ -80,6 +100,63 @@ public class CIStepInfoUtils {
       return stepImageConfig.getWindowsEntrypoint();
     }
     return stepImageConfig.getEntrypoint();
+  }
+
+  public Optional<String> resolveConnectorFromRegistries(List<CIRegistry> registries, String image) {
+    if (isEmpty(registries) || isEmpty(image)) {
+      return Optional.empty();
+    }
+    // first try to match the ones having match property
+    Optional<String> finalConnector = findConnectorUsingRegex(registries, image);
+    if (finalConnector.isPresent()) {
+      return finalConnector;
+    }
+    // choose connector with same type as image
+    finalConnector = findConnectorByType(registries, image);
+    return finalConnector;
+  }
+
+  private Optional<String> findConnectorUsingRegex(List<CIRegistry> registries, String image) {
+    String credential =
+        registries.stream()
+            .filter(r -> {
+              String match = r.getMatch();
+              return isNotEmpty(match) && NGExpressionUtils.containsPattern(Pattern.compile(match), image);
+            })
+            .map(CIRegistry::getConnectorIdentifier)
+            .findFirst()
+            .orElse(null);
+
+    return Optional.ofNullable(credential);
+  }
+
+  private Optional<String> findConnectorByType(List<CIRegistry> registries, String image) {
+    ConnectorType imageConnectorType = getConnectorTypeFromImage(image);
+    String finalIdentifier = registries.stream()
+                                 .filter(r -> isEmpty(r.getMatch()) && r.getConnectorType() == imageConnectorType)
+                                 .map(CIRegistry::getConnectorIdentifier)
+                                 .findFirst()
+                                 .orElse(null);
+    return Optional.ofNullable(finalIdentifier);
+  }
+
+  private static ConnectorType getConnectorTypeFromImage(String image) {
+    if (image.startsWith(HTTPS_URL)) {
+      image = image.substring(HTTPS_URL.length());
+    }
+
+    String[] imageParts = image.split(PATH_SEPARATOR);
+    if (imageParts.length > 1) {
+      String baseImagePath = imageParts[0];
+      if (baseImagePath.endsWith(BASE_GCR_HOSTNAME)) {
+        return ConnectorType.GCP;
+      } else if (baseImagePath.endsWith(BASE_ECR_HOSTNAME)) {
+        return ConnectorType.AWS;
+      } else if (baseImagePath.endsWith(BASE_AZURE_HOSTNAME)) {
+        return ConnectorType.AZURE;
+      }
+    }
+    return ConnectorType.DOCKER;
   }
 
   private static StepImageConfig getSecurityStepImageConfig(PluginCompatibleStep step,

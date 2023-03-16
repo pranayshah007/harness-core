@@ -9,6 +9,7 @@ package io.harness.cvng.cdng.beans.v2;
 
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 
 import lombok.AccessLevel;
 import lombok.Data;
@@ -21,6 +22,12 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class VerificationSpec {
+  String analysedServiceIdentifier;
+  String analysedEnvIdentifier;
+  MonitoredServiceSpecType monitoredServiceType;
+  String monitoredServiceIdentifier;
+  String monitoredServiceTemplateIdentifier;
+  String monitoredServiceTemplateVersionLabel;
   VerificationJobType analysisType;
   Sensitivity sensitivity;
   long durationInMinutes;

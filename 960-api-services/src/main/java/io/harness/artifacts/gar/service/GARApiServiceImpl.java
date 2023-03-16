@@ -204,7 +204,7 @@ public class GARApiServiceImpl implements GarApiService {
                 USER));
     }
   }
-  private List<BuildDetailsInternal> processPage(
+  public List<BuildDetailsInternal> processPage(
       GarPackageVersionResponse tagsPage, String versionRegex, GarInternalConfig garinternalConfig) {
     if (tagsPage != null && EmptyPredicate.isNotEmpty(tagsPage.getTags())) {
       int index = tagsPage.getTags().get(0).getName().lastIndexOf("/");
@@ -220,6 +220,7 @@ public class GARApiServiceImpl implements GarApiService {
                 metadata.put(ArtifactMetadataKeys.artifactRepositoryName, garinternalConfig.getRepositoryName());
                 metadata.put(ArtifactMetadataKeys.artifactRegion, garinternalConfig.getRegion());
                 metadata.put(ArtifactMetadataKeys.TAG, tagFinal);
+                metadata.put(ArtifactMetadataKeys.IMAGE, getImageName(garinternalConfig, tagFinal));
                 return BuildDetailsInternal.builder()
                     .uiDisplayName("Tag# " + tagFinal)
                     .number(tagFinal)
@@ -240,5 +241,10 @@ public class GARApiServiceImpl implements GarApiService {
       }
       return Collections.emptyList();
     }
+  }
+
+  private String getImageName(GarInternalConfig garinternalConfig, String tag) {
+    return garinternalConfig.getRegion() + '-' + "docker.pkg.dev/" + garinternalConfig.getProject() + "/"
+        + garinternalConfig.getRepositoryName() + "/" + garinternalConfig.getPkg() + ":" + tag;
   }
 }

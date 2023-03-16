@@ -9,6 +9,7 @@ package io.harness.aws.asg.manifest;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
+import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -68,6 +69,12 @@ public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateL
 
       if (isNotEmpty(asgLaunchTemplateManifestRequest.getOverrideProperties())) {
         applyOverrideProperties(createLaunchTemplateRequest, asgLaunchTemplateManifestRequest.getOverrideProperties());
+      }
+
+      // encode user data script in base64
+      if (isNotEmpty(createLaunchTemplateRequest.getLaunchTemplateData().getUserData())) {
+        createLaunchTemplateRequest.getLaunchTemplateData().setUserData(
+            encodeBase64(createLaunchTemplateRequest.getLaunchTemplateData().getUserData()));
       }
 
       LaunchTemplate launchTemplate = asgSdkManager.getLaunchTemplate(asgName);

@@ -29,8 +29,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class PipelineCreateEvent implements Event {
-  private String orgIdentifier;
   private String accountIdentifier;
+  private String orgIdentifier;
   private String projectIdentifier;
   private PipelineEntity pipeline;
   private Boolean isForOldGitSync;

@@ -237,7 +237,7 @@ public class NexusThreeClientImplTest {
                                  + "}")));
 
     wireMockRule.stubFor(
-        get(urlEqualTo("/service/rest/v1/search?repository=" + repoKey
+        get(urlEqualTo("/service/rest/v1/search?sort=version&direction=desc&repository=" + repoKey
                 + "&name=" + URLEncoder.encode(artifactPath, "UTF-8") + "&format=docker"))
             .willReturn(aResponse().withStatus(200).withBody("{\n"
                 + "    \"items\": [\n"
@@ -520,7 +520,7 @@ public class NexusThreeClientImplTest {
 
     try {
       List<BuildDetailsInternal> response =
-          nexusThreeService.getVersions(nexusConfig, repoKey, null, artifactPath, null, null);
+          nexusThreeService.getVersions(nexusConfig, repoKey, null, artifactPath, null, null, Integer.MAX_VALUE);
     } catch (InvalidArtifactServerException exception) {
       assertThat(exception.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
     }
@@ -628,7 +628,7 @@ public class NexusThreeClientImplTest {
                 + "\"continuationToken\": null\n"
                 + "}")));
     List<BuildDetailsInternal> response =
-        nexusThreeService.getVersions(nexusConfig, repoKey, "groupId", artifactPath, "war", "ex");
+        nexusThreeService.getVersions(nexusConfig, repoKey, "groupId", artifactPath, "war", "ex", Integer.MAX_VALUE);
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(2);
@@ -695,7 +695,9 @@ public class NexusThreeClientImplTest {
                                  + "    \"items\": [],\n"
                                  + "\"continuationToken\": null\n"
                                  + "}")));
-    assertThatThrownBy(() -> nexusThreeService.getVersions(nexusConfig, repoKey, "groupId", artifactPath, "war", "ex"))
+    assertThatThrownBy(()
+                           -> nexusThreeService.getVersions(
+                               nexusConfig, repoKey, "groupId", artifactPath, "war", "ex", Integer.MAX_VALUE))
         .isInstanceOf(HintException.class);
   }
 
@@ -801,7 +803,7 @@ public class NexusThreeClientImplTest {
                 + "\"continuationToken\": null\n"
                 + "}")));
     List<BuildDetailsInternal> response =
-        nexusThreeService.getVersions(nexusConfig, repoKey, "groupId", artifactPath, "war", "ex");
+        nexusThreeService.getVersions(nexusConfig, repoKey, "groupId", artifactPath, "war", "ex", Integer.MAX_VALUE);
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(2);
@@ -861,7 +863,7 @@ public class NexusThreeClientImplTest {
                                  + "}")));
 
     wireMockRule.stubFor(
-        get(urlEqualTo("/service/rest/v1/search?repository=" + repoKey + "&name=package"))
+        get(urlEqualTo("/service/rest/v1/search?sort=version&direction=desc&repository=" + repoKey + "&name=package"))
             .willReturn(aResponse().withStatus(200).withBody("{\n"
                 + "    \"items\": [\n"
                 + "{\n"
@@ -970,7 +972,7 @@ public class NexusThreeClientImplTest {
                                  + "}")));
 
     wireMockRule.stubFor(
-        get(urlEqualTo("/service/rest/v1/search?repository=" + repoKey + "&name=package"))
+        get(urlEqualTo("/service/rest/v1/search?sort=version&direction=desc&repository=" + repoKey + "&name=package"))
             .willReturn(aResponse().withStatus(200).withBody("{\n"
                 + "    \"items\": [\n"
                 + "{\n"
@@ -1185,7 +1187,7 @@ public class NexusThreeClientImplTest {
                                  + "}")));
 
     wireMockRule.stubFor(
-        get(urlEqualTo("/service/rest/v1/search?repository=" + repoKey + "&group=group"))
+        get(urlEqualTo("/service/rest/v1/search?sort=version&direction=desc&repository=" + repoKey + "&group=group"))
             .willReturn(aResponse().withStatus(200).withBody("{\n"
                 + "    \"items\": [\n"
                 + "{\n"
@@ -1294,7 +1296,7 @@ public class NexusThreeClientImplTest {
                                  + "}")));
 
     wireMockRule.stubFor(
-        get(urlEqualTo("/service/rest/v1/search?repository=" + repoKey + "&group=group"))
+        get(urlEqualTo("/service/rest/v1/search?sort=version&direction=desc&repository=" + repoKey + "&group=group"))
             .willReturn(aResponse().withStatus(200).withBody("{\n"
                 + "    \"items\": [\n"
                 + "{\n"

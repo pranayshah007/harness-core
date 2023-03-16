@@ -16,15 +16,20 @@ import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.ssh.FileSourceType;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-@Value
+@Getter
 @Builder
+@ToString
+@EqualsAndHashCode
 @OwnedBy(CDP)
 public class NgDownloadArtifactCommandUnit implements NgCommandUnit, NestedAnnotationResolver {
   String name;
-  @Expression(ALLOW_SECRETS) String destinationPath;
-  FileSourceType sourceType = FileSourceType.ARTIFACT;
+  @Setter @Expression(ALLOW_SECRETS) String destinationPath;
+  @Builder.Default FileSourceType sourceType = FileSourceType.ARTIFACT;
 
   @Override
   public String getCommandUnitType() {

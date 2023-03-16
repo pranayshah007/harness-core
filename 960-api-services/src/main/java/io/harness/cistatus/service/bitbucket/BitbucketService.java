@@ -7,6 +7,7 @@
 
 package io.harness.cistatus.service.bitbucket;
 
+import io.harness.git.model.MergePRResponse;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
@@ -16,4 +17,10 @@ public interface BitbucketService {
   boolean sendStatus(BitbucketConfig bitbucketConfig, String userName, String token,
       List<EncryptedDataDetail> encryptionDetails, String sha, String owner, String repo,
       Map<String, Object> bodyObjectMap);
+
+  MergePRResponse mergePR(BitbucketConfig bitbucketConfig, String token, String userName, String org, String name,
+      String prNumber, boolean deleteSourceBranch, String ref);
+
+  boolean deleteRef(BitbucketConfig bitbucketConfig, String authToken, String ref, String repoSlug, String org,
+      MergePRResponse mergeResponse);
 }

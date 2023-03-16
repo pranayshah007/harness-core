@@ -74,7 +74,7 @@ public class GcpInfrastructureProvider implements InfrastructureProvider {
                                           .accountId(computeProviderSetting.getAccountId())
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                           .build();
-    return delegateProxyFactory.get(ContainerService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(ContainerService.class, syncTaskContext)
         .listClusters(ContainerServiceParams.builder()
                           .encryptionDetails(encryptedDataDetails)
                           .settingAttribute(computeProviderSetting.toDTO())

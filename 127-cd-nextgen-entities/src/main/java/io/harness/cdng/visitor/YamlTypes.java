@@ -20,7 +20,7 @@ public interface YamlTypes {
   String GITOPS_CREATE_PR = StepSpecTypeConstants.GITOPS_CREATE_PR;
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
   String UPDATE_RELEASE_REPO = StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO;
-
+  String GITOPS_SYNC = StepSpecTypeConstants.GITOPS_SYNC;
   String PRIMARY_ARTIFACT = "primary";
   String PRIMARY_ARTIFACT_REF = "primaryArtifactRef";
   String ARTIFACT_SOURCES = "sources";
@@ -89,7 +89,13 @@ public interface YamlTypes {
   String ASG_BLUE_GREEN_DEPLOY = StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY;
   String ASG_BLUE_GREEN_ROLLBACK = StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK;
   String ASG_BLUE_GREEN_SWAP_SERVICE = StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE;
-
+  String GOOGLE_CLOUD_FUNCTIONS_DEPLOY = StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY;
+  String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC =
+      StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC;
+  String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT;
+  String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK;
+  String TERRAFORM_CLOUD_RUN = StepSpecTypeConstants.TERRAFORM_CLOUD_RUN;
+  String TERRAFORM_CLOUD_ROLLBACK = StepSpecTypeConstants.TERRAFORM_CLOUD_ROLLBACK;
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
   String K8S_MANIFEST = ManifestType.K8Manifest;
@@ -102,6 +108,7 @@ public interface YamlTypes {
   String SERVICE_SECTION = "serviceSection";
   String SERVICE_ENTITY = "service";
   String SERVICE_REF = "serviceRef";
+  String SERVICE_USE_FROM_STAGE = "useFromStage";
   String SERVICE_DEFINITION = "serviceDefinition";
   String SERVICE_SPEC = "spec";
   String SERVICE_OVERRIDE = "serviceOverrides";
@@ -131,6 +138,7 @@ public interface YamlTypes {
 
   String COMMAND_FLAGS_WRAPPER = "commandFlags";
   String REGION = "region";
+  String PROJECT = "project";
   String STAGE = "stage";
   String TEMPLATE = "template";
   String CREDENTIALS_REF = "credentialsRef";
@@ -166,6 +174,7 @@ public interface YamlTypes {
   String INPUTS = "inputs";
   String REF = "ref";
   String JENKINS_BUILD = StepSpecTypeConstants.JENKINS_BUILD;
+  String BAMBOO_BUILD = StepSpecTypeConstants.BAMBOO_BUILD;
   String STARTUP_COMMAND = "startupCommand";
 
   String ELASTIGROUP_SERVICE_SETTINGS_STEP = "Elastigroup_Service_Settings";
@@ -195,4 +204,13 @@ public interface YamlTypes {
   String TAS_ROLLING_ROLLBACK = StepSpecTypeConstants.TAS_ROLLING_ROLLBACK;
 
   String K8S_DRY_RUN_MANIFEST = StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST;
+
+  String AWS_LAMBDA_DEPLOY = StepSpecTypeConstants.AWS_LAMBDA_DEPLOY;
+
+  // AWS SAM
+  String AWS_SAM_DEPLOY = StepSpecTypeConstants.AWS_SAM_DEPLOY;
+  String AWS_SAM_ROLLBACK = StepSpecTypeConstants.AWS_SAM_ROLLBACK;
+
+  String AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK;
+  String TAS_ROUTE_MAPPING = StepSpecTypeConstants.TAS_ROUTE_MAPPING;
 }

@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.StartedProcess;
+import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DX)
@@ -55,7 +56,7 @@ public abstract class ScmUnixManager implements AutoCloseable {
     processBuilder.command("./" + SCM.getBinaryName(), "--unix", socketAddress);
     log.info("Running SCM server at path: {} on port: {}", PATH_TO_SCM_BUILD, socketAddress);
     processBuilder.redirectOutput(System.out);
-    processBuilder.redirectError(System.err);
+    processBuilder.redirectError(Slf4jStream.of("scm").asInfo());
     server = processBuilder.start();
   }
 }

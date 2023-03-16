@@ -17,6 +17,7 @@ import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
 import static io.harness.pms.contracts.execution.Status.PAUSED;
 import static io.harness.pms.contracts.execution.Status.PAUSING;
 import static io.harness.pms.contracts.execution.Status.QUEUED;
+import static io.harness.pms.contracts.execution.Status.QUEUED_LICENSE_LIMIT_REACHED;
 import static io.harness.pms.contracts.execution.Status.RESOURCE_WAITING;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.contracts.execution.Status.SKIPPED;
@@ -310,7 +311,8 @@ public class StatusUtilsTest extends CategoryTest {
   public void testNodeAllowedStartSet() {
     assertThat(StatusUtils.nodeAllowedStartSet(Status.RUNNING))
         .containsExactlyInAnyOrder(QUEUED, ASYNC_WAITING, APPROVAL_WAITING, RESOURCE_WAITING, TASK_WAITING,
-            TIMED_WAITING, INTERVENTION_WAITING, PAUSED, PAUSING, APPROVAL_REJECTED, INPUT_WAITING, WAIT_STEP_RUNNING);
+            TIMED_WAITING, INTERVENTION_WAITING, PAUSED, PAUSING, APPROVAL_REJECTED, INPUT_WAITING, WAIT_STEP_RUNNING,
+            QUEUED_LICENSE_LIMIT_REACHED);
     assertThat(StatusUtils.nodeAllowedStartSet(Status.INTERVENTION_WAITING)).isEqualTo(StatusUtils.brokeStatuses());
     assertThat(StatusUtils.nodeAllowedStartSet(Status.TIMED_WAITING)).containsExactlyInAnyOrder(QUEUED, RUNNING);
     assertThat(StatusUtils.nodeAllowedStartSet(Status.ASYNC_WAITING)).containsExactlyInAnyOrder(QUEUED, RUNNING);
@@ -353,7 +355,8 @@ public class StatusUtilsTest extends CategoryTest {
             PAUSING, INTERVENTION_WAITING, RUNNING, WAIT_STEP_RUNNING, APPROVAL_WAITING, INPUT_WAITING);
     assertThat(StatusUtils.planAllowedStartSet(Status.RUNNING))
         .containsExactlyInAnyOrder(QUEUED, ASYNC_WAITING, APPROVAL_WAITING, RESOURCE_WAITING, TASK_WAITING,
-            TIMED_WAITING, INTERVENTION_WAITING, PAUSED, PAUSING, APPROVAL_REJECTED, INPUT_WAITING, WAIT_STEP_RUNNING);
+            TIMED_WAITING, INTERVENTION_WAITING, PAUSED, PAUSING, APPROVAL_REJECTED, INPUT_WAITING, WAIT_STEP_RUNNING,
+            QUEUED_LICENSE_LIMIT_REACHED);
     assertThat(StatusUtils.planAllowedStartSet(Status.TIMED_WAITING)).containsExactlyInAnyOrder(QUEUED, RUNNING);
     assertThat(StatusUtils.planAllowedStartSet(Status.ASYNC_WAITING)).containsExactlyInAnyOrder(QUEUED, RUNNING);
     assertThat(StatusUtils.planAllowedStartSet(Status.APPROVAL_WAITING)).containsExactlyInAnyOrder(QUEUED, RUNNING);

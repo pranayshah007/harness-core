@@ -44,8 +44,14 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.beans.StepOutput;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
+import io.harness.ngmigration.expressions.step.TerraformStepFunctor;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.utils.CaseFormat;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -56,13 +62,16 @@ import io.harness.yaml.core.variables.StringNGVariable;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.GraphNode;
 import software.wings.beans.NameValuePair;
+import software.wings.beans.PhaseStep;
 import software.wings.beans.TerraformInfrastructureProvisioner;
+import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.states.provision.DestroyTerraformProvisionState;
 import software.wings.sm.states.provision.TerraformProvisionState;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -72,10 +81,16 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
-public abstract class BaseTerraformProvisionerMapper implements StepMapper {
+public abstract class BaseTerraformProvisionerMapper extends StepMapper {
   private static final String SECRET_FORMAT = "<+secrets.getValue(\"%s\")>";
 
-  public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
+  @Override
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.MANUAL_EFFORT;
+  }
+
+  public List<CgEntityId> getReferencedEntities(
+      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     TerraformProvisionState state = (TerraformProvisionState) getState(graphNode);
 
     List<CgEntityId> references = new ArrayList<>();
@@ -257,6 +272,7 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
     GitStore gitStore = null;
     if (EmptyPredicate.isNotEmpty(state.getTfVarFiles())) {
       gitStore = getGitStore(entities, migratedEntities, state);
+      gitStore.setFolderPath(ParameterField.ofNull());
       gitStore.setPaths(ParameterField.createValueField(state.getTfVarFiles()));
     } else if (state.getTfVarGitFileConfig() != null) {
       GitStoreBuilder storeBuilder = GitStore.builder().connectorRef(MigratorUtility.RUNTIME_INPUT);
@@ -265,7 +281,7 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
         storeBuilder.branch(ParameterField.createValueField(state.getTfVarGitFileConfig().getBranch()));
       } else {
         storeBuilder.gitFetchType(FetchType.COMMIT);
-        storeBuilder.branch(ParameterField.createValueField(state.getTfVarGitFileConfig().getCommitId()));
+        storeBuilder.commitId(ParameterField.createValueField(state.getTfVarGitFileConfig().getCommitId()));
       }
       storeBuilder.paths(ParameterField.createValueField(
           Arrays.stream(state.getTfVarGitFileConfig().getFilePath().split(",")).collect(Collectors.toList())));
@@ -321,15 +337,15 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
           .build();
     }
     TerraformInfrastructureProvisioner provisioner = (TerraformInfrastructureProvisioner) node.getEntity();
-
+    String path = StringUtils.isNotBlank(provisioner.getPath()) ? provisioner.getPath() : "./";
     if (StringUtils.isNotBlank(provisioner.getSourceRepoBranch())) {
       storeBuilder.gitFetchType(FetchType.BRANCH);
       storeBuilder.branch(ParameterField.createValueField(provisioner.getSourceRepoBranch()));
     } else {
       storeBuilder.gitFetchType(FetchType.COMMIT);
-      storeBuilder.branch(ParameterField.createValueField(provisioner.getCommitId()));
+      storeBuilder.commitId(ParameterField.createValueField(provisioner.getCommitId()));
     }
-    storeBuilder.folderPath(ParameterField.createValueField(provisioner.getPath()));
+    storeBuilder.folderPath(ParameterField.createValueField(path));
     return storeBuilder.build();
   }
 
@@ -366,8 +382,8 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
         .build();
   }
 
-  protected AbstractStepNode getStepNode(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  protected AbstractStepNode getStepNode(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode, CaseFormat identifierCaseFormat) {
     TerraformProvisionState state = (TerraformProvisionState) getState(graphNode);
     if (state.isRunPlanOnly()) {
       TerraformPlanExecutionData executionData = getPlanExecutionData(entities, migratedEntities, state);
@@ -377,7 +393,7 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
                                            .terraformPlanExecutionData(executionData)
                                            .build();
       TerraformPlanStepNode planStepNode = new TerraformPlanStepNode();
-      baseSetup(graphNode, planStepNode);
+      baseSetup(graphNode, planStepNode, identifierCaseFormat);
       planStepNode.setTerraformPlanStepInfo(stepInfo);
       return planStepNode;
     } else {
@@ -390,9 +406,29 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
                                             .provisionerIdentifier(MigratorUtility.RUNTIME_INPUT)
                                             .build();
       TerraformApplyStepNode applyStepNode = new TerraformApplyStepNode();
-      baseSetup(graphNode, applyStepNode);
+      baseSetup(graphNode, applyStepNode, identifierCaseFormat);
       applyStepNode.setTerraformApplyStepInfo(stepInfo);
       return applyStepNode;
     }
+  }
+
+  @Override
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
+    String sweepingOutputName = "terraform";
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
+        .stream()
+        .map(exp
+            -> StepOutput.builder()
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
+                   .expression(exp)
+                   .build())
+        .map(TerraformStepFunctor::new)
+        .collect(Collectors.toList());
   }
 }

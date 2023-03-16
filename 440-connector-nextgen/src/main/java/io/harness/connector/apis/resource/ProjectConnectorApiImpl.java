@@ -127,8 +127,8 @@ public class ProjectConnectorApiImpl implements ProjectConnectorApi {
     List<ConnectorResponse> connectorResponses = connectorApiUtils.toConnectorResponses(connectorResponseDTOS);
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
-        String.format("/v1/orgs/%s/projects/%s/connectors", org, project), connectorResponses.size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotalItems(), page, limit);
 
     return responseBuilderWithLinks.entity(connectorResponses).build();
   }

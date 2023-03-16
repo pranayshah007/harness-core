@@ -4,8 +4,13 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 # Add properties that are shared between developers and ci build system
+
+# Setup java toolchain for compilation
 build --java_language_version=11
+
+# Setup java toolchain for execution
 build --java_runtime_version=local_jdk
+
 build --tool_java_language_version=11
 build --tool_java_runtime_version=local_jdk
 

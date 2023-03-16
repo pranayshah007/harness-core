@@ -23,6 +23,8 @@ import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRepoDetail
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryResponseDTO;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
+import io.harness.common.NGExpressionUtils;
+import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -135,20 +137,24 @@ public class ArtifactoryArtifactResource {
       }
 
       if (isEmpty(artifactoryConnectorIdentifier)) {
-        artifactoryConnectorIdentifier = artifactoryRegistryArtifactConfig.getConnectorRef().getValue();
+        artifactoryConnectorIdentifier = (String) artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue();
       }
     }
+
+    artifactoryConnectorIdentifier =
+        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+            runtimeInputYaml, artifactoryConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
 
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     // todo(hinger): resolve other expressions here
-    artifactPath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    artifactPath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
 
-    repository = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    repository = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, repository, fqnPath, gitEntityBasicInfo, serviceRef);
 
-    artifactRepositoryUrl = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    artifactRepositoryUrl = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, artifactRepositoryUrl, fqnPath, gitEntityBasicInfo, serviceRef);
 
     ArtifactoryResponseDTO buildDetails = artifactoryResourceService.getBuildDetails(connectorRef, repository,
@@ -215,6 +221,54 @@ public class ArtifactoryArtifactResource {
         repositoryType = artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
       }
     }
+    if (artifactoryConnectorIdentifier != null && NGExpressionUtils.isRuntimeField(artifactoryConnectorIdentifier)) {
+      throw new InvalidIdentifierRefException(
+          "Artifactory Connector is required to fetch repositories. You can make this field Runtime input otherwise.");
+    }
+    IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
+        artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    ArtifactoryRepoDetailsDTO repoDetailsDTO =
+        artifactoryResourceService.getRepositories(repositoryType, connectorRef, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(repoDetailsDTO);
+  }
+
+  @POST
+  @Path("repositoriesDetailsV2")
+  @ApiOperation(value = "Gets repository details", nickname = "getRepositoriesDetailsV2ForArtifactory")
+  public ResponseDTO<ArtifactoryRepoDetailsDTO> getRepositoriesDetailsV2(
+      @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
+      @QueryParam("repositoryType") @DefaultValue("any") String repositoryType,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @QueryParam("fqnPath") String fqnPath, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @NotNull String runtimeInputYaml, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
+          (ArtifactoryRegistryArtifactConfig) artifactSpecFromService;
+
+      if (isEmpty(artifactoryConnectorIdentifier)) {
+        artifactoryConnectorIdentifier =
+            artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue().toString();
+      }
+
+      if (isEmpty(repositoryType)) {
+        repositoryType = artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
+      }
+    }
+
+    artifactoryConnectorIdentifier =
+        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+            runtimeInputYaml, artifactoryConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    if (artifactoryConnectorIdentifier != null && NGExpressionUtils.isRuntimeField(artifactoryConnectorIdentifier)) {
+      throw new InvalidIdentifierRefException(
+          "Artifactory Connector is required to fetch repositories. You can make this field Runtime input otherwise.");
+    }
+
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     ArtifactoryRepoDetailsDTO repoDetailsDTO =

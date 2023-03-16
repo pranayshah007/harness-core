@@ -15,4 +15,8 @@ public class SettingIdentifiers {
   public static String SCIM_JWT_TOKEN_CONFIGURATION_VALUE_IDENTIFIER = "scim_jwt_token_value_field";
   public static String SCIM_JWT_TOKEN_CONFIGURATION_PUBLIC_KEY_URL_IDENTIFIER = "scim_jwt_token_jwks_keys_url";
   public static String SCIM_JWT_TOKEN_CONFIGURATION_SERVICE_PRINCIPAL_IDENTIFIER = "scim_jwt_token_service_account_id";
+  public static String PIPELINE_TIMEOUT_IDENTIFIER = "pipeline_timeout";
+  public static String STAGE_TIMEOUT_IDENTIFIER = "stage_timeout";
+  public static String STEP_TIMEOUT_IDENTIFIER = "step_timeout";
+  public static String CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS = "concurrent_active_pipeline_executions";
 }

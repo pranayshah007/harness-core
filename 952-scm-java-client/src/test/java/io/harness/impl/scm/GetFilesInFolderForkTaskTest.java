@@ -9,20 +9,27 @@ package io.harness.impl.scm;
 
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.product.ci.scm.proto.AzureProvider;
 import io.harness.product.ci.scm.proto.BitbucketServerProvider;
+import io.harness.product.ci.scm.proto.ContentType;
 import io.harness.product.ci.scm.proto.FileChange;
 import io.harness.product.ci.scm.proto.FindFilesInBranchRequest;
 import io.harness.product.ci.scm.proto.FindFilesInBranchResponse;
 import io.harness.product.ci.scm.proto.GithubProvider;
 import io.harness.product.ci.scm.proto.PageResponse;
 import io.harness.product.ci.scm.proto.Provider;
+import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
@@ -32,6 +39,7 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.CI)
 public class GetFilesInFolderForkTaskTest extends CategoryTest {
+  SCMGrpc.SCMBlockingStub scmBlockingStub = mock(SCMGrpc.SCMBlockingStub.class);
   GetFilesInFolderForkTask getFilesInFolderForkTask = new GetFilesInFolderForkTask(null, null, null, null, null);
 
   @Test
@@ -99,9 +107,73 @@ public class GetFilesInFolderForkTaskTest extends CategoryTest {
     assertThat(requestBuilder.getPagination().getSize()).isEqualTo(25);
   }
 
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetAllFilesPresentInFolder() {
+    final Provider provider =
+        Provider.newBuilder().setBitbucketServer(BitbucketServerProvider.newBuilder().build()).build();
+    final FindFilesInBranchRequest.Builder requestBuilder = FindFilesInBranchRequest.newBuilder().setProvider(provider);
+    final GetFilesInFolderForkTask testGetFilesInFolderTask =
+        new GetFilesInFolderForkTask(null, provider, null, null, scmBlockingStub);
+    when(scmBlockingStub.findFilesInBranch(any())).thenReturn(getFindFilesInBranchResponse());
+
+    List<FileChange> fileChangeList = testGetFilesInFolderTask.getAllFilesPresentInFolder(requestBuilder);
+    assertThat(fileChangeList.size()).isEqualTo(1);
+    assertThat(fileChangeList.get(0).getPath()).isEqualTo("directory/parent/child.yaml");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testAddFilesOfThisFolder() {
+    final Provider provider = Provider.newBuilder().setAzure(AzureProvider.newBuilder().build()).build();
+    final FindFilesInBranchRequest.Builder requestBuilder = FindFilesInBranchRequest.newBuilder().setProvider(provider);
+    final GetFilesInFolderForkTask testGetFilesInFolderTask =
+        new GetFilesInFolderForkTask(null, provider, null, null, scmBlockingStub);
+    when(scmBlockingStub.findFilesInBranch(any())).thenReturn(getFindFilesInBranchResponseWithDirectory());
+
+    List<FileChange> fileChangeList = testGetFilesInFolderTask.getAllFilesPresentInFolder(requestBuilder);
+    List<FileChange> filePaths = new ArrayList<>();
+    testGetFilesInFolderTask.addFilesOfThisFolder(filePaths, fileChangeList);
+    assertThat(filePaths.size()).isEqualTo(1);
+    assertThat(filePaths.get(0).getPath()).isEqualTo("directory/parent/child.yaml");
+  }
+
   private FindFilesInBranchResponse getFindFilesInBranchResponseWithPage(int page) {
     return FindFilesInBranchResponse.newBuilder()
         .setPagination(PageResponse.newBuilder().setNext(page).build())
+        .build();
+  }
+
+  private FindFilesInBranchResponse getFindFilesInBranchResponseWithDirectory() {
+    return FindFilesInBranchResponse.getDefaultInstance()
+        .toBuilder()
+        .setPagination(PageResponse.newBuilder().setNext(0).setNextUrl("").build())
+        .addFile(FileChange.newBuilder()
+                     .setPath("directory/parent")
+                     .setContentType(ContentType.DIRECTORY)
+                     .setBlobId("123")
+                     .setCommitId("123")
+                     .build())
+        .addFile(FileChange.newBuilder()
+                     .setPath("directory/parent/child.yaml")
+                     .setContentType(ContentType.FILE)
+                     .setBlobId("456")
+                     .setCommitId("123")
+                     .build())
+        .build();
+  }
+
+  private FindFilesInBranchResponse getFindFilesInBranchResponse() {
+    return FindFilesInBranchResponse.newBuilder()
+        .addFile(FileChange.newBuilder()
+                     .setPath("directory/parent/child.yaml")
+                     .setContentType(ContentType.FILE)
+                     .setBlobId("456")
+                     .setCommitId("123")
+                     .build())
+        .setPagination(PageResponse.newBuilder().setNext(0).setNextUrl("").build())
         .build();
   }
 }

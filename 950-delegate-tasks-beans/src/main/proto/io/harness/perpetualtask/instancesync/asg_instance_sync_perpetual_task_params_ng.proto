@@ -1,0 +1,21 @@
+// Copyright 2020 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.perpetualtask.instancesync;
+
+option java_multiple_files = true;
+
+message AsgInstanceSyncPerpetualTaskParamsNg {
+  string account_id = 1;
+  repeated AsgDeploymentRelease asg_deployment_release_list = 2;
+}
+
+message AsgDeploymentRelease {
+  bytes asg_infra_config = 1;
+  string asg_name_without_suffix = 2;
+  string execution_strategy = 3;
+}

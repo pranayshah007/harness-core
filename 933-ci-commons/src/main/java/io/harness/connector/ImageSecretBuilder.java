@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.aws.AwsExceptionHandler.handleAmazonClientException;
 import static io.harness.aws.AwsExceptionHandler.handleAmazonServiceException;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.utils.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
+import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 
 import static java.lang.String.format;
 
@@ -34,13 +34,13 @@ import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
+import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
 import io.harness.govern.Switch;
 import io.harness.secrets.SecretDecryptor;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.ec2.model.AmazonEC2Exception;
@@ -206,11 +206,8 @@ public class ImageSecretBuilder {
 
     String registryUrl = imageParts[0];
     GcpConnectorDTO gcpConnectorConfig = (GcpConnectorDTO) connectorDetails.getConnectorConfig();
-    if (gcpConnectorConfig.getCredential().getGcpCredentialType() != GcpCredentialType.MANUAL_CREDENTIALS) {
-      throw new InvalidArgumentsException(
-          format("Unsupported auth type: %s for GCP connector: %s to pull image",
-              gcpConnectorConfig.getCredential().getGcpCredentialType().toString(), connectorDetails.getIdentifier()),
-          WingsException.USER);
+    if (gcpConnectorConfig.getCredential().getGcpCredentialType() == GcpCredentialType.INHERIT_FROM_DELEGATE) {
+      return null;
     }
     log.info("Decrypting GCP config for connector id:[{}], type:[{}]", connectorDetails.getIdentifier(),
         connectorDetails.getConnectorType());

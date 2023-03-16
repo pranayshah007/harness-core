@@ -22,8 +22,10 @@ public class AuditEventDataTypeConstants {
   public static final String FILE_AUDIT_EVENT_DATA = "FileAuditEventData";
   public static final String OPA_AUDIT_EVENT_DATA = "OpaAuditEventData";
   public static final String CHAOS_AUDIT_EVENT_DATA = "ChaosAuditEventData";
+  public static final String FEATURE_FLAG_AUDIT_EVENT_DATA = "FeatureFlagAuditEventData";
 
   // Deprecated
   public static final String USER_INVITE = "USER_INVITE";
   public static final String USER_MEMBERSHIP = "USER_MEMBERSHIP";
+  public static final String NODE_EXECUTION_EVENT_DATA = "NodeExecutionEventData";
 }

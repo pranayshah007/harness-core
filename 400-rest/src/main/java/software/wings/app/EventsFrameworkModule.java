@@ -26,6 +26,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT
 import static io.harness.eventsframework.EventsFrameworkConstants.SAML_AUTHORIZATION_ASSERTION;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cache.HarnessCacheManager;
 import io.harness.configuration.DeployMode;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.api.Consumer;
@@ -36,9 +37,16 @@ import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
+import io.harness.version.VersionInfoManager;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import javax.cache.Cache;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import lombok.AllArgsConstructor;
 import org.redisson.api.RedissonClient;
 
@@ -107,5 +115,14 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(RedisConsumer.of(OBSERVER_EVENT_CHANNEL, authorizationServiceHeader, redissonClient,
               DEFAULT_MAX_PROCESSING_TIME, DEFAULT_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
     }
+  }
+
+  @Provides
+  @Singleton
+  @Named("debeziumEventsCache")
+  public Cache<String, Long> sdkEventsCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache("debeziumEventsCache", String.class, Long.class,
+        AccessedExpiryPolicy.factoryOf(Duration.ONE_HOUR), versionInfoManager.getVersionInfo().getBuildNo());
   }
 }

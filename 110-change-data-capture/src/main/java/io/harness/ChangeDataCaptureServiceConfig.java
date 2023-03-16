@@ -44,6 +44,7 @@ public class ChangeDataCaptureServiceConfig extends Configuration {
   @JsonProperty("debeziumEnabled") private boolean debeziumEnabled;
   @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
+  @JsonProperty("changeStreamBatchSize") private int changeStreamBatchSize;
 
   public static Collection<Class<?>> getResourceClasses() {
     Reflections reflections = new Reflections(RESOURCE_PACKAGE);

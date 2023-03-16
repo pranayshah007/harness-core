@@ -9,7 +9,7 @@ package io.harness.gitsync.common.remote;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.encryption.ScopeHelper.getScope;
+import static io.harness.scope.ScopeHelper.getScope;
 
 import static io.fabric8.utils.Strings.nullIfEmpty;
 import static java.util.stream.Collectors.toList;

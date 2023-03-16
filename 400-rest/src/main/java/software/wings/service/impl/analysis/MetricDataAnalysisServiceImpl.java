@@ -17,6 +17,7 @@ import static io.harness.logging.Misc.replaceDotWithUnicode;
 import static io.harness.logging.Misc.replaceUnicodeWithDot;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 import static software.wings.common.VerificationConstants.DEMO_APPLICAITON_ID;
 import static software.wings.common.VerificationConstants.DEMO_FAILURE_TS_STATE_EXECUTION_ID;
 import static software.wings.common.VerificationConstants.DEMO_SUCCESS_TS_STATE_EXECUTION_ID;
@@ -24,7 +25,6 @@ import static software.wings.common.VerificationConstants.DEMO_WORKFLOW_EXECUTIO
 import static software.wings.delegatetasks.AppdynamicsDataCollectionTask.PREDECTIVE_HISTORY_MINUTES;
 import static software.wings.metrics.ThresholdType.ALERT_WHEN_HIGHER;
 import static software.wings.metrics.ThresholdType.ALERT_WHEN_LOWER;
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;

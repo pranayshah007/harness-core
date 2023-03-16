@@ -80,6 +80,7 @@ import retrofit2.Response;
 @PrepareForTest({NGRestUtils.class})
 @OwnedBy(PIPELINE)
 public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
+  private static final String ACCOUNT_ID = "accountId";
   @Mock private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Mock private EntitySetupUsageClient entitySetupUsageClient;
   @Mock private Producer eventProducer;
@@ -89,7 +90,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
   @Before
   public void init() {
     MockitoAnnotations.initMocks(this);
-    when(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO("accountId", null, null, null))
+    when(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(ACCOUNT_ID, null, null, null))
         .thenReturn(IdentifierRefProtoDTO.newBuilder().build());
     when(internalReferredEntityExtractor.extractInternalEntities(any(), anyListOf(EntityDetail.class)))
         .thenReturn(new ArrayList<>());
@@ -135,7 +136,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
 
     verify(eventProducer)
         .send(Message.newBuilder()
-                  .putAllMetadata(ImmutableMap.of("accountId", account, EventsFrameworkMetadataConstants.ACTION,
+                  .putAllMetadata(ImmutableMap.of(ACCOUNT_ID, account, EventsFrameworkMetadataConstants.ACTION,
                       EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                   .setData(entityReferenceDTO.toByteString())
                   .build());
@@ -356,7 +357,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
                                            .build())
             .build();
 
-    PipelineEntity pipelineEntity = PipelineEntity.builder().name("test").accountId("accountId").build();
+    PipelineEntity pipelineEntity = PipelineEntity.builder().name("test").accountId(ACCOUNT_ID).build();
     EntityDetailProtoDTO pipelineDetails =
         EntityDetailProtoDTO.newBuilder()
             .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(pipelineEntity.getAccountId(),
@@ -384,14 +385,14 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
 
     verify(eventProducer)
         .send(Message.newBuilder()
-                  .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountId(),
+                  .putAllMetadata(ImmutableMap.of(ACCOUNT_ID, pipelineEntity.getAccountId(),
                       EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.SECRETS.name(),
                       EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                   .setData(secretEntityReferenceDTO.toByteString())
                   .build());
     verify(eventProducer)
         .send(Message.newBuilder()
-                  .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountId(),
+                  .putAllMetadata(ImmutableMap.of(ACCOUNT_ID, pipelineEntity.getAccountId(),
                       EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.CONNECTORS.name(),
                       EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                   .setData(connectorEntityReferenceDTO.toByteString())
@@ -406,7 +407,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
 
     verify(eventProducer)
         .send(Message.newBuilder()
-                  .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountIdentifier(),
+                  .putAllMetadata(ImmutableMap.of(ACCOUNT_ID, pipelineEntity.getAccountIdentifier(),
                       EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.SERVICE.name(),
                       EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                   .setData(entityReferenceDTO.toByteString())
@@ -414,7 +415,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
 
     verify(eventProducer)
         .send(Message.newBuilder()
-                  .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountIdentifier(),
+                  .putAllMetadata(ImmutableMap.of(ACCOUNT_ID, pipelineEntity.getAccountIdentifier(),
                       EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.ENVIRONMENT.name(),
                       EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                   .setData(entityReferenceDTO.toByteString())
@@ -423,7 +424,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
     verify(eventProducer)
         .send(
             Message.newBuilder()
-                .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountIdentifier(),
+                .putAllMetadata(ImmutableMap.of(ACCOUNT_ID, pipelineEntity.getAccountIdentifier(),
                     EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.ENVIRONMENT_GROUP.name(),
                     EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                 .setData(entityReferenceDTO.toByteString())
@@ -431,7 +432,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
 
     verify(eventProducer)
         .send(Message.newBuilder()
-                  .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountIdentifier(),
+                  .putAllMetadata(ImmutableMap.of(ACCOUNT_ID, pipelineEntity.getAccountIdentifier(),
                       EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.TEMPLATE.name(),
                       EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                   .setData(entityReferenceDTO.toByteString())
@@ -439,7 +440,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
 
     verify(eventProducer)
         .send(Message.newBuilder()
-                  .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountIdentifier(),
+                  .putAllMetadata(ImmutableMap.of(ACCOUNT_ID, pipelineEntity.getAccountIdentifier(),
                       EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.FILES.name(),
                       EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                   .setData(entityReferenceDTO.toByteString())
@@ -447,8 +448,16 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
 
     verify(eventProducer)
         .send(Message.newBuilder()
-                  .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountIdentifier(),
+                  .putAllMetadata(ImmutableMap.of(ACCOUNT_ID, pipelineEntity.getAccountIdentifier(),
                       EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.PIPELINES.name(),
+                      EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+                  .setData(entityReferenceDTO.toByteString())
+                  .build());
+
+    verify(eventProducer)
+        .send(Message.newBuilder()
+                  .putAllMetadata(ImmutableMap.of(ACCOUNT_ID, pipelineEntity.getAccountIdentifier(),
+                      EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.INFRASTRUCTURE.name(),
                       EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                   .setData(entityReferenceDTO.toByteString())
                   .build());

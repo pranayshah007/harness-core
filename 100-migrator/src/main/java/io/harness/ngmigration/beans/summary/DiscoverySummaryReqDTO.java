@@ -23,4 +23,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DiscoverySummaryReqDTO extends MigrationTrackReqPayload {
   private String accountId;
+  private String appId;
 }

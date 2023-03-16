@@ -24,6 +24,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -48,10 +49,12 @@ public class UserServiceHelper {
 
   public boolean isUserPartOfDeletedAccount(User user, String deletedAccountId) {
     List<String> userAccounts = user.getAccountIds();
-    if (userAccounts.isEmpty()) {
+    List<String> userPendingAccounts =
+        user.getPendingAccounts().stream().map(Account::getUuid).collect(Collectors.toList());
+    if (userAccounts.isEmpty() && userPendingAccounts.isEmpty()) {
       throw new InvalidRequestException("User is not part of any accounts");
     }
-    return userAccounts.contains(deletedAccountId);
+    return userAccounts.contains(deletedAccountId) || userPendingAccounts.contains(deletedAccountId);
   }
 
   public List<Account> updatedActiveAccounts(User user, String deletedAccountId) {

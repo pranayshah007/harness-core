@@ -12,7 +12,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//970-api-services-beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/cistatus:module",
+        "//970-api-services-beans/src/main/java/io/harness/gitpolling/github:module",
         "//980-commons/src/main/java/io/harness/exception:module",
         "//980-commons/src/main/java/io/harness/network:module",
         "//980-commons/src/main/java/io/harness/threading:module",

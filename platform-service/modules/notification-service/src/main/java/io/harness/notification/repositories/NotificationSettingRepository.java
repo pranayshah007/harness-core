@@ -10,7 +10,6 @@ package io.harness.notification.repositories;
 import io.harness.annotation.HarnessRepo;
 import io.harness.notification.entities.NotificationSetting;
 
-import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
@@ -18,5 +17,5 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 public interface NotificationSettingRepository extends PagingAndSortingRepository<NotificationSetting, String> {
   Optional<NotificationSetting> findByAccountId(String accountId);
 
-  List<NotificationSetting> findAllByAccountId(String accountId);
+  long deleteAllByAccountId(String accountId);
 }

@@ -8,6 +8,7 @@
 package io.harness.cvng;
 
 import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
+import static io.harness.cvng.CVConstants.CUSTOM_CHANGE_PUBLISHER;
 import static io.harness.cvng.CVConstants.STATEMACHINE_PUBLISHER;
 
 import io.harness.eventsframework.EventsFrameworkConfiguration;
@@ -60,6 +61,16 @@ public class EventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(EventsFrameworkConstants.SRM_STATEMACHINE_EVENT))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+      bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT))
+          .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
+      bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF))
+          .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
     } else {
       RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
       bind(AbstractProducer.class)
@@ -83,6 +94,11 @@ public class EventsFrameworkModule extends AbstractModule {
               redissonClient, EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_MAX_PROCESSING_TIME,
               EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF_BATCH_SIZE, redisConfig.getEnvNamespace()));
       bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF))
+          .toInstance(RedisProducer.of(EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF, redissonClient, 5000,
+              "internal_change_publisher", redisConfig.getEnvNamespace()));
+
+      bind(Producer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
           .toInstance(RedisProducer.of(EventsFrameworkConstants.SETUP_USAGE, redissonClient,
               EventsFrameworkConstants.ENTITY_CRUD_MAX_TOPIC_SIZE, CV_NEXT_GEN.getServiceId(),
@@ -99,6 +115,18 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(RedisConsumer.of(EventsFrameworkConstants.SRM_STATEMACHINE_EVENT, CV_NEXT_GEN.getServiceId(),
               redissonClient, EventsFrameworkConstants.CD_DEPLOYMENT_EVENT_MAX_PROCESSING_TIME,
               EventsFrameworkConstants.SRM_STATEMACHINE_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
+
+      bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT))
+          .toInstance(RedisProducer.of(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT, redissonClient,
+              EventsFrameworkConstants.CUSTOM_CHANGE_EVENT_MAX_TOPIC_SIZE, CUSTOM_CHANGE_PUBLISHER,
+              redisConfig.getEnvNamespace()));
+
+      bind(Consumer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT))
+          .toInstance(RedisConsumer.of(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT, CV_NEXT_GEN.getServiceId(),
+              redissonClient, EventsFrameworkConstants.CUSTOM_CHANGE_EVENT_MAX_PROCESSING_TIME,
+              EventsFrameworkConstants.CUSTOM_CHANGE_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
     }
   }
 }

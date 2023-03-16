@@ -597,6 +597,10 @@ if [[ "" != "$AWS_MARKETPLACE_CE_PRODUCTCODE" ]]; then
   export AWS_MARKETPLACE_CE_PRODUCTCODE; yq -i '.cg.mktPlaceConfig.awsMarketPlaceCeProductCode=env(AWS_MARKETPLACE_CE_PRODUCTCODE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$AWS_MARKETPLACE_FF_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_FF_PRODUCTCODE; yq -i '.cg.mktPlaceConfig.awsMarketPlaceFfProductCode=env(AWS_MARKETPLACE_FF_PRODUCTCODE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$ALLOW_BLACKLISTED_EMAIL_DOMAINS" ]]; then
   export ALLOW_BLACKLISTED_EMAIL_DOMAINS; yq -i '.cg.blacklistedEmailDomainsAllowed=env(ALLOW_BLACKLISTED_EMAIL_DOMAINS)' $CONFIG_FILE
 fi
@@ -693,7 +697,7 @@ if [[ "" != "$REDIS_URL" ]]; then
 fi
 
 if [[ "" != "$ATMOSPHERE_REDIS_URL" ]]; then
-  export ATMOSPHERE_REDIS_URL; yq -i '.redisAtmosphereConfig.redisUrl=env(ATMOSPHERE_REDIS_URL)' $CONFIG_FILE
+  export ATMOSPHERE_REDIS_URL; yq -i '.cg.redisAtmosphereConfig.redisUrl=env(ATMOSPHERE_REDIS_URL)' $CONFIG_FILE
 fi
 
 if [[ "$REDIS_SENTINEL" == "true" ]]; then

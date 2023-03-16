@@ -31,7 +31,10 @@ import io.harness.cdng.ssh.ScriptCommandUnitSpec;
 import io.harness.cdng.ssh.TailFilePattern;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.utils.CaseFormat;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.shell.ScriptType;
 import io.harness.steps.shellscript.ShellScriptBaseSource;
@@ -39,8 +42,6 @@ import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.yaml.core.variables.NGVariable;
-import io.harness.yaml.core.variables.NGVariableType;
-import io.harness.yaml.core.variables.StringNGVariable;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import software.wings.beans.command.CommandUnit;
@@ -82,7 +83,8 @@ public class ServiceCommandTemplateService implements NgTemplateService {
   }
 
   @Override
-  public JsonNode getNgTemplateConfigSpec(Template template, String orgIdentifier, String projectIdentifier) {
+  public JsonNode getNgTemplateConfigSpec(
+      MigrationContext context, Template template, String orgIdentifier, String projectIdentifier) {
     SshCommandTemplate sshCommandTemplate = (SshCommandTemplate) template.getTemplateObject();
     if (EmptyPredicate.isEmpty(sshCommandTemplate.getCommandUnits())
         || !sshCommandTemplate.getCommandUnits().stream().allMatch(
@@ -92,18 +94,13 @@ public class ServiceCommandTemplateService implements NgTemplateService {
 
     List<NGVariable> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(template.getVariables())) {
-      template.getVariables().forEach(variable -> {
-        variables.add(StringNGVariable.builder()
-                          .name(variable.getName())
-                          .type(NGVariableType.STRING)
-                          .value(valueOrDefaultEmpty(variable.getValue()))
-                          .build());
-      });
+      variables.addAll(
+          MigratorUtility.getVariables(template.getVariables(), context.getInputDTO().getIdentifierCaseFormat()));
     }
 
     List<CommandUnitWrapper> commandUnitWrappers = sshCommandTemplate.getCommandUnits()
                                                        .stream()
-                                                       .map(this::handleCommandUnit)
+                                                       .map(commandUnit -> handleCommandUnit(context, commandUnit))
                                                        .filter(Objects::nonNull)
                                                        .collect(Collectors.toList());
 
@@ -116,55 +113,58 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     return JsonPipelineUtils.asTree(commandStepInfo);
   }
 
-  private CommandUnitWrapper handleCommandUnit(CommandUnit commandUnit) {
+  private CommandUnitWrapper handleCommandUnit(MigrationContext context, CommandUnit commandUnit) {
     CommandUnitType type = commandUnit.getCommandUnitType();
     String name = commandUnit.getName();
     switch (type) {
       case SCP:
-        return handleScp(commandUnit);
+        return handleScp(commandUnit, context.getInputDTO().getIdentifierCaseFormat());
       case EXEC:
-        return handleExec(commandUnit);
+        return handleExec(context, commandUnit);
       case COPY_CONFIGS:
-        return handleCopyConfigs(commandUnit);
+        return handleCopyConfigs(commandUnit, context.getInputDTO().getIdentifierCaseFormat());
       case DOWNLOAD_ARTIFACT:
-        return handleDownloadArtifact(commandUnit);
+        return handleDownloadArtifact(commandUnit, context.getInputDTO().getIdentifierCaseFormat());
       case SETUP_ENV:
         SetupEnvCommandUnit setup = (SetupEnvCommandUnit) commandUnit;
-        return getExec(name, setup.getScriptType(), setup.getCommandString(), setup.getCommandPath());
+        return getExec(context, name, setup.getScriptType(), setup.getCommandString(), setup.getCommandPath());
       case DOCKER_START:
         DockerStartCommandUnit dockerStart = (DockerStartCommandUnit) commandUnit;
-        return getExec(name, dockerStart.getScriptType(), dockerStart.getCommandString());
+        return getExec(context, name, dockerStart.getScriptType(), dockerStart.getCommandString());
       case DOCKER_STOP:
         DockerStopCommandUnit dockerStop = (DockerStopCommandUnit) commandUnit;
-        return getExec(name, dockerStop.getScriptType(), dockerStop.getCommandString());
+        return getExec(context, name, dockerStop.getScriptType(), dockerStop.getCommandString());
       case PROCESS_CHECK_RUNNING:
         ProcessCheckRunningCommandUnit processRunning = (ProcessCheckRunningCommandUnit) commandUnit;
-        return getExec(name, processRunning.getScriptType(), processRunning.getCommandString());
+        return getExec(context, name, processRunning.getScriptType(), processRunning.getCommandString());
       case PROCESS_CHECK_STOPPED:
         ProcessCheckStoppedCommandUnit processStopped = (ProcessCheckStoppedCommandUnit) commandUnit;
-        return getExec(name, processStopped.getScriptType(), processStopped.getCommandString());
+        return getExec(context, name, processStopped.getScriptType(), processStopped.getCommandString());
       case PORT_CHECK_CLEARED:
         PortCheckClearedCommandUnit portCleared = (PortCheckClearedCommandUnit) commandUnit;
-        return getExec(name, portCleared.getScriptType(), portCleared.getCommandString());
+        return getExec(context, name, portCleared.getScriptType(), portCleared.getCommandString());
       case PORT_CHECK_LISTENING:
         PortCheckListeningCommandUnit portListening = (PortCheckListeningCommandUnit) commandUnit;
-        return getExec(name, portListening.getScriptType(), portListening.getCommandString());
+        return getExec(context, name, portListening.getScriptType(), portListening.getCommandString());
       default:
         return null;
     }
   }
 
-  private CommandUnitWrapper getExec(String name, ScriptType scriptType, String script) {
-    return getExec(name, scriptType, script, null);
+  private CommandUnitWrapper getExec(MigrationContext context, String name, ScriptType scriptType, String script) {
+    return getExec(context, name, scriptType, script, null);
   }
 
-  private CommandUnitWrapper getExec(String name, ScriptType scriptType, String script, String workingDir) {
+  private CommandUnitWrapper getExec(
+      MigrationContext context, String name, ScriptType scriptType, String script, String workingDir) {
     ParameterField<String> directory =
         StringUtils.isBlank(workingDir) ? ParameterField.ofNull() : ParameterField.createValueField(workingDir);
-    script = (String) MigratorExpressionUtils.render(script, new HashMap<>());
+    script = (String) MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(), script,
+        new HashMap<>(), context.getInputDTO().getIdentifierCaseFormat());
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.SCRIPT)
         .name(name)
+        .identifier(MigratorUtility.generateIdentifier(name, context.getInputDTO().getIdentifierCaseFormat()))
         .spec(ScriptCommandUnitSpec.builder()
                   .shell(ScriptType.POWERSHELL.equals(scriptType) ? ShellType.PowerShell : ShellType.Bash)
                   .tailFiles(Collections.emptyList())
@@ -182,11 +182,12 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     return StepSpecTypeConstants.COMMAND;
   }
 
-  static CommandUnitWrapper handleCopyConfigs(CommandUnit commandUnit) {
+  static CommandUnitWrapper handleCopyConfigs(CommandUnit commandUnit, CaseFormat caseFormat) {
     CopyConfigCommandUnit configCommandUnit = (CopyConfigCommandUnit) commandUnit;
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.COPY)
         .name(commandUnit.getName())
+        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName(), caseFormat))
         .spec(CopyCommandUnitSpec.builder()
                   .destinationPath(valueOrDefaultEmpty(configCommandUnit.getDestinationParentPath()))
                   .sourceType(CommandUnitSourceType.Config)
@@ -194,22 +195,24 @@ public class ServiceCommandTemplateService implements NgTemplateService {
         .build();
   }
 
-  static CommandUnitWrapper handleDownloadArtifact(CommandUnit commandUnit) {
+  static CommandUnitWrapper handleDownloadArtifact(CommandUnit commandUnit, CaseFormat caseFormat) {
     DownloadArtifactCommandUnit downloadCommandUnit = (DownloadArtifactCommandUnit) commandUnit;
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.DOWNLOAD_ARTIFACT)
         .name(commandUnit.getName())
+        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName(), caseFormat))
         .spec(DownloadArtifactCommandUnitSpec.builder()
                   .destinationPath(valueOrDefaultEmpty(downloadCommandUnit.getCommandPath()))
                   .build())
         .build();
   }
 
-  static CommandUnitWrapper handleScp(CommandUnit commandUnit) {
+  static CommandUnitWrapper handleScp(CommandUnit commandUnit, CaseFormat caseFormat) {
     ScpCommandUnit scpCommandUnit = (ScpCommandUnit) commandUnit;
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.COPY)
         .name(commandUnit.getName())
+        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName(), caseFormat))
         .spec(CopyCommandUnitSpec.builder()
                   .destinationPath(valueOrDefaultEmpty(scpCommandUnit.getDestinationDirectoryPath()))
                   .sourceType(CommandUnitSourceType.Artifact)
@@ -217,7 +220,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
         .build();
   }
 
-  static CommandUnitWrapper handleExec(CommandUnit commandUnit) {
+  static CommandUnitWrapper handleExec(MigrationContext context, CommandUnit commandUnit) {
     ExecCommandUnit execCommandUnit = (ExecCommandUnit) commandUnit;
     List<TailFilePattern> tailFilePatterns = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(execCommandUnit.getTailPatterns())) {
@@ -230,11 +233,14 @@ public class ServiceCommandTemplateService implements NgTemplateService {
                                         .build())
                              .collect(Collectors.toList());
     }
-    String script = (String) MigratorExpressionUtils.render(execCommandUnit.getCommandString(), new HashMap<>());
+    String script = (String) MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(),
+        execCommandUnit.getCommandString(), new HashMap<>(), context.getInputDTO().getIdentifierCaseFormat());
 
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.SCRIPT)
         .name(commandUnit.getName())
+        .identifier(
+            MigratorUtility.generateIdentifier(commandUnit.getName(), context.getInputDTO().getIdentifierCaseFormat()))
         .spec(
             ScriptCommandUnitSpec.builder()
                 .shell(execCommandUnit.getScriptType().equals(ScriptType.BASH) ? ShellType.Bash : ShellType.PowerShell)

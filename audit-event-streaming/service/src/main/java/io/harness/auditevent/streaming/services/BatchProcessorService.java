@@ -8,12 +8,11 @@
 package io.harness.auditevent.streaming.services;
 
 import io.harness.audit.entities.AuditEvent;
-import io.harness.audit.entities.streaming.StreamingDestination;
-import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
+import io.harness.auditevent.streaming.entities.StreamingBatch;
 
 import java.util.List;
-import org.springframework.batch.core.JobParameters;
 
 public interface BatchProcessorService {
-  List<OutgoingAuditMessage> processAuditEvent(List<AuditEvent> auditEvents);
+  List<OutgoingAuditMessage> processAuditEvent(StreamingBatch streamingBatch, List<AuditEvent> auditEvents);
 }

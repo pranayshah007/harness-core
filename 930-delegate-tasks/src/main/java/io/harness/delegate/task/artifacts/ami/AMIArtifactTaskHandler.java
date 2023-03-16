@@ -64,6 +64,10 @@ public class AMIArtifactTaskHandler extends DelegateArtifactTaskHandler<AMIArtif
           attributes.getFilters(), attributes.getVersion());
     }
 
+    if (lastSuccessfulBuild == null) {
+      lastSuccessfulBuild = new BuildDetails();
+    }
+
     AMIArtifactDelegateResponse amiArtifactDelegateResponse =
         AMIRequestResponseMapper.toAMIArtifactResponse(lastSuccessfulBuild, attributes);
 

@@ -31,8 +31,8 @@ import lombok.val;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.data.mongodb.MongoDbFactory;
-import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
+import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
 
 @Configuration
 @Profile("test")
@@ -61,10 +61,10 @@ public class TestConfiguration implements MongoRuleMixin {
   }
 
   @Bean
-  public MongoDbFactory mongoDbFactory(
+  public MongoDatabaseFactory mongoDbFactory(
       ClosingFactory closingFactory, HPersistence hPersistence, BatchMainConfig config, Morphia morphia) {
     AdvancedDatastore eventsDatastore =
-        (AdvancedDatastore) morphia.createDatastore(fakeMongoClient(closingFactory), "events");
+        (AdvancedDatastore) morphia.createDatastore(fakeLegacyMongoClient(closingFactory), "events");
     MongoConfig mongoConfig = MongoConfig.builder().build();
     eventsDatastore.setQueryFactory(
         new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
@@ -73,7 +73,7 @@ public class TestConfiguration implements MongoRuleMixin {
     val datastoreMap = (Map<String, AdvancedDatastore>) getField(hPersistence, "datastoreMap");
     datastoreMap.put("events", eventsDatastore);
 
-    return new SimpleMongoDbFactory(eventsDatastore.getMongo(), eventsDatastore.getDB().getName());
+    return new SimpleMongoClientDatabaseFactory(fakeMongoClient(closingFactory), eventsDatastore.getDB().getName());
   }
 
   @Bean

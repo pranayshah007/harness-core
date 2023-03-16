@@ -7,12 +7,21 @@
 
 package io.harness.beans.stages;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
+
+import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
+import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 
 public abstract class IntegrationAbstractStageNode extends AbstractStageNode {
-  @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
+  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
+  @VariableExpression(skipVariableExpression = true)
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  ParameterField<List<FailureStrategyConfig>> failureStrategies;
 }

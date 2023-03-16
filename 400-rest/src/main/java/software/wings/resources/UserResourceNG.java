@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.security.dto.PrincipalType.USER;
 
+import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_MANAGEMENT;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -46,6 +48,7 @@ import io.harness.user.remote.UserFilterNG;
 
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
+import software.wings.security.annotations.AuthRule;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
 import software.wings.security.authentication.TwoFactorAuthenticationMechanism;
 import software.wings.security.authentication.TwoFactorAuthenticationSettings;
@@ -267,7 +270,7 @@ public class UserResourceNG {
     Integer pageSize = pageRequest.getPageSize();
 
     List<User> userList =
-        userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false);
+        userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false, false);
 
     PageResponse<UserInfo> pageResponse = aPageResponse()
                                               .withOffset(offset.toString())
@@ -341,6 +344,7 @@ public class UserResourceNG {
   @Path("/batch")
   public RestResponse<List<UserInfo>> listUsers(@QueryParam("accountId") String accountId, UserFilterNG userFilterNG) {
     Set<User> userSet = new HashSet<>();
+
     if (!isEmpty(userFilterNG.getUserIds())) {
       userSet.addAll(userService.getUsers(userFilterNG.getUserIds(), accountId));
     }
@@ -348,6 +352,14 @@ public class UserResourceNG {
       userSet.addAll(userService.getUsersByEmail(userFilterNG.getEmailIds(), accountId));
     }
     return new RestResponse<>(convertUserToNgUser(new ArrayList<>(userSet), false));
+  }
+
+  @POST
+  @Path("/batch-emails")
+  public RestResponse<List<UserInfo>> listUsersEmails(@QueryParam("accountId") String accountId) {
+    List<User> emails = userService.getUsersEmails(accountId);
+
+    return new RestResponse<>(convertUserToNgUser(new ArrayList<>(emails), false));
   }
 
   @PUT
@@ -448,6 +460,15 @@ public class UserResourceNG {
         twoFactorAuthenticationManager.disableTwoFactorAuthentication(userService.getUserByEmail(emailId)))));
   }
 
+  @GET
+  @Path("reset-two-factor-auth/{userId}")
+  @ApiOperation(value = "Resend email for two factor authorization", nickname = "resetTwoFactorAuth")
+  @AuthRule(permissionType = USER_PERMISSION_MANAGEMENT)
+  public RestResponse<Boolean> reset2fa(
+      @PathParam("userId") @NotEmpty String userId, @QueryParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse<>(twoFactorAuthenticationManager.sendTwoFactorAuthenticationResetEmail(userId));
+  }
+
   @PUT
   @Path("/{userId}/verified")
   public RestResponse<Boolean> verifyToken(@PathParam("userId") String userId) {
@@ -484,13 +505,18 @@ public class UserResourceNG {
     return UserInfo.builder()
         .email(user.getEmail())
         .name(user.getName())
+        .familyName(user.getFamilyName())
+        .givenName(user.getGivenName())
         .uuid(user.getUuid())
         .locked(user.isUserLocked())
         .disabled(user.isDisabled())
         .externallyManaged(user.isImported())
         .defaultAccountId(user.getDefaultAccountId())
         .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
+        .createdAt(user.getCreatedAt())
+        .lastUpdatedAt(user.getLastUpdatedAt())
         .emailVerified(user.isEmailVerified())
+        .externalId(user.getExternalUserId())
         .accounts(user.getAccounts()
                       .stream()
                       .map(account -> AccountMapper.toGatewayAccountRequest(account))

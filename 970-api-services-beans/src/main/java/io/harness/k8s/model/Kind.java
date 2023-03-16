@@ -7,6 +7,12 @@
 
 package io.harness.k8s.model;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
+import io.harness.exception.InvalidArgumentsException;
+
+import org.apache.commons.lang3.tuple.Pair;
+
 public enum Kind {
   Namespace,
   ResourceQuota,
@@ -36,5 +42,20 @@ public enum Kind {
   Ingress,
   APIService,
   VirtualService,
-  DestinationRule
+  DestinationRule;
+
+  public static Kind fromString(String kindName) {
+    if (isEmpty(kindName)) {
+      throw new InvalidArgumentsException(Pair.of("kind", "Empty or null kind provided"));
+    }
+
+    for (Kind kind : Kind.values()) {
+      if (kindName.equalsIgnoreCase(kind.name())) {
+        return kind;
+      }
+    }
+
+    throw new InvalidArgumentsException(
+        Pair.of("kind", String.format("Unsupported or unknown kubernetes kind '%s'", kindName)));
+  }
 }

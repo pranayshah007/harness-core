@@ -10,6 +10,7 @@ package io.harness.pms.pipeline;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -32,4 +33,5 @@ public class RecentExecutionInfoDTO {
   Long startTs;
   Long endTs;
   Integer runSequence;
+  PipelineStageInfo parentStageInfo;
 }

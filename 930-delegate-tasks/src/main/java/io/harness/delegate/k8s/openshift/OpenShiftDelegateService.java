@@ -10,15 +10,18 @@ package io.harness.delegate.k8s.openshift;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileData;
 import io.harness.cli.CliResponse;
-import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
+import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.OpenShiftClientException;
 import io.harness.filesystem.FileIo;
+import io.harness.k8s.exception.KubernetesExceptionExplanation;
+import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.openshift.OpenShiftClient;
@@ -50,20 +53,27 @@ public class OpenShiftDelegateService {
       paramsFilePaths = writeParamsToFile(manifestFilesDirectory, paramFilesContent);
     }
 
-    CliResponse cliResponse = openShiftClient.process(
-        ocBinaryPath, templateFilePath, paramsFilePaths, manifestFilesDirectory, executionLogCallback);
+    String command = openShiftClient.generateOcCommand(ocBinaryPath, templateFilePath, paramsFilePaths);
+
+    CliResponse cliResponse = openShiftClient.process(command, manifestFilesDirectory, executionLogCallback);
 
     if (cliResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
       String processedTemplateFile = cliResponse.getOutput();
       if (isEmpty(processedTemplateFile)) {
-        throw new InvalidRequestException("Oc process result can't be empty", WingsException.USER);
+        String errorMsg = "Oc process result can't be empty";
+        throw NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.INVALID_OPENSHIFT_FILES,
+            errorMsg,
+            new OpenShiftClientException(format("Executing command [%s] produced empty result", command), USER));
       }
       String kubernetesReadyYaml = prepareKubernetesReadyYaml(processedTemplateFile);
 
       return Collections.singletonList(
           FileData.builder().fileName("manifest.yaml").fileContent(kubernetesReadyYaml).build());
     } else {
-      throw new InvalidRequestException("Oc process command failed. " + cliResponse.getOutput());
+      throw NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.INVALID_OPENSHIFT_FILES,
+          format(KubernetesExceptionExplanation.OPENSHIFT_RENDER_ERROR, cliResponse.getError(), command),
+          new OpenShiftClientException(
+              format("Failed to render OpenShift template. %s", cliResponse.getError()), USER));
     }
   }
 
@@ -94,7 +104,9 @@ public class OpenShiftDelegateService {
       }
     }
     if (isEmpty(resultYaml.toString())) {
-      throw new InvalidRequestException("Items list can't be empty", WingsException.USER);
+      String errorMsg = "Items list can't be empty";
+      throw NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.INVALID_OPENSHIFT_FILES,
+          errorMsg, new OpenShiftClientException(format("Failed to render OpenShift template. %s", errorMsg), USER));
     }
     return resultYaml.toString();
   }
@@ -107,8 +119,10 @@ public class OpenShiftDelegateService {
       try {
         FileIo.writeUtf8StringToFile(directoryPath + '/' + paramsFileName, paramFiles.get(i));
       } catch (IOException e) {
-        throw new InvalidRequestException(
-            "IO Failure while writing params file. " + e.getMessage(), e, WingsException.USER);
+        String errorMsg = "IO Failure while writing params file. " + e.getMessage();
+        throw NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.INVALID_OPENSHIFT_FILES,
+            errorMsg,
+            new OpenShiftClientException(format("Failed to render OpenShift template. %s", errorMsg, e), USER));
       }
       paramsFilePaths.add(paramsFileName);
     }

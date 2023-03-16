@@ -10,4 +10,8 @@ package io.harness.pms.yaml;
 public class PipelineVersion {
   public static final String V0 = "0";
   public static final String V1 = "1";
+
+  public static boolean isV1(String version) {
+    return V1.equals(version);
+  }
 }

@@ -19,8 +19,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
-
-import software.wings.beans.WinRmCommandParameter;
+import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;

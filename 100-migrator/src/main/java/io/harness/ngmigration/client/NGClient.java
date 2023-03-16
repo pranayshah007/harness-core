@@ -13,6 +13,8 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.ng.core.dto.ProjectRequest;
+import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
@@ -33,6 +35,11 @@ import retrofit2.http.Query;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface NGClient {
+  @POST("projects")
+  Call<ResponseDTO<ProjectResponse>> createProject(@Header(X_API_KEY) String auth,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @Body ProjectRequest projectRequest);
+
   @POST("connectors")
   Call<ResponseDTO<ConnectorResponseDTO>> createConnector(@Header(X_API_KEY) String auth,
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body JsonNode connectorDTO);

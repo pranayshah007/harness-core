@@ -27,12 +27,14 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
+@Slf4j
 public class LogStreamingClientFactory implements Provider<LogStreamingClient> {
   @Inject private KryoConverterFactory kryoConverterFactory;
 
@@ -47,6 +49,9 @@ public class LogStreamingClientFactory implements Provider<LogStreamingClient> {
     this.clientCertificateFilePath = clientCertificateFilePath;
     this.clientCertificateKeyFilePath = clientCertificateKeyFilePath;
     this.trustAllCertificates = trustAllCertificates;
+    if (StringUtils.isEmpty(logStreamingServiceBaseUrl)) {
+      log.warn("The property logStreamingServiceBaseUrl is missing or empty");
+    }
   }
 
   @Override

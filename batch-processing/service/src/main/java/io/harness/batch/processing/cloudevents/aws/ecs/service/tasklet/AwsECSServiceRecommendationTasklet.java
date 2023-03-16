@@ -7,13 +7,14 @@
 
 package io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet;
 
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.convertToReadableForm;
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.makeResourceMap;
 import static io.harness.ccm.RecommenderUtils.EPSILON;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.convertToReadableForm;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.makeResourceMap;
 
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.CPU;
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.MEMORY;
 
+import static io.kubernetes.client.custom.Quantity.Format.BINARY_SI;
 import static java.math.RoundingMode.HALF_UP;
 import static java.util.Optional.ofNullable;
 
@@ -27,6 +28,7 @@ import io.harness.batch.processing.dao.intfc.ECSServiceDao;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
+import io.harness.ccm.commons.entities.billing.CECluster;
 import io.harness.ccm.commons.entities.ecs.ECSService;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
@@ -42,6 +44,7 @@ import io.harness.histogram.LinearHistogramOptions;
 import software.wings.graphql.datafetcher.ce.recommendation.entity.Cost;
 
 import com.amazonaws.services.ecs.model.LaunchType;
+import com.cronutils.utils.StringUtils;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
@@ -92,7 +95,7 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
     Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
     Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
     // Get all clusters for current account
-    Map<String, String> ceClusters = ceClusterDao.getClusterIdNameMapping(accountId);
+    Map<String, CECluster> ceClusters = ceClusterDao.getClusterIdMapping(accountId);
     if (CollectionUtils.isEmpty(ceClusters)) {
       return null;
     }
@@ -110,7 +113,7 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
 
       for (ClusterIdAndServiceArn clusterIdAndServiceArn : utilMap.keySet()) {
         String clusterId = clusterIdAndServiceArn.getClusterId();
-        String clusterName = ceClusters.get(clusterId);
+        String clusterName = ceClusters.get(clusterId).getClusterName();
         String serviceArn = clusterIdAndServiceArn.getServiceArn();
         String serviceName = serviceNameFromServiceArn(serviceArn);
         if (!ecsServiceMap.containsKey(serviceArn)) {
@@ -118,15 +121,20 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
               accountId, serviceArn);
           continue;
         }
-        LaunchType launchType = ecsServiceMap.get(clusterIdAndServiceArn.getServiceArn()).getLaunchType();
-        Resource resource = ecsServiceMap.get(clusterIdAndServiceArn.getServiceArn()).getResource();
+        ECSService ecsService = ecsServiceMap.get(clusterIdAndServiceArn.getServiceArn());
+        String awsAccountId = (ecsService.getAwsAccountId() == null) ? "" : ecsService.getAwsAccountId();
+        if (StringUtils.isEmpty(awsAccountId)) {
+          awsAccountId = ceClusters.get(clusterId).getInfraAccountId();
+        }
+        LaunchType launchType = ecsService.getLaunchType();
+        Resource resource = ecsService.getResource();
         if (resource.getCpuUnits().equals(0.0) || resource.getMemoryMb().equals(0.0)) {
           log.debug("Skipping ECS recommendation as resource value is zero for accountId : {}, service arn: {}",
               accountId, serviceArn);
           continue;
         }
-        long cpuMilliUnits = BigDecimal.valueOf(resource.getCpuUnits()).scaleByPowerOfTen(3).longValue();
-        long memoryBytes = BigDecimal.valueOf(resource.getMemoryMb()).scaleByPowerOfTen(6).longValue();
+        long cpuMilliUnits = resource.getCpuUnits().longValue() * 1024L;
+        long memoryBytes = resource.getMemoryMb().longValue() * 1024L * 1024L;
         List<ECSUtilizationData> utilData = utilMap.get(clusterIdAndServiceArn);
         // Create Partial Histogram for a day for this service
         ECSPartialRecommendationHistogram partialRecommendationHistogram = getPartialRecommendation(accountId,
@@ -141,13 +149,13 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
         partialHistograms.add(partialRecommendationHistogram);
 
         // Create ECSServiceRecommendation
-        ECSServiceRecommendation recommendation = getRecommendation(
-            accountId, clusterId, clusterName, serviceName, serviceArn, launchType, cpuMilliUnits, memoryBytes);
+        ECSServiceRecommendation recommendation = getRecommendation(accountId, awsAccountId, clusterId, clusterName,
+            serviceName, serviceArn, launchType, cpuMilliUnits, memoryBytes);
 
         // Merge partial recommendations and compute recommendations
         mergePartialRecommendations(partialHistograms, recommendation, cpuMilliUnits, memoryBytes);
         recommendation.setCurrentResourceRequirements(
-            convertToReadableForm(makeResourceMap(cpuMilliUnits, memoryBytes)));
+            convertToReadableForm(makeResourceMap(cpuMilliUnits, memoryBytes), BINARY_SI));
         recommendation.setLastComputedRecommendationAt(startTime);
         recommendation.setLastUpdateTime(startTime);
         recommendation.setVersion(1);
@@ -159,7 +167,7 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
           recommendation.setLastDayCost(lastDayCost);
           recommendation.setLastDayCostAvailable(true);
           BigDecimal monthlySavings = estimateMonthlySavings(recommendation.getCurrentResourceRequirements(),
-              recommendation.getPercentileBasedResourceRecommendation().get(String.format(PERCENTILE_KEY, 90)),
+              recommendation.getPercentileBasedResourceRecommendation().get(String.format(PERCENTILE_KEY, 95)),
               lastDayCost);
           recommendation.setEstimatedSavings(monthlySavings);
           recommendation.setValidRecommendation(true);
@@ -179,8 +187,8 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
         final Double monthlySaving =
             ofNullable(recommendation.getEstimatedSavings()).map(BigDecimal::doubleValue).orElse(null);
         // Save recommendation in timescale
-        ecsRecommendationDAO.upsertCeRecommendation(ecsServiceRecommendation.getUuid(), accountId, clusterName,
-            serviceName, monthlyCost, monthlySaving, recommendation.shouldShowRecommendation(),
+        ecsRecommendationDAO.upsertCeRecommendation(ecsServiceRecommendation.getUuid(), accountId, awsAccountId,
+            clusterName, serviceName, monthlyCost, monthlySaving, recommendation.shouldShowRecommendation(),
             recommendation.getLastReceivedUtilDataAt());
         ignoreListService.updateECSRecommendationState(
             ecsServiceRecommendation.getUuid(), accountId, clusterName, serviceName);
@@ -211,10 +219,12 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
         .build();
   }
 
-  ECSServiceRecommendation getRecommendation(String accountId, String clusterId, String clusterName, String serviceName,
-      String serviceArn, LaunchType launchType, long cpuMilliUnits, long memoryBytes) {
+  ECSServiceRecommendation getRecommendation(String accountId, String awsAccountId, String clusterId,
+      String clusterName, String serviceName, String serviceArn, LaunchType launchType, long cpuMilliUnits,
+      long memoryBytes) {
     return ECSServiceRecommendation.builder()
         .accountId(accountId)
+        .awsAccountId(awsAccountId)
         .clusterId(clusterId)
         .clusterName(clusterName)
         .serviceName(serviceName)
@@ -268,8 +278,8 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
     // Compute percentile based recommendation
     Map<String, Map<String, String>> computedPercentiles = new HashMap<>();
     for (Integer percentile : requiredPercentiles) {
-      long cpuAmount = (long) cpuHistogram.getPercentile(percentile);
-      long memoryAmount = (long) (memoryHistogram.getPercentile(percentile));
+      long cpuAmount = (long) cpuHistogram.getPercentile(((double) percentile) / 100.0);
+      long memoryAmount = (long) memoryHistogram.getPercentile(((double) percentile) / 100.0);
       if (recommendation.getLaunchType() != null && recommendation.getLaunchType().equals(LaunchType.FARGATE)) {
         CpuMillsAndMemoryBytes resourceValues = fargateResourceValues.get(cpuAmount, memoryAmount);
         if (null != resourceValues) {
@@ -277,8 +287,8 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
           memoryAmount = resourceValues.getMemoryBytes();
         }
       }
-      computedPercentiles.put(
-          String.format(PERCENTILE_KEY, percentile), convertToReadableForm(makeResourceMap(cpuAmount, memoryAmount)));
+      computedPercentiles.put(String.format(PERCENTILE_KEY, percentile),
+          convertToReadableForm(makeResourceMap(cpuAmount, memoryAmount), BINARY_SI));
     }
     recommendation.setPercentileBasedResourceRecommendation(computedPercentiles);
   }

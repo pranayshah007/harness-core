@@ -21,6 +21,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
+import io.harness.delegate.capability.ProcessExecutionCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
@@ -64,10 +65,16 @@ public abstract class AbstractTerragruntTaskParameters
   @Nullable CommandUnitsProgress commandUnitsProgress;
 
   List<EncryptedDataDetail> encryptedDataDetailList;
+  boolean tgModuleSourceInheritSSH;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> executionCapabilities = new ArrayList<>();
+
+    executionCapabilities.addAll(ProcessExecutionCapabilityHelper.generateExecutionCapabilitiesForTerraform(
+        encryptedDataDetailList, maskingEvaluator));
+    executionCapabilities.addAll(ProcessExecutionCapabilityHelper.generateExecutionCapabilitiesForTerragrunt(
+        encryptedDataDetailList, maskingEvaluator));
 
     addStoreCapabilities(configFilesStore, executionCapabilities);
     if (backendFilesStore != null) {

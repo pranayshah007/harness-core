@@ -15,11 +15,15 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
+import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -39,6 +43,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @Singleton
 public class InfrastructureValidator {
   private static final String CANNOT_BE_EMPTY_ERROR_MSG = "cannot be empty";
+  private static final String AWS_REGION = "region";
 
   public void validate(Infrastructure infrastructure) {
     switch (infrastructure.getKind()) {
@@ -81,6 +86,10 @@ public class InfrastructureValidator {
         validateEcsInfrastructure((EcsInfrastructure) infrastructure);
         break;
 
+      case InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS:
+        validateGoogleFunctionsInfrastructure((GoogleFunctionsInfrastructure) infrastructure);
+        break;
+
       case InfrastructureKind.ELASTIGROUP:
         validateElastigroupInfrastructure((ElastigroupInfrastructure) infrastructure);
         break;
@@ -94,6 +103,19 @@ public class InfrastructureValidator {
 
       case InfrastructureKind.ASG:
         validateAsgInfrastructure((AsgInfrastructure) infrastructure);
+        break;
+
+      case InfrastructureKind.AWS_SAM:
+        validateAwsSamInfrastructure((AwsSamInfrastructure) infrastructure);
+        break;
+
+      case InfrastructureKind.AWS_LAMBDA:
+        validateAwsLambdaInfrastructure((AwsLambdaInfrastructure) infrastructure);
+        break;
+
+      case InfrastructureKind.KUBERNETES_AWS:
+        K8sAwsInfrastructure k8sAwsInfrastructure = (K8sAwsInfrastructure) infrastructure;
+        validateK8sAwsInfrastructure(k8sAwsInfrastructure);
         break;
 
       default:
@@ -205,7 +227,7 @@ public class InfrastructureValidator {
   private void validateServerlessAwsInfrastructure(ServerlessAwsLambdaInfrastructure infrastructure) {
     if (ParameterField.isNull(infrastructure.getRegion())
         || isEmpty(getParameterFieldValue(infrastructure.getRegion()))) {
-      throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
+      throw new InvalidArgumentsException(Pair.of(AWS_REGION, CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getStage())) {
       throw new InvalidArgumentsException(Pair.of("stage", CANNOT_BE_EMPTY_ERROR_MSG));
@@ -235,7 +257,7 @@ public class InfrastructureValidator {
       throw new InvalidArgumentsException(Pair.of("connectorRef", CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getRegion())) {
-      throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
+      throw new InvalidArgumentsException(Pair.of(AWS_REGION, CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getHostConnectionType())) {
       throw new InvalidArgumentsException(Pair.of("hostConnectionType", CANNOT_BE_EMPTY_ERROR_MSG));
@@ -254,7 +276,28 @@ public class InfrastructureValidator {
       throw new InvalidArgumentsException(Pair.of("cluster", CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getRegion())) {
-      throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
+      throw new InvalidArgumentsException(Pair.of(AWS_REGION, CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+  }
+
+  private void validateAwsSamInfrastructure(AwsSamInfrastructure infrastructure) {
+    if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
+      throw new InvalidArgumentsException(Pair.of("connectorRef", CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+    if (!hasValueOrExpression(infrastructure.getRegion())) {
+      throw new InvalidArgumentsException(Pair.of(AWS_REGION, CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+  }
+
+  private void validateGoogleFunctionsInfrastructure(GoogleFunctionsInfrastructure infrastructure) {
+    if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
+      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+    }
+    if (!hasValueOrExpression(infrastructure.getProject())) {
+      throw new InvalidArgumentsException(Pair.of("project", "cannot be empty"));
+    }
+    if (!hasValueOrExpression(infrastructure.getRegion())) {
+      throw new InvalidArgumentsException(Pair.of(AWS_REGION, "cannot be empty"));
     }
   }
 
@@ -288,7 +331,30 @@ public class InfrastructureValidator {
     }
 
     if (!hasValueOrExpression(infrastructure.getRegion())) {
-      throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
+      throw new InvalidArgumentsException(Pair.of(AWS_REGION, CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+  }
+
+  private void validateAwsLambdaInfrastructure(AwsLambdaInfrastructure infrastructure) {
+    if (ParameterField.isNull(infrastructure.getRegion())
+        || isEmpty(getParameterFieldValue(infrastructure.getRegion()))) {
+      throw new InvalidArgumentsException(Pair.of(AWS_REGION, CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+  }
+
+  private void validateK8sAwsInfrastructure(K8sAwsInfrastructure infrastructure) {
+    if (ParameterField.isNull(infrastructure.getNamespace())
+        || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
+      throw new InvalidArgumentsException(Pair.of("namespace", CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+
+    if (!hasValueOrExpression(infrastructure.getReleaseName())) {
+      throw new InvalidArgumentsException(Pair.of("releaseName", CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+
+    if (ParameterField.isNull(infrastructure.getCluster())
+        || isEmpty(getParameterFieldValue(infrastructure.getCluster()))) {
+      throw new InvalidArgumentsException(Pair.of("cluster", CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 }

@@ -56,4 +56,6 @@ public interface NGVaultService {
   void processTokenLookup(ConnectorDTO connectorDTO, String accountIdentifier);
 
   VaultTokenLookupResult tokenLookup(BaseVaultConfig vaultConfig);
+
+  boolean unsetRenewalInterval(VaultConnector vaultConnector);
 }

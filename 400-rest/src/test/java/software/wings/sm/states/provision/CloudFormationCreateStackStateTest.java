@@ -204,7 +204,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
         Collections.singletonList("https://harness-test-bucket.s3.amazonaws.com/parameters.json"));
     state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(delegateTask.getData().getParameters()).isNotNull();
@@ -256,7 +256,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     state.setParametersFilePaths(Collections.singletonList("parameters.json"));
     state.executeInternal(mockContext, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     assertThat(delegateTask.getAccountId()).isEqualTo(ACCOUNT_ID);
@@ -289,7 +289,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
 
     state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     verifyDelegateTask(delegateTask, true);
     CloudFormationCreateStackRequest request =
@@ -311,7 +311,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     state.useCustomStackName = true;
     state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     verifyDelegateTask(delegateTask, true);
     CloudFormationCreateStackRequest request =
@@ -339,7 +339,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
 
     DelegateTask delegateTask = captor.getValue();
     verifyDelegateTask(delegateTask, true);
@@ -372,7 +372,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     state.setFileFetched(false);
     state.executeInternal(mockContext, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     assertThat(delegateTask.getAccountId()).isEqualTo(ACCOUNT_ID);
@@ -415,7 +415,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     state.setFileFetched(false);
     state.executeInternal(mockContext, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     assertThat(delegateTask.getAccountId()).isEqualTo(ACCOUNT_ID);
@@ -713,7 +713,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     ExecutionResponse executionResponse = state.executeInternal(mockContext, ACTIVITY_ID);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
 
@@ -771,7 +771,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     state.setCapabilities(capabilities);
     state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     verifyDelegateTask(delegateTask, true);
     CloudFormationCreateStackRequest request =
@@ -796,7 +796,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
 
     state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     CloudFormationCreateStackRequest request =
         (CloudFormationCreateStackRequest) delegateTask.getData().getParameters()[0];
@@ -816,7 +816,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
 
     state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     CloudFormationCreateStackRequest request =
         (CloudFormationCreateStackRequest) delegateTask.getData().getParameters()[0];
@@ -835,7 +835,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
 
     state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     CloudFormationCreateStackRequest request =
         (CloudFormationCreateStackRequest) delegateTask.getData().getParameters()[0];
@@ -854,7 +854,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
 
     state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     CloudFormationCreateStackRequest request =
         (CloudFormationCreateStackRequest) delegateTask.getData().getParameters()[0];

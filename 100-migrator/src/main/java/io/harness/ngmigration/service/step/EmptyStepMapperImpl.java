@@ -7,17 +7,20 @@
 
 package io.harness.ngmigration.service.step;
 
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 
 import software.wings.beans.GraphNode;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 
-import java.util.Map;
+public class EmptyStepMapperImpl extends StepMapper {
+  @Override
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.IGNORE;
+  }
 
-public class EmptyStepMapperImpl implements StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     return null;
@@ -29,9 +32,8 @@ public class EmptyStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
-    return null;
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+    return MigratorUtility.getWaitStepNode(graphNode.getName(), 60, true, context.getIdentifierCaseFormat());
   }
 
   @Override

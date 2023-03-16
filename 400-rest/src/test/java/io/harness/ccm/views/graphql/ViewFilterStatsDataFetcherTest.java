@@ -18,14 +18,11 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
-import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.rule.Owner;
 
-import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 import software.wings.graphql.schema.type.aggregation.QLData;
 
-import com.google.cloud.bigquery.BigQuery;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,9 +42,6 @@ public class ViewFilterStatsDataFetcherTest extends CategoryTest {
   public static final String FILTER_VALUE_2 = "filterValue2";
   @Inject @InjectMocks ViewFilterStatsDataFetcher viewFieldsDataFetcher;
   @Mock ViewsBillingService viewsBillingService;
-  @Mock CloudBillingHelper cloudBillingHelper;
-  @Mock BigQueryService bigQueryService;
-  @Mock BigQuery bigQuery;
 
   List<QLCEViewFilterWrapper> filters = new ArrayList<>();
   List<String> values = new ArrayList<>();
@@ -55,11 +49,9 @@ public class ViewFilterStatsDataFetcherTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    doReturn(bigQuery).when(bigQueryService).get();
-    doReturn(UNIFIED_TABLE).when(cloudBillingHelper).getCloudProviderTableName(ACCOUNT_ID, CloudBillingHelper.unified);
     values.add(FILTER_VALUE_1);
     values.add(FILTER_VALUE_2);
-    doReturn(values).when(viewsBillingService).getFilterValueStats(bigQuery, filters, UNIFIED_TABLE, 10, 0);
+    doReturn(values).when(viewsBillingService).getFilterValueStats(filters, 10, 0);
   }
 
   @Test

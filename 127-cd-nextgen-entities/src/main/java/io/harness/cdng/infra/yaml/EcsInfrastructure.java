@@ -42,8 +42,8 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("ecsInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.EcsInfrastructure")
-public class EcsInfrastructure
-    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef {
+public class EcsInfrastructure extends InfrastructureDetailsAbstract
+    implements Infrastructure, Visitable, WithConnectorRef, AwsBaseInfrastructure {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

@@ -15,6 +15,8 @@ import io.harness.changehandlers.PlanExecutionSummaryCIStageChangeDataHandler;
 import io.harness.changehandlers.PlanExecutionSummaryCdChangeDataHandler;
 import io.harness.changehandlers.PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew;
 import io.harness.changehandlers.PlanExecutionSummaryChangeDataHandler;
+import io.harness.changehandlers.PlanExecutionSummaryChangeDataHandlerAllStages;
+import io.harness.changehandlers.TagsInfoNGCDChangeDataHandler;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
 import com.google.inject.Inject;
@@ -27,13 +29,23 @@ public class PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled
   @Inject private PlanExecutionSummaryChangeDataHandler planExecutionSummaryChangeDataHandler;
   @Inject private PlanExecutionSummaryCdChangeDataHandler planExecutionSummaryCdChangeDataHandler;
   @Inject private PlanExecutionSummaryCIStageChangeDataHandler planExecutionSummaryCIStageChangeDataHandler;
+  @Inject private PlanExecutionSummaryChangeDataHandlerAllStages planExecutionSummaryChangeDataHandlerAllStages;
+  @Inject private TagsInfoNGCDChangeDataHandler tagsInfoNGCDChangeDataHandler;
   @Inject
   private PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew
       planExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew;
   @Override
   public ChangeHandler getChangeHandler(String handlerClass) {
-    boolean debeziumEnabled =
-        cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(), Target.builder().build(), false);
+    boolean debeziumEnabled = cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(),
+        Target.builder().identifier("planExecutionsSummary.STREAMING").build(), false);
+    boolean useCDCForPipelineHandler = cfClient.boolVariation(FeatureName.USE_CDC_FOR_PIPELINE_HANDLER.toString(),
+        Target.builder().identifier("planExecutionsSummary.STREAMING").build(), false);
+    if (handlerClass.contentEquals("PipelineExecutionSummaryEntityAllStages")) {
+      if (useCDCForPipelineHandler) {
+        return planExecutionSummaryChangeDataHandlerAllStages;
+      } else
+        return null;
+    }
     if (handlerClass.contentEquals("PipelineExecutionSummaryEntity")) {
       return planExecutionSummaryChangeDataHandler;
     } else if (handlerClass.contentEquals("PipelineExecutionSummaryEntityCD")) {
@@ -46,6 +58,8 @@ public class PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled
       return planExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew;
     } else if (handlerClass.contentEquals("PipelineExecutionSummaryEntityCIStage")) {
       return planExecutionSummaryCIStageChangeDataHandler;
+    } else if (handlerClass.contentEquals("TagsInfoNGCD")) {
+      return tagsInfoNGCDChangeDataHandler;
     }
 
     return null;

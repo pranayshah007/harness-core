@@ -129,6 +129,8 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       String httpUrl = repository.getHttpURL().toLowerCase();
       String sshUrl = isEmpty(repository.getSshURL()) ? GitClientHelper.getCompleteSSHUrlFromHttpUrlForAzure(httpUrl)
                                                       : repository.getSshURL();
+      httpUrl = GitClientHelper.convertToNewHTTPUrlForAzure(httpUrl);
+      sshUrl = GitClientHelper.convertToNewSSHUrlForAzure(sshUrl);
       urls.add(httpUrl);
       urls.add(sshUrl);
       return urls;
@@ -137,6 +139,7 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
     HashSet<String> urls = new HashSet<>();
 
     String httpUrl = repository.getHttpURL().toLowerCase();
+    httpUrl = GitClientHelper.convertToHttps(httpUrl);
     urls.add(httpUrl);
     // Add url without .git, to handle case, where user entered url without .git on connector
     if (httpUrl.endsWith(DOT_GIT)) {
@@ -314,13 +317,17 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       return;
     }
 
-    String fullyQualifiedIdentifier = getFullyQualifiedIdentifierRefString(
-        IdentifierRefHelper.getIdentifierRef(webhook.getGit().getConnectorIdentifier(), ngTriggerEntity.getAccountId(),
-            ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier()));
+    try {
+      String fullyQualifiedIdentifier = getFullyQualifiedIdentifierRefString(IdentifierRefHelper.getIdentifierRef(
+          webhook.getGit().getConnectorIdentifier(), ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
+          ngTriggerEntity.getProjectIdentifier()));
 
-    List<TriggerDetails> triggerDetailList =
-        triggerToConnectorMap.computeIfAbsent(fullyQualifiedIdentifier, k -> new ArrayList<>());
+      List<TriggerDetails> triggerDetailList =
+          triggerToConnectorMap.computeIfAbsent(fullyQualifiedIdentifier, k -> new ArrayList<>());
 
-    triggerDetailList.add(triggerDetail);
+      triggerDetailList.add(triggerDetail);
+    } catch (Exception ex) {
+      log.error(getTriggerSkipMessage(triggerDetail.getNgTriggerEntity()));
+    }
   }
 }

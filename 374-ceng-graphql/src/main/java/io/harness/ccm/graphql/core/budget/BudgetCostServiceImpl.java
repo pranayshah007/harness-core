@@ -9,7 +9,6 @@ package io.harness.ccm.graphql.core.budget;
 
 import static io.harness.ccm.budget.BudgetPeriod.DAILY;
 import static io.harness.ccm.budget.utils.BudgetUtils.MONTHS;
-import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
 import static io.harness.ccm.views.graphql.QLCEViewTimeGroupType.DAY;
@@ -23,17 +22,17 @@ import static java.lang.Math.max;
 import static org.joda.time.Days.daysBetween;
 import static org.joda.time.Months.monthsBetween;
 
-import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budget.utils.BudgetUtils;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetCostData;
 import io.harness.ccm.commons.entities.budget.BudgetData;
-import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.perspectives.PerspectiveTimeSeriesHelper;
-import io.harness.ccm.graphql.dto.common.TimeSeriesDataPoints;
+import io.harness.ccm.views.dto.TimeSeriesDataPoints;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
@@ -42,15 +41,18 @@ import io.harness.ccm.views.graphql.QLCEViewTimeTruncGroupBy;
 import io.harness.ccm.views.graphql.ViewCostData;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.service.ViewsBillingService;
+import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.joda.time.DateTime;
@@ -59,9 +61,11 @@ import org.joda.time.DateTime;
 public class BudgetCostServiceImpl implements BudgetCostService {
   @Inject ViewsBillingService viewsBillingService;
   @Inject ViewsQueryHelper viewsQueryHelper;
-  @Inject BigQueryService bigQueryService;
-  @Inject BigQueryHelper bigQueryHelper;
   @Inject PerspectiveTimeSeriesHelper perspectiveTimeSeriesHelper;
+  @Inject @Nullable @Named("clickHouseConfig") ClickHouseConfig clickHouseConfig;
+  @Inject ClickHouseService clickHouseService;
+  @Inject ClickHouseViewsBillingServiceImpl clickHouseViewsBillingService;
+  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
 
   @Override
   public double getActualCost(Budget budget) {
@@ -71,13 +75,12 @@ public class BudgetCostServiceImpl implements BudgetCostService {
 
   @Override
   public double getActualCost(String accountId, String perspectiveId, long startOfPeriod, BudgetPeriod period) {
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     long endTime = BudgetUtils.getEndTimeForBudget(startOfPeriod, period) - BudgetUtils.ONE_DAY_MILLIS;
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();
     filters.add(viewsQueryHelper.getViewMetadataFilter(perspectiveId));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(startOfPeriod, AFTER));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
-    return getCostForPerspectiveBudget(filters, cloudProviderTableName, accountId);
+    return getCostForPerspectiveBudget(filters, accountId);
   }
 
   @Override
@@ -88,7 +91,6 @@ public class BudgetCostServiceImpl implements BudgetCostService {
 
   @Override
   public double getForecastCost(String accountId, String perspectiveId, long startOfPeriod, BudgetPeriod period) {
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();
     long startTime = BudgetUtils.getStartTimeForForecasting();
     long endTime = BudgetUtils.getEndTimeForBudget(startOfPeriod, period) - BudgetUtils.ONE_DAY_MILLIS;
@@ -97,11 +99,10 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
     ViewCostData costDataForForecast =
         ViewCostData.builder()
-            .cost(
-                viewsBillingService
-                    .getCostData(bigQueryService.get(), filters, viewsQueryHelper.getPerspectiveTotalCostAggregation(),
-                        cloudProviderTableName, viewsQueryHelper.buildQueryParams(accountId, false))
-                    .getCost())
+            .cost(viewsBillingService
+                      .getCostData(filters, viewsQueryHelper.getPerspectiveTotalCostAggregation(),
+                          viewsQueryHelper.buildQueryParams(accountId, false))
+                      .getCost())
             .minStartTime(1000 * startTime)
             .maxStartTime(1000 * BudgetUtils.getStartOfCurrentDay() - BudgetUtils.ONE_DAY_MILLIS)
             .build();
@@ -125,14 +126,13 @@ public class BudgetCostServiceImpl implements BudgetCostService {
 
   @Override
   public double getLastPeriodCost(String accountId, String perspectiveId, long startOfPeriod, BudgetPeriod period) {
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     long startTime = BudgetUtils.getStartOfLastPeriod(startOfPeriod, period);
     long endTime = startOfPeriod - BudgetUtils.ONE_DAY_MILLIS;
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();
     filters.add(viewsQueryHelper.getViewMetadataFilter(perspectiveId));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(startTime, AFTER));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
-    return getCostForPerspectiveBudget(filters, cloudProviderTableName, accountId);
+    return getCostForPerspectiveBudget(filters, accountId);
   }
 
   @Override
@@ -329,11 +329,9 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     return BudgetData.builder().costData(budgetCostDataList).forecastCost(budget.getForecastCost()).build();
   }
 
-  private double getCostForPerspectiveBudget(
-      List<QLCEViewFilterWrapper> filters, String cloudProviderTable, String accountId) {
-    ViewCostData trendData = viewsBillingService.getCostData(bigQueryService.get(), filters,
-        viewsQueryHelper.getPerspectiveTotalCostAggregation(), cloudProviderTable,
-        viewsQueryHelper.buildQueryParams(accountId, false));
+  private double getCostForPerspectiveBudget(List<QLCEViewFilterWrapper> filters, String accountId) {
+    ViewCostData trendData = viewsBillingService.getCostData(filters,
+        viewsQueryHelper.getPerspectiveTotalCostAggregation(), viewsQueryHelper.buildQueryParams(accountId, false));
     return trendData.getCost();
   }
 
@@ -350,13 +348,22 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     if (endTime != 0L) {
       filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
     }
-    String cloudProviderTable = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
-    return perspectiveTimeSeriesHelper
-        .fetch(viewsBillingService.getTimeSeriesStatsNg(bigQueryService.get(), filters, groupBy, aggregationFunction,
-                   Collections.emptyList(), cloudProviderTable, true, 100,
-                   viewsQueryHelper.buildQueryParams(accountId, true, false, false, false, timeOffsetInDays, false)),
-            perspectiveTimeSeriesHelper.getTimePeriod(groupBy), groupBy)
-        .getStats();
+
+    if (isClickHouseEnabled) {
+      return clickHouseViewsBillingService
+          .getClickHouseTimeSeriesStatsNg(filters, groupBy, aggregationFunction, Collections.emptyList(), true, 100,
+              viewsQueryHelper.buildQueryParams(accountId, true, false, false, false, timeOffsetInDays, false, false),
+              perspectiveTimeSeriesHelper.getTimePeriod(groupBy), null, null, null, false)
+          .getStats();
+    } else {
+      return perspectiveTimeSeriesHelper
+          .fetch(viewsBillingService.getTimeSeriesStatsNg(filters, groupBy, aggregationFunction,
+                     Collections.emptyList(), true, 100,
+                     viewsQueryHelper.buildQueryParams(
+                         accountId, true, false, false, false, timeOffsetInDays, false, false)),
+              perspectiveTimeSeriesHelper.getTimePeriod(groupBy), groupBy)
+          .getStats();
+    }
   }
 
   private QLCEViewTimeGroupType getTimeResolutionForBudget(BudgetPeriod period) {
@@ -422,7 +429,6 @@ public class BudgetCostServiceImpl implements BudgetCostService {
 
   private List<ValueDataPoint> actualCostGroupedByPeriod(
       String accountId, BudgetPeriod period, String perspectiveId, long startTime, long endTime) {
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     List<QLCEViewGroupBy> groupBy = new ArrayList<>();
     groupBy.add(
         QLCEViewGroupBy.builder()
@@ -432,8 +438,7 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     filters.add(viewsQueryHelper.getViewMetadataFilter(perspectiveId));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(startTime, AFTER));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
-    return viewsBillingService.getActualCostGroupedByPeriod(bigQueryService.get(), filters, groupBy,
-        viewsQueryHelper.getPerspectiveTotalCostAggregation(), cloudProviderTableName,
-        viewsQueryHelper.buildQueryParams(accountId, false));
+    return viewsBillingService.getActualCostGroupedByPeriod(filters, groupBy,
+        viewsQueryHelper.getPerspectiveTotalCostAggregation(), viewsQueryHelper.buildQueryParams(accountId, false));
   }
 }

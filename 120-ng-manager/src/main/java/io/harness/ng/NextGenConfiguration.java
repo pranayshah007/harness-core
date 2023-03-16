@@ -101,6 +101,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String ACCOUNT_PACKAGE = "io.harness.account.resource";
   public static final String LICENSE_PACKAGE = "io.harness.licensing.api.resource";
   public static final String SUBSCRIPTION_PACKAGE = "io.harness.subscription.resource";
+  public static final String CREDIT_PACKAGE = "io.harness.credit.resource";
   public static final String POLLING_PACKAGE = "io.harness.polling.resource";
   public static final String ENFORCEMENT_PACKAGE = "io.harness.enforcement.resource";
   public static final String ENFORCEMENT_CLIENT_PACKAGE = "io.harness.enforcement.client.resources";
@@ -152,7 +153,11 @@ public class NextGenConfiguration extends Configuration {
   private static final String DEPLOYMENT_STAGE_PACKAGE = "io.harness.ng.core.deploymentstage";
   private static final String SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE =
       "io.harness.ng.core.migration.serviceenvmigrationv2.resources";
+  private static final String GCP_PACKAGE = "io.harness.ng.core.gcp.resources";
   private static final String MODULEVERSION_RESOURCE_PACKAGE = "io.harness.ng.moduleversion.resource";
+  private static final String TERRAFORM_CLOUD_RESOURCE_PACKAGE = "io.harness.ng.core.terraformcloud.resources";
+  private static final String EOL_BANNER_RESOURCE_PACKAGE = "io.harness.ng.core.eolbanner.resources";
+
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -243,6 +248,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "cdTsDbRetentionPeriodMonths") private String cdTsDbRetentionPeriodMonths;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty("gitService") private GitServiceConfiguration gitServiceConfiguration;
+  @JsonProperty(value = "disableFreezeNotificationTemplate") private boolean disableFreezeNotificationTemplate;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;
@@ -272,32 +278,35 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.FILTER_PACKAGE, NextGenConfiguration.SIGNUP_PACKAGE,
                 NextGenConfiguration.MOCKSERVER_PACKAGE, NextGenConfiguration.ACCOUNT_PACKAGE,
                 NextGenConfiguration.LICENSE_PACKAGE, NextGenConfiguration.SUBSCRIPTION_PACKAGE,
-                NextGenConfiguration.POLLING_PACKAGE, NextGenConfiguration.ENFORCEMENT_PACKAGE,
-                NextGenConfiguration.ENFORCEMENT_CLIENT_PACKAGE, NextGenConfiguration.ARTIFACTS_PACKAGE,
-                NextGenConfiguration.AUTHENTICATION_SETTINGS_PACKAGE, NextGenConfiguration.CD_OVERVIEW_PACKAGE,
-                NextGenConfiguration.ACTIVITY_HISTORY_PACKAGE, NextGenConfiguration.SERVICE_PACKAGE,
-                NextGenConfiguration.SERVICE_ACCOUNTS_PACKAGE, NextGenConfiguration.BUCKETS_PACKAGE,
-                NextGenConfiguration.CLUSTER_GCP_PACKAGE, NextGenConfiguration.WEBHOOK_PACKAGE,
-                NextGenConfiguration.ENVIRONMENT_PACKAGE, NextGenConfiguration.USERPROFILE_PACKAGE,
-                NextGenConfiguration.JIRA_PACKAGE, NextGenConfiguration.EXECUTION_PACKAGE,
-                NextGenConfiguration.ENTITYSETUP_PACKAGE, NextGenConfiguration.SCHEMA_PACKAGE,
-                NextGenConfiguration.DELEGATE_PACKAGE, NextGenConfiguration.ACCESS_CONTROL_PACKAGE,
-                NextGenConfiguration.FEEDBACK_PACKAGE, NextGenConfiguration.INSTANCE_SYNC_PACKAGE,
-                NextGenConfiguration.INVITE_PACKAGE, NextGenConfiguration.USER_PACKAGE,
-                NextGenConfiguration.INSTANCE_NG_PACKAGE, NextGenConfiguration.LICENSING_USAGE_PACKAGE,
-                NextGenConfiguration.SMTP_NG_RESOURCE, NextGenConfiguration.SERVICENOW_PACKAGE,
-                NextGenConfiguration.SCIM_NG_RESOURCE, NextGenConfiguration.NG_GLOBAL_KMS_RESOURCE_PACKAGE,
-                NextGenConfiguration.ACCOUNT_SETTING_PACKAGE, NextGenConfiguration.ENV_GROUP_RESOURCE,
-                NextGenConfiguration.AZURE_RESOURCES_PACKAGE, NextGenConfiguration.NG_TRIAL_SIGNUP_PACKAGE,
-                NextGenConfiguration.VARIABLE_RESOURCE_PACKAGE, NextGenConfiguration.FILE_STORE_RESOURCE_PACKAGE,
-                NextGenConfiguration.GITOPS_RESOURCE_PACKAGE, NextGenConfiguration.INFRA_RESOURCE_PACKAGE,
-                NextGenConfiguration.AWS_PACKAGE, NextGenConfiguration.OAUTH_RESOURCE_PACKAGE,
-                NextGenConfiguration.LDAP_PACKAGE, NextGenConfiguration.CHAOS_PACKAGE,
-                NextGenConfiguration.SETTINGS_RESOURCE_PACKAGE, NextGenConfiguration.AGENT_PACKAGE,
-                NextGenConfiguration.CUSTOM_DEPLOYMENT_PACKAGE, NextGenConfiguration.FREEZE_RESOURCE_PACKAGE,
-                NextGenConfiguration.MODULEVERSION_RESOURCE_PACKAGE, NextGenConfiguration.REFRESH_RESOURCE_PACKAGE,
-                DEPLOYMENT_STAGE_PACKAGE, NextGenConfiguration.MANIFEST_RESOURCE_PACKAGE,
-                NextGenConfiguration.TAS_PACKAGE, NextGenConfiguration.SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE))
+                NextGenConfiguration.CREDIT_PACKAGE, NextGenConfiguration.POLLING_PACKAGE,
+                NextGenConfiguration.ENFORCEMENT_PACKAGE, NextGenConfiguration.ENFORCEMENT_CLIENT_PACKAGE,
+                NextGenConfiguration.ARTIFACTS_PACKAGE, NextGenConfiguration.AUTHENTICATION_SETTINGS_PACKAGE,
+                NextGenConfiguration.CD_OVERVIEW_PACKAGE, NextGenConfiguration.ACTIVITY_HISTORY_PACKAGE,
+                NextGenConfiguration.SERVICE_PACKAGE, NextGenConfiguration.SERVICE_ACCOUNTS_PACKAGE,
+                NextGenConfiguration.BUCKETS_PACKAGE, NextGenConfiguration.CLUSTER_GCP_PACKAGE,
+                NextGenConfiguration.WEBHOOK_PACKAGE, NextGenConfiguration.ENVIRONMENT_PACKAGE,
+                NextGenConfiguration.USERPROFILE_PACKAGE, NextGenConfiguration.JIRA_PACKAGE,
+                NextGenConfiguration.EXECUTION_PACKAGE, NextGenConfiguration.ENTITYSETUP_PACKAGE,
+                NextGenConfiguration.SCHEMA_PACKAGE, NextGenConfiguration.DELEGATE_PACKAGE,
+                NextGenConfiguration.ACCESS_CONTROL_PACKAGE, NextGenConfiguration.FEEDBACK_PACKAGE,
+                NextGenConfiguration.INSTANCE_SYNC_PACKAGE, NextGenConfiguration.INVITE_PACKAGE,
+                NextGenConfiguration.USER_PACKAGE, NextGenConfiguration.INSTANCE_NG_PACKAGE,
+                NextGenConfiguration.LICENSING_USAGE_PACKAGE, NextGenConfiguration.SMTP_NG_RESOURCE,
+                NextGenConfiguration.SERVICENOW_PACKAGE, NextGenConfiguration.SCIM_NG_RESOURCE,
+                NextGenConfiguration.NG_GLOBAL_KMS_RESOURCE_PACKAGE, NextGenConfiguration.ACCOUNT_SETTING_PACKAGE,
+                NextGenConfiguration.ENV_GROUP_RESOURCE, NextGenConfiguration.AZURE_RESOURCES_PACKAGE,
+                NextGenConfiguration.NG_TRIAL_SIGNUP_PACKAGE, NextGenConfiguration.VARIABLE_RESOURCE_PACKAGE,
+                NextGenConfiguration.FILE_STORE_RESOURCE_PACKAGE, NextGenConfiguration.GITOPS_RESOURCE_PACKAGE,
+                NextGenConfiguration.INFRA_RESOURCE_PACKAGE, NextGenConfiguration.AWS_PACKAGE,
+                NextGenConfiguration.OAUTH_RESOURCE_PACKAGE, NextGenConfiguration.LDAP_PACKAGE,
+                NextGenConfiguration.CHAOS_PACKAGE, NextGenConfiguration.SETTINGS_RESOURCE_PACKAGE,
+                NextGenConfiguration.AGENT_PACKAGE, NextGenConfiguration.CUSTOM_DEPLOYMENT_PACKAGE,
+                NextGenConfiguration.FREEZE_RESOURCE_PACKAGE, NextGenConfiguration.MODULEVERSION_RESOURCE_PACKAGE,
+                NextGenConfiguration.REFRESH_RESOURCE_PACKAGE, DEPLOYMENT_STAGE_PACKAGE,
+                NextGenConfiguration.MANIFEST_RESOURCE_PACKAGE, NextGenConfiguration.TAS_PACKAGE,
+                NextGenConfiguration.SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE,
+                NextGenConfiguration.TERRAFORM_CLOUD_RESOURCE_PACKAGE, NextGenConfiguration.GCP_PACKAGE,
+                NextGenConfiguration.EOL_BANNER_RESOURCE_PACKAGE))
         .collect(Collectors.toSet());
   }
 

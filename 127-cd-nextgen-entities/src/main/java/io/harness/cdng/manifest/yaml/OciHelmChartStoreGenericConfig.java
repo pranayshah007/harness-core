@@ -74,4 +74,11 @@ public class OciHelmChartStoreGenericConfig implements OciHelmChartStoreConfig, 
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
   }
+
+  @Override
+  public void overrideConnectorRef(ParameterField<String> overridingConnectorRef) {
+    if (ParameterField.isNotNull(overridingConnectorRef)) {
+      connectorRef = overridingConnectorRef;
+    }
+  }
 }

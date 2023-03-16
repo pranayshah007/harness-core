@@ -23,6 +23,7 @@ import static software.wings.beans.TaskType.CUSTOM_LOG_COLLECTION_TASK;
 import static software.wings.beans.TaskType.STACKDRIVER_COLLECT_LOG_DATA;
 import static software.wings.beans.TaskType.SUMO_COLLECT_LOG_DATA;
 import static software.wings.beans.alert.AlertType.CONTINUOUS_VERIFICATION_ALERT;
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 import static software.wings.common.VerificationConstants.APPDYNAMICS_DEEPLINK_FORMAT;
 import static software.wings.common.VerificationConstants.BUGSNAG_UI_DUMMY_HOST_NAME;
 import static software.wings.common.VerificationConstants.CRON_POLL_INTERVAL_IN_MINUTES;
@@ -38,7 +39,6 @@ import static software.wings.common.VerificationConstants.PROMETHEUS_DEEPLINK_FO
 import static software.wings.common.VerificationConstants.VERIFICATION_HOST_PLACEHOLDER;
 import static software.wings.common.VerificationConstants.getLogAnalysisStates;
 import static software.wings.common.VerificationConstants.getMetricAnalysisStates;
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 import static software.wings.sm.states.APMVerificationState.buildMetricInfoMap;
 import static software.wings.sm.states.AbstractLogAnalysisState.HOST_BATCH_SIZE;
 import static software.wings.sm.states.DatadogState.metricEndpointsInfo;
@@ -105,6 +105,7 @@ import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.alert.cv.ContinuousVerificationAlertData;
 import software.wings.beans.alert.cv.ContinuousVerificationAlertData.AlertRiskDetail;
 import software.wings.beans.apm.Method;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.delegatetasks.cv.DataCollectionException;
@@ -117,7 +118,6 @@ import software.wings.security.AppPermissionSummary;
 import software.wings.security.AppPermissionSummary.EnvInfo;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.UserThreadLocal;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.VerificationLogContext;
 import software.wings.service.impl.analysis.AnalysisContext.AnalysisContextKeys;
 import software.wings.service.impl.analysis.ContinuousVerificationExecutionMetaData.ContinuousVerificationExecutionMetaDataKeys;
@@ -463,7 +463,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
         dataCollectionInfo.getApplicationId(), null, new Object[] {dataCollectionInfo}, dataCollectionInfo.getEnvId(),
         dataCollectionInfo.getCvConfigId(), dataCollectionInfo.getStateExecutionId(),
         dataCollectionInfo.getStateType());
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     return true;
   }
 
@@ -1477,7 +1477,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                             .build();
       String logCollectionResponse =
-          delegateProxyFactory.get(APMDelegateService.class, syncTaskContext)
+          delegateProxyFactory.getV2(APMDelegateService.class, syncTaskContext)
               .fetch(apmValidateCollectorConfig, ThirdPartyApiCallLog.createApiCallLog(accountId, config.getGuid()));
       if (isNotEmpty(logCollectionResponse)) {
         response.setProviderReachable(true);
@@ -1527,7 +1527,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
     SyncTaskContext syncTaskContext =
         SyncTaskContext.builder().accountId(accountId).appId(GLOBAL_APP_ID).timeout(DEFAULT_SYNC_CALL_TIMEOUT).build();
     String apmResponse =
-        delegateProxyFactory.get(APMDelegateService.class, syncTaskContext)
+        delegateProxyFactory.getV2(APMDelegateService.class, syncTaskContext)
             .fetch(apmValidateCollectorConfig, ThirdPartyApiCallLog.createApiCallLog(accountId, config.getGuid()));
     if (isNotEmpty(apmResponse)) {
       response.setProviderReachable(true);
@@ -1543,7 +1543,8 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
     APMResponseParser.APMResponseData responseData =
         new APMResponseParser.APMResponseData(null, DEFAULT_GROUP_NAME, apmResponse, metricInfoList);
 
-    Collection<NewRelicMetricDataRecord> metricDataRecords = APMResponseParser.extract(Arrays.asList(responseData));
+    Collection<software.wings.beans.dto.NewRelicMetricDataRecord> metricDataRecords =
+        APMResponseParser.extract(Arrays.asList(responseData));
     if (isNotEmpty(metricDataRecords)) {
       response.setProviderReachable(true);
       response.setLoadResponse(
@@ -1610,7 +1611,8 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
       APMResponseParser.APMResponseData responseData = new APMResponseParser.APMResponseData(
           null, DEFAULT_GROUP_NAME, (String) verificationNodeDataSetupResponse.getDataForNode(), entry.getValue());
 
-      Collection<NewRelicMetricDataRecord> metricDataRecords = APMResponseParser.extract(Arrays.asList(responseData));
+      Collection<software.wings.beans.dto.NewRelicMetricDataRecord> metricDataRecords =
+          APMResponseParser.extract(Arrays.asList(responseData));
 
       if (!verificationNodeDataSetupResponse.isProviderReachable()) {
         // if not reachable then directly return. no need to process further
@@ -1855,7 +1857,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
         .getLoggerByCVConfigId(
             cvConfiguration.getAccountId(), cvConfiguration.getUuid(), TimeUnit.MILLISECONDS.toMinutes(endTime))
         .info("Submitting service guard data collection task for time range %t to %t.", startTime, endTime);
-    delegateService.queueTask(task);
+    delegateService.queueTaskV2(task);
     return true;
   }
 
@@ -2377,10 +2379,12 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
     }
     for (DelegateTask task : delegateTasks) {
       // This log statement is pretty custom now for LogDataCollectionInfos
-      LogDataCollectionInfo info = (LogDataCollectionInfo) task.getData().getParameters()[0];
+      Object taskParameter =
+          task.getData() != null ? task.getData().getParameters()[0] : task.getTaskDataV2().getParameters()[0];
+      LogDataCollectionInfo info = (LogDataCollectionInfo) taskParameter;
       log.info(
           "Creating a delegate task for stateExecutionId {} for hosts {}", info.getStateExecutionId(), info.getHosts());
-      delegateService.queueTask(task);
+      delegateService.queueTaskV2(task);
     }
     return true;
   }
@@ -2523,7 +2527,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
       String accountId, APMValidateCollectorConfig apmValidateCollectorConfig, String guid) {
     SyncTaskContext syncTaskContext =
         SyncTaskContext.builder().accountId(accountId).appId(GLOBAL_APP_ID).timeout(DEFAULT_SYNC_CALL_TIMEOUT).build();
-    String apmResponse = delegateProxyFactory.get(APMDelegateService.class, syncTaskContext)
+    String apmResponse = delegateProxyFactory.getV2(APMDelegateService.class, syncTaskContext)
                              .fetch(apmValidateCollectorConfig, ThirdPartyApiCallLog.createApiCallLog(accountId, guid));
     JSONObject jsonObject = new JSONObject(apmResponse);
 

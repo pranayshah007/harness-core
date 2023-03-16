@@ -47,10 +47,8 @@ import io.harness.artifact.ArtifactCollectionResponseHandler;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateTaskEventsResponse;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateConfiguration;
-import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateProfileParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
@@ -80,6 +78,9 @@ import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.beans.Account;
 import software.wings.beans.AccountPreferences;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog.FieldType;
+import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceResponse;
@@ -88,7 +89,6 @@ import software.wings.dl.WingsPersistence;
 import software.wings.exception.WingsExceptionMapper;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.ratelimit.DelegateRequestRateLimiter;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.instance.InstanceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.DelegateService;
@@ -100,6 +100,7 @@ import com.google.protobuf.TextFormat;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
@@ -219,21 +220,6 @@ public class DelegateAgentResourceTest extends CategoryTest {
     assertThat(restResponse.getResource()).isInstanceOf(DelegateConfiguration.class).isNotNull();
     assertThat(restResponse.getResource().getAction()).isEqualTo(SELF_DESTRUCT);
     assertThat(restResponse.getResource().getDelegateVersions()).isNull();
-  }
-
-  @Test
-  @Owner(developers = ROHITKARELIA)
-  @Category(UnitTests.class)
-  public void shouldGetConnectionHeartbeat() {
-    DelegateConnectionHeartbeat delegateConnectionHeartbeat = DelegateConnectionHeartbeat.builder().build();
-    RESOURCES.client()
-        .target("/agent/delegates/connectionHeartbeat/" + DELEGATE_ID + "?delegateId=" + DELEGATE_ID
-            + "&accountId=" + ACCOUNT_ID)
-        .request()
-        .post(entity(delegateConnectionHeartbeat, MediaType.APPLICATION_JSON),
-            new GenericType<RestResponse<String>>() {});
-    verify(delegateService, atLeastOnce())
-        .registerHeartbeat(ACCOUNT_ID, DELEGATE_ID, delegateConnectionHeartbeat, ConnectionMode.POLLING);
   }
 
   @Test
@@ -501,15 +487,15 @@ public class DelegateAgentResourceTest extends CategoryTest {
                           .accountId(ACCOUNT_ID)
                           .stateExecutionId(STATE_EXECUTION_ID)
                           .requestTimeStamp(i)
-                          .request(Lists.newArrayList(ThirdPartyApiCallLog.ThirdPartyApiCallField.builder()
+                          .request(Lists.newArrayList(ThirdPartyApiCallField.builder()
                                                           .name(generateUuid())
                                                           .value(generateUuid())
-                                                          .type(ThirdPartyApiCallLog.FieldType.TEXT)
+                                                          .type(FieldType.TEXT)
                                                           .build()))
-                          .response(Lists.newArrayList(ThirdPartyApiCallLog.ThirdPartyApiCallField.builder()
+                          .response(Lists.newArrayList(ThirdPartyApiCallField.builder()
                                                            .name(generateUuid())
                                                            .value(generateUuid())
-                                                           .type(ThirdPartyApiCallLog.FieldType.TEXT)
+                                                           .type(FieldType.TEXT)
                                                            .build()))
                           .delegateId(DELEGATE_ID)
                           .delegateTaskId(generateUuid())
@@ -524,7 +510,11 @@ public class DelegateAgentResourceTest extends CategoryTest {
         .request()
         .post(entity(apiCallLogs, MediaType.APPLICATION_JSON), new GenericType<RestResponse<String>>() {});
 
-    verify(wingsPersistence, atLeastOnce()).save(apiCallLogs);
+    verify(wingsPersistence, atLeastOnce())
+        .save(apiCallLogs.stream()
+                  .map(thirdPartyApiCallLog
+                      -> software.wings.service.impl.ThirdPartyApiCallLog.fromDto(thirdPartyApiCallLog))
+                  .collect(Collectors.toList()));
   }
 
   @Test

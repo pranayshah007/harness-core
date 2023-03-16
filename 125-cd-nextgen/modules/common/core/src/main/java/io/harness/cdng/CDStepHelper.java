@@ -15,6 +15,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
+import static io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO.PROJECT;
 import static io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType.USERNAME_AND_TOKEN;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
@@ -39,6 +40,7 @@ import io.harness.beans.FileReference;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -50,14 +52,14 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeValidator;
-import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.service.steps.ServiceSweepingOutput;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.ssh.SshEntityHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.TasEntityHelper;
@@ -67,6 +69,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
@@ -75,6 +78,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
@@ -190,6 +194,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 public class CDStepHelper {
@@ -210,6 +215,7 @@ public class CDStepHelper {
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
@@ -351,6 +357,7 @@ public class CDStepHelper {
     bitbucketConnectorDTO.setApiAccess(apiAccessDTO);
   }
 
+  @NotNull
   public String getGitRepoUrl(ScmConnector scmConnector, String repoName) {
     repoName = trimToEmpty(repoName);
     notEmptyCheck("Repo name cannot be empty for Account level git connector", repoName);
@@ -359,6 +366,7 @@ public class CDStepHelper {
     return purgedRepoUrl + "/" + purgedRepoName;
   }
 
+  @NotNull
   public String getGitRepoUrlForAzureProject(ScmConnector scmConnector, String repoName) {
     repoName = trimToEmpty(repoName);
     notEmptyCheck("Repo name cannot be empty for Account level git connector", repoName);
@@ -367,24 +375,24 @@ public class CDStepHelper {
     return purgedRepoUrl + GIT + purgedRepoName;
   }
 
+  @NotNull
   public String convertGitAccountProjectUrlToRepoUrl(
-      GitConfigDTO gitConfigDTO, GitStoreConfig gitStoreConfig, String repoName) {
-    if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
-      return getGitRepoUrl(gitConfigDTO, repoName);
-    } else if (gitStoreConfig instanceof AzureRepoStore
-        && gitConfigDTO.getGitConnectionType() == GitConnectionType.PROJECT) {
-      return getGitRepoUrlForAzureProject(gitConfigDTO, repoName);
-    } else {
-      return "";
+      GitStoreConfig gitstoreConfig, ScmConnector scmConnector, GitAuthType gitAuthType, String repoName) {
+    if (gitstoreConfig instanceof AzureRepoStore && gitAuthType == GitAuthType.HTTP) {
+      return getGitRepoUrlForAzureProject(scmConnector, repoName);
     }
+    return getGitRepoUrl(scmConnector, repoName);
   }
 
   public void convertToRepoGitConfig(GitStoreConfig gitstoreConfig, ScmConnector scmConnector) {
     String repoName = gitstoreConfig.getRepoName() != null ? gitstoreConfig.getRepoName().getValue() : null;
     if (scmConnector instanceof GitConfigDTO) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) scmConnector;
-      String repoUrl = convertGitAccountProjectUrlToRepoUrl(gitConfigDTO, gitstoreConfig, repoName);
-      if (isNotEmpty(repoUrl)) {
+      if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT
+          || (gitstoreConfig instanceof AzureRepoStore
+              && gitConfigDTO.getGitConnectionType() == GitConnectionType.PROJECT)) {
+        String repoUrl =
+            convertGitAccountProjectUrlToRepoUrl(gitstoreConfig, gitConfigDTO, gitConfigDTO.getGitAuthType(), repoName);
         gitConfigDTO.setUrl(repoUrl);
         gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
       }
@@ -411,8 +419,9 @@ public class CDStepHelper {
       }
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
       AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) scmConnector;
-      if (azureRepoConnectorDTO.getConnectionType() == AzureRepoConnectionTypeDTO.PROJECT) {
-        String repoUrl = getGitRepoUrlForAzureProject(azureRepoConnectorDTO, repoName);
+      if (azureRepoConnectorDTO.getConnectionType() == PROJECT) {
+        String repoUrl = convertGitAccountProjectUrlToRepoUrl(
+            gitstoreConfig, azureRepoConnectorDTO, azureRepoConnectorDTO.getAuthentication().getAuthType(), repoName);
         azureRepoConnectorDTO.setUrl(repoUrl);
         azureRepoConnectorDTO.setConnectionType(AzureRepoConnectionTypeDTO.REPO);
       }
@@ -559,6 +568,17 @@ public class CDStepHelper {
     return releaseName;
   }
 
+  public String getFileContentAsBase64(Ambiance ambiance, String scopedFilePath, long allowedBytesFileSize) {
+    return EncodingUtils.encodeBase64(getFileContentAsString(ambiance, scopedFilePath, allowedBytesFileSize));
+  }
+
+  public String getFileContentAsString(Ambiance ambiance, final String scopedFilePath, long allowedBytesFileSize) {
+    return cdExpressionResolver.renderExpression(ambiance,
+        fileStoreService.getFileContentAsString(AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), scopedFilePath,
+            allowedBytesFileSize));
+  }
+
   private static void validateReleaseName(String name) {
     if (isEmpty(name)) {
       throw new InvalidArgumentsException(Pair.of("releaseName", "Cannot be empty"));
@@ -700,10 +720,6 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING);
   }
 
-  public boolean useDeclarativeRollback(String accountId) {
-    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDP_USE_K8S_DECLARATIVE_ROLLBACK_NG);
-  }
-
   public LogCallback getLogCallback(String commandUnitName, Ambiance ambiance, boolean shouldOpenStream) {
     return new NGLogCallback(logStreamingStepClientFactory, ambiance, commandUnitName, shouldOpenStream);
   }
@@ -830,7 +846,7 @@ public class CDStepHelper {
   @Nonnull
   public Optional<NGServiceV2InfoConfig> fetchServiceConfigFromSweepingOutput(Ambiance ambiance) {
     final OptionalSweepingOutput resolveOptional = sweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT));
     NGServiceConfig ngServiceConfig = null;
     if (resolveOptional.isFound()) {
       try {
@@ -852,7 +868,7 @@ public class CDStepHelper {
   @Nonnull
   public String fetchServiceYamlFromSweepingOutput(Ambiance ambiance) {
     final OptionalSweepingOutput resolveOptional = sweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT));
     if (!resolveOptional.isFound()) {
       throw new InvalidRequestException(
           "Cannot find service. Make sure this is running in a CD stage with service configured");
@@ -860,12 +876,31 @@ public class CDStepHelper {
     return ((ServiceSweepingOutput) resolveOptional.getOutput()).getFinalServiceYaml();
   }
 
+  public boolean areAllManifestsFromHarnessFileStore(List<? extends ManifestOutcome> manifestOutcomes) {
+    boolean retVal = true;
+    for (ManifestOutcome manifestOutcome : manifestOutcomes) {
+      if (manifestOutcome.getStore() != null) {
+        retVal = retVal && ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind());
+      }
+    }
+    return retVal;
+  }
+
+  public boolean isAnyGitManifest(List<ManifestOutcome> ecsManifestsOutcomes) {
+    for (ManifestOutcome manifest : ecsManifestsOutcomes) {
+      if (manifest.getStore() != null && ManifestStoreType.isInGitSubset(manifest.getStore().getKind())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public List<String> fetchFilesContentFromLocalStore(
       Ambiance ambiance, ManifestOutcome manifestOutcome, LogCallback logCallback) {
     Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents = new HashMap<>();
     LocalStoreFetchFilesResult localStoreFetchFilesResult = null;
     logCallback.saveExecutionLog(color(
-        format("%nFetching %s from Harness File Store", manifestOutcome.getType()), LogColor.White, LogWeight.Bold));
+        format("Fetching %s from Harness File Store", manifestOutcome.getType()), LogColor.White, LogWeight.Bold));
     if (ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind())) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       localStoreFetchFilesResult = getFileContentsFromManifestOutcome(manifestOutcome, ngAccess, logCallback);
@@ -887,7 +922,7 @@ public class CDStepHelper {
     List<String> fileContents = new ArrayList<>();
     if (isNotEmpty(scopedFilePathList)) {
       logCallback.saveExecutionLog(
-          color(format("%nFetching %s files with identifier: %s", manifestType, manifestIdentifier), LogColor.White,
+          color(format("Fetching %s files with identifier: %s", manifestType, manifestIdentifier), LogColor.White,
               LogWeight.Bold));
       logCallback.saveExecutionLog(color(format("Fetching following Files :"), LogColor.White));
       printFilesFetchedFromHarnessStore(scopedFilePathList, logCallback);
@@ -950,9 +985,14 @@ public class CDStepHelper {
     return UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress);
   }
 
-  @Nonnull
   public DelegateTaskRequest mapTaskRequestToDelegateTaskRequest(
       TaskRequest taskRequest, TaskData taskData, Set<String> taskSelectors) {
+    return mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, taskSelectors, "", false);
+  }
+
+  @Nonnull
+  public DelegateTaskRequest mapTaskRequestToDelegateTaskRequest(TaskRequest taskRequest, TaskData taskData,
+      Set<String> taskSelectors, String baseLogKey, boolean shouldSkipOpenStream) {
     final SubmitTaskRequest submitTaskRequest = taskRequest.getDelegateTaskRequest().getRequest();
     return DelegateTaskRequest.builder()
         .taskParameters((TaskParameters) taskData.getParameters()[0])
@@ -969,6 +1009,8 @@ public class CDStepHelper {
         .executeOnHarnessHostedDelegates(submitTaskRequest.getExecuteOnHarnessHostedDelegates())
         .emitEvent(submitTaskRequest.getEmitEvent())
         .stageId(submitTaskRequest.getStageId())
+        .baseLogKey(baseLogKey)
+        .shouldSkipOpenStream(shouldSkipOpenStream)
         .build();
   }
 }

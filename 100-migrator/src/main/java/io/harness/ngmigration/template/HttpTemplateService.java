@@ -8,6 +8,7 @@
 package io.harness.ngmigration.template;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.serializer.JsonUtils;
 import io.harness.steps.StepSpecTypeConstants;
 
@@ -23,8 +24,10 @@ public class HttpTemplateService implements NgTemplateService {
   public boolean isMigrationSupported() {
     return true;
   }
+
   @Override
-  public JsonNode getNgTemplateConfigSpec(Template template, String orgIdentifier, String projectIdentifier) {
+  public JsonNode getNgTemplateConfigSpec(
+      MigrationContext context, Template template, String orgIdentifier, String projectIdentifier) {
     HttpTemplate httpTemplate = (HttpTemplate) template.getTemplateObject();
 
     Map<String, Object> templateSpec = new HashMap<>();

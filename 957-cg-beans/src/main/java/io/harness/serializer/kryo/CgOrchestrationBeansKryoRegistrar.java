@@ -46,7 +46,6 @@ import software.wings.beans.VMSSAuthType;
 import software.wings.beans.VMSSDeploymentType;
 import software.wings.beans.Variable;
 import software.wings.beans.VariableType;
-import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestInput;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactFile;
@@ -66,7 +65,6 @@ import software.wings.helpers.ext.gcb.models.GcbBuildDetails;
 import software.wings.helpers.ext.gcb.models.GcbBuildStatus;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.metrics.MetricType;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.sm.ExecutionInterruptEffect;
 import software.wings.sm.PipelineSummary;
 import software.wings.sm.StateTypeScope;
@@ -88,13 +86,10 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(Variable.class, 5378);
     kryo.register(GitFileConfig.class, 5472);
     kryo.register(LicenseInfo.class, 5511);
-    kryo.register(ThirdPartyApiCallLog.class, 5377);
     kryo.register(ArtifactVariable.class, 7195);
     kryo.register(ArtifactStreamSummary.class, 7202);
     kryo.register(ArtifactStreamMetadata.class, 8126);
     kryo.register(ArtifactSummary.class, 8127);
-    kryo.register(ThirdPartyApiCallLog.ThirdPartyApiCallField.class, 71100);
-    kryo.register(ThirdPartyApiCallLog.FieldType.class, 71101);
 
     // Put promoted classes here and do not change the id
     kryo.register(SweepingOutput.class, 3101);
@@ -140,7 +135,6 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(ArtifactFile.class, 5066);
     kryo.register(Tag.class, 7185);
     kryo.register(Artifact.class, 7192);
-    kryo.register(HelmChart.class, 71106);
     kryo.register(Artifact.ContentStatus.class, 7193);
     kryo.register(Artifact.Status.class, 7194);
     kryo.register(ApprovalDetails.Action.class, 7461);

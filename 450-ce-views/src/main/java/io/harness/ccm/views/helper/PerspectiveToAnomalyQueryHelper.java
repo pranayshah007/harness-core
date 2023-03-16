@@ -228,14 +228,16 @@ public class PerspectiveToAnomalyQueryHelper {
     List<CCMFilter> convertedRuleFilters = new ArrayList<>();
     List<ViewRule> viewRules = view.getViewRules();
 
-    for (ViewRule rule : viewRules) {
-      List<QLCEViewFilterWrapper> ruleFilters = new ArrayList<>();
-      for (ViewCondition condition : rule.getViewConditions()) {
-        ruleFilters.add(QLCEViewFilterWrapper.builder()
-                            .idFilter(viewsQueryBuilder.mapConditionToFilter((ViewIdCondition) condition))
-                            .build());
+    if (viewRules != null) {
+      for (ViewRule rule : viewRules) {
+        List<QLCEViewFilterWrapper> ruleFilters = new ArrayList<>();
+        for (ViewCondition condition : rule.getViewConditions()) {
+          ruleFilters.add(QLCEViewFilterWrapper.builder()
+                              .idFilter(viewsQueryBuilder.mapConditionToFilter((ViewIdCondition) condition))
+                              .build());
+        }
+        convertedRuleFilters.add(convertFilters(ruleFilters));
       }
-      convertedRuleFilters.add(convertFilters(ruleFilters));
     }
 
     return convertedRuleFilters;

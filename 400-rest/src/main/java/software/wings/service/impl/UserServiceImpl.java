@@ -59,6 +59,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.security.crypto.bcrypt.BCrypt.checkpw;
 import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
+import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.LogoutResponse;
@@ -94,6 +95,11 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.invites.remote.InviteAcceptResponse;
 import io.harness.invites.remote.NgInviteClient;
+import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseStatus;
+import io.harness.licensing.LicenseType;
+import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
+import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
 import io.harness.limits.ActionType;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.limits.LimitEnforcementUtils;
@@ -281,6 +287,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.joda.time.DateTime;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 
 /**
@@ -292,6 +299,8 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 @Slf4j
 @TargetModule(_950_NG_AUTHENTICATION_SERVICE)
 public class UserServiceImpl implements UserService {
+  private static final Long TEST_FF_NUMBER_OF_CLIENT_MAUS = 1000000L;
+  private static final int TEST_FF_NUMBER_OF_USERS = 50;
   static final String ADD_TO_ACCOUNT_OR_GROUP_EMAIL_TEMPLATE_NAME = "add_group";
   static final String USER_PASSWORD_CHANGED_EMAIL_TEMPLATE_NAME = "password_changed";
   private static final String ADD_ACCOUNT_EMAIL_TEMPLATE_NAME = "add_account";
@@ -360,6 +369,8 @@ public class UserServiceImpl implements UserService {
   @Inject private TelemetryReporter telemetryReporter;
 
   @Inject private UserServiceHelper userServiceHelper;
+
+  @Inject private AdminLicenseHttpClient adminLicenseHttpClient;
 
   private final ScheduledExecutorService scheduledExecutor = new ScheduledThreadPoolExecutor(1,
       new ThreadFactoryBuilder().setNameFormat("invite-executor-thread-%d").setPriority(Thread.NORM_PRIORITY).build());
@@ -585,13 +596,6 @@ public class UserServiceImpl implements UserService {
                                .build());
 
     Account createdAccount = accountService.save(account, false);
-
-    if (!featureFlagService.isEnabled(FeatureName.CDNG_ENABLED, createdAccount.getUuid())
-        && "CD".equalsIgnoreCase(userInvite.getIntent())) {
-      createdAccount.setDefaultExperience(DefaultExperience.CG);
-
-      accountService.update(createdAccount);
-    }
 
     // create user
     User user = User.Builder.anUser()
@@ -1123,6 +1127,14 @@ public class UserServiceImpl implements UserService {
       loadSupportAccounts(user);
     }
     return user;
+  }
+
+  @Override
+  public List<User> getUsersEmails(String accountId) {
+    Query<User> query = wingsPersistence.createQuery(User.class);
+    query.project(UserKeys.email, true).criteria(UserKeys.accounts).hasThisOne(accountId);
+
+    return query.asList();
   }
 
   @Override
@@ -2021,6 +2033,9 @@ public class UserServiceImpl implements UserService {
       user = anUser().build();
       user.setEmail(userInvite.getEmail().trim().toLowerCase());
       user.setName(userInvite.getName().trim());
+      user.setGivenName(userInvite.getGivenName());
+      user.setFamilyName(userInvite.getFamilyName());
+      user.setExternalUserId(userInvite.getExternalId());
       user.setRoles(new ArrayList<>());
       user.setEmailVerified(true);
       user.setAppId(GLOBAL_APP_ID);
@@ -2526,6 +2541,9 @@ public class UserServiceImpl implements UserService {
 
   private void updatePasswordAndPostSteps(User existingUser, char[] password) {
     User user = resetUserPassword(existingUser, password);
+    log.info("UPDATE_USER_LOCKOUTINFO: Clearing and re-setting lockout info for user {} post password reset",
+        user.getUuid());
+    loginSettingsService.updateUserLockoutInfo(user, accountService.get(user.getDefaultAccountId()), 0);
     sendPasswordChangeEmail(user);
     user.getAccounts().forEach(account
         -> auditServiceHelper.reportForAuditingUsingAccountId(account.getUuid(), null, user, Type.RESET_PASSWORD));
@@ -2563,9 +2581,10 @@ public class UserServiceImpl implements UserService {
           Account defaultAccount = authenticationUtils.getDefaultAccount(user);
           log.info("User {} default account Id is {}", user.getEmail(), defaultAccount.getUuid());
           if (defaultAccount.getUuid().equals(accountId) && !user.isTwoFactorAuthenticationEnabled()) {
-            user = enableTwoFactorAuthenticationForUser(user, defaultAccount);
-            log.info("Sending 2FA reset email to user {}", user.getEmail());
-            totpAuthHandler.sendTwoFactorAuthenticationResetEmail(user);
+            User updatedUser = enableTwoFactorAuthenticationForUser(user, defaultAccount);
+            log.info("Sending 2FA reset email to user {}", updatedUser.getEmail());
+            totpAuthHandler.sendTwoFactorAuthenticationResetEmail(updatedUser);
+            publishUserEvent(user, updatedUser);
           }
         }
       }
@@ -2581,7 +2600,9 @@ public class UserServiceImpl implements UserService {
     TwoFactorAuthenticationSettings twoFactorAuthenticationSettings =
         totpAuthHandler.createTwoFactorAuthenticationSettings(user, account);
     twoFactorAuthenticationSettings.setTwoFactorAuthenticationEnabled(true);
-    return updateTwoFactorAuthenticationSettings(user, twoFactorAuthenticationSettings);
+    User updatedUser = updateTwoFactorAuthenticationSettings(user, twoFactorAuthenticationSettings);
+    publishUserEvent(user, updatedUser);
+    return updatedUser;
   }
 
   /**
@@ -2721,7 +2742,9 @@ public class UserServiceImpl implements UserService {
     updateOperations.set(UserKeys.twoFactorAuthenticationEnabled, settings.isTwoFactorAuthenticationEnabled());
     addTwoFactorAuthenticationOperation(settings.getMechanism(), updateOperations);
     addTotpSecretKeyOperation(settings.getTotpSecretKey(), updateOperations);
-    return this.applyUpdateOperations(user, updateOperations);
+    User updatedUser = this.applyUpdateOperations(user, updateOperations);
+    publishUserEvent(user, updatedUser);
+    return updatedUser;
   }
 
   private void addTwoFactorAuthenticationOperation(
@@ -3073,7 +3096,8 @@ public class UserServiceImpl implements UserService {
        * Dont send unnecessary events. Right now we only send events when username has changed or user is
        * created/deleted or user locked status has changed.
        */
-      if (updatedUser.getName().equals(oldUser.getName()) && updatedUser.isUserLocked() == oldUser.isUserLocked()) {
+      if (updatedUser.getName().equals(oldUser.getName()) && updatedUser.isUserLocked() == oldUser.isUserLocked()
+          && updatedUser.isTwoFactorAuthenticationEnabled() == oldUser.isTwoFactorAuthenticationEnabled()) {
         return;
       }
     }
@@ -3083,6 +3107,9 @@ public class UserServiceImpl implements UserService {
     userDTOBuilder.setName(updatedUser != null ? updatedUser.getName() : oldUser.getName());
     userDTOBuilder.setEmail(updatedUser != null ? updatedUser.getEmail() : oldUser.getEmail());
     userDTOBuilder.setLocked(updatedUser != null ? updatedUser.isUserLocked() : oldUser.isUserLocked());
+    userDTOBuilder.setIsTwoFactorAuthenticationEnabled(updatedUser != null
+            ? updatedUser.isTwoFactorAuthenticationEnabled()
+            : oldUser.isTwoFactorAuthenticationEnabled());
     userDTO = userDTOBuilder.build();
 
     try {
@@ -3917,14 +3944,16 @@ public class UserServiceImpl implements UserService {
   }
 
   public List<User> listUsers(PageRequest pageRequest, String accountId, String searchTerm, Integer offset,
-      Integer pageSize, boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance) {
+      Integer pageSize, boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled) {
     Query<User> query;
     if (isNotEmpty(searchTerm)) {
       query = getSearchUserQuery(accountId, searchTerm, includeUsersPendingInviteAcceptance);
     } else {
       query = getListUserQuery(accountId, includeUsersPendingInviteAcceptance);
     }
-    query.criteria(UserKeys.disabled).notEqual(true);
+    if (!includeDisabled) {
+      query.criteria(UserKeys.disabled).notEqual(true);
+    }
     applySortFilter(pageRequest, query);
     FindOptions findOptions = new FindOptions().skip(offset).limit(pageSize);
     List<User> userList = query.asList(findOptions);
@@ -4115,14 +4144,14 @@ public class UserServiceImpl implements UserService {
                                   .accountStatus(AccountStatus.ACTIVE)
                                   .build();
     if (marketPlace.getProductCode().equals(configuration.getMarketPlaceConfig().getAwsMarketPlaceProductCode())) {
-      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals("TRIAL")) {
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
       accountId = setupAccountForUser(user, userInvite, licenseInfo);
     } else if (marketPlace.getProductCode().equals(
                    configuration.getMarketPlaceConfig().getAwsMarketPlaceCeProductCode())) {
       CeLicenseType ceLicenseType = CeLicenseType.PAID;
-      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals("TRIAL")) {
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         ceLicenseType = CeLicenseType.FULL_TRIAL;
       }
       licenseInfo.setAccountType(AccountType.TRIAL);
@@ -4132,6 +4161,25 @@ public class UserServiceImpl implements UserService {
           CeLicenseInfo.builder()
               .expiryTime(marketPlace.getExpirationDate().getTime())
               .licenseType(ceLicenseType)
+              .build());
+    } else if (marketPlace.getProductCode().equals(
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceFfProductCode())) {
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+        licenseInfo.setAccountType(AccountType.TRIAL);
+      }
+      // TODO: please add trial logic here [PLG-1942]
+      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          CFModuleLicenseDTO.builder()
+              .numberOfClientMAUs(TEST_FF_NUMBER_OF_CLIENT_MAUS)
+              .numberOfUsers(TEST_FF_NUMBER_OF_USERS)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.CF)
+              .edition(Edition.ENTERPRISE)
+              .licenseType(LicenseType.PAID)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(marketPlace.getExpirationDate().getTime())
               .build());
     } else {
       throw new InvalidRequestException("Cannot resolve AWS marketplace order");

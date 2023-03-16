@@ -16,4 +16,5 @@ public class AWSConstants {
   public static final String REMOVETAG = "remove-tag";
   public static final String RENAMETAG = "rename-tag";
   public static final String EBSSNAPSHOT = "ebs-snapshot";
+  public static final String WEBHOOK = "webhook";
 }

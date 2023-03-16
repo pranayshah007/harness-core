@@ -362,6 +362,33 @@ public class CustomDeploymentYamlHelperTest extends CategoryTest {
   @Test
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
+  public void testValidateTemplateYamlWithNoInstanceAttributes() {
+    String templateYaml = readFile("entityTemplateWithNoInstanceAttributes.yaml", "");
+    assertThatThrownBy(() -> customDeploymentYamlHelper.validateTemplateYaml(templateYaml))
+        .hasMessage("Template yaml is not valid: instanceAttributes cannot be empty");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateTemplateYamlWithNoInstanceName() {
+    String templateYaml = readFile("entityTemplateWithNoInstanceName.yaml", "");
+    assertThatThrownBy(() -> customDeploymentYamlHelper.validateTemplateYaml(templateYaml))
+        .hasMessage("Template yaml is not valid: instancename value in the Field Name setting is mandatory");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateTemplateYamlWithEmptyInstanceAttributes() {
+    String templateYaml = readFile("entityTemplateWithEmptyInstanceAttributes.yaml", "");
+    assertThatThrownBy(() -> customDeploymentYamlHelper.validateTemplateYaml(templateYaml))
+        .hasMessage("Template yaml is not valid: instancename value in the Field Name setting is mandatory");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
   public void testGetVariables() {
     String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
     assertThat(customDeploymentYamlHelper.getVariables(templateYaml))

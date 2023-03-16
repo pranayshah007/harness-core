@@ -7,6 +7,8 @@
 
 package io.harness.graph.stepDetail;
 
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stepDetail.NodeExecutionDetailsInfo;
@@ -14,6 +16,7 @@ import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.beans.stepDetail.NodeExecutionsInfo.NodeExecutionsInfoBuilder;
 import io.harness.beans.stepDetail.NodeExecutionsInfo.NodeExecutionsInfoKeys;
 import io.harness.concurrency.ConcurrentChildInstance;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.observers.StepDetailsUpdateInfo;
 import io.harness.engine.observers.StepDetailsUpdateObserver;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
@@ -28,9 +31,11 @@ import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -146,5 +151,16 @@ public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsServic
       return null;
     }
     return nodeExecutionsInfo.getConcurrentChildInstance();
+  }
+
+  @Override
+  public void deleteNodeExecutionInfoForGivenIds(Set<String> nodeExecutionIds) {
+    if (EmptyPredicate.isEmpty(nodeExecutionIds)) {
+      return;
+    }
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      nodeExecutionsInfoRepository.deleteAllByNodeExecutionIdIn(nodeExecutionIds);
+      return true;
+    });
   }
 }

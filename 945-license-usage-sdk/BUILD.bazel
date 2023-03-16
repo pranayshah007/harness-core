@@ -14,16 +14,20 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//960-ng-core-beans:module",
-        "//960-ng-license-beans:module",
         "//960-ng-license-usage-beans:module",
         "//970-ng-commons:module",
-        "//980-commons:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/data/validator:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "//clients/access-control/sdk:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_google_inject_guice",
         "@maven//:io_swagger_core_v3_swagger_annotations",
         "@maven//:io_swagger_swagger_annotations",
+        "@maven//:javax_validation_validation_api",
         "@maven//:javax_ws_rs_javax_ws_rs_api",
+        "@maven//:org_springframework_data_spring_data_commons",
     ],
 )
 

@@ -11,7 +11,7 @@ import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType
 import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType.IRSA;
 import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsAuthType.ACCESS_KEY_AND_SECRET_KEY;
-import static io.harness.utils.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
+import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

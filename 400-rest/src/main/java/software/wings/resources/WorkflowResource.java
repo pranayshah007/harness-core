@@ -27,11 +27,14 @@ import static software.wings.security.PermissionAttribute.PermissionType.WORKFLO
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.WorkflowType;
+import io.harness.data.parser.Parser;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.LearningEngineAuth;
 
@@ -98,10 +101,13 @@ import javax.ws.rs.QueryParam;
 @OwnedBy(HarnessTeam.CDC)
 public class WorkflowResource {
   @Inject private ArtifactStreamServiceBindingService artifactStreamServiceBindingService;
+  private FeatureFlagService featureFlagService;
   private AppService appService;
 
   private WorkflowService workflowService;
   private AuthService authService;
+  private static final String CUSTOM_MAX_LIMIT = "1200";
+  private static final String LARGE_PAGE_SIZE_LIMIT = "3000";
 
   /**
    * Instantiates a new orchestration resource.
@@ -110,10 +116,12 @@ public class WorkflowResource {
    * @param authService the auth service
    */
   @Inject
-  public WorkflowResource(WorkflowService workflowService, AuthService authService, AppService appService) {
+  public WorkflowResource(WorkflowService workflowService, AuthService authService, AppService appService,
+      FeatureFlagService featureFlagService) {
     this.workflowService = workflowService;
     this.authService = authService;
     this.appService = appService;
+    this.featureFlagService = featureFlagService;
   }
 
   /**
@@ -136,7 +144,20 @@ public class WorkflowResource {
       @QueryParam("workflowType") List<String> workflowTypes,
       @QueryParam("details") @DefaultValue("true") boolean details,
       @QueryParam("withArtifactStreamSummary") @DefaultValue("false") boolean withArtifactStreamSummary,
-      @QueryParam("tagFilter") String tagFilter, @QueryParam("withTags") @DefaultValue("false") boolean withTags) {
+      @QueryParam("accountId") String accountId, @QueryParam("tagFilter") String tagFilter,
+      @QueryParam("withTags") @DefaultValue("false") boolean withTags) {
+    // Modifying the limit of workflows fetched
+    if (featureFlagService.isEnabled(FeatureName.CUSTOM_MAX_PAGE_SIZE, accountId)) {
+      String baseLimit = CUSTOM_MAX_LIMIT;
+      if (featureFlagService.isEnabled(FeatureName.EXTRA_LARGE_PAGE_SIZE, accountId)) {
+        baseLimit = LARGE_PAGE_SIZE_LIMIT;
+      }
+
+      String limit = PageRequest.UNLIMITED.equals(pageRequest.getLimit())
+          ? baseLimit
+          : Integer.toString(Parser.asInt(pageRequest.getLimit(), Integer.parseInt(baseLimit)));
+      pageRequest.setLimit(limit);
+    }
     if ((isEmpty(workflowTypes))
         && (pageRequest.getFilters() == null
             || pageRequest.getFilters().stream().noneMatch(
@@ -145,7 +166,6 @@ public class WorkflowResource {
     }
     if (isNotEmpty(appIds)) {
       pageRequest.addFilter("appId", IN, appIds.toArray());
-      String accountId = appService.getAccountIdByAppId(appIds.get(0));
       if (accountId != null) {
         pageRequest.addFilter("accountId", EQ, accountId);
       }

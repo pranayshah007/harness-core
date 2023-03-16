@@ -207,7 +207,7 @@ public class AwsAmiSwitchRoutesState extends State {
             .selectionLogsTrackingEnabled(isSelectionLogsTrackingForTasksEnabled())
             .description("Aws Ami switch routes task execution")
             .build();
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     appendDelegateTaskDetails(context, delegateTask);
     return ExecutionResponse.builder()

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutableResponse;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.AddExecutableResponseRequest;
 import io.harness.pms.contracts.execution.events.AdviserResponseRequest;
 import io.harness.pms.contracts.execution.events.EventErrorRequest;
@@ -29,7 +30,9 @@ import io.harness.pms.contracts.execution.events.SuspendChainRequest;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.plan.NodeExecutionEventType;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
+import io.harness.pms.sdk.core.execution.async.AsyncProgressData;
 import io.harness.pms.sdk.core.response.publishers.SdkResponseEventPublisher;
 import io.harness.pms.sdk.core.steps.io.ResponseDataMapper;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
@@ -38,7 +41,6 @@ import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.protobuf.ByteString;
 import java.util.Map;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -92,9 +94,10 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
 
   @Override
   public void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseData> response, boolean asyncError) {
-    Map<String, ByteString> responseBytes = responseDataMapper.toResponseDataProto(response);
+    Map<String, ResponseDataProto> responseDataBytes = responseDataMapper.toResponseDataProtoV2(response);
+
     ResumeNodeExecutionRequest resumeNodeExecutionRequest =
-        ResumeNodeExecutionRequest.newBuilder().putAllResponse(responseBytes).setAsyncError(asyncError).build();
+        ResumeNodeExecutionRequest.newBuilder().putAllResponseData(responseDataBytes).setAsyncError(asyncError).build();
     SdkResponseEventProto sdkResponseEvent = SdkResponseEventProto.newBuilder()
                                                  .setSdkResponseEventType(SdkResponseEventType.RESUME_NODE_EXECUTION)
                                                  .setResumeNodeExecutionRequest(resumeNodeExecutionRequest)
@@ -160,13 +163,19 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
   @Override
   public void handleProgressResponse(Ambiance ambiance, ProgressData progressData) {
     String progressJson = RecastOrchestrationUtils.toJson(progressData);
-    sdkResponseEventPublisher.publishEvent(
-        SdkResponseEventProto.newBuilder()
-            .setSdkResponseEventType(SdkResponseEventType.HANDLE_PROGRESS)
-            .setAmbiance(ambiance)
-            .setProgressRequest(HandleProgressRequest.newBuilder().setProgressJson(progressJson).build())
+    sdkResponseEventPublisher.publishEvent(SdkResponseEventProto.newBuilder()
+                                               .setSdkResponseEventType(SdkResponseEventType.HANDLE_PROGRESS)
+                                               .setAmbiance(ambiance)
+                                               .setProgressRequest(HandleProgressRequest.newBuilder()
+                                                                       .setStatus(calculateRequestStatus(progressData))
+                                                                       .setProgressJson(progressJson)
+                                                                       .build())
 
-            .build());
+                                               .build());
+  }
+
+  private Status calculateRequestStatus(ProgressData progressData) {
+    return progressData instanceof AsyncProgressData ? ((AsyncProgressData) progressData).getStatus() : Status.NO_OP;
   }
 
   @Override

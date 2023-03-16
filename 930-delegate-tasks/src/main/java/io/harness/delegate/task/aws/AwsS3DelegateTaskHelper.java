@@ -144,10 +144,10 @@ public class AwsS3DelegateTaskHelper {
           .build();
     } catch (Exception ex) {
       log.error("Exception while writing to S3 bucket: ", ex);
-
       return AwsPutAuditBatchToBucketTaskResponse.builder()
           .commandExecutionStatus(FAILURE)
-          .errorMessage("Exception while writing to S3 bucket " + (ex.getMessage() != null ? ex.getMessage() : ""))
+          .errorMessage(
+              ex.getMessage() != null ? ex.getMessage() : "Failed to write to S3 bucket. Unknown error occurred.")
           .build();
     }
   }

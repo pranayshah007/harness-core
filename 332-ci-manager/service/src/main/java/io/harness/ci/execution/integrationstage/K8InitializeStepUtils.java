@@ -10,8 +10,11 @@ package io.harness.ci.integrationstage;
 import static io.harness.beans.serializer.RunTimeInputHandler.UNRESOLVED_PARAMETER;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveNumberParameterWithDefaultValue;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterWithDefaultValue;
+import static io.harness.beans.steps.CIStepInfoType.SSCA_ORCHESTRATION;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BUCKET;
@@ -29,6 +32,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_ME
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.yaml.ParameterField.isNull;
 
 import static java.lang.String.format;
 
@@ -82,7 +86,9 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.utils.TimeoutUtils;
+import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
+import io.harness.yaml.core.variables.NumberNGVariable;
 import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.core.variables.StringNGVariable;
 import io.harness.yaml.extended.ci.container.ContainerResource;
@@ -175,7 +181,8 @@ public class K8InitializeStepUtils {
     Integer extraMemoryPerStep = 0;
     Integer extraCPUPerStep = 0;
 
-    if ((stepNode.getStrategy() == null) && !(stepNode.getStepSpecType() instanceof BackgroundStepInfo)) {
+    if (((isNull(stepNode.getStrategy())) || stepNode.getStrategy().getValue() == null)
+        && !(stepNode.getStepSpecType() instanceof BackgroundStepInfo)) {
       extraMemoryPerStep = calculateExtraMemory(executionWrapper, accountId, maxAllocatableMemoryRequest);
       extraCPUPerStep = calculateExtraCPU(executionWrapper, accountId, maxAllocatableCpuRequest);
     }
@@ -303,6 +310,7 @@ public class K8InitializeStepUtils {
       case UPLOAD_S3:
       case UPLOAD_GCS:
       case GIT_CLONE:
+      case SSCA_ORCHESTRATION:
         return createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, stageNode,
             ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(),
             stepElement.getType(), timeout, accountId, os, ambiance, extraMemoryPerStep, extraCPUPerStep);
@@ -347,12 +355,18 @@ public class K8InitializeStepUtils {
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
     Map<String, String> envVarMap = new HashMap<>();
-    envVarMap.putAll(getEnvVariables(stageNode));
+    envVarMap.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
+    envVarMap.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
     envVarMap.putAll(PluginSettingUtils.getBuildEnvironmentVariables(stepInfo, ciExecutionArgs));
     envVarMap.putAll(pluginSettingUtils.getPluginCompatibleEnvVariables(
         stepInfo, identifier, timeout, ambiance, StageInfraDetails.Type.K8, false));
     setEnvVariablesForHostedBuids(stageNode, stepInfo, envVarMap);
     Integer runAsUser = resolveIntegerParameter(stepInfo.getRunAsUser(), null);
+
+    Map<String, SecretNGVariable> secretVarMap = new HashMap<>();
+    secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
+    secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
+    secretVarMap.putAll(pluginSettingUtils.getPluginCompatibleSecretVars(stepInfo));
 
     Boolean privileged = null;
     if (CIStepInfoUtils.getPrivilegedMode(stepInfo) != null) {
@@ -363,7 +377,7 @@ public class K8InitializeStepUtils {
         .commands(StepContainerUtils.getCommand(os))
         .args(StepContainerUtils.getArguments(port))
         .envVars(envVarMap)
-        .secretVariables(getSecretVariables(stageNode))
+        .secretVariables(new ArrayList<>(secretVarMap.values()))
         .containerImageDetails(
             ContainerImageDetails.builder()
                 .imageDetails(IntegrationStageUtils.getImageInfo(CIStepInfoUtils.getPluginCustomStepImage(
@@ -440,15 +454,27 @@ public class K8InitializeStepUtils {
     Integer port = portFinder.getNextPort();
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
+
     Map<String, String> stepEnvVars = new HashMap<>();
-    stepEnvVars.putAll(getEnvVariables(stageNode));
+
+    // Order of precedence is Pipeline -> Stage -> Step
+    // First pipeline variables will be put in the map, then stage and then step variables
+    // If some pipeline variable has same name as stage variable then it will be replaced by stage variable in the map
+    // Same logic goes for stage and step variables.
+    // More details on https://harness.atlassian.net/browse/CI-6709
+    stepEnvVars.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
+    stepEnvVars.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
     stepEnvVars.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
     Map<String, String> envvars =
-        resolveMapParameter("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
     if (!isEmpty(envvars)) {
       stepEnvVars.putAll(envvars);
     }
     Integer runAsUser = resolveIntegerParameter(runStepInfo.getRunAsUser(), null);
+
+    Map<String, SecretNGVariable> secretVarMap = new HashMap<>();
+    secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
+    secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
 
     return ContainerDefinitionInfo.builder()
         .name(containerName)
@@ -456,7 +482,7 @@ public class K8InitializeStepUtils {
         .args(StepContainerUtils.getArguments(port))
         .envVars(stepEnvVars)
         .stepIdentifier(identifier)
-        .secretVariables(getSecretVariables(stageNode))
+        .secretVariables(new ArrayList<>(secretVarMap.values()))
         .containerImageDetails(ContainerImageDetails.builder()
                                    .imageDetails(IntegrationStageUtils.getImageInfo(resolveStringParameter(
                                        "Image", "Run", identifier, runStepInfo.getImage(), true)))
@@ -500,14 +526,19 @@ public class K8InitializeStepUtils {
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
     Map<String, String> stepEnvVars = new HashMap<>();
-    stepEnvVars.putAll(getEnvVariables(stageNode));
+    stepEnvVars.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
+    stepEnvVars.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
     stepEnvVars.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
     Map<String, String> envVars =
-        resolveMapParameter("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
     if (!isEmpty(envVars)) {
       stepEnvVars.putAll(envVars);
     }
     Integer runAsUser = resolveIntegerParameter(backgroundStepInfo.getRunAsUser(), null);
+
+    Map<String, SecretNGVariable> secretVarMap = new HashMap<>();
+    secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
+    secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
 
     return ContainerDefinitionInfo.builder()
         .name(containerName)
@@ -515,7 +546,7 @@ public class K8InitializeStepUtils {
         .args(StepContainerUtils.getArguments(port))
         .envVars(stepEnvVars)
         .stepIdentifier(identifier)
-        .secretVariables(getSecretVariables(stageNode))
+        .secretVariables(new ArrayList<>(secretVarMap.values()))
         .containerImageDetails(ContainerImageDetails.builder()
                                    .imageDetails(IntegrationStageUtils.getImageInfo(image))
                                    .connectorIdentifier(connectorRef)
@@ -546,14 +577,19 @@ public class K8InitializeStepUtils {
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
     Map<String, String> stepEnvVars = new HashMap<>();
-    stepEnvVars.putAll(getEnvVariables(stageNode));
+    stepEnvVars.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
+    stepEnvVars.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
     stepEnvVars.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
     Map<String, String> envvars =
-        resolveMapParameter("envVariables", "RunTests", identifier, runTestsStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "RunTests", identifier, runTestsStepInfo.getEnvVariables(), false);
     if (!isEmpty(envvars)) {
       stepEnvVars.putAll(envvars);
     }
     Integer runAsUser = resolveIntegerParameter(runTestsStepInfo.getRunAsUser(), null);
+
+    Map<String, SecretNGVariable> secretVarMap = new HashMap<>();
+    secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
+    secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
 
     return ContainerDefinitionInfo.builder()
         .name(containerName)
@@ -561,7 +597,7 @@ public class K8InitializeStepUtils {
         .args(StepContainerUtils.getArguments(port))
         .envVars(stepEnvVars)
         .stepIdentifier(identifier)
-        .secretVariables(getSecretVariables(stageNode))
+        .secretVariables(new ArrayList<>(secretVarMap.values()))
         .containerImageDetails(ContainerImageDetails.builder()
                                    .imageDetails(IntegrationStageUtils.getImageInfo(resolveStringParameter(
                                        "Image", "RunTest", identifier, runTestsStepInfo.getImage(), true)))
@@ -586,14 +622,17 @@ public class K8InitializeStepUtils {
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
     Map<String, String> envVarMap = new HashMap<>();
-    envVarMap.putAll(getEnvVariables(stageNode));
+    envVarMap.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
+    envVarMap.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
     envVarMap.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
-    if (!isEmpty(pluginStepInfo.getEnvVariables())) {
-      envVarMap.putAll(pluginStepInfo.getEnvVariables());
-    }
+    envVarMap.putAll(resolveMapParameterV2("envs", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false));
 
     setEnvVariablesForHostedCachingSteps(stageNode, identifier, envVarMap);
     Integer runAsUser = resolveIntegerParameter(pluginStepInfo.getRunAsUser(), null);
+
+    Map<String, SecretNGVariable> secretVarMap = new HashMap<>();
+    secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
+    secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
 
     return ContainerDefinitionInfo.builder()
         .name(containerName)
@@ -601,7 +640,7 @@ public class K8InitializeStepUtils {
         .args(StepContainerUtils.getArguments(port))
         .envVars(envVarMap)
         .stepIdentifier(identifier)
-        .secretVariables(getSecretVariables(stageNode))
+        .secretVariables(new ArrayList<>(secretVarMap.values()))
         .containerImageDetails(ContainerImageDetails.builder()
                                    .imageDetails(IntegrationStageUtils.getImageInfo(resolveStringParameter(
                                        "Image", "Plugin", identifier, pluginStepInfo.getImage(), true)))
@@ -672,32 +711,37 @@ public class K8InitializeStepUtils {
         .build();
   }
 
-  private Map<String, String> getEnvVariables(IntegrationStageNode stageNode) {
-    if (isEmpty(stageNode.getVariables())) {
-      return Collections.emptyMap();
+  private Map<String, String> getVariablesMap(List<NGVariable> variables, String stageId) {
+    Map<String, String> mapOfVariables = new HashMap<>();
+    if (isEmpty(variables)) {
+      return mapOfVariables;
     }
 
-    return stageNode.getVariables()
-        .stream()
-        .filter(customVariables -> customVariables.getType() == NGVariableType.STRING)
-        .map(customVariable -> (StringNGVariable) customVariable)
-        .collect(Collectors.toMap(ngVariable
-            -> ngVariable.getName(),
-            ngVariable
-            -> resolveStringParameterWithDefaultValue("variableValue", "stage", stageNode.getIdentifier(),
-                ngVariable.getValue(), false, ngVariable.getDefaultValue())));
+    variables.stream().filter(variable -> variable.getType() == NGVariableType.STRING).forEach(variable -> {
+      StringNGVariable stringNGVariable = (StringNGVariable) variable;
+      mapOfVariables.put(stringNGVariable.getName(),
+          resolveStringParameterWithDefaultValue("variableValue", "stage", stageId, stringNGVariable.getValue(), false,
+              stringNGVariable.getDefaultValue()));
+    });
+    variables.stream().filter(variable -> variable.getType() == NGVariableType.NUMBER).forEach(variable -> {
+      NumberNGVariable numberNGVariable = (NumberNGVariable) variable;
+      mapOfVariables.put(numberNGVariable.getName(),
+          resolveNumberParameterWithDefaultValue("variableValue", "stage", stageId, numberNGVariable.getValue(), false,
+              numberNGVariable.getDefaultValue()));
+    });
+
+    return mapOfVariables;
   }
 
-  private List<SecretNGVariable> getSecretVariables(IntegrationStageNode stageNode) {
-    if (isEmpty(stageNode.getVariables())) {
-      return Collections.emptyList();
+  private Map<String, SecretNGVariable> getSecretVariablesMap(List<NGVariable> variables) {
+    Map<String, SecretNGVariable> mapOfVariables = new HashMap<>();
+    if (isEmpty(variables)) {
+      return mapOfVariables;
     }
-
-    return stageNode.getVariables()
-        .stream()
-        .filter(variable -> variable.getType() == NGVariableType.SECRET)
+    return variables.stream()
+        .filter(customVariables -> customVariables.getType() == NGVariableType.SECRET)
         .map(customVariable -> (SecretNGVariable) customVariable)
-        .collect(Collectors.toList());
+        .collect(Collectors.toMap(ngVariable -> ngVariable.getName(), ngVariable -> ngVariable));
   }
 
   public Integer getStageMemoryRequest(List<ExecutionWrapperConfig> steps, String accountId) {
@@ -1036,6 +1080,7 @@ public class K8InitializeStepUtils {
       case SAVE_CACHE_GCS:
       case SECURITY:
       case GIT_CLONE:
+      case SSCA_ORCHESTRATION:
         return ((PluginCompatibleStep) ciStepInfo).getResources();
       default:
         throw new CIStageExecutionException(

@@ -29,7 +29,14 @@ public enum ChangeSourceType {
   @JsonProperty("K8sCluster") KUBERNETES("K8sCluster", ChangeCategory.INFRASTRUCTURE, ActivityType.KUBERNETES, false),
   @JsonProperty("HarnessCD")
   HARNESS_CD_CURRENT_GEN("HarnessCD", ChangeCategory.DEPLOYMENT, ActivityType.HARNESS_CD_CURRENT_GEN, false),
-  @JsonProperty("HarnessFF") HARNESS_FF("HarnessFF", ChangeCategory.FEATURE_FLAG, ActivityType.FEATURE_FLAG, true);
+  @JsonProperty("HarnessFF") HARNESS_FF("HarnessFF", ChangeCategory.FEATURE_FLAG, ActivityType.FEATURE_FLAG, true),
+  @JsonProperty("CustomDeploy")
+  CUSTOM_DEPLOY("CustomDeploy", ChangeCategory.DEPLOYMENT, ActivityType.CUSTOM_DEPLOY, false),
+  @JsonProperty("CustomIncident")
+  CUSTOM_INCIDENT("CustomIncident", ChangeCategory.ALERTS, ActivityType.CUSTOM_INCIDENT, false),
+  @JsonProperty("CustomInfrastructure")
+  CUSTOM_INFRA("CustomInfrastructure", ChangeCategory.INFRASTRUCTURE, ActivityType.CUSTOM_INFRA, false),
+  @JsonProperty("CustomFF") CUSTOM_FF("CustomFF", ChangeCategory.FEATURE_FLAG, ActivityType.CUSTOM_FF, false);
 
   private static Map<ActivityType, ChangeSourceType> ACTIVITY_TO_CHANGE_SOURCE_TYPE_MAP;
   private static Map<String, ChangeSourceType> STRING_TO_CHANGE_SOURCE_TYPE_MAP;

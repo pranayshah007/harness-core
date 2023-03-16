@@ -8,6 +8,7 @@
 package io.harness.ccm;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.audit.ResourceTypeConstants.BUDGET_GROUP;
 import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE;
 import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT;
 import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_SET;
@@ -36,6 +37,7 @@ import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
 import io.harness.ccm.audittrails.eventhandler.BudgetEventHandler;
+import io.harness.ccm.audittrails.eventhandler.BudgetGroupEventHandler;
 import io.harness.ccm.audittrails.eventhandler.CENextGenOutboxEventHandler;
 import io.harness.ccm.audittrails.eventhandler.CostCategoryEventHandler;
 import io.harness.ccm.audittrails.eventhandler.PerspectiveEventHandler;
@@ -48,6 +50,9 @@ import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.bigQuery.BigQueryServiceImpl;
 import io.harness.ccm.budgetGroup.service.BudgetGroupService;
 import io.harness.ccm.budgetGroup.service.BudgetGroupServiceImpl;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.clickHouse.ClickHouseServiceImpl;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.commons.service.impl.ClusterRecordServiceImpl;
 import io.harness.ccm.commons.service.impl.EntityMetadataServiceImpl;
@@ -100,30 +105,49 @@ import io.harness.ccm.serviceAccount.GcpServiceAccountService;
 import io.harness.ccm.serviceAccount.GcpServiceAccountServiceImpl;
 import io.harness.ccm.utils.AccountIdentifierLogInterceptor;
 import io.harness.ccm.utils.LogAccountIdentifier;
+import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingHistoryServiceImpl;
 import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
+import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingHistoryService;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.ccm.views.service.DataResponseService;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
 import io.harness.ccm.views.service.RuleExecutionService;
 import io.harness.ccm.views.service.RuleSetService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
+import io.harness.ccm.views.service.impl.BigQueryDataResponseServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
+import io.harness.ccm.views.service.impl.ClickHouseDataResponseServiceImpl;
+import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
 import io.harness.ccm.views.service.impl.GovernanceRuleServiceImpl;
 import io.harness.ccm.views.service.impl.RuleEnforcementServiceImpl;
 import io.harness.ccm.views.service.impl.RuleExecutionServiceImpl;
 import io.harness.ccm.views.service.impl.RuleSetServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
+import io.harness.configuration.DeployMode;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
+import io.harness.encryptors.CustomEncryptor;
+import io.harness.encryptors.Encryptors;
+import io.harness.encryptors.KmsEncryptor;
+import io.harness.encryptors.VaultEncryptor;
+import io.harness.encryptors.clients.AwsKmsEncryptor;
+import io.harness.encryptors.clients.AwsSecretsManagerEncryptor;
+import io.harness.encryptors.clients.AzureVaultEncryptor;
+import io.harness.encryptors.clients.GcpKmsEncryptor;
+import io.harness.encryptors.clients.GcpSecretsManagerEncryptor;
+import io.harness.encryptors.clients.HashicorpVaultEncryptor;
+import io.harness.encryptors.clients.LocalEncryptor;
+import io.harness.encryptors.clients.NoopCustomEncryptor;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.ff.FeatureFlagModule;
 import io.harness.filter.FilterType;
@@ -155,12 +179,18 @@ import io.harness.queryconverter.SQLConverterImpl;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ClientMode;
 import io.harness.secrets.SecretNGManagerClientModule;
+import io.harness.secrets.SecretsDelegateCacheHelperService;
+import io.harness.secrets.SecretsDelegateCacheService;
+import io.harness.secrets.SecretsDelegateCacheServiceImpl;
+import io.harness.secrets.noop.NoopSecretsDelegateCacheHelperService;
+import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.CENextGenModuleRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
+import io.harness.threading.ThreadPool;
 import io.harness.time.TimeModule;
 import io.harness.timescaledb.JooqModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
@@ -175,11 +205,16 @@ import io.harness.waiter.WaiterConfiguration;
 import io.harness.yaml.YamlSdkModule;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
+import software.wings.service.impl.security.EncryptionServiceImpl;
+import software.wings.service.impl.security.SecretDecryptionServiceImpl;
+import software.wings.service.intfc.security.EncryptionService;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -192,6 +227,8 @@ import io.dropwizard.jackson.Jackson;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
@@ -205,6 +242,14 @@ import ru.vyarus.guice.validator.ValidationModule;
 @OwnedBy(CE)
 public class CENextGenModule extends AbstractModule {
   private final CENextGenConfiguration configuration;
+
+  @Provides
+  @Singleton
+  @Named("asyncExecutor")
+  public ExecutorService asyncExecutor() {
+    return ThreadPool.create(10, 400, 1, TimeUnit.SECONDS,
+        new ThreadFactoryBuilder().setNameFormat("async-%d").setPriority(Thread.MIN_PRIORITY).build());
+  }
 
   public CENextGenModule(CENextGenConfiguration configuration) {
     this.configuration = configuration;
@@ -271,6 +316,27 @@ public class CENextGenModule extends AbstractModule {
       GcpConfig gcpConfig() {
         return configuration.getGcpConfig();
       }
+
+      @Provides
+      @Singleton
+      @Named("clickHouseConfig")
+      ClickHouseConfig clickHouseConfig() {
+        return configuration.getClickHouseConfig();
+      }
+
+      @Provides
+      @Singleton
+      @Named("deployMode")
+      DeployMode deployMode() {
+        return configuration.getDeployMode();
+      }
+
+      @Provides
+      @Singleton
+      @Named("isClickHouseEnabled")
+      boolean isClickHouseEnabled() {
+        return configuration.isClickHouseEnabled();
+      }
     });
 
     // Bind Services
@@ -280,7 +346,14 @@ public class CENextGenModule extends AbstractModule {
     bind(AwsEntityChangeEventService.class).to(AwsEntityChangeEventServiceImpl.class);
     bind(AzureEntityChangeEventService.class).to(AzureEntityChangeEventServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
+    bind(BusinessMappingHistoryService.class).to(BusinessMappingHistoryServiceImpl.class);
     bind(LicenseUsageInterface.class).to(LicenseUsageInterfaceImpl.class).in(Singleton.class);
+    bind(SecretDecryptionService.class).to(SecretDecryptionServiceImpl.class);
+    bind(EncryptionService.class).to(EncryptionServiceImpl.class);
+    bind(SecretsDelegateCacheService.class).to(SecretsDelegateCacheServiceImpl.class);
+    bind(SecretsDelegateCacheHelperService.class).to(NoopSecretsDelegateCacheHelperService.class);
+
+    bindSecretEncryptors();
 
     install(new CENextGenPersistenceModule());
     install(ExecutorModule.getInstance());
@@ -341,7 +414,6 @@ public class CENextGenModule extends AbstractModule {
     bind(CEGcpServiceAccountService.class).to(CEGcpServiceAccountServiceImpl.class);
     bind(GcpServiceAccountService.class).to(GcpServiceAccountServiceImpl.class);
     bind(GcpResourceManagerService.class).to(GcpResourceManagerServiceImpl.class);
-    bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
     bind(CEViewService.class).to(CEViewServiceImpl.class);
     bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(ClusterRecordService.class).to(ClusterRecordServiceImpl.class);
@@ -369,6 +441,16 @@ public class CENextGenModule extends AbstractModule {
     bind(CCMJiraHelper.class).to(CCMJiraHelperImpl.class);
     bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
     bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
+    bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
+
+    if (configuration.isClickHouseEnabled()) {
+      bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);
+      bind(DataResponseService.class).to(ClickHouseDataResponseServiceImpl.class);
+    } else {
+      bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
+      bind(DataResponseService.class).to(BigQueryDataResponseServiceImpl.class);
+    }
+
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
@@ -392,6 +474,64 @@ public class CENextGenModule extends AbstractModule {
     filterPropertiesMapper.addBinding(FilterType.RULEEXECUTION.toString()).to(ExecutionFilterPropertyMapper.class);
   }
 
+  private void bindSecretEncryptors() {
+    binder()
+        .bind(VaultEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.HASHICORP_VAULT_ENCRYPTOR.getName()))
+        .to(HashicorpVaultEncryptor.class);
+
+    binder()
+        .bind(VaultEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.AWS_VAULT_ENCRYPTOR.getName()))
+        .to(AwsSecretsManagerEncryptor.class);
+
+    binder()
+        .bind(VaultEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.AZURE_VAULT_ENCRYPTOR.getName()))
+        .to(AzureVaultEncryptor.class);
+
+    binder()
+        .bind(VaultEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.GCP_VAULT_ENCRYPTOR.getName()))
+        .to(GcpSecretsManagerEncryptor.class);
+
+    binder()
+        .bind(KmsEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.AWS_KMS_ENCRYPTOR.getName()))
+        .to(AwsKmsEncryptor.class);
+
+    binder()
+        .bind(KmsEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.GCP_KMS_ENCRYPTOR.getName()))
+        .to(GcpKmsEncryptor.class);
+
+    binder()
+        .bind(KmsEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.LOCAL_ENCRYPTOR.getName()))
+        .to(LocalEncryptor.class);
+
+    binder()
+        .bind(KmsEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.GLOBAL_GCP_KMS_ENCRYPTOR.getName()))
+        .to(GcpKmsEncryptor.class);
+
+    binder()
+        .bind(KmsEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.GLOBAL_AWS_KMS_ENCRYPTOR.getName()))
+        .to(AwsKmsEncryptor.class);
+    // Custom secret managers are not supported yet
+    binder()
+        .bind(CustomEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR.getName()))
+        .to(NoopCustomEncryptor.class);
+
+    binder()
+        .bind(CustomEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR_NG.getName()))
+        // Use ng encryptor
+        .to(NoopCustomEncryptor.class);
+  }
+
   private void bindAccountLogContextInterceptor() {
     AccountIdentifierLogInterceptor accountIdentifierLogInterceptor = new AccountIdentifierLogInterceptor();
     requestInjection(accountIdentifierLogInterceptor);
@@ -411,6 +551,7 @@ public class CENextGenModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(CLOUD_ASSET_GOVERNANCE_RULE_SET).to(RuleSetEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT)
         .to(RuleEnforcementEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(BUDGET_GROUP).to(BudgetGroupEventHandler.class);
   }
 
   private void registerDelegateTaskService() {

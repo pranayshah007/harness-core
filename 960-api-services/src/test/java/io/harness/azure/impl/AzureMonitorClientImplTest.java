@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.azure.AzureClient;
+import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.model.AzureConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.network.Http;
@@ -108,8 +109,12 @@ public class AzureMonitorClientImplTest extends CategoryTest {
     DateTime startDate = endDate.minusMinutes(1);
     String subscriptionId = "subscriptionId";
     String resourceId = "resourceId";
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+    AzureConfig azureConfig = AzureConfig.builder()
+                                  .clientId("clientId")
+                                  .tenantId("tenantId")
+                                  .key("key".toCharArray())
+                                  .azureEnvironmentType(AzureEnvironmentType.AZURE)
+                                  .build();
     ActivityLogs activityLogs = mock(ActivityLogs.class);
     WithEventDataStartTimeFilter query = mock(WithEventDataStartTimeFilter.class);
     WithEventDataEndFilter queryWithStartDate = mock(WithEventDataEndFilter.class);

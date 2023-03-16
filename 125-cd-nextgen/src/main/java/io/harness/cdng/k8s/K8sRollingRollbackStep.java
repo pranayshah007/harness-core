@@ -20,6 +20,8 @@ import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.K8sRollingRollbackBaseStepInfo.K8sRollingRollbackBaseStepInfoKeys;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.k8s.beans.K8sRollingReleaseOutput;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.EmptyPredicate;
@@ -134,6 +136,10 @@ public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> 
       rollbackRequestBuilder.releaseName(releaseOutput.getName());
     }
 
+    ManifestsOutcome manifestsOutcome = k8sStepHelper.resolveManifestsOutcome(ambiance);
+    cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
+    ManifestOutcome k8sManifestOutcome = k8sStepHelper.getK8sSupportedManifestOutcome(manifestsOutcome.values());
+
     rollbackRequestBuilder.commandName(K8S_DEPLOYMENT_ROLLING_ROLLBACK_COMMAND_NAME)
         .taskType(K8sTaskType.DEPLOYMENT_ROLLING_ROLLBACK)
         .timeoutIntervalInMin(
@@ -141,7 +147,7 @@ public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> 
         .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
         .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
         .pruningEnabled(pruningEnabled)
-        .useDeclarativeRollback(cdStepHelper.useDeclarativeRollback(accountId))
+        .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome))
         .build();
 
     return k8sStepHelper

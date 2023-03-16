@@ -22,6 +22,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.expressions.ExpressionEvaluatorProvider;
 import io.harness.engine.expressions.functors.NodeExecutionEntityType;
 import io.harness.exception.UnresolvedExpressionsException;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -30,6 +31,7 @@ import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.data.PmsOutcome;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.springdata.PersistenceUtils;
+import io.harness.springdata.TransactionHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -60,6 +62,9 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
   @Inject private ExpressionEvaluatorProvider expressionEvaluatorProvider;
   @Inject private Injector injector;
   @Inject private MongoTemplate mongoTemplate;
+  @Inject private PlanExpansionService planExpansionService;
+
+  @Inject private TransactionHelper transactionHelper;
 
   @Override
   public String resolve(Ambiance ambiance, RefObject refObject) {
@@ -81,18 +86,21 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
   @Override
   public String consumeInternal(Ambiance ambiance, Level producedBy, String name, String value, String groupName) {
     try {
-      OutcomeInstance instance =
-          mongoTemplate.insert(OutcomeInstance.builder()
-                                   .uuid(generateUuid())
-                                   .planExecutionId(ambiance.getPlanExecutionId())
-                                   .stageExecutionId(ambiance.getStageExecutionId())
-                                   .producedBy(producedBy)
-                                   .name(name)
-                                   .outcomeValue(PmsOutcome.parse(value))
-                                   .groupName(groupName)
-                                   .levelRuntimeIdIdx(ResolverUtils.prepareLevelRuntimeIdIdx(ambiance.getLevelsList()))
-                                   .build());
-      return instance.getUuid();
+      return transactionHelper.performTransaction(() -> {
+        OutcomeInstance instance = mongoTemplate.insert(
+            OutcomeInstance.builder()
+                .uuid(generateUuid())
+                .planExecutionId(ambiance.getPlanExecutionId())
+                .stageExecutionId(ambiance.getStageExecutionId())
+                .producedBy(producedBy)
+                .name(name)
+                .outcomeValue(PmsOutcome.parse(value))
+                .groupName(groupName)
+                .levelRuntimeIdIdx(ResolverUtils.prepareLevelRuntimeIdIdx(ambiance.getLevelsList()))
+                .build());
+        planExpansionService.addOutcomes(ambiance, name, instance.getOutcomeValue());
+        return instance.getUuid();
+      });
     } catch (DuplicateKeyException ex) {
       throw new OutcomeException(format("Outcome with name %s is already saved", name), ex);
     }

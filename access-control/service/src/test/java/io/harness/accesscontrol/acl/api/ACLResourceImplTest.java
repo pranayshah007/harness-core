@@ -17,12 +17,12 @@ import static org.mockito.Mockito.when;
 import io.harness.accesscontrol.AccessControlTestBase;
 import io.harness.accesscontrol.acl.ACLService;
 import io.harness.accesscontrol.acl.ResourceAttributeProvider;
-import io.harness.accesscontrol.commons.helpers.FeatureFlagHelperService;
 import io.harness.accesscontrol.preference.services.AccessControlPreferenceService;
 import io.harness.accesscontrol.roleassignments.privileged.PrivilegedRoleAssignmentService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 
@@ -34,7 +34,7 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.PL)
 public class ACLResourceImplTest extends AccessControlTestBase {
   private ACLResourceImpl aclResource;
-  @Mock FeatureFlagHelperService featureFlagHelperService;
+  @Mock FeatureFlagService featureFlagService;
 
   @Before
   public void setup() {
@@ -42,9 +42,9 @@ public class ACLResourceImplTest extends AccessControlTestBase {
     AccessControlPreferenceService accessControlPreferenceService = mock(AccessControlPreferenceService.class);
     PrivilegedRoleAssignmentService privilegedRoleAssignmentService = mock(PrivilegedRoleAssignmentService.class);
     ResourceAttributeProvider resourceAttributeProvider = mock(ResourceAttributeProvider.class);
-    when(featureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
+    when(featureFlagService.isEnabled(any(), any())).thenReturn(false);
     aclResource = new ACLResourceImpl(aclService, accessControlPreferenceService, privilegedRoleAssignmentService,
-        resourceAttributeProvider, featureFlagHelperService);
+        resourceAttributeProvider, featureFlagService);
   }
 
   @Test

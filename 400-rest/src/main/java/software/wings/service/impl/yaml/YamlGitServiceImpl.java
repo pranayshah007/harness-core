@@ -8,7 +8,6 @@
 package software.wings.service.impl.yaml;
 
 import static io.harness.beans.FeatureName.NOTIFY_GIT_SYNC_ERRORS_PER_APP;
-import static io.harness.beans.FeatureName.REMOVE_HINT_YAML_GIT_COMMITS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -692,7 +691,7 @@ public class YamlGitServiceImpl implements YamlGitService {
           new GitCommandCallback(accountId, yamlChangeSetId, GitCommandType.COMMIT_AND_PUSH,
               yamlGitConfig.getGitConnectorId(), yamlGitConfig.getRepositoryName(), yamlGitConfig.getBranchName()),
           waitId);
-      final String taskId = delegateService.queueTask(delegateTask);
+      final String taskId = delegateService.queueTaskV2(delegateTask);
       try (ProcessTimeLogContext ignore4 = new ProcessTimeLogContext(stopwatch.elapsed(MILLISECONDS), OVERRIDE_ERROR)) {
         log.info(GIT_YAML_LOG_PREFIX
                 + "Successfully queued harness->git change set for processing with delegate taskId=[{}]",
@@ -1024,7 +1023,7 @@ public class YamlGitServiceImpl implements YamlGitService {
           new GitCommandCallback(accountId, yamlChangeSet.getUuid(), GitCommandType.DIFF,
               yamlGitConfig.getGitConnectorId(), yamlGitConfig.getRepositoryName(), yamlGitConfig.getBranchName()),
           waitId);
-      final String taskId = delegateService.queueTask(delegateTask);
+      final String taskId = delegateService.queueTaskV2(delegateTask);
       try (ProcessTimeLogContext ignore2 = new ProcessTimeLogContext(stopwatch.elapsed(MILLISECONDS), OVERRIDE_ERROR)) {
         log.info(GIT_YAML_LOG_PREFIX
                 + "Successfully queued git->harness change set for processing with delegate taskId=[{}]",
@@ -1405,12 +1404,6 @@ public class YamlGitServiceImpl implements YamlGitService {
   private GitCommit fetchLastProcessedGitCommitId(String accountId, List<String> yamlGitConfigIds) {
     // After MultiGit support gitCommit record would have list of yamlGitConfigs.
 
-    FindOptions findOptions = new FindOptions();
-    if (featureFlagService.isNotEnabled(REMOVE_HINT_YAML_GIT_COMMITS, accountId)) {
-      findOptions.hint(
-          BasicDBUtils.getIndexObject(GitCommit.mongoIndexes(), "gitCommitAccountIdStatusYgcLastUpdatedIdx"));
-    }
-
     GitCommit gitCommit = wingsPersistence.createQuery(GitCommit.class)
                               .filter(GitCommitKeys.accountId, accountId)
                               .field(GitCommitKeys.status)
@@ -1418,7 +1411,7 @@ public class YamlGitServiceImpl implements YamlGitService {
                               .field(GitCommitKeys.yamlGitConfigIds)
                               .hasAnyOf(yamlGitConfigIds)
                               .order("-lastUpdatedAt")
-                              .get(findOptions);
+                              .get();
 
     // This is to handle the old git commit records which doesn't have yamlGitConfigId
     if (gitCommit == null) {

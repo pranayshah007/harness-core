@@ -23,11 +23,14 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
+import io.harness.beans.request.GitFileBatchRequest;
 import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.GitFileRequestV2;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
@@ -38,6 +41,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.delegate.task.scm.GitFileTaskResponseData;
+import io.harness.delegate.task.scm.ScmBatchGetFileTaskParams;
 import io.harness.delegate.task.scm.ScmGitFileTaskParams;
 import io.harness.delegate.task.scm.ScmGitRefTaskResponseData;
 import io.harness.delegate.task.scm.ScmPRTaskResponseData;
@@ -68,8 +72,11 @@ import io.harness.service.DelegateGrpcClientWrapper;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -142,7 +149,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = HARI)
   @Category(UnitTests.class)
   public void listBranchesForRepoByConnectorTest() {
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
             ScmGitRefTaskResponseData.builder().listBranchesResponse(listBranchesResponse.toByteArray()).build());
     final List<String> branches = scmDelegateFacilitatorService.listBranchesForRepoByConnector(accountIdentifier,
@@ -158,7 +165,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
     final ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
         ArgumentCaptor.forClass(DelegateTaskRequest.class);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(GitFileTaskResponseData.builder().fileContent(fileContent.toByteArray()).build());
     FileContent gitFileContent = scmDelegateFacilitatorService.getFile(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName, branch, filePath, null);
@@ -168,7 +175,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName, branch, filePath, commitId);
     assertThat(gitFileContent).isEqualTo(fileContent);
 
-    verify(delegateGrpcClientWrapper, times(2)).executeSyncTask(delegateTaskRequestArgumentCaptor.capture());
+    verify(delegateGrpcClientWrapper, times(2)).executeSyncTaskV2(delegateTaskRequestArgumentCaptor.capture());
 
     List<DelegateTaskRequest> delegateTaskRequestList = delegateTaskRequestArgumentCaptor.getAllValues();
 
@@ -190,7 +197,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
   public void getFileTest() {
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(GitFileTaskResponseData.builder().fileContent(fileContent.toByteArray()).build());
     final GitFileContent gitFileContent = scmDelegateFacilitatorService.getFileContent(
         yamlGitConfigIdentifier, accountIdentifier, orgIdentifier, projectIdentifier, filePath, branch, null);
@@ -215,7 +222,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
   public void getListUserRepos() {
     GetUserReposResponse getUserReposResponse =
         GetUserReposResponse.newBuilder().addRepos(Repository.newBuilder().setName(repoName).build()).build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
             ScmGitRefTaskResponseData.builder().getUserReposResponse(getUserReposResponse.toByteArray()).build());
     getUserReposResponse = scmDelegateFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier,
@@ -232,7 +239,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
                                                                           .addAllBranches(Arrays.asList(branch))
                                                                           .setDefaultBranch(defaultBranch)
                                                                           .build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ScmGitRefTaskResponseData.builder()
                         .getListBranchesWithDefaultResponse(listBranchesWithDefaultResponse.toByteArray())
                         .build());
@@ -251,7 +258,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
         GetUserRepoResponse.newBuilder()
             .setRepo(Repository.newBuilder().setName(repoName).setBranch(defaultBranch).build())
             .build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ScmGitRefTaskResponseData.builder().getUserRepoResponse(getUserRepoResponse.toByteArray()).build());
     getUserRepoResponse = scmDelegateFacilitatorService.getRepoDetails(
         accountIdentifier, orgIdentifier, projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig());
@@ -266,7 +273,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
     String errorMessage = "Repo not exist";
     CreateBranchResponse createBranchResponse =
         CreateBranchResponse.newBuilder().setStatus(404).setError(errorMessage).build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
             ScmGitRefTaskResponseData.builder().createBranchResponse(createBranchResponse.toByteArray()).build());
     createBranchResponse = scmDelegateFacilitatorService.createNewBranch(
@@ -281,7 +288,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
   public void testCreateFile() {
     CreateFileResponse createFileResponse =
         CreateFileResponse.newBuilder().setStatus(200).setCommitId(commitId).build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ScmPushTaskResponseData.builder().createFileResponse(createFileResponse.toByteArray()).build());
     CreateGitFileRequestDTO createGitFileRequestDTO =
         CreateGitFileRequestDTO.builder()
@@ -302,7 +309,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
   public void testUpdateFile() {
     UpdateFileResponse updateFileResponse =
         UpdateFileResponse.newBuilder().setStatus(200).setCommitId(commitId).build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ScmPushTaskResponseData.builder().updateFileResponse(updateFileResponse.toByteArray()).build());
     UpdateGitFileRequestDTO updateGitFileRequestDTO =
         UpdateGitFileRequestDTO.builder()
@@ -324,7 +331,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
   public void testGetLatestCommitOnFile() {
     GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
         GetLatestCommitOnFileResponse.newBuilder().setCommitId(commitId).build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ScmGitRefTaskResponseData.builder()
                         .getLatestCommitOnFileResponse(getLatestCommitOnFileResponse.toByteArray())
                         .build());
@@ -349,7 +356,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
   @Category(UnitTests.class)
   public void testCreatePullRequest() {
     CreatePRResponse mockedCreatePRResponse = CreatePRResponse.newBuilder().setStatus(200).setNumber(prNumber).build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ScmPRTaskResponseData.builder().createPRResponse(mockedCreatePRResponse).build());
     CreatePRResponse createPRResponse = scmDelegateFacilitatorService.createPullRequest(
         getDefaultScope(), connectorRef, repoName, sourceBranch, targetBranch, title);
@@ -370,7 +377,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
                                                                                .filepath(filePath)
                                                                                .build())
                                                           .build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(gitFileTaskResponseData);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(gitFileTaskResponseData);
     GitFileRequest gitFileRequest = GitFileRequest.builder().filepath(filePath).branch(branch).build();
     GitFileResponse gitFileResponse =
         scmDelegateFacilitatorService.getFile(scope, (ScmConnector) connectorInfo.getConnectorConfig(), gitFileRequest);
@@ -381,11 +388,108 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
     assertThat(gitFileResponse.getError()).isEqualTo(null);
   }
 
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetScmBatchGetFileTaskParams() {
+    GitFileRequestV2 gitFileRequest1 = GitFileRequestV2.builder()
+                                           .connectorRef("connector-1")
+                                           .scope(getScope(accountIdentifier, orgIdentifier, projectIdentifier))
+                                           .scmConnector(githubConnector)
+                                           .build();
+    GitFileRequestV2 gitFileRequest2 = GitFileRequestV2.builder()
+                                           .connectorRef("connector-2")
+                                           .scope(getScope(accountIdentifier, orgIdentifier, projectIdentifier))
+                                           .scmConnector(githubConnector)
+                                           .build();
+    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> getBatchFileRequestIdentifierGitFileRequestV2Map =
+        new HashMap<>();
+    GitFileBatchRequest gitFileBatchRequest =
+        GitFileBatchRequest.builder()
+            .accountIdentifier(accountIdentifier)
+            .getBatchFileRequestIdentifierGitFileRequestV2Map(getBatchFileRequestIdentifierGitFileRequestV2Map)
+            .build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest1);
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest2);
+    ScmBatchGetFileTaskParams responseParams =
+        scmDelegateFacilitatorService.getScmBatchGetFileTaskParams(gitFileBatchRequest);
+    assertThat(responseParams.getGetFileTaskParamsPerConnectorList().size()).isEqualTo(2);
+
+    GitFileRequestV2 gitFileRequest3 = GitFileRequestV2.builder()
+                                           .connectorRef("connector-2")
+                                           .scope(getScope(accountIdentifier, orgIdentifier, projectIdentifier))
+                                           .scmConnector(githubConnector)
+                                           .build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest3);
+    responseParams = scmDelegateFacilitatorService.getScmBatchGetFileTaskParams(gitFileBatchRequest);
+    assertThat(responseParams.getGetFileTaskParamsPerConnectorList().size()).isEqualTo(2);
+
+    GitFileRequestV2 gitFileRequest4 = GitFileRequestV2.builder()
+                                           .connectorRef("connector-2")
+                                           .scope(getScope(null, orgIdentifier, projectIdentifier))
+                                           .scmConnector(githubConnector)
+                                           .build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest4);
+    responseParams = scmDelegateFacilitatorService.getScmBatchGetFileTaskParams(gitFileBatchRequest);
+    assertThat(responseParams.getGetFileTaskParamsPerConnectorList().size()).isEqualTo(3);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetEligibleScopeOfDelegates() {
+    GitFileRequestV2 gitFileRequest1 =
+        GitFileRequestV2.builder().scope(getScope(accountIdentifier, orgIdentifier, projectIdentifier)).build();
+    GitFileRequestV2 gitFileRequest2 =
+        GitFileRequestV2.builder().scope(getScope(accountIdentifier, orgIdentifier, projectIdentifier)).build();
+    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> getBatchFileRequestIdentifierGitFileRequestV2Map =
+        new HashMap<>();
+    GitFileBatchRequest gitFileBatchRequest =
+        GitFileBatchRequest.builder()
+            .accountIdentifier(accountIdentifier)
+            .getBatchFileRequestIdentifierGitFileRequestV2Map(getBatchFileRequestIdentifierGitFileRequestV2Map)
+            .build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest1);
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest2);
+    Scope scope = scmDelegateFacilitatorService.getEligibleScopeOfDelegates(gitFileBatchRequest);
+    assertThat(scope.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(scope.getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(scope.getProjectIdentifier()).isEqualTo(projectIdentifier);
+
+    GitFileRequestV2 gitFileRequest3 =
+        GitFileRequestV2.builder().scope(getScope(accountIdentifier, orgIdentifier, null)).build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest3);
+    scope = scmDelegateFacilitatorService.getEligibleScopeOfDelegates(gitFileBatchRequest);
+    assertThat(scope.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(scope.getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(scope.getProjectIdentifier()).isEqualTo(null);
+
+    GitFileRequestV2 gitFileRequest4 =
+        GitFileRequestV2.builder().scope(getScope(accountIdentifier, null, null)).build();
+    getBatchFileRequestIdentifierGitFileRequestV2Map.put(getRandomRequestIdentifier(), gitFileRequest4);
+    scope = scmDelegateFacilitatorService.getEligibleScopeOfDelegates(gitFileBatchRequest);
+    assertThat(scope.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(scope.getOrgIdentifier()).isEqualTo(null);
+    assertThat(scope.getProjectIdentifier()).isEqualTo(null);
+  }
+
   private Scope getDefaultScope() {
     return Scope.builder()
         .accountIdentifier(accountIdentifier)
         .projectIdentifier(projectIdentifier)
         .orgIdentifier(orgIdentifier)
         .build();
+  }
+
+  private Scope getScope(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return Scope.builder()
+        .accountIdentifier(accountIdentifier)
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .build();
+  }
+
+  private GetBatchFileRequestIdentifier getRandomRequestIdentifier() {
+    return GetBatchFileRequestIdentifier.builder().identifier(UUID.randomUUID().toString()).build();
   }
 }

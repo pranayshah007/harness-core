@@ -74,6 +74,7 @@ public class UserEntityCrudStreamListener implements MessageListener {
                                  .name(stripToNull(userDTO.getName()))
                                  .email(stripToNull(userDTO.getEmail()))
                                  .locked(userDTO.getLocked())
+                                 .twoFactorAuthenticationEnabled(userDTO.getIsTwoFactorAuthenticationEnabled())
                                  .build();
       return ngUserService.updateUserMetadata(user);
     }

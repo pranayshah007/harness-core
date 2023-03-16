@@ -80,7 +80,7 @@ public class ArtifactCleanupServiceAsyncImplTest extends WingsBaseTest {
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
   public void verifyCustomCleanup() {
-    when(delegateService.queueTask(any())).thenReturn("ID");
+    when(delegateService.queueTaskV2(any())).thenReturn("ID");
 
     artifactCleanupServiceAsync.cleanupArtifacts(customArtifactStream, null);
 

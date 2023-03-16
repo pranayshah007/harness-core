@@ -7,8 +7,11 @@
 
 package io.harness.connector.validator;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
@@ -29,11 +32,14 @@ public class JiraConnectorValidator extends AbstractConnectorValidator {
   public <T extends ConnectorConfigDTO> TaskParameters getTaskParameters(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     JiraConnectorDTO jiraConnectorDTO = (JiraConnectorDTO) connectorConfig;
-
+    DecryptableEntity decryptableEntity =
+        (isNull(jiraConnectorDTO.getAuth()) || isNull(jiraConnectorDTO.getAuth().getCredentials()))
+        ? jiraConnectorDTO
+        : jiraConnectorDTO.getAuth().getCredentials();
     return JiraConnectionTaskParams.builder()
         .jiraConnectorDTO(jiraConnectorDTO)
         .encryptionDetails(
-            super.getEncryptionDetail(jiraConnectorDTO, accountIdentifier, orgIdentifier, projectIdentifier))
+            super.getEncryptionDetail(decryptableEntity, accountIdentifier, orgIdentifier, projectIdentifier))
         .build();
   }
 

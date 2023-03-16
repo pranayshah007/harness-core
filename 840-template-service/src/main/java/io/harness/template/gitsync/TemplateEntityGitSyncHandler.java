@@ -10,8 +10,8 @@ package io.harness.template.gitsync;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.beans.NGTemplateReference;
-import io.harness.common.EntityReference;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
@@ -85,7 +85,7 @@ public class TemplateEntityGitSyncHandler extends AbstractGitSdkEntityHandler<Te
   @Override
   public NGTemplateConfig save(String accountIdentifier, String yaml) {
     TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(accountIdentifier, yaml);
-    TemplateEntity createdTemplate = templateService.create(templateEntity, false, "");
+    TemplateEntity createdTemplate = templateService.create(templateEntity, false, "", false);
     return NGTemplateDtoMapper.toDTO(createdTemplate);
   }
 

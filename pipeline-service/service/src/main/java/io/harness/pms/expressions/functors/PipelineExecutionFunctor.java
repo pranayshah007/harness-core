@@ -10,6 +10,7 @@ package io.harness.pms.expressions.functors;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.expressions.OrchestrationConstants;
 import io.harness.expression.LateBindingValue;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -53,7 +54,9 @@ public class PipelineExecutionFunctor implements LateBindingValue {
 
   private void addExecutionUrlMap(Map<String, Object> jsonObject) {
     Map<String, String> executionMap = new HashMap<>();
-    executionMap.put("url", pipelineExpressionHelper.generateUrl(ambiance));
+    String pipelineExecutionUrl = pipelineExpressionHelper.generateUrl(ambiance);
+    executionMap.put("url", pipelineExecutionUrl);
     jsonObject.put("execution", executionMap);
+    jsonObject.put(OrchestrationConstants.EXECUTION_URL, pipelineExecutionUrl);
   }
 }

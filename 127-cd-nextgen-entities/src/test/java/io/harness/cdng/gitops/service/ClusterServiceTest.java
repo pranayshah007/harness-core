@@ -9,6 +9,7 @@ package io.harness.cdng.gitops.service;
 
 import static io.harness.rule.OwnerRule.MANAVJOT;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.util.Arrays.asList;
@@ -88,13 +89,11 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
     clusterService.deleteFromAllEnv(ACCOUNT_ID, ORG_ID, PROJECT_ID, "a1");
 
     assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env1"))
-                   .getContent()
                    .stream()
                    .map(Cluster::getClusterRef)
                    .collect(Collectors.toSet()))
         .containsExactlyInAnyOrder("a2", "a3");
     assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env2"))
-                   .getContent()
                    .stream()
                    .map(Cluster::getClusterRef)
                    .collect(Collectors.toSet()))
@@ -114,20 +113,17 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
     clusterService.deleteFromAllEnv(ACCOUNT_ID, "", "", "a1");
 
     assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env1"))
-                   .getContent()
                    .stream()
                    .map(Cluster::getClusterRef)
                    .collect(Collectors.toSet()))
         .containsExactlyInAnyOrder("a2", "account.a3");
     assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env2"))
-                   .getContent()
                    .stream()
                    .map(Cluster::getClusterRef)
                    .collect(Collectors.toSet()))
         .containsExactlyInAnyOrder("a2", "account.a3");
 
     assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env3"))
-                   .getContent()
                    .stream()
                    .map(Cluster::getClusterRef)
                    .collect(Collectors.toSet()))
@@ -145,10 +141,8 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
 
     clusterService.deleteAllFromEnv(ACCOUNT_ID, ORG_ID, PROJECT_ID, "env2");
 
-    assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env1")).getTotalElements())
-        .isEqualTo(3);
-    assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env2")).getTotalElements())
-        .isEqualTo(0);
+    assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env1")).size()).isEqualTo(3);
+    assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env2")).size()).isEqualTo(0);
   }
 
   @Test
@@ -162,8 +156,7 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
 
     clusterService.deleteAllFromProj(ACCOUNT_ID, ORG_ID, PROJECT_ID);
 
-    assertThat(
-        clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env1", "env2")).getTotalElements())
+    assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env1", "env2")).size())
         .isEqualTo(0);
   }
 
@@ -177,8 +170,7 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
 
     clusterService.bulkDelete(clusterList, ACCOUNT_ID, ORG_ID, PROJECT_ID, "env1");
 
-    assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env1")).getTotalElements())
-        .isEqualTo(0);
+    assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env1")).size()).isEqualTo(0);
   }
 
   @Test
@@ -221,6 +213,30 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
     assertThat(page.getContent().size()).isEqualTo(4L);
   }
 
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void shouldListClustersFromAllScopes() {
+    clusterService.bulkCreate(asList(getClusterForEnv("env1", "t1", ORG_ID, PROJECT_ID),
+        getClusterForEnv("env2", "t1", ORG_ID, null), getClusterForEnv("env3", "t1", null, null)));
+
+    List<Cluster> envs = clusterService.listAcrossEnv(0, 100, ACCOUNT_ID, ORG_ID, PROJECT_ID, asList("env1"));
+    assertThat(envs).hasSize(1);
+
+    envs = clusterService.listAcrossEnv(0, 100, ACCOUNT_ID, ORG_ID, PROJECT_ID, asList("env1", "env2"));
+    assertThat(envs).hasSize(1);
+
+    envs = clusterService.listAcrossEnv(0, 100, ACCOUNT_ID, ORG_ID, PROJECT_ID, asList("env1", "org.env2"));
+    assertThat(envs).hasSize(2);
+
+    envs = clusterService.listAcrossEnv(0, 100, ACCOUNT_ID, ORG_ID, PROJECT_ID, asList("env1", "org.env2", "env3"));
+    assertThat(envs).hasSize(2);
+
+    envs = clusterService.listAcrossEnv(
+        0, 100, ACCOUNT_ID, ORG_ID, PROJECT_ID, asList("env1", "org.env2", "account.env3"));
+    assertThat(envs).hasSize(3);
+  }
+
   private Cluster getCluster(String uuid) {
     return Cluster.builder()
         .accountId(ACCOUNT_ID)
@@ -236,6 +252,16 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
         .accountId(ACCOUNT_ID)
         .orgIdentifier(ORG_ID)
         .projectIdentifier(PROJECT_ID)
+        .envRef(envRef)
+        .clusterRef(uuid)
+        .build();
+  }
+
+  private Cluster getClusterForEnv(String envRef, String uuid, String orgId, String projectId) {
+    return Cluster.builder()
+        .accountId(ACCOUNT_ID)
+        .orgIdentifier(orgId)
+        .projectIdentifier(projectId)
         .envRef(envRef)
         .clusterRef(uuid)
         .build();

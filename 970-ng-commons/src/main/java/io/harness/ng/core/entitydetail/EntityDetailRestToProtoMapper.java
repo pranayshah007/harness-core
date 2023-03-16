@@ -22,6 +22,7 @@ import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.event.EntityToEntityProtoHelper;
@@ -46,11 +47,12 @@ public class EntityDetailRestToProtoMapper {
     } else if (entityDetail.getEntityRef() instanceof InputSetReference) {
       return entityDetailProtoBuilder.setInputSetRef(createInputSetRef((InputSetReference) entityDetail.getEntityRef()))
           .build();
-    } else {
+    } else if (entityDetail.getEntityRef() instanceof NGTemplateReference) {
       return entityDetailProtoBuilder
           .setTemplateRef(createTemplateRef((NGTemplateReference) entityDetail.getEntityRef()))
           .build();
     }
+    throw new InvalidRequestException("Entity detail reference " + entityDetail.getEntityRef() + " is not handled");
   }
 
   private IdentifierRefProtoDTO createIdentifierRef(IdentifierRef identifierRef) {

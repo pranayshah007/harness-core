@@ -39,6 +39,7 @@ import dev.morphia.mapping.MappedClass;
 import dev.morphia.mapping.Mapper;
 import dev.morphia.query.Criteria;
 import dev.morphia.query.FieldEnd;
+import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,12 +70,16 @@ public class PageController {
     // when pageRequest has SKIPCOUNT option, we won't do count query to db.
     boolean hasSkipCount = req.getOptions() != null && req.getOptions().contains(PageRequest.Option.SKIPCOUNT);
     if (req.getOptions() == null || req.getOptions().contains(PageRequest.Option.LIST) || hasSkipCount) {
-      q.offset(req.getStart());
+      FindOptions findOptions = new FindOptions();
+      findOptions.skip(req.getStart());
 
       int limit = PageRequest.UNLIMITED.equals(req.getLimit()) ? PageRequest.DEFAULT_UNLIMITED : req.getPageSize();
-      q.limit(limit);
+      findOptions.limit(limit);
+      if (req.getIndexHint() != null) {
+        findOptions.hint(req.getIndexHint());
+      }
 
-      List<T> list = q.asList();
+      List<T> list = q.asList(findOptions);
       response.setResponse(list);
 
       if (req.getOptions() == null || (req.getOptions().contains(PageRequest.Option.COUNT) && !hasSkipCount)) {

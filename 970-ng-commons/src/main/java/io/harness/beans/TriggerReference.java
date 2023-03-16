@@ -10,7 +10,6 @@ package io.harness.beans;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.common.EntityReference;
 import io.harness.common.EntityReferenceHelper;
 
 import java.util.Arrays;

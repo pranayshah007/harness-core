@@ -21,4 +21,5 @@ public interface EngineExpressionService {
   String renderExpression(Ambiance ambiance, String expression, ExpressionMode mode);
 
   Object evaluateExpression(Ambiance ambiance, String expression);
+  Object evaluateExpression(Ambiance ambiance, String expression, ExpressionMode mode);
 }

@@ -28,6 +28,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.nexus.NexusRequest;
 import io.harness.nexus.service.NexusRegistryService;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.utils.RepositoryFormat;
 
@@ -60,6 +61,7 @@ public class NexusArtifactTaskHandlerTest extends CategoryTest {
   private static Integer MAX_NO_OF_TAGS_PER_IMAGE = 10000;
 
   @Mock NexusRegistryService nexusRegistryService;
+  @Mock SecretDecryptionService secretDecryptionService;
   @InjectMocks NexusArtifactTaskHandler nexusArtifactService;
 
   @Test
@@ -76,7 +78,7 @@ public class NexusArtifactTaskHandlerTest extends CategoryTest {
     doReturn(buildDetailsInternal)
         .when(nexusRegistryService)
         .verifyBuildNumber(nexusInternalConfig, REPO_NAME, null, IMAGE_NAME, RepositoryFormat.docker.name(), IMAGE_TAG,
-            null, null, null, null, null, null);
+            null, null, null, null, null, null, Integer.MAX_VALUE);
 
     ArtifactTaskExecutionResponse lastSuccessfulBuild = nexusArtifactService.getLastSuccessfulBuild(sourceAttributes);
     assertThat(lastSuccessfulBuild).isNotNull();
@@ -105,7 +107,7 @@ public class NexusArtifactTaskHandlerTest extends CategoryTest {
     doReturn(buildDetailsInternal)
         .when(nexusRegistryService)
         .getLastSuccessfulBuildFromRegex(nexusInternalConfig, REPO_NAME, null, IMAGE_NAME,
-            RepositoryFormat.docker.name(), IMAGE_TAG_REGEX, null, null, null, null, null, null);
+            RepositoryFormat.docker.name(), IMAGE_TAG_REGEX, null, null, null, null, null, null, Integer.MAX_VALUE);
 
     ArtifactTaskExecutionResponse lastSuccessfulBuild = nexusArtifactService.getLastSuccessfulBuild(sourceAttributes);
     assertThat(lastSuccessfulBuild).isNotNull();
@@ -133,8 +135,8 @@ public class NexusArtifactTaskHandlerTest extends CategoryTest {
 
     doReturn(Lists.newArrayList(buildDetailsInternal))
         .when(nexusRegistryService)
-        .getBuilds(nexusInternalConfig, REPO_NAME, null, IMAGE_NAME, RepositoryFormat.docker.name(),
-            MAX_NO_OF_TAGS_PER_IMAGE, null, null, null, null, null, null);
+        .getBuilds(nexusInternalConfig, REPO_NAME, null, IMAGE_NAME, RepositoryFormat.docker.name(), null, null, null,
+            null, null, null, Integer.MAX_VALUE);
 
     ArtifactTaskExecutionResponse lastSuccessfulBuild = nexusArtifactService.getBuilds(sourceAttributes);
     assertThat(lastSuccessfulBuild).isNotNull();
@@ -241,6 +243,7 @@ public class NexusArtifactTaskHandlerTest extends CategoryTest {
         .repositoryPort(port)
         .artifactRepositoryUrl(dockerRepoServer)
         .nexusConnectorDTO(nexusConnectorDTO)
+        .maxBuilds(Integer.MAX_VALUE)
         .build();
   }
 

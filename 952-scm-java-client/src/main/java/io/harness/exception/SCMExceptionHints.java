@@ -11,5 +11,6 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class SCMExceptionHints {
-  public static final String INVALID_CREDENTIALS = "Please check your credentials.";
+  public static final String INVALID_CREDENTIALS = "Invalid Repository or wrong credentials.";
+  public static final String SCM_GIT_PROVIDER_ERROR = "Unable to process the file/folder using SCM service.";
 }

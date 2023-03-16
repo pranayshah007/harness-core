@@ -70,7 +70,7 @@ public class K8sServiceAccountDelegateTaskClientTest extends CategoryTest {
              eq(inClusterDelegateK8sConfig()), eq(ACCOUNT_IDENTIFIER), eq(ORG_IDENTIFIER), eq(PROJECT_IDENTIFIER)))
         .thenReturn(null);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ErrorNotifyResponseData.builder().errorMessage(errorMessage).build());
 
     assertThatThrownBy(()
@@ -118,7 +118,7 @@ public class K8sServiceAccountDelegateTaskClientTest extends CategoryTest {
   }
 
   private KubernetesConnectionTaskParams assertAndReturnTaskParams() {
-    when(delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequestArgumentCaptor.capture()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequestArgumentCaptor.capture()))
         .thenReturn(K8sServiceAccountInfoResponse.builder().username(USERNAME).build());
 
     final DelegateResponseData response = delegateTaskClient.fetchServiceAccount(

@@ -35,7 +35,6 @@ import static software.wings.security.PermissionAttribute.Action.READ;
 import static software.wings.security.PermissionAttribute.Action.UPDATE;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_APPLICATIONS;
 
-import static java.util.Base64.getUrlDecoder;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -122,7 +121,6 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import dev.morphia.Key;
 import java.io.UnsupportedEncodingException;
-import java.util.Base64.Decoder;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -132,6 +130,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
@@ -396,19 +395,6 @@ public class AuthServiceImpl implements AuthService {
       for (String appId : appIds) {
         authorize(accountId, appId, entityId, user, permissionAttributes, false, false);
       }
-    }
-  }
-
-  @Override
-  public void validateDelegateToken(String accountId, String tokenString, String delegateId, String delegateTokenName,
-      String agentMtlAuthority, boolean shouldSetTokenNameInGlobalContext) {
-    Decoder decoder = getUrlDecoder();
-    final String authHeader = new String(decoder.decode(tokenString.split("\\.")[0]));
-    if (authHeader.contains("HS256")) {
-      delegateTokenAuthenticator.validateDelegateAuth2Token(accountId, tokenString, agentMtlAuthority);
-    } else {
-      delegateTokenAuthenticator.validateDelegateToken(
-          accountId, tokenString, delegateId, delegateTokenName, agentMtlAuthority, shouldSetTokenNameInGlobalContext);
     }
   }
 
@@ -917,14 +903,15 @@ public class AuthServiceImpl implements AuthService {
       log.info("Generating bearer token");
       AuthToken authToken = new AuthToken(
           user.getLastAccountId(), user.getUuid(), configuration.getPortal().getAuthTokenExpiryInMillis());
-      authToken.setJwtToken(generateJWTSecret(authToken, user.getEmail(), user.getName()));
+      authToken.setJwtToken(UUID.randomUUID().toString());
       saveAuthToken(authToken);
       boolean isFirstLogin = user.getLastLogin() == 0L;
       user.setLastLogin(System.currentTimeMillis());
       userService.update(user);
 
       userService.evictUserFromCache(user.getUuid());
-      user.setToken(authToken.getJwtToken());
+      user.setToken(
+          generateJWTSecret(authToken, user.getEmail(), user.getName())); // this is used by UI to get resource.token
 
       user.setFirstLogin(isFirstLogin);
       if (!user.getEmail().endsWith(Keys.HARNESS_EMAIL)) {

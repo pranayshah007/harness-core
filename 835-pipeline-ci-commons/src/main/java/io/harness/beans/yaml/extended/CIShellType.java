@@ -7,11 +7,15 @@
 
 package io.harness.beans.yaml.extended;
 
+import static io.harness.pms.yaml.YamlUtils.NULL_STR;
+
 import io.harness.annotation.RecasterAlias;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Arrays;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.data.annotation.TypeAlias;
 
 @TypeAlias("ciShellType")
@@ -20,17 +24,23 @@ public enum CIShellType {
   @JsonProperty("Sh") SH("Sh"),
   @JsonProperty("Bash") BASH("Bash"),
   @JsonProperty("Powershell") POWERSHELL("Powershell"),
-  @JsonProperty("Pwsh") PWSH("Pwsh");
+  @JsonProperty("Pwsh") PWSH("Pwsh"),
+  @JsonProperty("Python") PYTHON("Python");
   private final String yamlName;
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static CIShellType getShellType(@JsonProperty("shellType") String yamlName) {
+    if (Strings.isBlank(yamlName) || yamlName.equals(NULL_STR)) {
+      return SH;
+    }
+
     for (CIShellType shellType : CIShellType.values()) {
       if (shellType.yamlName.equalsIgnoreCase(yamlName)) {
         return shellType;
       }
     }
-    throw new IllegalArgumentException("Invalid value: " + yamlName);
+    throw new IllegalArgumentException(
+        String.format("Shell type %s is invalid, valid values : %s", yamlName, Arrays.asList(CIShellType.values())));
   }
 
   CIShellType(String yamlName) {

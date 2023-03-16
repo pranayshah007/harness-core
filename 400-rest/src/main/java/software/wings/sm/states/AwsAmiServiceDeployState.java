@@ -428,7 +428,7 @@ public class AwsAmiServiceDeployState extends State {
             .selectionLogsTrackingEnabled(isSelectionLogsTrackingForTasksEnabled())
             .description("AWS AMI service deploy task execution")
             .build();
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
   }
 

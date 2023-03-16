@@ -15,6 +15,7 @@ import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,12 +34,13 @@ import org.springframework.data.annotation.TypeAlias;
 public class HostedVmInfraYaml implements Infrastructure {
   @Builder.Default @NotNull private Type type = Type.HOSTED_VM;
   @NotNull private HostedVmInfraSpec spec;
-
+  @ApiModelProperty(hidden = true) String uuid;
   @Data
   @Builder
   @NoArgsConstructor
   @AllArgsConstructor
   public static class HostedVmInfraSpec {
     @NotNull private ParameterField<Platform> platform;
+    @ApiModelProperty(hidden = true) String uuid;
   }
 }

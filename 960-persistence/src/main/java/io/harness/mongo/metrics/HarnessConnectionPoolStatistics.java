@@ -17,8 +17,6 @@ import com.mongodb.event.ConnectionCheckedInEvent;
 import com.mongodb.event.ConnectionCheckedOutEvent;
 import com.mongodb.event.ConnectionPoolListenerAdapter;
 import com.mongodb.event.ConnectionPoolOpenedEvent;
-import com.mongodb.event.ConnectionPoolWaitQueueEnteredEvent;
-import com.mongodb.event.ConnectionPoolWaitQueueExitedEvent;
 import com.mongodb.event.ConnectionRemovedEvent;
 import com.mongodb.management.ConnectionPoolStatisticsMBean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,11 +66,6 @@ public class HarnessConnectionPoolStatistics
   }
 
   @Override
-  public int getWaitQueueSize() {
-    return waitQueueSize.get();
-  }
-
-  @Override
   public void connectionCheckedOut(final ConnectionCheckedOutEvent event) {
     checkedOutCount.incrementAndGet();
   }
@@ -90,15 +83,5 @@ public class HarnessConnectionPoolStatistics
   @Override
   public void connectionRemoved(final ConnectionRemovedEvent event) {
     size.decrementAndGet();
-  }
-
-  @Override
-  public void waitQueueEntered(final ConnectionPoolWaitQueueEnteredEvent event) {
-    waitQueueSize.incrementAndGet();
-  }
-
-  @Override
-  public void waitQueueExited(final ConnectionPoolWaitQueueExitedEvent event) {
-    waitQueueSize.decrementAndGet();
   }
 }

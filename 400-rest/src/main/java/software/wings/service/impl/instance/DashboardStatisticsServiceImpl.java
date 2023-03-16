@@ -419,7 +419,8 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
           .field(InstanceKeys.deletedAt)
           .greaterThanOrEq(timestamp);
       FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
-      findOptions.hint(BasicDBUtils.getIndexObject(Instance.mongoIndexes(), "instance_index7"));
+      findOptions.hint(BasicDBUtils.getIndexObject(Instance.mongoIndexes(), "accountId_deletedAt_createdAt"));
+
       instanceSet.addAll(cloneQuery.asList(findOptions));
     }
 
@@ -1294,7 +1295,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                                     .addFieldsIncluded("_id", "name")
                                                     .build();
 
-      PageResponse<Environment> pageResponse = environmentService.list(envPageRequest, false, null);
+      PageResponse<Environment> pageResponse = environmentService.list(envPageRequest, false, null, false);
 
       List<Environment> environmentList = pageResponse.getResponse();
       if (isNotEmpty(environmentList)) {
@@ -1352,7 +1353,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   private ManifestSummary prepareManifestSummaryFromHelmChart(HelmChart helmChart) {
     helmChart.setMetadata(applicationManifestService.fetchAppManifestProperties(
         helmChart.getAppId(), helmChart.getApplicationManifestId()));
-    return ManifestSummary.prepareSummaryFromHelmChart(helmChart);
+    return ManifestSummary.prepareSummaryFromHelmChart(helmChart.toDto());
   }
 
   private EntitySummary getEntitySummary(String name, String id, String type) {

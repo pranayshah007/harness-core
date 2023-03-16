@@ -40,7 +40,7 @@ public class QueryDefinition implements WithIdentifier {
     if (Objects.nonNull(riskProfile) && riskProfile.getCategory() != null) {
       profile = riskProfile;
       // SLI is being set as ERROR CV MonitoringCategory to keep it consistent with current convention.
-    } else if ((sliEnabled != null && sliEnabled)) {
+    } else if (sliEnabled != null && sliEnabled) {
       profile = RiskProfile.builder().riskCategory(RiskCategory.ERROR).build();
     }
     return profile;

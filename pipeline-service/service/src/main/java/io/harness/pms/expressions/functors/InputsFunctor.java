@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.LateBindingValue;
+import io.harness.pms.merger.helpers.InputSetYamlHelperV1;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
@@ -85,8 +86,9 @@ public class InputsFunctor implements LateBindingValue {
     // Generate the Map of default values from the inputsYamlNode of pipeline yaml.
     Map<String, Object> inputsMap = getDefaultValuesMap(inputsYamlNode);
     // Generate map for inputSet values provided by user in execute API.
-    Map<String, Object> inputSetMap =
-        JsonPipelineUtils.jsonNodeToMap(JsonPipelineUtils.readTree(inputSet).get(YAMLFieldNameConstants.INPUTS));
+    Map<String, Object> inputSetMap = JsonPipelineUtils.jsonNodeToMap(
+        InputSetYamlHelperV1.getInputSetJsonNode(inputSet).get(YAMLFieldNameConstants.INPUTS));
+
     if (!EmptyPredicate.isEmpty(inputSetMap)) {
       inputsMap.putAll(inputSetMap);
     }

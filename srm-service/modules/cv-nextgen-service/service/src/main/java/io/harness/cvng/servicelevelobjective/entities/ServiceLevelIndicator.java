@@ -16,9 +16,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.core.utils.DateTimeUtils;
+import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -73,8 +73,8 @@ public abstract class ServiceLevelIndicator
   private long createdAt;
   private String healthSourceIdentifier;
   private String monitoredServiceIdentifier;
-  private ServiceLevelIndicatorType type;
   private boolean enabled;
+  private SLIExecutionType sliExecutionType;
   private SLIMetricType sliMetricType;
   private SLIMissingDataType sliMissingDataType;
   private int version;
@@ -85,7 +85,17 @@ public abstract class ServiceLevelIndicator
     tags.put("monitoredServiceIdentifier", monitoredServiceIdentifier);
     return tags;
   }
+
+  public static String getEvaluationAndMetricType(SLIExecutionType sliExecutionType, SLIMetricType sliMetricType) {
+    if (sliMetricType != null) {
+      return sliExecutionType.name() + "_" + sliMetricType.name();
+    }
+    return sliExecutionType.name();
+  }
+
   public abstract SLIMetricType getSLIMetricType();
+
+  public abstract SLIExecutionType getSLIExecutionType();
 
   public abstract List<String> getMetricNames();
 
@@ -123,8 +133,7 @@ public abstract class ServiceLevelIndicator
                                                                         extends ServiceLevelIndicator>
       implements UpdatableEntity<T, D> {
     protected void setCommonOperations(UpdateOperations<T> updateOperations, D serviceLevelIndicator) {
-      updateOperations.set(ServiceLevelIndicatorKeys.type, serviceLevelIndicator.getType())
-          .set(ServiceLevelIndicatorKeys.sliMissingDataType, serviceLevelIndicator.getSliMissingDataType());
+      updateOperations.set(ServiceLevelIndicatorKeys.sliMissingDataType, serviceLevelIndicator.getSliMissingDataType());
     }
   }
   @FdIndex Long createNextTaskIteration;

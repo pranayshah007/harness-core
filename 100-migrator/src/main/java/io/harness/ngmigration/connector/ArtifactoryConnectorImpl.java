@@ -20,7 +20,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthe
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.config.ArtifactoryConfig;

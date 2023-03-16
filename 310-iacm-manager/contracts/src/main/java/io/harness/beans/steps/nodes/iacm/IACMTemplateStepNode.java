@@ -68,7 +68,7 @@ public class IACMTemplateStepNode extends CIAbstractStepNode {
 
   @Builder
   public IACMTemplateStepNode(String uuid, String identifier, String name,
-      List<FailureStrategyConfig> failureStrategies, IACMTemplateInfo iacmTemplateInfo,
+      ParameterField<List<FailureStrategyConfig>> failureStrategies, IACMTemplateInfo iacmTemplateInfo,
       IACMTemplateStepNode.StepType type, ParameterField<Timeout> timeout) {
     this.setFailureStrategies(failureStrategies);
     this.iacmTemplateInfo = iacmTemplateInfo;

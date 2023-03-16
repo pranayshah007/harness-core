@@ -35,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 public class AwsLambdaHelperServiceDelegateNGImpl
     extends AwsHelperServiceDelegateBaseNG implements AwsLambdaHelperServiceDelegateNG {
+  @Override
   public AWSLambdaClient getAmazonLambdaClient(String region, AwsInternalConfig awsInternalConfig) {
     AWSLambdaClientBuilder builder = AWSLambdaClientBuilder.standard().withRegion(region);
     attachCredentialsAndBackoffPolicy(builder, awsInternalConfig);

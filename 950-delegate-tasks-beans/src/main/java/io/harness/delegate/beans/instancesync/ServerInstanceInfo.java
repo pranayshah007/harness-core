@@ -9,11 +9,14 @@ package io.harness.delegate.beans.instancesync;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.instancesync.info.AsgServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.AwsLambdaServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureWebAppServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.EcsServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.GoogleFunctionServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo;
@@ -41,7 +44,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = AwsSshWinrmServerInstanceInfo.class, name = "AwsSshWinrmServerInstanceInfo"),
       @JsonSubTypes.Type(value = CustomDeploymentServerInstanceInfo.class, name = "CustomDeploymentServerInstanceInfo"),
       @JsonSubTypes.Type(value = SpotServerInstanceInfo.class, name = "SpotServerInstanceInfo"),
-      @JsonSubTypes.Type(value = TasServerInstanceInfo.class, name = "TasServerInstanceInfo")
+      @JsonSubTypes.Type(value = TasServerInstanceInfo.class, name = "TasServerInstanceInfo"),
+      @JsonSubTypes.Type(value = AsgServerInstanceInfo.class, name = "AsgServerInstanceInfo"),
+      @JsonSubTypes.Type(
+          value = GoogleFunctionServerInstanceInfo.class, name = "GoogleCloudFunctionsServerInstanceInfo"),
+      @JsonSubTypes.Type(value = AwsLambdaServerInstanceInfo.class, name = "AwsLambdaServerInstanceInfo")
 })
 @OwnedBy(HarnessTeam.DX)
 public abstract class ServerInstanceInfo {}

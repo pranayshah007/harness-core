@@ -26,6 +26,7 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -36,6 +37,7 @@ public class CiTelemetryPublisher {
   @Inject AccountClient accountClient;
   @Inject CITelemetryStatusRepository ciTelemetryStatusRepository;
   @Inject ModuleLicenseRepository moduleLicenseRepository;
+
   String COUNT_ACTIVE_DEVELOPERS = "ci_license_developers_used";
   String ACCOUNT_DEPLOY_TYPE = "account_deploy_type";
   // Locking for a bit less than one day. It's ok to send a bit more than less considering downtime/etc
@@ -48,9 +50,11 @@ public class CiTelemetryPublisher {
   public void recordTelemetry() {
     log.info("CiTelemetryPublisher recordTelemetry execute started.");
     try {
-      List<AccountDTO> accountDTOList = getAllAccounts();
-      for (AccountDTO accountDTO : accountDTOList) {
-        String accountId = accountDTO.getIdentifier();
+      List<String> accountIdentifiers = getAllAccounts();
+      log.info("Memory before telemetry is {} ", getMemoryUse());
+      log.info("Size of the account list is {} ", accountIdentifiers.size());
+
+      for (String accountId : accountIdentifiers) {
         if (EmptyPredicate.isNotEmpty(accountId) && !accountId.equals(GLOBAL_ACCOUNT_ID)) {
           if (ciTelemetryStatusRepository.updateTimestampIfOlderThan(
                   accountId, System.currentTimeMillis() - A_DAY_MINUS_TEN_MINS, System.currentTimeMillis())) {
@@ -59,6 +63,7 @@ public class CiTelemetryPublisher {
             HashMap<String, Object> map = new HashMap<>();
             map.put(GROUP_TYPE, ACCOUNT);
             map.put(GROUP_ID, accountId);
+            map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
             long developersCount = ciOverviewDashboardService.getActiveCommitterCount(accountId);
             if (existing.size() != 0 || developersCount != 0) {
               map.put(COUNT_ACTIVE_DEVELOPERS, developersCount);
@@ -71,12 +76,12 @@ public class CiTelemetryPublisher {
                   TelemetryOption.builder().sendForCommunity(true).build());
               log.info("Account {} does not have CI Module, sending null as count", accountId);
             }
-            map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
           } else {
             log.info("Skipping already sent account {} in past 24 hours", accountId);
           }
         }
       }
+      log.info("Memory after telemetry is {} ", getMemoryUse());
     } catch (Exception e) {
       log.error("CITelemetryPublisher recordTelemetry execute failed.", e);
     } finally {
@@ -84,7 +89,17 @@ public class CiTelemetryPublisher {
     }
   }
 
-  List<AccountDTO> getAllAccounts() {
-    return CGRestUtils.getResponse(accountClient.getAllAccounts());
+  List<String> getAllAccounts() {
+    List<AccountDTO> accountDTOList = CGRestUtils.getResponse(accountClient.getAllAccounts());
+    return accountDTOList.stream()
+        .filter(AccountDTO::isNextGenEnabled)
+        .map(AccountDTO::getIdentifier)
+        .collect(Collectors.toList());
+  }
+
+  private long getMemoryUse() {
+    long totalMemory = Runtime.getRuntime().totalMemory();
+    long freeMemory = Runtime.getRuntime().freeMemory();
+    return totalMemory - freeMemory;
   }
 }

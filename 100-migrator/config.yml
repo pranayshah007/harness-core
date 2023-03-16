@@ -57,6 +57,19 @@ logging:
       logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
 
 cg:
+  redisDelegateConfig:
+    sentinel: false
+    masterName: "test"
+    redisUrl: "redis://localhost:6379"
+    sentinelUrls:
+      - "redis://redis1:26379"
+      - "redis://redis2:26379"
+      - "redis://redis3:26379"
+    envNamespace: ""
+    readMode: MASTER
+    nettyThreads: 16
+    useScriptCache: true
+
   auditConfig:
     storeRequestPayload: false
     storeResponsePayload: false
@@ -164,7 +177,7 @@ cg:
     nettyThreads: 16
     useScriptCache: true
 
-  atmosphereBroadcaster: HAZELCAST
+  atmosphereBroadcaster: MEMORY
 
   redisAtmosphereConfig:
     sentinel: false
@@ -348,7 +361,7 @@ cg:
   envPath: ""
 
   kubectlVersion: v1.13.2
-  scmVersion: 1658d03e
+  scmVersion: ef2d02fb
 
   ngAuthUIEnabled: false
 
@@ -385,7 +398,7 @@ cg:
       durationUnit: MINUTES
 
   cacheConfig:
-    cacheBackend: HAZELCAST
+    cacheBackend: NOOP
     cacheNamespace: ""
     disabledCaches: []
 

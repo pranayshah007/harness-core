@@ -155,7 +155,7 @@ public class SpotinstTrafficShiftAlbSwitchRoutesState extends State {
         dataBag.getInfrastructureMapping().getUuid(), commandRequest, dataBag.getEnv().getEnvironmentType(),
         dataBag.getInfrastructureMapping().getServiceId(), isSelectionLogsTrackingForTasksEnabled());
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
 
     return ExecutionResponse.builder()

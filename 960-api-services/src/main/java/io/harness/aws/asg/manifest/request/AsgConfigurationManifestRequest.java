@@ -7,6 +7,7 @@
 
 package io.harness.aws.asg.manifest.request;
 
+import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.manifest.request.ManifestRequest;
 
 import java.util.List;
@@ -16,14 +17,19 @@ import lombok.Getter;
 
 @Getter
 public class AsgConfigurationManifestRequest extends ManifestRequest {
-  public boolean useAlreadyRunningInstances;
-  Map<String, Object> overrideProperties;
+  private boolean useAlreadyRunningInstances;
+  private Map<String, Object> overrideProperties;
+  private AwsInternalConfig awsInternalConfig;
+  private String region;
+
   @Builder
-  public AsgConfigurationManifestRequest(
-      List<String> manifests, boolean useAlreadyRunningInstances, Map<String, Object> overrideProperties) {
+  public AsgConfigurationManifestRequest(List<String> manifests, boolean useAlreadyRunningInstances,
+      Map<String, Object> overrideProperties, AwsInternalConfig awsInternalConfig, String region) {
     super(manifests);
     this.useAlreadyRunningInstances = useAlreadyRunningInstances;
     this.overrideProperties = overrideProperties;
+    this.awsInternalConfig = awsInternalConfig;
+    this.region = region;
   }
 
   public void setOverrideProperties(Map<String, Object> overrideProperties) {

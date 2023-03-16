@@ -42,6 +42,8 @@ import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import static java.lang.String.format;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -82,6 +84,7 @@ import io.harness.pcf.PivotalClientApiException;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;
 import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfManifestFileData;
+import io.harness.pcf.model.CfRenameRequest;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CloudFoundryConfig;
 import io.harness.pcf.model.PcfConstants;
@@ -145,6 +148,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     TasApplicationInfo activeApplicationInfo = null;
     TasApplicationInfo inActiveApplicationInfo = null;
 
+    List<TasApplicationInfo> renames = null;
     try {
       workingDirectory = generateWorkingDirectoryOnDelegate(blueGreenSetupRequestNG);
       activeApplicationInfo = getActiveApplicationInfo(previousReleases, cfRequestConfig, logCallback, workingDirectory,
@@ -169,7 +173,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       deleteOlderApplications(previousReleases, cfRequestConfig, blueGreenSetupRequestNG, cfAppAutoscalarRequestData,
           logCallback, activeApplicationInfo, inActiveApplicationInfo);
 
-      renameInActiveApplication(previousReleases, blueGreenSetupRequestNG, cfRequestConfig, logCallback,
+      renames = renameInActiveApplication(previousReleases, blueGreenSetupRequestNG, cfRequestConfig, logCallback,
           activeApplicationInfo, inActiveApplicationInfo);
 
       boolean varsYmlPresent = checkIfVarsFilePresent(blueGreenSetupRequestNG);
@@ -219,6 +223,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing PCF Setup task [{}]",
           blueGreenSetupRequestNG, sanitizedException);
       Misc.logAllMessages(sanitizedException, logCallback);
+      handleRollbackForSetup(blueGreenSetupRequestNG.getReleaseNamePrefix(), renames, cfRequestConfig, logCallback);
       logCallback.saveExecutionLog(
           "\n\n ----------  PCF Setup process failed to complete successfully", ERROR, CommandExecutionStatus.FAILURE);
 
@@ -232,6 +237,48 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       logCallback = tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Wrapup, true, commandUnitsProgress);
       removeTempFilesCreated(blueGreenSetupRequestNG, logCallback, artifactFile, workingDirectory, pcfManifestFileData);
       logCallback.saveExecutionLog("#----------  Cleaning up temporary files completed", INFO, SUCCESS);
+    }
+  }
+
+  private void handleRollbackForSetup(String releaseNamePrefix, List<TasApplicationInfo> renames,
+      CfRequestConfig cfRequestConfig, LogCallback logCallback) throws PivotalClientApiException {
+    try {
+      if (!isNull(renames)) {
+        deleteCurrentInactiveAppIfExist(releaseNamePrefix, cfRequestConfig, logCallback);
+        renamePreviousInactiveApp(renames, cfRequestConfig, logCallback);
+      } else {
+        logCallback.saveExecutionLog(
+            "Revert not required as no application got created or renamed", ERROR, CommandExecutionStatus.FAILURE);
+      }
+    } catch (Exception e) {
+      log.error(CLOUD_FOUNDRY_LOG_PREFIX + "Exception in reverting app names", e);
+      logCallback.saveExecutionLog(format("\n\n ----------  Failed to revert app names : %s",
+                                       ExceptionMessageSanitizer.sanitizeMessage(e.getMessage())),
+          ERROR, CommandExecutionStatus.FAILURE);
+    }
+  }
+
+  private void renamePreviousInactiveApp(List<TasApplicationInfo> renames, CfRequestConfig cfRequestConfig,
+      LogCallback logCallback) throws PivotalClientApiException {
+    if (renames.isEmpty()) {
+      return;
+    }
+    TasApplicationInfo applicationInfo = renames.get(0);
+    cfDeploymentManager.renameApplication(new CfRenameRequest(cfRequestConfig, applicationInfo.getApplicationGuid(),
+                                              applicationInfo.getApplicationName(), applicationInfo.getOldName()),
+        logCallback);
+  }
+
+  private void deleteCurrentInactiveAppIfExist(String releaseNamePrefix, CfRequestConfig cfRequestConfig,
+      LogCallback logCallback) throws PivotalClientApiException {
+    List<ApplicationSummary> releases = cfDeploymentManager.getPreviousReleases(cfRequestConfig, releaseNamePrefix);
+    String inactiveAppName = releaseNamePrefix + INACTIVE_APP_NAME_SUFFIX;
+
+    if (releases.stream().anyMatch(release -> release.getName().equals(inactiveAppName))) {
+      cfRequestConfig.setApplicationName(inactiveAppName);
+      logCallback.saveExecutionLog(format("\n Deleting the newly created App: %s", inactiveAppName));
+      cfDeploymentManager.deleteApplication(cfRequestConfig);
+      logCallback.saveExecutionLog("App deleted successfully");
     }
   }
 
@@ -570,13 +617,13 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     }
   }
 
-  private void renameInActiveApplication(List<ApplicationSummary> previousReleases,
+  private List<TasApplicationInfo> renameInActiveApplication(List<ApplicationSummary> previousReleases,
       CfBlueGreenSetupRequestNG blueGreenSetupRequestNG, CfRequestConfig cfRequestConfig, LogCallback logCallback,
       TasApplicationInfo activeApplicationInfo, TasApplicationInfo inActiveApplicationInfo)
       throws PivotalClientApiException {
     if (inActiveApplicationInfo == null || isEmpty(inActiveApplicationInfo.getApplicationGuid())
         || previousReleases.size() == 1) {
-      return;
+      return Collections.emptyList();
     }
     ApplicationSummary inActiveApplication =
         findCurrentInActiveApplication(activeApplicationInfo, previousReleases, cfRequestConfig, logCallback);
@@ -586,6 +633,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     pcfCommandTaskBaseHelper.renameApp(inActiveApplication, cfRequestConfig, logCallback, newName);
     inActiveApplicationInfo.setOldName(inActiveApplicationInfo.getApplicationName());
     inActiveApplicationInfo.setApplicationName(newName);
+    return Collections.singletonList(inActiveApplicationInfo);
   }
 
   private int getHighestVersionAppName(List<ApplicationSummary> previousReleases) {

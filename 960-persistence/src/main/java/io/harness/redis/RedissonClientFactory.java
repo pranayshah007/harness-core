@@ -9,6 +9,9 @@ package io.harness.redis;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.threading.Morpheus.sleep;
+
+import static java.time.Duration.ofMillis;
 
 import io.harness.annotations.dev.OwnedBy;
 
@@ -33,6 +36,11 @@ import org.redisson.config.SingleServerConfig;
 @Slf4j
 public class RedissonClientFactory {
   private static final int DEFAULT_MIN_CONNECTION_IDLE_SIZE = 5;
+
+  private static final int DEFAULT_RETRY_ATTEMPTS = 3;
+  private static final int DEFAULT_RETRY_INTERVAL = 1500;
+  private static final int NUM_OF_RETRIES = 3;
+  private static final int WAIT_TIME_BETWEEN_RETRIES = 1000;
 
   private static final Map<RedisConfig, RedissonClient> redisConfigRedissonClientMap = new HashMap<>();
 
@@ -70,12 +78,16 @@ public class RedissonClientFactory {
         }
         if (redisConfig.getRetryInterval() != 0) {
           serverConfig.setRetryInterval(redisConfig.getRetryInterval());
+        } else {
+          serverConfig.setRetryInterval(DEFAULT_RETRY_INTERVAL);
         }
         if (redisConfig.getTimeout() != 0) {
           serverConfig.setTimeout(redisConfig.getTimeout());
         }
         if (redisConfig.getRetryAttempts() != 0) {
           serverConfig.setRetryAttempts(redisConfig.getRetryAttempts());
+        } else {
+          serverConfig.setRetryAttempts(DEFAULT_RETRY_ATTEMPTS);
         }
 
         serverConfig.setConnectionMinimumIdleSize(
@@ -110,6 +122,8 @@ public class RedissonClientFactory {
         }
         if (redisConfig.getRetryInterval() != 0) {
           config.useSentinelServers().setRetryInterval(redisConfig.getRetryInterval());
+        } else {
+          config.useSentinelServers().setRetryInterval(redisConfig.getRetryInterval());
         }
         if (redisConfig.getTimeout() != 0) {
           config.useSentinelServers().setTimeout(redisConfig.getTimeout());
@@ -125,11 +139,20 @@ public class RedissonClientFactory {
       }
 
       log.info("Creating Redis Client");
-      try {
-        redisConfigRedissonClientMap.put(redisConfig, Redisson.create(config));
-      } catch (Exception ex) {
-        log.error("Exception occurred when creating redis client.", ex);
-        throw ex;
+      int failedAttempts = 0;
+      while (true) {
+        try {
+          redisConfigRedissonClientMap.put(redisConfig, Redisson.create(config));
+          break;
+        } catch (Exception ex) {
+          failedAttempts++;
+          if (failedAttempts == NUM_OF_RETRIES) {
+            log.error("Exception occurred when creating redis client.", ex);
+            throw ex;
+          }
+          log.warn("Exception occurred when creating redis client. Trail num: {}", failedAttempts, ex);
+          sleep(ofMillis(WAIT_TIME_BETWEEN_RETRIES));
+        }
       }
       return redisConfigRedissonClientMap.get(redisConfig);
     }

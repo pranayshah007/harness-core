@@ -74,6 +74,16 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
   }
 
   @Override
+  public <R> R processScmRequestUsingManager(Function<ScmClientFacilitatorService, R> scmRequest) {
+    return scmRequest.apply(scmClientManagerService);
+  }
+
+  @Override
+  public <R> R processScmRequestUsingDelegate(Function<ScmClientFacilitatorService, R> scmRequest) {
+    return scmRequest.apply(scmClientDelegateService);
+  }
+
+  @Override
   public <R> R processScmRequestUsingConnectorSettings(Function<ScmClientFacilitatorService, R> scmRequest,
       String projectIdentifier, String orgIdentifier, String accountId, String connectorIdentifierRef,
       String connectorRepo, String connectorBranch) {

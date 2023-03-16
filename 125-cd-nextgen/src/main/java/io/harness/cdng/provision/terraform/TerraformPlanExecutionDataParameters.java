@@ -33,4 +33,6 @@ public class TerraformPlanExecutionDataParameters {
   ParameterField<String> secretManagerRef;
   ParameterField<Boolean> exportTerraformPlanJson;
   ParameterField<Boolean> exportTerraformHumanReadablePlan;
+  ParameterField<Boolean> isTerraformCloudCli;
+  ParameterField<Boolean> skipTerraformRefresh;
 }

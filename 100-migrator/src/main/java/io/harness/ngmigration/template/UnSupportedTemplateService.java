@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.template;
 
+import io.harness.ngmigration.beans.MigrationContext;
+
 import software.wings.beans.template.Template;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -15,8 +17,10 @@ public class UnSupportedTemplateService implements NgTemplateService {
   public boolean isMigrationSupported() {
     return false;
   }
+
   @Override
-  public JsonNode getNgTemplateConfigSpec(Template template, String orgIdentifier, String projectIdentifier) {
+  public JsonNode getNgTemplateConfigSpec(
+      MigrationContext context, Template template, String orgIdentifier, String projectIdentifier) {
     return null;
   }
 

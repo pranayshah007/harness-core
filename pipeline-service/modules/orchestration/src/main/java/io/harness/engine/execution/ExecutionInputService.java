@@ -25,4 +25,11 @@ public interface ExecutionInputService {
 
   ExecutionInputInstance save(ExecutionInputInstance executionInputInstance);
   List<ExecutionInputInstance> getExecutionInputInstances(Set<String> nodeExecutionIds);
+
+  /**
+   * Delete all ExecutionInputInstance for given nodeExecutionIds
+   * Uses - nodeExecutionId_1 index
+   * @param nodeExecutionIds
+   */
+  void deleteExecutionInputInstanceForGivenNodeExecutionIds(Set<String> nodeExecutionIds);
 }

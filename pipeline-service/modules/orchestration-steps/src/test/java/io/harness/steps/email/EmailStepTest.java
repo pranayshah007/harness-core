@@ -10,6 +10,7 @@ package io.harness.steps.email;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -23,6 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.NotificationTaskResponse;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.Status;
@@ -265,5 +267,80 @@ public class EmailStepTest extends CategoryTest {
     assertThat(argumentCaptor.getValue().getToRecipients()).isEqualTo(emailDTO.getToRecipients());
     assertThat(argumentCaptor.getValue().getCcRecipients()).isEqualTo(emailDTO.getCcRecipients());
     assertThat(stepResponse.getStatus()).isEqualTo(io.harness.pms.contracts.execution.Status.FAILED);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testnullBody() throws IOException {
+    when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(iLogStreamingStepClient);
+    String SUBJECT = "Email Subject";
+    String BODY = "";
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", "accountId").build();
+    EmailStepParameters emailStepParameters =
+        EmailStepParameters.builder()
+            .to(ParameterField.<String>builder().value("test@harness.io,hello@harness.io").build())
+            .subject(ParameterField.<String>builder().value(SUBJECT).build())
+            .cc(ParameterField.<String>builder().value("first@harness.io,second@harness.io").build())
+            .build();
+    SpecParameters specParameters = (SpecParameters) emailStepParameters;
+    Set<String> toRecipients = new HashSet<>();
+    Set<String> ccRecipients = new HashSet<>();
+    toRecipients.add("test@harness.io");
+    toRecipients.add("hello@harness.io");
+    ccRecipients.add("first@harness.io");
+    ccRecipients.add("second@harness.io");
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(specParameters).build();
+
+    NotificationTaskResponse notificationTaskResponse = NotificationTaskResponse.builder().build();
+    ResponseDTO<NotificationTaskResponse> notificationTaskResponseResponseDTO =
+        ResponseDTO.newResponse(notificationTaskResponse);
+    Response<ResponseDTO<NotificationTaskResponse>> response = Response.success(notificationTaskResponseResponseDTO);
+    response.body().setStatus(io.harness.ng.core.Status.FAILURE);
+    mockStatic(UUIDGenerator.class);
+    Mockito.when(UUIDGenerator.generateUuid()).thenReturn("notificationId");
+
+    doReturn(response).when(notificationClient).sendEmail(any());
+    assertThatThrownBy(() -> emailStep.executeSync(ambiance, stepElementParameters, null, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Email body cannot be blank");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testBlankBody() throws IOException {
+    when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(iLogStreamingStepClient);
+    String SUBJECT = "Email Subject";
+    String BODY = "";
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", "accountId").build();
+    EmailStepParameters emailStepParameters =
+        EmailStepParameters.builder()
+            .to(ParameterField.<String>builder().value("test@harness.io,hello@harness.io").build())
+            .subject(ParameterField.<String>builder().value(SUBJECT).build())
+            .body(ParameterField.<String>builder().value(BODY).build())
+            .cc(ParameterField.<String>builder().value("first@harness.io,second@harness.io").build())
+            .build();
+    SpecParameters specParameters = (SpecParameters) emailStepParameters;
+    Set<String> toRecipients = new HashSet<>();
+    Set<String> ccRecipients = new HashSet<>();
+    toRecipients.add("test@harness.io");
+    toRecipients.add("hello@harness.io");
+    ccRecipients.add("first@harness.io");
+    ccRecipients.add("second@harness.io");
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(specParameters).build();
+
+    NotificationTaskResponse notificationTaskResponse = NotificationTaskResponse.builder().build();
+    ResponseDTO<NotificationTaskResponse> notificationTaskResponseResponseDTO =
+        ResponseDTO.newResponse(notificationTaskResponse);
+    Response<ResponseDTO<NotificationTaskResponse>> response = Response.success(notificationTaskResponseResponseDTO);
+    response.body().setStatus(io.harness.ng.core.Status.FAILURE);
+    mockStatic(UUIDGenerator.class);
+    Mockito.when(UUIDGenerator.generateUuid()).thenReturn("notificationId");
+
+    doReturn(response).when(notificationClient).sendEmail(any());
+    assertThatThrownBy(() -> emailStep.executeSync(ambiance, stepElementParameters, null, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Email body cannot be blank");
   }
 }

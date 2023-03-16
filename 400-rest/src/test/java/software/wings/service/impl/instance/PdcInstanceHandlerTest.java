@@ -160,7 +160,7 @@ public class PdcInstanceHandlerTest extends WingsBaseTest {
                       .build());
     doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(APP_ID, INFRA_ID);
 
-    when(delegateService.executeTask(delegateTaskArgumentCaptor.capture()))
+    when(delegateService.executeTaskV2(delegateTaskArgumentCaptor.capture()))
         .thenReturn(HostReachabilityResponse.builder()
                         .hostReachabilityInfoList(
                             Arrays.asList(HostReachabilityInfo.builder().hostName("h1").reachable(true).build(),

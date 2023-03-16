@@ -7,6 +7,8 @@
 
 package io.harness.ng;
 
+import static io.harness.NGCommonEntityConstants.CONFIG_FILE_FUNCTOR;
+import static io.harness.NGCommonEntityConstants.FILE_STORE_FUNCTOR;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInterMsvcRequests;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInternalApi;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassPaths;
@@ -43,15 +45,18 @@ import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.cdng.gitSync.EnvironmentGroupEntityGitSyncHelper;
 import io.harness.cdng.licenserestriction.ServiceRestrictionsUsageImpl;
 import io.harness.cdng.migration.CDMigrationProvider;
-import io.harness.cdng.moduleversioninfo.runnable.ModuleVersionsMaintenanceTask;
 import io.harness.cdng.orchestration.NgStepRegistrar;
 import io.harness.cdng.pipeline.executions.CdngOrchestrationExecutionEventHandlerRegistrar;
 import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
+import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPlanJsonFunctor;
+import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPolicyChecksJsonFunctor;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
+import io.harness.changestreams.controllers.PlgEventConsumerController;
+import io.harness.changestreams.redisconsumers.ModuleLicensesRedisEventConsumer;
 import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.connector.ConnectorDTO;
@@ -116,13 +121,18 @@ import io.harness.ng.core.exceptionmappers.OptimisticLockingFailureExceptionMapp
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
+import io.harness.ng.core.handler.NGVaultUnsetRenewalHandler;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
+import io.harness.ng.core.migration.NgLocalToGlobalSecretsMigrationJob;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
+import io.harness.ng.core.remote.UserGroupRestrictionUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.CloudCostK8sConnectorRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.OrgRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ProjectRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.SecretRestrictionUsageImpl;
+import io.harness.ng.core.remote.licenserestriction.ServiceAccountRestrictionUsageImpl;
+import io.harness.ng.core.remote.licenserestriction.VariableRestrictionUsageImpl;
 import io.harness.ng.core.user.exception.mapper.InvalidUserRemoveRequestExceptionMapper;
 import io.harness.ng.core.variable.expressions.functors.VariableFunctor;
 import io.harness.ng.migration.DelegateMigrationProvider;
@@ -130,6 +140,7 @@ import io.harness.ng.migration.NGCoreMigrationProvider;
 import io.harness.ng.migration.SourceCodeManagerMigrationProvider;
 import io.harness.ng.migration.UserMembershipMigrationProvider;
 import io.harness.ng.migration.UserMetadataMigrationProvider;
+import io.harness.ng.moduleversioninfo.runnable.ModuleVersionsMaintenanceTask;
 import io.harness.ng.oauth.OAuthTokenRefresher;
 import io.harness.ng.overview.eventGenerator.DeploymentEventGenerator;
 import io.harness.ng.webhook.services.api.WebhookEventProcessingService;
@@ -146,6 +157,8 @@ import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
+import io.harness.pms.expressions.functors.ConfigFileFunctor;
+import io.harness.pms.expressions.functors.FileStoreFunctor;
 import io.harness.pms.expressions.functors.ImagePullSecretFunctor;
 import io.harness.pms.expressions.functors.InstanceFunctor;
 import io.harness.pms.governance.EnvironmentExpansionHandler;
@@ -437,8 +450,11 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerIterators(appConfig.getNgIteratorsConfig(), injector);
     registerJobs(injector);
     registerQueueListeners(injector);
-    registerNotificationTemplates(injector);
+    if (!appConfig.isDisableFreezeNotificationTemplate()) {
+      registerNotificationTemplates(injector);
+    }
     registerPmsSdkEvents(appConfig, injector);
+    registerDebeziumEvents(appConfig, injector);
     initializeMonitoring(appConfig, injector);
     registerObservers(injector);
     registerOasResource(appConfig, environment, injector);
@@ -610,6 +626,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     //  injector.getInstance(NgDeploymentFreezeActivationHandler.class).registerIterators();
     injector.getInstance(OAuthTokenRefresher.class)
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
+    injector.getInstance(NGVaultUnsetRenewalHandler.class).registerIterators(5);
   }
 
   public void registerJobs(Injector injector) {
@@ -626,6 +643,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(NGEventConsumerService.class));
     environment.lifecycle().manage(injector.getInstance(GitSyncEventConsumerService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
+    environment.lifecycle().manage(injector.getInstance(PlgEventConsumerController.class));
   }
 
   private void registerPmsSdkEvents(NextGenConfiguration appConfig, Injector injector) {
@@ -642,6 +660,13 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(PipelineExecutionSummaryCDRedisEventConsumer.class),
         appConfig.getDebeziumConsumersConfigs().getPlanExecutionsSummaryStreaming().getThreads());
+  }
+
+  private void registerDebeziumEvents(NextGenConfiguration appConfig, Injector injector) {
+    log.info("Initializing sdk redis abstract consumers for PLG...");
+    PlgEventConsumerController plgEventConsumerController = injector.getInstance(PlgEventConsumerController.class);
+    plgEventConsumerController.register(injector.getInstance(ModuleLicensesRedisEventConsumer.class),
+        appConfig.getDebeziumConsumersConfigs().getModuleLicensesStreaming().getThreads());
   }
 
   private void registerYamlSdk(Injector injector) {
@@ -709,7 +734,12 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     sdkFunctorMap.put(TerraformPlanJsonFunctor.TERRAFORM_PLAN_JSON, TerraformPlanJsonFunctor.class);
     sdkFunctorMap.put(
         TerraformHumanReadablePlanFunctor.TERRAFORM_HUMAN_READABLE_PLAN, TerraformHumanReadablePlanFunctor.class);
+    sdkFunctorMap.put(
+        TerraformCloudPolicyChecksJsonFunctor.TFC_POLICY_CHECKS_JSON, TerraformCloudPolicyChecksJsonFunctor.class);
+    sdkFunctorMap.put(TerraformCloudPlanJsonFunctor.TERRAFORM_CLOUD_PLAN_JSON, TerraformCloudPlanJsonFunctor.class);
     sdkFunctorMap.put(InstanceFunctor.INSTANCE, InstanceFunctor.class);
+    sdkFunctorMap.put(CONFIG_FILE_FUNCTOR, ConfigFileFunctor.class);
+    sdkFunctorMap.put(FILE_STORE_FUNCTOR, FileStoreFunctor.class);
     return sdkFunctorMap;
   }
 
@@ -791,6 +821,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
+    environment.lifecycle().manage(injector.getInstance(NgLocalToGlobalSecretsMigrationJob.class));
     createConsumerThreadsToListenToEvents(environment, injector);
   }
 
@@ -991,6 +1022,9 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                     .put(FeatureRestrictionName.MULTIPLE_PROJECTS, ProjectRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_ORGANIZATIONS, OrgRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_SECRETS, SecretRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MULTIPLE_USER_GROUPS, UserGroupRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MULTIPLE_SERVICE_ACCOUNTS, ServiceAccountRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MULTIPLE_VARIABLES, VariableRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.SERVICES, ServiceRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.CCM_K8S_CLUSTERS, CloudCostK8sConnectorRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.DEPLOYMENTS_PER_MONTH, DeploymentsPerMonthRestrictionUsageImpl.class)

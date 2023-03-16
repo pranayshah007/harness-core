@@ -23,7 +23,8 @@ public enum JiraFieldTypeNG {
   @JsonProperty("timetracking") TIME_TRACKING,
   @JsonProperty("option") OPTION,
   @JsonProperty("user") USER,
-  @JsonProperty("issuelink") ISSUE_LINK;
+  @JsonProperty("issuelink") ISSUE_LINK,
+  @JsonProperty("issuetype") ISSUE_TYPE;
 
   public static JiraFieldTypeNG fromTypeString(String typeStr) {
     if (typeStr == null) {
@@ -52,8 +53,10 @@ public enum JiraFieldTypeNG {
         return OPTION;
       case "issuelink":
         return ISSUE_LINK;
+      case JiraConstantsNG.ISSUE_TYPE_KEY:
+        return ISSUE_TYPE;
       default:
-        // Special fields (project, issuetype) and unknown fields throw this exception and are not part of issue create
+        // Special fields (project) and unknown fields throw this exception and are not part of issue create
         // meta.
         throw new InvalidArgumentsException(String.format("Unsupported type: %s", typeStr));
     }

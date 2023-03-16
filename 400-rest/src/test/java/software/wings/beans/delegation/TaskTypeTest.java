@@ -445,7 +445,32 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(405, "AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG");
     taskTypeOrdinalMapping.put(406, "AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG");
     taskTypeOrdinalMapping.put(407, "SCM_BATCH_GET_FILE_TASK");
-
+    taskTypeOrdinalMapping.put(408, "TERRAFORM_CLOUD_TASK_NG");
+    taskTypeOrdinalMapping.put(409, "GIT_TASK_NG");
+    taskTypeOrdinalMapping.put(410, "GOOGLE_CLOUD_STORAGE_ARTIFACT_TASK_NG");
+    taskTypeOrdinalMapping.put(411, "GOOGLE_FUNCTION_COMMAND_TASK");
+    taskTypeOrdinalMapping.put(412, "GOOGLE_CLOUD_SOURCE_ARTIFACT_TASK_NG");
+    taskTypeOrdinalMapping.put(413, "GCP_PROJECTS_TASK_NG");
+    taskTypeOrdinalMapping.put(414, "GCS_BUCKETS_TASK_NG");
+    taskTypeOrdinalMapping.put(415, "AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG");
+    taskTypeOrdinalMapping.put(416, "GOOGLE_FUNCTION_DEPLOY_TASK");
+    taskTypeOrdinalMapping.put(417, "GOOGLE_FUNCTION_ROLLBACK_TASK");
+    taskTypeOrdinalMapping.put(418, "GOOGLE_FUNCTION_PREPARE_ROLLBACK_TASK");
+    taskTypeOrdinalMapping.put(419, "GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_TASK");
+    taskTypeOrdinalMapping.put(420, "GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK");
+    taskTypeOrdinalMapping.put(421, "ECS_TASK_ARN_ROLLING_DEPLOY_NG");
+    taskTypeOrdinalMapping.put(422, "ECS_TASK_ARN_CANARY_DEPLOY_NG");
+    taskTypeOrdinalMapping.put(423, "ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE_NG");
+    taskTypeOrdinalMapping.put(424, "BAMBOO_CONNECTIVITY_TEST_TASK");
+    taskTypeOrdinalMapping.put(425, "BAMBOO_ARTIFACT_TASK_NG");
+    taskTypeOrdinalMapping.put(426, "AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG");
+    taskTypeOrdinalMapping.put(427, "AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG");
+    taskTypeOrdinalMapping.put(428, "TERRAFORM_TASK_NG_V3");
+    taskTypeOrdinalMapping.put(429, "BAMBOO_TRIGGER_JOB");
+    taskTypeOrdinalMapping.put(430, "TERRAFORM_TASK_NG_V4");
+    taskTypeOrdinalMapping.put(431, "TERRAFORM_CLOUD_CLEANUP_TASK_NG");
+    taskTypeOrdinalMapping.put(432, "OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG");
+    taskTypeOrdinalMapping.put(433, "TAS_ROUTE_MAPPING");
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }

@@ -74,6 +74,7 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
@@ -192,6 +193,7 @@ public class PcfPluginStateTest extends WingsBaseTest {
   @Mock private StateExecutionService stateExecutionService;
   @InjectMocks @Spy private PcfStateHelper pcfStateHelper;
   @Mock private MainConfiguration configuration;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Spy @InjectMocks private PcfPluginState pcfPluginState = new PcfPluginState("name");
   private PcfStateTestHelper pcfStateTestHelper = new PcfStateTestHelper();
   private ServiceElement serviceElement = pcfStateTestHelper.getServiceElement();
@@ -394,7 +396,7 @@ public class PcfPluginStateTest extends WingsBaseTest {
     assertThat(stateExecutionData.getFilePathsInScript()).contains("/app/sample_application/manifest.yml");
     assertThat(stateExecutionData.getFilePathsInScript()).isNotEmpty();
     assertThat(stateExecutionData.getRenderedScriptString()).isNotEmpty();
-    verify(delegateService, times(1)).queueTask(delegateTask);
+    verify(delegateService, times(1)).queueTaskV2(delegateTask);
   }
 
   @Test
@@ -437,7 +439,7 @@ public class PcfPluginStateTest extends WingsBaseTest {
     assertThat(stateExecutionData.getFilePathsInScript()).contains("/app/sample_application/${manifest}");
     assertThat(stateExecutionData.getFilePathsInScript()).isNotEmpty();
     assertThat(stateExecutionData.getRenderedScriptString()).isNotEmpty();
-    verify(delegateService, times(1)).queueTask(delegateTask);
+    verify(delegateService, times(1)).queueTaskV2(delegateTask);
   }
 
   @Test
@@ -458,7 +460,7 @@ public class PcfPluginStateTest extends WingsBaseTest {
     assertThat(executionResponse.isAsync()).isTrue();
     final PcfPluginStateExecutionData stateExecutionData =
         (PcfPluginStateExecutionData) (executionResponse.getStateExecutionData());
-    verify(delegateService, times(1)).queueTask(any(DelegateTask.class));
+    verify(delegateService, times(1)).queueTaskV2(any(DelegateTask.class));
   }
 
   @Test
@@ -486,7 +488,7 @@ public class PcfPluginStateTest extends WingsBaseTest {
     assertThat(executionResponse.isAsync()).isTrue();
     final PcfPluginStateExecutionData stateExecutionData =
         (PcfPluginStateExecutionData) (executionResponse.getStateExecutionData());
-    verify(delegateService, times(1)).queueTask(any(DelegateTask.class));
+    verify(delegateService, times(1)).queueTaskV2(any(DelegateTask.class));
   }
 
   @Test

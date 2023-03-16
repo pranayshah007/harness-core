@@ -14,6 +14,7 @@ import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
@@ -26,6 +27,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
@@ -54,16 +57,22 @@ import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
@@ -180,10 +189,18 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
                                .parentId(forkNode.getUuid())
                                .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
                                .build();
+
+    NodeExecution strategyParent = NodeExecution.builder()
+                                       .uuid("strategyParent")
+                                       .status(FAILED)
+                                       .parentId(stageNode.getUuid())
+                                       .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                       .build();
+
     NodeExecution strategyNode = NodeExecution.builder()
                                      .uuid("strategyNode")
                                      .status(FAILED)
-                                     .parentId(stageNode.getUuid())
+                                     .parentId(strategyParent.getUuid())
                                      .stepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY).build())
                                      .build();
 
@@ -194,8 +211,8 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
                                           .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
                                           .build();
 
-    List<NodeExecution> nodeExecutions =
-        Arrays.asList(pipelineNode, stageNode, forkNode, child1, child2, child3, strategyNode, strategyChildNode);
+    List<NodeExecution> nodeExecutions = Arrays.asList(
+        pipelineNode, stageNode, forkNode, child1, child2, child3, strategyNode, strategyChildNode, strategyParent);
     CloseableIterator<NodeExecution> iterator =
         OrchestrationTestHelper.createCloseableIterator(nodeExecutions.iterator());
     doReturn(iterator).when(service).fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(any(), any(), any());
@@ -204,8 +221,9 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
         service.findAllChildrenWithStatusInAndWithoutOldRetries(ambiance.getPlanExecutionId(), stageNode.getUuid(),
             EnumSet.of(Status.RUNNING), true, Collections.emptySet(), false);
     assertThat(stageChildList).isNotEmpty();
-    assertThat(stageChildList).hasSize(6);
-    assertThat(stageChildList).containsExactlyInAnyOrder(stageNode, forkNode, child1, child2, child3, strategyNode);
+    assertThat(stageChildList).hasSize(7);
+    assertThat(stageChildList)
+        .containsExactlyInAnyOrder(stageNode, forkNode, child1, child2, child3, strategyNode, strategyParent);
 
     // Iterator cannot be reused again, thus initialise again
     iterator = OrchestrationTestHelper.createCloseableIterator(nodeExecutions.iterator());
@@ -214,8 +232,9 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
         service.findAllChildrenWithStatusInAndWithoutOldRetries(ambiance.getPlanExecutionId(), stageNode.getUuid(),
             EnumSet.of(Status.RUNNING), false, Collections.emptySet(), false);
     assertThat(stageChildListWithoutParent).isNotEmpty();
-    assertThat(stageChildListWithoutParent).hasSize(5);
-    assertThat(stageChildListWithoutParent).containsExactlyInAnyOrder(forkNode, child1, child2, child3, strategyNode);
+    assertThat(stageChildListWithoutParent).hasSize(6);
+    assertThat(stageChildListWithoutParent)
+        .containsExactlyInAnyOrder(forkNode, child1, child2, child3, strategyNode, strategyParent);
 
     // Iterator cannot be reused again, thus initialise again
     iterator = OrchestrationTestHelper.createCloseableIterator(nodeExecutions.iterator());
@@ -233,9 +252,19 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
         service.findAllChildrenWithStatusInAndWithoutOldRetries(ambiance.getPlanExecutionId(), stageNode.getUuid(),
             EnumSet.of(Status.RUNNING), true, Collections.emptySet(), true);
     assertThat(strategyChildList).isNotEmpty();
+    assertThat(strategyChildList).hasSize(8);
+    assertThat(strategyChildList)
+        .containsExactlyInAnyOrder(
+            forkNode, child1, child2, child3, strategyNode, strategyChildNode, stageNode, strategyParent);
+
+    iterator = OrchestrationTestHelper.createCloseableIterator(nodeExecutions.iterator());
+    doReturn(iterator).when(service).fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(any(), any(), any());
+    strategyChildList = service.findAllChildrenWithStatusInAndWithoutOldRetries(ambiance.getPlanExecutionId(),
+        stageNode.getUuid(), EnumSet.of(Status.RUNNING), true, Collections.emptySet(), false);
+    assertThat(strategyChildList).isNotEmpty();
     assertThat(strategyChildList).hasSize(7);
     assertThat(strategyChildList)
-        .containsExactlyInAnyOrder(forkNode, child1, child2, child3, strategyNode, strategyChildNode, stageNode);
+        .containsExactlyInAnyOrder(forkNode, child1, child2, child3, strategyNode, strategyParent, stageNode);
   }
 
   @Test
@@ -423,36 +452,6 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void shouldTestRemoveTimeoutInstances() {
-    String planExecutionUuid = generateUuid();
-    String parentId = generateUuid();
-    NodeExecution nodeExecution =
-        NodeExecution.builder()
-            .uuid(generateUuid())
-            .parentId(parentId)
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
-            .mode(ExecutionMode.SYNC)
-            .uuid(generateUuid())
-            .name("name")
-            .identifier(generateUuid())
-            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-            .module("CD")
-            .startTs(System.currentTimeMillis())
-            .status(Status.RUNNING)
-            .timeoutInstanceIds(ImmutableList.of(generateUuid(), generateUuid()))
-            .build();
-    nodeExecutionService.save(nodeExecution);
-
-    boolean ack = nodeExecutionService.removeTimeoutInstances(nodeExecution.getUuid());
-    assertThat(ack).isTrue();
-
-    NodeExecution updated = nodeExecutionService.get(nodeExecution.getUuid());
-    assertThat(updated.getTimeoutInstanceIds()).isEmpty();
-  }
-
-  @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void test() {
@@ -578,6 +577,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .status(Status.RUNNING)
             .nodeId(nodeUuid)
             .name("name")
+            .oldRetry(false)
             .identifier("stage1")
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .startTs(500L)
@@ -604,6 +604,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .identifier("stage1")
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .module("CD")
+            .oldRetry(true)
             .startTs(200L)
             .build();
     String nodeUuid2 = generateUuid();
@@ -627,6 +628,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .name("name")
             .identifier("stage2")
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STAGE).build())
+            .oldRetry(false)
             .startTs(400L)
             .module("CD")
             .build();
@@ -652,6 +654,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .name("name")
             .startTs(500L)
             .identifier("stage3")
+            .oldRetry(false)
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STAGE).build())
             .module("CD")
             .build();
@@ -705,10 +708,16 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testDeleteAllNodeExecutionAndMetadata() {
+    MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
+    Reflect.on(nodeExecutionService).set("mongoTemplate", mongoTemplateMock);
     Reflect.on(nodeExecutionService).set("nodeDeleteObserverSubject", nodeDeleteObserverSubject);
+
     List<NodeExecution> nodeExecutionList = new LinkedList<>();
+    Set<String> batchNodeExecutionIds = new HashSet<>();
     for (int i = 0; i < 1200; i++) {
-      nodeExecutionList.add(NodeExecution.builder().uuid(generateUuid()).build());
+      String uuid = generateUuid();
+      nodeExecutionList.add(NodeExecution.builder().uuid(uuid).build());
+      batchNodeExecutionIds.add(uuid);
     }
     CloseableIterator<NodeExecution> iterator =
         OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
@@ -717,5 +726,35 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
         .fetchNodeExecutionsFromAnalytics("EXECUTION_1", NodeProjectionUtils.fieldsForNodeExecutionDelete);
     nodeExecutionService.deleteAllNodeExecutionAndMetadata("EXECUTION_1");
     verify(nodeDeleteObserverSubject, times(2)).fireInform(any(), any());
+
+    verify(mongoTemplateMock, times(1))
+        .remove(query(where(NodeExecutionKeys.id).in(batchNodeExecutionIds)), NodeExecution.class);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testFetchNodeExecutionsForGivenStageFQNs() {
+    NodeExecutionReadHelper nodeExecutionReadHelperMock = Mockito.mock(NodeExecutionReadHelper.class);
+    Reflect.on(nodeExecutionService).set("nodeExecutionReadHelper", nodeExecutionReadHelperMock);
+    List<NodeExecution> nodeExecutionList = new LinkedList<>();
+    for (int i = 0; i < 1200; i++) {
+      String uuid = generateUuid();
+      nodeExecutionList.add(NodeExecution.builder().uuid(uuid).build());
+    }
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    String planExecutionId = "planId";
+    List<String> stageFQNs = Collections.singletonList("s1");
+    Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId)
+                            .is(planExecutionId)
+                            .and(NodeExecutionKeys.stageFqn)
+                            .in(stageFQNs);
+    Query query = query(criteria);
+    query.fields().include("node");
+    doReturn(iterator).when(nodeExecutionReadHelperMock).fetchNodeExecutions(query);
+    CloseableIterator<NodeExecution> fetchedIterator = nodeExecutionService.fetchNodeExecutionsForGivenStageFQNs(
+        planExecutionId, stageFQNs, Collections.singletonList("node"));
+    assertThat(fetchedIterator).isEqualTo(iterator);
   }
 }

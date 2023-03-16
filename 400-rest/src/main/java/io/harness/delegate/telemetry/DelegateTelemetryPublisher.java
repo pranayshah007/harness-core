@@ -20,7 +20,7 @@ import io.harness.TelemetryConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -52,9 +52,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 @OwnedBy(DEL)
-public class DelegateTelemetryPublisher extends IteratorPumpModeHandler implements Handler<Account> {
+public class DelegateTelemetryPublisher extends IteratorPumpAndRedisModeHandler implements Handler<Account> {
   private static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   private static final String ACCOUNT = "Account";
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(4);
+  private static final Duration ACCEPTABLE_EXECUTION_TIME = ofMinutes(2);
 
   private final PersistenceIteratorFactory persistenceIteratorFactory;
   private final MorphiaPersistenceProvider<Account> persistenceProvider;
@@ -83,13 +85,30 @@ public class DelegateTelemetryPublisher extends IteratorPumpModeHandler implemen
                            .clazz(Account.class)
                            .fieldName(AccountKeys.delegateTelemetryPublisherIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofMinutes(4))
-                           .acceptableExecutionTime(ofMinutes(2))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
                            .handler(this)
                            .entityProcessController(new AccountLevelEntityProcessController(accountService))
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<Account, MorphiaFilterExpander<Account>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       DelegateTelemetryPublisher.class,
+                       MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
+                           .clazz(Account.class)
+                           .fieldName(AccountKeys.delegateTelemetryPublisherIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+                           .handler(this)
+                           .entityProcessController(new AccountLevelEntityProcessController(accountService))
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

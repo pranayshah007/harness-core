@@ -8,7 +8,9 @@
 package io.harness.cvng.migration;
 
 import io.harness.cvng.migration.timescale.CreateSLOHealthIndicator;
+import io.harness.cvng.migration.timescale.CreateSLOHistoryTable;
 import io.harness.cvng.migration.timescale.CreateSLOPeriodicSummary;
+import io.harness.cvng.migration.timescale.MigrateSLOtoTimeScaleDb;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
@@ -33,6 +35,8 @@ public class SRMTimescaleMigrationList implements MigrationDetails {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, CreateSLOHealthIndicator.class))
         .add(Pair.of(2, CreateSLOPeriodicSummary.class))
+        .add(Pair.of(3, CreateSLOHistoryTable.class))
+        .add(Pair.of(4, MigrateSLOtoTimeScaleDb.class))
         .build();
   }
 }

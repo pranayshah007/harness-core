@@ -10,6 +10,7 @@ package io.harness.delegate.aws.asg;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -31,6 +32,7 @@ import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.AsgNGException;
@@ -100,7 +102,7 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
 
     } catch (Exception e) {
       logCallback.saveExecutionLog(
-          color(format("Prepare Rollback Data Operation Failed with error: %s", asgTaskHelper.getExceptionMessage(e)),
+          color(format("Prepare Rollback Data Failed with error: %s", asgTaskHelper.getExceptionMessage(e)),
               LogColor.Red, LogWeight.Bold),
           ERROR, CommandExecutionStatus.FAILURE);
       throw new AsgNGException(e);
@@ -109,7 +111,7 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
 
   private Map<String, List<String>> executePrepareRollbackData(
       AsgSdkManager asgSdkManager, LogCallback logCallback, String asgName) {
-    asgSdkManager.info("Prepare Rollback Data Operation Started");
+    asgSdkManager.info("Preparing Rollback Data");
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }
@@ -123,16 +125,16 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
             .addHandler(AsgLaunchTemplate, AsgLaunchTemplateManifestRequest.builder().build())
             .addHandler(AsgConfiguration, AsgConfigurationManifestRequest.builder().build())
             .addHandler(AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().build())
+            .addHandler(AsgScheduledUpdateGroupAction, AsgScheduledActionManifestRequest.builder().build())
             .getContent();
 
     if (chainState.getAutoScalingGroup() == null) {
       logCallback.saveExecutionLog(
-          color(
-              format("Asg %s doesn't exist. Skipping Prepare Rollback Data Operation", asgName), White, LogWeight.Bold),
-          INFO, CommandExecutionStatus.SUCCESS);
-    } else {
-      logCallback.saveExecutionLog(color("Prepare Rollback Data Operation Finished Successfully", Green, Bold), INFO,
+          color(format("Asg %s doesn't exist. Skipping Prepare Rollback Data", asgName), White, LogWeight.Bold), INFO,
           CommandExecutionStatus.SUCCESS);
+    } else {
+      logCallback.saveExecutionLog(
+          color("Prepare Rollback Data Finished Successfully", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);
     }
     return chainState.getAsgManifestsDataForRollback();
   }

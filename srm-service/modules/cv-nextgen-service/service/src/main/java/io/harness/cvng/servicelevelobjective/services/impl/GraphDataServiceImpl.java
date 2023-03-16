@@ -192,9 +192,10 @@ public class GraphDataServiceImpl implements GraphDataService {
         entityDisabledTimeService.get(monitoredService.getUuid(), monitoredService.getAccountId());
     int currentDisabledRange = 0;
     long disabledMinutesFromStart = 0;
+    int skipRecordCount = 0;
     int currentSLIRecord = 0;
 
-    List<SLODashboardWidget.Point> sliTread = new ArrayList<>();
+    List<SLODashboardWidget.Point> sliTrend = new ArrayList<>();
     List<SLODashboardWidget.Point> errorBudgetBurndown = new ArrayList<>();
     double errorBudgetRemainingPercentage = 100;
     double sliStatusPercentage = 0;
@@ -207,15 +208,19 @@ public class GraphDataServiceImpl implements GraphDataService {
       SLIValue sliValue = null;
       long beginningMinute = sliRecords.get(0).getEpochMinute();
       SLIRecord firstRecord = sliRecords.get(0);
-      long prevRecordGoodCount =
+      long lastRecordBeforeStartGoodCount =
           firstRecord.getRunningGoodCount() - (firstRecord.getSliState() == SLIRecord.SLIState.GOOD ? 1 : 0);
-      long prevRecordBadCount =
+      long lastRecordBeforeStartBadCount =
           firstRecord.getRunningBadCount() - (firstRecord.getSliState() == SLIRecord.SLIState.BAD ? 1 : 0);
+
       for (SLIRecord sliRecord : sliRecords) {
-        long goodCountFromStart = sliRecord.getRunningGoodCount() - prevRecordGoodCount;
-        long badCountFromStart = sliRecord.getRunningBadCount() - prevRecordBadCount;
+        long goodCountFromStart = sliRecord.getRunningGoodCount() - lastRecordBeforeStartGoodCount;
+        long badCountFromStart = sliRecord.getRunningBadCount() - lastRecordBeforeStartBadCount;
+        if (sliRecord.getSliState().equals(SLIRecord.SLIState.SKIP_DATA)) {
+          skipRecordCount += 1;
+        }
         long minutesFromStart = sliRecord.getEpochMinute() - beginningMinute + 1;
-        boolean enabled = true;
+
         if (!disableTimes.isEmpty() && currentDisabledRange <= disableTimes.size() && currentSLIRecord != 0) {
           Pair<Long, Long> disabledMinData =
               getDisabledMinBetweenRecords(sliRecords.get(currentSLIRecord - 1).getTimestamp().toEpochMilli(),
@@ -223,18 +228,14 @@ public class GraphDataServiceImpl implements GraphDataService {
           disabledMinutesFromStart += disabledMinData.getLeft();
           currentDisabledRange = Math.toIntExact(disabledMinData.getRight());
         }
-        if (currentDisabledRange < disableTimes.size()) {
-          enabled = !disableTimes.get(currentDisabledRange).contains(sliRecord.getTimestamp().toEpochMilli());
-        }
-        if (currentDisabledRange > 0) {
-          enabled =
-              enabled && !disableTimes.get(currentDisabledRange - 1).contains(sliRecord.getTimestamp().toEpochMilli());
-        }
+
+        boolean enabled = isMinuteEnabled(disableTimes, currentDisabledRange, sliRecord);
+
         if (sliRecord.getSliVersion() != sliVersion) {
           return SLODashboardWidget.SLOGraphData.builder()
               .errorBudgetBurndown(errorBudgetBurndown)
               .errorBudgetRemaining(errorBudgetRemaining)
-              .sloPerformanceTrend(sliTread)
+              .sloPerformanceTrend(sliTrend)
               .isRecalculatingSLI(true)
               .isCalculatingSLI(false)
               .sliStatusPercentage(sliStatusPercentage)
@@ -242,8 +243,9 @@ public class GraphDataServiceImpl implements GraphDataService {
               .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
               .build();
         }
+
         sliValue = sliMissingDataType.calculateSLIValue(
-            goodCountFromStart, badCountFromStart, minutesFromStart, disabledMinutesFromStart);
+            goodCountFromStart + skipRecordCount, badCountFromStart, minutesFromStart, disabledMinutesFromStart);
 
         if (getBadCountTillRangeStartTime
             && !sliRecord.getTimestamp().isBefore(DateTimeUtils.roundDownTo1MinBoundary(filter.getStartTime()))) {
@@ -259,7 +261,7 @@ public class GraphDataServiceImpl implements GraphDataService {
           badCountTillRangeEndTime = sliValue.getBadCount();
         }
 
-        sliTread.add(SLODashboardWidget.Point.builder()
+        sliTrend.add(SLODashboardWidget.Point.builder()
                          .timestamp(sliRecord.getTimestamp().toEpochMilli())
                          .value(sliValue.sliPercentage())
                          .enabled(enabled)
@@ -272,36 +274,49 @@ public class GraphDataServiceImpl implements GraphDataService {
                 .build());
         currentSLIRecord++;
       }
+
       errorBudgetRemainingPercentage = errorBudgetBurndown.get(errorBudgetBurndown.size() - 1).getValue();
-      sliStatusPercentage = sliTread.get(sliTread.size() - 1).getValue();
+      sliStatusPercentage = sliTrend.get(sliTrend.size() - 1).getValue();
       errorBudgetRemaining = totalErrorBudgetMinutes - sliValue.getBadCount();
     } else if (Instant.ofEpochMilli(serviceLevelIndicator.getCreatedAt())
                    .isBefore(clock.instant().minus(Duration.ofMinutes(10)))) {
       isCalculatingSLI = true;
     }
 
-    long startFilter = filter.getStartTime().toEpochMilli();
-    long endFilter = filter.getEndTime().toEpochMilli();
-
-    sliTread = sliTread.stream()
-                   .filter(sli -> sli.getTimestamp() >= startFilter)
-                   .filter(sli -> sli.getTimestamp() <= endFilter)
-                   .collect(Collectors.toList());
-    errorBudgetBurndown = errorBudgetBurndown.stream()
-                              .filter(e -> e.getTimestamp() >= startFilter)
-                              .filter(e -> e.getTimestamp() <= endFilter)
-                              .collect(Collectors.toList());
+    sliTrend = filterWidgetPoints(sliTrend, filter);
+    errorBudgetBurndown = filterWidgetPoints(errorBudgetBurndown, filter);
 
     return SLODashboardWidget.SLOGraphData.builder()
         .errorBudgetBurndown(errorBudgetBurndown)
         .errorBudgetRemaining(errorBudgetRemaining)
-        .sloPerformanceTrend(sliTread)
+        .sloPerformanceTrend(sliTrend)
         .isRecalculatingSLI(false)
         .isCalculatingSLI(isCalculatingSLI)
         .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
         .errorBudgetBurned(Math.max(badCountTillRangeEndTime - badCountTillRangeStartTime, 0))
         .sliStatusPercentage(sliStatusPercentage)
         .build();
+  }
+
+  private boolean isMinuteEnabled(List<EntityDisableTime> disableTimes, int currentDisabledRange, SLIRecord sliRecord) {
+    boolean enabled = true;
+    if (currentDisabledRange < disableTimes.size()) {
+      enabled = !disableTimes.get(currentDisabledRange).contains(sliRecord.getTimestamp().toEpochMilli());
+    }
+    if (currentDisabledRange > 0) {
+      enabled =
+          enabled && !disableTimes.get(currentDisabledRange - 1).contains(sliRecord.getTimestamp().toEpochMilli());
+    }
+    return enabled;
+  }
+  private List<SLODashboardWidget.Point> filterWidgetPoints(
+      List<SLODashboardWidget.Point> dataPoints, TimeRangeParams filter) {
+    long startFilter = filter.getStartTime().toEpochMilli();
+    long endFilter = filter.getEndTime().toEpochMilli();
+    return dataPoints.stream()
+        .filter(dataPoint -> dataPoint.getTimestamp() >= startFilter)
+        .filter(dataPoint -> dataPoint.getTimestamp() <= endFilter)
+        .collect(Collectors.toList());
   }
 
   @VisibleForTesting

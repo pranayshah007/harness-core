@@ -7,6 +7,7 @@
 
 package io.harness.cvng;
 
+import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
@@ -65,6 +66,7 @@ import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask.CVNGDemoPerpetua
 import io.harness.cvng.core.jobs.CVNGDemoPerpetualTaskHandler;
 import io.harness.cvng.core.jobs.ChangeSourceDemoHandler;
 import io.harness.cvng.core.jobs.CompositeSLODataExecutorTaskHandler;
+import io.harness.cvng.core.jobs.CustomChangeEventConsumer;
 import io.harness.cvng.core.jobs.DataCollectionTasksPerpetualTaskStatusUpdateHandler;
 import io.harness.cvng.core.jobs.DeploymentChangeEventConsumer;
 import io.harness.cvng.core.jobs.EntityCRUDStreamConsumer;
@@ -74,7 +76,6 @@ import io.harness.cvng.core.jobs.PersistentLockCleanup;
 import io.harness.cvng.core.jobs.SLIDataCollectionTaskCreateNextTaskHandler;
 import io.harness.cvng.core.jobs.SLORecalculationFailureHandler;
 import io.harness.cvng.core.jobs.ServiceGuardDataCollectionTaskCreateNextTaskHandler;
-import io.harness.cvng.core.jobs.ServiceLevelObjectiveV2VerifyTaskHandler;
 import io.harness.cvng.core.jobs.StatemachineEventConsumer;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.SideKickService;
@@ -98,12 +99,11 @@ import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObject
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.ServiceLevelObjectiveKeys;
 import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
 import io.harness.cvng.statemachine.jobs.AnalysisOrchestrationJob;
+import io.harness.cvng.utils.SRMServiceAuthIfHasApiKey;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.ExecutionStatus;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceKeys;
@@ -156,7 +156,6 @@ import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.templates.PredefinedTemplate;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
-import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.pms.contracts.plan.ExpansionRequestType;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
@@ -177,7 +176,6 @@ import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEvent
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.pms.yaml.YamlNode;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.reflection.HarnessReflections;
@@ -311,6 +309,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     new Thread(injector.getInstance(EntityCRUDStreamConsumer.class)).start();
     new Thread(injector.getInstance(DeploymentChangeEventConsumer.class)).start();
     new Thread(injector.getInstance(InternalChangeEventFFConsumer.class)).start();
+    new Thread(injector.getInstance(CustomChangeEventConsumer.class)).start();
     new Thread(injector.getInstance(StatemachineEventConsumer.class)).start();
   }
 
@@ -410,7 +409,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     modules.add(new AbstractMongoModule() {
       @Override
       public UserProvider userProvider() {
-        return new NoopUserProvider();
+        return new UserPrincipalUserProvider();
       }
     });
     modules.add(new ProviderModule() {
@@ -475,7 +474,6 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerCVNGDemoPerpetualTaskIterator(injector);
     registerSLORecalculationFailure(injector);
     registerDataCollectionTasksPerpetualTaskStatusUpdateIterator(injector);
-    registerServiceLevelObjectiveV2VerifyTaskIterator(injector);
     registerCompositeSLODataExecutorTaskIterator(injector);
     injector.getInstance(CVNGStepTaskHandler.class).registerIterator();
     injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
@@ -597,7 +595,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     JsonExpansionInfo sloPolicyInfo =
         JsonExpansionInfo.newBuilder()
             .setExpansionType(ExpansionRequestType.LOCAL_FQN)
-            .setKey(YAMLFieldNameConstants.STAGE + YamlNode.PATH_SEP + YAMLFieldNameConstants.SPEC)
+            .setKey(YAMLFieldNameConstants.STAGE)
             .setExpansionKey(ExpansionKeysConstants.SLO_POLICY_EXPANSION_KEY)
             .setStageType(StepType.newBuilder().setType("Deployment").setStepCategory(StepCategory.STAGE).build())
             .build();
@@ -935,41 +933,6 @@ public class VerificationApplication extends Application<VerificationConfigurati
         () -> dataCollectionTasksPerpetualTaskStatusUpdateIterator.process(), 0, 2, TimeUnit.MINUTES);
   }
 
-  private void registerServiceLevelObjectiveV2VerifyTaskIterator(Injector injector) {
-    ScheduledThreadPoolExecutor serviceLevelObjectiveV2VerifyTaskExecutor = new ScheduledThreadPoolExecutor(
-        3, new ThreadFactoryBuilder().setNameFormat("service-level-objective-v2-verify-task-iterator").build());
-
-    ServiceLevelObjectiveV2VerifyTaskHandler serviceLevelObjectiveV2VerifyTaskHandler =
-        injector.getInstance(ServiceLevelObjectiveV2VerifyTaskHandler.class);
-
-    PersistenceIterator serviceLevelObjectiveV2VerifyTaskIterator =
-        MongoPersistenceIterator
-            .<AbstractServiceLevelObjective, MorphiaFilterExpander<AbstractServiceLevelObjective>>builder()
-            .mode(PersistenceIterator.ProcessMode.PUMP)
-            .iteratorName("ServiceLevelObjectiveV2VerifyTaskIterator")
-            .clazz(AbstractServiceLevelObjective.class)
-            .fieldName(ServiceLevelObjectiveV2Keys.nextVerificationIteration)
-            .targetInterval(ofMinutes(30))
-            .acceptableNoAlertDelay(ofMinutes(5))
-            .executorService(serviceLevelObjectiveV2VerifyTaskExecutor)
-            .semaphore(new Semaphore(2))
-            .handler(serviceLevelObjectiveV2VerifyTaskHandler)
-            .schedulingType(REGULAR)
-            .filterExpander(query
-                -> query.and(
-                    query.criteria(ServiceLevelObjectiveV2Keys.lastUpdatedAt)
-                        .greaterThan(
-                            injector.getInstance(Clock.class).instant().minus(45, ChronoUnit.MINUTES).toEpochMilli()),
-                    query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.SIMPLE)))
-            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
-            .redistribute(true)
-            .build();
-
-    injector.injectMembers(serviceLevelObjectiveV2VerifyTaskIterator);
-    serviceLevelObjectiveV2VerifyTaskExecutor.scheduleWithFixedDelay(
-        () -> serviceLevelObjectiveV2VerifyTaskIterator.process(), 0, 5, TimeUnit.MINUTES);
-  }
-
   private void registerCompositeSLODataExecutorTaskIterator(Injector injector) {
     ScheduledThreadPoolExecutor compositeSLODataExecutorTaskExecutor = new ScheduledThreadPoolExecutor(
         3, new ThreadFactoryBuilder().setNameFormat("composite-slo-data-collection-task-iterator").build());
@@ -1041,7 +1004,11 @@ public class VerificationApplication extends Application<VerificationConfigurati
     Map<String, String> serviceToSecretMapping = new HashMap<>();
     Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate = resourceInfoAndRequest
         -> resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(NextGenManagerAuth.class) != null
-        || resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(NextGenManagerAuth.class) != null;
+        || resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(NextGenManagerAuth.class) != null
+        || (resourceInfoAndRequest.getKey().getResourceMethod() != null
+            && resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(SRMServiceAuthIfHasApiKey.class)
+                != null
+            && resourceInfoAndRequest.getValue().getHeaders().get(X_API_KEY) != null);
     serviceToSecretMapping.put(BEARER.getServiceId(), configuration.getManagerAuthConfig().getJwtAuthSecret());
     serviceToSecretMapping.put(
         IDENTITY_SERVICE.getServiceId(), configuration.getManagerAuthConfig().getJwtIdentityServiceSecret());
@@ -1104,18 +1071,21 @@ public class VerificationApplication extends Application<VerificationConfigurati
     SLONotificationHandler notificationHandler = injector.getInstance(SLONotificationHandler.class);
 
     PersistenceIterator dataCollectionIterator =
-        MongoPersistenceIterator.<ServiceLevelObjective, MorphiaFilterExpander<ServiceLevelObjective>>builder()
+        MongoPersistenceIterator
+            .<AbstractServiceLevelObjective, MorphiaFilterExpander<AbstractServiceLevelObjective>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
             .iteratorName("SLONotificationIterator")
-            .clazz(ServiceLevelObjective.class)
-            .fieldName(ServiceLevelObjectiveKeys.nextNotificationIteration)
+            .clazz(AbstractServiceLevelObjective.class)
+            .fieldName(ServiceLevelObjectiveV2Keys.nextNotificationIteration)
             .targetInterval(ofMinutes(60))
             .acceptableNoAlertDelay(ofMinutes(10))
             .executorService(notificationExecutor)
             .semaphore(new Semaphore(5))
             .handler(notificationHandler)
             .schedulingType(REGULAR)
-            .filterExpander(query -> query.field(ServiceLevelObjectiveKeys.notificationRuleRefs).exists())
+            .filterExpander(query
+                -> query.and(query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.SIMPLE),
+                    query.criteria(ServiceLevelObjectiveV2Keys.notificationRuleRefs).exists()))
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();

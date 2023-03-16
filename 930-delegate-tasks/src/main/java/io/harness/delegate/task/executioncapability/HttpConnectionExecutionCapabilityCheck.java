@@ -32,15 +32,16 @@ public class HttpConnectionExecutionCapabilityCheck implements CapabilityCheck, 
     boolean isNextGen =
         isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN"));
     if (isNextGen) {
-      valid = Http.connectableHttpUrlWithoutFollowingRedirect(httpConnectionExecutionCapability.fetchConnectableUrl());
+      valid = Http.connectableHttpUrlWithoutFollowingRedirect(
+          httpConnectionExecutionCapability.fetchConnectableUrl(), httpConnectionExecutionCapability.getHeaders());
     } else {
       if (httpConnectionExecutionCapability.getHeaders() != null) {
         valid = Http.connectableHttpUrlWithHeaders(
             httpConnectionExecutionCapability.fetchConnectableUrl(), httpConnectionExecutionCapability.getHeaders());
       } else {
         if (httpConnectionExecutionCapability.isIgnoreRedirect()) {
-          valid =
-              Http.connectableHttpUrlWithoutFollowingRedirect(httpConnectionExecutionCapability.fetchConnectableUrl());
+          valid = Http.connectableHttpUrlWithoutFollowingRedirect(
+              httpConnectionExecutionCapability.fetchConnectableUrl(), httpConnectionExecutionCapability.getHeaders());
         } else {
           valid = Http.connectableHttpUrl(httpConnectionExecutionCapability.fetchConnectableUrl());
         }

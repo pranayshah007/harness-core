@@ -15,6 +15,7 @@ import io.harness.plan.Plan;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @OwnedBy(PIPELINE)
 public interface PlanService {
@@ -29,4 +30,18 @@ public interface PlanService {
   // When retying a failed pipeline from a strategy node, we are saving one IdentityNode for each successful
   // combination.
   List<Node> saveIdentityNodesForMatrix(List<Node> identityNodes, String planId);
+
+  /**
+   * Delete all nodeEntity for given uuids
+   * Uses - id index
+   * @param nodeEntityIds
+   */
+  void deleteNodesForGivenIds(Set<String> nodeEntityIds);
+
+  /**
+   * Delete all Plans for given uuids
+   * Uses - id index
+   * @param planIds
+   */
+  void deletePlansForGivenIds(Set<String> planIds);
 }

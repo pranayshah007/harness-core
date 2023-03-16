@@ -10,16 +10,22 @@ package io.harness.shell;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.AADITI;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.VED;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
 
 import java.util.Collections;
@@ -310,5 +316,39 @@ public class ScriptProcessExecutorTest extends CategoryTest {
     assertThat(shellExecutionData.getSweepingOutputEnvVariables()).containsEntry("B", "bbb");
     assertThat(shellExecutionData.getSweepingOutputEnvVariables()).containsKey("aaa");
     assertThat(shellExecutionData.getSweepingOutputEnvVariables()).doesNotContainKey("C");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testExecuteBashScriptWithInvalidVariables() {
+    Map<String, String> env = new HashMap<>();
+    env.put("PATH", "/Users/user/bin:/usr/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin");
+    shellExecutorConfig = ShellExecutorConfig.builder()
+                              .accountId(ACCOUNT_ID)
+                              .appId(APP_ID)
+                              .commandUnitName("MyCommand")
+                              .executionId(ACTIVITY_ID)
+                              .scriptType(ScriptType.BASH)
+                              .workingDirectory("/tmp")
+                              .environment(env)
+                              .kubeConfigContent("KubeConfig")
+                              .build();
+
+    scriptProcessExecutor = new ScriptProcessExecutor(logCallback, true, shellExecutorConfig);
+    on(scriptProcessExecutor).set("logCallback", logCallback);
+
+    String command = "export A=\"aaa\"\n"
+        + "export B=\"bbb\"";
+    ExecuteCommandResponse executeCommandResponse = scriptProcessExecutor.executeCommandString(
+        command, asList("A", "B", "${C}", "${A}", "hyphen-var", "nonExistentVar"), Collections.emptyList(), null);
+    assertThat(executeCommandResponse).isNotNull();
+    assertThat(executeCommandResponse.getStatus()).isEqualTo(SUCCESS);
+    assertThat(executeCommandResponse.getCommandExecutionData()).isNotNull();
+    ShellExecutionData shellExecutionData = (ShellExecutionData) executeCommandResponse.getCommandExecutionData();
+    assertThat(shellExecutionData.getSweepingOutputEnvVariables()).isNotEmpty();
+
+    // 2 warnings for hyphenated and empty variables
+    verify(logCallback, times(2)).saveExecutionLog(any(), eq(LogLevel.WARN), any());
   }
 }

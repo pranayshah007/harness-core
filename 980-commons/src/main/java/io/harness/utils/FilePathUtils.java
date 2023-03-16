@@ -15,6 +15,7 @@ import io.harness.exception.InvalidRequestException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
@@ -22,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.DX)
 public class FilePathUtils {
   public static final String FILE_PATH_SEPARATOR = "/";
+  public static final Pattern FILE_PATH_PATTERN = Pattern.compile("^(\\b(account|org)\\b:)*/.+$");
 
   public static boolean isFilePartOfFolder(String folderPath, String filePath) {
     if (filePath == null || folderPath == null) {

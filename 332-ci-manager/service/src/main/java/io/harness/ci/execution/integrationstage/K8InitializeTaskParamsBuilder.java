@@ -30,7 +30,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.executionargs.CIExecutionArgs;
+import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
@@ -38,7 +40,9 @@ import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.K8PodDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.PodCleanupDetails;
+import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
+import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
@@ -47,7 +51,6 @@ import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.buildstate.providers.InternalContainerParamsProvider;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.ci.utils.LiteEngineSecretEvaluator;
 import io.harness.ci.utils.PortFinder;
@@ -252,6 +255,12 @@ public class K8InitializeTaskParamsBuilder {
     Map<String, String> commonEnvVars = k8InitializeTaskUtils.getCommonStepEnvVariables(
         k8PodDetails, gitEnvVars, runtimeCodebaseVars, k8InitializeTaskUtils.getWorkDir(), logPrefix, ambiance);
 
+    Caching caching = initializeStepInfo.getStageElementConfig().getCaching();
+    if (caching != null && RunTimeInputHandler.resolveBooleanParameter(caching.getEnabled(), false)) {
+      Map<String, String> cacheEnvVars = k8InitializeTaskUtils.getCacheEnvironmentVariable();
+      commonEnvVars.putAll(cacheEnvVars);
+    }
+
     ConnectorDetails harnessInternalImageConnector =
         harnessImageUtils.getHarnessImageConnectorDetailsForK8(ngAccess, infrastructure);
     Map<String, ConnectorDetails> githubApiTokenFunctorConnectors =
@@ -409,12 +418,16 @@ public class K8InitializeTaskParamsBuilder {
             .type(IntegrationStageNode.StepType.CI)
             .identifier(initializeStepInfo.getStageIdentifier())
             .variables(initializeStepInfo.getVariables())
+            .pipelineVariables(initializeStepInfo.getPipelineVariables())
             .integrationStageConfig((IntegrationStageConfigImpl) initializeStepInfo.getStageElementConfig())
             .build();
-    CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder()
-                                          .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
-                                          .executionSource(initializeStepInfo.getExecutionSource())
-                                          .build();
+    StageDetails stageDetails = getStageDetails(ambiance);
+    CIExecutionArgs ciExecutionArgs =
+        CIExecutionArgs.builder()
+            .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
+            .executionSource(initializeStepInfo.getExecutionSource() != null ? initializeStepInfo.getExecutionSource()
+                                                                             : stageDetails.getExecutionSource())
+            .build();
     List<ContainerDefinitionInfo> serviceCtrDefinitionInfos =
         k8InitializeServiceUtils.createServiceContainerDefinitions(stageNode, portFinder, os);
     List<ContainerDefinitionInfo> stepCtrDefinitionInfos =
@@ -461,5 +474,14 @@ public class K8InitializeTaskParamsBuilder {
       }
     }
     return k8InitializeTaskUtils.generatePodName(stageId);
+  }
+
+  private StageDetails getStageDetails(Ambiance ambiance) {
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
+    if (!optionalSweepingOutput.isFound()) {
+      throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
+    }
+    return (StageDetails) optionalSweepingOutput.getOutput();
   }
 }

@@ -48,12 +48,14 @@ public class AzureCGHelper {
     RetryPolicy retryPolicy =
         AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions()));
 
-    ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
-                                                        .clientId(clientId)
-                                                        .tenantId(tenantId)
-                                                        .clientSecret(clientSecret)
-                                                        .httpClient(httpClient)
-                                                        .build();
+    ClientSecretCredential clientSecretCredential =
+        new ClientSecretCredentialBuilder()
+            .clientId(clientId)
+            .tenantId(tenantId)
+            .clientSecret(clientSecret)
+            .httpClient(httpClient)
+            .authorityHost(AzureUtils.getAuthorityHost(azureEnvironment, tenantId))
+            .build();
 
     return AzureUtils.getAzureHttpPipeline(clientSecretCredential, azureProfile, retryPolicy, httpClient);
   }

@@ -142,7 +142,7 @@ public class TasRunPluginCommandTaskHandler extends CfCommandTaskNGHandler {
       executionLogCallback.saveExecutionLog("#----------  Cleaning up temporary files completed", INFO, SUCCESS);
     }
   }
-  private TasRunPluginResponse handleError(
+  public TasRunPluginResponse handleError(
       LogCallback executionLogCallback, CfRunPluginCommandRequestNG pluginCommandRequest, Exception e) {
     log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing PCF Run Plugin Command task [{}]",
         pluginCommandRequest);
@@ -202,7 +202,7 @@ public class TasRunPluginCommandTaskHandler extends CfCommandTaskNGHandler {
     }
     return canonicalPath;
   }
-  private void saveFilesInWorkingDirectoryStringContent(
+  public void saveFilesInWorkingDirectoryStringContent(
       final List<FileData> fileDataList, final String workingDirectoryCanonicalPath) throws IOException {
     if (EmptyPredicate.isEmpty(fileDataList)) {
       return;
@@ -226,7 +226,7 @@ public class TasRunPluginCommandTaskHandler extends CfCommandTaskNGHandler {
   }
 
   @VisibleForTesting
-  String prepareFinalScript(String renderedScriptString, String workingDirCanonicalPathStr, String repoRoot) {
+  public String prepareFinalScript(String renderedScriptString, String workingDirCanonicalPathStr, String repoRoot) {
     // replace the path identifier with actual working directory path
     String finalScript =
         renderedScriptString.replaceAll(PcfConstants.FILE_START_REPO_ROOT_REGEX, workingDirCanonicalPathStr);

@@ -7,6 +7,9 @@
 
 package io.harness.pms.execution.utils;
 
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 
 import com.google.common.collect.Sets;
@@ -14,10 +17,13 @@ import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
+@OwnedBy(PIPELINE)
 public class NodeProjectionUtils {
   public static final Set<String> withId = Sets.newHashSet(NodeExecutionKeys.uuid);
 
   public static final Set<String> withParentId = Sets.newHashSet(NodeExecutionKeys.parentId);
+
+  public static final Set<String> withNextId = Sets.newHashSet(NodeExecutionKeys.nextId);
 
   public static final Set<String> fieldsForRetryInterruptHandler = Sets.newHashSet(
       NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.oldRetry, NodeExecutionKeys.mode);
@@ -38,6 +44,8 @@ public class NodeProjectionUtils {
 
   public static final Set<String> withAmbianceAndStatus =
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status);
+
+  public static final Set<String> withAmbiance = Sets.newHashSet(NodeExecutionKeys.ambiance);
 
   public static final Set<String> withStatus = Sets.newHashSet(NodeExecutionKeys.status);
 
@@ -68,9 +76,11 @@ public class NodeProjectionUtils {
       NodeExecutionKeys.executableResponses, NodeExecutionKeys.mode, NodeExecutionKeys.resolvedParams,
       NodeExecutionKeys.module, NodeExecutionKeys.originalNodeExecutionId, NodeExecutionKeys.stepType);
 
-  public static final Set<String> fieldsForExpressionEngine = Sets.newHashSet(NodeExecutionKeys.status,
-      NodeExecutionKeys.ambiance, NodeExecutionKeys.mode, NodeExecutionKeys.startTs, NodeExecutionKeys.endTs,
-      NodeExecutionKeys.parentId, NodeExecutionKeys.resolvedParams, NodeExecutionKeys.oldRetry);
+  // NodeId is added to resolve expression within same step
+  public static final Set<String> fieldsForExpressionEngine =
+      Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.ambiance, NodeExecutionKeys.mode,
+          NodeExecutionKeys.startTs, NodeExecutionKeys.endTs, NodeExecutionKeys.parentId,
+          NodeExecutionKeys.resolvedParams, NodeExecutionKeys.oldRetry, NodeExecutionKeys.nodeId);
 
   public static final Set<String> forFacilitation = Sets.newHashSet(NodeExecutionKeys.ambiance,
       NodeExecutionKeys.originalNodeExecutionId, NodeExecutionKeys.module, NodeExecutionKeys.resolvedParams);
@@ -87,7 +97,10 @@ public class NodeProjectionUtils {
       NodeExecutionKeys.name, NodeExecutionKeys.nodeId, NodeExecutionKeys.status, NodeExecutionKeys.executableResponses,
       NodeExecutionKeys.ambiance, NodeExecutionKeys.oldRetry, NodeExecutionKeys.planNode, NodeExecutionKeys.parentId);
 
-  public static final Set<String> fieldsForNodeExecutionDelete =
-      Sets.newHashSet(NodeExecutionKeys.timeoutInstanceIds, NodeExecutionKeys.adviserTimeoutInstanceIds,
-          NodeExecutionKeys.nodeId, NodeExecutionKeys.notifyId, NodeExecutionKeys.stepType);
+  public static final Set<String> fieldsForNodeExecutionDelete = Sets.newHashSet(NodeExecutionKeys.timeoutInstanceIds,
+      NodeExecutionKeys.adviserTimeoutInstanceIds, NodeExecutionKeys.nodeId, NodeExecutionKeys.notifyId,
+      NodeExecutionKeys.stepType, NodeExecutionKeys.executionInputConfigured);
+
+  public static final Set<String> fieldsForIdentityNodeCreation =
+      Sets.newHashSet(NodeExecutionKeys.planNode, NodeExecutionKeys.stepType, NodeExecutionKeys.uuid);
 }

@@ -45,6 +45,7 @@ import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.service.impl.FileStoreServiceImpl;
 import io.harness.ng.beans.PageRequest;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.Status;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -179,7 +180,7 @@ public class FileStoreResourceTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testCreateFileWith128CharsIdentifier() {
-    String identifier = RandomStringUtils.randomAlphanumeric(128);
+    String identifier = RandomStringUtils.random(128, true, false);
     final FileDTO createRequest = FileDTO.builder()
                                       .parentIdentifier("Root")
                                       .identifier(identifier)
@@ -423,7 +424,7 @@ public class FileStoreResourceTest extends CategoryTest {
     doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_EDIT_PERMISSION));
     when(fileStoreService.listReferencedBy(pageParams, ACCOUNT, ORG, PROJECT, IDENTIFIER, EntityType.PIPELINES))
         .thenReturn(entityServiceUsageList);
-    ResponseDTO<Page<EntitySetupUsageDTO>> response =
+    ResponseDTO<PageResponse<EntitySetupUsageDTO>> response =
         fileStoreResource.getReferencedBy(page, size, ACCOUNT, ORG, PROJECT, IDENTIFIER, EntityType.PIPELINES, null);
 
     verify(fileStoreService).listReferencedBy(pageParams, ACCOUNT, ORG, PROJECT, IDENTIFIER, EntityType.PIPELINES);

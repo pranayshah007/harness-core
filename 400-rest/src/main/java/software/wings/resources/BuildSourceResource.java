@@ -7,6 +7,8 @@
 
 package software.wings.resources;
 
+import static io.harness.beans.FeatureName.SPG_ALLOW_FILTER_BY_PATHS_GCS;
+import static io.harness.beans.FeatureName.SPG_ALLOW_GET_BUILD_SYNC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -15,6 +17,7 @@ import static software.wings.security.PermissionAttribute.ResourceType.APPLICATI
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.ff.FeatureFlagService;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.artifact.ArtifactStream;
@@ -63,6 +66,7 @@ public class BuildSourceResource {
   @Inject private GcsService gcsService;
   @Inject private ArtifactStreamService artifactStreamService;
   @Inject private ArtifactService artifactService;
+  @Inject private FeatureFlagService featureFlagService;
 
   /**
    * Gets jobs.
@@ -246,12 +250,23 @@ public class BuildSourceResource {
     List<BuildDetails> buildDetails;
     ArtifactStream artifactStream = artifactStreamService.get(artifactStreamId);
     if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled())) {
-      List<Artifact> artifacts =
-          artifactService.listArtifactsByArtifactStreamId(artifactStream.getAccountId(), artifactStreamId);
-      buildDetails =
-          artifacts.stream()
-              .map(artifact -> BuildDetails.Builder.aBuildDetails().withNumber(artifact.getBuildNo()).build())
-              .collect(toList());
+      if (featureFlagService.isEnabled(SPG_ALLOW_GET_BUILD_SYNC, artifactStream.getAccountId())) {
+        buildDetails = buildSourceService.getBuilds(appId, artifactStreamId, artifactStream.getSettingId());
+        buildDetails = buildDetails.stream().sorted(new BuildDetailsComparator()).collect(toList());
+      } else {
+        List<Artifact> artifacts =
+            artifactService.listArtifactsByArtifactStreamId(artifactStream.getAccountId(), artifactStreamId);
+
+        if (featureFlagService.isEnabled(SPG_ALLOW_FILTER_BY_PATHS_GCS, artifactStream.getAccountId())
+            && artifactStream.getArtifactStreamType().equals(ArtifactStreamType.GCS.name())) {
+          buildDetails = buildSourceService.listArtifactByArtifactStreamAndFilterPath(artifacts, artifactStream);
+        } else {
+          buildDetails =
+              artifacts.stream()
+                  .map(artifact -> BuildDetails.Builder.aBuildDetails().withNumber(artifact.getBuildNo()).build())
+                  .collect(toList());
+        }
+      }
     } else {
       if (ArtifactStreamType.CUSTOM.name().equals(artifactStream.getArtifactStreamType())) {
         CustomArtifactStream customArtifactStream = (CustomArtifactStream) artifactStream;

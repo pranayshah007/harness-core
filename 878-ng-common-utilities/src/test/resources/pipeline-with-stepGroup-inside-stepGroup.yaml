@@ -1,0 +1,53 @@
+pipeline:
+  name: stepGroupTest
+  identifier: stepGroupTest
+  projectIdentifier: sahiltest
+  orgIdentifier: executionlist
+  tags: {}
+  stages:
+    - stage:
+        name: stage1
+        identifier: stage1
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: sg1
+                  identifier: stage1
+                  steps:
+                    - stepGroup:
+                        name: sg2
+                        identifier: sg2
+                        steps:
+                          - step:
+                              type: ShellScript
+                              name: Shell Script_1
+                              identifier: ShellScript_1
+                              spec:
+                                shell: Bash
+                                onDelegate: true
+                                source:
+                                  type: Inline
+                                  spec:
+                                    script: exit 1
+                                environmentVariables: []
+                                outputVariables: []
+                              timeout: 10m
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - AllErrors
+                        action:
+                          type: Retry
+                          spec:
+                            retryCount: 2
+                            retryIntervals:
+                              - 5s
+                              - 5s
+                            onRetryFailure:
+                              action:
+                                type: Abort
+                  spec: {}
+        tags: {}

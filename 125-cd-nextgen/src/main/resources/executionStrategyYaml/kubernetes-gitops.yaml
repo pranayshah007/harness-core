@@ -20,3 +20,9 @@ spec:
           spec:
             deleteSourceBranch: true
           timeout: 10m
+      - step:
+          type: GitOpsFetchLinkedApps
+          name: "Fetch Linked Apps"
+          identifier: fetchLinkedApps
+          timeout: 10m
+          spec: {}

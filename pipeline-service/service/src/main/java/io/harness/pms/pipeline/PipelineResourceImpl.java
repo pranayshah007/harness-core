@@ -28,7 +28,7 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
-import io.harness.gitaware.helper.MoveConfigRequestDTO;
+import io.harness.gitaware.helper.PipelineMoveConfigRequestDTO;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -37,24 +37,29 @@ import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
-import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.pipeline.api.PipelinesApiUtils;
+import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.mappers.NodeExecutionToExecutioNodeMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
+import io.harness.pms.pipeline.service.PipelineGetResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.pipeline.validation.async.beans.Action;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
 import io.harness.utils.PageUtils;
@@ -70,7 +75,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -95,6 +99,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   private final VariableCreatorMergeService variableCreatorMergeService;
   private final PipelineCloneHelper pipelineCloneHelper;
   private final PipelineMetadataService pipelineMetadataService;
+  private final PipelineAsyncValidationService pipelineAsyncValidationService;
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   @Deprecated
@@ -103,8 +108,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       String pipelineName, String pipelineDescription, Boolean isDraft, GitEntityCreateInfoDTO gitEntityCreateInfo,
       @NotNull String yaml) {
     String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
-    PipelineEntity pipelineEntity =
-        PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml, isDraft, pipelineVersion);
+    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
+        accountId, orgId, projectId, pipelineName, yaml, isDraft, pipelineVersion);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
 
@@ -119,8 +124,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       String pipelineName, String pipelineDescription, Boolean isDraft, GitEntityCreateInfoDTO gitEntityCreateInfo,
       @NotNull String yaml) {
     String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
-    PipelineEntity pipelineEntity =
-        PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml, isDraft, pipelineVersion);
+    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
+        accountId, orgId, projectId, pipelineName, yaml, isDraft, pipelineVersion);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
     PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(pipelineEntity, false);
@@ -150,15 +155,14 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
 
   @Hidden
   public ResponseDTO<VariableMergeServiceResponse> createVariables(@NotNull String accountId, @NotNull String orgId,
-      @NotNull String projectId, GitEntityFindInfoDTO gitEntityBasicInfo,
+      @NotNull String projectId, GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCache,
       @NotNull @ApiParam(hidden = true) String yaml) {
     log.info("Creating variables for pipeline.");
 
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml);
     // Apply all the templateRefs(if any) then check for variables.
     String resolveTemplateRefsInPipeline =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE)
-            .getMergedPipelineYaml();
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, loadFromCache).getMergedPipelineYaml();
     VariableMergeServiceResponse variablesResponse =
         variableCreatorMergeService.createVariablesResponses(resolveTemplateRefsInPipeline, false);
 
@@ -169,14 +173,13 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<VariableMergeServiceResponse> createVariablesV2(
       @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
       @NotNull String accountId, @NotNull String orgId, @NotNull String projectId,
-      GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull @ApiParam(hidden = true) String yaml) {
+      GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCache, @NotNull @ApiParam(hidden = true) String yaml) {
     log.info("Creating variables for pipeline v2 version.");
 
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml);
     // Apply all the templateRefs(if any) then check for variables.
     String resolveTemplateRefsInPipeline =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE)
-            .getMergedPipelineYaml();
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, loadFromCache).getMergedPipelineYaml();
     VariableMergeServiceResponse variablesResponse = variableCreatorMergeService.createVariablesResponsesV2(
         accountId, orgId, projectId, resolveTemplateRefsInPipeline);
     return ResponseDTO.newResponse(variablesResponse);
@@ -186,14 +189,22 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<PMSPipelineResponseDTO> getPipelineByIdentifier(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
       @ResourceIdentifier String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo,
-      boolean getTemplatesResolvedPipeline, boolean loadFromFallbackBranch, String loadFromCache) {
+      boolean getTemplatesResolvedPipeline, boolean loadFromFallbackBranch, boolean validateAsync,
+      String loadFromCache) {
     log.info(String.format("Retrieving pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity;
+    // if validateAsync is true, then this ID wil be of the event started for the async validation process, which can be
+    // queried on using another API to get the result of the async validation. If validateAsync is false, then this ID
+    // is not needed and will be null
+    String validationUUID;
     try {
-      pipelineEntity = pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false,
-          loadFromFallbackBranch, PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
+      PipelineGetResult pipelineGetResult = pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId,
+          pipelineId, false, false, Boolean.TRUE.equals(loadFromFallbackBranch),
+          GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache), validateAsync);
+      pipelineEntity = pipelineGetResult.getPipelineEntity();
+      validationUUID = pipelineGetResult.getAsyncValidationUUID();
     } catch (PolicyEvaluationFailureException pe) {
       return ResponseDTO.newResponse(
           PMSPipelineResponseDTO.builder()
@@ -209,15 +220,6 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
               .entityValidityDetails(EntityValidityDetails.builder().valid(false).invalidYaml(e.getYaml()).build())
               .gitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata())
               .yamlSchemaErrorWrapper((YamlSchemaErrorWrapperDTO) e.getMetadata())
-              .build());
-    } catch (NGTemplateResolveExceptionV2 ne) {
-      return ResponseDTO.newResponse(
-          PMSPipelineResponseDTO.builder()
-              .yamlPipeline(ne.getReferredByYaml())
-              .entityValidityDetails(
-                  EntityValidityDetails.builder().valid(false).invalidYaml(ne.getReferredByYaml()).build())
-              .gitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata())
-              .validateTemplateInputsResponse((ValidateTemplateInputsResponseDTO) ne.getMetadata())
               .build());
     }
 
@@ -242,6 +244,9 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         log.info("Cannot get resolved templates pipeline YAML");
       }
     }
+    if (validateAsync) {
+      pipeline.setValidationUuid(validationUUID);
+    }
     return ResponseDTO.newResponse(version, pipeline);
   }
 
@@ -255,7 +260,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
-        accountId, orgId, projectId, pipelineId, yaml, ifMatch, isDraft, pipelineVersion);
+        accountId, orgId, projectId, pipelineId, pipelineName, yaml, ifMatch, isDraft, pipelineVersion);
     PipelineCRUDResult pipelineCRUDResult =
         pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY, true);
     PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();
@@ -271,7 +276,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
-        accountId, orgId, projectId, pipelineId, yaml, ifMatch, isDraft, pipelineVersion);
+        accountId, orgId, projectId, pipelineId, pipelineName, yaml, ifMatch, isDraft, pipelineVersion);
     PipelineCRUDResult pipelineCRUDResult =
         pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY, false);
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
@@ -420,7 +425,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<Boolean> refreshFFCache(@NotNull @AccountIdentifier String accountId) {
     try {
       return ResponseDTO.newResponse(pmsFeatureFlagHelper.refreshCacheForGivenAccountId(accountId));
-    } catch (ExecutionException e) {
+    } catch (InvalidRequestException e) {
       log.error("Execution exception occurred while updating cache: " + e.getMessage());
     }
     return ResponseDTO.newResponse(false);
@@ -461,7 +466,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
             pipelineId, projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
 
     if (pipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(
@@ -490,25 +495,55 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
 
   @Override
   public ResponseDTO<MoveConfigResponse> moveConfig(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, MoveConfigRequestDTO moveConfigRequestDTO) {
-    if (!pipelineIdentifier.equals(moveConfigRequestDTO.getPipelineIdentifier())) {
+      String projectIdentifier, String pipelineIdentifier, PipelineMoveConfigRequestDTO pipelineMoveConfigRequestDTO) {
+    if (!pipelineIdentifier.equals(pipelineMoveConfigRequestDTO.getPipelineIdentifier())) {
       throw new InvalidRequestException("Identifiers given in path param and request body don't match.");
     }
     PipelineCRUDResult pipelineCRUDResult =
         pmsPipelineService.moveConfig(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier,
             MoveConfigOperationDTO.builder()
-                .repoName(moveConfigRequestDTO.getRepoName())
-                .branch(moveConfigRequestDTO.getBranch())
+                .repoName(pipelineMoveConfigRequestDTO.getRepoName())
+                .branch(pipelineMoveConfigRequestDTO.getBranch())
                 .moveConfigOperationType(io.harness.gitaware.helper.MoveConfigOperationType.getMoveConfigType(
-                    moveConfigRequestDTO.getMoveConfigOperationType()))
-                .connectorRef(moveConfigRequestDTO.getConnectorRef())
-                .baseBranch(moveConfigRequestDTO.getBaseBranch())
-                .commitMessage(moveConfigRequestDTO.getCommitMsg())
-                .isNewBranch(moveConfigRequestDTO.getIsNewBranch())
-                .filePath(moveConfigRequestDTO.getFilePath())
+                    pipelineMoveConfigRequestDTO.getMoveConfigOperationType()))
+                .connectorRef(pipelineMoveConfigRequestDTO.getConnectorRef())
+                .baseBranch(pipelineMoveConfigRequestDTO.getBaseBranch())
+                .commitMessage(pipelineMoveConfigRequestDTO.getCommitMsg())
+                .isNewBranch(pipelineMoveConfigRequestDTO.getIsNewBranch())
+                .filePath(pipelineMoveConfigRequestDTO.getFilePath())
                 .build());
     PipelineEntity pipelineEntity = pipelineCRUDResult.getPipelineEntity();
     return ResponseDTO.newResponse(
         MoveConfigResponse.builder().pipelineIdentifier(pipelineEntity.getIdentifier()).build());
+  }
+
+  @Override
+  public ResponseDTO<PipelineValidationUUIDResponseBody> startPipelineValidationEvent(String accountId, String orgId,
+      String projectId, String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCacheHeader) {
+    Optional<PipelineEntity> pipelineEntity =
+        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+    if (pipelineEntity.isEmpty()) {
+      throw new EntityNotFoundException(
+          String.format("Pipeline with the given ID: %s does not exist or has been deleted.", pipelineId));
+    }
+    boolean loadFromCache = GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCacheHeader);
+    PipelineValidationEvent pipelineValidationEvent = pipelineAsyncValidationService.startEvent(
+        pipelineEntity.get(), gitEntityBasicInfo.getBranch(), Action.CRUD, loadFromCache);
+    PipelineValidationUUIDResponseBody pipelineValidationUUIDResponseBody =
+        PipelinesApiUtils.buildPipelineValidationUUIDResponseBody(pipelineValidationEvent);
+    return ResponseDTO.newResponse(pipelineValidationUUIDResponseBody);
+  }
+
+  @Override
+  public ResponseDTO<PipelineValidationResponseDTO> getPipelineValidateResult(
+      String accountId, String orgId, String projectId, String uuid) {
+    Optional<PipelineValidationEvent> eventByUuid = pipelineAsyncValidationService.getEventByUuid(uuid);
+    if (eventByUuid.isEmpty()) {
+      throw new EntityNotFoundException("No Pipeline Validation Event found for uuid " + uuid);
+    }
+    PipelineValidationEvent pipelineValidationEvent = eventByUuid.get();
+    PipelineValidationResponseDTO response =
+        PMSPipelineDtoMapper.buildPipelineValidationResponseDTO(pipelineValidationEvent);
+    return ResponseDTO.newResponse(response);
   }
 }

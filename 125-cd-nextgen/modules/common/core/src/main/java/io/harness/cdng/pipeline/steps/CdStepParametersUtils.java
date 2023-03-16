@@ -34,9 +34,10 @@ public class CdStepParametersUtils {
     stepBuilder.delegateSelectors(stepNode.getDelegateSelectors());
     stepBuilder.description(stepNode.getDescription());
     stepBuilder.skipCondition(stepNode.getSkipCondition());
-    stepBuilder.failureStrategies(stepNode.getFailureStrategies());
+    stepBuilder.failureStrategies(
+        stepNode.getFailureStrategies() != null ? stepNode.getFailureStrategies().getValue() : null);
     stepBuilder.timeout(ParameterField.createValueField(TimeoutUtils.getTimeoutString(stepNode.getTimeout())));
-    stepBuilder.when(stepNode.getWhen());
+    stepBuilder.when(stepNode.getWhen() != null ? stepNode.getWhen().getValue() : null);
     stepBuilder.type(stepNode.getType());
     stepBuilder.uuid(stepNode.getUuid());
     stepBuilder.enforce(stepNode.getEnforce());
@@ -51,9 +52,10 @@ public class CdStepParametersUtils {
     stageBuilder.name(stageNode.getName());
     stageBuilder.identifier(stageNode.getIdentifier());
     stageBuilder.description(SdkCoreStepUtils.getParameterFieldHandleValueNull(stageNode.getDescription()));
-    stageBuilder.failureStrategies(stageNode.getFailureStrategies());
+    stageBuilder.failureStrategies(
+        stageNode.getFailureStrategies() != null ? stageNode.getFailureStrategies().getValue() : null);
     stageBuilder.skipCondition(stageNode.getSkipCondition());
-    stageBuilder.when(stageNode.getWhen());
+    stageBuilder.when(stageNode.getWhen() != null ? stageNode.getWhen().getValue() : null);
     stageBuilder.type(stageNode.getType());
     stageBuilder.uuid(stageNode.getUuid());
     stageBuilder.variables(

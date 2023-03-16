@@ -51,6 +51,7 @@ import io.harness.azure.model.VirtualMachineData.VirtualMachineDataBuilder;
 import io.harness.azure.model.image.AzureMachineImage;
 import io.harness.azure.model.image.AzureMachineImageFactory;
 import io.harness.azure.utility.AzureResourceUtility;
+import io.harness.azure.utility.AzureUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.runtime.azure.AzureAppServicesWebAppNotFoundException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -748,6 +749,8 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
     return new ComputeManagementClientBuilder()
         .subscriptionId(subscriptionId)
         .pipeline(getAzureHttpPipeline(azureConfig, subscriptionId))
+        .endpoint(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getResourceManagerEndpoint())
+        .environment(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()))
         .buildClient();
   }
 }

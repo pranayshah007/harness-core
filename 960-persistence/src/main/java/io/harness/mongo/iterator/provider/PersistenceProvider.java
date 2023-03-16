@@ -10,20 +10,20 @@ package io.harness.mongo.iterator.provider;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType;
 
 import io.harness.iterator.PersistentIterable;
+import io.harness.mongo.iterator.BulkWriteOpsResults;
 import io.harness.mongo.iterator.filter.FilterExpander;
 
-import com.mongodb.BulkWriteResult;
-import dev.morphia.query.MorphiaIterator;
 import java.time.Duration;
+import java.util.Iterator;
 import java.util.List;
 
 public interface PersistenceProvider<T extends PersistentIterable, F extends FilterExpander> {
   void updateEntityField(T entity, List<Long> nextIterations, Class<T> clazz, String fieldName);
   T obtainNextInstance(long base, long throttled, Class<T> clazz, String fieldName, SchedulingType schedulingType,
-      Duration targetInterval, F filterExpander, boolean unsorted);
-  T findInstance(Class<T> clazz, String fieldName, F filterExpander);
+      Duration targetInterval, F filterExpander, boolean unsorted, boolean isDelegateTaskMigrationEnabled);
+  T findInstance(Class<T> clazz, String fieldName, F filterExpander, boolean isDelegateTaskMigrationEnabled);
   void recoverAfterPause(Class<T> clazz, String fieldName);
-  MorphiaIterator<T, T> obtainNextInstances(Class<T> clazz, String fieldName, F filterExpander, int limit);
-  BulkWriteResult bulkWriteDocumentsMatchingIds(
+  Iterator<T> obtainNextInstances(Class<T> clazz, String fieldName, F filterExpander, int limit);
+  BulkWriteOpsResults bulkWriteDocumentsMatchingIds(
       Class<T> clazz, List<String> ids, String fieldName, long base, Duration targetInterval);
 }

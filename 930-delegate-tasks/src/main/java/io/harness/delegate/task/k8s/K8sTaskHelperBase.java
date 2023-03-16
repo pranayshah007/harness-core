@@ -134,7 +134,6 @@ import io.harness.k8s.K8sConstants;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.ProcessResponse;
-import io.harness.k8s.RetryHelper;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
@@ -149,6 +148,7 @@ import io.harness.k8s.kubectl.RolloutHistoryCommand;
 import io.harness.k8s.kubectl.RolloutStatusCommand;
 import io.harness.k8s.kubectl.ScaleCommand;
 import io.harness.k8s.kubectl.Utils;
+import io.harness.k8s.kubectl.VersionCommand;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.manifest.VersionUtils;
 import io.harness.k8s.model.HarnessAnnotations;
@@ -178,6 +178,7 @@ import io.harness.logging.LogLevel;
 import io.harness.manifest.CustomManifestService;
 import io.harness.manifest.CustomManifestSource;
 import io.harness.ng.core.dto.ErrorDetail;
+import io.harness.retry.RetryHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.YamlUtils;
@@ -609,6 +610,7 @@ public class K8sTaskHelperBase {
   /**
    * This method arranges resources to be deleted in the reverse order of their creation.
    * To see order of create, please refer to KubernetesResourceComparer.kindOrder
+   *
    * @param resourceIdsToDelete
    */
   public List<KubernetesResourceId> arrangeResourceIdsInDeletionOrder(List<KubernetesResourceId> resourceIdsToDelete) {
@@ -1139,18 +1141,26 @@ public class K8sTaskHelperBase {
     return "";
   }
 
-  public Integer getCurrentReplicas(
-      Kubectl client, KubernetesResourceId resourceId, K8sDelegateTaskParams k8sDelegateTaskParams) throws Exception {
+  public Integer getCurrentReplicas(Kubectl client, KubernetesResourceId resourceId,
+      K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback) throws Exception {
     GetCommand getCommand = client.get()
                                 .resources(resourceId.kindNameRef())
                                 .namespace(resourceId.getNamespace())
                                 .output("jsonpath={$.spec.replicas}");
     ProcessResult result = runK8sExecutableSilent(k8sDelegateTaskParams, getCommand);
     if (result.getExitValue() == 0) {
-      return Integer.valueOf(result.outputUTF8());
-    } else {
-      return null;
+      if (result.hasOutput()) {
+        if (isNotEmpty(result.outputUTF8().trim())) {
+          return Integer.valueOf(result.outputUTF8());
+        }
+        executionLogCallback.saveExecutionLog(
+            format("Unable to retrieve current replicas count based on path $.spec.replicas. "
+                    + "Resource '%s' may not be supported for scaling.",
+                resourceId.getKind()),
+            WARN);
+      }
     }
+    return null;
   }
 
   @VisibleForTesting
@@ -1194,12 +1204,28 @@ public class K8sTaskHelperBase {
           : overriddenClient.apply().filename("manifests-dry-run.yaml").dryrun(true);
       ProcessResponse response = runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, dryrun);
       ProcessResult result = response.getProcessResult();
+      // Getting Version for the kubectl
+      String kubernetesVersion = getKubernetesVersion(k8sDelegateTaskParams, client);
+      String resultOutput;
+      try {
+        resultOutput = result.outputUTF8();
+      } catch (Exception ex) {
+        resultOutput = EMPTY;
+      }
+      String resourcesCreated = resultOutput.toLowerCase();
+      final StringBuilder resourcesNotCreatedBuilder = new StringBuilder();
+      resources.forEach(resource -> {
+        String resourceName = resource.getResourceId().kindNameRef();
+        if (!(resourcesCreated.contains(resourceName.toLowerCase()))) {
+          resourcesNotCreatedBuilder.append(resourceName).append('\n');
+        }
+      });
       if (result.getExitValue() != 0) {
         logExecutableFailed(result, executionLogCallback);
         if (isErrorFrameworkEnabled) {
-          throw new KubernetesCliTaskRuntimeException(response, KubernetesCliCommandType.DRY_RUN);
+          throw new KubernetesCliTaskRuntimeException(
+              response, KubernetesCliCommandType.DRY_RUN, kubernetesVersion, resourcesNotCreatedBuilder.toString());
         }
-
         return false;
       }
     } catch (Exception e) {
@@ -2396,9 +2422,9 @@ public class K8sTaskHelperBase {
           manifestOverrideFiles.remove(index);
         }
         return renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(),
-            getManifestDirectoryForHelmChart(manifestFilesDirectory, helmChartManifest), manifestOverrideFiles,
-            releaseName, namespace, executionLogCallback, helmChartManifest.getHelmVersion(), timeoutInMillis,
-            helmChartManifest.getHelmCommandFlag());
+            getManifestDirectoryForHelmChartWithSubCharts(manifestFilesDirectory, helmChartManifest),
+            manifestOverrideFiles, releaseName, namespace, executionLogCallback, helmChartManifest.getHelmVersion(),
+            timeoutInMillis, helmChartManifest.getHelmCommandFlag(), helmChartManifest.getSubChartName());
 
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
@@ -2410,7 +2436,8 @@ public class K8sTaskHelperBase {
         String kustomizePath = Paths.get(manifestFilesDirectory, kustomizeYamlFolderPath).toString();
         savingPatchesToDirectory(kustomizePath, manifestOverrideFiles, executionLogCallback);
         return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams.getKustomizeBinaryPath(),
-            kustomizeManifest.getPluginPath(), kustomizeYamlFolderPath, executionLogCallback);
+            kustomizeManifest.getPluginPath(), kustomizeYamlFolderPath, executionLogCallback,
+            kustomizeManifest.getCommandFlags());
 
       case OPENSHIFT_TEMPLATE:
         OpenshiftManifestDelegateConfig openshiftManifestConfig =
@@ -2450,7 +2477,7 @@ public class K8sTaskHelperBase {
           manifestOverrideFiles.remove(index);
         }
         return renderTemplateForHelmChartFiles(k8sDelegateTaskParams.getHelmPath(),
-            getManifestDirectoryForHelmChart(manifestFilesDirectory, helmChartManifest), filesList,
+            getManifestDirectoryForHelmChartWithSubCharts(manifestFilesDirectory, helmChartManifest), filesList,
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, helmChartManifest.getHelmVersion(),
             timeoutInMillis, helmChartManifest.getHelmCommandFlag());
 
@@ -2458,7 +2485,7 @@ public class K8sTaskHelperBase {
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
         return kustomizeTaskHelper.buildForApply(k8sDelegateTaskParams.getKustomizeBinaryPath(),
             kustomizeManifest.getPluginPath(), manifestFilesDirectory, filesList, true, manifestOverrideFiles,
-            executionLogCallback);
+            executionLogCallback, kustomizeManifest.getCommandFlags());
 
       default:
         throw new UnsupportedOperationException(
@@ -2869,7 +2896,7 @@ public class K8sTaskHelperBase {
 
   public List<FileData> renderTemplateForHelm(String helmPath, String manifestFilesDirectory, List<String> valuesFiles,
       String releaseName, String namespace, LogCallback executionLogCallback, HelmVersion helmVersion,
-      long timeoutInMillis, HelmCommandFlag helmCommandFlag) throws Exception {
+      long timeoutInMillis, HelmCommandFlag helmCommandFlag, String subChartName) throws Exception {
     String valuesFileOptions = createValuesFileOptions(manifestFilesDirectory, valuesFiles, executionLogCallback);
     log.info("Values file options: " + valuesFileOptions);
 
@@ -2892,7 +2919,14 @@ public class K8sTaskHelperBase {
             new HelmClientException(getErrorMessageIfProcessFailed("Failed to render template. ", processResult), USER,
                 HelmCliCommandType.RENDER_CHART));
       }
-      result.add(FileData.builder().fileName("manifest.yaml").fileContent(processResult.outputUTF8()).build());
+      int index = isEmpty(subChartName)
+          ? -1
+          : helmTaskHelperBase.checkForDependencyUpdateFlag(helmCommandFlag.getValueMap(), processResult.outputUTF8());
+      result.add(
+          FileData.builder()
+              .fileName("manifest.yaml")
+              .fileContent(index == -1 ? processResult.outputUTF8() : processResult.outputUTF8().substring(index))
+              .build());
     }
 
     return result;
@@ -2915,6 +2949,13 @@ public class K8sTaskHelperBase {
       throw NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.INVALID_VALUES_YAML,
           KubernetesExceptionExplanation.INVALID_VALUES_YAML,
           new KubernetesValuesException(message, exception.getCause()));
+    } catch (NoSuchFileException e) {
+      String prefixMessage = "There may be an issue with file/folder path, due to which file is not found. ";
+      String suffixMessage = "Please check if file exists in the specified path.";
+      if (isNotEmpty(e.getFile()) && e.getFile().contains("charts/")) {
+        suffixMessage = suffixMessage + " Also check if sub-chart name is correct/valid.";
+      }
+      throw NestedExceptionUtils.hintWithExplanationException(prefixMessage + suffixMessage, "No such file found", e);
     }
   }
 
@@ -2940,6 +2981,7 @@ public class K8sTaskHelperBase {
 
     for (String chartFile : chartFiles) {
       if (K8sTaskHelperBase.isValidManifestFile(chartFile)) {
+        chartFile = StringUtils.stripStart(chartFile, "/");
         try (ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
              LogOutputStream logErrorStream =
                  K8sTaskHelperBase.getExecutionLogOutputStream(executionLogCallback, ERROR, errorCaptureStream)) {
@@ -3025,8 +3067,16 @@ public class K8sTaskHelperBase {
     if (GIT != helmChartManifest.getStoreDelegateConfig().getType()) {
       return HelmTaskHelperBase.getChartDirectory(baseManifestDirectory, helmChartManifest.getChartName());
     }
-
     return baseManifestDirectory;
+  }
+
+  private String getManifestDirectoryForHelmChartWithSubCharts(
+      String baseManifestDirectory, HelmChartManifestDelegateConfig helmChartManifest) {
+    String manifestDir = getManifestDirectoryForHelmChart(baseManifestDirectory, helmChartManifest);
+    if (isEmpty(helmChartManifest.getSubChartName())) {
+      return manifestDir;
+    }
+    return Paths.get(manifestDir, "charts", helmChartManifest.getSubChartName()).toString();
   }
 
   @NotNull
@@ -3063,6 +3113,16 @@ public class K8sTaskHelperBase {
   public void addRevisionNumber(List<KubernetesResource> resources, int revision) {
     try {
       VersionUtils.addRevisionNumber(resources, revision);
+    } catch (KubernetesYamlException exception) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          INVALID_RESOURCE_SPEC_HINT, INVALID_RESOURCE_SPEC_EXPLANATION, exception);
+    }
+  }
+
+  public void addSuffixToConfigmapsAndSecrets(
+      List<KubernetesResource> resources, String suffix, LogCallback executionLogCallback) {
+    try {
+      VersionUtils.addSuffixToConfigmapsAndSecrets(resources, suffix, executionLogCallback);
     } catch (KubernetesYamlException exception) {
       throw NestedExceptionUtils.hintWithExplanationException(
           INVALID_RESOURCE_SPEC_HINT, INVALID_RESOURCE_SPEC_EXPLANATION, exception);
@@ -3266,6 +3326,20 @@ public class K8sTaskHelperBase {
           new InvalidArgumentsException("Invalid path to openshift template file"));
     }
     return openshiftTemplatePath;
+  }
+  @VisibleForTesting
+  public String getKubernetesVersion(K8sDelegateTaskParams k8sDelegateTaskParams, Kubectl client) {
+    VersionCommand versionCommand = client.version().jsonVersion();
+    ProcessResult kubernetesVersion;
+    try {
+      kubernetesVersion = runK8sExecutableSilent(k8sDelegateTaskParams, versionCommand);
+      if (!kubernetesVersion.hasOutput()) {
+        return EMPTY;
+      }
+      return kubernetesVersion.outputUTF8();
+    } catch (Exception ex) {
+      return EMPTY;
+    }
   }
 
   private String getFileName(String path) {

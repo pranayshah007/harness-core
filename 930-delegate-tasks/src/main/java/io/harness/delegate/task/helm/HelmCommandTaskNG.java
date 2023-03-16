@@ -34,16 +34,18 @@ import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
+import io.harness.exception.DataException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.helm.HelmConstants;
 import io.harness.k8s.K8sConstants;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.secret.SecretSanitizerThreadLocal;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -78,6 +80,7 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
   public HelmCommandTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
+    SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
   }
 
   @Override
@@ -146,9 +149,6 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
       }
     } catch (Exception ex) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
-      String errorMsg = sanitizedException.getMessage();
-      helmCommandRequestNG.getLogCallback().saveExecutionLog(
-          errorMsg + "\n Overall deployment Failed", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       log.error(format("Exception in processing helm task [%s]", helmCommandRequestNG.toString()), sanitizedException);
       closeOpenCommandUnits(
           helmCommandRequestNG.getCommandUnitsProgress(), getLogStreamingTaskClient(), sanitizedException);
@@ -186,7 +186,8 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
     commandRequestNG.setLogCallback(logCallback);
     logCallback.saveExecutionLog("Creating KubeConfig", LogLevel.INFO, CommandExecutionStatus.RUNNING);
     String configLocation = containerDeploymentDelegateBaseHelper.createKubeConfig(
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(commandRequestNG.getK8sInfraDelegateConfig()));
+        containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+            commandRequestNG.getK8sInfraDelegateConfig(), logCallback));
     commandRequestNG.setKubeConfigLocation(configLocation);
     logCallback.saveExecutionLog(
         "Setting KubeConfig\nKUBECONFIG_PATH=" + configLocation, LogLevel.INFO, CommandExecutionStatus.RUNNING);
@@ -270,7 +271,8 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
       return throwable;
     }
 
-    if (!(throwable instanceof HintException || throwable instanceof ExplanationException)) {
+    if (!(throwable instanceof HintException || throwable instanceof ExplanationException
+            || throwable instanceof DataException)) {
       return throwable;
     }
 

@@ -15,10 +15,12 @@ import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PER
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
 import static io.harness.ng.core.user.entities.UserGroup.UserGroupBuilder;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NAMANG;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.REETIKA;
 import static io.harness.utils.PageTestUtils.getPage;
 import static io.harness.utils.PageUtils.getPageRequest;
@@ -475,23 +477,13 @@ public class UserGroupServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
-  public void testListUserGroupsBatch_withViewPermissionOnAll() {
+  public void testListUserGroupsBatch() {
     final ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
     String searchTerm = randomAlphabetic(5);
 
-    AccessCheckResponseDTO accessCheckResponseDTO =
-        AccessCheckResponseDTO.builder()
-            .principal(Principal.builder().principalIdentifier("id").principalType(USER).build())
-            .accessControlList(accessControlDTOS)
-            .build();
-
-    when(accessControlClient.hasAccess(ResourceScope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER),
-             Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION))
-        .thenReturn(true);
     final Page<UserGroup> allPages = PageUtils.getPage(userGroupList, 0, 100);
     when(userGroupRepository.findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged())))
         .thenReturn(allPages);
-    when(accessControlClient.checkForAccessOrThrow(any())).thenReturn(accessCheckResponseDTO);
 
     List<UserGroup> resultUserGroups = userGroupService.list(UserGroupFilterDTO.builder()
                                                                  .accountIdentifier(ACCOUNT_IDENTIFIER)
@@ -503,47 +495,6 @@ public class UserGroupServiceImplTest extends CategoryTest {
     verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged()));
     assertThat(resultUserGroups.stream().map(UserGroup::getIdentifier).collect(Collectors.toList()))
         .isEqualTo(userGroupList.stream().map(UserGroup::getIdentifier).collect(Collectors.toList()));
-  }
-
-  @Test
-  @Owner(developers = MEENAKSHI)
-  @Category(UnitTests.class)
-  public void testListUserGroupsBatch_withViewPermissionOnSelectedUserGroups() {
-    final ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
-    String searchTerm = randomAlphabetic(5);
-
-    AccessControlDTOBuilder accessControlDTOBuilder = AccessControlDTO.builder()
-                                                          .resourceType(USERGROUP)
-                                                          .permission("core_usergroup_view")
-                                                          .resourceScope(ResourceScope.builder()
-                                                                             .accountIdentifier(ACCOUNT_IDENTIFIER)
-                                                                             .orgIdentifier(ORG_IDENTIFIER)
-                                                                             .projectIdentifier(PROJECT_IDENTIFIER)
-                                                                             .build());
-
-    AccessCheckResponseDTO accessCheckResponseDTO =
-        AccessCheckResponseDTO.builder()
-            .principal(Principal.builder().principalIdentifier("id").principalType(USER).build())
-            .accessControlList(accessControlDTOS)
-            .build();
-
-    when(accessControlClient.hasAccess(ResourceScope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER),
-             Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION))
-        .thenReturn(false);
-    final Page<UserGroup> allPages = PageUtils.getPage(userGroupList, 0, 100);
-    when(userGroupRepository.findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged())))
-        .thenReturn(allPages);
-    when(accessControlClient.checkForAccessOrThrow(any())).thenReturn(accessCheckResponseDTO);
-
-    List<UserGroup> resultUserGroups = userGroupService.list(UserGroupFilterDTO.builder()
-                                                                 .accountIdentifier(ACCOUNT_IDENTIFIER)
-                                                                 .orgIdentifier(ORG_IDENTIFIER)
-                                                                 .projectIdentifier(PROJECT_IDENTIFIER)
-                                                                 .searchTerm(searchTerm)
-                                                                 .build());
-
-    verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged()));
-    assertThat(resultUserGroups).isEqualTo(permittedUserGroups);
   }
 
   @Test
@@ -709,6 +660,160 @@ public class UserGroupServiceImplTest extends CategoryTest {
     when(userGroupRepository.findAll(any(Criteria.class), any())).thenReturn(getPage(emptyList(), 0));
     userGroupService.list(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, searchTerm,
         UserGroupFilterType.EXCLUDE_INHERITED_GROUPS, getPageRequest(pageRequest));
+    verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), any());
+
+    Criteria developedCriteria = userGroupCriteriaArgumentCaptor.getValue();
+    Criteria expectedCriteria =
+        new Criteria()
+            .and(UserGroupKeys.accountIdentifier)
+            .is(ACCOUNT_IDENTIFIER)
+            .and(UserGroupKeys.orgIdentifier)
+            .is(ORG_IDENTIFIER)
+            .and(UserGroupKeys.projectIdentifier)
+            .is(PROJECT_IDENTIFIER)
+            .andOperator(new Criteria().orOperator(Criteria.where(UserGroupKeys.name).regex(searchTerm, "i"),
+                Criteria.where(UserGroupKeys.tags).regex(searchTerm, "i")));
+
+    assertThat(developedCriteria.getCriteriaObject().keySet()).isEqualTo(expectedCriteria.getCriteriaObject().keySet());
+
+    verifyNoMoreInteractions(userGroupRepository);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testListUserGroupsWhenAccountAndIncludeChildScopeUserGroup() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(10).build();
+    final ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+
+    when(userGroupRepository.findAll(any(Criteria.class), any())).thenReturn(getPage(emptyList(), 0));
+    userGroupService.list(ACCOUNT_IDENTIFIER, null, null, null, UserGroupFilterType.INCLUDE_CHILD_SCOPE_GROUPS,
+        getPageRequest(pageRequest));
+    verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), any());
+
+    Criteria developedCriteria = userGroupCriteriaArgumentCaptor.getValue();
+    Criteria expectedCriteria = new Criteria().and(UserGroupKeys.accountIdentifier).is(ACCOUNT_IDENTIFIER);
+
+    assertThat(developedCriteria.getCriteriaObject().keySet()).isEqualTo(expectedCriteria.getCriteriaObject().keySet());
+
+    verifyNoMoreInteractions(userGroupRepository);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testListUserGroupsWhenAccountAndIncludeChildScopeUserGroupAndSearch() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(10).build();
+    String searchTerm = randomAlphabetic(5);
+    final ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+
+    when(userGroupRepository.findAll(any(Criteria.class), any())).thenReturn(getPage(emptyList(), 0));
+    userGroupService.list(ACCOUNT_IDENTIFIER, null, null, searchTerm, UserGroupFilterType.INCLUDE_CHILD_SCOPE_GROUPS,
+        getPageRequest(pageRequest));
+    verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), any());
+
+    Criteria developedCriteria = userGroupCriteriaArgumentCaptor.getValue();
+    Criteria expectedCriteria =
+        new Criteria()
+            .and(UserGroupKeys.accountIdentifier)
+            .is(ACCOUNT_IDENTIFIER)
+            .andOperator(new Criteria().orOperator(Criteria.where(UserGroupKeys.name).regex(searchTerm, "i"),
+                Criteria.where(UserGroupKeys.tags).regex(searchTerm, "i")));
+
+    assertThat(developedCriteria.getCriteriaObject().keySet()).isEqualTo(expectedCriteria.getCriteriaObject().keySet());
+
+    verifyNoMoreInteractions(userGroupRepository);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testListUserGroupsWhenOrgAndIncludeChildScopeUserGroup() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(10).build();
+    final ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+
+    when(userGroupRepository.findAll(any(Criteria.class), any())).thenReturn(getPage(emptyList(), 0));
+    userGroupService.list(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, null,
+        UserGroupFilterType.INCLUDE_CHILD_SCOPE_GROUPS, getPageRequest(pageRequest));
+    verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), any());
+
+    Criteria developedCriteria = userGroupCriteriaArgumentCaptor.getValue();
+    Criteria expectedCriteria = new Criteria()
+                                    .and(UserGroupKeys.accountIdentifier)
+                                    .is(ACCOUNT_IDENTIFIER)
+                                    .and(UserGroupKeys.orgIdentifier)
+                                    .is(ORG_IDENTIFIER);
+
+    assertThat(developedCriteria.getCriteriaObject().keySet()).isEqualTo(expectedCriteria.getCriteriaObject().keySet());
+
+    verifyNoMoreInteractions(userGroupRepository);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testListUserGroupsWhenOrgAndIncludeChildScopeUserGroupAndSearch() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(10).build();
+    String searchTerm = randomAlphabetic(5);
+    final ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+
+    when(userGroupRepository.findAll(any(Criteria.class), any())).thenReturn(getPage(emptyList(), 0));
+    userGroupService.list(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, searchTerm,
+        UserGroupFilterType.INCLUDE_CHILD_SCOPE_GROUPS, getPageRequest(pageRequest));
+    verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), any());
+
+    Criteria developedCriteria = userGroupCriteriaArgumentCaptor.getValue();
+    Criteria expectedCriteria =
+        new Criteria()
+            .and(UserGroupKeys.accountIdentifier)
+            .is(ACCOUNT_IDENTIFIER)
+            .and(UserGroupKeys.orgIdentifier)
+            .is(ORG_IDENTIFIER)
+            .andOperator(new Criteria().orOperator(Criteria.where(UserGroupKeys.name).regex(searchTerm, "i"),
+                Criteria.where(UserGroupKeys.tags).regex(searchTerm, "i")));
+
+    assertThat(developedCriteria.getCriteriaObject().keySet()).isEqualTo(expectedCriteria.getCriteriaObject().keySet());
+
+    verifyNoMoreInteractions(userGroupRepository);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testListUserGroupsWhenProjectAndIncludeChildScopeUserGroup() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(10).build();
+    final ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+
+    when(userGroupRepository.findAll(any(Criteria.class), any())).thenReturn(getPage(emptyList(), 0));
+    userGroupService.list(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null,
+        UserGroupFilterType.INCLUDE_CHILD_SCOPE_GROUPS, getPageRequest(pageRequest));
+    verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), any());
+
+    Criteria developedCriteria = userGroupCriteriaArgumentCaptor.getValue();
+    Criteria expectedCriteria = new Criteria()
+                                    .and(UserGroupKeys.accountIdentifier)
+                                    .is(ACCOUNT_IDENTIFIER)
+                                    .and(UserGroupKeys.orgIdentifier)
+                                    .is(ORG_IDENTIFIER)
+                                    .and(UserGroupKeys.projectIdentifier)
+                                    .is(PROJECT_IDENTIFIER);
+
+    assertThat(developedCriteria.getCriteriaObject().keySet()).isEqualTo(expectedCriteria.getCriteriaObject().keySet());
+
+    verifyNoMoreInteractions(userGroupRepository);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testListUserGroupsWhenProjectAndIncludeChildScopeUserGroupAndSearch() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(10).build();
+    String searchTerm = randomAlphabetic(5);
+    final ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+
+    when(userGroupRepository.findAll(any(Criteria.class), any())).thenReturn(getPage(emptyList(), 0));
+    userGroupService.list(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, searchTerm,
+        UserGroupFilterType.INCLUDE_CHILD_SCOPE_GROUPS, getPageRequest(pageRequest));
     verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), any());
 
     Criteria developedCriteria = userGroupCriteriaArgumentCaptor.getValue();
@@ -1396,5 +1501,29 @@ public class UserGroupServiceImplTest extends CategoryTest {
         userGroupService.getInheritingChildScopeList(ACCOUNT_IDENTIFIER, null, null, "UG1");
     assertThat(returnedValue.size()).isEqualTo(2);
     assertThat(returnedValue).isEqualTo(new ArrayList<>(Arrays.asList(scopeNameDTO1, scopeNameDTO2)));
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testGetAllUserGroupsForAUser_WithUsersAndTagsExcluded() {
+    // Case when user groups are fetched as well for user
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    String userGroupIdentifier = randomAlphabetic(10);
+    UserGroup userGroup = UserGroup.builder()
+                              .accountIdentifier(scope.getAccountIdentifier())
+                              .orgIdentifier(scope.getOrgIdentifier())
+                              .projectIdentifier(scope.getProjectIdentifier())
+                              .identifier(userGroupIdentifier)
+                              .externallyManaged(true)
+                              .isSsoLinked(false)
+                              .build();
+
+    ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    doReturn(Collections.singletonList(userGroup))
+        .when(userGroupRepository)
+        .findAll(userGroupCriteriaArgumentCaptor.capture());
+    userGroupService.getUserGroupsForUser(ACCOUNT_IDENTIFIER, "testUserId");
+    verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture());
   }
 }

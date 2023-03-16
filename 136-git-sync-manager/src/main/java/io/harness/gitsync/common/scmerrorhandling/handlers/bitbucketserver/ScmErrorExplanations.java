@@ -33,4 +33,6 @@ public class ScmErrorExplanations {
       + "1. The requested file path<FILEPATH> doesn't exist for given branch<BRANCH> and repo<REPO>\n"
       + "2. The given branch<BRANCH> or repo<REPO> is invalid";
   public static final String WRONG_REPO_OR_BRANCH = "The provided branch<BRANCH> or the repo<REPO> are invalid.";
+
+  public static final String RATE_LIMIT = "The number of api requests for your account is too high.";
 }

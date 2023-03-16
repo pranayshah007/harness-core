@@ -34,6 +34,8 @@ fi
 cp ${HOME}/.bazel-dirs/bin/ce-nextgen/service/module_deploy.jar ce-nextgen-capsule.jar
 cp ../../ce-nextgen/config/keystore.jks .
 cp ../../ce-nextgen/config/config.yml .
+cp ../../ce-nextgen/config/jfr/default.jfc .
+cp ../../ce-nextgen/config/jfr/profile.jfc .
 cp ../../ce-nextgen/build/container/Dockerfile-ce-nextgen-cie-jdk Dockerfile-ce-nextgen-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .

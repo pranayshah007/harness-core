@@ -22,7 +22,7 @@ import io.harness.repositories.SubscriptionDetailRepository;
 import io.harness.subscription.entities.SubscriptionDetail;
 import io.harness.subscription.enums.SubscriptionStatus;
 import io.harness.subscription.helpers.StripeHelper;
-import io.harness.subscription.params.SubscriptionParams;
+import io.harness.subscription.params.StripeSubscriptionRequest;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -99,7 +99,7 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
         // Retrieve the payment intent used to pay the subscription
         PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
 
-        stripeHelper.updateSubscriptionDefaultPayment(SubscriptionParams.builder()
+        stripeHelper.updateSubscriptionDefaultPayment(StripeSubscriptionRequest.builder()
                                                           .subscriptionId(subscriptionId)
                                                           .paymentMethodId(paymentIntent.getPaymentMethod())
                                                           .build());

@@ -9,6 +9,8 @@ package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_ARTIFACT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_ARTIFACT_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT;
@@ -19,7 +21,6 @@ import static io.harness.delegate.utils.AzureArtifactsUtils.getAzureArtifactDele
 import static io.harness.delegate.utils.NexusUtils.getNexusArtifactFileName;
 import static io.harness.delegate.utils.NexusUtils.getNexusVersion;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
-import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -90,9 +91,10 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
     log.info("About to download artifact");
     SshWinRmArtifactDelegateConfig artifactDelegateConfig = commandTaskParameters.getArtifactDelegateConfig();
     if (artifactDelegateConfig instanceof SkipCopyArtifactDelegateConfig) {
-      log.info("Artifactory docker registry found, skipping download artifact.");
-      logCallback.saveExecutionLog("Command execution finished with status " + SUCCESS, INFO, SUCCESS);
-      return SUCCESS;
+      throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT,
+          format(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_ARTIFACT_EXPLANATION, artifactDelegateConfig.getArtifactType()),
+          new WinRmCommandExecutionException(
+              format(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_ARTIFACT, artifactDelegateConfig.getArtifactType())));
     }
 
     if (artifactDelegateConfig instanceof CustomArtifactDelegateConfig) {

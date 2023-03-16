@@ -8,6 +8,7 @@
 package io.harness.decryption.delegate.module;
 
 import io.harness.concurrent.HTimeLimiter;
+import io.harness.decryption.delegate.module.kryo.SecretsKryoModule;
 import io.harness.encryptors.CustomEncryptor;
 import io.harness.encryptors.Encryptors;
 import io.harness.encryptors.KmsEncryptor;
@@ -52,6 +53,8 @@ public class DelegateDecryptionModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    install(new SecretsKryoModule());
+
     bind(DelegateDecryptionService.class).to(DelegateDecryptionServiceImpl.class);
     bind(EncryptionService.class).to(EncryptionServiceImpl.class);
     bind(SecretsDelegateCacheService.class).to(SecretsDelegateCacheServiceImpl.class);

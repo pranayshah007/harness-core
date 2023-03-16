@@ -335,12 +335,15 @@ public class AzureHelperService {
       RetryPolicy retryPolicy =
           AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions()));
 
-      ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
-                                                          .clientId(azureConfig.getClientId())
-                                                          .tenantId(azureConfig.getTenantId())
-                                                          .clientSecret(String.valueOf(azureConfig.getKey()))
-                                                          .httpClient(httpClient)
-                                                          .build();
+      ClientSecretCredential clientSecretCredential =
+          new ClientSecretCredentialBuilder()
+              .clientId(azureConfig.getClientId())
+              .tenantId(azureConfig.getTenantId())
+              .clientSecret(String.valueOf(azureConfig.getKey()))
+              .httpClient(httpClient)
+              .authorityHost(
+                  AzureUtils.getAuthorityHost(azureConfig.getAzureEnvironmentType(), azureConfig.getTenantId()))
+              .build();
 
       return AzureResourceManager
           .authenticate(AzureUtils.getAzureHttpPipeline(clientSecretCredential, azureProfile, retryPolicy, httpClient),

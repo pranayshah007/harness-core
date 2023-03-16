@@ -12,7 +12,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.KAPIL;
-import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.UJJAWAL;
@@ -252,14 +251,6 @@ public class AuthServiceTest extends WingsBaseTest {
       UserThreadLocal.unset();
     }
     assertThat(exceptionThrown).isFalse();
-  }
-
-  @Test
-  @Owner(developers = MARKO)
-  @Category(UnitTests.class)
-  public void testValidateDelegateToken() {
-    authService.validateDelegateToken(ACCOUNT_ID, VALID_TOKEN, null, null, null, false);
-    verify(delegateTokenAuthenticator).validateDelegateToken(ACCOUNT_ID, VALID_TOKEN, null, null, null, false);
   }
 
   @Test

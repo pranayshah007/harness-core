@@ -46,6 +46,11 @@ public class UserInfo {
   String billingFrequency;
   UtmInfo utmInfo;
   boolean externallyManaged;
+  String givenName;
+  String familyName;
+  String externalId;
+  long createdAt;
+  long lastUpdatedAt;
 
   public boolean isLocked() {
     return this.locked;

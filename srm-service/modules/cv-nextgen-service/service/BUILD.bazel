@@ -19,6 +19,7 @@ shared_dependencies = [
     "//930-ng-core-clients:module",
     "//945-account-mgmt:module",
     "//950-wait-engine:module",
+    "//950-opa-client:module",
     "//clients/notification:module",
     "//940-primary-version-manager:module",
     "//940-secret-manager-client:module",
@@ -146,7 +147,7 @@ java_library(
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_mockito_mockito_core",
-        "@maven//:org_mongodb_mongo_java_driver",
+        "@maven//:org_mongodb_mongodb_driver_core",
         "@maven//:org_powermock_powermock_module_junit4",
     ],
 )

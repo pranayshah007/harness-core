@@ -82,7 +82,7 @@ public class CustomBuildSourceServiceTest extends WingsBaseTest {
                         .accountId(ACCOUNT_ID)
                         .build());
 
-    when(delegateProxyFactory.get(any(), any())).thenReturn(customBuildService);
+    when(delegateProxyFactory.getV2(any(), any())).thenReturn(customBuildService);
     when(customBuildService.getBuilds(any(ArtifactStreamAttributes.class)))
         .thenReturn(asList(BuildDetails.Builder.aBuildDetails().withNumber("1").build()));
     final List<BuildDetails> builds = customBuildSourceService.getBuilds(ARTIFACT_STREAM_ID);

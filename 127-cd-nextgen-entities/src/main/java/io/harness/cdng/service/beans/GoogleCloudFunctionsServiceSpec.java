@@ -14,7 +14,7 @@ import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.ServiceSpec;
-import io.harness.cdng.visitor.helpers.manifest.GoogleCloudFunctionDefinitionManifestVisitorHelper;
+import io.harness.cdng.visitor.helpers.serviceconfig.GoogleCloudFunctionsServiceSpecVisitorHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.yaml.YamlNode;
@@ -36,7 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @JsonTypeName(ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS)
-@SimpleVisitorHelper(helperClass = GoogleCloudFunctionDefinitionManifestVisitorHelper.class)
+@SimpleVisitorHelper(helperClass = GoogleCloudFunctionsServiceSpecVisitorHelper.class)
 @TypeAlias("googleCloudFunctionsServiceSpec")
 @RecasterAlias("io.harness.cdng.service.beans.GoogleCloudFunctionsServiceSpec")
 public class GoogleCloudFunctionsServiceSpec implements ServiceSpec, Visitable {

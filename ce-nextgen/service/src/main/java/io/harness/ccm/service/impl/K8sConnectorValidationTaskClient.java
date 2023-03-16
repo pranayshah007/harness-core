@@ -49,7 +49,7 @@ public class K8sConnectorValidationTaskClient {
     DelegateTaskRequest delegateTaskRequest =
         createCeValidateKubernetesConfigTask(connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
 
-    DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
 
     checkForErrorResponseForValidationResult(responseData);
     return ((KubernetesConnectionTaskResponse) responseData).getConnectorValidationResult();

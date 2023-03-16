@@ -13,6 +13,7 @@ import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -71,8 +72,8 @@ public class ScriptStepInfo extends CIAbstractStepInfo implements WithConnectorR
   }
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
-  ParameterField<Map<String, String>> envs;
-  public ParameterField<Map<String, String>> getEnvs() {
+  ParameterField<Map<String, ParameterField<String>>> envs;
+  public ParameterField<Map<String, ParameterField<String>>> getEnvs() {
     if (ParameterField.isNull(this.envs)) {
       this.envs.setValue(Collections.emptyMap());
     }
@@ -91,18 +92,21 @@ public class ScriptStepInfo extends CIAbstractStepInfo implements WithConnectorR
   @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> image;
   @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) ParameterField<Boolean> privileged;
   @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) ParameterField<Integer> user;
-  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.Shell") Shell shell;
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.Shell")
+  ParameterField<Shell> shell;
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.PullPolicy")
-  PullPolicy pull;
+  ParameterField<PullPolicy> pull;
 
   @Builder
   @ConstructorProperties({"uuid", "run", "outputs", "envs", "reports", "image", "resources", "privileged", "user",
       "shell", "pull", "volumes"})
   public ScriptStepInfo(String uuid, ParameterField<String> run, ParameterField<List<String>> outputs,
-      ParameterField<Map<String, String>> envs, ParameterField<List<Report>> reports, ParameterField<String> image,
-      ContainerResource resources, ParameterField<Boolean> privileged, ParameterField<Integer> user, Shell shell,
-      PullPolicy pull, ParameterField<List<Volume>> volumes) {
+      ParameterField<Map<String, ParameterField<String>>> envs, ParameterField<List<Report>> reports,
+      ParameterField<String> image, ContainerResource resources, ParameterField<Boolean> privileged,
+      ParameterField<Integer> user, ParameterField<Shell> shell, ParameterField<PullPolicy> pull,
+      ParameterField<List<Volume>> volumes) {
     this.uuid = uuid;
     this.run = run;
     this.envs = envs;

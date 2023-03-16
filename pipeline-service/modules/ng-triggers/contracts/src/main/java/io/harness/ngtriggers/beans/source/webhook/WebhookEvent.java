@@ -26,9 +26,10 @@ public enum WebhookEvent {
   @JsonProperty("Merge Request") MERGE_REQUEST,
   @JsonProperty("Repository") REPOSITORY,
   @JsonProperty("Branch") BRANCH,
-  @JsonProperty("Tag") TAG;
+  @JsonProperty("Tag") TAG,
+  @JsonProperty("Release") RELEASE;
 
-  public static final Set<WebhookEvent> githubEvents = EnumSet.of(PULL_REQUEST, PUSH, ISSUE_COMMENT);
+  public static final Set<WebhookEvent> githubEvents = EnumSet.of(PULL_REQUEST, PUSH, ISSUE_COMMENT, RELEASE);
   public static final Set<WebhookEvent> gitlabEvents = EnumSet.of(PUSH, MERGE_REQUEST, MR_COMMENT);
   public static final Set<WebhookEvent> bitbucketEvents = EnumSet.of(PULL_REQUEST, PUSH, PR_COMMENT);
   public static final Set<WebhookEvent> awsCodeCommitEvents = EnumSet.of(PUSH);

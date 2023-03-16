@@ -7,7 +7,7 @@
 
 package io.harness.cvng.cdng.beans.v2;
 
-import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 
 import io.swagger.annotations.ApiModel;
 import lombok.AccessLevel;
@@ -22,8 +22,8 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel(value = "HealthSourceV2")
 public class HealthSource {
-  String healthSourceIdentifier;
-  String healthSourceName;
-  DataSourceType providerName;
+  String identifier;
+  String name;
+  MonitoredServiceDataSourceType type;
   ProviderType providerType;
 }

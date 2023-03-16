@@ -8,23 +8,42 @@
 package io.harness.cvng.core.services.impl;
 
 import io.harness.cvng.beans.ELKDataCollectionInfo;
+import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.ELKCVConfig;
+import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.DataCollectionInfoMapper;
 
-public class ELKDataCollectionInfoMapper implements DataCollectionInfoMapper<ELKDataCollectionInfo, ELKCVConfig> {
+public class ELKDataCollectionInfoMapper implements DataCollectionInfoMapper<ELKDataCollectionInfo, CVConfig> {
   @Override
-  public ELKDataCollectionInfo toDataCollectionInfo(ELKCVConfig cvConfig, VerificationTask.TaskType taskType) {
-    ELKDataCollectionInfo elkDataCollectionInfo =
-        ELKDataCollectionInfo.builder()
-            .index(cvConfig.getIndex())
-            .query(cvConfig.getQuery())
-            .serviceInstanceIdentifier(cvConfig.getServiceInstanceIdentifier())
-            .timeStampIdentifier(cvConfig.getTimeStampIdentifier())
-            .timeStampFormat(cvConfig.getTimeStampFormat())
-            .messageIdentifier(cvConfig.getMessageIdentifier())
-            .build();
-    elkDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
-    return elkDataCollectionInfo;
+  public ELKDataCollectionInfo toDataCollectionInfo(CVConfig cvConfigBase, VerificationTask.TaskType taskType) {
+    if (cvConfigBase instanceof ELKCVConfig) {
+      ELKCVConfig cvConfig = (ELKCVConfig) cvConfigBase;
+      ELKDataCollectionInfo elkDataCollectionInfo =
+          ELKDataCollectionInfo.builder()
+              .index(cvConfig.getIndex())
+              .query(cvConfig.getQuery())
+              .serviceInstanceIdentifier(cvConfig.getServiceInstanceIdentifier())
+              .timeStampIdentifier(cvConfig.getTimeStampIdentifier())
+              .timeStampFormat(cvConfig.getTimeStampFormat())
+              .messageIdentifier(cvConfig.getMessageIdentifier())
+              .build();
+      elkDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
+      return elkDataCollectionInfo;
+    } else if (cvConfigBase instanceof NextGenLogCVConfig) {
+      NextGenLogCVConfig cvConfig = (NextGenLogCVConfig) cvConfigBase;
+      ELKDataCollectionInfo elkDataCollectionInfo =
+          ELKDataCollectionInfo.builder()
+              .index(cvConfig.getQueryParams().getIndex())
+              .query(cvConfig.getQuery())
+              .serviceInstanceIdentifier(cvConfig.getQueryParams().getServiceInstanceField())
+              .timeStampIdentifier(cvConfig.getQueryParams().getTimeStampIdentifier())
+              .timeStampFormat(cvConfig.getQueryParams().getTimeStampFormat())
+              .messageIdentifier(cvConfig.getQueryParams().getMessageIdentifier())
+              .build();
+      elkDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
+      return elkDataCollectionInfo;
+    }
+    throw new RuntimeException("Cannot convert CVConfig " + cvConfigBase);
   }
 }

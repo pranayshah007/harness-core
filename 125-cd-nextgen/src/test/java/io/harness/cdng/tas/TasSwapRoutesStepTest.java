@@ -10,14 +10,19 @@ package io.harness.cdng.tas;
 import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -93,7 +98,7 @@ public class TasSwapRoutesStepTest extends CategoryTest {
   @Mock private TasEntityHelper tasEntityHelper;
   @Mock private TasStepHelper tasStepHelper;
   @Mock private StepHelper stepHelper;
-
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @InjectMocks private TasSwapRoutesStep tasSwapRoutesStep;
 
   @Test
@@ -102,6 +107,23 @@ public class TasSwapRoutesStepTest extends CategoryTest {
   public void getStepParametersClassTest() {
     Class<StepElementParameters> stepElementParametersClass = tasSwapRoutesStep.getStepParametersClass();
     assertThat(stepElementParametersClass).isEqualTo(StepElementParameters.class);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testValidateResourcesFFEnabled() {
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.CDS_TAS_NG));
+    tasSwapRoutesStep.validateResources(ambiance, stepElementParameters);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testValidateResourcesFFDisabled() {
+    doReturn(false).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.CDS_TAS_NG));
+    assertThatThrownBy(() -> tasSwapRoutesStep.validateResources(ambiance, stepElementParameters))
+        .hasMessage("CDS_TAS_NG FF is not enabled for this account. Please contact harness customer care.");
   }
 
   @Test
@@ -271,6 +293,47 @@ public class TasSwapRoutesStepTest extends CategoryTest {
 
     assertThat(taskRequest.getSkipTaskRequest().getMessage())
         .isEqualTo("Tas Swap Route Step was not executed. Skipping.");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacWithNullActiveApplicationDetails() {
+    tasSwapRoutesStepParameters.setDownSizeOldApplication(ParameterField.createValueField(true));
+    TasSetupDataOutcome tasSetupDataOutcome = TasSetupDataOutcome.builder()
+                                                  .cfCliVersion(CfCliVersion.V7)
+                                                  .desiredActualFinalCount(4)
+                                                  .isBlueGreen(true)
+                                                  .newReleaseName("app")
+                                                  .resizeStrategy(TasResizeStrategyType.DOWNSCALE_OLD_FIRST)
+                                                  .build();
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorConfig(TasConnectorDTO.builder().build()).build();
+    TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
+        TanzuApplicationServiceInfrastructureOutcome.builder().organization(ORG).space(SPACE).build();
+    OptionalSweepingOutput optionalSweepingOutput =
+        OptionalSweepingOutput.builder().output(tasSetupDataOutcome).found(true).build();
+
+    doReturn(optionalSweepingOutput).when(tasEntityHelper).getSetupOutcome(any(), any(), any(), any(), any(), any());
+    doReturn(infrastructureOutcome).when(outcomeService).resolve(any(), any());
+    doReturn(connectorInfoDTO).when(tasEntityHelper).getConnectorInfoDTO(any(), any(), any(), any());
+    doReturn(null).when(tasEntityHelper).getEncryptionDataDetails(any(), any());
+    doReturn(null).when(stepHelper).getEnvironmentType(any());
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+
+    stepElementParameters.setSpec(tasSwapRoutesStepParameters);
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    tasSwapRoutesStep.obtainTaskAfterRbac(ambiance, stepElementParameters, null);
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    CfSwapRoutesRequestNG taskData = (CfSwapRoutesRequestNG) taskDataArgumentCaptor.getValue().getParameters()[0];
+
+    assertThat(taskData.getCommandName()).isEqualTo(CfCommandTypeNG.SWAP_ROUTES.toString());
+    assertThat(taskData.getCfCommandTypeNG()).isEqualTo(CfCommandTypeNG.SWAP_ROUTES);
+    assertThat(taskData.getTasInfraConfig().getSpace()).isEqualTo(SPACE);
+    assertThat(taskData.getTasInfraConfig().getOrganization()).isEqualTo(ORG);
   }
 
   private List<CfInternalInstanceElement> getCfInstances(List<String> AppNames) {

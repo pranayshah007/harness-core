@@ -305,7 +305,7 @@ public class FilepathTriggerFilter implements TriggerFilter {
     }
   }
 
-  // Github, gitlab docs say, payload would contains details about 20 commits.
+  // Gitlab docs say, payload would contains details about 20 commits.
   // So if there more than or equal to 20 commits, there is a chance, few commits were truncated.
   // So, we go to delegate task.
   @VisibleForTesting
@@ -317,6 +317,12 @@ public class FilepathTriggerFilter implements TriggerFilter {
           filterRequestData.getWebhookPayloadData().getOriginalEvent().getSourceRepoType().toLowerCase();
       switch (sourceRepoType) {
         case GITHUB_LOWER_CASE:
+          // There are no documented limits on Github's push payload (apart from payload being capped to 25MB).
+          // In which case the webhook will not event be fired.
+          // ref: https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#push
+          // As of 02/01/2023, we verified experimentally that Github's `compareCommits` API is limited to returning
+          // 300 files changed, and no pagination is possible, so we should always use the webhook's payload here.
+          return false;
         case GITLAB_LOWER_CASE:
           int commitsCount =
               filterRequestData.getWebhookPayloadData().getParseWebhookResponse().getPush().getCommitsCount();

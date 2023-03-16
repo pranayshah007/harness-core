@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.utils.YamlPipelineUtils;
@@ -22,15 +23,29 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDC)
 @UtilityClass
 public class YamlRefreshHelper {
   private final String DUMMY_NODE = "dummy";
+
+  public final Set<String> oneOfKeysParent = new HashSet<>(List.of("service"));
+  public final Set<String> ignorableKeysToOneOfAtSameLevel = new HashSet<>(List.of("service.serviceInputs"));
+
+  private static final String USE_FROM_STAGE_NODE = "useFromStage";
+  private static final String STAGE_NODE = "stage";
+  private static final String CHILD_SERVICE_REF_NODE = "service.serviceRef";
   /**
    * Given two jsonNodes, refresh firstNode with respect to sourceNode.
    * RuntimeInputFormHelper.createTemplateFromYaml() requires only one root node. So, added dummy root to source node.
@@ -125,7 +140,82 @@ public class YamlRefreshHelper {
       }
     });
 
-    return new YamlConfig(refreshedFqnToValueMap, sourceNodeYamlConfig.getYamlMap()).getYamlMap();
+    Set<FQN> useFromStageFQNKeysFromInputSet =
+        getUseFromStageKeysFromInputSet(sourceNodeFqnToValueMap, nodeToRefreshFqnToValueMap);
+    JsonNode modifiedOriginalMap =
+        addOneOfKeysParentKeysRemovingOtherParallelChildren(sourceNodeYamlConfig.getYamlMap(), refreshedFqnToValueMap,
+            useFromStageFQNKeysFromInputSet, nodeToRefreshYamlConfig.getYamlMap());
+    return new YamlConfig(refreshedFqnToValueMap, modifiedOriginalMap).getYamlMap();
+  }
+
+  private Set<FQN> getUseFromStageKeysFromInputSet(Map<FQN, Object> sourceYamlFQNMap, Map<FQN, Object> inputSetFQNMap) {
+    Set<FQN> nonIgnorableKeys = new LinkedHashSet<>();
+    Set<FQN> baseServiceFQNs = new HashSet<>();
+    sourceYamlFQNMap.keySet().forEach(key -> {
+      FQN baseServiceFQN = key.getBaseFQNTillOneOfGivenFields(oneOfKeysParent);
+      if (baseServiceFQN != null) {
+        baseServiceFQNs.add(baseServiceFQN);
+      }
+    });
+
+    baseServiceFQNs.forEach(baseSvcFQN -> {
+      Set<FQN> inputSetFQNMapKeySet = inputSetFQNMap.keySet();
+      FQNNode fqnNodeUseFromStage = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(USE_FROM_STAGE_NODE).build();
+      FQNNode fqnNodeStage = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(STAGE_NODE).build();
+
+      List<FQNNode> expandedFQNsForUseFromStageObjectNode = new ArrayList<>(baseSvcFQN.getFqnList());
+      expandedFQNsForUseFromStageObjectNode.add(fqnNodeUseFromStage);
+
+      List<FQNNode> expandedFQNsForUseFromStageLeafTextNode = new ArrayList<>(expandedFQNsForUseFromStageObjectNode);
+      expandedFQNsForUseFromStageLeafTextNode.add(fqnNodeStage);
+
+      FQN useFromStageFQNLeaf = FQN.builder().fqnList(expandedFQNsForUseFromStageLeafTextNode).build();
+      FQN useFromStageFQNObject = FQN.builder().fqnList(expandedFQNsForUseFromStageObjectNode).build();
+
+      if (inputSetFQNMapKeySet.contains(useFromStageFQNLeaf)) {
+        nonIgnorableKeys.add(useFromStageFQNObject);
+      }
+    });
+    return nonIgnorableKeys;
+  }
+
+  /***
+   *
+   * @param sourceNodeYamlMap
+   * @param refreshedYamlNodeFqnToValueMap
+   * @param oneOfKeysTypeNodeChild
+   * @param runtimeInputYamlMap
+   * @return
+   * This method modifies original sourceNodeYaml by deleting original oneOfChild fields and adding new one
+   * It also modifies refreshedYamlNodeFqnToValueMap in same way
+   */
+  private JsonNode addOneOfKeysParentKeysRemovingOtherParallelChildren(JsonNode sourceNodeYamlMap,
+      Map<FQN, Object> refreshedYamlNodeFqnToValueMap, Set<FQN> oneOfKeysTypeNodeChild, JsonNode runtimeInputYamlMap) {
+    for (FQN childKeyFQN : oneOfKeysTypeNodeChild) {
+      FQN parent = childKeyFQN.getBaseFQNTillOneOfGivenFields(oneOfKeysParent);
+      JsonNode jsonNodeForParentFQN = YamlSubMapExtractor.getNodeForFQN(sourceNodeYamlMap, parent);
+      if (jsonNodeForParentFQN instanceof TextNode) {
+        continue;
+      }
+
+      refreshedYamlNodeFqnToValueMap.entrySet().removeIf(
+          next -> next.getKey().contains(parent) && !next.getKey().equals(parent));
+
+      ObjectNode objectNodeForParentFQN = (ObjectNode) jsonNodeForParentFQN;
+      for (Iterator<String> fieldNamesItr = objectNodeForParentFQN.fieldNames(); fieldNamesItr.hasNext();) {
+        String childFieldName = fieldNamesItr.next();
+        if (objectNodeForParentFQN.has(childFieldName) && !childFieldName.equals(childKeyFQN.getFieldName())) {
+          fieldNamesItr.remove();
+        }
+      }
+
+      if (!objectNodeForParentFQN.has(childKeyFQN.getFieldName())) {
+        objectNodeForParentFQN.putIfAbsent(childKeyFQN.getFieldName(), new TextNode("<+input>"));
+        refreshedYamlNodeFqnToValueMap.put(
+            childKeyFQN, YamlSubMapExtractor.getNodeForFQN(runtimeInputYamlMap, childKeyFQN));
+      }
+    }
+    return sourceNodeYamlMap;
   }
 
   private String convertToYaml(Object object) {

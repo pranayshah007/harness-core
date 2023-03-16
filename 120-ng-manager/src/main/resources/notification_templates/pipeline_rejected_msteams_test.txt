@@ -4,7 +4,7 @@
   "summary": "Pipeline Execution Rejected for ${WORKFLOW_NAME}",
   "sections": [
     {
-      "activityTitle": "Pipeline Execution Rejected - ${WORKFLOW_NAME}> triggered by ${USER_NAME} has been rejected due to active deployment freeze ${BLACKOUT_WINDOW_NAME} in ${ACCOUNT_ID} Account || ${WORKFLOW_NAME} started at ${START_TIME} and rejected due to deployment freeze at ${END_TIME}"
+      "activityTitle": "Pipeline Execution Rejected - ${WORKFLOW_NAME}> triggered by ${USER_NAME} has been rejected due to active deployment freeze ${BLACKOUT_WINDOW_NAME} in ${ACCOUNT_ID} Account || ${WORKFLOW_NAME} started at ${START_TIME} and rejected due to deployment freeze at ${END_TIME} || ${CUSTOMIZED_MESSAGE}"
     }
   ]
 }

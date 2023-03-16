@@ -95,7 +95,7 @@ public class NGEntityNameValidatorTest extends CategoryTest {
 
   @Builder
   static class EntityNameValidatorWithCustomMaxSize {
-    @NGEntityName(maxLength = 128) String name;
+    @NGEntityName String name;
   }
 
   @Test

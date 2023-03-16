@@ -22,6 +22,7 @@ public class CILicenseObjectMapper implements LicenseObjectMapper<CIModuleLicens
   public CIModuleLicenseDTO toDTO(CIModuleLicense entity) {
     return CIModuleLicenseDTO.builder()
         .numberOfCommitters(entity.getNumberOfCommitters())
+        .cacheAllowance(entity.getCacheAllowance())
         .hostingCredits(entity.getHostingCredits())
         .build();
   }
@@ -30,6 +31,7 @@ public class CILicenseObjectMapper implements LicenseObjectMapper<CIModuleLicens
   public CIModuleLicense toEntity(CIModuleLicenseDTO dto) {
     return CIModuleLicense.builder()
         .numberOfCommitters(dto.getNumberOfCommitters())
+        .cacheAllowance(dto.getCacheAllowance())
         .hostingCredits(dto.getHostingCredits())
         .build();
   }

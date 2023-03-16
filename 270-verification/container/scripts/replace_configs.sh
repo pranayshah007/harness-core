@@ -31,6 +31,10 @@ if [[ "" != "$MONGO_URI" ]]; then
   export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DMS_MONGO_URI" ]]; then
+  export DMS_MONGO_URI=${DMS_MONGO_URI//\\&/&}; yq -i '.dms-mongo.uri=env(DMS_MONGO_URI)' $CONFIG_FILE
+fi
+
 if [[ "" != "$MONGO_SSL_CONFIG" ]]; then
   export MONGO_SSL_CONFIG; yq -i '.mongo.mongoSSLConfig.mongoSSLEnabled=env(MONGO_SSL_CONFIG)' $CONFIG_FILE
 fi

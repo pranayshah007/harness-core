@@ -95,7 +95,8 @@ public class ECRUploadStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.spec.labels.foo",
             "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.name",
             "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.spec.remoteCacheImage",
-            "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.spec.baseImageConnectorRefs");
+            "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.spec.baseImageConnectorRefs",
+            "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -107,7 +108,6 @@ public class ECRUploadStepVariableCreatorTest extends CategoryTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.type",
             "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.identifier",
-            "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.when",
             "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.startTs",
             "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.endTs");
 

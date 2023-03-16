@@ -14,9 +14,11 @@ import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
+import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.rest.RestResponse;
@@ -106,8 +108,9 @@ public class DelegateNgSetupInternalResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) throws IOException {
     final String managerUrl = subdomainUrlHelper.getManagerUrl(request, accountIdentifier);
+    final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
     String terraformExampleModuleFile =
-        delegateInstallationCommandService.getTerraformExampleModuleFile(managerUrl, accountIdentifier);
+        delegateInstallationCommandService.getTerraformExampleModuleFile(managerUrl, accountIdentifier, owner);
     return new RestResponse<>(terraformExampleModuleFile);
   }
 

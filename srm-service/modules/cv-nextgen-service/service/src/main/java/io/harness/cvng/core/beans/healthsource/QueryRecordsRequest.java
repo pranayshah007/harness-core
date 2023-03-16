@@ -14,6 +14,4 @@ import lombok.EqualsAndHashCode;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @EqualsAndHashCode(callSuper = true)
-public class QueryRecordsRequest extends HealthSourceRecordsRequest {
-  QueryJsonPath queryJSONPath;
-}
+public class QueryRecordsRequest extends HealthSourceRecordsRequest {}

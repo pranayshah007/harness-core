@@ -155,6 +155,10 @@ awsAccountTagsCollectionJobConfig:
 gcpConfig:
   gcpProjectId: "ccm-play"
   gcpAwsConnectorCrudPubSubTopic: "ce-aws-connector-crud"
+  bigQueryUpdatePubSubTopic:
+    enabled: true
+    topicName: ccm-bigquery-batch-update
+    subscriptionName: batch-processing-ccm-bigquery-batch-update-subscriber
 
 notificationClient:
   messageBroker:
@@ -174,3 +178,12 @@ notificationClient:
 
 currencyPreferences:
   historicalUpdateMonthsCount: 3
+
+clickHouseConfig:
+  url: "jdbc:ch://clickhouse.harness.svc.cluster.local:8123"
+  username: "default"
+  password: ""
+
+deployMode: KUBERNETES
+
+isClickHouseEnabled: false

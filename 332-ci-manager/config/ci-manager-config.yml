@@ -140,12 +140,13 @@ ciExecutionServiceConfig:
     gcsCreds: null
     projectId: null
     bucketName: null
-  queueServiceClient:
-    queueServiceConfig:
+  queueServiceClientConfig:
+    httpClientConfig:
       baseUrl: http://localhost:9091/
       connectTimeOutSeconds: 15
       readTimeOutSeconds: 15
-    authToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiU0VSVklDRSIsIm5hbWUiOiJIU1FTIiwiZW1haWwiOiIiLCJ1c2VybmFtZSI6IiIsImlzcyI6Ikhhcm5lc3MgSW5jIiwiZXhwIjoxNjY5MjE5ODUxLCJuYmYiOjE2NjkyMTI2NTEsImlhdCI6MTY2OTIxMjY1MX0.TpxXD9jNv0tBywmgDQj1alDrXJGz-PTgerLkkBJDlAE
+    queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+    envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
   addonImageTag: releaseBuild-30
   liteEngineImageTag: releaseBuild-29
   defaultMemoryLimit: 500
@@ -165,8 +166,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.3
-  liteEngineImage: harness/ci-lite-engine:1.16.3
+  addonImage: harness/ci-addon:1.16.6
+  liteEngineImage: harness/ci-lite-engine:1.16.6
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
@@ -176,6 +177,8 @@ ciExecutionServiceConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
     splitWindowsAmd64Pool: false
+    internalAccounts:
+      - "kmpySmUISimoRrJL6NL73w"
   stoStepConfig:
     defaultTag: ${STO_STEP_CONFIG_DEFAULT_TAG:-latest}
     defaultEntrypoint:
@@ -201,32 +204,38 @@ ciExecutionServiceConfig:
         image: harness/checkmarx-job-runner
       - product: zap_default
         image: harness/zap-job-runner
+      - product: zap_quick
+        image: harness/zap-job-runner
+      - product: zap_attack
+        image: harness/zap-job-runner
+      - product: zap_standard
+        image: harness/zap-job-runner
       - product: mend_default
         image: harness/whitesource-agent-job-runner
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.2.7-rootless
+      image: harness/drone-git:1.2.8-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.6.6
+      image: plugins/kaniko:1.7.1
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.6.11
+      image: plugins/kaniko-ecr:1.7.1
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.6.6
+      image: plugins/kaniko-gcr:1.7.1
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.6.7
+      image: plugins/kaniko-acr:1.7.1
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -254,20 +263,24 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.4.4
+      image: plugins/cache:1.4.9
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.4.4
+      image: plugins/cache:1.4.9
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
+    sscaOrchestrationConfig:
+      image: harness/ssca-plugin:latest
+      entrypoint:
+        - /bin/ssca-plugin
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.2.7
+      gitClone: harness/drone-git:1.2.8
       buildAndPushDockerRegistry: plugins/docker:20.13.0
       buildAndPushACR: plugins/acr:20.13.0
       buildAndPushECR: plugins/ecr:20.13.0
@@ -276,8 +289,9 @@ ciExecutionServiceConfig:
       s3Upload: plugins/s3:1.2.0
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.2.0
-      cacheGCS: plugins/cache:1.4.4
-      cacheS3: plugins/cache:1.4.4
+      cacheGCS: plugins/cache:1.4.9
+      cacheS3: plugins/cache:1.4.9
+      sscaOrchestration: harness/ssca-plugin:latest
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
@@ -296,11 +310,11 @@ asyncDelegateResponseConsumption:
 
 pmsSdkGrpcServerConfig:
   connectors:
-    - port: 12301
+    - port: ${PMS_SDK_SERVER_CONFIG_SECURE_PORT:-12301}
       secure: true
       keyFilePath: key.pem
       certFilePath: cert.pem
-    - port: 12302
+    - port: ${PMS_SDK_SERVER_CONFIG_PORT:-12302}
 
 pmsGrpcClientConfig:
   target: localhost:12011
@@ -367,3 +381,11 @@ pmsPlanCreatorServicePoolConfig:
   timeUnit: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 enableOpentelemetry: false
+enableTelemetry: ${ENABLE_TELEMETRY:-false}
+
+policyManagerSecret: secret
+
+opaClientConfig:
+  baseUrl: http://localhost:3000
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15

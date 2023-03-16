@@ -9,6 +9,8 @@ package software.wings.search.entities.application;
 
 import static java.util.Arrays.asList;
 
+import io.harness.beans.FeatureName;
+import io.harness.ff.FeatureFlagService;
 import io.harness.mongo.changestreams.ChangeEvent;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -31,24 +33,26 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class ApplicationTimescaleChangeHandler implements ChangeHandler {
   @Inject private TimeScaleDBService timeScaleDBService;
-
+  @Inject private FeatureFlagService featureFlagService;
   @Override
   public boolean handleChange(ChangeEvent<?> changeEvent) {
     String tableName = "cg_applications";
-
-    switch (changeEvent.getChangeType()) {
-      case INSERT:
-        dbOperation(SQLOperationHelper.insertSQL(tableName, getColumnValueMapping(changeEvent)));
-        break;
-      case UPDATE:
-        dbOperation(SQLOperationHelper.updateSQL(tableName, getColumnValueMapping(changeEvent),
-            Collections.singletonMap("id", changeEvent.getUuid()), getPrimaryKeys()));
-        break;
-      case DELETE:
-        dbOperation(SQLOperationHelper.deleteSQL(tableName, Collections.singletonMap("id", changeEvent.getUuid())));
-        break;
-      default:
-        return false;
+    boolean debeziumEnabled = featureFlagService.isGlobalEnabled(FeatureName.CDS_DEBEZIUM_ENABLED_CG);
+    if (!debeziumEnabled) {
+      switch (changeEvent.getChangeType()) {
+        case INSERT:
+          dbOperation(SQLOperationHelper.insertSQL(tableName, getColumnValueMapping(changeEvent)));
+          break;
+        case UPDATE:
+          dbOperation(SQLOperationHelper.updateSQL(tableName, getColumnValueMapping(changeEvent),
+              Collections.singletonMap("id", changeEvent.getUuid()), getPrimaryKeys()));
+          break;
+        case DELETE:
+          dbOperation(SQLOperationHelper.deleteSQL(tableName, Collections.singletonMap("id", changeEvent.getUuid())));
+          break;
+        default:
+          return false;
+      }
     }
     return true;
   }

@@ -34,12 +34,6 @@ template:
                           outputVariables: []
                           executionTarget: {}
                         timeout: 10m
-                    - stepGroup:
-                        name: stp
-                        identifier: stp
-                        template:
-                          templateRef: org.orgStepGroupTemplate
-                          versionLabel: v1
       - step:
           type: SwapRoutes
           name: Swap Routes_1

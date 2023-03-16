@@ -125,13 +125,13 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
     assertThatThrownBy(
         () -> templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, null, null, templateYaml, false))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The project level template cannot be used at account level");
+        .hasMessage("The project level template cannot be used at account level. Ref: [approvalTemplate]");
 
     // Project scope template cannot be used at Org level
     assertThatThrownBy(
         () -> templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, null, templateYaml, false))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The project level template cannot be used at org level");
+        .hasMessage("The project level template cannot be used at org level. Ref: [approvalTemplate]");
 
     // Project scope template can be used at Project level
     templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, PROJECT_ID, templateYaml, false);
@@ -268,6 +268,6 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
     assertThatThrownBy(
         () -> templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, null, pipelineYaml, false))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The project level template cannot be used at org level");
+        .hasMessage("The project level template cannot be used at org level. Ref: [stageTemplate]");
   }
 }

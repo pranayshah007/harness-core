@@ -10,6 +10,7 @@ package io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketserver;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.SCMExceptionErrorMessages;
 import io.harness.exception.ScmBadRequestException;
@@ -44,6 +45,11 @@ public class BitbucketServerGetBranchHeadCommitScmApiErrorHandler implements Scm
             ErrorMessageFormatter.formatMessage(
                 GET_BRANCH_HEAD_COMMIT_FAILED_MESSAGE + ScmErrorExplanations.WRONG_REPO_OR_BRANCH, errorMetadata),
             new ScmBadRequestException(SCMExceptionErrorMessages.BITBUCKET_REPOSITORY_OR_BRANCH_NOT_FOUND_ERROR));
+      case 429:
+        throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.RATE_LIMIT,
+            ScmErrorExplanations.RATE_LIMIT,
+            new ScmBadRequestException(
+                EmptyPredicate.isEmpty(errorMessage) ? ScmErrorDefaultMessage.RATE_LIMIT : errorMessage));
       default:
         log.error(String.format(
             "Error while fetching the branch head commit from bitbucket(server) : [%s: %s]", statusCode, errorMessage));

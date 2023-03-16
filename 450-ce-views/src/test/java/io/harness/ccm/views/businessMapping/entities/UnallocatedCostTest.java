@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.ccm.views.businessMapping.helper.BusinessMappingHelper;
+import io.harness.ccm.views.businessMapping.helper.BusinessMappingTestHelper;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,10 +61,11 @@ public class UnallocatedCostTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testEqualsAndHashCode() {
     final UnallocatedCost unallocatedCost1 =
-        BusinessMappingHelper.getUnallocatedCost(UnallocatedCostStrategy.DISPLAY_NAME);
+        BusinessMappingTestHelper.getUnallocatedCost(UnallocatedCostStrategy.DISPLAY_NAME);
     final UnallocatedCost unallocatedCost2 =
-        BusinessMappingHelper.getUnallocatedCost(UnallocatedCostStrategy.DISPLAY_NAME);
-    final UnallocatedCost unallocatedCost3 = BusinessMappingHelper.getUnallocatedCost(UnallocatedCostStrategy.SHARE);
+        BusinessMappingTestHelper.getUnallocatedCost(UnallocatedCostStrategy.DISPLAY_NAME);
+    final UnallocatedCost unallocatedCost3 =
+        BusinessMappingTestHelper.getUnallocatedCost(UnallocatedCostStrategy.SHARE);
     assertThat(unallocatedCost1).isEqualTo(unallocatedCost2);
     assertThat(unallocatedCost1).isNotEqualTo(unallocatedCost3);
     assertThat(unallocatedCost1.hashCode()).isEqualTo(unallocatedCost2.hashCode());
@@ -75,10 +76,12 @@ public class UnallocatedCostTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testToString() {
-    final UnallocatedCost unallocatedCost1 = BusinessMappingHelper.getUnallocatedCost(UnallocatedCostStrategy.SHARE);
-    final UnallocatedCost unallocatedCost2 = BusinessMappingHelper.getUnallocatedCost(UnallocatedCostStrategy.SHARE);
+    final UnallocatedCost unallocatedCost1 =
+        BusinessMappingTestHelper.getUnallocatedCost(UnallocatedCostStrategy.SHARE);
+    final UnallocatedCost unallocatedCost2 =
+        BusinessMappingTestHelper.getUnallocatedCost(UnallocatedCostStrategy.SHARE);
     final UnallocatedCost unallocatedCost3 =
-        BusinessMappingHelper.getUnallocatedCost(UnallocatedCostStrategy.DISPLAY_NAME);
+        BusinessMappingTestHelper.getUnallocatedCost(UnallocatedCostStrategy.DISPLAY_NAME);
     assertThat(unallocatedCost1.toString()).isEqualTo(unallocatedCost2.toString());
     assertThat(unallocatedCost1.toString()).isNotEqualTo(unallocatedCost3.toString());
   }

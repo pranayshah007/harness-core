@@ -50,8 +50,8 @@ public class StepGroupStepParameters implements StepParameters {
         .identifier(config.getIdentifier())
         .name(config.getName())
         .skipCondition(config.getSkipCondition())
-        .when(config.getWhen())
-        .failureStrategies(config.getFailureStrategies())
+        .when(config.getWhen() != null ? config.getWhen().getValue() : null)
+        .failureStrategies(config.getFailureStrategies() != null ? config.getFailureStrategies().getValue() : null)
         .childNodeID(childNodeID)
         .build();
   }

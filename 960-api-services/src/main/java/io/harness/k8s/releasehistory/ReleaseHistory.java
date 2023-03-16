@@ -13,11 +13,11 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.WingsException;
+import io.harness.k8s.model.K8sYamlUtils;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.releasehistory.IK8sRelease.Status;
 import io.harness.k8s.utils.ObjectYamlUtils;
-import io.harness.serializer.YamlUtils;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import java.io.IOException;
@@ -48,7 +48,7 @@ public class ReleaseHistory {
   }
 
   public static ReleaseHistory createFromData(String releaseHistory) throws IOException {
-    return new YamlUtils().read(releaseHistory, ReleaseHistory.class);
+    return new K8sYamlUtils().read(releaseHistory, ReleaseHistory.class);
   }
 
   public K8sLegacyRelease createNewRelease(List<KubernetesResourceId> resources) {

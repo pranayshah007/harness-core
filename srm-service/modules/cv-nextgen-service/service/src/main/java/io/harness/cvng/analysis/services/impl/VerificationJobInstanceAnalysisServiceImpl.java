@@ -147,8 +147,8 @@ public class VerificationJobInstanceAnalysisServiceImpl implements VerificationJ
       String verificationTaskId, CVConfig cvConfig, VerificationJobInstance verificationJobInstance) {
     String demoTemplatePath = getDemoTemplatePath(verificationJobInstance.getVerificationStatus(), cvConfig.getType());
     if (cvConfig.getVerificationType() == VerificationType.TIME_SERIES) {
-      deploymentTimeSeriesAnalysisService.addDemoAnalysisData(
-          verificationTaskId, cvConfig, verificationJobInstance, demoTemplatePath);
+      deploymentTimeSeriesAnalysisService.addDemoMetricsAnalysisData(
+          verificationTaskId, cvConfig, verificationJobInstance, verificationJobInstance.getVerificationStatus());
     } else {
       deploymentLogAnalysisService.addDemoAnalysisData(
           verificationTaskId, cvConfig, verificationJobInstance, demoTemplatePath);

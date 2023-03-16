@@ -93,28 +93,6 @@ fi
 
 export DEPLOY_MODE=${deployMode}
 
-if [[ $DEPLOY_MODE != "KUBERNETES" ]]; then
-  echo "Checking Delegate latest version..."
-  DELEGATE_STORAGE_URL=${delegateStorageUrl}
-  REMOTE_DELEGATE_LATEST=$(curl $MANAGER_PROXY_CURL -ks $DELEGATE_STORAGE_URL/${delegateCheckLocation})
-  REMOTE_DELEGATE_URL=$DELEGATE_STORAGE_URL/$(echo $REMOTE_DELEGATE_LATEST | cut -d " " -f2)
-  REMOTE_DELEGATE_VERSION=$(echo $REMOTE_DELEGATE_LATEST | cut -d " " -f1)
-
-  if [ ! -e delegate.jar ]; then
-    echo "Downloading Delegate $REMOTE_DELEGATE_VERSION ..."
-    curl $MANAGER_PROXY_CURL -#k $REMOTE_DELEGATE_URL -o delegate.jar
-  else
-    DELEGATE_CURRENT_VERSION=$(jar_app_version delegate.jar)
-    if [[ $REMOTE_DELEGATE_VERSION != $DELEGATE_CURRENT_VERSION ]]; then
-      echo "The current version $DELEGATE_CURRENT_VERSION is not the same as the expected remote version $REMOTE_DELEGATE_VERSION"
-      echo "Downloading Delegate $REMOTE_DELEGATE_VERSION ..."
-      mkdir -p backup.$DELEGATE_CURRENT_VERSION
-      cp delegate.jar backup.$DELEGATE_CURRENT_VERSION
-      curl $MANAGER_PROXY_CURL -#k $REMOTE_DELEGATE_URL -o delegate.jar
-    fi
-  fi
-fi
-
 if [ -z $CLIENT_TOOLS_DOWNLOAD_DISABLED ]; then
   export CLIENT_TOOLS_DOWNLOAD_DISABLED=false
 fi
@@ -222,13 +200,8 @@ fi
 <#noparse>
 JAVA_OPTS=${JAVA_OPTS//UseCGroupMemoryLimitForHeap/UseContainerSupport}
 </#noparse>
-if [[ $DEPLOY_MODE == "KUBERNETES" ]]; then
-  echo "Starting delegate - version $2 with java $JRE_BINARY"
-  $JRE_BINARY $INSTRUMENTATION $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -DACCOUNT_ID="${accountId}" -DMANAGER_HOST_AND_PORT="${managerHostAndPort}" -Ddelegatesourcedir="$DIR" ${delegateXmx} -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 $JAVA_OPTS $ALPN_CMD -jar $2/delegate.jar config-delegate.yml watched $1
-else
-  echo "Starting delegate - version $REMOTE_DELEGATE_VERSION with java $JRE_BINARY"
-  $JRE_BINARY $INSTRUMENTATION $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -DACCOUNT_ID="${accountId}" -DMANAGER_HOST_AND_PORT="${managerHostAndPort}" -Ddelegatesourcedir="$DIR" ${delegateXmx} -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 $JAVA_OPTS $ALPN_CMD -jar delegate.jar config-delegate.yml watched $1
-fi
+echo "Starting delegate - version $2 with java $JRE_BINARY"
+$JRE_BINARY $INSTRUMENTATION $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -DACCOUNT_ID="${accountId}" -DMANAGER_HOST_AND_PORT="${managerHostAndPort}" -Ddelegatesourcedir="$DIR" ${delegateXmx} -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 $JAVA_OPTS $ALPN_CMD -jar $2/delegate.jar config-delegate.yml watched $1
 
 sleep 3
 if `pgrep -f "\-Ddelegatesourcedir=$DIR"> /dev/null`; then

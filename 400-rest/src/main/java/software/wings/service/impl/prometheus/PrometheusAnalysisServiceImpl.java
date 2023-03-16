@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.VerificationOperationException;
@@ -26,10 +26,10 @@ import software.wings.beans.PrometheusConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.apm.Method;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.metrics.MetricType;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.APMDelegateService;
 import software.wings.service.impl.analysis.TimeSeries;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;
@@ -191,8 +191,8 @@ public class PrometheusAnalysisServiceImpl implements PrometheusAnalysisService 
           secretManager.getEncryptionDetails((EncryptableSetting) settingAttribute.getValue(), null, null);
       apmValidateCollectorConfig.setEncryptedDataDetails(encryptionDetails);
 
-      final String validateResponseJson =
-          delegateProxyFactory.get(APMDelegateService.class, taskContext).fetch(apmValidateCollectorConfig, apiCallLog);
+      final String validateResponseJson = delegateProxyFactory.getV2(APMDelegateService.class, taskContext)
+                                              .fetch(apmValidateCollectorConfig, apiCallLog);
       PrometheusMetricDataResponse response =
           JsonUtils.asObject(validateResponseJson, PrometheusMetricDataResponse.class);
       metricDataResponseByTimeSeries.put(timeSeries, response);

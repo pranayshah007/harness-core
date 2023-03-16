@@ -36,7 +36,7 @@ public class DelegateNotAvailableException extends WingsException {
   }
 
   public DelegateNotAvailableException(String message) {
-    super(message, null, DELEGATE_NOT_AVAILABLE, Level.ERROR, null, EnumSet.of(FailureType.APPLICATION_ERROR));
+    super(message, null, DELEGATE_NOT_AVAILABLE, Level.ERROR, null, EnumSet.of(FailureType.DELEGATE_RESTART));
     param(MESSAGE_KEY, message);
   }
 }

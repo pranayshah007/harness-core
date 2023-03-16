@@ -26,7 +26,7 @@ import io.harness.delegate.clienttools.KubectlVersion;
 import io.harness.delegate.clienttools.KustomizeVersion;
 import io.harness.delegate.clienttools.OcVersion;
 import io.harness.exception.InvalidRequestException;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
 
 import javax.annotation.Nullable;

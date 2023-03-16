@@ -21,6 +21,7 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityScopeInfo;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.filter.service.FilterService;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.FileChange;
 import io.harness.gitsync.ScopeDetails;
 import io.harness.gitsync.persistance.GitSyncSdkService;
@@ -70,6 +71,8 @@ public class TemplateFullGitSyncHelperTest extends CategoryTest {
 
   @Mock TemplateGitXService templateGitXService;
 
+  @Mock GitAwareEntityHelper gitAwareEntityHelper;
+
   @Mock NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
   private final String ACCOUNT_ID = "accountId";
   private final String ORG_IDENTIFIER = "orgId";
@@ -89,8 +92,8 @@ public class TemplateFullGitSyncHelperTest extends CategoryTest {
     String filename = "template.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
 
-    templateServiceHelper =
-        new NGTemplateServiceHelper(filterService, templateRepository, gitSyncSdkService, templateGitXService);
+    templateServiceHelper = new NGTemplateServiceHelper(
+        filterService, templateRepository, gitSyncSdkService, templateGitXService, gitAwareEntityHelper);
     Reflect.on(templateFullGitSyncHelper).set("templateServiceHelper", templateServiceHelper);
 
     entityDetailProtoDTO = EntityDetailProtoDTO.newBuilder().setType(EntityTypeProtoEnum.TEMPLATE).build();

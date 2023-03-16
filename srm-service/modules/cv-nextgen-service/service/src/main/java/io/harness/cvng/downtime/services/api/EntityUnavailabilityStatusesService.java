@@ -8,17 +8,39 @@ package io.harness.cvng.downtime.services.api;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
+import io.harness.cvng.downtime.beans.DowntimeDTO;
+import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 
+import java.util.List;
+import org.apache.commons.lang3.tuple.Pair;
+
 public interface EntityUnavailabilityStatusesService extends DeleteEntityByHandler<EntityUnavailabilityStatuses> {
-  EntityUnavailabilityStatusesDTO create(
-      ProjectParams projectParams, EntityUnavailabilityStatusesDTO entityUnavailabilityStatusesDTO);
+  void create(ProjectParams projectParams, List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS);
 
-  EntityUnavailabilityStatusesDTO get(ProjectParams projectParams, String entityId);
+  void update(ProjectParams projectParams, String entityId,
+      List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS);
 
-  EntityUnavailabilityStatusesDTO update(
-      ProjectParams projectParams, String entityId, EntityUnavailabilityStatusesDTO entityUnavailabilityStatusesDTO);
+  void updateAndSaveRunningInstance(ProjectParams projectParams, String entityId);
+  List<EntityUnavailabilityStatusesDTO> getEntityUnavaialabilityStatusesDTOs(
+      ProjectParams projectParams, DowntimeDTO downtimeDTO, List<Pair<Long, Long>> futureInstances);
+  List<EntityUnavailabilityStatusesDTO> getPastInstances(ProjectParams projectParams);
 
-  boolean delete(ProjectParams projectParams, String entityId);
+  EntityUnavailabilityStatuses getInstanceById(String uuid);
+
+  List<EntityUnavailabilityStatusesDTO> getAllInstances(ProjectParams projectParams);
+
+  List<EntityUnavailabilityStatusesDTO> getAllInstances(
+      ProjectParams projectParams, EntityType entityType, String entityIdentifier);
+
+  List<EntityUnavailabilityStatusesDTO> getAllInstances(ProjectParams projectParams, long startTime, long endTime);
+
+  List<EntityUnavailabilityStatuses> getAllUnavailabilityInstances(
+      ProjectParams projectParams, long startTime, long endTime);
+
+  List<EntityUnavailabilityStatusesDTO> getActiveOrFirstUpcomingInstance(
+      ProjectParams projectParams, List<String> entityIds);
+  boolean deleteFutureDowntimeInstances(ProjectParams projectParams, String entityId);
+  boolean deleteAllInstances(ProjectParams projectParams, String entityId);
 }

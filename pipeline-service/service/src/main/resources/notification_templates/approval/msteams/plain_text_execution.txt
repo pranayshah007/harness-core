@@ -40,6 +40,10 @@
                   "name": "Running stages",
                   "value": "${runningStages}"
              },
+             {
+                  "name": "Execution",
+                  "value": "[${pipelineExecutionLink}](${pipelineExecutionLink})"
+             },
       ],
     }
   ]

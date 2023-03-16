@@ -186,10 +186,10 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
                 "WorkflowExecution with id: [{}] status did not match in timescale and mongo. The status were as follows: [{}] and [{}]",
                 workflowExecution.getUuid(), secondaryStatus, workflowExecution.getStatus().name());
           }
-          return;
         } else {
           log.warn("Entry for the execution with id: [{}] does not exists in timescale", workflowExecution.getUuid());
         }
+        return;
       } catch (SQLException ex) {
         totalTries++;
         log.warn("Failed to retrieve executions from TimeScaleDB for entity: [{}] accountID:[{}], totalTries:[{}]",

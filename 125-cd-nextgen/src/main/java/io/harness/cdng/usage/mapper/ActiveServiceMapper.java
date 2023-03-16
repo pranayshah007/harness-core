@@ -62,4 +62,17 @@ public class ActiveServiceMapper {
         .endTSInMs(timestamp)
         .build();
   }
+
+  public static ActiveServiceFetchData buildActiveServiceFetchData(
+      String accountIdentifier, Pageable pageRequest, long currentTSInMS) {
+    long startTSInMs = LicenseUsageUtils.getEpochMilliNDaysAgo(currentTSInMS, TIME_PERIOD_IN_DAYS);
+    return ActiveServiceFetchData.builder()
+        .accountIdentifier(accountIdentifier)
+        .pageSize(pageRequest.getPageSize())
+        .pageNumber(pageRequest.getPageNumber())
+        .sort(pageRequest.getSort())
+        .startTSInMs(startTSInMs)
+        .endTSInMs(currentTSInMS)
+        .build();
+  }
 }

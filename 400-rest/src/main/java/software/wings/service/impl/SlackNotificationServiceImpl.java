@@ -75,7 +75,7 @@ public class SlackNotificationServiceImpl implements SlackNotificationService {
                                               .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                               .build();
         log.info("Sending message for account {} via delegate", accountId);
-        delegateProxyFactory.get(SlackMessageSender.class, syncTaskContext)
+        delegateProxyFactory.getV2(SlackMessageSender.class, syncTaskContext)
             .send(new SlackMessage(slackConfig.getOutgoingWebhookUrl(), slackChannel, senderName, message), true,
                 isCertValidationRequired);
       } catch (Exception ex) {
@@ -101,7 +101,7 @@ public class SlackNotificationServiceImpl implements SlackNotificationService {
                                               .build();
         log.info("Sending message for account {} via delegate", accountId);
 
-        delegateProxyFactory.get(SlackMessageSender.class, syncTaskContext)
+        delegateProxyFactory.getV2(SlackMessageSender.class, syncTaskContext)
             .sendJSON(new SlackMessageJSON(slackWebHook, message));
       } else {
         log.info("Sending message for account {} via manager", accountId);

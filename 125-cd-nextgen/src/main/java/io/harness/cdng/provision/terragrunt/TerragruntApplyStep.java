@@ -77,8 +77,6 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    helper.checkIfTerragruntFeatureIsEnabled(ambiance, "Terragrunt Apply");
-
     List<EntityDetail> entityDetailList = new ArrayList<>();
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -144,6 +142,9 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
         ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier());
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
 
+    builder.tgModuleSourceInheritSSH(
+        helper.isExportCredentialForSourceModule(spec.getConfigFiles(), stepElementParameters.getType()));
+
     builder.stateFileId(helper.getLatestFileId(entityId))
         .entityId(entityId)
         .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
@@ -176,11 +177,18 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
         ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier());
     TerragruntInheritOutput inheritOutput =
         helper.getSavedInheritOutput(provisionerIdentifier, TerragruntCommandType.APPLY.name(), ambiance);
+
+    if (TerragruntTaskRunType.RUN_ALL == inheritOutput.getRunConfiguration().getRunType()) {
+      throw new InvalidRequestException(
+          "Inheriting from a plan which has used \"All Modules\" at Terragrunt Plan Step is not supported");
+    }
+
     TerragruntApplyTaskParametersBuilder<?, ?> builder = TerragruntApplyTaskParameters.builder();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
     builder.accountId(accountId)
         .entityId(entityId)
+        .tgModuleSourceInheritSSH(inheritOutput.isUseConnectorCredentials())
         .stateFileId(helper.getLatestFileId(entityId))
         .workspace(inheritOutput.getWorkspace())
         .configFilesStore(helper.getGitFetchFilesConfig(

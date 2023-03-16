@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//890-sm-delegate/src/main/java/io/harness/secrets:module",
         "//890-sm-delegate/src/main/java/io/harness/secrets/noop:module",
+        "//931-delegate-decryption-service/src/java/io/harness/decryption/delegate/module/kryo:module",
         "//931-delegate-decryption-service/src/java/software/wings/service/impl/security:module",
         "//931-encryption-service/src/java/io/harness/encryptors/clients:module",
         "//931-encryption-service/src/java/io/harness/secrets:module",

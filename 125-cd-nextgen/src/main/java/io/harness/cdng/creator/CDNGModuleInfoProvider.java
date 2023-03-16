@@ -15,7 +15,6 @@ import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.freeze.FreezeOutcome;
@@ -40,10 +39,10 @@ import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary;
 import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary.ArtifactsSummary;
 import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary.ArtifactsSummary.ArtifactsSummaryBuilder;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
-import io.harness.cdng.service.steps.ServiceConfigStep;
-import io.harness.cdng.service.steps.ServiceSectionStep;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
-import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.constants.ServiceConfigStepConstants;
+import io.harness.cdng.service.steps.constants.ServiceSectionStepConstants;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
@@ -86,6 +85,10 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
     ArtifactsOutcome artifactsOutcome = artifactsOutcomeOptional.get();
     if (artifactsOutcome.getPrimary() != null) {
       artifactsSummaryBuilder.primary(artifactsOutcome.getPrimary().getArtifactSummary());
+      if (artifactsOutcome.getPrimary().getArtifactSummary() != null) {
+        artifactsSummaryBuilder.artifactDisplayName(
+            artifactsOutcome.getPrimary().getArtifactSummary().getDisplayName());
+      }
     }
 
     if (isNotEmpty(artifactsOutcome.getSidecars())) {
@@ -118,6 +121,15 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
     return Optional.ofNullable((FreezeOutcome) optionalOutcome.getOutcome());
   }
 
+  private Optional<ArtifactsOutcome> getArtifactsOutcome(Ambiance ambiance) {
+    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
+    if (!optionalOutcome.isFound()) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable((ArtifactsOutcome) optionalOutcome.getOutcome());
+  }
+
   private Optional<ArtifactsOutcome> getArtifactsOutcome(OrchestrationEvent event) {
     OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
         event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
@@ -137,9 +149,9 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
   }
 
   private boolean isServiceNodeAndCompleted(StepType stepType, Status status) {
-    return (Objects.equals(stepType, ServiceConfigStep.STEP_TYPE)
-               || Objects.equals(stepType, ServiceSectionStep.STEP_TYPE)
-               || Objects.equals(stepType, ServiceStepV3.STEP_TYPE))
+    return (Objects.equals(stepType, ServiceConfigStepConstants.STEP_TYPE)
+               || Objects.equals(stepType, ServiceSectionStepConstants.STEP_TYPE)
+               || Objects.equals(stepType, ServiceStepV3Constants.STEP_TYPE))
         && StatusUtils.isFinalStatus(status);
   }
 
@@ -163,24 +175,28 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
     StepType stepType = AmbianceUtils.getCurrentStepType(event.getAmbiance());
     Ambiance ambiance = event.getAmbiance();
     CDPipelineModuleInfoBuilder cdPipelineModuleInfoBuilder = CDPipelineModuleInfo.builder();
-    if (ngFeatureFlagHelperService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_DEPLOYMENT_FREEZE)) {
-      Optional<FreezeOutcome> freezeOutcome = getFreezeOutcome(ambiance);
-      freezeOutcome.ifPresent(outcome -> {
-        List<String> freezeIdentifiers = new LinkedList<>();
-        outcome.getGlobalFreezeConfigs().stream().forEach(freezeConfig
-            -> freezeIdentifiers.add(
-                NGFreezeDtoMapper.getFreezeRef(freezeConfig.getFreezeScope(), freezeConfig.getIdentifier())));
-        outcome.getManualFreezeConfigs().stream().forEach(freezeConfig
-            -> freezeIdentifiers.add(
-                NGFreezeDtoMapper.getFreezeRef(freezeConfig.getFreezeScope(), freezeConfig.getIdentifier())));
-        cdPipelineModuleInfoBuilder.freezeIdentifiers(freezeIdentifiers);
-      });
-    }
+    Optional<FreezeOutcome> freezeOutcome = getFreezeOutcome(ambiance);
+    freezeOutcome.ifPresent(outcome -> {
+      List<String> freezeIdentifiers = new LinkedList<>();
+      outcome.getGlobalFreezeConfigs().stream().forEach(freezeConfig
+          -> freezeIdentifiers.add(
+              NGFreezeDtoMapper.getFreezeRef(freezeConfig.getFreezeScope(), freezeConfig.getIdentifier())));
+      outcome.getManualFreezeConfigs().stream().forEach(freezeConfig
+          -> freezeIdentifiers.add(
+              NGFreezeDtoMapper.getFreezeRef(freezeConfig.getFreezeScope(), freezeConfig.getIdentifier())));
+      cdPipelineModuleInfoBuilder.freezeIdentifiers(freezeIdentifiers);
+    });
     if (isServiceNodeAndCompleted(stepType, event.getStatus())) {
       Optional<ServiceStepOutcome> serviceOutcome = getServiceStepOutcome(ambiance);
       serviceOutcome.ifPresent(outcome
           -> cdPipelineModuleInfoBuilder.serviceDefinitionType(outcome.getServiceDefinitionType())
                  .serviceIdentifier(outcome.getIdentifier()));
+      Optional<ArtifactsOutcome> artifactsOutcome = getArtifactsOutcome(ambiance);
+      artifactsOutcome.ifPresent(outcome -> {
+        if (outcome.getPrimary() != null && outcome.getPrimary().getArtifactSummary() != null) {
+          cdPipelineModuleInfoBuilder.artifactDisplayName(outcome.getPrimary().getArtifactSummary().getDisplayName());
+        }
+      });
     }
     if (isInfrastructureNodeAndCompleted(stepType, event.getStatus())) {
       OptionalOutcome infraOptionalOutcome = outcomeService.resolveOptional(
@@ -231,33 +247,30 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
   public StageModuleInfo getStageLevelModuleInfo(OrchestrationEvent event) {
     CDStageModuleInfoBuilder cdStageModuleInfoBuilder = CDStageModuleInfo.builder();
     StepType stepType = AmbianceUtils.getCurrentStepType(event.getAmbiance());
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(event.getAmbiance()), FeatureName.NG_DEPLOYMENT_FREEZE)) {
-      Optional<FreezeOutcome> freezeOutcome = getFreezeOutcome(event.getAmbiance());
-      freezeOutcome.ifPresent(outcome -> {
-        List<FreezeExecutionInfo> executionInfos = new LinkedList<>();
-        outcome.getGlobalFreezeConfigs().stream().forEach(freezeConfig
-            -> executionInfos.add(FreezeExecutionInfo.builder()
-                                      .freezeType(freezeConfig.getType().name())
-                                      .identifier(freezeConfig.getIdentifier())
-                                      .projectIdentifier(freezeConfig.getProjectIdentifier())
-                                      .orgIdentifier(freezeConfig.getOrgIdentifier())
-                                      .name(freezeConfig.getName())
-                                      .yaml(freezeConfig.getYaml())
-                                      .build()));
-        outcome.getManualFreezeConfigs().stream().forEach(freezeConfig
-            -> executionInfos.add(FreezeExecutionInfo.builder()
-                                      .freezeType(freezeConfig.getType().name())
-                                      .identifier(freezeConfig.getIdentifier())
-                                      .projectIdentifier(freezeConfig.getProjectIdentifier())
-                                      .orgIdentifier(freezeConfig.getOrgIdentifier())
-                                      .name(freezeConfig.getName())
-                                      .yaml(freezeConfig.getYaml())
-                                      .build()));
-        cdStageModuleInfoBuilder.freezeExecutionSummary(
-            FreezeExecutionSummary.builder().freezeExecutionInfoList(executionInfos).build());
-      });
-    }
+    Optional<FreezeOutcome> freezeOutcome = getFreezeOutcome(event.getAmbiance());
+    freezeOutcome.ifPresent(outcome -> {
+      List<FreezeExecutionInfo> executionInfos = new LinkedList<>();
+      outcome.getGlobalFreezeConfigs().stream().forEach(freezeConfig
+          -> executionInfos.add(FreezeExecutionInfo.builder()
+                                    .freezeType(freezeConfig.getType().name())
+                                    .identifier(freezeConfig.getIdentifier())
+                                    .projectIdentifier(freezeConfig.getProjectIdentifier())
+                                    .orgIdentifier(freezeConfig.getOrgIdentifier())
+                                    .name(freezeConfig.getName())
+                                    .yaml(freezeConfig.getYaml())
+                                    .build()));
+      outcome.getManualFreezeConfigs().stream().forEach(freezeConfig
+          -> executionInfos.add(FreezeExecutionInfo.builder()
+                                    .freezeType(freezeConfig.getType().name())
+                                    .identifier(freezeConfig.getIdentifier())
+                                    .projectIdentifier(freezeConfig.getProjectIdentifier())
+                                    .orgIdentifier(freezeConfig.getOrgIdentifier())
+                                    .name(freezeConfig.getName())
+                                    .yaml(freezeConfig.getYaml())
+                                    .build()));
+      cdStageModuleInfoBuilder.freezeExecutionSummary(
+          FreezeExecutionSummary.builder().freezeExecutionInfoList(executionInfos).build());
+    });
     if (isServiceNodeAndCompleted(stepType, event.getStatus())) {
       Optional<ServiceStepOutcome> serviceOutcome = getServiceStepOutcome(event.getAmbiance());
       Optional<ArtifactsOutcome> artifactsOutcome = getArtifactsOutcome(event);
@@ -339,6 +352,8 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
                                                                    .envGroupName(clustersDatum.getEnvGroupName())
                                                                    .envGroupId(clustersDatum.getEnvGroupId())
                                                                    .envId(clustersDatum.getEnvId())
+                                                                   .agentId(clustersDatum.getAgentId())
+                                                                   .scope(clustersDatum.getScope())
                                                                    .build())
                                                         .collect(Collectors.toList());
     gitOpsExecutionSummary.setClusters(clusters);

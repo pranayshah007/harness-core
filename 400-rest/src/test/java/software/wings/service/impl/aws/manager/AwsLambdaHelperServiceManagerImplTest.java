@@ -60,7 +60,7 @@ public class AwsLambdaHelperServiceManagerImplTest extends CategoryTest {
     final AwsLambdaDetails lambdaDetails = AwsLambdaDetails.builder().build();
     final AwsLambdaDetailsResponse awsLambdaDetailsResponse =
         AwsLambdaDetailsResponse.builder().executionStatus(ExecutionStatus.SUCCESS).details(lambdaDetails).build();
-    doReturn(awsLambdaDetailsResponse).when(delegateService).executeTask(any(DelegateTask.class));
+    doReturn(awsLambdaDetailsResponse).when(delegateService).executeTaskV2(any(DelegateTask.class));
 
     assertThat(awsLambdaHelperServiceManager.getFunctionDetails(awsLambdaDetailsRequest)).isEqualTo(lambdaDetails);
   }
@@ -73,14 +73,14 @@ public class AwsLambdaHelperServiceManagerImplTest extends CategoryTest {
         AwsLambdaDetailsRequest.builder().awsConfig(AwsConfig.builder().tag("tag").build()).build();
     final AwsLambdaDetailsResponse awsLambdaDetailsResponse =
         AwsLambdaDetailsResponse.builder().executionStatus(ExecutionStatus.FAILED).errorMessage("error").build();
-    doReturn(awsLambdaDetailsResponse).when(delegateService).executeTask(any(DelegateTask.class));
+    doReturn(awsLambdaDetailsResponse).when(delegateService).executeTaskV2(any(DelegateTask.class));
 
     assertThatExceptionOfType(WingsException.class)
         .isThrownBy(() -> awsLambdaHelperServiceManager.getFunctionDetails(awsLambdaDetailsRequest));
 
     doReturn(ErrorNotifyResponseData.builder().errorMessage("error").build())
         .when(delegateService)
-        .executeTask(any(DelegateTask.class));
+        .executeTaskV2(any(DelegateTask.class));
     assertThatExceptionOfType(WingsException.class)
         .isThrownBy(() -> awsLambdaHelperServiceManager.getFunctionDetails(awsLambdaDetailsRequest));
   }

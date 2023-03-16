@@ -101,7 +101,7 @@ public class AzureARMManagerImpl implements AzureARMManager {
                       .build())
             .build();
     try {
-      DelegateResponseData notifyResponseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData notifyResponseData = delegateService.executeTaskV2(delegateTask);
       if (notifyResponseData instanceof ErrorNotifyResponseData) {
         throw new InvalidRequestException(((ErrorNotifyResponseData) notifyResponseData).getErrorMessage(), USER);
       } else if (notifyResponseData instanceof RemoteMethodReturnValueData) {

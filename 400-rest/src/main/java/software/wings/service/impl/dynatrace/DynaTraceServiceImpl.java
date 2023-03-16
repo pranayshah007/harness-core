@@ -13,7 +13,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.VerificationOperationException;
@@ -64,7 +64,7 @@ public class DynaTraceServiceImpl implements DynaTraceService {
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                             .build();
       List<DynaTraceMetricDataResponse> response =
-          delegateProxyFactory.get(DynaTraceDelegateService.class, syncTaskContext)
+          delegateProxyFactory.getV2(DynaTraceDelegateService.class, syncTaskContext)
               .getMetricsWithDataForNode((DynaTraceConfig) settingAttribute.getValue(), encryptionDetails,
                   setupTestNodeData, createApiCallLog(settingAttribute.getAccountId(), setupTestNodeData.getGuid()));
       if (response.isEmpty()) {
@@ -103,7 +103,7 @@ public class DynaTraceServiceImpl implements DynaTraceService {
                                           .appId(GLOBAL_APP_ID)
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                           .build();
-    return delegateProxyFactory.get(DynaTraceDelegateService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(DynaTraceDelegateService.class, syncTaskContext)
         .getServices((DynaTraceConfig) settingAttribute.getValue(), encryptionDetails,
             createApiCallLog(settingAttribute.getAccountId(), generateUuid()), shouldResolveAllServices);
   }

@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.aws.service.AwsResourceServiceImpl;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
+import io.harness.cdng.infra.yaml.AwsBaseInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
@@ -293,7 +294,7 @@ public class AwsHelperResource {
     }
 
     if (isEmpty(region) && spec != null) {
-      region = ((EcsInfrastructure) spec).getRegion().getValue();
+      region = ((AwsBaseInfrastructure) spec).getRegion().getValue();
     }
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
@@ -326,7 +327,7 @@ public class AwsHelperResource {
     }
 
     if (isEmpty(region) && spec != null) {
-      region = ((EcsInfrastructure) spec).getRegion().getValue();
+      region = ((AwsBaseInfrastructure) spec).getRegion().getValue();
     }
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
@@ -360,7 +361,7 @@ public class AwsHelperResource {
     }
 
     if (isEmpty(region) && spec != null) {
-      region = ((EcsInfrastructure) spec).getRegion().getValue();
+      region = ((AwsBaseInfrastructure) spec).getRegion().getValue();
     }
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);

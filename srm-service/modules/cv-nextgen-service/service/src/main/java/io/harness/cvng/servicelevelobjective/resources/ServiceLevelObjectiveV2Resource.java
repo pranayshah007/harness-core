@@ -80,7 +80,7 @@ import retrofit2.http.Body;
 //    })
 @OwnedBy(HarnessTeam.CV)
 public class ServiceLevelObjectiveV2Resource {
-  @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveService;
+  @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject AccessControlClient accessControlClient;
 
   public static final String SLO = "SLO";
@@ -97,7 +97,7 @@ public class ServiceLevelObjectiveV2Resource {
   public RestResponse<TimeGraphResponse> getOnboardingGraph(@BeanParam ProjectParams projectParams,
       @Parameter(description = "Composite SLO spec which consists of list of SLO details") @ApiParam(
           required = true) @Valid @Body CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec) {
-    return new RestResponse<>(serviceLevelObjectiveService.getOnboardingGraph(compositeServiceLevelObjectiveSpec));
+    return new RestResponse<>(serviceLevelObjectiveV2Service.getOnboardingGraph(compositeServiceLevelObjectiveSpec));
   }
 
   @POST
@@ -125,7 +125,7 @@ public class ServiceLevelObjectiveV2Resource {
                                       .projectIdentifier(serviceLevelObjectiveDTO.getProjectIdentifier())
                                       .build();
     // TODO: change this api signature
-    return new RestResponse<>(serviceLevelObjectiveService.create(projectParams, serviceLevelObjectiveDTO));
+    return new RestResponse<>(serviceLevelObjectiveV2Service.create(projectParams, serviceLevelObjectiveDTO));
   }
 
   @PUT
@@ -146,7 +146,8 @@ public class ServiceLevelObjectiveV2Resource {
           "identifier") @ResourceIdentifier String identifier,
       @Parameter(description = "Details of the SLO to be updated") @Valid
       @Body ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
-    return new RestResponse<>(serviceLevelObjectiveService.update(projectParams, identifier, serviceLevelObjectiveDTO));
+    return new RestResponse<>(
+        serviceLevelObjectiveV2Service.update(projectParams, identifier, serviceLevelObjectiveDTO));
   }
 
   @DELETE
@@ -165,7 +166,7 @@ public class ServiceLevelObjectiveV2Resource {
   deleteSLOV2Data(@Valid @BeanParam ProjectParams projectParams,
       @Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(required = true) @NotNull @PathParam(
           "identifier") @ResourceIdentifier String identifier) {
-    return new RestResponse<>(serviceLevelObjectiveService.delete(projectParams, identifier));
+    return new RestResponse<>(serviceLevelObjectiveV2Service.delete(projectParams, identifier));
   }
 
   @GET
@@ -183,7 +184,7 @@ public class ServiceLevelObjectiveV2Resource {
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam("pageSize")
       @NotNull Integer pageSize, @BeanParam ServiceLevelObjectiveFilter serviceLevelObjectiveFilter) {
     return ResponseDTO.newResponse(
-        serviceLevelObjectiveService.get(projectParams, offset, pageSize, serviceLevelObjectiveFilter));
+        serviceLevelObjectiveV2Service.get(projectParams, offset, pageSize, serviceLevelObjectiveFilter));
   }
 
   @GET
@@ -202,6 +203,6 @@ public class ServiceLevelObjectiveV2Resource {
   getServiceLevelObjectiveV2(@BeanParam ProjectParams projectParams,
       @Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(required = true) @NotNull @PathParam(
           "identifier") @ResourceIdentifier String identifier) {
-    return new RestResponse<>(serviceLevelObjectiveService.get(projectParams, identifier));
+    return new RestResponse<>(serviceLevelObjectiveV2Service.get(projectParams, identifier));
   }
 }

@@ -7,9 +7,15 @@
 
 package io.harness.connector.mappers.jira;
 
+import static java.util.Objects.isNull;
+
 import io.harness.connector.entities.embedded.jira.JiraConnector;
+import io.harness.connector.entities.embedded.jira.JiraUserNamePasswordAuthentication;
 import io.harness.connector.mappers.ConnectorEntityToDTOMapper;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
+import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraConnectorDTO.JiraConnectorDTOBuilder;
 import io.harness.encryption.SecretRefHelper;
 
 import com.google.inject.Singleton;
@@ -18,11 +24,27 @@ import com.google.inject.Singleton;
 public class JiraEntityToDTO implements ConnectorEntityToDTOMapper<JiraConnectorDTO, JiraConnector> {
   @Override
   public JiraConnectorDTO createConnectorDTO(JiraConnector jiraConnector) {
-    return JiraConnectorDTO.builder()
-        .jiraUrl(jiraConnector.getJiraUrl())
-        .username(jiraConnector.getUsername())
-        .usernameRef(SecretRefHelper.createSecretRef(jiraConnector.getUsernameRef()))
-        .passwordRef(SecretRefHelper.createSecretRef(jiraConnector.getPasswordRef()))
-        .build();
+    // no change required after Jira connector migration
+    JiraConnectorDTOBuilder jiraConnectorDTOBuilder =
+        JiraConnectorDTO.builder()
+            .jiraUrl(jiraConnector.getJiraUrl())
+            .username(jiraConnector.getUsername())
+            .usernameRef(SecretRefHelper.createSecretRef(jiraConnector.getUsernameRef()))
+            .passwordRef(SecretRefHelper.createSecretRef(jiraConnector.getPasswordRef()));
+    if (!isNull(jiraConnector.getJiraAuthentication())) {
+      jiraConnectorDTOBuilder.auth(JiraAuthenticationDTO.builder()
+                                       .authType(jiraConnector.getAuthType())
+                                       .credentials(jiraConnector.getJiraAuthentication().toJiraAuthCredentialsDTO())
+                                       .build());
+      if (JiraAuthType.USER_PASSWORD.equals(jiraConnector.getAuthType())) {
+        // override old base level fields with value present in new JiraAuthCredentials in USER_PASSWORD case
+        JiraUserNamePasswordAuthentication jiraUserNamePasswordAuthentication =
+            (JiraUserNamePasswordAuthentication) jiraConnector.getJiraAuthentication();
+        jiraConnectorDTOBuilder.username(jiraUserNamePasswordAuthentication.getUsername())
+            .usernameRef(SecretRefHelper.createSecretRef(jiraUserNamePasswordAuthentication.getUsernameRef()))
+            .passwordRef(SecretRefHelper.createSecretRef(jiraUserNamePasswordAuthentication.getPasswordRef()));
+      }
+    }
+    return jiraConnectorDTOBuilder.build();
   }
 }

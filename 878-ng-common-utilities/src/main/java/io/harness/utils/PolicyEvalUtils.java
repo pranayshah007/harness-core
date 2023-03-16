@@ -7,6 +7,7 @@
 
 package io.harness.utils;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import static io.harness.pms.sdk.core.steps.io.StepResponse.builder;
 
@@ -149,7 +150,8 @@ public class PolicyEvalUtils {
 
   public StepResponse evalPolicies(Ambiance ambiance, StepElementParameters stepParameters, StepResponse stepResponse,
       OpaServiceClient opaServiceClient) {
-    if (stepParameters.getEnforce() == null || ParameterField.isNull(stepParameters.getEnforce().getPolicySets())) {
+    if (stepParameters.getEnforce() == null || ParameterField.isNull(stepParameters.getEnforce().getPolicySets())
+        || isEmpty(stepParameters.getEnforce().getPolicySets().getValue())) {
       return stepResponse;
     }
     OpaEvaluationResponseHolder opaEvaluationResponseHolder;

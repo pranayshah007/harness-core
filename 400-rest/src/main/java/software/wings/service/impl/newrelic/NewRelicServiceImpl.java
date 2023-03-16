@@ -15,7 +15,7 @@ import static io.harness.govern.Switch.unhandled;
 
 import static software.wings.app.ManagerCacheRegistrar.NEW_RELIC_APPLICATION_CACHE;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.beans.FeatureName;
 import io.harness.eraro.ErrorCode;
@@ -38,11 +38,11 @@ import software.wings.beans.NewRelicConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.apm.Method;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.common.VerificationConstants;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.dl.WingsPersistence;
 import software.wings.metrics.TimeSeriesMetricDefinition;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.APMDelegateService;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;
 import software.wings.service.impl.apm.MLServiceUtils;
@@ -119,7 +119,7 @@ public class NewRelicServiceImpl implements NewRelicService {
                                           .appId(GLOBAL_APP_ID)
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                           .build();
-    delegateProxyFactory.get(APMDelegateService.class, syncTaskContext).validateCollector(config);
+    delegateProxyFactory.getV2(APMDelegateService.class, syncTaskContext).validateCollector(config);
   }
 
   @Override
@@ -150,7 +150,7 @@ public class NewRelicServiceImpl implements NewRelicService {
                                             .appId(GLOBAL_APP_ID)
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                             .build();
-      return delegateProxyFactory.get(APMDelegateService.class, syncTaskContext)
+      return delegateProxyFactory.getV2(APMDelegateService.class, syncTaskContext)
           .fetch(apmValidateCollectorConfig, ThirdPartyApiCallLog.createApiCallLog(accountId, fetchConfig.getGuid()));
     } catch (Exception e) {
       String errorMsg = e.getCause() != null ? ExceptionUtils.getMessage(e.getCause()) : ExceptionUtils.getMessage(e);
@@ -168,17 +168,17 @@ public class NewRelicServiceImpl implements NewRelicService {
                                           .build();
     switch (stateType) {
       case NEW_RELIC:
-        delegateProxyFactory.get(NewRelicDelegateService.class, syncTaskContext)
+        delegateProxyFactory.getV2(NewRelicDelegateService.class, syncTaskContext)
             .validateConfig((NewRelicConfig) settingAttribute.getValue(), encryptedDataDetails);
         return;
       case APP_DYNAMICS:
         AppDynamicsConfig appDynamicsConfig = (AppDynamicsConfig) settingAttribute.getValue();
-        delegateProxyFactory.get(AppdynamicsDelegateService.class, syncTaskContext)
+        delegateProxyFactory.getV2(AppdynamicsDelegateService.class, syncTaskContext)
             .validateConfig(appDynamicsConfig, encryptedDataDetails);
         return;
       case DYNA_TRACE:
         DynaTraceConfig dynaTraceConfig = (DynaTraceConfig) settingAttribute.getValue();
-        delegateProxyFactory.get(DynaTraceDelegateService.class, syncTaskContext)
+        delegateProxyFactory.getV2(DynaTraceDelegateService.class, syncTaskContext)
             .validateConfig(dynaTraceConfig, encryptedDataDetails);
         return;
       default:
@@ -214,7 +214,7 @@ public class NewRelicServiceImpl implements NewRelicService {
 
           errorCode = ErrorCode.NEWRELIC_ERROR;
           List<NewRelicApplication> allApplications =
-              delegateProxyFactory.get(NewRelicDelegateService.class, syncTaskContext)
+              delegateProxyFactory.getV2(NewRelicDelegateService.class, syncTaskContext)
                   .getAllApplications((NewRelicConfig) settingAttribute.getValue(), encryptionDetails, null);
           // check if number of apps is too big to compute
           if (isNotEmpty(allApplications) && allApplications.size() == 1 && allApplications.get(0).getId() == -1) {
@@ -225,7 +225,7 @@ public class NewRelicServiceImpl implements NewRelicService {
           return allApplications;
         case APP_DYNAMICS:
           errorCode = ErrorCode.APPDYNAMICS_ERROR;
-          return delegateProxyFactory.get(AppdynamicsDelegateService.class, syncTaskContext)
+          return delegateProxyFactory.getV2(AppdynamicsDelegateService.class, syncTaskContext)
               .getAllApplications((AppDynamicsConfig) settingAttribute.getValue(), encryptionDetails);
         default:
           throw new IllegalStateException("Invalid state" + stateType);
@@ -253,7 +253,7 @@ public class NewRelicServiceImpl implements NewRelicService {
       switch (stateType) {
         case NEW_RELIC:
           errorCode = ErrorCode.NEWRELIC_ERROR;
-          return delegateProxyFactory.get(NewRelicDelegateService.class, syncTaskContext)
+          return delegateProxyFactory.getV2(NewRelicDelegateService.class, syncTaskContext)
               .getApplicationInstances(
                   (NewRelicConfig) settingAttribute.getValue(), encryptionDetails, applicationId, null);
         default:
@@ -277,7 +277,7 @@ public class NewRelicServiceImpl implements NewRelicService {
                                             .appId(GLOBAL_APP_ID)
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                             .build();
-      return delegateProxyFactory.get(NewRelicDelegateService.class, syncTaskContext)
+      return delegateProxyFactory.getV2(NewRelicDelegateService.class, syncTaskContext)
           .getTxnsWithData((NewRelicConfig) settingAttribute.getValue(), encryptionDetails, applicationId,
               featureFlagService.isEnabled(
                   FeatureName.DISABLE_METRIC_NAME_CURLY_BRACE_CHECK, settingAttribute.getAccountId()),
@@ -328,7 +328,7 @@ public class NewRelicServiceImpl implements NewRelicService {
                                             .appId(GLOBAL_APP_ID)
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                             .build();
-      return delegateProxyFactory.get(NewRelicDelegateService.class, syncTaskContext)
+      return delegateProxyFactory.getV2(NewRelicDelegateService.class, syncTaskContext)
           .getMetricsWithDataForNode((NewRelicConfig) settingAttribute.getValue(), encryptionDetails, setupTestNodeData,
               instanceId,
               !featureFlagService.isEnabled(
@@ -466,7 +466,7 @@ public class NewRelicServiceImpl implements NewRelicService {
                                           .appId(GLOBAL_APP_ID)
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                           .build();
-    return delegateProxyFactory.get(NewRelicDelegateService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(NewRelicDelegateService.class, syncTaskContext)
         .resolveNewRelicApplicationName(
             (NewRelicConfig) settingAttribute.getValue(), encryptionDetails, newRelicApplicationName, null);
   }
@@ -487,7 +487,7 @@ public class NewRelicServiceImpl implements NewRelicService {
                                           .appId(GLOBAL_APP_ID)
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                           .build();
-    return delegateProxyFactory.get(NewRelicDelegateService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(NewRelicDelegateService.class, syncTaskContext)
         .resolveNewRelicApplicationId(
             (NewRelicConfig) settingAttribute.getValue(), encryptionDetails, newRelicApplicationId, null);
   }

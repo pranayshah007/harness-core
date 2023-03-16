@@ -7,7 +7,6 @@
 
 package io.harness.service.impl;
 
-import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 
 import static java.lang.String.format;
@@ -15,6 +14,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.authenticator.DelegateTokenEncryptDecrypt;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
@@ -30,7 +30,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.security.SourcePrincipalContextBuilder;
-import io.harness.service.intfc.DelegateCache;
 import io.harness.utils.Misc;
 
 import software.wings.beans.Account;
@@ -61,32 +60,46 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   private static final String DEFAULT_TOKEN_NAME = "default_token";
   private final HPersistence persistence;
   private final OutboxService outboxService;
-  private final DelegateCache delegateCache;
+  private final DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt;
 
   @Inject
   public DelegateNgTokenServiceImpl(
-      HPersistence persistence, OutboxService outboxService, DelegateCache delegateCache) {
+      HPersistence persistence, OutboxService outboxService, DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt) {
     this.persistence = persistence;
     this.outboxService = outboxService;
-    this.delegateCache = delegateCache;
+    this.delegateTokenEncryptDecrypt = delegateTokenEncryptDecrypt;
   }
 
   @Override
-  public DelegateTokenDetails createToken(String accountId, DelegateEntityOwner owner, String name) {
-    DelegateToken delegateToken = DelegateToken.builder()
-                                      .accountId(accountId)
-                                      .owner(owner)
-                                      .name(name.trim())
-                                      .isNg(true)
-                                      .status(DelegateTokenStatus.ACTIVE)
-                                      .value(encodeBase64(Misc.generateSecretKey()))
-                                      .createdByNgUser(SourcePrincipalContextBuilder.getSourcePrincipal())
-                                      .build();
+  public DelegateTokenDetails createToken(
+      String accountId, DelegateEntityOwner owner, String tokenName, Long revokeAfter) {
+    String token = encodeBase64(Misc.generateSecretKey());
+    String tokenIdentifier = tokenName;
+    if (owner != null) {
+      String orgId = DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(owner.getIdentifier());
+      String projectId = DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(owner.getIdentifier());
+      tokenIdentifier = String.format("%s_%s_%s", tokenName, orgId, projectId);
+    }
+    DelegateToken delegateToken =
+        DelegateToken.builder()
+            .accountId(accountId)
+            .owner(owner)
+            .name(tokenName.trim())
+            .isNg(true)
+            .status(DelegateTokenStatus.ACTIVE)
+            .value(token)
+            .encryptedTokenId(delegateTokenEncryptDecrypt.encrypt(accountId, token, tokenIdentifier.trim()))
+            .createdByNgUser(SourcePrincipalContextBuilder.getSourcePrincipal())
+            .revokeAfter(revokeAfter)
+            .build();
+
+    validateCreateDelegateTokenRequest(delegateToken);
 
     try {
       persistence.save(delegateToken);
     } catch (DuplicateKeyException e) {
-      throw new InvalidRequestException(format("Token with given name %s already exists for given account.", name));
+      throw new InvalidRequestException(
+          format("Token with given name %s already exists for given account.", tokenName));
     }
 
     publishCreateTokenAuditEvent(delegateToken);
@@ -94,9 +107,11 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   }
 
   @Override
-  public DelegateTokenDetails revokeDelegateToken(String accountId, DelegateEntityOwner owner, String tokenName) {
+  public DelegateTokenDetails revokeDelegateToken(String accountId, String tokenName) {
     Query<DelegateToken> filterQuery = matchNameTokenQuery(accountId, tokenName);
     validateTokenToBeRevoked(filterQuery.get());
+
+    log.info("Revoking delegate token: {} for account: {}", tokenName, accountId);
     UpdateOperations<DelegateToken> updateOperations =
         persistence.createUpdateOperations(DelegateToken.class)
             .set(DelegateTokenKeys.status, DelegateTokenStatus.REVOKED)
@@ -146,11 +161,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   public String getDelegateTokenValue(String accountId, String name) {
     DelegateToken delegateToken = matchNameTokenQuery(accountId, name).get();
     if (delegateToken != null) {
-      if (delegateToken.isNg()) {
-        return decodeBase64ToString(delegateToken.getValue());
-      } else {
-        return delegateToken.getValue();
-      }
+      return delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken);
     }
     log.warn("Not able to find delegate token {} for account {} . Please verify manually.", name, accountId);
     return null;
@@ -232,6 +243,19 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     return owner == null ? DEFAULT_TOKEN_NAME : DEFAULT_TOKEN_NAME.concat("_" + owner.getIdentifier());
   }
 
+  public void autoRevokeExpiredTokens() {
+    List<DelegateToken> delegateTokenList = persistence.createQuery(DelegateToken.class)
+                                                .filter(DelegateTokenKeys.isNg, true)
+                                                .filter(DelegateTokenKeys.status, DelegateTokenStatus.ACTIVE)
+                                                .field(DelegateTokenKeys.revokeAfter)
+                                                .lessThan(System.currentTimeMillis())
+                                                .project(DelegateTokenKeys.accountId, true)
+                                                .project(DelegateTokenKeys.name, true)
+                                                .asList();
+    delegateTokenList.forEach(
+        delegateToken -> revokeDelegateToken(delegateToken.getAccountId(), delegateToken.getName()));
+  }
+
   private Query<DelegateToken> matchNameTokenQuery(String accountId, String tokenName) {
     return persistence.createQuery(DelegateToken.class)
         .field(DelegateTokenKeys.accountId)
@@ -249,11 +273,15 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
                                                                   .status(delegateToken.getStatus());
 
     if (includeTokenValue) {
-      delegateTokenDetailsBuilder.value(decodeBase64ToString(delegateToken.getValue()));
+      delegateTokenDetailsBuilder.value(delegateTokenEncryptDecrypt.getBase64EncodedTokenValue(delegateToken));
     }
 
     if (delegateToken.getOwner() != null) {
       delegateTokenDetailsBuilder.ownerIdentifier(delegateToken.getOwner().getIdentifier());
+    }
+
+    if (delegateToken.getRevokeAfter() != null) {
+      delegateTokenDetailsBuilder.revokeAfter(delegateToken.getRevokeAfter());
     }
 
     return delegateTokenDetailsBuilder.build();
@@ -314,5 +342,12 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
         -> delegateTokenStatusMap.put(
             delegateToken.getName(), DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())));
     return delegateTokenStatusMap;
+  }
+
+  private void validateCreateDelegateTokenRequest(DelegateToken delegateToken) {
+    Long revokeAfter = delegateToken.getRevokeAfter();
+    if (revokeAfter != null && revokeAfter < System.currentTimeMillis()) {
+      throw new InvalidRequestException("Token revocation time can not be less than current time.");
+    }
   }
 }

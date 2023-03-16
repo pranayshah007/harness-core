@@ -11,9 +11,9 @@ import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.checkDuplicateConfigFilesIdentifiersWithIn;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.checkDuplicateManifestIdentifiersWithIn;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
+import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.checkDuplicateConfigFilesIdentifiersWithIn;
+import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.checkDuplicateManifestIdentifiersWithIn;
+import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
 import static io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.pms.rbac.NGResourceType.SERVICE;
@@ -51,6 +51,7 @@ import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.EnvironmentValidationHelper;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
@@ -81,7 +82,6 @@ import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
-import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.rbac.CDNGRbacUtility;
@@ -189,6 +189,9 @@ public class EnvironmentResourceV2 {
 
   public static final String ENVIRONMENT_PARAM_MESSAGE = "Environment Identifier for the entity";
 
+  private static final String TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE =
+      "You cannot configure multiple Helm Repo Overrides for the service. Overrides provided: [%s]";
+
   @GET
   @Path("{environmentIdentifier}")
   @NGAccessControlCheck(resourceType = ENVIRONMENT, permission = "core_environment_view")
@@ -253,6 +256,9 @@ public class EnvironmentResourceV2 {
         Resource.of(ENVIRONMENT, null, environmentAttributes), ENVIRONMENT_CREATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    if (isEmpty(environmentRequestDTO.getYaml())) {
+      environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentEntity.getYaml());
+    }
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(environmentEntity.getOrgIdentifier(),
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());
     Environment createdEnvironment = environmentService.create(environmentEntity);
@@ -312,6 +318,9 @@ public class EnvironmentResourceV2 {
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    if (isEmpty(environmentRequestDTO.getYaml())) {
+      environmentEntityYamlSchemaHelper.validateSchema(accountId, requestEnvironment.getYaml());
+    }
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
     return ResponseDTO.newResponse(
@@ -341,6 +350,9 @@ public class EnvironmentResourceV2 {
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    if (isEmpty(environmentRequestDTO.getYaml())) {
+      environmentEntityYamlSchemaHelper.validateSchema(accountId, requestEnvironment.getYaml());
+    }
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(requestEnvironment.getOrgIdentifier(),
         requestEnvironment.getProjectIdentifier(), requestEnvironment.getAccountId());
@@ -389,6 +401,42 @@ public class EnvironmentResourceV2 {
     } else {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
+    return getEnvironmentsPageByCriteria(criteria, pageRequest);
+  }
+
+  @GET
+  @Path("list/scoped")
+  @Hidden
+  @ApiOperation(value = "Gets environment list filtered by scoped env refs", nickname = "getEnvironmentListFiltered")
+  @Operation(operationId = "getEnvironmentListFiltered", summary = "Gets Environment list filtered by scoped env refs",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Gets Environment list filtered by scoped env refs")
+      })
+  public ResponseDTO<PageResponse<EnvironmentResponse>>
+  getEnvironmentsFilteredByRefs(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+                                    NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") int size,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
+      @Parameter(description = "List of EnvironmentIds") @QueryParam("envIdentifiers") List<String> envIdentifiers) {
+    checkAccessForListingAtScope(accountId, orgIdentifier, projectIdentifier, envIdentifiers);
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
+        accountId, orgIdentifier, projectIdentifier, envIdentifiers, false);
+    Pageable pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, EnvironmentKeys.createdAt));
+
+    return getEnvironmentsPageByCriteria(criteria, pageRequest);
+  }
+
+  @NotNull
+  private ResponseDTO<PageResponse<EnvironmentResponse>> getEnvironmentsPageByCriteria(
+      Criteria criteria, Pageable pageRequest) {
     Page<Environment> environmentEntities = environmentService.list(criteria, pageRequest);
     environmentEntities.forEach(environment -> {
       if (EmptyPredicate.isEmpty(environment.getYaml())) {
@@ -472,14 +520,7 @@ public class EnvironmentResourceV2 {
     } else {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
-    Page<Environment> environmentEntities = environmentService.list(criteria, pageRequest);
-    environmentEntities.forEach(environment -> {
-      if (EmptyPredicate.isEmpty(environment.getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
-        environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
-      }
-    });
-    return ResponseDTO.newResponse(getNGPageResponse(environmentEntities.map(EnvironmentMapper::toResponseWrapper)));
+    return getEnvironmentsPageByCriteria(criteria, pageRequest);
   }
 
   @GET
@@ -521,12 +562,17 @@ public class EnvironmentResourceV2 {
           environmentGroupService.get(accountId, orgIdentifier, projectIdentifier, envGroupIdentifier, false);
       IdentifierRef envGroupIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(envGroupIdentifier, accountId, orgIdentifier, projectIdentifier);
-      environmentGroupEntity.ifPresent(groupEntity -> envIdentifiers.addAll(groupEntity.getEnvIdentifiers()));
+      environmentGroupEntity.ifPresentOrElse(
+          groupEntity -> envIdentifiers.addAll(groupEntity.getEnvIdentifiers()), () -> {
+            throw new InvalidRequestException(
+                String.format("Could not find environment group with identifier: %s", envGroupIdentifier));
+          });
       // fetch environments from the same scope as of env group
-      criteria = CoreCriteriaUtils.createCriteriaForGetList(envGroupIdentifierRef.getAccountIdentifier(),
-          envGroupIdentifierRef.getOrgIdentifier(), envGroupIdentifierRef.getProjectIdentifier(), false);
+      criteria = environmentFilterHelper.createCriteriaForGetList(envGroupIdentifierRef.getAccountIdentifier(),
+          envGroupIdentifierRef.getOrgIdentifier(), envGroupIdentifierRef.getProjectIdentifier(), false, searchTerm);
     } else {
-      criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false);
+      criteria = environmentFilterHelper.createCriteriaForGetList(
+          accountId, orgIdentifier, projectIdentifier, false, searchTerm);
     }
 
     if (isNotEmpty(envIdentifiers)) {
@@ -628,7 +674,8 @@ public class EnvironmentResourceV2 {
     if (isNotEmpty(environmentYamlMetadata.getEnvIdentifiers())) {
       envIdentifiers.addAll(environmentYamlMetadata.getEnvIdentifiers());
     }
-    if (isNotEmpty(environmentYamlMetadata.getEnvGroupIdentifier())) {
+    if (isNotEmpty(environmentYamlMetadata.getEnvGroupIdentifier())
+        && !EngineExpressionEvaluator.hasExpressions(environmentYamlMetadata.getEnvGroupIdentifier())) {
       Optional<EnvironmentGroupEntity> environmentGroupEntity = environmentGroupService.get(
           accountId, orgIdentifier, projectIdentifier, environmentYamlMetadata.getEnvGroupIdentifier(), false);
       environmentGroupEntity.ifPresent(groupEntity -> envIdentifiers.addAll(groupEntity.getEnvIdentifiers()));
@@ -660,7 +707,8 @@ public class EnvironmentResourceV2 {
       }
 
       checkDuplicateManifestIdentifiersWithIn(serviceOverrideInfoConfig.getManifests());
-      validateNoMoreThanOneHelmOverridePresent(serviceOverrideInfoConfig.getManifests());
+      validateNoMoreThanOneHelmOverridePresent(
+          serviceOverrideInfoConfig.getManifests(), TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE);
       checkDuplicateConfigFilesIdentifiersWithIn(serviceOverrideInfoConfig.getConfigFiles());
     }
   }
@@ -813,6 +861,51 @@ public class EnvironmentResourceV2 {
       @QueryParam("envIdentifiers") List<String> envIdentifiers) {
     return ResponseDTO.newResponse(
         environmentService.getAttributes(accountId, orgIdentifier, projectIdentifier, envIdentifiers));
+  }
+
+  private void checkAccessForListingAtScope(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers) {
+    if (isEmpty(envIdentifiers)) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+      return;
+    }
+
+    boolean checkProjectLevelList = false;
+    boolean checkOrgLevelList = false;
+    boolean checkAccountLevelList = false;
+
+    if (isNotEmpty(envIdentifiers)) {
+      for (String envRef : envIdentifiers) {
+        if (isNotEmpty(envRef) && !EngineExpressionEvaluator.hasExpressions(envRef)) {
+          IdentifierRef envIdentifierRef =
+              IdentifierRefHelper.getIdentifierRef(envRef, accountId, orgIdentifier, projectIdentifier);
+          if (io.harness.encryption.Scope.PROJECT.equals(envIdentifierRef.getScope())) {
+            checkProjectLevelList = true;
+          } else if (io.harness.encryption.Scope.ORG.equals(envIdentifierRef.getScope())) {
+            checkOrgLevelList = true;
+          } else if (io.harness.encryption.Scope.ACCOUNT.equals(envIdentifierRef.getScope())) {
+            checkAccountLevelList = true;
+          }
+        }
+      }
+    }
+
+    // listing without scoped refs
+    if (checkProjectLevelList) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+    }
+
+    if (checkOrgLevelList) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, null),
+          Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+    }
+
+    if (checkAccountLevelList) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, null, null), Resource.of(ENVIRONMENT, null),
+          ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+    }
   }
 
   private void checkForServiceOverrideUpdateAccess(

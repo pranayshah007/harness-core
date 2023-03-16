@@ -51,9 +51,14 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
     InstanceSyncTrackedDeploymentDetails trackedDeploymentDetails = DelegateRestUtils.executeRestCall(
         delegateAgentManagerClient.fetchTrackedReleaseDetails(taskId.getId(), taskParams.getAccountId()));
 
+    Builder responseBuilder =
+        CgInstanceSyncResponse.newBuilder().setPerpetualTaskId(taskId.getId()).setAccountId(taskParams.getAccountId());
+
     if (Objects.isNull(trackedDeploymentDetails)
         || CollectionUtils.isEmpty(trackedDeploymentDetails.getDeploymentDetailsList())) {
       log.error("No deployments to track for perpetualTaskId: [{}]. Nothing to do here.", taskId.getId());
+      publishInstanceSyncResult(taskParams.getAccountId(), taskId.getId(),
+          responseBuilder.setExecutionStatus(CommandExecutionStatus.SKIPPED.name()).build());
       return PerpetualTaskResponse.builder()
           .responseCode(Response.SC_OK)
           .responseMessage("No tracked deployments for Instance Sync task")
@@ -62,9 +67,6 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
 
     AtomicInteger batchInstanceCount = new AtomicInteger(0);
     AtomicInteger batchReleaseDetailsCount = new AtomicInteger(0);
-    Builder responseBuilder = CgInstanceSyncResponse.newBuilder()
-                                  .setPerpetualTaskId(taskId.getId())
-                                  .setAccountId(trackedDeploymentDetails.getAccountId());
 
     trackedDeploymentDetails.getDeploymentDetailsList().forEach(trackedDeployment -> {
       InstanceDetailsFetcher instanceFetcher =
@@ -90,7 +92,8 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
 
       if (batchInstanceCount.get() > trackedDeploymentDetails.getResponseBatchConfig().getInstanceCount()
           || batchReleaseDetailsCount.get() > trackedDeploymentDetails.getResponseBatchConfig().getReleaseCount()) {
-        publishInstanceSyncResult(trackedDeploymentDetails.getAccountId(), taskId.getId(), responseBuilder.build());
+        publishInstanceSyncResult(trackedDeploymentDetails.getAccountId(), taskId.getId(),
+            responseBuilder.setExecutionStatus(CommandExecutionStatus.SUCCESS.name()).build());
         responseBuilder.clearInstanceData();
         batchInstanceCount.set(0);
         batchReleaseDetailsCount.set(0);

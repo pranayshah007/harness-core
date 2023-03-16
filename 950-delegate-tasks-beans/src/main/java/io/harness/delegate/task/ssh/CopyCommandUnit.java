@@ -16,14 +16,19 @@ import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.ssh.FileSourceType;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-@Value
+@Getter
 @Builder
+@ToString
+@EqualsAndHashCode
 @OwnedBy(CDP)
 public class CopyCommandUnit implements NgCommandUnit, NestedAnnotationResolver {
   String name;
-  @Expression(ALLOW_SECRETS) String destinationPath;
+  @Setter @Expression(ALLOW_SECRETS) String destinationPath;
   FileSourceType sourceType;
 
   @Override

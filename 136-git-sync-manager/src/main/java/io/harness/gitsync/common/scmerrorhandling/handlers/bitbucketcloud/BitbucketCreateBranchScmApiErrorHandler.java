@@ -10,6 +10,7 @@ package io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
@@ -58,6 +59,11 @@ public class BitbucketCreateBranchScmApiErrorHandler implements ScmApiErrorHandl
             ErrorMessageFormatter.formatMessage(
                 CREATE_BRANCH_FAILED_MESSAGE + CREATE_BRANCH_NOT_FOUND_ERROR_EXPLANATION, errorMetadata),
             new ScmBadRequestException(errorMessage));
+      case 429:
+        throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.RATE_LIMIT,
+            ScmErrorExplanations.RATE_LIMIT,
+            new ScmBadRequestException(
+                EmptyPredicate.isEmpty(errorMessage) ? ScmErrorDefaultMessage.RATE_LIMIT : errorMessage));
       default:
         log.error(String.format("Error while creating bitbucket branch: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);

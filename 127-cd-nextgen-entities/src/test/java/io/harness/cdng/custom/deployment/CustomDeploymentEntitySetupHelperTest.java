@@ -25,12 +25,14 @@ import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
 import com.google.common.io.Resources;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -161,6 +163,118 @@ public class CustomDeploymentEntitySetupHelperTest extends CategoryTest {
     assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getOrgIdentifier().getValue()).isEqualTo(ORG);
     assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getProjectIdentifier().getValue())
         .isEqualTo(PROJECT);
+    EntitySetupUsageCreateV2DTO entitySetupUsageCreateDTO =
+        EntitySetupUsageCreateV2DTO.parseFrom(messageArgumentCaptor.getValue().getData());
+    assertThat(entitySetupUsageCreateDTO.getReferredByEntity().getInfraDefRef().getOrgIdentifier().getValue())
+        .isEqualTo(ORG);
+    assertThat(entitySetupUsageCreateDTO.getReferredByEntity().getInfraDefRef().getProjectIdentifier().getValue())
+        .isEqualTo(PROJECT);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.RISHABH)
+  @Category(UnitTests.class)
+  public void testAddReferencesInEntitySetupUsageForAccountLevelInfra() throws InvalidProtocolBufferException {
+    String infraYaml = readFile("infrastructureAccountLevel.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .name(INFRA)
+                                                    .identifier(INFRA)
+                                                    .accountId(ACCOUNT)
+                                                    .envIdentifier(ENVIRONMENT)
+                                                    .yaml(infraYaml)
+                                                    .build();
+    customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(infrastructureEntity);
+    ArgumentCaptor<EntityDetailProtoDTO> entityDTOArgumentCaptor = ArgumentCaptor.forClass(EntityDetailProtoDTO.class);
+    final ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+    verify(customDeploymentEntitySetupHelper, times(1))
+        .publishSetupUsageEvent(any(), entityDTOArgumentCaptor.capture());
+    verify(eventProducer, times(1)).send(messageArgumentCaptor.capture());
+    assertRedisEvent(
+        messageArgumentCaptor.getAllValues().get(0), EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION, "TEMPLATE");
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getIdentifier().getValue()).isEqualTo("OpenStack");
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getVersionLabel().getValue()).isEqualTo("V1");
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getAccountIdentifier().getValue())
+        .isEqualTo(ACCOUNT);
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getOrgIdentifier().getValue()).isEmpty();
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getProjectIdentifier().getValue()).isEmpty();
+    EntitySetupUsageCreateV2DTO entitySetupUsageCreateDTO =
+        EntitySetupUsageCreateV2DTO.parseFrom(messageArgumentCaptor.getValue().getData());
+    assertThat(entitySetupUsageCreateDTO.getReferredByEntity().getInfraDefRef().getOrgIdentifier().getValue())
+        .isEmpty();
+    assertThat(entitySetupUsageCreateDTO.getReferredByEntity().getInfraDefRef().getProjectIdentifier().getValue())
+        .isEmpty();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.RISHABH)
+  @Category(UnitTests.class)
+  public void testAddReferencesInEntitySetupUsageForOrgLevelTemplateOrgInfra() throws InvalidProtocolBufferException {
+    String infraYaml = readFile("infrastructureOrgLevel.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .name(INFRA)
+                                                    .identifier(INFRA)
+                                                    .accountId(ACCOUNT)
+                                                    .orgIdentifier(ORG)
+                                                    .envIdentifier(ENVIRONMENT)
+                                                    .yaml(infraYaml)
+                                                    .build();
+    customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(infrastructureEntity);
+    ArgumentCaptor<EntityDetailProtoDTO> entityDTOArgumentCaptor = ArgumentCaptor.forClass(EntityDetailProtoDTO.class);
+    final ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+    verify(customDeploymentEntitySetupHelper, times(1))
+        .publishSetupUsageEvent(any(), entityDTOArgumentCaptor.capture());
+    verify(eventProducer, times(1)).send(messageArgumentCaptor.capture());
+    assertRedisEvent(
+        messageArgumentCaptor.getAllValues().get(0), EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION, "TEMPLATE");
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getIdentifier().getValue()).isEqualTo("OpenStack");
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getVersionLabel().getValue()).isEqualTo("V1");
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getAccountIdentifier().getValue())
+        .isEqualTo(ACCOUNT);
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getOrgIdentifier().getValue()).isEqualTo(ORG);
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getProjectIdentifier().getValue()).isEmpty();
+    EntitySetupUsageCreateV2DTO entitySetupUsageCreateDTO =
+        EntitySetupUsageCreateV2DTO.parseFrom(messageArgumentCaptor.getValue().getData());
+    assertThat(entitySetupUsageCreateDTO.getReferredByEntity().getInfraDefRef().getOrgIdentifier().getValue())
+        .isEqualTo(ORG);
+    assertThat(entitySetupUsageCreateDTO.getReferredByEntity().getInfraDefRef().getProjectIdentifier().getValue())
+        .isEmpty();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.RISHABH)
+  @Category(UnitTests.class)
+  public void testAddReferencesInEntitySetupUsageForAccountLevelTemplateOrgInfra()
+      throws InvalidProtocolBufferException {
+    String infraYaml = readFile("infrastructureOrgLevel.yaml", INFRA_RESOURCE_PATH_PREFIX)
+                           .replace("org.OpenStack", "account.OpenStack");
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .name(INFRA)
+                                                    .identifier(INFRA)
+                                                    .accountId(ACCOUNT)
+                                                    .orgIdentifier(ORG)
+                                                    .envIdentifier(ENVIRONMENT)
+                                                    .yaml(infraYaml)
+                                                    .build();
+    customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(infrastructureEntity);
+    ArgumentCaptor<EntityDetailProtoDTO> entityDTOArgumentCaptor = ArgumentCaptor.forClass(EntityDetailProtoDTO.class);
+    final ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+    verify(customDeploymentEntitySetupHelper, times(1))
+        .publishSetupUsageEvent(any(), entityDTOArgumentCaptor.capture());
+    verify(eventProducer, times(1)).send(messageArgumentCaptor.capture());
+    assertRedisEvent(
+        messageArgumentCaptor.getAllValues().get(0), EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION, "TEMPLATE");
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getIdentifier().getValue()).isEqualTo("OpenStack");
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getVersionLabel().getValue()).isEqualTo("V1");
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getAccountIdentifier().getValue())
+        .isEqualTo(ACCOUNT);
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getOrgIdentifier().getValue()).isEmpty();
+    assertThat(entityDTOArgumentCaptor.getValue().getTemplateRef().getProjectIdentifier().getValue()).isEmpty();
+    EntitySetupUsageCreateV2DTO entitySetupUsageCreateDTO =
+        EntitySetupUsageCreateV2DTO.parseFrom(messageArgumentCaptor.getValue().getData());
+    assertThat(entitySetupUsageCreateDTO.getReferredByEntity().getInfraDefRef().getOrgIdentifier().getValue())
+        .isEqualTo(ORG);
+    assertThat(entitySetupUsageCreateDTO.getReferredByEntity().getInfraDefRef().getProjectIdentifier().getValue())
+        .isEmpty();
   }
 
   @Test
@@ -184,6 +298,67 @@ public class CustomDeploymentEntitySetupHelperTest extends CategoryTest {
     assertEquals(message.getMetadataOrThrow(EventsFrameworkMetadataConstants.ACTION),
         EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION);
     assertNotNull(message.getData());
+    EntitySetupUsageCreateV2DTO entitySetupUsageCreateDTO =
+        EntitySetupUsageCreateV2DTO.parseFrom(messageArgumentCaptor.getValue().getData());
+    assertThat(entitySetupUsageCreateDTO.getReferredByEntity().getInfraDefRef().getOrgIdentifier().getValue())
+        .isEqualTo(ORG);
+    assertThat(entitySetupUsageCreateDTO.getReferredByEntity().getInfraDefRef().getProjectIdentifier().getValue())
+        .isEqualTo(PROJECT);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.RISHABH)
+  @Category(UnitTests.class)
+  public void testDeleteReferencesInEntitySetupUsageAccountInfra() throws InvalidProtocolBufferException {
+    String infraYaml = readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .name(INFRA)
+                                                    .identifier(INFRA)
+                                                    .accountId(ACCOUNT)
+                                                    .envIdentifier(ENVIRONMENT)
+                                                    .yaml(infraYaml)
+                                                    .build();
+    customDeploymentEntitySetupHelper.deleteReferencesInEntitySetupUsage(infrastructureEntity);
+    final ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+    verify(eventProducer, times(1)).send(messageArgumentCaptor.capture());
+    Message message = messageArgumentCaptor.getAllValues().get(0);
+    assertEquals(message.getMetadataOrThrow(EventsFrameworkMetadataConstants.ACTION),
+        EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION);
+    assertNotNull(message.getData());
+    EntitySetupUsageCreateV2DTO entitySetupUsageCreateDTO =
+        EntitySetupUsageCreateV2DTO.parseFrom(messageArgumentCaptor.getValue().getData());
+    assertThat(entitySetupUsageCreateDTO.getReferredByEntity().getInfraDefRef().getOrgIdentifier().getValue())
+        .isEmpty();
+    assertThat(entitySetupUsageCreateDTO.getReferredByEntity().getInfraDefRef().getProjectIdentifier().getValue())
+        .isEmpty();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.RISHABH)
+  @Category(UnitTests.class)
+  public void testDeleteReferencesInEntitySetupUsageOrgInfra() throws InvalidProtocolBufferException {
+    String infraYaml = readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .name(INFRA)
+                                                    .identifier(INFRA)
+                                                    .accountId(ACCOUNT)
+                                                    .orgIdentifier(ORG)
+                                                    .envIdentifier(ENVIRONMENT)
+                                                    .yaml(infraYaml)
+                                                    .build();
+    customDeploymentEntitySetupHelper.deleteReferencesInEntitySetupUsage(infrastructureEntity);
+    final ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+    verify(eventProducer, times(1)).send(messageArgumentCaptor.capture());
+    Message message = messageArgumentCaptor.getAllValues().get(0);
+    assertEquals(message.getMetadataOrThrow(EventsFrameworkMetadataConstants.ACTION),
+        EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION);
+    assertNotNull(message.getData());
+    EntitySetupUsageCreateV2DTO entitySetupUsageCreateDTO =
+        EntitySetupUsageCreateV2DTO.parseFrom(messageArgumentCaptor.getValue().getData());
+    assertThat(entitySetupUsageCreateDTO.getReferredByEntity().getInfraDefRef().getOrgIdentifier().getValue())
+        .isEqualTo(ORG);
+    assertThat(entitySetupUsageCreateDTO.getReferredByEntity().getInfraDefRef().getProjectIdentifier().getValue())
+        .isEmpty();
   }
 
   @Test

@@ -50,7 +50,8 @@ public class NGDelegateLogCallback implements LogCallback {
   }
 
   @Override
-  public void saveExecutionLog(String line, LogLevel logLevel, CommandExecutionStatus commandExecutionStatus) {
+  public void saveExecutionLog(
+      String line, LogLevel logLevel, CommandExecutionStatus commandExecutionStatus, boolean closeLogStream) {
     if (this.iLogStreamingTaskClient == null) {
       return;
     }
@@ -58,8 +59,7 @@ public class NGDelegateLogCallback implements LogCallback {
     LogLine logLine = LogLine.builder().message(line).level(logLevel).timestamp(now).build();
     iLogStreamingTaskClient.writeLogLine(logLine, commandUnitName);
 
-    boolean terminalStatus = CommandExecutionStatus.isTerminalStatus(commandExecutionStatus);
-    if (terminalStatus) {
+    if (closeLogStream) {
       iLogStreamingTaskClient.closeStream(commandUnitName);
     }
 
@@ -78,6 +78,12 @@ public class NGDelegateLogCallback implements LogCallback {
       ExecutorService taskProgressExecutor = iLogStreamingTaskClient.obtainTaskProgressExecutor();
       taskProgressExecutor.submit(() -> sendTaskProgressUpdate(taskProgressClient));
     }
+  }
+
+  @Override
+  public void saveExecutionLog(String line, LogLevel logLevel, CommandExecutionStatus commandExecutionStatus) {
+    boolean terminalStatus = CommandExecutionStatus.isTerminalStatus(commandExecutionStatus);
+    saveExecutionLog(line, logLevel, commandExecutionStatus, terminalStatus);
   }
 
   boolean updateCommandUnitProgressMap(CommandExecutionStatus commandExecutionStatus, Instant now,

@@ -8,7 +8,7 @@
 package io.harness.delegate.task.artifacts.artifactory;
 
 import static io.harness.artifactory.service.ArtifactoryRegistryService.DEFAULT_ARTIFACT_FILTER;
-import static io.harness.artifactory.service.ArtifactoryRegistryService.MAX_NO_OF_BUILDS_PER_ARTIFACT;
+import static io.harness.artifactory.service.ArtifactoryRegistryService.MAX_NO_OF_TAGS_PER_ARTIFACT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -213,8 +213,7 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
 
     doReturn(Lists.newArrayList(buildDetailsInternal))
         .when(artifactoryRegistryService)
-        .getBuilds(
-            artifactoryInternalConfig, REPO_NAME, IMAGE_NAME, RepositoryFormat.docker.name(), MAX_NO_OF_TAGS_PER_IMAGE);
+        .getBuilds(artifactoryInternalConfig, REPO_NAME, IMAGE_NAME, RepositoryFormat.docker.name());
 
     ArtifactTaskExecutionResponse lastSuccessfulBuild = artifactoryArtifactService.getBuilds(sourceAttributes);
     assertThat(lastSuccessfulBuild).isNotNull();
@@ -271,7 +270,7 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
     doReturn(Lists.newArrayList(buildDetailsInternal))
         .when(artifactoryNgService)
         .getArtifactList(
-            artifactoryInternalConfig, sourceAttributes.getRepositoryName(), filePath, MAX_NO_OF_BUILDS_PER_ARTIFACT);
+            artifactoryInternalConfig, sourceAttributes.getRepositoryName(), filePath, MAX_NO_OF_TAGS_PER_ARTIFACT);
 
     ArtifactTaskExecutionResponse lastSuccessfulBuild = artifactoryArtifactService.getBuilds(sourceAttributes);
     assertThat(lastSuccessfulBuild).isNotNull();

@@ -81,7 +81,7 @@ public class AwsLambdaHelperServiceManagerImpl implements AwsLambdaHelperService
                       .build())
             .build();
     try {
-      DelegateResponseData notifyResponseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData notifyResponseData = delegateService.executeTaskV2(delegateTask);
       if (notifyResponseData instanceof ErrorNotifyResponseData) {
         throw new GeneralException(((ErrorNotifyResponseData) notifyResponseData).getErrorMessage());
       } else if (notifyResponseData instanceof AwsResponse

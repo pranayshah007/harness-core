@@ -41,12 +41,8 @@ public class ServletOutputStreamCopier extends ServletOutputStream {
    */
   @Override
   public void write(int b) throws IOException {
-    try {
-      outputStream.write(b);
-      copy.write(b);
-    } catch (IOException ex) {
-      log.error("", ex);
-    }
+    outputStream.write(b);
+    copy.write(b);
   }
 
   /**
@@ -61,13 +57,9 @@ public class ServletOutputStreamCopier extends ServletOutputStream {
   /**
    * Flush stream.
    */
-  public void flushStream() {
-    try {
-      if (null != copy) {
-        copy.close();
-      }
-    } catch (IOException io) {
-      log.error("", io);
+  public void flushStream() throws IOException {
+    if (null != copy) {
+      copy.close();
     }
   }
 

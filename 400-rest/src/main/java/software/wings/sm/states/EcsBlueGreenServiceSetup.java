@@ -199,7 +199,7 @@ public class EcsBlueGreenServiceSetup extends State {
     String logMessage = "Creating a task to fetch files from git.";
     executionLogCallback.saveExecutionLog(logMessage, CommandExecutionStatus.RUNNING);
     final DelegateTask gitFetchFileTask = createGitFetchFileAsyncTask(context, applicationManifestMap, activityId);
-    delegateService.queueTask(gitFetchFileTask);
+    delegateService.queueTaskV2(gitFetchFileTask);
 
     EcsBGSetupStateExecutionData stateExecutionData =
         createStateExecutionData(activityId, applicationManifestMap, context, ecsSetUpDataBag);

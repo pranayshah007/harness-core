@@ -335,7 +335,7 @@ public class InviteServiceImpl implements InviteService {
       if (isPasswordRequired) {
         return getUserInfoSubmitUrl(baseUrl, resourceUrl, email, jwtToken, inviteAcceptResponse);
       } else {
-        createAndInviteNonPasswordUser(accountIdentifier, jwtToken, decodedEmail.trim(), false, true);
+        createAndInviteNonPasswordUser(accountIdentifier, jwtToken, decodedEmail.trim(), false, true, null, null, null);
         return resourceUrl;
       }
     } else {
@@ -345,6 +345,15 @@ public class InviteServiceImpl implements InviteService {
       } else {
         Optional<Invite> inviteOpt = getInviteFromToken(jwtToken, false);
         completeInvite(inviteOpt);
+
+        TwoFactorAuthSettingsInfo twoFactorAuthSettingsInfo = getTwoFactorAuthSettingsInfo(accountIdentifier, email);
+        if (twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled()
+            && !userInfo.isTwoFactorAuthenticationEnabled()) {
+          updateUserTwoFactorAuthInfo(userInfo.getEmail(), twoFactorAuthSettingsInfo);
+          CGRestUtils.getResponse(
+              userClient.sendTwoFactorAuthenticationResetEmail(userInfo.getUuid(), accountIdentifier),
+              String.format("Failed to send two factor authentication setup email for user %s", userInfo.getUuid()));
+        }
         return resourceUrl;
       }
     }
@@ -386,9 +395,17 @@ public class InviteServiceImpl implements InviteService {
   }
 
   private void createAndInviteNonPasswordUser(String accountIdentifier, String jwtToken, String email,
-      boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail) {
-    UserInviteDTO userInviteDTO =
-        UserInviteDTO.builder().accountId(accountIdentifier).email(email).name(email).token(jwtToken).build();
+      boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail, String givenName, String familyName,
+      String externalId) {
+    UserInviteDTO userInviteDTO = UserInviteDTO.builder()
+                                      .accountId(accountIdentifier)
+                                      .email(email)
+                                      .name(email)
+                                      .givenName(givenName)
+                                      .familyName(familyName)
+                                      .externalId(externalId)
+                                      .token(jwtToken)
+                                      .build();
 
     try {
       log.info("NG User Invite: making a userClient call to createUserAndCompleteNGInvite");
@@ -597,11 +614,14 @@ public class InviteServiceImpl implements InviteService {
       String email = invite.getEmail().trim();
 
       if (scimLdapArray[0]) {
-        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true, false);
+        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true, false, invite.getGivenName(),
+            invite.getFamilyName(), invite.getExternalId());
+        updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
       } else if (scimLdapArray[1] || isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) {
-        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, false);
+        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, false, invite.getGivenName(),
+            invite.getFamilyName(), invite.getExternalId());
+        updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
       }
-      updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
 
       if (isPLNoEmailForSamlAccountInvitesEnabled && !twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled()) {
         return InviteOperationResponse.USER_INVITE_NOT_REQUIRED;
@@ -945,6 +965,7 @@ public class InviteServiceImpl implements InviteService {
                 .locked(user.isLocked())
                 .disabled(user.isDisabled())
                 .externallyManaged(user.isExternallyManaged())
+                .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
                 .build()));
     for (String email : userEmails) {
       userMetadataMap.computeIfAbsent(email, email1 -> UserMetadataDTO.builder().email(email1).build());

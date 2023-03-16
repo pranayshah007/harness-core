@@ -10,7 +10,7 @@ package io.harness.ci.states;
 import static io.harness.annotations.dev.HarnessTeam.IACM;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.steps.stepinfo.IACMStepInfo;
+import io.harness.beans.stepinfo.IACMStepInfo;
 import io.harness.pms.contracts.steps.StepType;
 
 @OwnedBy(IACM)

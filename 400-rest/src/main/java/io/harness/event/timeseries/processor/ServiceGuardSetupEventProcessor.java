@@ -11,9 +11,9 @@ import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.common.VerificationConstants;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.hazelcast.internal.util.Preconditions;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;

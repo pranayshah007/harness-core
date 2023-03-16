@@ -20,7 +20,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public interface ConnectorFilterService {
   Criteria createCriteriaFromConnectorFilter(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String searchTerm, ConnectorType type, ConnectorCategory category, ConnectorCategory sourceCategory,
-      boolean isBuiltInSMDisabled);
+      boolean isBuiltInSMDisabled, String version);
 
   Criteria createCriteriaFromConnectorListQueryParams(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String filterIdentifier, String searchTerm, FilterPropertiesDTO filterProperties,

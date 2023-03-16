@@ -54,6 +54,11 @@ public class PageTestUtils {
       }
 
       @Override
+      public Pageable withPage(int pageNumber) {
+        return null;
+      }
+
+      @Override
       public boolean hasPrevious() {
         return false;
       }

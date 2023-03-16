@@ -161,7 +161,7 @@ public class SSHVaultServiceImpl extends BaseVaultServiceImpl implements SSHVaul
                 .ngTask(isNgTask(sshVaultConfig.getOrgIdentifier(), sshVaultConfig.getProjectIdentifier()))
                 .build();
 
-        return delegateProxyFactory.get(SecretManagementDelegateService.class, syncTaskContext)
+        return delegateProxyFactory.getV2(SecretManagementDelegateService.class, syncTaskContext)
             .validateSSHVault(sshVaultConfig);
       } catch (WingsException e) {
         failedAttempts++;

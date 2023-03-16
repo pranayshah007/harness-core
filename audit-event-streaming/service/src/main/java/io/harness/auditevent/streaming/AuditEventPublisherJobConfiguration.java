@@ -10,7 +10,7 @@ package io.harness.auditevent.streaming;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.AUDIT_EVENT_PUBLISHER_JOB;
 
 import io.harness.auditevent.streaming.services.AuditEventStreamingService;
-import io.harness.auditevent.streaming.services.StreamingDestinationsService;
+import io.harness.auditevent.streaming.services.StreamingDestinationService;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -24,13 +24,13 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class AuditEventPublisherJobConfiguration {
-  private final StreamingDestinationsService streamingDestinationsService;
+  private final StreamingDestinationService streamingDestinationService;
   private final AuditEventStreamingService auditEventStreamingService;
 
   @Autowired
-  public AuditEventPublisherJobConfiguration(StreamingDestinationsService streamingDestinationsService,
-      AuditEventStreamingService auditEventStreamingService) {
-    this.streamingDestinationsService = streamingDestinationsService;
+  public AuditEventPublisherJobConfiguration(
+      StreamingDestinationService streamingDestinationService, AuditEventStreamingService auditEventStreamingService) {
+    this.streamingDestinationService = streamingDestinationService;
     this.auditEventStreamingService = auditEventStreamingService;
   }
 
@@ -49,6 +49,6 @@ public class AuditEventPublisherJobConfiguration {
 
   @Bean
   public AuditEventPublisherTasklet auditEventPublisherTasklet() {
-    return new AuditEventPublisherTasklet(streamingDestinationsService, auditEventStreamingService);
+    return new AuditEventPublisherTasklet(streamingDestinationService, auditEventStreamingService);
   }
 }

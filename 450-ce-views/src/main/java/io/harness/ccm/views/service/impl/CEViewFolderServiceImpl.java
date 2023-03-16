@@ -56,8 +56,8 @@ public class CEViewFolderServiceImpl implements CEViewFolderService {
   }
 
   @Override
-  public List<CEViewFolder> getFolders(String accountId) {
-    return ceViewFolderDao.getFolders(accountId);
+  public List<CEViewFolder> getFolders(String accountId, String folderNamePattern) {
+    return ceViewFolderDao.getFolders(accountId, folderNamePattern);
   }
 
   @Override

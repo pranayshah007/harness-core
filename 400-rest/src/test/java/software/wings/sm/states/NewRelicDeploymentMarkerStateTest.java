@@ -82,7 +82,7 @@ public class NewRelicDeploymentMarkerStateTest extends APMStateVerificationTestB
         newRelicDeploymentMarkerState, "templateExpressionProcessor", templateExpressionProcessor, true);
     when(executionContext.getApp())
         .thenReturn(Application.Builder.anApplication().appId(generateUuid()).accountId(accountId).build());
-    when(delegateService.queueTask(any(DelegateTask.class)))
+    when(delegateService.queueTaskV2(any(DelegateTask.class)))
         .thenAnswer(invocationOnMock -> persistence.save((PersistentEntity) invocationOnMock.getArguments()[0]));
 
     NewRelicConfig newRelicConfig = NewRelicConfig.builder()

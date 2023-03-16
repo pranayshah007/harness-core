@@ -15,7 +15,7 @@ import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
-import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
+import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 
 import software.wings.beans.JenkinsConfig;
 import software.wings.helpers.ext.jenkins.BuildDetails;

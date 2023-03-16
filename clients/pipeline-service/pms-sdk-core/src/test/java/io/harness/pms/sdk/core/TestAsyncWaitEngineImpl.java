@@ -19,4 +19,9 @@ public class TestAsyncWaitEngineImpl implements AsyncWaitEngine {
       NotifyCallback notifyCallback, ProgressCallback progressCallback, List<String> correlationIds, int timeout) {
     // Do nothing
   }
+
+  @Override
+  public void taskAcquired(String correlationId) {
+    // Do nothing
+  }
 }

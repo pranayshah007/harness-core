@@ -8,9 +8,31 @@
 package io.harness.audit.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.audit.Action.ABORT;
+import static io.harness.audit.Action.ADD_COLLABORATOR;
+import static io.harness.audit.Action.ADD_MEMBERSHIP;
+import static io.harness.audit.Action.CREATE;
+import static io.harness.audit.Action.CREATE_TOKEN;
+import static io.harness.audit.Action.DELETE;
+import static io.harness.audit.Action.END;
+import static io.harness.audit.Action.ERROR_BUDGET_RESET;
+import static io.harness.audit.Action.FORCE_DELETE;
+import static io.harness.audit.Action.INVITE;
 import static io.harness.audit.Action.LOGIN;
 import static io.harness.audit.Action.LOGIN2FA;
+import static io.harness.audit.Action.PAUSE;
+import static io.harness.audit.Action.REMOVE_COLLABORATOR;
+import static io.harness.audit.Action.REMOVE_MEMBERSHIP;
+import static io.harness.audit.Action.RESEND_INVITE;
+import static io.harness.audit.Action.RESTORE;
+import static io.harness.audit.Action.RESUME;
+import static io.harness.audit.Action.REVOKE_INVITE;
+import static io.harness.audit.Action.REVOKE_TOKEN;
+import static io.harness.audit.Action.START;
+import static io.harness.audit.Action.TIMEOUT;
 import static io.harness.audit.Action.UNSUCCESSFUL_LOGIN;
+import static io.harness.audit.Action.UPDATE;
+import static io.harness.audit.Action.UPSERT;
 import static io.harness.audit.mapper.AuditEventMapper.fromDTO;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
@@ -19,6 +41,7 @@ import static io.harness.utils.PageUtils.getPageRequest;
 import static java.lang.System.currentTimeMillis;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.Action;
 import io.harness.audit.StaticAuditFilter;
 import io.harness.audit.api.AuditService;
 import io.harness.audit.api.AuditYamlService;
@@ -36,6 +59,7 @@ import io.harness.audit.entities.ResourceScope;
 import io.harness.audit.entities.YamlDiffRecord;
 import io.harness.audit.mapper.ResourceMapper;
 import io.harness.audit.mapper.ResourceScopeMapper;
+import io.harness.audit.remote.StaticAuditFilterV2;
 import io.harness.audit.repositories.AuditRepository;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.common.beans.KeyValuePair;
@@ -66,6 +90,12 @@ public class AuditServiceImpl implements AuditService {
   private final AuditRepository auditRepository;
   private final AuditYamlService auditYamlService;
   private final AuditFilterPropertiesValidator auditFilterPropertiesValidator;
+
+  public static List<Action> entityChangeEvents = List.of(CREATE, UPDATE, RESTORE, DELETE, FORCE_DELETE, UPSERT, INVITE,
+      RESEND_INVITE, REVOKE_INVITE, ADD_COLLABORATOR, REMOVE_COLLABORATOR, CREATE_TOKEN, REVOKE_TOKEN, ADD_MEMBERSHIP,
+      REMOVE_MEMBERSHIP, ERROR_BUDGET_RESET);
+  public static List<Action> loginEvents = List.of(LOGIN, LOGIN2FA, UNSUCCESSFUL_LOGIN);
+  public static List<Action> runTimeEvents = List.of(START, END, PAUSE, RESUME, ABORT, TIMEOUT);
 
   @Inject
   public AuditServiceImpl(AuditRepository auditRepository, AuditYamlService auditYamlService,
@@ -164,7 +194,12 @@ public class AuditServiceImpl implements AuditService {
                          .lte(Instant.ofEpochMilli(auditFilterPropertiesDTO.getEndTime() == null
                                  ? currentTimeMillis()
                                  : auditFilterPropertiesDTO.getEndTime())));
-    Criteria staticFilterCriteria = getStaticFilterCriteria(auditFilterPropertiesDTO.getStaticFilter());
+    Criteria staticFilterCriteria;
+    if (isNotEmpty(auditFilterPropertiesDTO.getStaticFilters())) {
+      staticFilterCriteria = getStaticFilterCriteria(auditFilterPropertiesDTO.getStaticFilters());
+    } else {
+      staticFilterCriteria = getStaticFilterCriteria(auditFilterPropertiesDTO.getStaticFilter());
+    }
     return new Criteria().andOperator(
         new Criteria().andOperator(criteriaList.toArray(new Criteria[0])), staticFilterCriteria);
   }
@@ -178,6 +213,29 @@ public class AuditServiceImpl implements AuditService {
       return new Criteria().norOperator(Criteria.where(AuditEventKeys.PRINCIPAL_TYPE_KEY).is(PrincipalType.SYSTEM));
     }
     return new Criteria();
+  }
+
+  private Criteria getStaticFilterCriteria(List<StaticAuditFilterV2> staticFilter) {
+    List<Criteria> criteriaList = new ArrayList<>();
+
+    Criteria loginCriteria = Criteria.where(AuditEventKeys.action).in(loginEvents);
+    Criteria systemCriteria = Criteria.where(AuditEventKeys.PRINCIPAL_TYPE_KEY).is(PrincipalType.SYSTEM);
+    Criteria entityChangeEventCriteria = Criteria.where(AuditEventKeys.action).in(entityChangeEvents);
+    Criteria runTimeEventCriteria = Criteria.where(AuditEventKeys.action).in(runTimeEvents);
+
+    if (staticFilter.contains(StaticAuditFilterV2.LOGIN_EVENTS)) {
+      criteriaList.add(loginCriteria);
+    }
+    if (staticFilter.contains(StaticAuditFilterV2.SYSTEM_EVENTS)) {
+      criteriaList.add(systemCriteria);
+    }
+    if (staticFilter.contains(StaticAuditFilterV2.ENTITY_CHANGE_EVENTS)) {
+      criteriaList.add(entityChangeEventCriteria);
+    }
+    if (staticFilter.contains(StaticAuditFilterV2.RUNTIME_EVENTS)) {
+      criteriaList.add(runTimeEventCriteria);
+    }
+    return new Criteria().orOperator(criteriaList.toArray(new Criteria[0]));
   }
 
   private Criteria getBaseScopeCriteria(String accountIdentifier) {

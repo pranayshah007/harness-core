@@ -17,6 +17,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.authorization.AuthorizationServiceHeader.DELEGATE_SERVICE;
 import static io.harness.authorization.AuthorizationServiceHeader.IDENTITY_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.authorization.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
@@ -36,12 +37,17 @@ import io.harness.accesscontrol.principals.serviceaccounts.iterators.ServiceAcco
 import io.harness.accesscontrol.principals.usergroups.iterators.UserGroupReconciliationIterator;
 import io.harness.accesscontrol.principals.users.iterators.UserReconciliationIterator;
 import io.harness.accesscontrol.resources.resourcegroups.iterators.ResourceGroupReconciliationIterator;
+import io.harness.accesscontrol.roleassignments.worker.ProjectOrgBasicRoleCreationService;
+import io.harness.accesscontrol.roleassignments.worker.UserRoleAssignmentRemovalService;
 import io.harness.accesscontrol.scopes.harness.iterators.ScopeReconciliationIterator;
 import io.harness.accesscontrol.support.reconciliation.SupportPreferenceReconciliationIterator;
 import io.harness.accesscontrol.support.reconciliation.SupportRoleAssignmentsReconciliationService;
 import io.harness.aggregator.AggregatorService;
 import io.harness.aggregator.MongoOffsetCleanupJob;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cf.AbstractCfModule;
+import io.harness.cf.CfClientConfig;
+import io.harness.cf.CfMigrationConfig;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
 import io.harness.enforcement.client.custom.CustomRestrictionInterface;
@@ -49,6 +55,7 @@ import io.harness.enforcement.client.services.EnforcementSdkRegisterService;
 import io.harness.enforcement.client.usage.RestrictionUsageInterface;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.violation.ConstraintViolationExceptionMapper;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
@@ -170,6 +177,22 @@ public class AccessControlApplication extends Application<AccessControlConfigura
         return appConfig.getDbAliases();
       }
     });
+    modules.add(new AbstractCfModule() {
+      @Override
+      public CfClientConfig cfClientConfig() {
+        return appConfig.getCfClientConfig();
+      }
+
+      @Override
+      public CfMigrationConfig cfMigrationConfig() {
+        return CfMigrationConfig.builder().build();
+      }
+
+      @Override
+      public FeatureFlagConfig featureFlagConfig() {
+        return appConfig.getFeatureFlagConfig();
+      }
+    });
     Injector injector = Guice.createInjector(modules);
     injector.getInstance(HPersistence.class);
     registerCorsFilter(appConfig, environment);
@@ -262,6 +285,8 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     }
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
     environment.lifecycle().manage(injector.getInstance(SupportRoleAssignmentsReconciliationService.class));
+    environment.lifecycle().manage(injector.getInstance(UserRoleAssignmentRemovalService.class));
+    environment.lifecycle().manage(injector.getInstance(ProjectOrgBasicRoleCreationService.class));
   }
 
   private void registerJerseyProviders(Environment environment) {
@@ -351,6 +376,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     serviceToSecretMapping.put(ACCESS_CONTROL_SERVICE.getServiceId(), configuration.getDefaultServiceSecret());
     serviceToSecretMapping.put(CODE.getServiceId(), configuration.getDefaultServiceSecret());
     serviceToSecretMapping.put(IDENTITY_SERVICE.getServiceId(), configuration.getIdentityServiceSecret());
+    serviceToSecretMapping.put(IDP_SERVICE.getServiceId(), configuration.getDefaultServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
   }

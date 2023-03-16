@@ -22,7 +22,7 @@ template:
               - account:/manifest.yml
       instancesListPath: instances
       instanceAttributes:
-        - name: hostName
+        - name: instancename
           jsonPath: <+input>
           description: "IP address of the host"
     execution:

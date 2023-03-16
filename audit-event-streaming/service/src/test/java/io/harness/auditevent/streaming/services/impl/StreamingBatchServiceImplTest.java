@@ -8,13 +8,11 @@
 package io.harness.auditevent.streaming.services.impl;
 
 import static io.harness.audit.entities.AuditEvent.AuditEventKeys.ACCOUNT_IDENTIFIER_KEY;
-import static io.harness.audit.entities.AuditEvent.AuditEventKeys.createdAt;
-import static io.harness.auditevent.streaming.entities.BatchStatus.FAILED;
-import static io.harness.auditevent.streaming.entities.BatchStatus.IN_PROGRESS;
-import static io.harness.auditevent.streaming.entities.BatchStatus.READY;
-import static io.harness.auditevent.streaming.entities.BatchStatus.SUCCESS;
+import static io.harness.auditevent.streaming.beans.BatchStatus.FAILED;
+import static io.harness.auditevent.streaming.beans.BatchStatus.IN_PROGRESS;
+import static io.harness.auditevent.streaming.beans.BatchStatus.READY;
+import static io.harness.auditevent.streaming.beans.BatchStatus.SUCCESS;
 import static io.harness.auditevent.streaming.entities.StreamingBatch.StreamingBatchKeys.accountIdentifier;
-import static io.harness.auditevent.streaming.entities.StreamingBatch.StreamingBatchKeys.endTime;
 import static io.harness.auditevent.streaming.entities.StreamingBatch.StreamingBatchKeys.streamingDestinationIdentifier;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO.TypeEnum.AWS_S3;
@@ -28,11 +26,13 @@ import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
 import io.harness.CategoryTest;
+import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.auditevent.streaming.AuditEventRepository;
-import io.harness.auditevent.streaming.entities.BatchStatus;
+import io.harness.auditevent.streaming.beans.BatchStatus;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
+import io.harness.auditevent.streaming.entities.StreamingBatch.StreamingBatchKeys;
 import io.harness.auditevent.streaming.repositories.StreamingBatchRepository;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
@@ -108,8 +108,8 @@ public class StreamingBatchServiceImplTest extends CategoryTest {
     verify(streamingBatchRepository, times(1)).findOne(criteriaArgumentCaptor.capture(), sortArgumentCaptor.capture());
     Sort sort = sortArgumentCaptor.getValue();
     assertThat(sort.get()).hasSize(1);
-    assertThat(sort.getOrderFor(endTime)).isNotNull();
-    assertThat(sort.getOrderFor(endTime).getDirection()).isEqualTo(DESC);
+    assertThat(sort.getOrderFor(StreamingBatchKeys.createdAt)).isNotNull();
+    assertThat(sort.getOrderFor(StreamingBatchKeys.createdAt).getDirection()).isEqualTo(DESC);
     Criteria criteria = criteriaArgumentCaptor.getValue();
     assertGetLatestCriteria(criteria);
   }
@@ -270,8 +270,8 @@ public class StreamingBatchServiceImplTest extends CategoryTest {
   private void assertAuditRecordsCountCriteria(StreamingBatch expectedStreamingBatch, Criteria criteria) {
     Document document = criteria.getCriteriaObject();
     assertThat(document).containsEntry(ACCOUNT_IDENTIFIER_KEY, ACCOUNT_IDENTIFIER);
-    assertThat(document).containsKey(createdAt);
-    Document createdAtDocument = (Document) document.get(createdAt);
+    assertThat(document).containsKey(AuditEvent.AuditEventKeys.createdAt);
+    Document createdAtDocument = (Document) document.get(AuditEvent.AuditEventKeys.createdAt);
     assertThat(createdAtDocument)
         .containsExactlyInAnyOrderEntriesOf(Map.ofEntries(Map.entry("$gt", expectedStreamingBatch.getStartTime()),
             Map.entry("$lte", expectedStreamingBatch.getEndTime())));

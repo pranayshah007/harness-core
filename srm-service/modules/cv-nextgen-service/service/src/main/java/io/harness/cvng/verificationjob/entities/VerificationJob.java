@@ -107,6 +107,8 @@ public abstract class VerificationJob
   private String activitySourceIdentifier;
   @NotNull private String accountId;
   private String monitoredServiceIdentifier;
+  private String monitoredServiceTemplateIdentifier;
+  private String monitoredServiceTemplateVersionLabel;
   @NotNull private RuntimeParameter serviceIdentifier;
   @NotNull private RuntimeParameter envIdentifier;
   @Deprecated private List<DataSourceType> dataSources;

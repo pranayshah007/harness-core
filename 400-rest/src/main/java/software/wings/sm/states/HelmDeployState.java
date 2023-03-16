@@ -391,7 +391,7 @@ public class HelmDeployState extends State {
     renderDelegateTask(context, delegateTask, stateExecutionContext);
 
     appendDelegateTaskDetails(context, delegateTask);
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
 
     Map<K8sValuesLocation, Collection<String>> valuesFiles = new EnumMap<>(K8sValuesLocation.class);
     HelmDeployStateExecutionData stateExecutionData = (HelmDeployStateExecutionData) context.getStateExecutionData();
@@ -588,7 +588,7 @@ public class HelmDeployState extends State {
 
     HelmCommandExecutionResponse helmCommandExecutionResponse;
     appendDelegateTaskDetails(context, delegateTask);
-    DelegateResponseData notifyResponseData = delegateService.executeTask(delegateTask);
+    DelegateResponseData notifyResponseData = delegateService.executeTaskV2(delegateTask);
     if (notifyResponseData instanceof HelmCommandExecutionResponse) {
       helmCommandExecutionResponse = (HelmCommandExecutionResponse) notifyResponseData;
     } else {
@@ -1204,7 +1204,7 @@ public class HelmDeployState extends State {
         expressionEvaluator.substitute(commandRequest.getCommandFlags(), Collections.emptyMap()));
 
     appendDelegateTaskDetails(context, delegateTask);
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     return ExecutionResponse.builder()
         .correlationIds(singletonList(activityId))
@@ -1308,7 +1308,7 @@ public class HelmDeployState extends State {
     renderDelegateTask(context, delegateTask, stateExecutionContext);
 
     appendDelegateTaskDetails(context, delegateTask);
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
 
     Map<K8sValuesLocation, Collection<String>> valuesFiles = new EnumMap<>(K8sValuesLocation.class);
     HelmDeployStateExecutionData stateExecutionData = (HelmDeployStateExecutionData) context.getStateExecutionData();
@@ -1558,7 +1558,7 @@ public class HelmDeployState extends State {
         expressionEvaluator.substitute(helmValuesFetchTaskParameters.getHelmCommandFlags(), Collections.emptyMap()));
 
     appendDelegateTaskDetails(context, delegateTask);
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
 
     return ExecutionResponse.builder()
         .async(true)

@@ -12,13 +12,17 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
+import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -54,8 +58,8 @@ public class InfrastructurePlanCreatorHelper {
       if (refToInputMap.containsKey(entity.getIdentifier())) {
         Map<String, Object> infraInputYaml = new HashMap<>();
         infraInputYaml.put(YamlTypes.INFRASTRUCTURE_DEF, refToInputMap.get(entity.getIdentifier()));
-        mergedInfraYaml = MergeHelper.mergeInputSetFormatYamlToOriginYaml(
-            entity.getYaml(), YamlPipelineUtils.writeYamlString(infraInputYaml));
+        mergedInfraYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+            entity.getYaml(), YamlPipelineUtils.writeYamlString(infraInputYaml), true, true);
       }
 
       try {
@@ -135,6 +139,12 @@ public class InfrastructurePlanCreatorHelper {
         ecsInfrastructure.setInfraIdentifier(infraIdentifier);
         return;
 
+      case InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS:
+        GoogleFunctionsInfrastructure googleFunctionsInfrastructure = (GoogleFunctionsInfrastructure) infrastructure;
+        googleFunctionsInfrastructure.setInfraName(infraName);
+        googleFunctionsInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
       case InfrastructureKind.ELASTIGROUP:
         ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
         elastigroupInfrastructure.setInfraName(infraName);
@@ -152,6 +162,24 @@ public class InfrastructurePlanCreatorHelper {
         AsgInfrastructure asgInfrastructure = (AsgInfrastructure) infrastructure;
         asgInfrastructure.setInfraName(infraName);
         asgInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.AWS_SAM:
+        AwsSamInfrastructure awsSamInfrastructure = (AwsSamInfrastructure) infrastructure;
+        awsSamInfrastructure.setInfraName(infraName);
+        awsSamInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.AWS_LAMBDA:
+        AwsLambdaInfrastructure awsLambdaInfrastructure = (AwsLambdaInfrastructure) infrastructure;
+        awsLambdaInfrastructure.setInfraName(infraName);
+        awsLambdaInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.KUBERNETES_AWS:
+        K8sAwsInfrastructure k8sAwsInfrastructure = (K8sAwsInfrastructure) infrastructure;
+        k8sAwsInfrastructure.setInfraIdentifier(infraIdentifier);
+        k8sAwsInfrastructure.setInfraName(infraName);
         return;
 
       default:

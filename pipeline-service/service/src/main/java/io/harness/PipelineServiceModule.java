@@ -8,7 +8,9 @@
 package io.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.authorization.AuthorizationServiceHeader.*;
+import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
+import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELINE_ENTITY;
@@ -37,6 +39,7 @@ import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
+import io.harness.ff.FeatureFlagModule;
 import io.harness.filter.FilterType;
 import io.harness.filter.FiltersModule;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -104,6 +107,7 @@ import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetServiceImpl;
 import io.harness.pms.opa.service.PMSOpaService;
 import io.harness.pms.opa.service.PMSOpaServiceImpl;
+import io.harness.pms.outbox.NodeExecutionOutboxEventHandler;
 import io.harness.pms.outbox.PMSOutboxEventHandler;
 import io.harness.pms.outbox.PipelineOutboxEventHandler;
 import io.harness.pms.pipeline.PipelineResource;
@@ -308,6 +312,7 @@ public class PipelineServiceModule extends AbstractModule {
             .licenseClientId(PIPELINE_SERVICE.getServiceId())
             .build()));
     install(OrchestrationStepsModule.getInstance(configuration.getOrchestrationStepConfig()));
+    install(FeatureFlagModule.getInstance());
     install(OrchestrationVisualizationModule.getInstance(configuration.getEventsFrameworkConfiguration(),
         configuration.getOrchestrationVisualizationThreadPoolConfig()));
     install(PrimaryVersionManagerModule.getInstance());
@@ -371,8 +376,7 @@ public class PipelineServiceModule extends AbstractModule {
     });
     install(new VariableClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
-    install(new HsqsServiceClientModule(this.configuration.getQueueServiceClientConfig(),
-        this.configuration.getQueueServiceSecret(), BEARER.getServiceId()));
+    install(new HsqsServiceClientModule(this.configuration.getQueueServiceClientConfig(), BEARER.getServiceId()));
 
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(PMSOutboxEventHandler.class);
@@ -490,6 +494,8 @@ public class PipelineServiceModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.TRIGGER).to(TriggerOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.PIPELINE).to(PipelineOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.INPUT_SET).to(PipelineOutboxEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.NODE_EXECUTION)
+        .to(NodeExecutionOutboxEventHandler.class);
   }
 
   private void registerEventsFrameworkMessageListeners() {
@@ -721,6 +727,21 @@ public class PipelineServiceModule extends AbstractModule {
         new ThreadFactoryBuilder().setNameFormat("JsonExpansionExecutorService-%d").build());
   }
 
+  /**
+   * To be used for async validations of Pipelines. Because pipeline fetch calls can be frequent, max pool size needs to
+   * be high
+   */
+  @Provides
+  @Singleton
+  @Named("PipelineAsyncValidationExecutorService")
+  public Executor pipelineAsyncValidationExecutorService() {
+    return ThreadPool.create(configuration.getPipelineAsyncValidationPoolConfig().getCorePoolSize(),
+        configuration.getPipelineAsyncValidationPoolConfig().getMaxPoolSize(),
+        configuration.getPipelineAsyncValidationPoolConfig().getIdleTime(),
+        configuration.getPipelineAsyncValidationPoolConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("PipelineAsyncValidationExecutorService-%d").build());
+  }
+
   @Provides
   @Singleton
   @Named("TelemetrySenderExecutor")
@@ -789,5 +810,11 @@ public class PipelineServiceModule extends AbstractModule {
   @Named("jsonExpansionRequestBatchSize")
   public Integer getjsonExpansionRequestBatchSize() {
     return configuration.getJsonExpansionBatchSize();
+  }
+
+  @Provides
+  @Singleton
+  public boolean getAllowDifferentReposForPipelineAndInputSets() {
+    return configuration.isAllowDifferentReposForPipelineAndInputSets();
   }
 }

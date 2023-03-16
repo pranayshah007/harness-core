@@ -18,7 +18,11 @@ import static io.harness.ccm.commons.entities.anomaly.AnomalyWidget.ANOMALIES_BY
 import static io.harness.ccm.commons.entities.anomaly.AnomalyWidget.ANOMALIES_BY_STATUS;
 import static io.harness.ccm.commons.entities.anomaly.AnomalyWidget.TOP_N_ANOMALIES;
 import static io.harness.ccm.commons.entities.anomaly.AnomalyWidget.TOTAL_COST_IMPACT;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_FOLDER;
+import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_VIEW;
 
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.ccm.commons.dao.anomaly.AnomalyDao;
 import io.harness.ccm.commons.entities.CCMAggregation;
 import io.harness.ccm.commons.entities.CCMField;
@@ -40,8 +44,10 @@ import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
 import io.harness.ccm.service.intf.AnomalyService;
 import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 import io.harness.ccm.views.entities.CEView;
+import io.harness.ccm.views.entities.ViewType;
 import io.harness.ccm.views.helper.PerspectiveToAnomalyQueryHelper;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.exception.WingsException;
 import io.harness.timescaledb.tables.pojos.Anomalies;
 
 import com.google.inject.Inject;
@@ -50,8 +56,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;
@@ -66,13 +75,14 @@ public class AnomalyServiceImpl implements AnomalyService {
   @Inject private EntityMetadataService entityMetadataService;
 
   @Override
-  public List<AnomalyData> listAnomalies(@NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery) {
-    return listAnomalies(accountIdentifier, anomalyQuery, Collections.emptyList());
+  public List<AnomalyData> listAnomalies(
+      @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, Set<String> allowedAnomaliesIds) {
+    return listAnomalies(accountIdentifier, anomalyQuery, Collections.emptyList(), allowedAnomaliesIds, false);
   }
 
   @Override
-  public List<AnomalyData> listAnomalies(
-      @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, @NonNull List<CCMFilter> ruleFilters) {
+  public List<AnomalyData> listAnomalies(@NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery,
+      @NonNull List<CCMFilter> ruleFilters, Set<String> allowedAnomaliesIds, boolean alwaysAllowed) {
     if (anomalyQuery == null) {
       anomalyQuery = getDefaultAnomalyQuery();
     }
@@ -81,10 +91,14 @@ public class AnomalyServiceImpl implements AnomalyService {
         : DSL.noCondition();
 
     List<CCMSort> sortBy = anomalyQuery.getOrderBy() != null ? anomalyQuery.getOrderBy() : Collections.emptyList();
-    List<Anomalies> anomalies =
-        anomalyDao.fetchAnomalies(accountIdentifier, condition, anomalyQueryBuilder.getOrderByFields(sortBy),
+    List<Anomalies> anomalies = alwaysAllowed
+        ? anomalyDao.fetchAnomalies(accountIdentifier, condition, anomalyQueryBuilder.getOrderByFields(sortBy),
             anomalyQuery.getOffset() != null ? anomalyQuery.getOffset() : AnomalyUtils.DEFAULT_OFFSET,
-            anomalyQuery.getLimit() != null ? anomalyQuery.getLimit() : AnomalyUtils.DEFAULT_LIMIT);
+            anomalyQuery.getLimit() != null ? anomalyQuery.getLimit() : AnomalyUtils.DEFAULT_LIMIT)
+        : anomalyDao.fetchAnomalies(accountIdentifier, condition, anomalyQueryBuilder.getOrderByFields(sortBy),
+            anomalyQuery.getOffset() != null ? anomalyQuery.getOffset() : AnomalyUtils.DEFAULT_OFFSET,
+            anomalyQuery.getLimit() != null ? anomalyQuery.getLimit() : AnomalyUtils.DEFAULT_LIMIT,
+            allowedAnomaliesIds);
 
     List<AnomalyData> anomalyData = new ArrayList<>();
     List<String> awsAccountIds = AnomalyUtils.collectAwsAccountIds(anomalies);
@@ -113,8 +127,7 @@ public class AnomalyServiceImpl implements AnomalyService {
 
   @Override
   public List<PerspectiveAnomalyData> listPerspectiveAnomalies(
-      @NonNull String accountIdentifier, @NonNull String perspectiveId, PerspectiveQueryDTO perspectiveQuery) {
-    CEView perspective = viewService.get(perspectiveId);
+      @NonNull String accountIdentifier, @NonNull CEView perspective, PerspectiveQueryDTO perspectiveQuery) {
     List<CCMFilter> ruleFilters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
     CCMFilter filters =
         perspectiveToAnomalyQueryHelper.getConvertedFiltersForPerspective(perspective, perspectiveQuery);
@@ -125,7 +138,7 @@ public class AnomalyServiceImpl implements AnomalyService {
             .limit(AnomalyUtils.DEFAULT_LIMIT)
             .offset(AnomalyUtils.DEFAULT_OFFSET)
             .build(),
-        ruleFilters);
+        ruleFilters, Collections.emptySet(), true);
     return buildPerspectiveAnomalyData(anomalyData);
   }
 
@@ -142,7 +155,8 @@ public class AnomalyServiceImpl implements AnomalyService {
   }
 
   @Override
-  public List<AnomalySummary> getAnomalySummary(@NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery) {
+  public List<AnomalySummary> getAnomalySummary(
+      @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, Set<String> allowedAnomaliesIds) {
     if (anomalyQuery == null) {
       return Collections.emptyList();
     }
@@ -151,7 +165,8 @@ public class AnomalyServiceImpl implements AnomalyService {
         : DSL.noCondition();
 
     if (anomalyQuery.getGroupBy().isEmpty()) {
-      List<AnomalySummary> totalCostSummary = anomalyDao.fetchAnomaliesTotalCost(accountIdentifier, condition);
+      List<AnomalySummary> totalCostSummary =
+          anomalyDao.fetchAnomaliesTotalCost(accountIdentifier, condition, allowedAnomaliesIds);
       List<AnomalySummary> updatedTotalCostSummary = new ArrayList<>();
       totalCostSummary.forEach(entry -> {
         if (entry.getActualCost() != null) {
@@ -161,7 +176,7 @@ public class AnomalyServiceImpl implements AnomalyService {
       });
       return updatedTotalCostSummary;
     } else {
-      List<AnomalyData> anomalies = listAnomalies(accountIdentifier, anomalyQuery);
+      List<AnomalyData> anomalies = listAnomalies(accountIdentifier, anomalyQuery, allowedAnomaliesIds);
       if (anomalyQuery.getGroupBy().get(0).getGroupByField() == ALL) {
         return buildTopAnomaliesSummary(anomalies);
       } else if (anomalyQuery.getGroupBy().get(0).getGroupByField() == CLOUD_PROVIDER) {
@@ -171,20 +186,6 @@ public class AnomalyServiceImpl implements AnomalyService {
       }
     }
     return Collections.emptyList();
-  }
-
-  @Override
-  public List<AnomalySummary> getAnomalySummary(List<AnomalyData> anomalies, AnomalyWidget widget) {
-    switch (widget) {
-      case TOP_N_ANOMALIES:
-        return buildTopAnomaliesSummary(anomalies);
-      case ANOMALIES_BY_CLOUD_PROVIDERS:
-        return buildAnomalyByCloudProviderSummary(anomalies);
-      case ANOMALIES_BY_STATUS:
-        return buildAnomalyByStatusSummary(anomalies);
-      default:
-        return Collections.emptyList();
-    }
   }
 
   private List<AnomalySummary> buildTopAnomaliesSummary(List<AnomalyData> anomalies) {
@@ -225,30 +226,95 @@ public class AnomalyServiceImpl implements AnomalyService {
   }
 
   @Override
-  public List<AnomalyWidgetData> getAnomalyWidgetData(@NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery) {
+  public List<AnomalyWidgetData> getAnomalyWidgetData(
+      @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, Set<String> allowedAnomaliesIds) {
     List<AnomalyWidgetData> anomalyWidgetData = new ArrayList<>();
-    List<AnomalyData> anomalies = listAnomalies(accountIdentifier, anomalyQuery);
-    anomalyWidgetData.add(
-        AnomalyWidgetData.builder()
-            .widgetDescription(AnomalyWidget.TOP_N_ANOMALIES)
-            .widgetData(getAnomalySummary(accountIdentifier, getAnomalyWidgetQuery(anomalyQuery, TOP_N_ANOMALIES)))
-            .build());
-    anomalyWidgetData.add(
-        AnomalyWidgetData.builder()
-            .widgetDescription(AnomalyWidget.TOTAL_COST_IMPACT)
-            .widgetData(getAnomalySummary(accountIdentifier, getAnomalyWidgetQuery(anomalyQuery, TOTAL_COST_IMPACT)))
-            .build());
     anomalyWidgetData.add(AnomalyWidgetData.builder()
-                              .widgetDescription(ANOMALIES_BY_CLOUD_PROVIDERS)
-                              .widgetData(getAnomalySummary(
-                                  accountIdentifier, getAnomalyWidgetQuery(anomalyQuery, ANOMALIES_BY_CLOUD_PROVIDERS)))
+                              .widgetDescription(AnomalyWidget.TOP_N_ANOMALIES)
+                              .widgetData(getAnomalySummary(accountIdentifier,
+                                  getAnomalyWidgetQuery(anomalyQuery, TOP_N_ANOMALIES), allowedAnomaliesIds))
+                              .build());
+    anomalyWidgetData.add(AnomalyWidgetData.builder()
+                              .widgetDescription(AnomalyWidget.TOTAL_COST_IMPACT)
+                              .widgetData(getAnomalySummary(accountIdentifier,
+                                  getAnomalyWidgetQuery(anomalyQuery, TOTAL_COST_IMPACT), allowedAnomaliesIds))
                               .build());
     anomalyWidgetData.add(
         AnomalyWidgetData.builder()
-            .widgetDescription(ANOMALIES_BY_STATUS)
-            .widgetData(getAnomalySummary(accountIdentifier, getAnomalyWidgetQuery(anomalyQuery, ANOMALIES_BY_STATUS)))
+            .widgetDescription(ANOMALIES_BY_CLOUD_PROVIDERS)
+            .widgetData(getAnomalySummary(accountIdentifier,
+                getAnomalyWidgetQuery(anomalyQuery, ANOMALIES_BY_CLOUD_PROVIDERS), allowedAnomaliesIds))
             .build());
+    anomalyWidgetData.add(AnomalyWidgetData.builder()
+                              .widgetDescription(ANOMALIES_BY_STATUS)
+                              .widgetData(getAnomalySummary(accountIdentifier,
+                                  getAnomalyWidgetQuery(anomalyQuery, ANOMALIES_BY_STATUS), allowedAnomaliesIds))
+                              .build());
     return anomalyWidgetData;
+  }
+
+  @Override
+  public Set<String> listAllowedAnomaliesIds(
+      @NonNull String accountIdentifier, Set<String> allowedFolderIds, List<CEView> perspectives) {
+    Set<String> anomalyData = new HashSet<>();
+    CCMFilter filters = CCMFilter.builder().numericFilters(null).stringFilters(null).timeFilters(null).build();
+    List<CEView> allowedPerspectives = getAllowedPerspectives(allowedFolderIds, perspectives);
+
+    for (CEView perspective : allowedPerspectives) {
+      List<CCMFilter> ruleFilters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
+      List<AnomalyData> anomalyDataForPerspective = listAnomalies(accountIdentifier,
+          AnomalyQueryDTO.builder()
+              .filter(filters)
+              .orderBy(Collections.emptyList())
+              .limit(AnomalyUtils.DEFAULT_LIMIT)
+              .offset(AnomalyUtils.DEFAULT_OFFSET)
+              .build(),
+          ruleFilters, Collections.emptySet(), true);
+      anomalyData.addAll(
+          anomalyDataForPerspective.stream().map(anomaly -> anomaly.getId()).collect(Collectors.toSet()));
+    }
+    return anomalyData;
+  }
+
+  @Override
+  public HashMap<String, CEView> listAllowedAnomaliesIdAndPerspectives(
+      @NonNull String accountIdentifier, Set<String> allowedFolderIds, List<CEView> perspectives) {
+    HashMap<String, CEView> anomalyDataAndPerspective = new HashMap<>();
+    CCMFilter filters = CCMFilter.builder().numericFilters(null).stringFilters(null).timeFilters(null).build();
+    List<CEView> allowedPerspectives = getAllowedPerspectives(allowedFolderIds, perspectives);
+
+    for (CEView perspective : allowedPerspectives) {
+      List<CCMFilter> ruleFilters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
+      List<AnomalyData> anomalyDataForPerspective = listAnomalies(accountIdentifier,
+          AnomalyQueryDTO.builder()
+              .filter(filters)
+              .orderBy(Collections.emptyList())
+              .limit(AnomalyUtils.DEFAULT_LIMIT)
+              .offset(AnomalyUtils.DEFAULT_OFFSET)
+              .build(),
+          ruleFilters, Collections.emptySet(), true);
+      for (AnomalyData anomaly : anomalyDataForPerspective) {
+        if (!anomalyDataAndPerspective.containsKey(anomaly.getId())) {
+          if (perspective.getViewType() != ViewType.DEFAULT
+              || (perspective.getViewType() == ViewType.DEFAULT
+                  && perspective.getName().equalsIgnoreCase(anomaly.getCloudProvider()))) {
+            anomalyDataAndPerspective.put(anomaly.getId(), perspective);
+          }
+        }
+      }
+    }
+    return anomalyDataAndPerspective;
+  }
+
+  @Override
+  public List<AnomalyData> addPerspectiveInfo(
+      List<AnomalyData> anomalyData, HashMap<String, CEView> allowedAnomaliesIdAndPerspectives) {
+    List<AnomalyData> anomalyDataWithPerspectiveInfo = new ArrayList<>();
+    for (AnomalyData anomalyData1 : anomalyData) {
+      anomalyDataWithPerspectiveInfo.add(
+          buildAnomalyDataWithPerspectiveInfo(anomalyData1, allowedAnomaliesIdAndPerspectives));
+    }
+    return anomalyDataWithPerspectiveInfo;
   }
 
   private AnomalyQueryDTO getAnomalyWidgetQuery(AnomalyQueryDTO anomalyQuery, AnomalyWidget widget) {
@@ -342,5 +408,46 @@ public class AnomalyServiceImpl implements AnomalyService {
 
   private AnomalySummary buildAnomalySummary(String name, Double count, Double actualCost, Double anomalousCost) {
     return AnomalySummary.builder().name(name).count(count).actualCost(actualCost).anomalousCost(anomalousCost).build();
+  }
+
+  private List<CEView> getAllowedPerspectives(Set<String> allowedFolderIds, List<CEView> perspectives) {
+    if ((allowedFolderIds == null || allowedFolderIds.size() < 1)
+        && (perspectives != null && perspectives.size() > 0)) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, PERSPECTIVE_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
+    }
+    List<CEView> allowedPerspectives = new ArrayList<>();
+    if (allowedFolderIds != null && perspectives != null) {
+      allowedPerspectives = perspectives.stream()
+                                .filter(ceView -> allowedFolderIds.contains(ceView.getFolderId()))
+                                .collect(Collectors.toList());
+    }
+    return allowedPerspectives;
+  }
+
+  private AnomalyData buildAnomalyDataWithPerspectiveInfo(
+      AnomalyData anomalyData, HashMap<String, CEView> allowedAnomaliesIdAndPerspectives) {
+    return AnomalyData.builder()
+        .id(anomalyData.getId())
+        .time(anomalyData.getTime())
+        .anomalyRelativeTime(anomalyData.getAnomalyRelativeTime())
+        .actualAmount(anomalyData.getActualAmount())
+        .expectedAmount(anomalyData.getExpectedAmount())
+        .anomalousSpend(anomalyData.getAnomalousSpend())
+        .anomalousSpendPercentage(anomalyData.getAnomalousSpendPercentage())
+        .entity(anomalyData.getEntity())
+        .resourceName(anomalyData.getResourceName())
+        .resourceInfo(anomalyData.getResourceInfo())
+        .status(anomalyData.getStatus())
+        .statusRelativeTime(anomalyData.getStatusRelativeTime())
+        .cloudProvider(anomalyData.getCloudProvider())
+        .perspectiveId(allowedAnomaliesIdAndPerspectives.get(anomalyData.getId()).getUuid())
+        .perspectiveName(allowedAnomaliesIdAndPerspectives.get(anomalyData.getId()).getName())
+        .entity(anomalyData.getEntity())
+        .details(anomalyData.getDetails())
+        .comment(anomalyData.getComment())
+        .anomalyScore(anomalyData.getAnomalyScore())
+        .userFeedback(anomalyData.getUserFeedback())
+        .build();
   }
 }

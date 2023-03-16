@@ -20,6 +20,7 @@ import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.category.element.UnitTests;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
+import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.events.TriggerCreateEvent;
 import io.harness.ngtriggers.events.TriggerDeleteEvent;
 import io.harness.ngtriggers.events.TriggerOutboxEvents;
@@ -86,8 +87,12 @@ public class PMSOutboxEventHandlerTest {
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
-    NGTriggerEntity triggerEntity =
-        NGTriggerEntity.builder().name(randomAlphabetic(10)).identifier(identifier).yaml(triggerNewYaml).build();
+    NGTriggerEntity triggerEntity = NGTriggerEntity.builder()
+                                        .name(randomAlphabetic(10))
+                                        .identifier(identifier)
+                                        .type(NGTriggerType.WEBHOOK)
+                                        .yaml(triggerNewYaml)
+                                        .build();
     TriggerCreateEvent triggerCreateEvent =
         new TriggerCreateEvent(accountIdentifier, orgIdentifier, projectIdentifier, triggerEntity);
     OutboxEvent outboxEvent = TestUtils.createOutboxEvent(triggerCreateEvent, TriggerOutboxEvents.TRIGGER_CREATED);
@@ -106,8 +111,12 @@ public class PMSOutboxEventHandlerTest {
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
-    NGTriggerEntity triggerEntity =
-        NGTriggerEntity.builder().name(randomAlphabetic(10)).identifier(identifier).yaml(triggerOldYaml).build();
+    NGTriggerEntity triggerEntity = NGTriggerEntity.builder()
+                                        .name(randomAlphabetic(10))
+                                        .identifier(identifier)
+                                        .type(NGTriggerType.WEBHOOK)
+                                        .yaml(triggerOldYaml)
+                                        .build();
     TriggerDeleteEvent triggerDeleteEvent =
         new TriggerDeleteEvent(accountIdentifier, orgIdentifier, projectIdentifier, triggerEntity);
     OutboxEvent outboxEvent = TestUtils.createOutboxEvent(triggerDeleteEvent, TriggerOutboxEvents.TRIGGER_DELETED);
@@ -126,10 +135,18 @@ public class PMSOutboxEventHandlerTest {
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
-    NGTriggerEntity newTrigger =
-        NGTriggerEntity.builder().name(randomAlphabetic(10)).identifier(identifier).yaml(triggerNewYaml).build();
-    NGTriggerEntity oldTrigger =
-        NGTriggerEntity.builder().name(randomAlphabetic(10)).identifier(identifier).yaml(triggerOldYaml).build();
+    NGTriggerEntity newTrigger = NGTriggerEntity.builder()
+                                     .name(randomAlphabetic(10))
+                                     .identifier(identifier)
+                                     .type(NGTriggerType.WEBHOOK)
+                                     .yaml(triggerNewYaml)
+                                     .build();
+    NGTriggerEntity oldTrigger = NGTriggerEntity.builder()
+                                     .name(randomAlphabetic(10))
+                                     .identifier(identifier)
+                                     .type(NGTriggerType.SCHEDULED)
+                                     .yaml(triggerOldYaml)
+                                     .build();
     TriggerUpdateEvent triggerUpdateEvent =
         new TriggerUpdateEvent(accountIdentifier, orgIdentifier, projectIdentifier, oldTrigger, newTrigger);
     OutboxEvent outboxEvent = TestUtils.createOutboxEvent(triggerUpdateEvent, TriggerOutboxEvents.TRIGGER_UPDATED);

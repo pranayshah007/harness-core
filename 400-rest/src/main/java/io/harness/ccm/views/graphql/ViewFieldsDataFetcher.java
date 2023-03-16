@@ -15,7 +15,6 @@ import static software.wings.graphql.datafetcher.billing.CloudBillingHelper.colu
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
 import io.harness.ccm.views.entities.CEView;
@@ -33,7 +32,6 @@ import software.wings.security.annotations.AuthRule;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.google.cloud.bigquery.BigQuery;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -53,7 +51,6 @@ public class ViewFieldsDataFetcher extends AbstractFieldsDataFetcher<QLCEViewFie
   @Inject private CEViewService ceViewService;
   @Inject private ViewsBillingService viewsBillingService;
   @Inject CloudBillingHelper cloudBillingHelper;
-  @Inject BigQueryService bigQueryService;
 
   private static final long CACHE_SIZE = 100;
 
@@ -198,8 +195,7 @@ public class ViewFieldsDataFetcher extends AbstractFieldsDataFetcher<QLCEViewFie
     // Getting supported fields from information schema
     String informationSchemaView = cloudBillingHelper.getInformationSchemaViewForDataset(accountId, columnView);
     String tableName = cloudBillingHelper.getTableName("AZURE");
-    BigQuery bigQuery = bigQueryService.get();
-    List<String> supportedFields = viewsBillingService.getColumnsForTable(bigQuery, informationSchemaView, tableName);
+    List<String> supportedFields = viewsBillingService.getColumnsForTable(informationSchemaView, tableName);
 
     // Adding fields which are common across all account types of azure
     supportedAzureFields.addAll(ViewFieldUtils.getAzureFields());

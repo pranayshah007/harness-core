@@ -30,6 +30,7 @@ public class VaultDTOToEntity implements ConnectorDTOToEntityMapper<VaultConnect
         .secretEngineManuallyConfigured(connectorDTO.isSecretEngineManuallyConfigured())
         .renewalIntervalMinutes(connectorDTO.getRenewalIntervalMinutes())
         .renewedAt(System.currentTimeMillis())
+        .lastTokenLookupAt(System.currentTimeMillis())
         .appRoleId(connectorDTO.getAppRoleId())
         .basePath(connectorDTO.getBasePath())
         .namespace(connectorDTO.getNamespace())

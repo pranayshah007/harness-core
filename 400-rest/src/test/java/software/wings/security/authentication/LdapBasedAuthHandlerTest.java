@@ -208,7 +208,7 @@ public class LdapBasedAuthHandlerTest extends CategoryTest {
     when(authenticationUtils.getUser(anyString())).thenReturn(user);
     when(authenticationUtils.getDefaultAccount(any(User.class))).thenReturn(account);
     LdapDelegateService ldapDelegateService = mock(LdapDelegateService.class);
-    when(delegateProxyFactory.get(eq(LdapDelegateService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(LdapDelegateService.class), any(SyncTaskContext.class)))
         .thenReturn(ldapDelegateService);
 
     doReturn(encryptedDataDetail).when(spyLdapSettings).getEncryptedDataDetails(any());

@@ -20,6 +20,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.configfile.ConfigFile;
@@ -32,8 +33,8 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.cdng.service.steps.ServiceStepV3;
-import io.harness.cdng.service.steps.ServiceStepsHelper;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -72,9 +73,10 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-public class ConfigFilesStepV2Test {
+public class ConfigFilesStepV2Test extends CategoryTest {
   @Mock private NGLogCallback mockNgLogCallback;
   @Mock private ServiceStepsHelper serviceStepsHelper;
   @Mock private CDExpressionResolver expressionResolver;
@@ -98,6 +100,10 @@ public class ConfigFilesStepV2Test {
                              .build()))
         .when(connectorService)
         .get(anyString(), anyString(), anyString(), anyString());
+
+    // mock serviceStepsHelper
+    doReturn(mockNgLogCallback).when(serviceStepsHelper).getServiceLogCallback(Mockito.any());
+    doReturn(mockNgLogCallback).when(serviceStepsHelper).getServiceLogCallback(Mockito.any(), Mockito.anyBoolean());
   }
 
   @After
@@ -121,7 +127,7 @@ public class ConfigFilesStepV2Test {
                  .build())
         .when(mockSweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
 
     StepResponse stepResponse = step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
 
@@ -147,7 +153,7 @@ public class ConfigFilesStepV2Test {
                  .build())
         .when(mockSweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
     List<EntityDetail> listEntityDetail = new ArrayList<>();
 
     listEntityDetail.add(EntityDetail.builder().name("configSecret1").build());
@@ -190,7 +196,7 @@ public class ConfigFilesStepV2Test {
                  .build())
         .when(mockSweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
 
     try {
       step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);

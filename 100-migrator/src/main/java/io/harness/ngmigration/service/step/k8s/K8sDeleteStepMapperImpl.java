@@ -15,15 +15,14 @@ import io.harness.cdng.k8s.DeleteResourcesWrapper;
 import io.harness.cdng.k8s.K8sDeleteStepInfo;
 import io.harness.cdng.k8s.K8sDeleteStepNode;
 import io.harness.delegate.task.k8s.DeleteResourcesType;
-import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GraphNode;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sDelete;
 
@@ -32,7 +31,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
-public class K8sDeleteStepMapperImpl implements StepMapper {
+public class K8sDeleteStepMapperImpl extends StepMapper {
+  @Override
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
+  }
+
   @Override
   public String getStepType(GraphNode stepYaml) {
     return null;
@@ -40,18 +44,17 @@ public class K8sDeleteStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     K8sDelete state = new K8sDelete(stepYaml.getName());
     state.parseProperties(properties);
     return state;
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     K8sDelete state = (K8sDelete) getState(graphNode);
     K8sDeleteStepNode k8sDeleteStepNode = new K8sDeleteStepNode();
-    baseSetup(graphNode, k8sDeleteStepNode);
+    baseSetup(graphNode, k8sDeleteStepNode, context.getIdentifierCaseFormat());
     K8sDeleteStepInfo k8sDeleteStepInfo =
         K8sDeleteStepInfo.infoBuilder()
             .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))

@@ -8,8 +8,8 @@
 package io.harness.ci.config;
 
 import io.harness.annotation.RecasterAlias;
-import io.harness.beans.execution.QueueServiceClient;
 import io.harness.execution.ExecutionServiceConfig;
+import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.sto.config.STOStepConfig;
 
 import lombok.Builder;
@@ -28,7 +28,7 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
   CIStepConfig stepConfig;
   CICacheIntelligenceConfig cacheIntelligenceConfig;
   ExecutionLimits executionLimits;
-  QueueServiceClient queueServiceClient;
+  QueueServiceClientConfig queueServiceClientConfig;
   HostedVmConfig hostedVmConfig;
   STOStepConfig stoStepConfig;
   // Base 64 encoded credentials for gcp
@@ -40,7 +40,7 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
       String delegateServiceEndpointVariableValue, Integer defaultMemoryLimit, Integer defaultCPULimit,
       Integer pvcDefaultStorageSize, String addonImage, String liteEngineImage, boolean isLocal, String ciImageTag,
       CIStepConfig stepConfig, CICacheIntelligenceConfig cacheIntelligenceConfig, ExecutionLimits executionLimits,
-      QueueServiceClient queueServiceClient, HostedVmConfig hostedVmConfig, STOStepConfig stoStepConfig,
+      QueueServiceClientConfig queueServiceClientConfig, HostedVmConfig hostedVmConfig, STOStepConfig stoStepConfig,
       Integer remoteDebugTimeout) {
     super(addonImageTag, liteEngineImageTag, defaultInternalImageConnector, delegateServiceEndpointVariableValue,
         defaultMemoryLimit, defaultCPULimit, pvcDefaultStorageSize, addonImage, liteEngineImage, isLocal);
@@ -49,7 +49,7 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
     this.cacheIntelligenceConfig = cacheIntelligenceConfig;
     this.executionLimits = executionLimits;
     this.stoStepConfig = stoStepConfig;
-    this.queueServiceClient = queueServiceClient;
+    this.queueServiceClientConfig = queueServiceClientConfig;
     this.hostedVmConfig = hostedVmConfig;
     this.remoteDebugTimeout = remoteDebugTimeout;
   }

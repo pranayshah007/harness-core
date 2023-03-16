@@ -127,4 +127,21 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
     Query query = new Query(criteria);
     return mongoTemplate.find(query, Environment.class);
   }
+  @Override
+  public List<String> getEnvironmentIdentifiers(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria baseCriteria = Criteria.where(EnvironmentKeys.accountId)
+                                .is(accountIdentifier)
+                                .and(EnvironmentKeys.orgIdentifier)
+                                .is(orgIdentifier)
+                                .and(EnvironmentKeys.projectIdentifier)
+                                .is(projectIdentifier);
+
+    Query query = new Query(baseCriteria);
+
+    query.fields().include(EnvironmentKeys.identifier).exclude(EnvironmentKeys.id);
+
+    List<Environment> EnvironmentEntity = mongoTemplate.find(query, Environment.class);
+    return EnvironmentEntity.stream().map(environment -> environment.getIdentifier()).collect(Collectors.toList());
+  }
 }

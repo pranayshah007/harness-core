@@ -14,6 +14,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.mockito.Mockito.mock;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.cache.CacheConfig;
@@ -23,6 +24,7 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.factory.ClosingFactory;
 import io.harness.filter.FiltersModule;
+import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.persistance.NoOpGitSyncSdkServiceImpl;
@@ -51,6 +53,7 @@ import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
 import io.harness.template.services.NoOpTemplateGitXServiceImpl;
 import io.harness.template.services.TemplateGitXService;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -84,6 +87,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
+import org.mockito.Mockito;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -192,6 +196,10 @@ public class TemplateServiceTestRule implements InjectorRuleMixin, MethodRule, M
         bind(GitAwarePersistence.class).to(NoOpGitAwarePersistenceImpl.class);
         bind(GitSyncSdkService.class).to(NoOpGitSyncSdkServiceImpl.class);
         bind(TemplateGitXService.class).to(NoOpTemplateGitXServiceImpl.class);
+        bind(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class)
+            .toInstance(Mockito.mock(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class));
+        bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(NGTemplateFeatureFlagHelperService.class).toInstance(mock(NGTemplateFeatureFlagHelperService.class));
       }
     });
 

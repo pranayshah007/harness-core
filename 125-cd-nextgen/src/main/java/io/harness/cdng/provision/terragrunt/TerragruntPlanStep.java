@@ -87,8 +87,6 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    helper.checkIfTerragruntFeatureIsEnabled(ambiance, "Terragrunt Plan");
-
     List<EntityDetail> entityDetailList = new ArrayList<>();
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -135,6 +133,8 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
     builder.accountId(accountId);
     String entityId = helper.generateFullIdentifier(
         ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance);
+    builder.tgModuleSourceInheritSSH(
+        helper.isExportCredentialForSourceModule(configuration.getConfigFiles(), stepParameters.getType()));
     ParameterField<Boolean> exportTgPlanJsonField = planStepParameters.getConfiguration().getExportTerragruntPlanJson();
 
     builder.entityId(entityId)
@@ -160,6 +160,8 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
             && ParameterFieldHelper.getBooleanParameterFieldValue(exportTgPlanJsonField))
         .planSecretManager(helper.getEncryptionConfig(ambiance, planStepParameters))
         .stateFileId(helper.getLatestFileId(entityId))
+        .planName(helper.getTerragruntPlanName(planStepParameters.getConfiguration().getCommand(), ambiance,
+            planStepParameters.getProvisionerIdentifier().getValue()))
         .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT))
         .encryptedDataDetailList(helper.getEncryptionDetails(configuration.getConfigFiles().getStore().getSpec(),
             configuration.getBackendConfig(), configuration.getVarFiles(), ambiance))
@@ -213,7 +215,7 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
     boolean exportTgPlanJson = !ParameterField.isNull(exportTgPlanJsonField)
         && ParameterFieldHelper.getBooleanParameterFieldValue(exportTgPlanJsonField);
 
-    if (exportTgPlanJson) {
+    if (exportTgPlanJson && terragruntTaskNGResponse.getEncryptedPlan() != null) {
       helper.saveTerragruntPlanExecutionDetails(
           ambiance, terragruntTaskNGResponse, provisionerIdentifier, planStepParameters);
 

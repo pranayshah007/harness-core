@@ -12,6 +12,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static java.util.Objects.nonNull;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.aws.asg.AsgBlueGreenDeployStep;
+import io.harness.cdng.aws.asg.AsgBlueGreenRollbackStep;
+import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStep;
+import io.harness.cdng.aws.asg.AsgCanaryDeleteStep;
+import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
+import io.harness.cdng.aws.asg.AsgRollingDeployStep;
+import io.harness.cdng.aws.asg.AsgRollingRollbackStep;
+import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStep;
+import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStep;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStep;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStep;
@@ -24,6 +33,10 @@ import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStep;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStep;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStep;
+import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStep;
+import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStep;
+import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStep;
+import io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
 import io.harness.cdng.k8s.K8sBlueGreenStep;
@@ -60,7 +73,14 @@ public class InstanceSyncStepResolver {
       TasAppResizeStep.STEP_TYPE.getType(), TasSwapRoutesStep.STEP_TYPE.getType(), TasRollbackStep.STEP_TYPE.getType(),
       TasSwapRollbackStep.STEP_TYPE.getType(), ElastigroupBGStageSetupStep.STEP_TYPE.getType(),
       ElastigroupSwapRouteStep.STEP_TYPE.getType(), ElastigroupRollbackStep.STEP_TYPE.getType(),
-      TasRollingDeployStep.STEP_TYPE.getType(), TasRollingRollbackStep.STEP_TYPE.getType()));
+      TasRollingDeployStep.STEP_TYPE.getType(), TasRollingRollbackStep.STEP_TYPE.getType(),
+      AsgRollingDeployStep.STEP_TYPE.getType(), AsgCanaryDeployStep.STEP_TYPE.getType(),
+      AsgCanaryDeleteStep.STEP_TYPE.getType(), AsgRollingRollbackStep.STEP_TYPE.getType(),
+      AsgBlueGreenDeployStep.STEP_TYPE.getType(), AsgBlueGreenSwapServiceStep.STEP_TYPE.getType(),
+      AsgBlueGreenRollbackStep.STEP_TYPE.getType(), GoogleFunctionsDeployStep.STEP_TYPE.getType(),
+      GoogleFunctionsRollbackStep.STEP_TYPE.getType(), GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE.getType(),
+      GoogleFunctionsTrafficShiftStep.STEP_TYPE.getType(), AwsLambdaDeployStep.STEP_TYPE.getType(),
+      AwsLambdaRollbackStep.STEP_TYPE.getType()));
 
   public boolean shouldRunInstanceSync(StepType stepType) {
     return nonNull(stepType) && INSTANCE_SYN_STEP_TYPES.contains(stepType.getType());

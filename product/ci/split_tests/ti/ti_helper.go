@@ -8,7 +8,6 @@ package ti
 import (
 	"context"
 	b64 "encoding/base64"
-	"encoding/json"
 	logger "github.com/harness/harness-core/commons/go/lib/logs"
 	ti_addon "github.com/harness/harness-core/product/ci/addon/remote"
 	"github.com/harness/harness-core/product/ci/common/external"
@@ -54,39 +53,23 @@ func getTiClient(log *zap.SugaredLogger) (ticlient.Client, error) {
 		log.Errorw("Unable to decode the token present to call TI service")
 		return nil, err
 	}
-	tc, err := remoteTiClientWithToken(string(decodedToken))
-	if err != nil {
-		log.Errorw("Error occurred while requesting timing data: remote connection failed")
-		return nil, err
-	}
-	return tc, err
+	tiClient := remoteTiClientWithToken("", "", "", false, string(decodedToken))
+	return tiClient, nil
 }
 
 // callTiSvc makes an API call to the TI service
 func callTiSvc(ctx context.Context, log *zap.SugaredLogger, tiReq types.GetTestTimesReq) (types.GetTestTimesResp, error) {
 	var tiResp types.GetTestTimesResp
-	tc, err := getTiClient(log)
+
+	// TI Client
+	tiClient, err := getTiClient(log)
 	if err != nil {
 		return tiResp, err
 	}
-	org, err := getOrgId()
-	if err != nil {
-		return tiResp, err
-	}
-	project, err := getProjectId()
-	if err != nil {
-		return tiResp, err
-	}
-	pipeline, err := getPipelineId()
-	if err != nil {
-		return tiResp, err
-	}
-	body, err := json.Marshal(&tiReq)
-	if err != nil {
-		return tiResp, err
-	}
+
+	// GetTestTimes API call
 	ctxWithLogger := logger.WithContext(ctx, log)
-	tiResp, err = tc.GetTestTimes(ctxWithLogger, org, project, pipeline, string(body))
+	tiResp, err = tiClient.GetTestTimes(ctxWithLogger, &tiReq)
 	if err != nil {
 		log.Errorw("Error occurred while requesting timing data: API failed")
 		return tiResp, err

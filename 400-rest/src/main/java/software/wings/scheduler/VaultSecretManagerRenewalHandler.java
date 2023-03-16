@@ -20,7 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -44,7 +44,10 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
 @Slf4j
-public class VaultSecretManagerRenewalHandler extends IteratorPumpModeHandler implements Handler<SecretManagerConfig> {
+public class VaultSecretManagerRenewalHandler
+    extends IteratorPumpAndRedisModeHandler implements Handler<SecretManagerConfig> {
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(62);
+
   @Inject private AccountService accountService;
   @Inject private VaultService vaultService;
   @Inject private AlertService alertService;
@@ -62,7 +65,7 @@ public class VaultSecretManagerRenewalHandler extends IteratorPumpModeHandler im
                     .clazz(SecretManagerConfig.class)
                     .fieldName(SecretManagerConfigKeys.nextTokenRenewIteration)
                     .targetInterval(targetInterval)
-                    .acceptableNoAlertDelay(ofSeconds(62))
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                     .handler(this)
                     .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                     .filterExpander(query
@@ -73,6 +76,28 @@ public class VaultSecretManagerRenewalHandler extends IteratorPumpModeHandler im
                     .schedulingType(REGULAR)
                     .persistenceProvider(persistenceProvider)
                     .redistribute(true));
+  }
+
+  @Override
+  public void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<SecretManagerConfig, MorphiaFilterExpander<SecretManagerConfig>>)
+            persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                SecretManagerConfig.class,
+                MongoPersistenceIterator.<SecretManagerConfig, MorphiaFilterExpander<SecretManagerConfig>>builder()
+                    .clazz(SecretManagerConfig.class)
+                    .fieldName(SecretManagerConfigKeys.nextTokenRenewIteration)
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                    .handler(this)
+                    .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                    .filterExpander(query
+                        -> query.criteria(SecretManagerConfigKeys.encryptionType)
+                               .in(Sets.newHashSet(EncryptionType.VAULT, EncryptionType.VAULT_SSH))
+                               .criteria(SecretManagerConfigKeys.ngMetadata + "." + NGSecretManagerMetadataKeys.deleted)
+                               .notEqual(true))
+                    .persistenceProvider(persistenceProvider));
   }
 
   @Override

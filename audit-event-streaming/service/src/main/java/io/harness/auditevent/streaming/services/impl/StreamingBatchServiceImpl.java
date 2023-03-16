@@ -9,11 +9,11 @@ package io.harness.auditevent.streaming.services.impl;
 
 import static io.harness.audit.entities.AuditEvent.AuditEventKeys.ACCOUNT_IDENTIFIER_KEY;
 import static io.harness.audit.entities.AuditEvent.AuditEventKeys.createdAt;
-import static io.harness.auditevent.streaming.entities.BatchStatus.READY;
+import static io.harness.auditevent.streaming.beans.BatchStatus.READY;
 
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.auditevent.streaming.AuditEventRepository;
-import io.harness.auditevent.streaming.entities.BatchStatus;
+import io.harness.auditevent.streaming.beans.BatchStatus;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
 import io.harness.auditevent.streaming.entities.StreamingBatch.StreamingBatchKeys;
 import io.harness.auditevent.streaming.repositories.StreamingBatchRepository;
@@ -54,7 +54,7 @@ public class StreamingBatchServiceImpl implements StreamingBatchService {
                             .is(accountIdentifier)
                             .and(StreamingBatchKeys.streamingDestinationIdentifier)
                             .is(streamingDestinationIdentifier);
-    Sort sort = Sort.by(Sort.Direction.DESC, StreamingBatchKeys.endTime);
+    Sort sort = Sort.by(Sort.Direction.DESC, StreamingBatchKeys.createdAt);
     return Optional.ofNullable(streamingBatchRepository.findOne(criteria, sort));
   }
 

@@ -256,7 +256,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     }
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
       // fetch yaml from git
-      String branchName = templateGitXService.getWorkingBranch(savedEntity.getRepoURL());
+      String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
       if (loadFromFallbackBranch) {
         savedEntity = fetchRemoteEntityWithFallBackBranch(
             accountId, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
@@ -439,6 +439,21 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
                                           .and(TemplateEntityKeys.versionLabel)
                                           .is(versionLabel),
         projectIdentifier, orgIdentifier, accountId, TemplateEntity.class);
+  }
+
+  @Override
+  public boolean existsByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier) {
+    Optional<TemplateEntity> template = gitAwarePersistence.findOne(Criteria.where(TemplateEntityKeys.identifier)
+                                                                        .is(templateIdentifier)
+                                                                        .and(TemplateEntityKeys.projectIdentifier)
+                                                                        .is(projectIdentifier)
+                                                                        .and(TemplateEntityKeys.orgIdentifier)
+                                                                        .is(orgIdentifier)
+                                                                        .and(TemplateEntityKeys.accountId)
+                                                                        .is(accountId),
+        projectIdentifier, orgIdentifier, accountId, TemplateEntity.class);
+    return template.isPresent();
   }
 
   @Override

@@ -117,11 +117,11 @@ public class S3BucketResource {
     }
 
     // Getting the resolved region in case of expressions
-    String resolvedRegion = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedRegion = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, region, fqnPath, null, serviceRef);
 
     // Getting the resolved region in case of expressions
-    String resolvedConnectorIdentifier = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier,
+    String resolvedConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier,
         projectIdentifier, pipelineIdentifier, runtimeInputYaml, awsConnectorIdentifier, fqnPath, null, serviceRef);
 
     IdentifierRef connectorRef =
@@ -189,12 +189,12 @@ public class S3BucketResource {
     }
 
     // Getting the resolved region in case of expressions
-    String resolvedRegion = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedRegion = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved awsConnectorIdentifier in case of expressions
     String resolvedAwsConnectorIdentifier =
-        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
             runtimeInputYaml, awsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Common logic in case of ServiceV1 and ServiceV2
@@ -276,16 +276,16 @@ public class S3BucketResource {
     }
 
     // Getting the resolved region in case of expressions
-    String resolvedRegion = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedRegion = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved awsConnectorIdentifier in case of expressions
     String resolvedAwsConnectorIdentifier =
-        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
             runtimeInputYaml, awsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved bucketName in case of expressions
-    String resolvedBucketName = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedBucketName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, bucketName, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Common logic in case of ServiceV1 and ServiceV2

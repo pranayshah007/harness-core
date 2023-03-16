@@ -34,14 +34,16 @@ public class StepParametersUtils {
     stageBuilder.name(stageNode.getName());
     stageBuilder.identifier(stageNode.getIdentifier());
     stageBuilder.description(SdkCoreStepUtils.getParameterFieldHandleValueNull(stageNode.getDescription()));
-    stageBuilder.failureStrategies(stageNode.getFailureStrategies());
+    stageBuilder.failureStrategies(
+        stageNode.getFailureStrategies() != null ? stageNode.getFailureStrategies().getValue() : null);
     stageBuilder.skipCondition(stageNode.getSkipCondition());
-    stageBuilder.when(stageNode.getWhen());
+    stageBuilder.when(stageNode.getWhen() != null ? stageNode.getWhen().getValue() : null);
     stageBuilder.type(stageNode.getType());
     stageBuilder.uuid(stageNode.getUuid());
     stageBuilder.variables(
         ParameterField.createValueField(NGVariablesUtils.getMapOfVariables(stageNode.getVariables())));
     stageBuilder.tags(CollectionUtils.emptyIfNull(stageNode.getTags()));
+    stageBuilder.delegateSelectors(stageNode.getDelegateSelectors());
 
     return stageBuilder;
   }
@@ -53,9 +55,10 @@ public class StepParametersUtils {
     stepBuilder.delegateSelectors(stepElementConfig.getDelegateSelectors());
     stepBuilder.description(stepElementConfig.getDescription());
     stepBuilder.skipCondition(stepElementConfig.getSkipCondition());
-    stepBuilder.failureStrategies(stepElementConfig.getFailureStrategies());
+    stepBuilder.failureStrategies(
+        stepElementConfig.getFailureStrategies() != null ? stepElementConfig.getFailureStrategies().getValue() : null);
     stepBuilder.timeout(ParameterField.createValueField(TimeoutUtils.getTimeoutString(stepElementConfig.getTimeout())));
-    stepBuilder.when(stepElementConfig.getWhen());
+    stepBuilder.when(stepElementConfig.getWhen() != null ? stepElementConfig.getWhen().getValue() : null);
     stepBuilder.type(stepElementConfig.getType());
     stepBuilder.uuid(stepElementConfig.getUuid());
     stepBuilder.enforce(stepElementConfig.getEnforce());

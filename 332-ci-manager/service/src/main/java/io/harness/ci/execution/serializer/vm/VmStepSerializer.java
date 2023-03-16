@@ -7,7 +7,9 @@
 
 package io.harness.ci.serializer.vm;
 
+import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
+import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.stepinfo.ActionStepInfo;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
@@ -26,6 +28,7 @@ import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import java.util.Set;
 
 @Singleton
@@ -46,20 +49,21 @@ public class VmStepSerializer {
   }
 
   public VmStepInfo serialize(Ambiance ambiance, CIStepInfo stepInfo, StageInfraDetails stageInfraDetails,
-      String identifier, ParameterField<Timeout> parameterFieldTimeout) {
+      String identifier, ParameterField<Timeout> parameterFieldTimeout, List<CIRegistry> registries,
+      ExecutionSource executionSource) {
     String stepName = stepInfo.getNonYamlInfo().getStepInfoType().getDisplayName();
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
         return vmRunStepSerializer.serialize(
-            (RunStepInfo) stepInfo, ambiance, identifier, parameterFieldTimeout, stepName);
+            (RunStepInfo) stepInfo, ambiance, identifier, parameterFieldTimeout, stepName, registries);
       case BACKGROUND:
-        return vmBackgroundStepSerializer.serialize((BackgroundStepInfo) stepInfo, ambiance, identifier);
+        return vmBackgroundStepSerializer.serialize((BackgroundStepInfo) stepInfo, ambiance, identifier, registries);
       case RUN_TESTS:
         return vmRunTestStepSerializer.serialize(
-            (RunTestsStepInfo) stepInfo, identifier, parameterFieldTimeout, stepName, ambiance);
+            (RunTestsStepInfo) stepInfo, identifier, parameterFieldTimeout, stepName, ambiance, registries);
       case PLUGIN:
-        return vmPluginStepSerializer.serialize(
-            (PluginStepInfo) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout, stepName, ambiance);
+        return vmPluginStepSerializer.serialize((PluginStepInfo) stepInfo, stageInfraDetails, identifier,
+            parameterFieldTimeout, stepName, ambiance, registries, executionSource);
       case GCR:
       case DOCKER:
       case ECR:
@@ -73,9 +77,10 @@ public class VmStepSerializer {
       case SECURITY:
       case RESTORE_CACHE_S3:
       case GIT_CLONE:
+      case SSCA_ORCHESTRATION:
         return vmPluginCompatibleStepSerializer.serialize(
             ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout, stepName);
-      case IACM_TERRAFORM_PLAN:
+      case IACM_TERRAFORM:
         return vmIACMPluginCompatibleStepSerializer.serialize(
             ambiance, (IACMTerraformPlanInfo) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout);
       case ACTION:

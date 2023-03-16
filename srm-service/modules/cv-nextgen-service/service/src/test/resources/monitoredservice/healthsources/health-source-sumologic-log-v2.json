@@ -1,0 +1,21 @@
+{
+  "type": "SumologicLogs",
+  "version": "v2",
+  "identifier": "Sumologic_Log_Local",
+  "name": "Sumologic Log Local",
+  "spec": {
+    "connectorRef": "account.sumologic_try_2",
+    "queryDefinitions": [
+      {
+        "identifier": "sample_identifier",
+        "groupName": "default_group",
+        "name": "sample_log_name",
+        "queryParams": {
+          "serviceInstanceField": "_sourceHost"
+        },
+        "query": "_sourceCategory=windows/performance"
+      }
+    ],
+    "healthSourceParams": {}
+  }
+}

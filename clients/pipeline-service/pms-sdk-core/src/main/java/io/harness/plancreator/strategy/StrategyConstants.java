@@ -19,4 +19,6 @@ public class StrategyConstants {
   public static final String REPEAT = "repeat";
   public static final String PARTITION = "partition";
   public static final String TOTAL_ITERATIONS = "totalIterations";
+  public static final String CURRENT_GLOBAL_ITERATION = "currentGlobalIteration";
+  public static final String TOTAL_GLOBAL_ITERATIONS = "totalGlobalIteration";
 }

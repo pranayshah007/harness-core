@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -797,7 +798,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     // List down all services accessible from that scope
     // project level
     Criteria criteriaFromServiceFilter =
-        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", false, true);
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, false, true);
     Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
     Page<ServiceEntity> list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
@@ -805,18 +806,32 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(list.getContent().size()).isEqualTo(3);
 
     // org level
-    criteriaFromServiceFilter = ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", null, false, true);
+    criteriaFromServiceFilter =
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", null, null, false, true);
     list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
     // services from org,account scopes
     assertThat(list.getContent().size()).isEqualTo(2);
 
     // account level
-    criteriaFromServiceFilter = ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, false, true);
+    criteriaFromServiceFilter =
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, true);
     list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
     // services from acc scope
     assertThat(list.getContent().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testCreateCriteriaForGetListWithOptionalOrgAndProject() {
+    Criteria criteriaFromServiceFilter =
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, false);
+
+    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("accountId")).isTrue();
+    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("orgIdentifier")).isTrue();
+    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("projectIdentifier")).isTrue();
   }
 
   @Test

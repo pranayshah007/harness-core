@@ -28,7 +28,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 import org.mongodb.morphia.annotations.Id;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -46,15 +45,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Persistent
 @TypeAlias("io.harness.ng.core.ModuleVersionInfo.entity.ModuleVersionInfo")
 public class ModuleVersionInfo implements PersistentEntity {
-  @FdUniqueIndex
-  @Id
-  @dev.morphia.annotations.Id
-  @EntityIdentifier
-  @Schema(description = "Module Name")
-  private String moduleName;
+  @Id @dev.morphia.annotations.Id String uuid;
+  @FdUniqueIndex @EntityIdentifier @Schema(description = "Module Name") private String moduleName;
   @NotNull @Schema(description = "Module Version") private String version;
   @NotNull @Schema(description = "Module Display Name") private String displayName;
-  @LastModifiedDate @Schema(description = "Module Last Modified") String lastModifiedAt;
+  @NotNull @Schema(description = "Module Last Modified") String lastModifiedAt;
   @NotNull @Schema(description = "Module versionUrl") private String versionUrl;
   @NotNull @Schema(description = "Module Release Notes Link") private String releaseNotesLink;
   @Wither private List<MicroservicesVersionInfo> microservicesVersionInfo;

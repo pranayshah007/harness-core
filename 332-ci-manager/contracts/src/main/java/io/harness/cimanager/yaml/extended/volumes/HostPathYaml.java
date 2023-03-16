@@ -36,6 +36,7 @@ public class HostPathYaml implements CIVolume {
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> mountPath;
 
   @NotNull private HostPathYamlSpec spec;
+  @ApiModelProperty(hidden = true) String uuid;
 
   @Data
   @Builder
@@ -44,5 +45,6 @@ public class HostPathYaml implements CIVolume {
   public static class HostPathYamlSpec {
     @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> path;
     @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> type;
+    @ApiModelProperty(hidden = true) String uuid;
   }
 }

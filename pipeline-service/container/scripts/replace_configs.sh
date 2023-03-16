@@ -170,6 +170,22 @@ if [[ "" != "$CV_MANAGER_SERVICE_SECRET" ]]; then
   export CV_MANAGER_SERVICE_SECRET; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.cv.secret=env(CV_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
+if [[ "" != "$CV_MANAGER_BASE_URL" ]]; then
+  export CV_MANAGER_BASE_URL; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.srm.serviceHttpClientConfig.baseUrl=env(CV_MANAGER_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CV_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS" ]]; then
+  export CV_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.srm.serviceHttpClientConfig.connectTimeOutSeconds=env(CV_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CV_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS" ]]; then
+  export CV_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.srm.serviceHttpClientConfig.readTimeOutSeconds=env(CV_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CV_MANAGER_SERVICE_SECRET" ]]; then
+  export CV_MANAGER_SERVICE_SECRET; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.srm.secret=env(CV_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
 if [[ "" != "$NG_MANAGER_TARGET" ]]; then
   export NG_MANAGER_TARGET; yq -i '.grpcClientConfigs.cd.target=env(NG_MANAGER_TARGET)' $CONFIG_FILE
 fi
@@ -184,6 +200,14 @@ fi
 
 if [[ "" != "$CVNG_MANAGER_AUTHORITY" ]]; then
   export CVNG_MANAGER_AUTHORITY; yq -i '.grpcClientConfigs.cv.authority=env(CVNG_MANAGER_AUTHORITY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CVNG_MANAGER_TARGET" ]]; then
+  export CVNG_MANAGER_TARGET; yq -i '.grpcClientConfigs.srm.target=env(CVNG_MANAGER_TARGET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CVNG_MANAGER_AUTHORITY" ]]; then
+  export CVNG_MANAGER_AUTHORITY; yq -i '.grpcClientConfigs.srm.authority=env(CVNG_MANAGER_AUTHORITY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CI_MANAGER_TARGET" ]]; then
@@ -400,6 +424,8 @@ replace_key_value eventsFramework.redis.nettyThreads $EVENTS_FRAMEWORK_NETTY_THR
 replace_key_value eventsFramework.redis.sslConfig.enabled $EVENTS_FRAMEWORK_REDIS_SSL_ENABLED
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
+replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
 
 replace_key_value eventsFrameworkSnapshotDebezium.redis.sentinel $EVENTS_FRAMEWORK_SNAPSHOT_USE_SENTINEL
 replace_key_value eventsFrameworkSnapshotDebezium.redis.envNamespace $EVENTS_FRAMEWORK_SNAPSHOT_ENV_NAMESPACE
@@ -516,3 +542,16 @@ replace_key_value pipelineEventConsumersConfig.initiateNode.threads "$INITIATE_N
 
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
 replace_key_value segmentConfiguration.url "$SEGMENT_URL"
+
+replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
+replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
+replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
+replace_key_value cfClientConfig.analyticsEnabled "$CF_CLIENT_ANALYTICS_ENABLED"
+replace_key_value cfClientConfig.connectionTimeout "$CF_CLIENT_CONNECTION_TIMEOUT"
+replace_key_value cfClientConfig.readTimeout "$CF_CLIENT_READ_TIMEOUT"
+replace_key_value cfClientConfig.bufferSize "$CF_CLIENT_BUFFER_SIZE"
+replace_key_value cfClientConfig.retries "$CF_RETRIES"
+replace_key_value cfClientConfig.sleepInterval "$CF_SLEEP_INTERVAL"
+
+replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
+replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"

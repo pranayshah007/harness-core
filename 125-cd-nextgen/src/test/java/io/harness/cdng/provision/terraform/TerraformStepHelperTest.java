@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.terraform;
 
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
+import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.AKHIL_PANDEY;
@@ -384,16 +385,18 @@ public class TerraformStepHelperTest extends CategoryTest {
         TerraformStepDataGenerator.generateRemoteVarFileSpec(StoreConfigType.GITLAB, gitStoreVarFiles);
     LinkedHashMap<String, TerraformVarFile> varFilesMap =
         TerraformStepDataGenerator.generateVarFileSpecs(remoteVarFiles, false);
-    TerraformApplyStepParameters parameters = TerraformApplyStepParameters.infoBuilder()
-                                                  .provisionerIdentifier(ParameterField.createValueField("provId_"))
-                                                  .configuration(TerraformStepConfigurationParameters.builder()
-                                                                     .type(TerraformStepConfigurationType.INLINE)
-                                                                     .spec(TerraformExecutionDataParameters.builder()
-                                                                               .configFiles(configFilesWrapper)
-                                                                               .varFiles(varFilesMap)
-                                                                               .build())
-                                                                     .build())
-                                                  .build();
+    TerraformApplyStepParameters parameters =
+        TerraformApplyStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("provId_"))
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .type(TerraformStepConfigurationType.INLINE)
+                               .spec(TerraformExecutionDataParameters.builder()
+                                         .configFiles(configFilesWrapper)
+                                         .varFiles(varFilesMap)
+                                         .isTerraformCloudCli(ParameterField.createValueField(false))
+                                         .build())
+                               .build())
+            .build();
     TerraformTaskNGResponse response =
         TerraformTaskNGResponse.builder()
             .commitIdForConfigFilesMap(ImmutableMap.of(TerraformStepHelper.TF_CONFIG_FILES, "commit-1",
@@ -903,6 +906,9 @@ public class TerraformStepHelperTest extends CategoryTest {
     Ambiance ambiance = getAmbiance();
     String planName = helper.getTerraformPlanName(APPLY, ambiance, "provisionId");
     assertThat(planName).isEqualTo("tfPlan-exec-id-provisionId");
+
+    String destroyPlanName = helper.getTerraformPlanName(DESTROY, ambiance, "provisionId");
+    assertThat(destroyPlanName).isEqualTo("tfDestroyPlan-exec-id-provisionId");
   }
 
   @Test
@@ -1322,16 +1328,18 @@ public class TerraformStepHelperTest extends CategoryTest {
     LinkedHashMap<String, TerraformVarFile> varFilesMap =
         TerraformStepDataGenerator.generateVarFileSpecs(remoteVarFiles, false);
 
-    TerraformApplyStepParameters parameters = TerraformApplyStepParameters.infoBuilder()
-                                                  .provisionerIdentifier(ParameterField.createValueField("provId_"))
-                                                  .configuration(TerraformStepConfigurationParameters.builder()
-                                                                     .type(TerraformStepConfigurationType.INLINE)
-                                                                     .spec(TerraformExecutionDataParameters.builder()
-                                                                               .configFiles(configFilesWrapper)
-                                                                               .varFiles(varFilesMap)
-                                                                               .build())
-                                                                     .build())
-                                                  .build();
+    TerraformApplyStepParameters parameters =
+        TerraformApplyStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("provId_"))
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .type(TerraformStepConfigurationType.INLINE)
+                               .spec(TerraformExecutionDataParameters.builder()
+                                         .configFiles(configFilesWrapper)
+                                         .varFiles(varFilesMap)
+                                         .isTerraformCloudCli(ParameterField.createValueField(false))
+                                         .build())
+                               .build())
+            .build();
     TerraformTaskNGResponse response =
         TerraformTaskNGResponse.builder()
             .commitIdForConfigFilesMap(ImmutableMap.of(TerraformStepHelper.TF_CONFIG_FILES, "commit-1",

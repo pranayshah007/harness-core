@@ -13,7 +13,9 @@ import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIG
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 import static io.harness.pms.contracts.execution.Status.ERRORED;
+import static io.harness.pms.contracts.execution.Status.EXPIRED;
 import static io.harness.pms.contracts.execution.Status.SKIPPED;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.springdata.SpringDataMongoUtils.returnNewOptions;
 
 import static org.springframework.data.domain.Sort.by;
@@ -30,7 +32,6 @@ import io.harness.engine.observers.NodeExecutionStartObserver;
 import io.harness.engine.observers.NodeStartInfo;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.engine.observers.NodeUpdateInfo;
-import io.harness.engine.observers.NodeUpdateObserver;
 import io.harness.event.OrchestrationLogConfiguration;
 import io.harness.event.OrchestrationLogPublisher;
 import io.harness.exception.InvalidRequestException;
@@ -39,6 +40,7 @@ import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
@@ -54,6 +56,7 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.springdata.PersistenceModule;
 import io.harness.springdata.TransactionHelper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -76,6 +79,7 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Sort;
@@ -89,7 +93,7 @@ import org.springframework.data.util.CloseableIterator;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class NodeExecutionServiceImpl implements NodeExecutionService {
-  private static final int MAX_BATCH_SIZE = 1000;
+  private static final int MAX_BATCH_SIZE = PersistenceModule.MAX_BATCH_SIZE;
 
   private static final Set<String> GRAPH_FIELDS = Set.of(NodeExecutionKeys.mode, NodeExecutionKeys.progressData,
       NodeExecutionKeys.unitProgresses, NodeExecutionKeys.executableResponses, NodeExecutionKeys.interruptHistories,
@@ -102,9 +106,10 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Inject private OrchestrationLogConfiguration orchestrationLogConfiguration;
   @Inject private NodeExecutionReadHelper nodeExecutionReadHelper;
 
+  @Inject private PlanExpansionService planExpansionService;
+
   @Getter private final Subject<NodeStatusUpdateObserver> nodeStatusUpdateSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
-  @Getter private final Subject<NodeUpdateObserver> nodeUpdateObserverSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionDeleteObserver> nodeDeleteObserverSubject = new Subject<>();
 
   @Override
@@ -330,7 +335,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       // NOTE: We are ignoring the status of steps inside strategy because of max concurrency defined.
       // We need to run all the steps inside strategy once
       if (includeChildrenOfStrategy || child.getStepType().getStepCategory() != StepCategory.STRATEGY) {
-        extractChildList(parentChildrenMap, child.getUuid(), finalList, true);
+        extractChildList(parentChildrenMap, child.getUuid(), finalList, includeChildrenOfStrategy);
       }
     });
   }
@@ -434,8 +439,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       }
       return updated;
     });
-    nodeUpdateObserverSubject.fireInform(
-        NodeUpdateObserver::onNodeUpdate, NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
     return updatedNodeExecution;
   }
 
@@ -483,11 +486,14 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
                       .addCriteria(where(NodeExecutionKeys.status).in(allowedStartStatuses));
     Update updateOps =
         ops.set(NodeExecutionKeys.status, status).set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
+    addFinalStatusOps(updateOps, status);
+
     NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
       NodeExecution updated = mongoTemplate.findAndModify(query, updateOps, returnNewOptions, NodeExecution.class);
       if (updated == null) {
         log.warn("Cannot update execution status for the node {} with {}", nodeExecutionId, status);
       } else {
+        planExpansionService.updateStatus(updated.getAmbiance(), status);
         if (updated.getStepType().getStepCategory() == StepCategory.STAGE || StatusUtils.isFinalStatus(status)) {
           emitEvent(updated, OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE);
         }
@@ -500,6 +506,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
           NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
     }
     return updatedNodeExecution;
+  }
+
+  // Add additional updateOps based on nodeStatus to be updated
+  // This is done to reduce write conflicts on same record, and send multiple updates at one go.
+  private void addFinalStatusOps(Update updateOps, Status toBeUpdatedNodeStatus) {
+    if (StatusUtils.isFinalStatus(toBeUpdatedNodeStatus)) {
+      updateOps.set(NodeExecutionKeys.endTs, System.currentTimeMillis());
+      if (toBeUpdatedNodeStatus != EXPIRED) {
+        updateOps.set(NodeExecutionKeys.timeoutInstanceIds, new ArrayList<>());
+      }
+    }
   }
 
   @Override
@@ -560,29 +577,49 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Override
   public void deleteAllNodeExecutionAndMetadata(String planExecutionId) {
     // Fetches all nodeExecutions from analytics for given planExecutionId
-    List<NodeExecution> batchNodeExecutionSet = new LinkedList<>();
+    List<NodeExecution> batchNodeExecutionList = new LinkedList<>();
+    Set<String> nodeExecutionsIdsToDelete = new HashSet<>();
     try (CloseableIterator<NodeExecution> iterator =
              fetchNodeExecutionsFromAnalytics(planExecutionId, NodeProjectionUtils.fieldsForNodeExecutionDelete)) {
       while (iterator.hasNext()) {
-        batchNodeExecutionSet.add(iterator.next());
-        if (batchNodeExecutionSet.size() >= MAX_BATCH_SIZE) {
-          deleteNodeExecutionsAndMetadataInternal(batchNodeExecutionSet);
-          batchNodeExecutionSet.clear();
+        NodeExecution next = iterator.next();
+        nodeExecutionsIdsToDelete.add(next.getUuid());
+        batchNodeExecutionList.add(next);
+        if (batchNodeExecutionList.size() >= MAX_BATCH_SIZE) {
+          deleteNodeExecutionsMetadataInternal(batchNodeExecutionList);
+          batchNodeExecutionList.clear();
         }
       }
     }
-    if (EmptyPredicate.isNotEmpty(batchNodeExecutionSet)) {
-      deleteNodeExecutionsAndMetadataInternal(batchNodeExecutionSet);
+    if (EmptyPredicate.isNotEmpty(batchNodeExecutionList)) {
+      deleteNodeExecutionsMetadataInternal(batchNodeExecutionList);
     }
+    // At end delete all nodeExecutions
+    deleteNodeExecutionsInternal(nodeExecutionsIdsToDelete);
   }
 
   /**
-   * Deletes all nodeExecutions and its related metadata once we have the nodeExecutionToDelete data we collected
+   * Deletes all nodeExecutions metadata
+   *
    * @param nodeExecutionsToDelete
    */
-  private void deleteNodeExecutionsAndMetadataInternal(List<NodeExecution> nodeExecutionsToDelete) {
-    // Delete example - WaitInstances, resourceRestraintInstances, timeoutInstanceIds, etc
+  private void deleteNodeExecutionsMetadataInternal(List<NodeExecution> nodeExecutionsToDelete) {
+    // Delete nodeExecutionMetadata example - WaitInstances, resourceRestraintInstances, timeoutInstanceIds, etc
     nodeDeleteObserverSubject.fireInform(NodeExecutionDeleteObserver::onNodesDelete, nodeExecutionsToDelete);
+  }
+
+  /**
+   * Deletes all nodeExecutions for given ids
+   * This method assumes the nodeExecutions will be in batch thus caller needs to handle it
+   * @param batchNodeExecutionIds
+   */
+  private void deleteNodeExecutionsInternal(Set<String> batchNodeExecutionIds) {
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      // Uses - id index
+      Query query = query(where(NodeExecutionKeys.id).in(batchNodeExecutionIds));
+      mongoTemplate.remove(query, NodeExecution.class);
+      return true;
+    });
   }
 
   /**
@@ -698,21 +735,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public boolean removeTimeoutInstances(String nodeExecutionId) {
-    Update ops = new Update();
-    ops.set(NodeExecutionKeys.timeoutInstanceIds, new ArrayList<>());
-    // Uses - id index
-    Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
-    UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
-
-    if (!updateResult.wasAcknowledged()) {
-      log.warn("TimeoutInstanceIds cannot be removed from nodeExecution {}", nodeExecutionId);
-      return false;
-    }
-    return true;
-  }
-
-  @Override
   public List<RetryStageInfo> getStageDetailFromPlanExecutionId(String planExecutionId) {
     return fetchStageDetailFromNodeExecution(fetchStageExecutions(planExecutionId));
   }
@@ -745,6 +767,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         .include(NodeExecutionKeys.parentId)
         .include(NodeExecutionKeys.oldRetry)
         .include(NodeExecutionKeys.ambiance)
+        .include(NodeExecutionKeys.resolvedParams)
         .include(NodeExecutionKeys.executableResponses);
 
     query.with(by(NodeExecutionKeys.createdAt));
@@ -856,14 +879,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return nodeExecutionIdToPlanNode;
   }
 
-  // We can have multiple nodeExecution corresponding to same node. So this method make sure that only final/last
-  // nodeExecution is considered while transforming plan for retry failed pipeline.
+  // We can have multiple nodeExecution corresponding to same node during the retry-failure-strategy. So this method
+  // makes sure that only the latest nodeExecution is used for retry when there are multiple nodeExecutions due to
+  // retry-failure-strategy. There will be only one such node due to retry-failure-strategy.
+
+  // In case of strategy, returning any nodeExecution for steps is fine. Because during the execution, the children
+  // nodeExecutions are decided by the original nodeExecution of strategy node. And there will be only one strategy
+  // nodeExecution and that too with oldRetry false.
   private Map<String, NodeExecution> getUniqueNodeExecutionForNodes(List<NodeExecution> nodeExecutions) {
     Map<String, NodeExecution> nodeExecutionMap = new HashMap<>();
     for (NodeExecution nodeExecution : nodeExecutions) {
-      if (!nodeExecutionMap.containsKey(nodeExecution.getNode().getUuid())) {
-        nodeExecutionMap.put(nodeExecution.getNode().getUuid(), nodeExecution);
-      } else if (nodeExecutionMap.get(nodeExecution.getNode().getUuid()).getStartTs() < nodeExecution.getStartTs()) {
+      if (!nodeExecutionMap.containsKey(nodeExecution.getNode().getUuid()) && !nodeExecution.getOldRetry()) {
         nodeExecutionMap.put(nodeExecution.getNode().getUuid(), nodeExecution);
       }
     }
@@ -874,5 +900,23 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     if (EmptyPredicate.isEmpty(fieldsToInclude)) {
       throw new InvalidRequestException("Projection fields cannot be empty in NodeExecution query.");
     }
+  }
+
+  @Override
+  public CloseableIterator<NodeExecution> fetchNodeExecutionsForGivenStageFQNs(
+      String planExecutionId, List<String> stageFQNs, Collection<String> requiredFields) {
+    Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId)
+                            .is(planExecutionId)
+                            .and(NodeExecutionKeys.stageFqn)
+                            .in(stageFQNs);
+
+    Query query = query(criteria);
+    if (EmptyPredicate.isNotEmpty(requiredFields)) {
+      for (String requiredField : requiredFields) {
+        query.fields().include(requiredField);
+      }
+    }
+
+    return nodeExecutionReadHelper.fetchNodeExecutions(query);
   }
 }

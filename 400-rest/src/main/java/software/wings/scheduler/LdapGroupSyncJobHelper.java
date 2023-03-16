@@ -322,7 +322,7 @@ public class LdapGroupSyncJobHelper {
                                           .appId(GLOBAL_APP_ID)
                                           .timeout(ldapSyncTimeout)
                                           .build();
-    LdapGroupResponse groupResponse = delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
+    LdapGroupResponse groupResponse = delegateProxyFactory.getV2(LdapDelegateService.class, syncTaskContext)
                                           .fetchGroupByDn(LdapSettingsMapper.ldapSettingsDTO(ldapSettings),
                                               encryptedDataDetail, userGroup.getSsoGroupId());
     if (null == groupResponse) {

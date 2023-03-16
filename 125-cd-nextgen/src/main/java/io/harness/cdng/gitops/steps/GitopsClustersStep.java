@@ -24,10 +24,12 @@ import static java.util.function.Predicate.not;
 import io.harness.beans.ScopeLevel;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
+import io.harness.cdng.environment.helper.EnvironmentStepsUtils;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.gitops.models.Cluster;
@@ -220,6 +222,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       throw new InvalidRequestException("No GitOps Cluster is selected with the current environment configuration");
     }
 
+    updateEnvRefsWithEnvGroupScope(envClusterRefs, params.getEnvGroupRef());
+
     logEnvironments(envClusterRefs, logger);
 
     // clusterId -> IndividualClusterInternal list, 1 cluster can be referenced by multiple environments
@@ -232,6 +236,17 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     }
 
     return filterClustersFromGitopsService(ambiance, individualClusters, logger);
+  }
+
+  private void updateEnvRefsWithEnvGroupScope(Collection<EnvClusterRefs> envClusterRefs, String envGroupRef) {
+    if (org.apache.commons.lang.StringUtils.isEmpty(envGroupRef)) {
+      return;
+    }
+    Scope envGroupScope = EnvironmentStepsUtils.getScopeForRef(envGroupRef);
+    for (EnvClusterRefs envClusterRef : envClusterRefs) {
+      String envRefWithScope = EnvironmentStepsUtils.getEnvironmentRef(envClusterRef.getEnvRef(), envGroupScope);
+      envClusterRef.setEnvRef(envRefWithScope);
+    }
   }
 
   @NotNull
@@ -308,7 +323,10 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
 
         content.forEach(c -> {
           if (individualClusters.containsKey(c.getIdentifier())) {
-            individualClusters.get(c.getIdentifier()).forEach(envCluster -> { envCluster.setClusterName(c.name()); });
+            individualClusters.get(c.getIdentifier()).forEach(envCluster -> {
+              envCluster.setClusterName(c.name());
+              envCluster.setAgentId(c.getAgentIdentifier());
+            });
           }
         });
 
@@ -405,7 +423,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       }
       outcome.appendCluster(new Metadata(clusterInternal.getEnvGroupRef(), clusterInternal.getEnvGroupName()),
           new Metadata(clusterInternal.getEnvRef(), clusterInternal.getEnvName()), clusterInternal.getEnvType(),
-          new Metadata(clusterInternal.getClusterRef(), clusterInternal.getClusterName()), mergedVars);
+          new Metadata(clusterInternal.getClusterRef(), clusterInternal.getClusterName()), mergedVars,
+          clusterInternal.getAgentId());
     });
 
     return outcome;
@@ -422,6 +441,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     String envType;
     String clusterRef;
     String clusterName;
+    String agentId;
     Map<String, Object> envVariables;
   }
 

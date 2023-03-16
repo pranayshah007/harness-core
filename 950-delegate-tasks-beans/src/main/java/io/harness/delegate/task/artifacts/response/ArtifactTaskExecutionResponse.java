@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.ami.AMITagsResponse;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.bamboo.BambooBuildTaskNGResponse;
 import io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.shell.ExecuteCommandResponse;
@@ -23,6 +24,7 @@ import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.helpers.ext.nexus.NexusRepositories;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
@@ -44,7 +46,11 @@ public class ArtifactTaskExecutionResponse {
   List<String> artifactPath;
   List<NexusRepositories> repositories;
   JenkinsBuildTaskNGResponse jenkinsBuildTaskNGResponse;
+  BambooBuildTaskNGResponse bambooBuildTaskNGResponse;
   ExecuteCommandResponse executeCommandResponse;
   CommandExecutionStatus status;
   String errorMessage;
+  Map<String, String> plans;
+  List<String> nexusGroupIds;
+  List<String> nexusArtifactIds;
 }

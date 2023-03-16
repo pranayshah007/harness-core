@@ -8,11 +8,12 @@
 package io.harness.ci.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.yaml.extended.CIShellType;
@@ -23,7 +24,9 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.Report;
 import io.harness.product.ci.engine.proto.RunStep;
@@ -47,6 +50,7 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
+
   public UnitStep serializeStepWithStepParameters(RunStepInfo runStepInfo, Integer port, String callbackId,
       String logKey, String identifier, ParameterField<Timeout> parameterFieldTimeout, String accountId,
       String stepName, Ambiance ambiance) {
@@ -62,8 +66,9 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
         RunTimeInputHandler.resolveShellType(runStepInfo.getShell()), accountId, featureFlagService);
 
     String command = null;
-
-    if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
+        && featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, accountId)) {
       command = SerializerUtils.getK8sDebugCommand(ciExecutionServiceConfig.getRemoteDebugTimeout())
           + System.lineSeparator()
           + RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true);
@@ -77,7 +82,7 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
 
     runStepBuilder.setContainerPort(port);
     Map<String, String> envvars =
-        resolveMapParameter("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
     if (!isEmpty(envvars)) {
       runStepBuilder.putAllEnvironment(envvars);
     }
@@ -114,6 +119,8 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
       protoShellType = ShellType.PWSH;
     } else if (shellType == CIShellType.POWERSHELL) {
       protoShellType = ShellType.POWERSHELL;
+    } else if (shellType == CIShellType.PYTHON) {
+      protoShellType = ShellType.PYTHON;
     }
 
     runStepBuilder.setShellType(protoShellType);

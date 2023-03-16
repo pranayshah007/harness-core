@@ -10,7 +10,7 @@ package software.wings.service.intfc.analysis;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.exception.WingsException;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -63,10 +63,10 @@ public class LogVerificationServiceImpl implements LogVerificationService {
       case BUG_SNAG:
         BugsnagConfig config = (BugsnagConfig) settingAttribute.getValue();
         if (shouldGetProjects) {
-          return delegateProxyFactory.get(BugsnagDelegateService.class, syncTaskContext)
+          return delegateProxyFactory.getV2(BugsnagDelegateService.class, syncTaskContext)
               .getProjects(config, orgId, encryptionDetails, null);
         } else {
-          return delegateProxyFactory.get(BugsnagDelegateService.class, syncTaskContext)
+          return delegateProxyFactory.getV2(BugsnagDelegateService.class, syncTaskContext)
               .getOrganizations((BugsnagConfig) settingAttribute.getValue(), encryptionDetails, null);
         }
 
@@ -95,7 +95,7 @@ public class LogVerificationServiceImpl implements LogVerificationService {
     bugsnagSetupTestData.setFromTime(bugsnagSetupTestData.getToTime() - TimeUnit.MINUTES.toMillis(60));
     Object response;
     try {
-      response = delegateProxyFactory.get(BugsnagDelegateService.class, taskContext)
+      response = delegateProxyFactory.getV2(BugsnagDelegateService.class, taskContext)
                      .search((BugsnagConfig) settingAttribute.getValue(), accountId, bugsnagSetupTestData,
                          encryptedDataDetails,
                          createApiCallLog(settingAttribute.getAccountId(), bugsnagSetupTestData.getGuid()));

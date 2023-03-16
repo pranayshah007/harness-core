@@ -10,7 +10,7 @@ package software.wings.delegatetasks.cv;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,11 +31,11 @@ import io.harness.rule.Owner;
 import io.harness.time.Timestamp;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.delegatetasks.MetricDataStoreService;
 import software.wings.service.impl.analysis.MetricElement;
 import software.wings.service.impl.analysis.MetricsDataCollectionInfo;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.analysis.ClusterLevel;
 
 import com.google.common.collect.Lists;

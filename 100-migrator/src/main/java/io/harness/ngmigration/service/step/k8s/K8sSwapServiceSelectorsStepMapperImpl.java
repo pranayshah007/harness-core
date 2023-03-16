@@ -10,14 +10,13 @@ package io.harness.ngmigration.service.step.k8s;
 import io.harness.cdng.k8s.K8sBGSwapServicesStepInfo;
 import io.harness.cdng.k8s.K8sBGSwapServicesStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GraphNode;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.KubernetesSwapServiceSelectors;
 
@@ -25,7 +24,12 @@ import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
-public class K8sSwapServiceSelectorsStepMapperImpl implements StepMapper {
+public class K8sSwapServiceSelectorsStepMapperImpl extends StepMapper {
+  @Override
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
+  }
+
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.K8S_BG_SWAP_SERVICES;
@@ -33,18 +37,17 @@ public class K8sSwapServiceSelectorsStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     KubernetesSwapServiceSelectors state = new KubernetesSwapServiceSelectors(stepYaml.getName());
     state.parseProperties(properties);
     return state;
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     KubernetesSwapServiceSelectors state = (KubernetesSwapServiceSelectors) getState(graphNode);
     K8sBGSwapServicesStepNode k8sBGSwapServicesStepNode = new K8sBGSwapServicesStepNode();
-    baseSetup(graphNode, k8sBGSwapServicesStepNode);
+    baseSetup(graphNode, k8sBGSwapServicesStepNode, context.getIdentifierCaseFormat());
     K8sBGSwapServicesStepInfo stepInfo = new K8sBGSwapServicesStepInfo();
 
     stepInfo.setBlueGreenSwapServicesStepFqn(state.getService2());

@@ -263,7 +263,7 @@ public class PdcInstanceHandler extends InstanceHandler implements InstanceSyncB
                                     .build();
 
     try {
-      DelegateResponseData notifyResponseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData notifyResponseData = delegateService.executeTaskV2(delegateTask);
       if (notifyResponseData instanceof HostReachabilityResponse) {
         HostReachabilityResponse value = (HostReachabilityResponse) notifyResponseData;
         return value.getHostReachabilityInfoList();

@@ -55,8 +55,8 @@ public class HealthSourceDTOTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testToHealthSource() {
     List<CVConfig> cvConfigList = Collections.singletonList(cvConfigBuilder());
-    HealthSource healthSource =
-        HealthSourceDTO.toHealthSource(cvConfigList, dataSourceTypeToHealthSourceTransformerMap);
+    HealthSource healthSource = HealthSourceDTO.toHealthSource(
+        cvConfigList, dataSourceTypeToHealthSourceTransformerMap.get(cvConfigList.get(0).getType()));
     assertThat(healthSource.getIdentifier()).isEqualTo(healthSourceIdentifier);
     assertThat(healthSource.getName()).isEqualTo(cvConfigList.get(0).getMonitoringSourceName());
   }

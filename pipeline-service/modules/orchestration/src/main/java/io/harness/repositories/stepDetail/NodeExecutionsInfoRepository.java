@@ -13,10 +13,18 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
 
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @HarnessRepo
 public interface NodeExecutionsInfoRepository extends PagingAndSortingRepository<NodeExecutionsInfo, String> {
   Optional<NodeExecutionsInfo> findByNodeExecutionId(String nodeExecutionId);
+
+  /**
+   * Delete all nodeExecutionsInfo for given nodeExecutionIds
+   * Uses - nodeExecutionId_unique_idx index
+   * @param nodeExecutionIds
+   */
+  void deleteAllByNodeExecutionIdIn(Set<String> nodeExecutionIds);
 }

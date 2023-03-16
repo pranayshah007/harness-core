@@ -17,10 +17,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.category.element.UnitTests;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineServiceImpl;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
@@ -58,6 +60,7 @@ public class PipelineStagePlanCreatorTest {
   @Mock PipelineStageHelper pipelineStageHelper;
   @Mock KryoSerializer kryoSerializer;
   @Mock PMSPipelineServiceImpl pmsPipelineService;
+  @Mock PmsGitSyncHelper pmsGitSyncHelper;
   @InjectMocks PipelineStagePlanCreator pipelineStagePlanCreator;
 
   private String ORG = "org";
@@ -139,6 +142,10 @@ public class PipelineStagePlanCreatorTest {
         .when(pmsPipelineService)
         .getPipeline("acc", "org", "project", "childPipeline", false, false);
 
+    doReturn(EntityGitDetails.builder().repoName("repo").repoName("repoName").branch("branch").build())
+        .when(pmsGitSyncHelper)
+        .getEntityGitDetailsFromBytes(any());
+
     PipelineStageNode pipelineStageNode = YamlUtils.read(yamlField, PipelineStageNode.class);
     assertThat(SecurityContextBuilder.getPrincipal()).isNull();
     PlanCreationResponse response =
@@ -152,6 +159,9 @@ public class PipelineStagePlanCreatorTest {
     assertThat(planNode.getFacilitatorObtainments().get(0).getType().getType())
         .isEqualTo(OrchestrationFacilitatorType.ASYNC);
     assertThat(planNode.getExpressionMode()).isEqualTo(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+
+    // Verifying the new Git Context For ChildPipeline
+    verify(pmsGitSyncHelper, times(1)).getEntityGitDetailsFromBytes(any());
   }
 
   @Test
@@ -171,6 +181,10 @@ public class PipelineStagePlanCreatorTest {
     doReturn(Optional.of(PipelineEntity.builder().yaml(ignoreFailureYamlField).build()))
         .when(pmsPipelineService)
         .getPipeline("acc", "org", "project", "childPipeline", false, false);
+
+    doReturn(EntityGitDetails.builder().repoName("repo").repoName("repoName").branch("branch").build())
+        .when(pmsGitSyncHelper)
+        .getEntityGitDetailsFromBytes(any());
 
     doReturn(new byte[9]).when(kryoSerializer).asBytes(any());
     PipelineStageNode stageNode = YamlUtils.read(ignoreFailureYamlField, PipelineStageNode.class);

@@ -153,6 +153,39 @@ func TestGetLatestCommit(t *testing.T) {
 	assert.NotNil(t, got.Commit.Sha, "There is a commit id")
 }
 
+func TestGetLatestCommitBitbucketOnprem(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		content, _ := os.ReadFile("testdata/commit_bb_onprem.json")
+		fmt.Fprint(w, string(content))
+	}))
+	defer ts.Close()
+
+	in := &pb.GetLatestCommitRequest{
+		Slug: "har/k8s-manifests",
+		Type: &pb.GetLatestCommitRequest_Branch{
+			Branch: "master",
+		},
+		Provider: &pb.Provider{
+			Hook: &pb.Provider_BitbucketServer{
+				BitbucketServer: &pb.BitbucketServerProvider{
+					Username:            "ff",
+					PersonalAccessToken: "ODUxWrong8QrWxs",
+				},
+			},
+			Endpoint: ts.URL,
+		},
+	}
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	got, err := GetLatestCommit(context.Background(), in, log.Sugar())
+
+	assert.Nil(t, err, "no errors")
+	assert.NotNil(t, got.Commit.Sha, "There is a commit id")
+	assert.NotNil(t, got.Commit.Link, "There is a link")
+}
+
 func TestListBranches(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -214,7 +247,6 @@ func TestListBranchesWithDefault(t *testing.T) {
 	assert.Equal(t, 1, len(got.Branches), "one branch")
 	assert.Equal(t, int32(0), got.Pagination.Next, "No next page")
 }
-
 
 func TestListCommits(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -121,7 +121,7 @@ public class InfrastructurePmsPlanCreator {
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
         .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
-        .name(PlanCreatorConstants.INFRA_SECTION_NODE_NAME)
+        .name(PlanCreatorConstants.INFRA_NODE_NAME)
         .identifier(PlanCreatorConstants.INFRA_SECTION_NODE_IDENTIFIER)
         .stepType(InfrastructureTaskExecutableStepV2.STEP_TYPE)
         .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)

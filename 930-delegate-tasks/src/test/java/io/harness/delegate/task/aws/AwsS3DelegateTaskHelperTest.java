@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.aws;
 
+import static io.harness.ModuleType.CORE;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -21,11 +22,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
-import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
-import io.harness.audit.streaming.dtos.AuditRecordDTO;
 import io.harness.audit.streaming.dtos.PutObjectResultResponse;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -43,8 +43,6 @@ import io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.request.HttpRequestInfo;
-import io.harness.request.RequestMetadata;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 
@@ -52,7 +50,6 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.impl.AwsApiHelperService;
 
 import com.amazonaws.AmazonServiceException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -587,20 +584,15 @@ public class AwsS3DelegateTaskHelperTest extends CategoryTest {
             .auditBatch(AuditBatchDTO.builder()
                             .batchId("123")
                             .accountIdentifier("accID123")
-                            .policyIdentifier("polID123")
+                            .streamingDestinationIdentifier("polID123")
                             .startTime(System.currentTimeMillis())
                             .endTime(System.currentTimeMillis())
                             .numberOfRecords(10)
-                            .auditRecords(Arrays.asList(
-                                AuditRecordDTO.builder()
-                                    .auditId("audId123")
-                                    .insertId("insId123")
-                                    .httpRequestInfo(HttpRequestInfo.builder().requestMethod("PUT").build())
-                                    .requestMetadata(RequestMetadata.builder().clientIP("192.168.1.1").build())
-                                    .timestamp(Instant.EPOCH)
-                                    .module(ModuleType.CV)
-                                    .createdAt(System.currentTimeMillis())
-                                    .build()))
+                            .outgoingAuditMessages(Arrays.asList(OutgoingAuditMessage.builder()
+                                                                     .auditEventId("audId123")
+                                                                     .auditAction("CREATE")
+                                                                     .auditModule(CORE)
+                                                                     .build()))
                             .status(AuditBatchDTO.BatchStatus.builder()
                                         .state(AuditBatchDTO.BatchState.SUCCESS)
                                         .message("none")

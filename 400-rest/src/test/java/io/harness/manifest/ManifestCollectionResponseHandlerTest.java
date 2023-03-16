@@ -133,11 +133,12 @@ public class ManifestCollectionResponseHandlerTest extends CategoryTest {
                                      .map(i -> generateHelmChartWithVersion(String.valueOf(i)))
                                      .collect(Collectors.toList());
     Set<String> toBeDeletedCharts = new HashSet<>(Arrays.asList("4", "5"));
-    ManifestCollectionResponse manifestCollectionResponse = ManifestCollectionResponse.builder()
-                                                                .stable(true)
-                                                                .helmCharts(helmCharts)
-                                                                .toBeDeletedKeys(toBeDeletedCharts)
-                                                                .build();
+    ManifestCollectionResponse manifestCollectionResponse =
+        ManifestCollectionResponse.builder()
+            .stable(true)
+            .helmCharts(helmCharts.stream().map(HelmChart::toDto).collect(Collectors.toList()))
+            .toBeDeletedKeys(toBeDeletedCharts)
+            .build();
     ManifestCollectionExecutionResponse response = ManifestCollectionExecutionResponse.builder()
                                                        .appManifestId(MANIFEST_ID)
                                                        .appId(APP_ID)
@@ -173,7 +174,10 @@ public class ManifestCollectionResponseHandlerTest extends CategoryTest {
                                      .map(i -> generateHelmChartWithVersion(String.valueOf(i)))
                                      .collect(Collectors.toList());
     ManifestCollectionResponse manifestCollectionResponse =
-        ManifestCollectionResponse.builder().stable(true).helmCharts(helmCharts).build();
+        ManifestCollectionResponse.builder()
+            .stable(true)
+            .helmCharts(helmCharts.stream().map(HelmChart::toDto).collect(Collectors.toList()))
+            .build();
     ManifestCollectionExecutionResponse response = ManifestCollectionExecutionResponse.builder()
                                                        .appManifestId(MANIFEST_ID)
                                                        .appId(APP_ID)

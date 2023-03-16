@@ -126,7 +126,7 @@ public class GitSyncServiceImpl implements GitSyncService {
     if (activityForFileHistory) {
       req.addOrder(GitFileActivityKeys.createdAt, SortOrder.OrderType.DESC);
     }
-    PageResponse<GitFileActivity> response = wingsPersistence.query(GitFileActivity.class, req);
+    PageResponse<GitFileActivity> response = wingsPersistence.queryAnalytics(GitFileActivity.class, req);
     List<GitFileActivity> gitFileActivities = response.getResponse();
     List<GitFileActivity> gitFileActivitiesFilteredByAccountRBAC = gitFileActivities;
     if (whetherWeCanHaveAccountLevelFile(appId)) {
@@ -236,6 +236,7 @@ public class GitSyncServiceImpl implements GitSyncService {
     if (isEmpty(changesFailed)) {
       return;
     }
+
     List<String> nameOfFilesProcessedInCommit = getNameOfFilesProcessed(changesFailed);
     Map<String, String> latestActivitiesForFiles = getLatestActivitiesForFiles(nameOfFilesProcessedInCommit, accountId);
     changesFailed.parallelStream().forEach(failedChange
@@ -283,6 +284,7 @@ public class GitSyncServiceImpl implements GitSyncService {
       String filePath;
       String errorMessage;
     }
+
     Map<String, String> fileNameErrorMap = new HashMap<>();
     Query<GitFileActivity> query = wingsPersistence.createQuery(GitFileActivity.class)
                                        .filter(ACCOUNT_ID_KEY, accountId)
@@ -434,7 +436,7 @@ public class GitSyncServiceImpl implements GitSyncService {
       pageRequest.addFilter(GitFileActivitySummaryKeys.gitToHarness, EQ, gitToHarness);
     }
     PageResponse<GitFileActivitySummary> pageResponse =
-        wingsPersistence.query(GitFileActivitySummary.class, pageRequest);
+        wingsPersistence.queryAnalytics(GitFileActivitySummary.class, pageRequest);
     List<GitFileActivitySummary> gitFileActivitySummaries = pageResponse.getResponse();
     populateConnectorNameInGitFileActivitySummaries(gitFileActivitySummaries, accountId);
     pageResponse.setResponse(gitFileActivitySummaries);

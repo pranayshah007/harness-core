@@ -52,6 +52,6 @@ public class AggregatorSecondarySyncStateRepository {
 
   public void removeByIdentifier(@NotEmpty String identifier) {
     Criteria criteria = Criteria.where(AggregatorSecondarySyncStateKeys.identifier).is(identifier);
-    mongoTemplate.findAllAndRemove(new Query(criteria), AggregatorSecondarySyncState.class);
+    mongoTemplate.remove(new Query(criteria), AggregatorSecondarySyncState.class);
   }
 }

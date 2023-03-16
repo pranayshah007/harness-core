@@ -13,12 +13,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 
 import com.mongodb.client.result.UpdateResult;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@Slf4j
 @OwnedBy(HarnessTeam.CDC)
 @HarnessRepo
 public class ApprovalInstanceCustomRepositoryImpl implements ApprovalInstanceCustomRepository {

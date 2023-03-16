@@ -13,6 +13,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.pms.governance.PipelineSaveResponse;
 
 import okhttp3.RequestBody;
@@ -29,4 +30,11 @@ public interface PmsClient {
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgId,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectId, @Body RequestBody yaml);
+
+  @POST("triggers")
+  Call<ResponseDTO<NGTriggerResponseDTO>> createTrigger(@Header(X_API_KEY) String auth,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgId,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectId,
+      @Query(NGCommonEntityConstants.TARGET_IDENTIFIER_KEY) String targetIdentifier, @Body RequestBody yaml);
 }

@@ -17,6 +17,7 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.polling.bean.ArtifactInfo;
 
 import software.wings.utils.RepositoryFormat;
 

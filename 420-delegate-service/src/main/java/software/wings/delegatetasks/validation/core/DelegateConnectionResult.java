@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.validation.core;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -38,6 +39,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Data
 @Builder
 @StoreIn(DbAliases.HARNESS)
+@SecondaryStoreIn(DbAliases.DMS)
 @Entity(value = "delegateConnectionResults", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @JsonIgnoreProperties(ignoreUnknown = true)

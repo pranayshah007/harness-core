@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.common.EntityReference;
+import io.harness.beans.EntityReference;
 import io.harness.gitsync.common.helper.RepoProviderHelper;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.sdk.GitSyncApiConstants;

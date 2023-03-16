@@ -17,4 +17,6 @@ public class AuditEventStreamingConstants {
   public static final String AWS_S3_STREAMING_PUBLISHER = "awsS3StreamingPublisher";
 
   public static final String AUDIT_EVENT_PUBLISHER_JOB = "auditEventPublisherJob";
+
+  public static final String METADATA_KEY_BATCH_ID = "batchId";
 }

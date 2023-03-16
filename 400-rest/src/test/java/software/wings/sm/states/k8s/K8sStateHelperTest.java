@@ -358,7 +358,7 @@ public class K8sStateHelperTest extends WingsBaseTest {
                                             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                             .k8sTaskResponse(K8sInstanceSyncResponse.builder().build())
                                             .build();
-    when(delegateService.executeTask(any())).thenReturn(response);
+    when(delegateService.executeTaskV2(any())).thenReturn(response);
     Environment env = new Environment();
     env.setEnvironmentType(EnvironmentType.PROD);
     when(environmentService.get(nullable(String.class), nullable(String.class))).thenReturn(env);
@@ -373,13 +373,13 @@ public class K8sStateHelperTest extends WingsBaseTest {
     k8sStateHelper.fetchPodList(infrastructureMapping, "default", "releaseName");
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).executeTask(captor.capture());
+    verify(delegateService).executeTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask.getTags()).isEmpty();
 
     k8sStateHelper.fetchPodList(infrastructureMapping, "default", "releaseName");
     captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(2)).executeTask(captor.capture());
+    verify(delegateService, times(2)).executeTaskV2(captor.capture());
     delegateTask = captor.getValue();
     assertThat(delegateTask.getTags()).isEmpty();
 
@@ -389,7 +389,7 @@ public class K8sStateHelperTest extends WingsBaseTest {
     persistence.save(settingAttribute);
     k8sStateHelper.fetchPodList(infrastructureMapping, "default", "releaseName");
     captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(3)).executeTask(captor.capture());
+    verify(delegateService, times(3)).executeTaskV2(captor.capture());
     delegateTask = captor.getValue();
     assertThat(delegateTask.getTags()).isEmpty();
 
@@ -404,7 +404,7 @@ public class K8sStateHelperTest extends WingsBaseTest {
     persistence.save(settingAttribute);
     k8sStateHelper.fetchPodList(infrastructureMapping, "default", "releaseName");
     captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(4)).executeTask(captor.capture());
+    verify(delegateService, times(4)).executeTaskV2(captor.capture());
     delegateTask = captor.getValue();
     K8sInstanceSyncTaskParameters syncTaskParameters =
         (K8sInstanceSyncTaskParameters) delegateTask.getData().getParameters()[0];
@@ -413,7 +413,7 @@ public class K8sStateHelperTest extends WingsBaseTest {
         (KubernetesClusterConfig) syncTaskParameters.getK8sClusterConfig().getCloudProvider();
     assertThat(clusterConfig.getDelegateSelectors()).contains("delegateSelectors");
 
-    when(delegateService.executeTask(any()))
+    when(delegateService.executeTaskV2(any()))
         .thenReturn(ErrorNotifyResponseData.builder().errorMessage("ErrorMessage").build());
     try {
       k8sStateHelper.fetchPodList(infrastructureMapping, "default", "releaseName");
@@ -422,7 +422,7 @@ public class K8sStateHelperTest extends WingsBaseTest {
       assertThat(ex.getMessage()).isEqualTo("Failed to fetch PodList for release releaseName. Error: ErrorMessage");
     }
 
-    when(delegateService.executeTask(any()))
+    when(delegateService.executeTaskV2(any()))
         .thenReturn(RemoteMethodReturnValueData.builder()
                         .returnValue("returnValue")
                         .exception(new K8sPodSyncException("k8sPodSyncException"))
@@ -436,7 +436,7 @@ public class K8sStateHelperTest extends WingsBaseTest {
               "Failed to fetch PodList for release releaseName. Exception: RemoteMethodReturnValueData(returnValue=returnValue, exception=io.harness.exception.K8sPodSyncException: k8sPodSyncException)");
     }
 
-    when(delegateService.executeTask(any())).thenReturn(HelmValuesFetchTaskResponse.builder().build());
+    when(delegateService.executeTaskV2(any())).thenReturn(HelmValuesFetchTaskResponse.builder().build());
     try {
       k8sStateHelper.fetchPodList(infrastructureMapping, "default", "releaseName");
     } catch (Exception ex) {

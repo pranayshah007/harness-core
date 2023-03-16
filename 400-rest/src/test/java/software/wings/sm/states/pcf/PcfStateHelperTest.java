@@ -301,7 +301,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
         .thenReturn(
             ManifestFile.builder().fileName(MANIFEST_YML).fileContent(PcfSetupStateTest.MANIFEST_YAML_CONTENT).build());
 
-    doReturn("").when(delegateService).queueTask(any());
+    doReturn("").when(delegateService).queueTaskV2(any());
     logCallback = Mockito.mock(LogCallback.class);
   }
 

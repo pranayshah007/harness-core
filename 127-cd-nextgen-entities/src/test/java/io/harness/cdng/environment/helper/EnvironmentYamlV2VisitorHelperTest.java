@@ -21,7 +21,7 @@ import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import org.junit.Test;
@@ -42,7 +42,7 @@ public class EnvironmentYamlV2VisitorHelperTest extends CategoryTest {
     // case1: without expression
     EnvironmentYamlV2 environmentYamlV2 =
         EnvironmentYamlV2.builder().environmentRef(ParameterField.createValueField("ref")).build();
-    Map<String, Object> contextMap = Collections.emptyMap();
+    Map<String, Object> contextMap = new HashMap<>();
     Set<EntityDetailProtoDTO> entityDetailProtoDTOS =
         envVisitor.addReference(environmentYamlV2, accountId, orgId, projectId, contextMap);
 

@@ -7,6 +7,7 @@
 
 package software.wings.service.impl.instance;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static java.util.Collections.emptyList;
@@ -23,6 +24,8 @@ import software.wings.dl.WingsPersistence;
 import software.wings.service.InstanceSyncPerpetualTaskCreator;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskInfo.InstanceSyncPerpetualTaskInfoKeys;
 import software.wings.service.impl.instance.backup.InstanceSyncPTBackupService;
+import software.wings.service.impl.instance.backup.InstanceSyncPTInfoBackup;
+import software.wings.service.impl.instance.backup.InstanceSyncPTInfoBackupDao;
 import software.wings.service.intfc.instance.InstanceService;
 
 import com.google.common.base.Preconditions;
@@ -44,6 +47,7 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
   @Inject private WingsPersistence wingsPersistence;
   @Inject private InstanceHandlerFactoryService instanceHandlerFactory;
   @Inject private InstanceSyncPTBackupService instanceSyncPTBackupService;
+  @Inject private InstanceSyncPTInfoBackupDao instanceSyncPTInfoBackupDao;
 
   @Override
   public void createPerpetualTasks(InfrastructureMapping infrastructureMapping) {
@@ -103,6 +107,18 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
                    .filter(Objects::nonNull)
                    .collect(Collectors.toList()))
         .orElse(emptyList());
+  }
+
+  private List<PerpetualTaskRecord> getExistingPerpetualTasksFromBackup(InfrastructureMapping infrastructureMapping) {
+    List<InstanceSyncPTInfoBackup> instanceSyncPTInfoBackupList =
+        instanceSyncPTInfoBackupDao.findAllByAccountIdAndInfraMappingId(
+            infrastructureMapping.getAccountId(), infrastructureMapping.getUuid());
+    if (isEmpty(instanceSyncPTInfoBackupList)) {
+      return emptyList();
+    }
+    return instanceSyncPTInfoBackupList.stream()
+        .map(InstanceSyncPTInfoBackup::getPerpetualTaskRecord)
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -219,10 +235,18 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
   public void restorePerpetualTasks(String accountId, InfrastructureMapping infrastructureMapping) {
     InstanceSyncByPerpetualTaskHandler handler = getInstanceHandler(infrastructureMapping);
     InstanceSyncPerpetualTaskCreator instanceSyncPTCreator = handler.getInstanceSyncPerpetualTaskCreator();
-    // TODO: merge existing perpetual task and get perpetual task info
-    List<PerpetualTaskRecord> existingTasks = getExistingPerpetualTasks(infrastructureMapping);
     Optional<InstanceSyncPerpetualTaskInfo> perpetualTaskInfoOptional =
         getByAccountIdAndInfrastructureMappingId(accountId, infrastructureMapping.getUuid());
+
+    List<PerpetualTaskRecord> existingTasks = perpetualTaskInfoOptional
+                                                  .map(instanceSyncPerpetualTaskInfo
+                                                      -> instanceSyncPerpetualTaskInfo.getPerpetualTaskIds()
+                                                             .stream()
+                                                             .map(id -> perpetualTaskService.getTaskRecord(id))
+                                                             .filter(Objects::nonNull)
+                                                             .collect(Collectors.toCollection(ArrayList::new)))
+                                                  .orElseGet(ArrayList::new);
+
     final InstanceSyncPerpetualTaskInfo perpetualTaskInfo =
         perpetualTaskInfoOptional.orElseGet(()
                                                 -> InstanceSyncPerpetualTaskInfo.builder()
@@ -233,11 +257,32 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
 
     instanceSyncPTBackupService.restore(accountId, infrastructureMapping.getUuid(), perpetualTask -> {
       Optional<String> taskId = instanceSyncPTCreator.restorePerpetualTask(perpetualTask, existingTasks);
-      taskId.ifPresent(id -> perpetualTaskInfo.getPerpetualTaskIds().add(id));
+      taskId.ifPresent(id -> {
+        perpetualTaskInfo.getPerpetualTaskIds().add(id);
+        existingTasks.add(perpetualTask);
+      });
     });
 
     if (!perpetualTaskInfo.getPerpetualTaskIds().isEmpty()) {
       save(perpetualTaskInfo);
+    }
+  }
+
+  @Override
+  public void createPerpetualTasksForNewDeploymentBackup(
+      List<DeploymentSummary> deploymentSummaries, InfrastructureMapping infrastructureMapping) {
+    InstanceSyncByPerpetualTaskHandler handler = getInstanceHandler(infrastructureMapping);
+
+    List<PerpetualTaskRecord> existingTasks = getExistingPerpetualTasksFromBackup(infrastructureMapping);
+
+    List<PerpetualTaskRecord> perpetualTaskRecords =
+        handler.getInstanceSyncPerpetualTaskCreator().createPerpetualTasksBackup(
+            deploymentSummaries, existingTasks, infrastructureMapping);
+
+    if (EmptyPredicate.isNotEmpty(perpetualTaskRecords)) {
+      perpetualTaskRecords.forEach(perpetualTaskRecord
+          -> instanceSyncPTBackupService.save(
+              infrastructureMapping.getAccountId(), infrastructureMapping.getUuid(), perpetualTaskRecord));
     }
   }
 

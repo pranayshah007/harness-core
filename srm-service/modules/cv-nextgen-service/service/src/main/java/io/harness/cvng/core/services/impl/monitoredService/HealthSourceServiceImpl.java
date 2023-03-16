@@ -16,15 +16,20 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDTO;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MonitoredService;
+import io.harness.cvng.core.entities.NextGenLogCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.utils.monitoredService.CVConfigToHealthSourceTransformer;
+import io.harness.cvng.core.utils.monitoredService.NextGenLogHealthSourceSpecTransformer;
+import io.harness.cvng.core.utils.monitoredService.NextGenMetricSourceSpecTransformer;
 import io.harness.exception.DuplicateFieldException;
 
 import com.google.inject.Inject;
@@ -36,12 +41,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 public class HealthSourceServiceImpl implements HealthSourceService {
   @Inject private Map<DataSourceType, CVConfigToHealthSourceTransformer> dataSourceTypeToHealthSourceTransformerMap;
+
+  @Inject private NextGenMetricSourceSpecTransformer nextGenMetricSourceSpecTransformer;
+
+  @Inject private NextGenLogHealthSourceSpecTransformer nextGenLogHealthSourceSpecTransformer;
   @Inject private CVConfigService cvConfigService;
   @Inject private MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
   @Inject private MetricPackService metricPackService;
@@ -157,9 +166,25 @@ public class HealthSourceServiceImpl implements HealthSourceService {
       log.error(errorMessage, new IllegalStateException(errorMessage));
       return null;
     }
-    HealthSource healthSource = HealthSourceDTO.toHealthSource(cvConfigs, dataSourceTypeToHealthSourceTransformerMap);
+    CVConfig baseCVConfig = cvConfigs.get(0);
+    CVConfigToHealthSourceTransformer<CVConfig, HealthSourceSpec> cvConfigToHealthSourceTransformer =
+        getCvConfigHealthSourceSpecCVConfigToHealthSourceTransformer(baseCVConfig);
+    HealthSource healthSource = HealthSourceDTO.toHealthSource(cvConfigs, cvConfigToHealthSourceTransformer);
     healthSource.setIdentifier(identifier);
     return healthSource;
+  }
+
+  private CVConfigToHealthSourceTransformer<CVConfig, HealthSourceSpec>
+  getCvConfigHealthSourceSpecCVConfigToHealthSourceTransformer(CVConfig baseCVConfig) {
+    CVConfigToHealthSourceTransformer<? extends CVConfig, ? extends HealthSourceSpec> cvConfigToHealthSourceTransformer;
+    if (baseCVConfig instanceof NextGenLogCVConfig) {
+      cvConfigToHealthSourceTransformer = nextGenLogHealthSourceSpecTransformer;
+    } else if (baseCVConfig instanceof NextGenMetricCVConfig) {
+      cvConfigToHealthSourceTransformer = nextGenMetricSourceSpecTransformer;
+    } else {
+      cvConfigToHealthSourceTransformer = dataSourceTypeToHealthSourceTransformerMap.get(baseCVConfig.getType());
+    }
+    return (CVConfigToHealthSourceTransformer<CVConfig, HealthSourceSpec>) cvConfigToHealthSourceTransformer;
   }
 
   @Override
@@ -199,10 +224,13 @@ public class HealthSourceServiceImpl implements HealthSourceService {
     List<CVConfig> cvConfigList = cvConfigService.list(projectParams, identifiers);
     Map<String, List<CVConfig>> cvConfigMap = cvConfigList.stream().collect(groupingBy(CVConfig::getIdentifier));
     for (Map.Entry<String, List<CVConfig>> cvConfig : cvConfigMap.entrySet()) {
+      CVConfig baseCVConfig = cvConfig.getValue().get(0);
       Pair<String, String> nameSpaceAndIdentifier =
-          HealthSourceService.getNameSpaceAndIdentifier(cvConfig.getValue().get(0).getFullyQualifiedIdentifier());
+          HealthSourceService.getNameSpaceAndIdentifier(baseCVConfig.getFullyQualifiedIdentifier());
+      CVConfigToHealthSourceTransformer<CVConfig, HealthSourceSpec> cvConfigToHealthSourceTransformer =
+          getCvConfigHealthSourceSpecCVConfigToHealthSourceTransformer(baseCVConfig);
       HealthSource healthSource =
-          HealthSourceDTO.toHealthSource(cvConfig.getValue(), dataSourceTypeToHealthSourceTransformerMap);
+          HealthSourceDTO.toHealthSource(cvConfig.getValue(), cvConfigToHealthSourceTransformer);
       Set<HealthSource> healthSourceSet =
           healthSourceMap.getOrDefault(nameSpaceAndIdentifier.getKey(), new HashSet<>());
       healthSourceSet.add(healthSource);

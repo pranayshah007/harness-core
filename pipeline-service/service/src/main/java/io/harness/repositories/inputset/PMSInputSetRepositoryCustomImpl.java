@@ -10,10 +10,12 @@ package io.harness.repositories.inputset;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -36,6 +38,8 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.pipeline.MoveConfigOperationType;
 import io.harness.springdata.PersistenceUtils;
 import io.harness.springdata.TransactionHelper;
+import io.harness.utils.PipelineExceptionsHelper;
+import io.harness.utils.PipelineGitXHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -43,6 +47,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -164,7 +169,8 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
 
   @Override
   public Optional<InputSetEntity> find(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String identifier, boolean notDeleted, boolean getMetadataOnly) {
+      String pipelineIdentifier, String identifier, boolean notDeleted, boolean getMetadataOnly,
+      boolean loadFromFallbackBranch, boolean loadFromCache) {
     Criteria criteria = PMSInputSetFilterHelper.getCriteriaForFind(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, notDeleted);
     Query query = new Query(criteria);
@@ -176,24 +182,55 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
       return Optional.of(savedEntity);
     }
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
-      // fetch yaml from git
-      GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-      savedEntity = (InputSetEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
-          Scope.builder()
-              .accountIdentifier(accountId)
-              .orgIdentifier(orgIdentifier)
-              .projectIdentifier(projectIdentifier)
-              .build(),
-          GitContextRequestParams.builder()
-              .branchName(gitEntityInfo.getBranch())
-              .connectorRef(savedEntity.getConnectorRef())
-              .filePath(savedEntity.getFilePath())
-              .repoName(savedEntity.getRepo())
-              .build(),
-          Collections.emptyMap());
+      String branch = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
+      if (loadFromFallbackBranch) {
+        savedEntity = fetchRemoteEntityWithFallBackBranch(
+            accountId, orgIdentifier, projectIdentifier, savedEntity, branch, loadFromCache);
+      } else {
+        savedEntity =
+            fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, branch, loadFromCache);
+      }
     }
 
     return Optional.of(savedEntity);
+  }
+
+  private InputSetEntity fetchRemoteEntityWithFallBackBranch(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, InputSetEntity savedEntity, String branch, boolean loadFromCache) {
+    try {
+      savedEntity =
+          fetchRemoteEntity(accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branch, loadFromCache);
+    } catch (WingsException ex) {
+      log.info(String.format("Failed to fetch input-set from default branch [%s]", branch));
+      String fallBackBranch = savedEntity.getFallBackBranch();
+      if (PipelineGitXHelper.shouldRetryWithFallBackBranch(
+              PipelineExceptionsHelper.getScmException(ex), branch, fallBackBranch)) {
+        log.info(String.format(
+            "Retrieving pipeline [%s] from fall back branch [%s] ", savedEntity.getIdentifier(), fallBackBranch));
+        GitAwareContextHelper.updateGitEntityContextWithBranch(fallBackBranch);
+        savedEntity = fetchRemoteEntity(
+            accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, fallBackBranch, loadFromCache);
+      } else {
+        throw ex;
+      }
+    }
+    return savedEntity;
+  }
+
+  InputSetEntity fetchRemoteEntity(String accountId, String orgIdentifier, String projectIdentifier,
+      InputSetEntity savedEntity, String branch, boolean loadFromCache) {
+    // fetch yaml from git
+    return (InputSetEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
+        Scope.of(accountId, orgIdentifier, projectIdentifier),
+        GitContextRequestParams.builder()
+            .branchName(branch)
+            .connectorRef(savedEntity.getConnectorRef())
+            .filePath(savedEntity.getFilePath())
+            .repoName(savedEntity.getRepo())
+            .entityType(EntityType.INPUT_SETS)
+            .loadFromCache(loadFromCache)
+            .build(),
+        Collections.emptyMap());
   }
 
   @Override
@@ -344,7 +381,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
   public void deleteAllInputSetsWhenPipelineDeleted(Query query) {
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
         "[Retrying]: Failed deleting Input Set; attempt: {}", "[Failed]: Failed deleting Input Set; attempt: {}");
-    Failsafe.with(retryPolicy).get(() -> mongoTemplate.findAllAndRemove(query, InputSetEntity.class));
+    Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, InputSetEntity.class));
   }
 
   @Override
@@ -386,6 +423,12 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
         () -> moveConfigOperations(inputSetToMove, criteria, update, moveConfigOperationType));
   }
 
+  @Override
+  public List<String> findAllUniqueInputSetRepos(@NotNull Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findDistinct(query, InputSetEntityKeys.repo, InputSetEntity.class, String.class);
+  }
+
   @VisibleForTesting
   InputSetEntity moveConfigOperations(InputSetEntity inputSetToMove, Criteria criteria, Update update,
       MoveConfigOperationType moveConfigOperationType) {
@@ -424,6 +467,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
     inputSetEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
     inputSetEntity.setRepo(gitEntityInfo.getRepoName());
     inputSetEntity.setFilePath(gitEntityInfo.getFilePath());
+    inputSetEntity.setFallBackBranch(gitEntityInfo.getBranch());
     setRepoUrlForSave(inputSetEntity);
   }
 }

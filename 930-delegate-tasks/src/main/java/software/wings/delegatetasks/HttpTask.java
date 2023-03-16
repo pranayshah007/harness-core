@@ -24,6 +24,7 @@ import io.harness.http.beans.HttpInternalConfig;
 import io.harness.http.beans.HttpInternalResponse;
 
 import software.wings.beans.HttpStateExecutionResponse;
+import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -37,6 +38,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class HttpTask extends AbstractDelegateRunnableTask {
   @Inject private HttpService httpService;
+  @Inject private EncryptionService encryptionService;
 
   public HttpTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> postExecute, BooleanSupplier preExecute) {
@@ -46,6 +48,12 @@ public class HttpTask extends AbstractDelegateRunnableTask {
   @Override
   public HttpStateExecutionResponse run(TaskParameters parameters) throws IOException {
     HttpTaskParameters httpTaskParameters = (HttpTaskParameters) parameters;
+
+    if (httpTaskParameters.getCertificate() != null) {
+      encryptionService.decrypt(
+          httpTaskParameters.getCertificate(), httpTaskParameters.getEncryptedDataDetails(), false);
+    }
+
     HttpInternalResponse httpInternalResponse =
         httpService.executeUrl(HttpInternalConfig.builder()
                                    .method(httpTaskParameters.getMethod())
@@ -56,6 +64,8 @@ public class HttpTask extends AbstractDelegateRunnableTask {
                                    .useProxy(httpTaskParameters.isUseProxy())
                                    .isCertValidationRequired(httpTaskParameters.isCertValidationRequired())
                                    .throwErrorIfNoProxySetWithDelegateProxy(true)
+                                   .certificate(httpTaskParameters.getCertificate())
+                                   .encryptedDataDetails(httpTaskParameters.getEncryptedDataDetails())
                                    .build());
     return HttpStateExecutionResponse.builder()
         .executionStatus(

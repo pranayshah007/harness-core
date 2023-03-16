@@ -34,7 +34,8 @@ public class DelegateSetupDetails implements YamlDTO {
   // TODO: Remove delegateCongigId once we drop this from UI.
   private String delegateConfigurationId;
   // This can be blank also, since we can create a group from delegate yaml itself.
-  @EntityIdentifier(allowBlank = true) private String identifier;
+  // Custom limit for delegate-name as 63 characters because kubernetes component name can be at most 63 characters.
+  @EntityIdentifier(allowBlank = true, maxLength = 63) private String identifier;
 
   private K8sConfigDetails k8sConfigDetails;
 

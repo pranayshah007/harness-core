@@ -9,6 +9,9 @@ package io.harness.pms.plan.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
+import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
+import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipeline;
+import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipelineForGivenStages;
 
 import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -47,6 +50,7 @@ import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.helpers.YamlExpressionResolveHelper;
+import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlWithTemplateDTO;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
@@ -57,15 +61,18 @@ import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
+import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
 import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
+import io.harness.security.PrincipalHelper;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.serializer.JsonUtils;
 import io.harness.serializer.ProtoUtils;
 import io.harness.service.GraphGenerationService;
 
+import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
@@ -439,6 +446,24 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
         "Invalid request : Input Set did not exist or pipeline execution has been deleted");
   }
 
+  @Override
+  public String getInputSetYamlForRerun(
+      String accountId, String orgId, String projectId, String planExecutionId, boolean pipelineDeleted) {
+    // ToDo: Use Mongo Projections
+    Optional<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntityOptional =
+        pmsExecutionSummaryRespository
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
+                accountId, orgId, projectId, planExecutionId, !pipelineDeleted);
+    if (pipelineExecutionSummaryEntityOptional.isPresent()) {
+      PipelineExecutionSummaryEntity executionSummaryEntity = pipelineExecutionSummaryEntityOptional.get();
+
+      // InputSet yaml used during execution
+      return executionSummaryEntity.getInputSetYaml();
+    }
+    throw new InvalidRequestException(
+        "Invalid request : pipeline execution with planExecutionId " + planExecutionId + " has been deleted");
+  }
+
   private String getLatestTemplate(
       String accountId, String orgId, String projectId, PipelineExecutionSummaryEntity executionSummaryEntity) {
     EntityGitDetails entityGitDetails = executionSummaryEntity.getEntityGitDetails();
@@ -521,6 +546,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
                              .setManualIssuer(ManualIssuer.newBuilder()
                                                   .setType(principal.getType().toString())
                                                   .setIdentifier(principal.getName())
+                                                  .setEmailId(PrincipalHelper.getEmail(principal))
+                                                  .setUserId(PrincipalHelper.getUsername(principal))
                                                   .build())
                              .setIssueTime(ProtoUtils.unixMillisToTimestamp(System.currentTimeMillis()))
                              .build())
@@ -595,5 +622,45 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     String executionYaml = planExecutionMetadata.get().getYaml();
 
     return ExecutionDataResponseDTO.builder().executionYaml(executionYaml).executionId(planExecutionId).build();
+  }
+
+  public ExecutionMetaDataResponseDetailsDTO getExecutionDataDetails(String planExecutionId) {
+    Optional<PlanExecutionMetadata> planExecutionMetadata =
+        planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
+
+    if (!planExecutionMetadata.isPresent()) {
+      throw new ResourceNotFoundException(
+          String.format("Execution with id [%s] is not present or deleted", planExecutionId));
+    }
+    PlanExecutionMetadata metadata = planExecutionMetadata.get();
+
+    return ExecutionMetaDataResponseDetailsDTO.builder()
+        .executionYaml(metadata.getYaml())
+        .planExecutionId(planExecutionId)
+        .inputYaml(metadata.getInputSetYaml())
+        .triggerPayload(metadata.getTriggerPayload())
+        .build();
+  }
+
+  @Override
+  public String mergeRuntimeInputIntoPipelineForRerun(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String planExecutionId, String pipelineBranch, String pipelineRepoID,
+      List<String> stageIdentifiers) {
+    String pipelineYaml = validateAndMergeHelper
+                              .getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+                                  pipelineBranch, pipelineRepoID, false, false)
+                              .getYaml();
+    String pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
+        ? createTemplateFromPipeline(pipelineYaml)
+        : createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
+    if (EmptyPredicate.isEmpty(pipelineTemplate)) {
+      return "";
+    }
+    String mergedRuntimeInputYaml =
+        getInputSetYamlForRerun(accountId, orgIdentifier, projectIdentifier, planExecutionId, false);
+    if (EmptyPredicate.isEmpty(stageIdentifiers)) {
+      return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineTemplate, mergedRuntimeInputYaml, false);
+    }
+    return mergeInputSetIntoPipelineForGivenStages(pipelineTemplate, mergedRuntimeInputYaml, false, stageIdentifiers);
   }
 }

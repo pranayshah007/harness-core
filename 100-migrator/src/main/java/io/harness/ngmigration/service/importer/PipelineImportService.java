@@ -47,6 +47,9 @@ public class PipelineImportService implements ImportService {
         pipelineIds = pipelines.stream().map(Pipeline::getUuid).collect(Collectors.toSet());
       }
     }
+    if (EmptyPredicate.isEmpty(pipelineIds)) {
+      return null;
+    }
     return discoveryService.discoverMulti(accountId,
         DiscoveryInput.builder()
             .exportImage(false)

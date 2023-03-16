@@ -11,7 +11,7 @@ import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.delegate.task.manifests.request.ManifestCollectionParams;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
-import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.dto.HelmChart;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
 import software.wings.delegatetasks.helm.ArtifactoryHelmTaskHelper;
 import software.wings.helpers.ext.artifactory.ArtifactoryService;

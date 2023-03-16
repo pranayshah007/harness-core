@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.JENNY;
 
+import static java.time.Duration.ofMinutes;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -78,6 +79,7 @@ public class DeleteDelegateDataFetcherTest extends AbstractDataFetcherTestBase {
     existingDelegate.setUuid(delegateId);
     existingDelegate.setAccountId(accountId);
     existingDelegate.setStatus(DelegateInstanceStatus.WAITING_FOR_APPROVAL);
+    existingDelegate.setLastHeartBeat(System.currentTimeMillis() - ofMinutes(2).toMillis());
     persistence.save(existingDelegate);
     QLDeleteDelegateInput deleteDelegateInput =
         QLDeleteDelegateInput.builder().delegateId(delegateId).accountId(accountId).build();

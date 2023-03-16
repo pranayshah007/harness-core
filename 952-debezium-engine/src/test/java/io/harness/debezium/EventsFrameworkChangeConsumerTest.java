@@ -112,7 +112,7 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
                                                        .eventsFrameworkConfiguration(null)
                                                        .consumerMode(mode)
                                                        .build(),
-            cfClient, "coll", producerFactory);
+            cfClient, "coll.mode", producerFactory);
     List<ChangeEvent<String, String>> records = new ArrayList<>();
     ConnectHeaders headers = new ConnectHeaders();
     headers.add("__op", "c", Schema.STRING_SCHEMA);

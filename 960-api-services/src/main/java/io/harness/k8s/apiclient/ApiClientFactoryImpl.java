@@ -9,6 +9,8 @@ package io.harness.k8s.apiclient;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.model.KubernetesClusterAuthType.GCP_OAUTH;
+import static io.harness.network.Http.getProxyPassword;
+import static io.harness.network.Http.getProxyUserName;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static okhttp3.Protocol.HTTP_1_1;
@@ -30,6 +32,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import okhttp3.ConnectionPool;
+import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 
 @Singleton
@@ -104,15 +107,22 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
 
     ApiClient apiClient = clientBuilder.build();
     // don't timeout on client-side
-    OkHttpClient httpClient =
+    OkHttpClient.Builder builder =
         apiClient.getHttpClient()
             .newBuilder()
             .readTimeout(useNewReadTimeoutForValidation ? READ_TIMEOUT_IN_SECONDS : 0, TimeUnit.SECONDS)
             .connectTimeout(CONNECTION_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)
             .connectionPool(connectionPool)
-            .protocols(List.of(HTTP_1_1))
-            .build();
-    apiClient.setHttpClient(httpClient);
+            .protocols(List.of(HTTP_1_1));
+    String user = getProxyUserName();
+    if (isNotEmpty(user)) {
+      String password = getProxyPassword();
+      builder.proxyAuthenticator((route, response) -> {
+        String credential = Credentials.basic(user, password);
+        return response.request().newBuilder().header("Proxy-Authorization", credential).build();
+      });
+    }
+    apiClient.setHttpClient(builder.build());
     return apiClient;
   }
 

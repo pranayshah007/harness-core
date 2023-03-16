@@ -7,10 +7,15 @@
 
 package io.harness.ngtriggers.service;
 
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
@@ -20,6 +25,7 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.rule.Owner;
 
+import com.mongodb.client.result.DeleteResult;
 import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Before;
@@ -86,5 +92,25 @@ public class NGTriggerEventServiceImplTest {
     assertThat(eventHistories).isNotNull();
     assertThat(eventHistories.getNumberOfElements()).isEqualTo(1);
     assertThat(eventHistories.getContent().get(0).getAccountId()).isEqualTo(ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testDeleteAllForPipeline() {
+    ngTriggerEventService.deleteAllForPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER);
+    verify(triggerEventHistoryRepository, times(1)).deleteBatch(any());
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testDeleteTriggerEventHistory() {
+    DeleteResult deleteResult = DeleteResult.acknowledged(0);
+    when(triggerEventHistoryRepository.deleteTriggerEventHistoryForTriggerIdentifier(any(Criteria.class)))
+        .thenReturn(deleteResult);
+    ngTriggerEventService.deleteTriggerEventHistory(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER);
+    verify(triggerEventHistoryRepository, times(1)).deleteTriggerEventHistoryForTriggerIdentifier(any());
   }
 }

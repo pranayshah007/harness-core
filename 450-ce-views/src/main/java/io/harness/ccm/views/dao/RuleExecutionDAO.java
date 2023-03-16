@@ -37,10 +37,8 @@ public class RuleExecutionDAO {
     return hPersistence.createQuery(RuleExecution.class).field(RuleExecutionKeys.accountId).equal(accountId).asList();
   }
   public RuleExecution get(String accountId, String uuid) {
-    log.info("accountId: {}, uuid: {}", accountId, uuid);
     Query<RuleExecution> query = hPersistence.createQuery(RuleExecution.class, excludeValidate);
     query.field(RuleExecutionKeys.accountId).equal(accountId).field(RuleExecutionKeys.uuid).equal(uuid);
-    log.info(query.toString());
     return query.get();
   }
 
@@ -49,10 +47,8 @@ public class RuleExecutionDAO {
     Query<RuleExecution> query = hPersistence.createQuery(RuleExecution.class)
                                      .field(RuleExecutionKeys.accountId)
                                      .equal(ruleExecutionFilter.getAccountId());
-    log.info("Added accountId filter");
     if (ruleExecutionFilter.getTargetAccount() != null) {
       query.field(RuleExecutionKeys.targetAccount).in(ruleExecutionFilter.getTargetAccount());
-      log.info("Added target account filter: {} ", ruleExecutionFilter.getTargetAccount());
     }
     if (ruleExecutionFilter.getRuleIds() != null) {
       query.field(RuleExecutionKeys.ruleIdentifier).in(ruleExecutionFilter.getRuleIds());

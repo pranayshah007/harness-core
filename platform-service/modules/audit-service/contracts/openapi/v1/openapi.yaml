@@ -49,7 +49,28 @@ paths:
       tags:
         - Streaming Destinations
       x-internal: true
-  /v1/streaming-destinations/{streaming-destination}:
+  /v1/streaming-destinations/aggregate:
+    get:
+      summary: List Streaming Destinations
+      operationId: getStreamingDestinationsAggregate
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamingDestinationAggregateListResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/PageIndex'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/Status'
+      description: Get list of Streaming Destinations
+      security:
+        - x-api-key: []
+      tags:
+        - Streaming Destinations
+      x-internal: true
+  '/v1/streaming-destinations/{streaming-destination}':
     parameters:
       - $ref: '#/components/parameters/StreamingDestinationParam'
     put:
@@ -96,8 +117,82 @@ paths:
       x-internal: true
       tags:
         - Streaming Destinations
+  '/v1/streaming-destinations/{streaming-destination}/validate-unique-identifier':
+    get:
+      summary: Validate Uniqueness of Identifier
+      tags:
+        - Streaming Destinations
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamingDestinationValidateResponse'
+          headers: {}
+      operationId: validateUniqueIdentifier
+      description: Validate uniqueness of identifier for Streaming Destination
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      x-internal: true
+    parameters:
+      - name: streaming-destination
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Streaming Destination identifier
+  /v1/streaming-destinations/cards:
+    get:
+      summary: Your GET endpoint
+      tags:
+        - Streaming Destinations
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamingDestinationCardsResponse'
+      operationId: get-streaming-destinations-cards
+      x-internal: true
+      description: Get the info for cards on streaming destination page
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+  /v1/audits:
+    post:
+      summary: List Audits
+      operationId: post-audits
+      responses:
+        '200':
+          $ref: '#/components/responses/AuditListResponse'
+      description: Get list of Audits
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/PageIndex'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditFilterPropertiesV1DTO'
+        description: This has the filter attributes for listing Audit Events
+      tags:
+        - Audits
+      x-internal: true
 components:
   schemas:
+    StreamingDestinationStatus:
+      title: StreamingDestinationStatus
+      x-stoplight:
+        id: 6k8zse7tcg5y0
+      type: string
+      x-extension-1: null
+      enum:
+        - ACTIVE
+        - INACTIVE
+      description: Streaming Destination Status enum
+      x-internal: false
     StreamingDestinationDTO:
       title: StreamingDestinationDTO
       x-stoplight:
@@ -112,22 +207,61 @@ components:
           type: string
           description: Streaming Destination name
         status:
-          type: string
-          description: Streaming Destination status
-          enum:
-            - ACTIVE
-            - INACTIVE
+          $ref: '#/components/schemas/StreamingDestinationStatus'
         connector_ref:
           type: string
           description: Streaming Destination scoped connector reference identifier
         spec:
           $ref: '#/components/schemas/StreamingDestinationSpecDTO'
+        description:
+          type: string
+          maxLength: 1024
+          description: Description for Streaming Destination
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: Tags for Streaming Destination
       required:
         - identifier
         - name
         - status
         - connector_ref
         - spec
+    Connector:
+      type: object
+      x-internal: true
+      properties:
+        name:
+          type: string
+          description: Connector name
+          pattern: '^[0-9a-zA-Z-_ ]{0,127}$'
+        identifier:
+          type: string
+          minLength: 1
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          description: Connector identifier
+          maxLength: 128
+        description:
+          type: string
+          description: Connector description
+        org:
+          type: string
+          description: Organization identifier for connector
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
+        project:
+          type: string
+          description: Project identifier for connector
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: Connector tags
+      required:
+        - name
+        - identifier
     StreamingDestinationSpecDTO:
       title: StreamingDestinationSpecDTO
       x-stoplight:
@@ -180,6 +314,366 @@ components:
           type: integer
           format: int64
           description: Last updated time of the Streaming Destination status
+      required:
+        - streaming_destination
+    StreamingDestinationCards:
+      title: StreamingDestinationCards
+      x-stoplight:
+        id: 1dw4ls5voxwl2
+      type: object
+      description: Streaming Destination Cards model
+      properties:
+        countByStatusCard:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusWiseCount'
+        lastStreamedCard:
+          $ref: '#/components/schemas/LastStreamedCard'
+        failureInfoCard:
+          $ref: '#/components/schemas/FailureInfoCard'
+    StatusWiseCount:
+      title: StatusWiseCount
+      x-stoplight:
+        id: 2ad155c277a03
+      type: object
+      description: Streaming Destination count by status card
+      properties:
+        status:
+          $ref: '#/components/schemas/StreamingDestinationStatus'
+        count:
+          type: integer
+          description: Number of streaming destinations at the status
+    LastStreamedCard:
+      title: LastStreamedInfo
+      x-stoplight:
+        id: a35601e416967
+      type: object
+      description: Info about last successfull streaming attempt
+      properties:
+        lastStreamedAt:
+          type: integer
+          format: int64
+          description: Timestamp of last successfull streaming attempt
+    FailureInfoCard:
+      title: FailureCard
+      x-stoplight:
+        id: a2d05f2010784
+      type: object
+      description: Info about failure in streaming attempt
+      properties:
+        count:
+          type: integer
+          description: Number of streaming destinations that have failure
+          format: int64
+    StreamingDestinationAggregateDTO:
+      title: StreamingDestinationAggregateDTO
+      x-stoplight:
+        id: chl0l737sfwea
+      type: object
+      description: Streaming Destination Aggregate DTO
+      properties:
+        streaming_destination:
+          $ref: '#/components/schemas/StreamingDestinationDTO'
+        connector_info:
+          $ref: '#/components/schemas/Connector'
+        streaming_details:
+          $ref: '#/components/schemas/StreamingDetails'
+      required:
+        - streaming_destination
+        - connector_info
+    StreamingDetails:
+      title: StreamingDetails
+      x-stoplight:
+        id: 505pv39rdv4z1
+      type: object
+      properties:
+        status:
+          type: string
+          description: Status of the batch
+          enum:
+            - READY
+            - IN_PROGRESS
+            - SUCCESS
+            - FAILED
+        last_streamed_at:
+          type: integer
+          format: int64
+        error_message:
+          type: string
+      description: Details of the last streamed batch
+      x-internal: true
+    ResourceScopeDTO:
+      title: ResourceScopeDTO
+      x-stoplight:
+        id: 4pz290lmuwtl3
+      type: object
+      description: This has scope details for the resource defined in Harness.
+      properties:
+        account_identifier:
+          type: string
+          description: Identifier of Account
+        org_identifier:
+          type: string
+          description: Identifier of Organization
+        project_identifier:
+          type: string
+          description: Identifier of Project
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+    ResourceDTO:
+      title: ResourceDTO
+      x-stoplight:
+        id: 2r7wy11v8scql
+      type: object
+      description: This contains info about Resource saved as a part of Audit Event
+      properties:
+        type:
+          type: string
+        identifier:
+          type: string
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+    AuditFilterPropertiesV1DTO:
+      title: AuditFilterPropertiesV1DTO
+      x-stoplight:
+        id: hrclq6ndh1ymg
+      type: object
+      description: Properties of the Filter entity defined in Harness.
+      properties:
+        filter_type:
+          $ref: '#/components/schemas/FilterType'
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: tags
+        start_time:
+          type: integer
+          format: int64
+          description: Used to specify a start time for retrieving Audit events that occurred at or after the time indicated.
+        end_time:
+          type: integer
+          format: int64
+          description: Used to specify the end time for retrieving Audit events that occurred at or before the time indicated.
+        modules:
+          type: array
+          description: List of Module Types
+          items:
+            $ref: '#/components/schemas/ModuleType'
+        actions:
+          type: array
+          description: List of Actions
+          items:
+            $ref: '#/components/schemas/Action'
+        resources:
+          type: array
+          description: List of Resources
+          items:
+            $ref: '#/components/schemas/ResourceDTO'
+        scopes:
+          type: array
+          description: List of Resource Scopes
+          items:
+            $ref: '#/components/schemas/ResourceScopeDTO'
+        principals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Principal'
+        static_filter:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaticAuditFilter'
+        environments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Environment'
+    StaticAuditFilter:
+      title: StaticAuditFilter
+      x-stoplight:
+        id: mdul5d1wgfhez
+      type: string
+      enum:
+        - SYSTEM_EVENTS
+        - LOGIN_EVENTS
+        - ENTITY_CHANGE_EVENTS
+        - RUNTIME_EVENTS
+    ModuleType:
+      title: ModuleType
+      x-stoplight:
+        id: xjqf65bl7w788
+      type: string
+      description: Type of Modules
+      enum:
+        - CD
+        - CI
+        - CV
+        - CF
+        - CE
+        - STO
+        - CORE
+        - PMS
+        - TEMPLATESERVICE
+        - GOVERNANCE
+        - CHAOS
+    Action:
+      title: Action
+      x-stoplight:
+        id: bzquds8sspg1q
+      type: string
+      enum:
+        - CREATE
+        - UPDATE
+        - RESTORE
+        - DELETE
+        - FORCE_DELETE
+        - UPSERT
+        - INVITE
+        - RESEND_INVITE
+        - REVOKE_INVITE
+        - ADD_COLLABORATOR
+        - REMOVE_COLLABORATOR
+        - CREATE_TOKEN
+        - REVOKE_TOKEN
+        - LOGIN
+        - LOGIN2FA
+        - UNSUCCESSFUL_LOGIN
+        - ERROR_BUDGET_RESET
+    Principal:
+      title: Principal
+      x-stoplight:
+        id: tj7q0qb2zdnyw
+      type: object
+      properties:
+        identifier:
+          type: string
+        type:
+          $ref: '#/components/schemas/PrincipalType'
+    PrincipalType:
+      title: PrincipalType
+      x-stoplight:
+        id: fxz45g9sxt8f2
+      type: string
+      enum:
+        - USER
+        - SYSTEM
+        - API_KEY
+        - SERVICE_ACCOUNT
+    Environment:
+      title: Environment
+      x-stoplight:
+        id: jmpmivgkftb1v
+      type: object
+      properties:
+        identifier:
+          type: string
+        type:
+          $ref: '#/components/schemas/EnvironmentType'
+    EnvironmentType:
+      title: EnvironmentType
+      x-stoplight:
+        id: ihuiok9k1qcmz
+      type: string
+      enum:
+        - PreProduction
+        - Production
+    FilterType:
+      title: FilterType
+      x-stoplight:
+        id: nvm8xs2of7vf8
+      type: string
+      enum:
+        - CONNECTOR
+        - DELEGATEPROFILE
+        - DELEGATE
+        - PIPELINESETUP
+        - PIPELINEEXECUTION
+        - DEPLOYMENT
+        - AUDIT
+        - TEMPLATE
+        - ENVIRONMENTGROUP
+        - FILESTORE
+        - CCMRECOMMENDATION
+        - ANOMALY
+        - ENVIRONMENT
+        - RULEEXECUTION
+    AuditEventDTO:
+      title: AuditEventDTO
+      x-stoplight:
+        id: mxditpr8jr7lh
+      type: object
+      properties:
+        audit_id:
+          type: string
+        insert_id:
+          type: string
+        resource_scope:
+          $ref: '#/components/schemas/ResourceScopeDTO'
+        timestamp:
+          type: integer
+        module:
+          $ref: '#/components/schemas/ModuleType'
+        http_request_info:
+          $ref: '#/components/schemas/HttpRequestInfo'
+        request_metadata:
+          $ref: '#/components/schemas/RequestMetadata'
+        authentication_info:
+          $ref: '#/components/schemas/AuthenticationInfoDTO'
+        environment:
+          $ref: '#/components/schemas/Environment'
+        resource:
+          $ref: '#/components/schemas/ResourceDTO'
+        yaml_diff_record:
+          $ref: '#/components/schemas/YamlDiffRecordDTO'
+        action:
+          $ref: '#/components/schemas/Action'
+        internal_info:
+          type: object
+          additionalProperties:
+            type: string
+    HttpRequestInfo:
+      title: HttpRequestInfo
+      x-stoplight:
+        id: xv4gl47om7rva
+      type: object
+      properties:
+        request_method:
+          type: string
+    RequestMetadata:
+      title: RequestMetadata
+      x-stoplight:
+        id: ga39sbthmsnqw
+      type: object
+      properties:
+        client_ip:
+          type: string
+    AuthenticationInfoDTO:
+      title: AuthenticationInfoDTO
+      x-stoplight:
+        id: vbhi03cpej4ej
+      type: object
+      properties:
+        principal:
+          $ref: '#/components/schemas/Principal'
+        labels:
+          type: string
+    YamlDiffRecordDTO:
+      title: YamlDiffRecordDTO
+      x-stoplight:
+        id: 9t10m54ew32zz
+      type: object
+      description: This has the YAML Difference of the record.
+      properties:
+        old_yaml:
+          type: string
+          description: Previous YAML version
+        new_yaml:
+          type: string
+          description: Current YAML version
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -296,10 +790,73 @@ components:
                   created: 1670304106000
                   update: 1670304106000
       headers:
-        Link:
+        X-Total-Elements:
           schema:
-            type: string
-          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+    StreamingDestinationValidateResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: boolean
+            description: It returns true if the Identifier is unique and false if the Identifier is not unique
+    StreamingDestinationCardsResponse:
+      description: Streaming Destination cards response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StreamingDestinationCards'
+    StreamingDestinationAggregateListResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/StreamingDestinationAggregateDTO'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+    AuditListResponse:
+      description: ''
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/AuditEventDTO'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
   requestBodies:
     CreateStreamingDestinationRequest:
       content:

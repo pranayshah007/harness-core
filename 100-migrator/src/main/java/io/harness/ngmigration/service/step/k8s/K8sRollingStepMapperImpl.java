@@ -10,19 +10,21 @@ package io.harness.ngmigration.service.step.k8s;
 import io.harness.cdng.k8s.K8sRollingStepInfo;
 import io.harness.cdng.k8s.K8sRollingStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GraphNode;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 
-import java.util.Map;
+public class K8sRollingStepMapperImpl extends StepMapper {
+  @Override
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
+  }
 
-public class K8sRollingStepMapperImpl implements StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.K8S_ROLLING_DEPLOY;
@@ -34,10 +36,9 @@ public class K8sRollingStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     K8sRollingStepNode k8sRollingStepNode = new K8sRollingStepNode();
-    baseSetup(graphNode, k8sRollingStepNode);
+    baseSetup(graphNode, k8sRollingStepNode, context.getIdentifierCaseFormat());
     k8sRollingStepNode.setK8sRollingStepInfo(
         K8sRollingStepInfo.infoBuilder().skipDryRun(ParameterField.createValueField(false)).build());
     return k8sRollingStepNode;

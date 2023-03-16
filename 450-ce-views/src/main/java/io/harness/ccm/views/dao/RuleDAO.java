@@ -141,7 +141,7 @@ public class RuleDAO {
     UpdateOperations<Rule> updateOperations = hPersistence.createUpdateOperations(Rule.class);
 
     if (rule.getName() != null) {
-      if (fetchByName(accountId, rule.getName(), false) != null) {
+      if (fetchByName(accountId, rule.getName(), true) != null) {
         throw new InvalidRequestException("Rule with given name already exits");
       }
       updateOperations.set(RuleId.name, rule.getName());
@@ -161,13 +161,11 @@ public class RuleDAO {
   }
 
   public List<Rule> check(String accountId, List<String> rulesIdentifier) {
-    List<Rule> rules = hPersistence.createQuery(Rule.class)
-                           .field(RuleId.accountId)
-                           .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
-                           .field(RuleId.uuid)
-                           .in(rulesIdentifier)
-                           .asList();
-    log.info("{} ", rules);
-    return rules;
+    return hPersistence.createQuery(Rule.class)
+        .field(RuleId.accountId)
+        .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
+        .field(RuleId.uuid)
+        .in(rulesIdentifier)
+        .asList();
   }
 }

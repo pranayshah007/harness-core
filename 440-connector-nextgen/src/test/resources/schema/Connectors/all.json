@@ -1503,6 +1503,113 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "BambooAuthCredentialsDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "BambooAuthenticationDTO": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "UsernamePassword",
+            "Anonymous",
+            "Bearer Token(HTTP Header)"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UsernamePassword"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BambooUserNamePasswordDTO"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "BambooConnectorDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "bambooUrl"
+          ],
+          "properties": {
+            "auth": {
+              "$ref": "#/definitions/BambooAuthenticationDTO"
+            },
+            "bambooUrl": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "BambooUserNamePasswordDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BambooAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "passwordRef"
+          ],
+          "properties": {
+            "passwordRef": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "usernameRef"
+              ]
+            },
+            {
+              "required": [
+                "username"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "BillingExportSpec": {
       "type": "object",
       "required": [
@@ -2018,7 +2125,9 @@
             "GcpSecretManager",
             "AzureArtifacts",
             "Tas",
-            "Spot"
+            "Spot",
+            "Bamboo",
+            "TerraformCloud"
           ]
         }
       },
@@ -2164,6 +2273,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AzureRepoConnector"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Bamboo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BambooConnectorDTO"
               }
             }
           }
@@ -2724,6 +2849,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/TasConnector"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TerraformCloud"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TerraformCloudConnector"
               }
             }
           }
@@ -4595,6 +4736,61 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "JiraAuthCredentialsDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "JiraAuthenticationDTO": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "UsernamePassword",
+            "PersonalAccessToken"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "PersonalAccessToken"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JiraPATDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UsernamePassword"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JiraUserNamePasswordDTO"
+              }
+            }
+          }
+        }
+      ]
+    },
     "JiraConnector": {
       "allOf": [
         {
@@ -4603,10 +4799,13 @@
         {
           "type": "object",
           "required": [
-            "jiraUrl",
-            "passwordRef"
+            "auth",
+            "jiraUrl"
           ],
           "properties": {
+            "auth": {
+              "$ref": "#/definitions/JiraAuthenticationDTO"
+            },
             "delegateSelectors": {
               "type": "array",
               "uniqueItems": true,
@@ -4617,6 +4816,50 @@
             "jiraUrl": {
               "type": "string"
             },
+            "passwordRef": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "JiraPATDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/JiraAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "patRef"
+          ],
+          "properties": {
+            "patRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "JiraUserNamePasswordDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/JiraAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "passwordRef"
+          ],
+          "properties": {
             "passwordRef": {
               "type": "string"
             },
@@ -5808,6 +6051,96 @@
           "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudConnector": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "credential",
+            "terraformCloudUrl"
+          ],
+          "properties": {
+            "credential": {
+              "$ref": "#/definitions/TerraformCloudCredential"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
+            },
+            "terraformCloudUrl": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudCredential": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "ApiToken"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ApiToken"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TerraformCloudTokenCredentials"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TerraformCloudCredentialSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudTokenCredentials": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerraformCloudCredentialSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "apiToken"
+          ],
+          "properties": {
+            "apiToken": {
+              "type": "string",
+              "readOnly": true
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "VaultConnectorDTO": {

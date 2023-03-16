@@ -11,6 +11,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.freeze.beans.CurrentOrUpcomingWindow;
 import io.harness.freeze.beans.FreezeDuration;
+import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeWindow;
 import io.harness.freeze.beans.Recurrence;
 import io.harness.freeze.beans.RecurrenceType;
@@ -58,14 +59,7 @@ public class FreezeTimeUtils {
   private CurrentOrUpcomingWindow fetchCurrentOrUpcomingTimeWindow(FreezeWindow freezeWindow) {
     TimeZone timeZone = TimeZone.getTimeZone(freezeWindow.getTimeZone());
     LocalDateTime firstWindowStartTime = LocalDateTime.parse(freezeWindow.getStartTime(), dtf);
-    LocalDateTime firstWindowEndTime;
-    if (freezeWindow.getEndTime() == null) {
-      FreezeDuration freezeDuration = FreezeDuration.fromString(freezeWindow.getDuration());
-      Long endTime = getEpochValueFromDateString(firstWindowStartTime, timeZone) + freezeDuration.getTimeoutInMillis();
-      firstWindowEndTime = Instant.ofEpochMilli(endTime).atZone(timeZone.toZoneId()).toLocalDateTime();
-    } else {
-      firstWindowEndTime = LocalDateTime.parse(freezeWindow.getEndTime(), dtf);
-    }
+    LocalDateTime firstWindowEndTime = getLocalDateTime(freezeWindow, timeZone, firstWindowStartTime);
     if (freezeWindow.getRecurrence() == null) {
       if (getCurrentTime() > getEpochValueFromDateString(firstWindowEndTime, timeZone)) {
         return null;
@@ -282,21 +276,14 @@ public class FreezeTimeUtils {
     return date.toInstant(zoneOffset).toEpochMilli();
   }
 
-  public void validateTimeRange(FreezeWindow freezeWindow) throws ParseException {
+  public void validateTimeRange(FreezeWindow freezeWindow, FreezeStatus freezeStatus) throws ParseException {
     if (EmptyPredicate.isEmpty(freezeWindow.getTimeZone())) {
       throw new InvalidRequestException("Time zone cannot be empty");
     }
     TimeZone timeZone = TimeZone.getTimeZone(freezeWindow.getTimeZone());
+    validateTimeZone(freezeWindow.getTimeZone(), timeZone);
     LocalDateTime firstWindowStartTime = LocalDateTime.parse(freezeWindow.getStartTime(), dtf);
-    LocalDateTime firstWindowEndTime;
-    if (freezeWindow.getEndTime() == null) {
-      FreezeDuration freezeDuration = FreezeDuration.fromString(freezeWindow.getDuration());
-      Long endTime = FreezeTimeUtils.getEpochValueFromDateString(firstWindowStartTime, timeZone)
-          + freezeDuration.getTimeoutInMillis();
-      firstWindowEndTime = Instant.ofEpochMilli(endTime).atZone(timeZone.toZoneId()).toLocalDateTime();
-    } else {
-      firstWindowEndTime = LocalDateTime.parse(freezeWindow.getEndTime(), dtf);
-    }
+    LocalDateTime firstWindowEndTime = getLocalDateTime(freezeWindow, timeZone, firstWindowStartTime);
 
     long timeDifferenceFromStartTime =
         FreezeTimeUtils.getEpochValueFromDateString(firstWindowStartTime, timeZone) - getCurrentTime();
@@ -324,15 +311,21 @@ public class FreezeTimeUtils {
       if (recurrence.getSpec() != null && recurrence.getSpec().getUntil() != null) {
         LocalDateTime until = LocalDateTime.parse(freezeWindow.getRecurrence().getSpec().getUntil(), dtf);
         Long untilMs = getEpochValue(recurrence.getRecurrenceType(), until, timeZone, 0);
-        if (untilMs < getCurrentTime()) {
+        if (untilMs < getCurrentTime() && FreezeStatus.ENABLED.equals(freezeStatus)) {
           throw new InvalidRequestException("End time for recurrence cannot be less than current time");
         }
       }
     } else {
       Long endTime = getEpochValue(null, firstWindowEndTime, timeZone, 0);
-      if (endTime < getCurrentTime()) {
+      if (endTime < getCurrentTime() && FreezeStatus.ENABLED.equals(freezeStatus)) {
         throw new InvalidRequestException("Freeze Window is already expired");
       }
+    }
+  }
+
+  private void validateTimeZone(String timeZoneId, TimeZone timeZone) {
+    if (timeZone.getID().equals("GMT") && !timeZoneId.equals("GMT")) {
+      throw new InvalidRequestException("Invalid TimeZone Selected");
     }
   }
 }

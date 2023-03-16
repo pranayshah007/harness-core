@@ -7,18 +7,18 @@
 
 package io.harness.ci.plan.creator.stage.V3;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.build.BuildStatusUpdateParameter;
-import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.clone.Clone;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
-import io.harness.ci.plan.creator.codebase.V1.CodebasePlanCreatorV1;
+import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
 import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.cimanager.stages.V1.IntegrationStageConfigImplV1;
 import io.harness.cimanager.stages.V1.IntegrationStageNodeV1;
@@ -48,6 +48,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
+import io.harness.yaml.registry.Registry;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -66,7 +67,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CI)
 public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<IntegrationStageNodeV1> {
   @Inject private KryoSerializer kryoSerializer;
-  @Inject private ConnectorUtils connectorUtils;
   @Inject private CIPlanCreatorUtils ciPlanCreatorUtils;
 
   @Override
@@ -81,13 +81,16 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
     Infrastructure infrastructure =
         ciPlanCreatorUtils.getInfrastructure(stageConfig.getRuntime(), stageConfig.getPlatform());
     CodeBase codeBase = ciPlanCreatorUtils.getCodebase(ctx, stageConfig.getClone()).orElse(null);
-    ExecutionSource executionSource = ciPlanCreatorUtils.buildExecutionSource(ctx, codeBase, stageNode.getIdentifier());
-    BuildStatusUpdateParameter buildStatusUpdateParameter =
-        ciPlanCreatorUtils.getBuildStatusUpdateParameter(stageNode, codeBase, executionSource);
+    Optional<Object> optionalRegistry = ciPlanCreatorUtils.getDeserializedObjectFromDependency(
+        ctx.getMetadata().getGlobalDependency(), YAMLFieldNameConstants.REGISTRY);
+    Registry registry = (Registry) optionalRegistry.orElse(Registry.builder().build());
     IntegrationStageStepParametersPMS params = IntegrationStageStepParametersPMS.builder()
                                                    .infrastructure(infrastructure)
                                                    .childNodeID(childrenNodeIds.get(0))
-                                                   .buildStatusUpdateParameter(buildStatusUpdateParameter)
+                                                   .codeBase(codeBase)
+                                                   .triggerPayload(ctx.getTriggerPayload())
+                                                   .registry(registry)
+                                                   .cloneManually(ciPlanCreatorUtils.shouldCloneManually(ctx, codeBase))
                                                    .build();
     PlanNodeBuilder builder =
         PlanNode.builder()
@@ -102,7 +105,7 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
                                 .build())
             .stepType(IntegrationStageStepPMS.STEP_TYPE)
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-            .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
+            .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
@@ -194,12 +197,14 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
     Optional<CodeBase> optionalCodeBase = ciPlanCreatorUtils.getCodebase(ctx, clone);
     if (optionalCodeBase.isPresent()) {
       CodeBase codeBase = optionalCodeBase.get();
-      ExecutionSource executionSource =
-          ciPlanCreatorUtils.buildExecutionSource(ctx, codeBase, ctx.getCurrentField().getId());
-      PlanNode codebasePlanNode = CodebasePlanCreatorV1.createPlanForCodeBase(
-          ctx, kryoSerializer, codeBase, connectorUtils, executionSource, childNodeID);
-      planCreationResponseMap.put(
-          codebasePlanNode.getUuid(), PlanCreationResponse.builder().planNode(codebasePlanNode).build());
+      List<PlanNode> codebasePlanNodes =
+          CodebasePlanCreator.buildCodebasePlanNodes(generateUuid(), childNodeID, kryoSerializer, codeBase, null);
+      if (isNotEmpty(codebasePlanNodes)) {
+        Collections.reverse(codebasePlanNodes);
+        for (PlanNode planNode : codebasePlanNodes) {
+          planCreationResponseMap.put(planNode.getUuid(), PlanCreationResponse.builder().planNode(planNode).build());
+        }
+      }
       metadataMap.put("codebase", ByteString.copyFrom(kryoSerializer.asBytes(codeBase)));
     }
   }

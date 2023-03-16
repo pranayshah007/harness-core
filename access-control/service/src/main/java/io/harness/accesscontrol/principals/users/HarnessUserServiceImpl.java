@@ -12,6 +12,7 @@ import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.usermembership.remote.UserMembershipClient;
 
@@ -39,8 +40,15 @@ public class HarnessUserServiceImpl implements HarnessUserService {
         NGRestUtils.getResponse(userMembershipClient.isUserInScope(identifier, scopeParams.getAccountIdentifier(),
                                     scopeParams.getOrgIdentifier(), scopeParams.getProjectIdentifier()),
             "Could not find the user with the given identifier");
+    UserMetadataDTO userMetadataDTO =
+        NGRestUtils.getResponse(userMembershipClient.getUser(identifier, scopeParams.getAccountIdentifier()));
     if (Boolean.TRUE.equals(isUserInScope)) {
-      User user = User.builder().identifier(identifier).scopeIdentifier(scope.toString()).build();
+      User user = User.builder()
+                      .identifier(identifier)
+                      .scopeIdentifier(scope.toString())
+                      .name(userMetadataDTO.getName())
+                      .email(userMetadataDTO.getEmail())
+                      .build();
       userService.createIfNotPresent(user);
     } else {
       userService.deleteIfPresent(identifier, scope.toString());

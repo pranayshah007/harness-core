@@ -1,0 +1,17 @@
+service:
+  name: newservice
+  identifier: newservice
+  tags: {}
+  serviceDefinition:
+    spec:
+      artifacts:
+        primary:
+          primaryArtifactRef: <+input>
+          sources:
+            - spec:
+                connectorRef: org.dp1
+                imagePath: <+input>
+                tag: <+input>
+              identifier: s1
+              type: DockerRegistry
+    type: Kubernetes

@@ -12,6 +12,7 @@ import io.harness.annotation.RecasterAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import io.swagger.annotations.ApiModelProperty;
 import org.springframework.data.annotation.TypeAlias;
 
 @TypeAlias("archiveFormat")
@@ -20,6 +21,7 @@ public enum ArchiveFormat {
   @JsonProperty("Tar") TAR("tar"),
   @JsonProperty("Gzip") GZIP("gzip");
   private final String yamlName;
+  @ApiModelProperty(hidden = true) String uuid;
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static ArchiveFormat getArchiveFormat(@JsonProperty("archiveFormat") String yamlName) {

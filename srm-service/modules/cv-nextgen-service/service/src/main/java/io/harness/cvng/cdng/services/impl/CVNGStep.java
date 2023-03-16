@@ -40,6 +40,7 @@ import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceServi
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
+import io.harness.opaclient.OpaServiceClient;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
@@ -58,6 +59,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.executable.AsyncExecutableWithCapabilities;
 import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.PolicyEvalUtils;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
@@ -71,6 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -94,6 +97,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
   @Inject private SideKickService sideKickService;
   @Inject
   private Map<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
+
+  @Inject private OpaServiceClient opaServiceClient;
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
@@ -122,7 +127,10 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
         verifyStepCvConfigServiceMap.get(monitoredServiceType)
             .fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
     String monitoredServiceIdentifier = resolvedCVConfigInfo.getMonitoredServiceIdentifier();
+    String monitoredServiceTemplateIdentifier = resolvedCVConfigInfo.getMonitoredServiceTemplateIdentifier();
+    String monitoredServiceTemplateVersionLabel = resolvedCVConfigInfo.getMonitoredServiceTemplateVersionLabel();
     List<CVConfig> cvConfigs = resolvedCVConfigInfo.getCvConfigs();
+    log.info("Resolved cvConfigIds {}", resolvedCVConfigInfo.getCvConfigIds());
     Instant deploymentStartTime = Instant.ofEpochMilli(
         AmbianceUtils.getStageLevelFromAmbiance(ambiance)
             .orElseThrow(() -> new IllegalStateException("verify step needs to be part of a stage."))
@@ -145,7 +153,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
     } else {
       String verificationJobInstanceId;
       DeploymentActivity activity = getDeploymentActivity(stepParameters, serviceEnvironmentParams, ambiance,
-          deploymentStartTime, monitoredServiceIdentifier, cvConfigs);
+          deploymentStartTime, monitoredServiceIdentifier, monitoredServiceTemplateIdentifier,
+          monitoredServiceTemplateVersionLabel, cvConfigs);
       boolean isDemoEnabled = isDemoEnabled(accountId, ambiance);
       boolean shouldFailVerification = false;
       if (isDemoEnabled) {
@@ -156,14 +165,16 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
                 shouldFailVerification(ambiance, stepParameters.getSensitivity())
                     ? ActivityVerificationStatus.VERIFICATION_FAILED
                     : ActivityVerificationStatus.VERIFICATION_PASSED,
-                monitoredServiceIdentifier, cvConfigs);
+                monitoredServiceIdentifier, monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel,
+                cvConfigs);
         activity.setDemoActivity(true);
         verificationJobInstanceId =
             verificationJobInstanceService.createDemoInstances(Arrays.asList(verificationJobInstance)).get(0);
       } else {
         VerificationJobInstanceBuilder verificationJobInstanceBuilder =
             getVerificationJobInstanceBuilder(AmbianceUtils.obtainCurrentLevel(ambiance).getIdentifier(),
-                stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier, cvConfigs);
+                stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier,
+                monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel, cvConfigs);
         activity.fillInVerificationJobInstanceDetails(verificationJobInstanceBuilder);
         verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstanceBuilder.build());
       }
@@ -208,7 +219,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
 
   private VerificationJobInstanceBuilder getVerificationJobInstanceBuilder(String stepName,
       CVNGStepParameter stepParameters, ServiceEnvironmentParams serviceEnvironmentParams, Instant deploymentStartTime,
-      String monitoredServiceIdentifier, List<CVConfig> cvConfigs) {
+      String monitoredServiceIdentifier, String monitoredServiceTemplateIdentifier,
+      String monitoredServiceTemplateVersionLabel, List<CVConfig> cvConfigs) {
     Instant verificationStartTime = clock.instant();
     VerificationJob verificationJob =
         stepParameters.getVerificationJobBuilder()
@@ -219,6 +231,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
             .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
             .accountId(serviceEnvironmentParams.getAccountIdentifier())
             .monitoredServiceIdentifier(monitoredServiceIdentifier)
+            .monitoredServiceTemplateIdentifier(monitoredServiceTemplateIdentifier)
+            .monitoredServiceTemplateVersionLabel(monitoredServiceTemplateVersionLabel)
             .cvConfigs(cvConfigs)
             .build();
     VerificationJobInstanceBuilder verificationJobInstanceBuilder =
@@ -232,12 +246,17 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
   private VerificationJobInstance getVerificationJobInstanceForDemo(String stepName, CVNGStepParameter stepParameters,
       ServiceEnvironmentParams serviceEnvironmentParams, Instant deploymentStartTime,
       ActivityVerificationStatus activityVerificationStatus, String monitoredServiceIdentifier,
+      String monitoredServiceTemplateIdentifier, String monitoredServiceTemplateVersionLabel,
       List<CVConfig> cvConfigs) {
-    VerificationJobInstanceBuilder verificationJobInstanceBuilder = getVerificationJobInstanceBuilder(
-        stepName, stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier, cvConfigs);
+    VerificationJobInstanceBuilder verificationJobInstanceBuilder = getVerificationJobInstanceBuilder(stepName,
+        stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier,
+        monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel, cvConfigs);
     verificationJobInstanceBuilder.verificationStatus(activityVerificationStatus);
     verificationJobInstanceBuilder.startTime(clock.instant().minus(Duration.ofMinutes(15)));
     verificationJobInstanceBuilder.deploymentStartTime(clock.instant().minus(Duration.ofMinutes(16)));
+    Map<String, CVConfig> cvConfigMap =
+        cvConfigs.stream().collect(Collectors.toMap(CVConfig::getUuid, cvConfig -> cvConfig, (u, v) -> v));
+    verificationJobInstanceBuilder.cvConfigMap(cvConfigMap);
     return verificationJobInstanceBuilder.build();
   }
 
@@ -253,7 +272,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
   @NotNull
   private DeploymentActivity getDeploymentActivity(CVNGStepParameter stepParameters,
       ServiceEnvironmentParams serviceEnvironmentParams, Ambiance ambiance, Instant activityStartTime,
-      String monitoredServiceIdentifier, List<CVConfig> cvConfigs) {
+      String monitoredServiceIdentifier, String monitoredServiceTemplateIdentifier,
+      String monitoredServiceTemplateVersionLabel, List<CVConfig> cvConfigs) {
     Instant startTime = clock.instant();
     VerificationJob verificationJob =
         stepParameters.getVerificationJobBuilder()
@@ -263,6 +283,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
             .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
             .accountId(serviceEnvironmentParams.getAccountIdentifier())
             .monitoredServiceIdentifier(monitoredServiceIdentifier)
+            .monitoredServiceTemplateIdentifier(monitoredServiceTemplateIdentifier)
+            .monitoredServiceTemplateVersionLabel(monitoredServiceTemplateVersionLabel)
             .cvConfigs(cvConfigs)
             .build();
     DeploymentActivity deploymentActivity =
@@ -425,4 +447,13 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+
+  @Override
+  public StepResponse postAsyncValidate(
+      Ambiance ambiance, StepElementParameters stepParameters, StepResponse stepResponse) {
+    if (Status.SUCCEEDED.equals(stepResponse.getStatus())) {
+      return PolicyEvalUtils.evalPolicies(ambiance, stepParameters, stepResponse, opaServiceClient);
+    }
+    return stepResponse;
+  }
 }

@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.VINICIUS;
@@ -252,6 +253,39 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     assertThat(artifactOutcome).isNotNull();
     assertThat(artifactOutcome).isInstanceOf(ArtifactoryArtifactOutcome.class);
     assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName());
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testToArtifactoryGenericArtifactPathOutcome() {
+    ArtifactoryRegistryArtifactConfig artifactConfig =
+        ArtifactoryRegistryArtifactConfig.builder()
+            .connectorRef(ParameterField.createValueField("connector"))
+            .repository(ParameterField.createValueField("REPO_NAME"))
+            .artifactPath(ParameterField.createValueField("path"))
+            .artifactDirectory(ParameterField.createValueField("dir"))
+            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.generic.name()))
+            .build();
+    assertArtifactoryGenericArtifactPathOutcome(artifactConfig, "dir/path");
+
+    artifactConfig.setArtifactPathFilter(ParameterField.createValueField("abc"));
+    assertArtifactoryGenericArtifactPathOutcome(artifactConfig, "path");
+  }
+
+  private void assertArtifactoryGenericArtifactPathOutcome(
+      ArtifactoryRegistryArtifactConfig artifactConfig, String expectedArtifactPath) {
+    ArtifactDelegateResponse artifactDelegateResponse = ArtifactoryGenericArtifactDelegateResponse.builder().build();
+
+    ArtifactOutcome artifactOutcome =
+        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, false);
+
+    assertThat(artifactOutcome).isNotNull();
+    assertThat(artifactOutcome).isInstanceOf(ArtifactoryGenericArtifactOutcome.class);
+    assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName());
+    ArtifactoryGenericArtifactOutcome artifactoryGenericArtifactOutcome =
+        (ArtifactoryGenericArtifactOutcome) artifactOutcome;
+    assertThat(artifactoryGenericArtifactOutcome.getArtifactPath()).isEqualTo(expectedArtifactPath);
   }
 
   @Test

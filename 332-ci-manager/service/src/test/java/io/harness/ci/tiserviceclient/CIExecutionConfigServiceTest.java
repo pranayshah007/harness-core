@@ -235,6 +235,62 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = DEV_MITTAL)
   @Category(UnitTests.class)
+  public void getDeprecatedImagesTest() {
+    CIExecutionConfig executionConfig = CIExecutionConfig.builder()
+                                            .accountIdentifier("acct")
+                                            .buildAndPushDockerRegistryImage("bpdr:1.2.4")
+                                            .addOnImage("harness/ci-addon:1.1.0")
+                                            .liteEngineImage("harness/ci-lite-engine:1.2.0")
+                                            .gitCloneImage("gc:abc")
+                                            .buildAndPushECRImage("bpecr:1.2.3")
+                                            .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .gcsUploadImage("gcsupload:1.2.3")
+                                            .s3UploadImage("s3upload:1.2.3")
+                                            .artifactoryUploadTag("art:1.2.3")
+                                            .securityImage("sc:1.2.3")
+                                            .cacheGCSTag("cachegcs:1.2.3")
+                                            .cacheS3Tag("caches3:1.2.3")
+                                            .gcsUploadImage("gcsUpload:1.2.3")
+                                            .build();
+    when(cIExecutionConfigRepository.findFirstByAccountIdentifier("acct")).thenReturn(Optional.of(executionConfig));
+    CIExecutionImages deprecatedImages = ciExecutionConfigService.getDeprecatedImages("acct");
+    assertThat(deprecatedImages.getBuildAndPushECRTag()).isNull();
+    assertThat(deprecatedImages.getGcsUploadTag()).isNull();
+    assertThat(deprecatedImages.getLiteEngineTag()).isNull();
+    assertThat(deprecatedImages.getAddonTag()).isNull();
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void getDeprecatedImagesWithDeprecatedTagsTest() {
+    CIExecutionConfig executionConfig = CIExecutionConfig.builder()
+                                            .accountIdentifier("acct")
+                                            .buildAndPushDockerRegistryImage("bpdr:0.2.4")
+                                            .addOnImage("harness/ci-addon:0.1.0")
+                                            .liteEngineImage("harness/ci-lite-engine:1.1.0")
+                                            .gitCloneImage("gc:abc")
+                                            .buildAndPushECRImage("bpecr:0.2.3")
+                                            .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .gcsUploadImage("gcsupload:0.2.3")
+                                            .s3UploadImage("s3upload:1.2.3")
+                                            .artifactoryUploadTag("art:1.2.3")
+                                            .securityImage("sc:1.2.3")
+                                            .cacheGCSTag("cachegcs:0.2.3")
+                                            .cacheS3Tag("caches3:1.2.3")
+                                            .gcsUploadImage("gcsUpload:1.2.3")
+                                            .build();
+    when(cIExecutionConfigRepository.findFirstByAccountIdentifier("acct")).thenReturn(Optional.of(executionConfig));
+    CIExecutionImages deprecatedImages = ciExecutionConfigService.getDeprecatedImages("acct");
+    assertThat(deprecatedImages.getBuildAndPushECRTag()).isNull();
+    assertThat(deprecatedImages.getGcsUploadTag()).isNull();
+    assertThat(deprecatedImages.getLiteEngineTag()).isNull();
+    assertThat(deprecatedImages.getAddonTag()).isEqualTo("harness/ci-addon:0.1.0");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
   public void getDefaultTest() {
     CIExecutionImages ciExecutionImages = ciExecutionConfigService.getDefaultConfig(StageInfraDetails.Type.VM);
     assertThat(ciExecutionImages.getAddonTag()).isNull();
@@ -343,6 +399,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
     assertThat(ciExecutionImages.getBuildAndPushDockerRegistryTag()).isEqualTo("bpdr:1.2.4");
     assertThat(ciExecutionImages.getCacheGCSTag()).isEqualTo("cachegcs:1.2.3");
     assertThat(ciExecutionImages.getSecurityTag()).isEqualTo("sc:1.2.3");
+    assertThat(ciExecutionImages.getSscaOrchestrationTag()).isEqualTo("sscaorchestrate:0.0.1");
   }
 
   @Test

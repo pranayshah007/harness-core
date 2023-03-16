@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.context.AzureClientContext;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureConfig;
@@ -368,7 +369,12 @@ public class AzureWebClientImplTest extends CategoryTest {
   }
 
   private AzureConfig buildAzureConfig() {
-    return AzureConfig.builder().key("key".toCharArray()).clientId("clientId").tenantId("tenantId").build();
+    return AzureConfig.builder()
+        .key("key".toCharArray())
+        .clientId("clientId")
+        .tenantId("tenantId")
+        .azureEnvironmentType(AzureEnvironmentType.AZURE)
+        .build();
   }
 
   @NotNull

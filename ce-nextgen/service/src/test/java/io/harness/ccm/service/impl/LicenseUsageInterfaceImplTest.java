@@ -17,6 +17,7 @@ import io.harness.ModuleType;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.commons.beans.usage.CELicenseUsageDTO;
 import io.harness.licensing.usage.params.UsageRequestParams;
@@ -54,6 +55,7 @@ public class LicenseUsageInterfaceImplTest extends CategoryTest {
   @Mock TableResult tableResult;
   @Mock BigQueryService bigQueryService;
   @Mock CENextGenConfiguration configuration;
+  @Mock ClickHouseService clickHouseService;
 
   List<FieldValue> octoberClusterFieldValues;
   List<FieldValue> octoberAzureFieldValues;

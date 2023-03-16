@@ -31,6 +31,9 @@ public interface GitService {
   GitFetchFilesResult fetchFilesByPath(GitConfig gitConfig, String connectorId, String commitId, String branch,
       List<String> filePaths, boolean useBranch, boolean shouldExportCommitSha);
 
+  GitFetchFilesResult fetchFilesByPath(String identifier, GitConfig gitConfig, String connectorId, String commitId,
+      String branch, List<String> filePaths, boolean useBranch, boolean shouldExportCommitSha, LogCallback logCallback);
+
   GitFetchFilesResult fetchFilesByPath(GitConfig gitConfig, String connectorId, String commitId, String branch,
       List<String> filePaths, boolean useBranch, boolean shouldExportCommitSha, LogCallback logCallback);
 

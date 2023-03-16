@@ -92,6 +92,7 @@ import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.command.CommandExecutionResult;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -345,6 +346,7 @@ public class CommandStateTest extends WingsBaseTest {
   @Mock private ArtifactStreamServiceBindingService artifactStreamServiceBindingService;
   @Mock private ServiceTemplateHelper serviceTemplateHelper;
   @Mock private TemplateExpressionProcessor templateExpressionProcessor;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
@@ -760,7 +762,7 @@ public class CommandStateTest extends WingsBaseTest {
     DelegateTaskBuilder delegateBuilder = getDelegateBuilder(artifact, artifactStreamAttributes, command);
     DelegateTask delegateTask = delegateBuilder.build();
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     verify(context, times(4)).getContextElement(ContextElementType.STANDARD);
     verify(context, times(1)).getContextElement(ContextElementType.INSTANCE);
@@ -935,7 +937,7 @@ public class CommandStateTest extends WingsBaseTest {
     DelegateTaskBuilder delegateBuilder = getDelegateBuilder(artifact, artifactStreamAttributes, command);
     DelegateTask delegateTask = delegateBuilder.build();
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     verify(context, times(4)).getContextElement(ContextElementType.STANDARD);
     verify(context, times(1)).getContextElement(ContextElementType.INSTANCE);
@@ -1045,7 +1047,7 @@ public class CommandStateTest extends WingsBaseTest {
     DelegateTaskBuilder delegateBuilder = getDelegateBuilder(artifact, artifactStreamAttributes, command);
     DelegateTask delegateTask = delegateBuilder.build();
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     verify(context, times(4)).getContextElement(ContextElementType.STANDARD);
     verify(context, times(3)).getContextElement(ContextElementType.INSTANCE);
@@ -2341,7 +2343,7 @@ public class CommandStateTest extends WingsBaseTest {
     DelegateTaskBuilder delegateBuilder = getDelegateBuilder(artifact, artifactStreamAttributes, command);
     DelegateTask delegateTask = delegateBuilder.build();
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     verify(context, times(4)).getContextElement(ContextElementType.STANDARD);
     verify(context, times(1)).getContextElement(ContextElementType.INSTANCE);

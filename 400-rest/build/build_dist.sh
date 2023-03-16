@@ -23,7 +23,6 @@ fi
 BAZEL_BIN="${HOME}/.bazel-dirs/bin"
 
 cp ${BAZEL_BIN}/360-cg-manager/module_deploy.jar rest-capsule.jar
-cp ../../400-rest/src/main/resources/hazelcast.xml .
 cp ../../keystore.jks .
 cp ../../360-cg-manager/key.pem .
 cp ../../360-cg-manager/cert.pem .

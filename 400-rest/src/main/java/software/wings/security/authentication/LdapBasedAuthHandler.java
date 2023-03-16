@@ -171,7 +171,7 @@ public class LdapBasedAuthHandler implements AuthHandler {
                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                             .build();
     }
-    LdapResponse authenticationResponse = delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
+    LdapResponse authenticationResponse = delegateProxyFactory.getV2(LdapDelegateService.class, syncTaskContext)
                                               .authenticate(LdapSettingsMapper.ldapSettingsDTO(settings),
                                                   settingsEncryptedDataDetail, username, passwordEncryptedDataDetail);
     if (authenticationResponse.getStatus() == Status.SUCCESS) {

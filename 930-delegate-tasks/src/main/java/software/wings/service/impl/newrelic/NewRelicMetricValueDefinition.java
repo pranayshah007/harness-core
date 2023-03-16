@@ -18,6 +18,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SortOrder;
 import io.harness.beans.SortOrder.OrderType;
 
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.metrics.MetricType;
 import software.wings.metrics.RiskLevel;

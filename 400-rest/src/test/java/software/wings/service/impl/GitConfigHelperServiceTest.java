@@ -203,11 +203,11 @@ public class GitConfigHelperServiceTest extends WingsBaseTest {
                               .accountId("id")
                               .build();
     List<EncryptedDataDetail> encryptionDetails = new ArrayList<>();
-    doReturn(GitCommandExecutionResponse.builder().build()).when(delegateService).executeTask(any());
+    doReturn(GitCommandExecutionResponse.builder().build()).when(delegateService).executeTaskV2(any());
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
 
     gitConfigHelperService.validateGitConfig(gitConfig, encryptionDetails);
-    verify(delegateService, times(1)).executeTask(captor.capture());
+    verify(delegateService, times(1)).executeTaskV2(captor.capture());
     DelegateTask task = captor.getAllValues().get(0);
     Object[] parameters = task.getData().getParameters();
     assertThat(parameters.length).isEqualTo(3);
@@ -226,20 +226,20 @@ public class GitConfigHelperServiceTest extends WingsBaseTest {
                               .urlType(GitConfig.UrlType.ACCOUNT)
                               .build();
 
-    doReturn(GitCommandExecutionResponse.builder().build()).when(delegateService).executeTask(any());
+    doReturn(GitCommandExecutionResponse.builder().build()).when(delegateService).executeTaskV2(any());
 
     List<EncryptedDataDetail> encryptionDetails = new ArrayList<>();
     gitConfigHelperService.validateGitConfig(gitConfig, encryptionDetails);
-    verify(delegateService, times(0)).executeTask(any());
+    verify(delegateService, times(0)).executeTaskV2(any());
 
     gitConfig.setRepoName("");
     gitConfigHelperService.validateGitConfig(gitConfig, encryptionDetails);
-    verify(delegateService, times(0)).executeTask(any());
+    verify(delegateService, times(0)).executeTaskV2(any());
 
     gitConfig.setRepoName("repo.git");
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
     gitConfigHelperService.validateGitConfig(gitConfig, encryptionDetails);
-    verify(delegateService, times(1)).executeTask(captor.capture());
+    verify(delegateService, times(1)).executeTaskV2(captor.capture());
 
     DelegateTask task = captor.getAllValues().get(0);
     Object[] parameters = task.getData().getParameters();

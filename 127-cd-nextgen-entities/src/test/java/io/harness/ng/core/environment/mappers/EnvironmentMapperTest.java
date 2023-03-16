@@ -302,7 +302,7 @@ public class EnvironmentMapperTest extends CategoryTest {
                                                  .build();
     assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Manifests cannot contain more than one helm repo override");
+        .hasMessageContaining("You cannot configure multiple Helm Repo Overrides");
   }
 
   @Test
@@ -437,6 +437,6 @@ public class EnvironmentMapperTest extends CategoryTest {
     assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(
-            "Found mismatch in following fields between yaml and requested value respectively: {Environment type=[Production, PreProduction], Org Identifier=[ORG_ID, null], Project Identifier =[PROJECT_ID, invalidProjectId], Environment Identifier=[ENV, invalidId], Environment name=[envtest, invalidName]}");
+            "For the environment [name: invalidName, identifier: invalidId], Found mismatch in following fields between yaml and requested value respectively: {Environment type=[Production, PreProduction], Org Identifier=[ORG_ID, null], Project Identifier =[PROJECT_ID, invalidProjectId], Environment Identifier=[ENV, invalidId], Environment name=[envtest, invalidName]}");
   }
 }

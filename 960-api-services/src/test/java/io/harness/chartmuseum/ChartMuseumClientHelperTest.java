@@ -28,7 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.version.Version;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 

@@ -14,12 +14,17 @@ import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.beans.FeatureName;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.AccessDeniedException;
+import io.harness.exception.WingsException;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimGroup;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimResource;
 import io.harness.scim.service.ScimGroupService;
 import io.harness.security.annotations.ScimAPI;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import io.dropwizard.jersey.PATCH;
@@ -46,14 +51,21 @@ import lombok.extern.slf4j.Slf4j;
 public class NGScimGroupResource extends ScimResource {
   @Inject private ScimGroupService scimGroupService;
   @Inject private AccessControlClient accessControlClient;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+
+  private static final String STRING_PERMISSION_FAIL_FORMAT =
+      "Token needs to have %s permission on account: %s to perform SCIM UserGroup action";
 
   @POST
   @Path("Groups")
   @ApiOperation(value = "Create a new group and return uuid in response", nickname = "createScimGroup")
   public Response createGroup(ScimGroup groupQuery, @PathParam("accountIdentifier") String accountIdentifier) {
-    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null), Resource.of(USERGROUP, null),
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
+        && !accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null), Resource.of(USERGROUP, null),
             MANAGE_USERGROUP_PERMISSION)) {
-      log.warn("NGSCIM: Missing permission to create group for accountId {}", accountIdentifier);
+      throw new AccessDeniedException(
+          String.format(STRING_PERMISSION_FAIL_FORMAT, MANAGE_USERGROUP_PERMISSION, accountIdentifier),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
     try {
       return Response.status(Response.Status.CREATED)
@@ -70,9 +82,12 @@ public class NGScimGroupResource extends ScimResource {
   @ApiOperation(value = "Fetch an existing user by uuid", nickname = "getScimGroup")
   public Response getGroup(
       @PathParam("accountIdentifier") String accountIdentifier, @PathParam("groupIdentifier") String groupIdentifier) {
-    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
+        && !accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
             Resource.of(USERGROUP, groupIdentifier), VIEW_USERGROUP_PERMISSION)) {
-      log.warn("NGSCIM: Missing permission to fetch group for accountId {}", accountIdentifier);
+      throw new AccessDeniedException(
+          String.format(STRING_PERMISSION_FAIL_FORMAT, VIEW_USERGROUP_PERMISSION, accountIdentifier),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
     try {
       return Response.status(Response.Status.OK)
@@ -90,9 +105,12 @@ public class NGScimGroupResource extends ScimResource {
   @ApiOperation(value = "Delete an existing user by uuid", nickname = "deleteScimGroup")
   public Response deleteGroup(
       @PathParam("accountIdentifier") String accountIdentifier, @PathParam("groupIdentifier") String groupIdentifier) {
-    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
+        && !accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
             Resource.of(USERGROUP, groupIdentifier), MANAGE_USERGROUP_PERMISSION)) {
-      log.warn("NGSCIM: Missing permission to delete group for accountId {}", accountIdentifier);
+      throw new AccessDeniedException(
+          String.format(STRING_PERMISSION_FAIL_FORMAT, MANAGE_USERGROUP_PERMISSION, accountIdentifier),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
     scimGroupService.deleteGroup(groupIdentifier, accountIdentifier);
     return Response.status(Response.Status.NO_CONTENT).build();
@@ -107,9 +125,12 @@ public class NGScimGroupResource extends ScimResource {
   public Response
   searchGroup(@PathParam("accountIdentifier") String accountIdentifier, @QueryParam("filter") String filter,
       @QueryParam("count") Integer count, @QueryParam("startIndex") Integer startIndex) {
-    if (!accessControlClient.hasAccess(
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
+        && !accessControlClient.hasAccess(
             ResourceScope.of(accountIdentifier, null, null), Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION)) {
-      log.warn("NGSCIM: Missing permission to search group for accountId {}", accountIdentifier);
+      throw new AccessDeniedException(
+          String.format(STRING_PERMISSION_FAIL_FORMAT, VIEW_USERGROUP_PERMISSION, accountIdentifier),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
     try {
       ScimListResponse<ScimGroup> groupResources =
@@ -127,9 +148,12 @@ public class NGScimGroupResource extends ScimResource {
   @ApiOperation(value = "Update some fields of a groups by uuid. Can update members/name", nickname = "patchScimGroup")
   public Response updateGroup(@PathParam("accountIdentifier") String accountIdentifier,
       @PathParam("groupIdentifier") String groupIdentifier, PatchRequest patchRequest) {
-    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
+        && !accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
             Resource.of(USERGROUP, groupIdentifier), MANAGE_USERGROUP_PERMISSION)) {
-      log.warn("NGSCIM: Missing permission to patch update group for accountId {}", accountIdentifier);
+      throw new AccessDeniedException(
+          String.format(STRING_PERMISSION_FAIL_FORMAT, MANAGE_USERGROUP_PERMISSION, accountIdentifier),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
     return scimGroupService.updateGroup(groupIdentifier, accountIdentifier, patchRequest);
   }
@@ -139,9 +163,12 @@ public class NGScimGroupResource extends ScimResource {
   @ApiOperation(value = "Update a group", nickname = "updateScimGroup")
   public Response updateGroup(@PathParam("accountIdentifier") String accountIdentifier,
       @PathParam("groupIdentifier") String groupIdentifier, ScimGroup groupQuery) {
-    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
+        && !accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
             Resource.of(USERGROUP, groupIdentifier), MANAGE_USERGROUP_PERMISSION)) {
-      log.warn("NGSCIM: Missing permission to update group for accountId {}", accountIdentifier);
+      throw new AccessDeniedException(
+          String.format(STRING_PERMISSION_FAIL_FORMAT, MANAGE_USERGROUP_PERMISSION, accountIdentifier),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
     try {
       return scimGroupService.updateGroup(groupIdentifier, accountIdentifier, groupQuery);

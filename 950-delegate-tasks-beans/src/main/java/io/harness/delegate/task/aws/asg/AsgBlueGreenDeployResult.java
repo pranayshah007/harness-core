@@ -17,6 +17,6 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class AsgBlueGreenDeployResult {
-  private AutoScalingGroupContainer autoScalingGroupContainer;
-  private String asgName;
+  private AutoScalingGroupContainer stageAutoScalingGroupContainer;
+  private AutoScalingGroupContainer prodAutoScalingGroupContainer;
 }

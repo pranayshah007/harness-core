@@ -13,8 +13,10 @@ import io.harness.exception.GeneralException;
 import io.harness.threading.Morpheus;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.internal.connection.ServerAddressHelper;
 import de.flapdoodle.embed.mongo.Command;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodStarter;
@@ -28,6 +30,7 @@ import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.config.IRuntimeConfig;
 import de.flapdoodle.embed.process.runtime.Network;
 import java.io.Closeable;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import lombok.Builder;
@@ -61,10 +64,6 @@ class RealMongoCreator {
     @Override
     public void close() {
       executorService.submit(() -> {
-        if (temporaryDatabaseName != null) {
-          mongoClient.dropDatabase(temporaryDatabaseName);
-        }
-
         mongoClient.close();
         if (mongodExecutable != null) {
           mongodExecutable.stop();
@@ -76,11 +75,10 @@ class RealMongoCreator {
   private static RealMongo realMongo(String databaseName) throws Exception {
     String testMongoUri = System.getenv("TEST_MONGO_URI");
     if (testMongoUri != null) {
-      MongoClientURI mongoClientURI = new MongoClientURI(testMongoUri + "/" + databaseName);
       return RealMongo.builder()
           .mongodExecutable(null)
           .temporaryDatabaseName(databaseName)
-          .mongoClient(new MongoClient(mongoClientURI))
+          .mongoClient(MongoClients.create(testMongoUri + "/" + databaseName))
           .build();
     }
 
@@ -107,7 +105,11 @@ class RealMongoCreator {
           mongodExecutable = starter.prepare(mongodConfig);
           mongodExecutable.start();
         }
-        MongoClient mongoClient = new MongoClient("localhost", port);
+        MongoClient mongoClient = MongoClients.create(
+            MongoClientSettings.builder()
+                .applyToClusterSettings(
+                    builder -> builder.hosts(Arrays.asList(ServerAddressHelper.createServerAddress("localhost", port))))
+                .build());
         return RealMongo.builder().mongodExecutable(mongodExecutable).mongoClient(mongoClient).build();
       } catch (Exception e) {
         // Note this handles race int the port, but also in the starter prepare

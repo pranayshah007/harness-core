@@ -8,9 +8,11 @@
 package io.harness.pms.expressions.functors;
 
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.IVAN;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 
 import io.harness.CategoryTest;
@@ -33,7 +35,9 @@ import io.grpc.testing.GrpcCleanupRule;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.Before;
@@ -45,6 +49,14 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class RemoteExpressionFunctorTest extends CategoryTest {
+  private static final int EXPECTED_NUMBER_OF_ARGUMENTS = 2;
+  private static final String SECRET_REF = "secretRef";
+  private static final String FUNCTOR_KEY = "functorKey";
+  private static final String AMBIANCE = "ambiance";
+  private static final String REMOTE_FUNCTOR_SERVICE_BLOCKING_STUB = "remoteFunctorServiceBlockingStub";
+  private static final String DUMMY_VALUE = "DummyValue";
+  private static final String EXPRESSION_RESPONSE_VALUE = "value";
+
   RemoteFunctorServiceBlockingStub blockingStub;
   @Rule public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
   ExpressionRequest request;
@@ -72,31 +84,32 @@ public class RemoteExpressionFunctorTest extends CategoryTest {
     blockingStub = RemoteFunctorServiceGrpc.newBlockingStub(chan);
     MockitoAnnotations.initMocks(this);
   }
+
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testGet() {
     Ambiance ambiance = Ambiance.newBuilder().build();
-    on(remoteExpressionFunctor).set("ambiance", ambiance);
-    on(remoteExpressionFunctor).set("functorKey", "functorKey");
-    on(remoteExpressionFunctor).set("remoteFunctorServiceBlockingStub", blockingStub);
+    on(remoteExpressionFunctor).set(AMBIANCE, ambiance);
+    on(remoteExpressionFunctor).set(FUNCTOR_KEY, FUNCTOR_KEY);
+    on(remoteExpressionFunctor).set(REMOTE_FUNCTOR_SERVICE_BLOCKING_STUB, blockingStub);
 
     // For single string as argument
     Map<String, Object> map = (Map<String, Object>) remoteExpressionFunctor.get("empty");
     assertEquals(request.getAmbiance(), ambiance);
     assertEquals(request.getArgsList().size(), 1);
-    assertEquals(request.getFunctorKey(), "functorKey");
+    assertEquals(request.getFunctorKey(), FUNCTOR_KEY);
     assertNotNull(map);
-    assertEquals(map.get("value"), "DummyValue");
+    assertEquals(map.get(EXPRESSION_RESPONSE_VALUE), DUMMY_VALUE);
 
     // For array of strings as argument
     String[] allArgs = {"empty", "arg1"};
     map = (Map<String, Object>) remoteExpressionFunctor.get(allArgs);
     assertEquals(request.getAmbiance(), ambiance);
     assertEquals(request.getArgsList().size(), 2);
-    assertEquals(request.getFunctorKey(), "functorKey");
+    assertEquals(request.getFunctorKey(), FUNCTOR_KEY);
     assertNotNull(map);
-    assertEquals(map.get("value"), "DummyValue");
+    assertEquals(map.get(EXPRESSION_RESPONSE_VALUE), DUMMY_VALUE);
   }
 
   @Test
@@ -119,5 +132,43 @@ public class RemoteExpressionFunctorTest extends CategoryTest {
     assertEquals(ExpressionResultUtils.getPrimitiveResponse("a-b-c-d-e", UUID.class.getSimpleName()),
         UUID.fromString("a-b-c-d-e"));
     assertEquals(ExpressionResultUtils.getPrimitiveResponse("uri", URI.class.getSimpleName()), URI.create("uri"));
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetAsString() {
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    on(remoteExpressionFunctor).set(AMBIANCE, ambiance);
+    on(remoteExpressionFunctor).set(FUNCTOR_KEY, FUNCTOR_KEY);
+    on(remoteExpressionFunctor).set(REMOTE_FUNCTOR_SERVICE_BLOCKING_STUB, blockingStub);
+
+    Map<String, Object> map = (Map<String, Object>) remoteExpressionFunctor.getAsString("/folder/filename");
+
+    assertEquals(request.getAmbiance(), ambiance);
+    assertEquals(request.getArgsList().size(), EXPECTED_NUMBER_OF_ARGUMENTS);
+    List<String> args = Arrays.asList(request.getArgsList().toArray(new String[0]));
+    assertThat(args).contains("getAsString", "/folder/filename");
+    assertNotNull(map);
+    assertEquals(map.get(EXPRESSION_RESPONSE_VALUE), DUMMY_VALUE);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetAsBase64() {
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    on(remoteExpressionFunctor).set(AMBIANCE, ambiance);
+    on(remoteExpressionFunctor).set(FUNCTOR_KEY, FUNCTOR_KEY);
+    on(remoteExpressionFunctor).set(REMOTE_FUNCTOR_SERVICE_BLOCKING_STUB, blockingStub);
+
+    Map<String, Object> map = (Map<String, Object>) remoteExpressionFunctor.getAsBase64(SECRET_REF);
+
+    assertEquals(request.getAmbiance(), ambiance);
+    assertEquals(request.getArgsList().size(), EXPECTED_NUMBER_OF_ARGUMENTS);
+    List<String> args = Arrays.asList(request.getArgsList().toArray(new String[0]));
+    assertThat(args).contains("getAsBase64", SECRET_REF);
+    assertNotNull(map);
+    assertEquals(map.get(EXPRESSION_RESPONSE_VALUE), DUMMY_VALUE);
   }
 }

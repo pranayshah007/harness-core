@@ -35,11 +35,15 @@ public class PipelineUtilsTest extends CategoryTest {
     String pipelineId = "pipelineId";
     String executionId = "executionId";
     String baseUrl = "localhost";
+    String stageSetupId = "abcdefg";
+    String stageExecId = "stageExecId";
     String url = baseUrl + "/account/" + accountId + "/ci/orgs/" + orgId + "/projects/" + projectId + "/pipelines/"
-        + pipelineId + "/executions/" + executionId + "/pipeline";
+        + pipelineId + "/executions/" + executionId + "/pipeline?stage=abcdefg&stageExecId=stageExecId";
+
     NGAccess ngAccess =
         BaseNGAccess.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build();
-    String returnedUrl = pipelineUtils.getBuildDetailsUrl(ngAccess, pipelineId, executionId, baseUrl);
+    String returnedUrl =
+        pipelineUtils.getBuildDetailsUrl(ngAccess, pipelineId, executionId, baseUrl, stageSetupId, stageExecId);
     assertEquals(url, returnedUrl);
   }
 }

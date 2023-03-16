@@ -55,9 +55,6 @@ public class InternalChangeEventTransformerTest extends CvNextGenTestBase {
     InternalChangeActivity internalChangeActivity = builderFactory.getInternalChangeActivity_FFBuilder().build();
     ChangeEventDTO changeEventDTO = internalChangeEventTransformer.getDTO(internalChangeActivity);
     verifyEqual(internalChangeActivity, changeEventDTO);
-    /*assertThat(changeEventDTO.getServiceName()).isEqualTo("Mocked service name");
-    assertThat(changeEventDTO.getEnvironmentName()).isEqualTo("Mocked env name");
-    assertThat(internalChangeActivity.getUuid()).isEqualTo(changeEventDTO.getId());*/
   }
 
   private void verifyEqual(InternalChangeActivity internalChangeActivity, ChangeEventDTO changeEventDTO) {
@@ -66,7 +63,6 @@ public class InternalChangeEventTransformerTest extends CvNextGenTestBase {
     assertThat(internalChangeActivity.getProjectIdentifier()).isEqualTo(changeEventDTO.getProjectIdentifier());
     assertThat(internalChangeActivity.getEventTime().toEpochMilli()).isEqualTo(changeEventDTO.getEventTime());
     assertThat(internalChangeActivity.getType()).isEqualTo(changeEventDTO.getType().getActivityType());
-    assertThat(internalChangeActivity.getEventTime().toEpochMilli()).isEqualTo(changeEventDTO.getEventTime());
     assertThat(internalChangeActivity.getMonitoredServiceIdentifier())
         .isEqualTo(changeEventDTO.getMonitoredServiceIdentifier());
     assertThat(internalChangeActivity.getChangeSourceIdentifier())

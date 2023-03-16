@@ -108,6 +108,10 @@ public class RecentExecutionsInfoHelper {
           if (endTsInPlanExecution != null && endTsInPlanExecution != 0L) {
             recentExecutionInfo.setEndTs(endTsInPlanExecution);
           }
+          if (ambiance.getMetadata().getPipelineStageInfo().getHasParentPipeline()) {
+            recentExecutionInfo.setParentStageInfo(ambiance.getMetadata().getPipelineStageInfo());
+          }
+
           Criteria criteria =
               getCriteriaForPipelineMetadata(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
           Update update = getUpdateOperationForRecentExecutionInfo(recentExecutionInfoList);

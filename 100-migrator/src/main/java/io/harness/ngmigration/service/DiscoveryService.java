@@ -21,11 +21,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
@@ -35,6 +36,7 @@ import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigratedDetails;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.remote.client.ServiceHttpClientConfig;
 
@@ -61,6 +63,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -119,7 +122,12 @@ public class DiscoveryService {
       // TODO: check if child already discovered, if yes, no need to rediscover. Just create a link in parent.
       for (CgEntityId child : chilldren) {
         NgMigrationService ngMigrationService = migrationFactory.getMethod(child.getType());
-        DiscoveryNode node = ngMigrationService.discover(accountId, appId, child.getId());
+        DiscoveryNode node = null;
+        try {
+          node = ngMigrationService.discover(accountId, appId, child.getId());
+        } catch (Exception e) {
+          log.error("error when fetching entity", e);
+        }
         travel(accountId, appId, entities, graph, currentNode.getEntityId(), node);
       }
     }
@@ -165,8 +173,8 @@ public class DiscoveryService {
         ngMigrationService = migrationFactory.getMethod(entityType);
         DiscoveryNode node = ngMigrationService.discover(accountId, appId, entityId);
         if (node == null) {
-          throw new InvalidRequestException(
-              String.format("Entity not found! - Type: %s & ID: %s", child.getType(), entityId));
+          log.warn(String.format("Entity not found! - Type: %s & ID: %s", child.getType(), entityId));
+          continue;
         }
         // We add the node the dummy head's children & to the graph
         head.getChildren().add(node.getEntityNode().getEntityId());
@@ -233,8 +241,8 @@ public class DiscoveryService {
   }
 
   public StreamingOutput exportYamlFilesAsZip(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
-    List<NGYamlFile> ngYamlFiles = migrateEntity(inputDTO, discoveryResult);
-    return createZip(ngYamlFiles);
+    YamlGenerationDetails generationDetails = migrateEntity(inputDTO, discoveryResult);
+    return createZip(generationDetails.getYamlFileList());
   }
 
   public StreamingOutput createZip(List<NGYamlFile> yamlFiles) {
@@ -251,7 +259,7 @@ public class DiscoveryService {
     };
   }
 
-  private List<NGYamlFile> migrateEntity(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
+  private YamlGenerationDetails migrateEntity(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
     Map<CgEntityId, NGYamlFile> migratedEntities = new HashMap<>();
     Map<CgEntityId, Set<CgEntityId>> leafTracker = discoveryResult.getLinks().entrySet().stream().collect(
         Collectors.toMap(Entry::getKey, e -> Sets.newHashSet(e.getValue())));
@@ -260,11 +268,14 @@ public class DiscoveryService {
   }
 
   public SaveSummaryDTO migrateEntity(String auth, MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
-    List<NGYamlFile> ngYamlFiles = migrateEntity(inputDTO, discoveryResult);
-    return createEntities(auth, inputDTO, ngYamlFiles);
+    YamlGenerationDetails generationDetails = migrateEntity(inputDTO, discoveryResult);
+    return createEntities(auth, inputDTO, generationDetails);
   }
 
-  private SaveSummaryDTO createEntities(String auth, MigrationInputDTO inputDTO, List<NGYamlFile> ngYamlFiles) {
+  private SaveSummaryDTO createEntities(
+      String auth, MigrationInputDTO inputDTO, YamlGenerationDetails generationDetails) {
+    List<NGYamlFile> ngYamlFiles = generationDetails.getYamlFileList();
+    List<NGSkipDetail> skipDetails = generationDetails.getSkipDetails();
     NGClient ngClient = MigratorUtility.getRestClient(ngClientConfig, NGClient.class);
     PmsClient pmsClient = MigratorUtility.getRestClient(pipelineServiceClientConfig, PmsClient.class);
     TemplateClient templateClient = MigratorUtility.getRestClient(templateServiceClientConfig, TemplateClient.class);
@@ -273,6 +284,7 @@ public class DiscoveryService {
     SaveSummaryDTO summaryDTO = SaveSummaryDTO.builder()
                                     .errors(new ArrayList<>())
                                     .stats(new HashMap<>())
+                                    .skipDetails(skipDetails)
                                     .alreadyMigratedDetails(new ArrayList<>())
                                     .successfullyMigratedDetails(new ArrayList<>())
                                     .build();
@@ -308,6 +320,7 @@ public class DiscoveryService {
         summaryDTO.getErrors().add(ImportError.builder().message(e.getMessage()).entity(file.getCgBasicInfo()).build());
       }
     }
+    summaryDTO.setNgYamlFiles(ngYamlFiles);
     return summaryDTO;
   }
 
@@ -367,23 +380,28 @@ public class DiscoveryService {
     }
   }
 
-  private List<NGYamlFile> getAllYamlFiles(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  private YamlGenerationDetails getAllYamlFiles(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       Map<CgEntityId, Set<CgEntityId>> leafTracker) {
     if (!leafTracker.containsKey(entityId)) {
-      return new ArrayList<>();
+      return null;
     }
     List<NGYamlFile> files = new ArrayList<>();
+    List<NGSkipDetail> skipDetails = new ArrayList<>();
 
     // Load all migrated entities for the CG entities before actual migration
-    for (CgEntityId cgEntityId : entities.keySet()) {
-      NGYamlFile yamlFile =
-          migrationFactory.getMethod(cgEntityId.getType()).getExistingYaml(inputDTO, entities, cgEntityId);
-      if (yamlFile != null) {
-        migratedEntities.put(cgEntityId, yamlFile);
-        files.add(yamlFile);
-      }
-    }
+    // We'll first load the environment because infra depends on Environment
+    entities.keySet()
+        .stream()
+        .sorted(Comparator.comparing(id -> !ENVIRONMENT.equals(id.getType())))
+        .forEach(cgEntityId -> {
+          NGYamlFile yamlFile = migrationFactory.getMethod(cgEntityId.getType())
+                                    .getExistingYaml(inputDTO, entities, migratedEntities, cgEntityId);
+          if (yamlFile != null) {
+            migratedEntities.put(cgEntityId, yamlFile);
+            files.add(yamlFile);
+          }
+        });
 
     // Note: Special case: Migrate environments
     // We are doing this because when we migrate infra we need to reference environment
@@ -393,10 +411,13 @@ public class DiscoveryService {
                                         .filter(cgEntityId -> ENVIRONMENT.equals(cgEntityId.getType()))
                                         .collect(Collectors.toList());
     for (CgEntityId entry : environments) {
-      List<NGYamlFile> currentEntity = migrationFactory.getMethod(entry.getType())
-                                           .getYaml(inputDTO, entityId, entities, graph, entry, migratedEntities);
-      if (isNotEmpty(currentEntity)) {
-        files.addAll(currentEntity);
+      YamlGenerationDetails details = migrationFactory.getMethod(entry.getType())
+                                          .getYamls(inputDTO, entityId, entities, graph, entry, migratedEntities);
+      if (details != null && isNotEmpty(details.getYamlFileList())) {
+        files.addAll(details.getYamlFileList());
+      }
+      if (details != null && isNotEmpty(details.getSkipDetails())) {
+        skipDetails.addAll(details.getSkipDetails());
       }
     }
 
@@ -406,16 +427,19 @@ public class DiscoveryService {
         if (ENVIRONMENT.equals(entry.getType())) {
           continue;
         }
-        List<NGYamlFile> currentEntity = migrationFactory.getMethod(entry.getType())
-                                             .getYaml(inputDTO, entityId, entities, graph, entry, migratedEntities);
-        if (isNotEmpty(currentEntity)) {
-          files.addAll(currentEntity);
+        YamlGenerationDetails details = migrationFactory.getMethod(entry.getType())
+                                            .getYamls(inputDTO, entityId, entities, graph, entry, migratedEntities);
+        if (details != null && isNotEmpty(details.getYamlFileList())) {
+          files.addAll(details.getYamlFileList());
+        }
+        if (details != null && isNotEmpty(details.getSkipDetails())) {
+          skipDetails.addAll(details.getSkipDetails());
         }
       }
       removeLeafNodes(leafTracker);
     }
 
-    return files;
+    return YamlGenerationDetails.builder().yamlFileList(files).skipDetails(skipDetails).build();
   }
 
   private MutableGraph getGraphViz(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph) {

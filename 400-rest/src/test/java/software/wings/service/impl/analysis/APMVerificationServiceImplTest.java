@@ -56,11 +56,11 @@ import software.wings.beans.PrometheusConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.apm.Method;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.dl.WingsPersistence;
 import software.wings.metrics.MetricType;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.apm.APMDataCollectionInfo;
 import software.wings.service.impl.apm.APMSetupTestNodeData;
 import software.wings.service.impl.apm.MLServiceUtils;
@@ -174,7 +174,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
 
     // setup
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
+    when(mockDelegateProxyFactory.getV2(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenReturn(dummyResponseString);
 
@@ -213,7 +213,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
 
     // setup
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
+    when(mockDelegateProxyFactory.getV2(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenReturn(textLoad);
     when(datadogService.getConcatenatedListOfMetricsForValidation(any(), any(), any(), any()))
@@ -254,7 +254,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
 
     // setup
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
+    when(mockDelegateProxyFactory.getV2(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenReturn(textLoad);
     when(datadogService.getConcatenatedListOfMetricsForValidation(any(), any(), any(), any()))
@@ -327,7 +327,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     // setup
     ThirdPartyApiCallLog apiCallLog = ThirdPartyApiCallLog.builder().build();
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
+    when(mockDelegateProxyFactory.getV2(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenAnswer(invocation -> {
           Object[] args = invocation.getArguments();
@@ -361,7 +361,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
 
     // setup
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
+    when(mockDelegateProxyFactory.getV2(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenReturn(dummyResponseString);
 
@@ -385,7 +385,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
 
     // setup
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
+    when(mockDelegateProxyFactory.getV2(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenReturn(dummyResponseString);
 
@@ -409,7 +409,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
 
     // setup
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
+    when(mockDelegateProxyFactory.getV2(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenThrow(new WingsException(""));
 
@@ -450,7 +450,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
 
     verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
-    verify(mockDelegateService).queueTask(taskCaptor.capture());
+    verify(mockDelegateService).queueTaskV2(taskCaptor.capture());
     assertThat(TaskType.APM_24_7_METRIC_DATA_COLLECTION_TASK.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
     APMDataCollectionInfo dataCollectionInfo =
@@ -490,7 +490,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
 
     verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
-    verify(mockDelegateService).queueTask(taskCaptor.capture());
+    verify(mockDelegateService).queueTaskV2(taskCaptor.capture());
     assertThat(TaskType.APPDYNAMICS_COLLECT_24_7_METRIC_DATA.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
     AppdynamicsDataCollectionInfo dataCollectionInfo =
@@ -529,7 +529,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
 
     verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
-    verify(mockDelegateService).queueTask(taskCaptor.capture());
+    verify(mockDelegateService).queueTaskV2(taskCaptor.capture());
     assertThat(TaskType.NEWRELIC_COLLECT_24_7_METRIC_DATA.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
     NewRelicDataCollectionInfo dataCollectionInfo =
@@ -581,7 +581,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
 
     verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
-    verify(mockDelegateService).queueTask(taskCaptor.capture());
+    verify(mockDelegateService).queueTaskV2(taskCaptor.capture());
     assertThat(TaskType.APM_24_7_METRIC_DATA_COLLECTION_TASK.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
     APMDataCollectionInfo dataCollectionInfo =
@@ -615,7 +615,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
-    verify(mockDelegateService).queueTask(taskCaptor.capture());
+    verify(mockDelegateService).queueTaskV2(taskCaptor.capture());
     assertThat(TaskType.CLOUD_WATCH_COLLECT_24_7_METRIC_DATA.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
     CloudWatchDataCollectionInfo dataCollectionInfo =
@@ -651,7 +651,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
-    verify(mockDelegateService).queueTask(taskCaptor.capture());
+    verify(mockDelegateService).queueTaskV2(taskCaptor.capture());
 
     assertThat(TaskType.STACKDRIVER_COLLECT_24_7_METRIC_DATA.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
@@ -682,7 +682,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
-    verify(mockDelegateService).queueTask(taskCaptor.capture());
+    verify(mockDelegateService).queueTaskV2(taskCaptor.capture());
 
     assertThat(TaskType.CUSTOM_COLLECT_24_7_LOG_DATA.name()).isEqualTo(taskCaptor.getValue().getData().getTaskType());
   }
@@ -715,7 +715,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
 
     // setup
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
+    when(mockDelegateProxyFactory.getV2(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenReturn(dummyResponseString);
 
@@ -748,7 +748,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     // setup
     ThirdPartyApiCallLog apiCallLog = ThirdPartyApiCallLog.builder().build();
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockDelegateProxyFactory.get(any(), any())).thenReturn(apmDelegateService);
+    when(mockDelegateProxyFactory.getV2(any(), any())).thenReturn(apmDelegateService);
 
     try {
       service.getDataForNode("accountId", "serverConfigId", nodeData, DelegateStateType.APM_VERIFICATION);

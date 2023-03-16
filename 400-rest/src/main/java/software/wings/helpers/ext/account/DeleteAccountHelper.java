@@ -19,6 +19,7 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
+import io.harness.event.timeseries.processor.TimescaleDataCleanup;
 import io.harness.ff.FeatureFlagService;
 import io.harness.limits.checker.rate.UsageBucket;
 import io.harness.limits.checker.rate.UsageBucket.UsageBucketKeys;
@@ -40,6 +41,8 @@ import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.beans.sso.SSOSettings;
 import software.wings.scheduler.events.segment.SegmentGroupEventJobContext;
 import software.wings.scheduler.events.segment.SegmentGroupEventJobContext.SegmentGroupEventJobContextKeys;
+import software.wings.service.impl.ChurnedAuditFilesAndChunksCleanup;
+import software.wings.service.impl.ChurnedConfigFilesAndChunksCleanup;
 import software.wings.service.impl.SSOSettingServiceImpl;
 import software.wings.service.impl.ServiceClassLocator;
 import software.wings.service.intfc.DelegateService;
@@ -84,6 +87,10 @@ public class DeleteAccountHelper {
   @Inject private FeatureFlagService featureFlagService;
   @Inject private DelegateService delegateService;
   @Inject private DelegateNgTokenService delegateNgTokenService;
+  @Inject private ChurnedAuditFilesAndChunksCleanup churnedAuditFilesAndChunksCleanup;
+
+  @Inject private ChurnedConfigFilesAndChunksCleanup churnedConfigFilesAndChunksCleanup;
+  @Inject private TimescaleDataCleanup timescaleDataCleanup;
 
   public List<String> deleteAllEntities(String accountId) {
     List<String> entitiesRemainingForDeletion = new ArrayList<>();
@@ -239,6 +246,9 @@ public class DeleteAccountHelper {
     delegateService.deleteByAccountId(accountId);
     List<String> entitiesRemainingForDeletion = deleteAllEntities(accountId);
     delegateNgTokenService.deleteByAccountId(accountId);
+    churnedAuditFilesAndChunksCleanup.deleteAuditFilesAndChunks(accountId);
+    churnedConfigFilesAndChunksCleanup.deleteConfigFilesAndChunks(accountId);
+    timescaleDataCleanup.cleanupChurnedAccountData(accountId);
     if (isEmpty(entitiesRemainingForDeletion)) {
       log.info("Deleting account entry {}", accountId);
       hPersistence.delete(Account.class, accountId);

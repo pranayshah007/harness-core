@@ -1,0 +1,49 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts/mappers:module",
+        "//950-delegate-tasks-beans:module",
+        "//960-api-services/src/main/java/io/harness/artifacts/beans:module",
+        "//960-api-services/src/main/java/io/harness/artifacts/comparator:module",
+        "//960-api-services/src/main/java/io/harness/azure/client:module",
+        "//960-api-services/src/main/java/io/harness/azure/utility:module",
+        "//960-api-services/src/main/java/io/harness/k8s/model:module",
+        "//960-api-services/src/main/java/io/harness/security/encryption:module",
+        "//960-api-services/src/main/java/software/wings/helpers/ext/azure:module",
+        "//970-api-services-beans/src/main/java/io/harness/azure:module",
+        "//970-api-services-beans/src/main/java/io/harness/azure/model:module",
+        "//970-api-services-beans/src/main/java/io/harness/azure/model/kube:module",
+        "//970-api-services-beans/src/main/java/io/harness/azure/model/tag:module",
+        "//970-api-services-beans/src/main/java/io/harness/k8s/model:module",
+        "//970-api-services-beans/src/main/java/io/harness/logging:module",
+        "//970-ng-commons:module",
+        "//980-commons/src/main/java/io/harness/artifact:module",
+        "//980-commons/src/main/java/io/harness/data/encoding:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/expression:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_azure_azure_core_management",
+        "@maven//:com_azure_resourcemanager_azure_resourcemanager_appservice",
+        "@maven//:com_azure_resourcemanager_azure_resourcemanager_containerregistry",
+        "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_fasterxml_jackson_dataformat_jackson_dataformat_yaml",
+        "@maven//:com_google_inject_guice",
+        "@maven//:com_intellij_annotations",
+    ],
+)
+
+run_analysis_per_module()

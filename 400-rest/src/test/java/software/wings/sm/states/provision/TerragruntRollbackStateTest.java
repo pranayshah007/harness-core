@@ -43,6 +43,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.FileBucket;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HIterator;
 import io.harness.rule.Owner;
@@ -111,6 +112,7 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
   @Mock private StateExecutionService stateExecutionService;
   @Mock private TerragruntStateHelper terragruntStateHelper;
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks
   TerragruntRollbackState terragruntRollbackState = new TerragruntRollbackState("Rollback Terragrunt Test");
@@ -348,7 +350,7 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
         .isEqualTo(ACTIVITY_ID);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(i)).queueTask(captor.capture());
+    verify(delegateService, times(i)).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask.getData().getParameters().length).isEqualTo(1);
     TerragruntProvisionParameters parameters =

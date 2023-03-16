@@ -11,7 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGE_USER_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USER;
 import static io.harness.rule.OwnerRule.NAMANG;
+import static io.harness.rule.OwnerRule.TEJAS;
 
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -362,5 +365,38 @@ public class UserInfoServiceImplTest extends CategoryTest {
     verifyNoMoreInteractions(userClient);
     verifyNoMoreInteractions(accessControlClient);
     verifyNoMoreInteractions(ngUserService);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testSendTwoFactorAuthenticationResetEmail() throws IOException {
+    String userId = randomAlphabetic(10);
+    String accountId = randomAlphabetic(10);
+
+    // test success scenario
+    Call<RestResponse<Boolean>> restResponseCall = mock(Call.class);
+    RestResponse<Boolean> restResponse = new RestResponse<>(Boolean.TRUE);
+    when(userClient.sendTwoFactorAuthenticationResetEmail(userId, accountId)).thenReturn(restResponseCall);
+    when(restResponseCall.execute()).thenReturn(Response.success(restResponse));
+
+    Boolean response = userInfoServiceImpl.sendTwoFactorAuthenticationResetEmail(userId, accountId);
+    assertTrue(response);
+
+    // test negative scenario when client returns false
+    restResponse = new RestResponse<>(Boolean.FALSE);
+    when(userClient.sendTwoFactorAuthenticationResetEmail(userId, accountId)).thenReturn(restResponseCall);
+    when(restResponseCall.execute()).thenReturn(Response.success(restResponse));
+
+    response = userInfoServiceImpl.sendTwoFactorAuthenticationResetEmail(userId, accountId);
+    assertFalse(response);
+
+    // test negative scenario when client returns null
+    restResponse = new RestResponse<>(null);
+    when(userClient.sendTwoFactorAuthenticationResetEmail(userId, accountId)).thenReturn(restResponseCall);
+    when(restResponseCall.execute()).thenReturn(Response.success(restResponse));
+
+    response = userInfoServiceImpl.sendTwoFactorAuthenticationResetEmail(userId, accountId);
+    assertFalse(response);
   }
 }

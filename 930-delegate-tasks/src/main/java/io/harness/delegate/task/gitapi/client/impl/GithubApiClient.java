@@ -172,7 +172,9 @@ public class GithubApiClient implements GitApiClient {
     GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
     String gitApiURL = getGitApiURL(gitConfigDTO.getUrl());
     String repoOwner = gitConfigDTO.getGitRepositoryDetails().getOrg();
-    String repoName = gitConfigDTO.getGitRepositoryDetails().getName();
+    String repoName = gitConfigDTO.getGitRepositoryDetails().getName() != null
+        ? gitConfigDTO.getGitRepositoryDetails().getName()
+        : attributesRequest.getRepository();
     String webhookId = attributesRequest.getWebhookId();
     String token = retrieveAuthToken(gitConnector);
 

@@ -9,12 +9,15 @@ package io.harness.mappers.instanceinfo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.dtos.instanceinfo.AsgInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.AwsLambdaInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AwsSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.CustomDeploymentInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.EcsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.GoogleFunctionInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
@@ -23,12 +26,15 @@ import io.harness.dtos.instanceinfo.ReferenceInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.SpotInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.TasInstanceInfoDTO;
+import io.harness.entities.instanceinfo.AsgInstanceInfo;
+import io.harness.entities.instanceinfo.AwsLambdaInstanceInfo;
 import io.harness.entities.instanceinfo.AwsSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureWebAppNGInstanceInfo;
 import io.harness.entities.instanceinfo.CustomDeploymentInstanceInfo;
 import io.harness.entities.instanceinfo.EcsInstanceInfo;
 import io.harness.entities.instanceinfo.GitopsInstanceInfo;
+import io.harness.entities.instanceinfo.GoogleFunctionInstanceInfo;
 import io.harness.entities.instanceinfo.InstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.entities.instanceinfo.NativeHelmInstanceInfo;
@@ -71,6 +77,12 @@ public class InstanceInfoMapper {
       return SpotInstanceInfoMapper.toDTO((SpotInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof TasInstanceInfo) {
       return TasInstanceInfoMapper.toDTO((TasInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof AsgInstanceInfo) {
+      return AsgInstanceInfoMapper.toDTO((AsgInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof GoogleFunctionInstanceInfo) {
+      return GoogleFunctionInstanceInfoMapper.toDTO((GoogleFunctionInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof AwsLambdaInstanceInfo) {
+      return AwsLambdaInstanceInfoMapper.toDTO((AwsLambdaInstanceInfo) instanceInfo);
     }
     throw new InvalidRequestException("No InstanceInfoMapper toDTO found for instanceInfo : {}" + instanceInfo);
   }
@@ -102,6 +114,12 @@ public class InstanceInfoMapper {
       return SpotInstanceInfoMapper.toEntity((SpotInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof TasInstanceInfoDTO) {
       return TasInstanceInfoMapper.toEntity((TasInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof AsgInstanceInfoDTO) {
+      return AsgInstanceInfoMapper.toEntity((AsgInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof GoogleFunctionInstanceInfoDTO) {
+      return GoogleFunctionInstanceInfoMapper.toEntity((GoogleFunctionInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof AwsLambdaInstanceInfoDTO) {
+      return AwsLambdaInstanceInfoMapper.toEntity((AwsLambdaInstanceInfoDTO) instanceInfoDTO);
     }
     throw new InvalidRequestException(
         "No InstanceInfoMapper toEntity found for instanceInfoDTO : {}" + instanceInfoDTO);

@@ -7,6 +7,8 @@
 
 package io.harness.pms.plan.execution.service;
 
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrency.ConcurrentChildInstance;
@@ -21,7 +23,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
 import io.harness.pms.plan.execution.LayoutNodeGraphConstants;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -37,6 +38,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -103,15 +105,9 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         ConcurrentChildInstance concurrentChildInstance =
             pmsGraphStepDetailsService.fetchConcurrentChildInstance(nodeExecution.getUuid());
         if (concurrentChildInstance != null && !nodeExecution.getExecutableResponses().isEmpty()) {
-          if (nodeExecution.getNode().getStepParameters().containsKey("strategyType")
-              && !nodeExecution.getNode()
-                      .getStepParameters()
-                      .get("strategyType")
-                      .equals(StrategyType.PARALLELISM.name())) {
-            update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId()
-                    + ".moduleInfo.maxConcurrency.value",
-                nodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency());
-          }
+          update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId()
+                  + ".moduleInfo.maxConcurrency.value",
+              nodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency());
           updateApplied = true;
         }
       }
@@ -145,6 +141,9 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   private void addAndUpdateChildNodesForStrategy(String planExecutionId, Update update,
       Map<String, GraphLayoutNodeDTO> graphLayoutNode, NodeExecution nodeExecution,
       List<NodeExecution> childrenNodeExecution, String stageSetupId) {
+    if (childrenNodeExecution.isEmpty()) {
+      return;
+    }
     for (NodeExecution stageNodeExecution : childrenNodeExecution) {
       // If the child already exists in graph then ignore.
       if (!alreadyAddedAsChild(graphLayoutNode, nodeExecution.getNodeId(), stageNodeExecution.getUuid())) {
@@ -167,6 +166,11 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
     Query query = new Query(criteria);
     pmsExecutionSummaryRepository.update(query, update);
+  }
+
+  @Override
+  public PipelineExecutionSummaryEntity save(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
+    return pmsExecutionSummaryRepository.save(pipelineExecutionSummaryEntity);
   }
 
   public boolean updateStrategyPlanNode(String planExecutionId, NodeExecution strategyNodeExecution, Update update) {
@@ -220,15 +224,10 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     boolean updateRequired = updateStrategyPlanNode(planExecutionId, nodeExecution, update);
 
     // Update identity nodes if only they are in final status.
-    if (OrchestrationUtils.isStageOrParallelStageNode(nodeExecution)
-        && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
-        && StatusUtils.isFinalStatus(nodeExecution.getStatus())) {
-      return updateIdentityStageOrStrategyNodes(planExecutionId, update) || updateRequired;
-    }
-
-    if (OrchestrationUtils.isPipelineNode(nodeExecution)) {
-      // Update pipeline based data in layoutNodeMap
-      updateRequired = ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(update, nodeExecution) || updateRequired;
+    if ((OrchestrationUtils.isStageOrParallelStageNode(nodeExecution)
+            || nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY)
+        && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE) {
+      updateRequired = updateIdentityStageOrStrategyNodes(planExecutionId, update) || updateRequired;
     }
     return ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution) || updateRequired;
   }
@@ -255,6 +254,18 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     Query query = new Query(criteria);
     query.fields().include(PlanExecutionSummaryKeys.planExecutionId);
     return pmsExecutionSummaryRepository.fetchExecutionSummaryEntityFromAnalytics(query);
+  }
+
+  @Override
+  public void deleteAllSummaryForGivenPlanExecutionIds(Set<String> planExecutionIds) {
+    if (EmptyPredicate.isEmpty(planExecutionIds)) {
+      return;
+    }
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      // Uses - id index
+      pmsExecutionSummaryRepository.deleteAllByPlanExecutionIdIn(planExecutionIds);
+      return true;
+    });
   }
 
   /**

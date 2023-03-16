@@ -8,6 +8,7 @@
 package io.harness.delegate.task.pcf.request;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import static java.lang.String.format;
 
@@ -19,6 +20,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
+import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.pcf.model.CfCliVersion;
 
@@ -31,15 +33,15 @@ import lombok.EqualsAndHashCode;
 @OwnedBy(CDP)
 @EqualsAndHashCode(callSuper = true)
 public class CfSwapRoutesRequestNG extends AbstractTasTaskRequest {
-  String newApplicationName;
-  List<String> tempRoutes;
-  List<String> finalRoutes;
+  @Expression(ALLOW_SECRETS) String newApplicationName;
+  @Expression(ALLOW_SECRETS) List<String> tempRoutes;
+  @Expression(ALLOW_SECRETS) List<String> finalRoutes;
   boolean downsizeOldApplication;
   TasApplicationInfo activeApplicationDetails;
   TasApplicationInfo inActiveApplicationDetails;
   TasApplicationInfo newApplicationDetails;
   List<String> existingApplicationNames;
-  String releaseNamePrefix;
+  @Expression(ALLOW_SECRETS) String releaseNamePrefix;
   boolean useAppAutoScalar;
   Integer olderActiveVersionCountToKeep;
 

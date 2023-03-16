@@ -25,27 +25,30 @@ import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.pms.annotations.PipelineServiceAuth;
+import io.harness.pms.pipeline.MoveConfigOperationDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
+import io.harness.pms.pipeline.service.PipelineGetResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
-import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineMoveConfigRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineMoveConfigResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
@@ -126,57 +129,33 @@ public class PipelinesApiImpl implements PipelinesApi {
         "Retrieving Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
     Optional<PipelineEntity> pipelineEntity;
     PipelineGetResponseBody pipelineGetResponseBody = new PipelineGetResponseBody();
-    String validationUUID = null;
-    if (validateAsync) {
-      // todo: add schema validations
-      pipelineEntity = pmsPipelineService.getPipeline(account, org, project, pipeline, false, false,
-          Boolean.TRUE.equals(loadFromFallbackBranch),
-          PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
-      if (pipelineEntity.isEmpty()) {
-        throw new EntityNotFoundException(
-            String.format("Pipeline with the given ID: %s does not exist or has been deleted.", pipeline));
-      }
-      // if the branch in the request is null, then the branch from where the remote pipeline is taken from is set
-      // inside the scm git metadata. Hence the branch from there is the actual branch we need
-      String branchFromScm = GitAwareContextHelper.getBranchInSCMGitMetadata();
-      String fqn = PipelineAsyncValidationHelper.buildFQN(pipelineEntity.get(), branchFromScm);
-      Optional<PipelineValidationEvent> optionalEvent =
-          pipelineAsyncValidationService.getLatestEventByFQNAndAction(fqn, Action.CRUD);
-      if (optionalEvent.isPresent()) {
-        validationUUID = optionalEvent.get().getUuid();
-      } else {
-        PipelineValidationEvent newEvent =
-            pipelineAsyncValidationService.startEvent(pipelineEntity.get(), branchFromScm, Action.CRUD);
-        validationUUID = newEvent.getUuid();
-      }
-    } else {
-      try {
-        pipelineEntity = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline, false,
-            Boolean.TRUE.equals(loadFromFallbackBranch),
-            PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
-      } catch (PolicyEvaluationFailureException pe) {
-        pipelineGetResponseBody.setPipelineYaml(pe.getYaml());
-        pipelineGetResponseBody.setGitDetails(
-            PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
-        pipelineGetResponseBody.setValid(false);
-        // GovMetaData needed here after redoing structure
-        return Response.status(200).entity(pipelineGetResponseBody).build();
-      } catch (InvalidYamlException e) {
-        pipelineGetResponseBody.setPipelineYaml(e.getYaml());
-        pipelineGetResponseBody.setGitDetails(
-            PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
-        pipelineGetResponseBody.setYamlErrorWrapper(
-            PipelinesApiUtils.getListYAMLErrorWrapper((YamlSchemaErrorWrapperDTO) e.getMetadata()));
-        pipelineGetResponseBody.setValid(false);
-        return Response.status(200).entity(pipelineGetResponseBody).build();
-      } catch (NGTemplateResolveExceptionV2 ne) {
-        pipelineGetResponseBody.setPipelineYaml(ne.getReferredByYaml());
-        pipelineGetResponseBody.setGitDetails(
-            PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
-        pipelineGetResponseBody.setValid(false);
-        return Response.status(200).entity(pipelineGetResponseBody).build();
-      }
+    // if validateAsync is true, then this ID wil be of the event started for the async validation process, which can be
+    // queried on using another API to get the result of the async validation. If validateAsync is false, then this ID
+    // is not needed and will be null
+    String validationUUID;
+    try {
+      PipelineGetResult pipelineGetResult = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline,
+          false, false, Boolean.TRUE.equals(loadFromFallbackBranch),
+          GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache), validateAsync);
+      pipelineEntity = pipelineGetResult.getPipelineEntity();
+      validationUUID = pipelineGetResult.getAsyncValidationUUID();
+    } catch (PolicyEvaluationFailureException pe) {
+      pipelineGetResponseBody.setPipelineYaml(pe.getYaml());
+      pipelineGetResponseBody.setGitDetails(
+          PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
+      pipelineGetResponseBody.setValid(false);
+      // GovMetaData needed here after redoing structure
+      return Response.status(200).entity(pipelineGetResponseBody).build();
+    } catch (InvalidYamlException e) {
+      pipelineGetResponseBody.setPipelineYaml(e.getYaml());
+      pipelineGetResponseBody.setGitDetails(
+          PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
+      pipelineGetResponseBody.setYamlErrorWrapper(
+          PipelinesApiUtils.getListYAMLErrorWrapper((YamlSchemaErrorWrapperDTO) e.getMetadata()));
+      pipelineGetResponseBody.setValid(false);
+      return Response.status(200).entity(pipelineGetResponseBody).build();
     }
+
     pipelineGetResponseBody = PipelinesApiUtils.getGetResponseBody(pipelineEntity.orElseThrow(
         ()
             -> new EntityNotFoundException(
@@ -212,7 +191,7 @@ public class PipelinesApiImpl implements PipelinesApi {
           String.format("Pipeline with the given ID: %s does not exist or has been deleted.", pipeline));
     }
     PipelineValidationEvent pipelineValidationEvent =
-        pipelineAsyncValidationService.startEvent(pipelineEntity.get(), branch, Action.CRUD);
+        pipelineAsyncValidationService.startEvent(pipelineEntity.get(), branch, Action.CRUD, loadFromCache);
     PipelineValidationUUIDResponseBody pipelineValidationUUIDResponseBody =
         PipelinesApiUtils.buildPipelineValidationUUIDResponseBody(pipelineValidationEvent);
     return Response.ok().entity(pipelineValidationUUIDResponseBody).build();
@@ -258,8 +237,8 @@ public class PipelinesApiImpl implements PipelinesApi {
         pipelineEntities.map(e -> PMSPipelineDtoMapper.preparePipelineSummaryForListView(e, pipelineMetadataMap));
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
-        String.format("/v1/orgs/%s/projects/%s/pipelines", org, project), pipelines.getContent().size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, pipelines.getTotalElements(), page, limit);
     return responseBuilderWithLinks
         .entity(pipelines.getContent()
                     .stream()
@@ -295,6 +274,33 @@ public class PipelinesApiImpl implements PipelinesApi {
     }
     PipelineCreateResponseBody responseBody = new PipelineCreateResponseBody();
     responseBody.setIdentifier(updatedEntity.getIdentifier());
+    return Response.ok().entity(responseBody).build();
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  public Response moveConfig(@OrgIdentifier String org, @ProjectIdentifier String project,
+      @ResourceIdentifier String pipeline, PipelineMoveConfigRequestBody requestBody,
+      @AccountIdentifier String account) {
+    if (requestBody == null) {
+      throw new InvalidRequestException("Pipeline move config request body must not be null.");
+    }
+    if (!Objects.equals(pipeline, requestBody.getPipelineIdentifier())) {
+      throw new InvalidRequestException(
+          String.format("Expected Pipeline identifier in Request Body to be [%s], but was [%s]", pipeline,
+              requestBody.getPipelineIdentifier()));
+    }
+    log.info(
+        String.format("Move Config for Pipeline of move type %s with identifier %s in project %s, org %s, account %s",
+            requestBody.getMoveConfigOperationType().toString(), pipeline, project, org, account));
+    GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitMoveDetails(requestBody.getGitDetails()));
+    MoveConfigOperationDTO moveConfigOperation = PipelinesApiUtils.buildMoveConfigOperationDTO(
+        requestBody.getGitDetails(), requestBody.getMoveConfigOperationType());
+    PipelineCRUDResult pipelineCRUDResult =
+        pmsPipelineService.moveConfig(account, org, project, pipeline, moveConfigOperation);
+    PipelineEntity movedPipelineEntity = pipelineCRUDResult.getPipelineEntity();
+    PipelineMoveConfigResponseBody responseBody = new PipelineMoveConfigResponseBody();
+    responseBody.setPipelineIdentifier(movedPipelineEntity.getIdentifier());
     return Response.ok().entity(responseBody).build();
   }
 }

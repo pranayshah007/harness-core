@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.configfile.ConfigFileWrapper;
+import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.EcsServiceSpec;
 import io.harness.cdng.service.beans.EcsServiceSpec.EcsServiceSpecBuilder;
@@ -20,7 +21,7 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.beans.Service;
 import software.wings.ngmigration.CgEntityId;
@@ -35,7 +36,8 @@ public class EcsServiceV2Mapper implements ServiceV2Mapper {
   @Override
   public ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
-      List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles) {
+      List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
+      List<StartupScriptConfiguration> startupScriptConfigurations) {
     PrimaryArtifact primaryArtifact = getPrimaryArtifactStream(inputDTO, entities, graph, service, migratedEntities);
     EcsServiceSpecBuilder ecsServiceSpecBuilder = EcsServiceSpec.builder();
     if (primaryArtifact != null) {
@@ -44,7 +46,8 @@ public class EcsServiceV2Mapper implements ServiceV2Mapper {
     if (EmptyPredicate.isNotEmpty(manifests)) {
       ecsServiceSpecBuilder.manifests(manifests);
     }
-    ecsServiceSpecBuilder.variables(MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities));
+    ecsServiceSpecBuilder.variables(MigratorUtility.getVariables(
+        service.getServiceVariables(), migratedEntities, inputDTO.getIdentifierCaseFormat()));
     ecsServiceSpecBuilder.configFiles(configFiles);
     return ServiceDefinition.builder()
         .type(ServiceDefinitionType.ECS)

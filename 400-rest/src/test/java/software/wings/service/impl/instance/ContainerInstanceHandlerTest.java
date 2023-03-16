@@ -10,11 +10,14 @@ package software.wings.service.impl.instance;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.k8s.model.HarnessLabelValues.colorBlue;
 import static io.harness.k8s.model.HarnessLabelValues.colorGreen;
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
 import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -76,6 +79,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.exception.GeneralException;
+import io.harness.exception.K8sPodSyncException;
 import io.harness.exception.runtime.NoInstancesException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.model.HarnessLabels;
@@ -258,8 +262,10 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                               .build())
             .build());
 
-    ContainerSyncResponse containerSyncResponse =
-        ContainerSyncResponse.builder().containerInfoList(Collections.emptyList()).build();
+    ContainerSyncResponse containerSyncResponse = ContainerSyncResponse.builder()
+                                                      .commandExecutionStatus(SUCCESS)
+                                                      .containerInfoList(Collections.emptyList())
+                                                      .build();
 
     doReturn(instances).when(instanceService).getInstancesForAppAndInframappingNotRemovedFully(any(), any());
     doReturn(containerSyncResponse).when(containerSync).getInstances(any(), anyList());
@@ -303,6 +309,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
             .build());
 
     ContainerSyncResponse containerSyncResponse = ContainerSyncResponse.builder()
+                                                      .commandExecutionStatus(SUCCESS)
                                                       .containerInfoList(asList(Builder.anEcsContainerInfo()
                                                                                     .withClusterName(ECS_CLUSTER)
                                                                                     .withServiceName("service_a_1")
@@ -362,6 +369,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
             .build());
 
     ContainerSyncResponse containerSyncResponse = ContainerSyncResponse.builder()
+                                                      .commandExecutionStatus(SUCCESS)
                                                       .containerInfoList(asList(Builder.anEcsContainerInfo()
                                                                                     .withClusterName(ECS_CLUSTER)
                                                                                     .withServiceName("service_a_1")
@@ -414,7 +422,10 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
             .build());
 
     doReturn(instances).when(instanceService).getInstancesForAppAndInframappingNotRemovedFully(any(), any());
-    doReturn(ContainerSyncResponse.builder().containerInfoList(Collections.EMPTY_LIST).build())
+    doReturn(ContainerSyncResponse.builder()
+                 .commandExecutionStatus(SUCCESS)
+                 .containerInfoList(Collections.EMPTY_LIST)
+                 .build())
         .when(containerSync)
         .getInstances(any(), anyList());
     OnDemandRollbackInfo onDemandRollbackInfo = OnDemandRollbackInfo.builder().onDemandRollback(false).build();
@@ -444,6 +455,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
         .when(instanceService)
         .getInstancesForAppAndInframappingNotRemovedFully(any(), any());
     doReturn(ContainerSyncResponse.builder()
+                 .commandExecutionStatus(SUCCESS)
                  .containerInfoList(asList(Builder.anEcsContainerInfo()
                                                .withClusterName(ECS_CLUSTER)
                                                .withServiceName("service_a_1")
@@ -476,7 +488,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
       String containerId, InstanceType instanceType) throws Exception {
     doReturn(pageResponse).when(instanceService).list(any());
 
-    doReturn(ContainerSyncResponse.builder().containerInfoList(asList()).build())
+    doReturn(ContainerSyncResponse.builder().commandExecutionStatus(SUCCESS).containerInfoList(asList()).build())
         .doReturn(containerSyncResponse)
         .when(containerSync)
         .getInstances(any(), anyList());
@@ -537,12 +549,14 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                               .build())
             .build());
 
-    ContainerSyncResponse containerSyncResponse =
-        ContainerSyncResponse.builder().containerInfoList(Collections.EMPTY_LIST).build();
+    ContainerSyncResponse containerSyncResponse = ContainerSyncResponse.builder()
+                                                      .commandExecutionStatus(SUCCESS)
+                                                      .containerInfoList(Collections.EMPTY_LIST)
+                                                      .build();
 
     doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
-    doReturn(ContainerSyncResponse.builder().containerInfoList(asList()).build())
+    doReturn(ContainerSyncResponse.builder().commandExecutionStatus(SUCCESS).containerInfoList(asList()).build())
         .doReturn(containerSyncResponse)
         .when(containerSync)
         .getInstances(any(), anyList());
@@ -585,6 +599,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
             .build());
 
     ContainerSyncResponse containerSyncResponse = ContainerSyncResponse.builder()
+                                                      .commandExecutionStatus(SUCCESS)
                                                       .containerInfoList(asList(KubernetesContainerInfo.builder()
                                                                                     .clusterName(KUBE_CLUSTER)
                                                                                     .controllerName("controllerName:0")
@@ -641,7 +656,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
 
     doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
-    doReturn(ContainerSyncResponse.builder().containerInfoList(asList()).build())
+    doReturn(ContainerSyncResponse.builder().commandExecutionStatus(SUCCESS).containerInfoList(asList()).build())
         .when(containerSync)
         .getInstances(any(), anyList());
     OnDemandRollbackInfo onDemandRollbackInfo = OnDemandRollbackInfo.builder().onDemandRollback(false).build();
@@ -673,6 +688,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
 
     doReturn(Collections.emptyList()).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(ContainerSyncResponse.builder()
+                 .commandExecutionStatus(SUCCESS)
                  .containerInfoList(asList(KubernetesContainerInfo.builder()
                                                .clusterName(KUBE_CLUSTER)
                                                .controllerName("controllerName:0")
@@ -748,8 +764,9 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
 
     doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
-    doReturn(ContainerSyncResponse.builder().containerInfoList(asList()).build())
+    doReturn(ContainerSyncResponse.builder().commandExecutionStatus(SUCCESS).containerInfoList(asList()).build())
         .doReturn(ContainerSyncResponse.builder()
+                      .commandExecutionStatus(SUCCESS)
                       .containerInfoList(asList(KubernetesContainerInfo.builder()
                                                     .clusterName(KUBE_CLUSTER)
                                                     .controllerName("controllerName:1")
@@ -1342,6 +1359,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
         .get(any(), any());
     doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(ContainerSyncResponse.builder()
+                 .commandExecutionStatus(SUCCESS)
                  .containerInfoList(instances.stream()
                                         .map(instance
                                             -> KubernetesContainerInfo.builder()
@@ -2337,6 +2355,30 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(awsInfrastructureMapping, null);
   }
 
+  @Test(expected = K8sPodSyncException.class)
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void shouldThrowExceptionK8sPodSyncExceptionForK8s() {
+    DirectKubernetesInfrastructureMapping infrastructureMapping =
+        DirectKubernetesInfrastructureMapping.Builder.aDirectKubernetesInfrastructureMapping().build();
+    K8sTaskExecutionResponse k8sTaskExecutionResponse =
+        K8sTaskExecutionResponse.builder().commandExecutionStatus(FAILURE).build();
+    containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(
+        infrastructureMapping, k8sTaskExecutionResponse);
+  }
+
+  @Test(expected = K8sPodSyncException.class)
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void shouldThrowExceptionK8sPodSyncExceptionForHelm() {
+    DirectKubernetesInfrastructureMapping infrastructureMapping =
+        DirectKubernetesInfrastructureMapping.Builder.aDirectKubernetesInfrastructureMapping().build();
+    ContainerSyncResponse k8sTaskExecutionResponse =
+        ContainerSyncResponse.builder().commandExecutionStatus(FAILURE).build();
+    containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(
+        infrastructureMapping, k8sTaskExecutionResponse);
+  }
+
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
@@ -2518,8 +2560,8 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     Exception thrownException = null;
 
     try {
-      containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(
-          infrastructureMapping, K8sTaskExecutionResponse.builder().k8sTaskResponse(syncResponse).build());
+      containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(infrastructureMapping,
+          K8sTaskExecutionResponse.builder().commandExecutionStatus(SUCCESS).k8sTaskResponse(syncResponse).build());
     } catch (Exception e) {
       thrownException = e;
     }
@@ -2735,7 +2777,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
       list.add(info);
     }
     LinkedList<software.wings.beans.infrastructure.instance.info.ContainerInfo> list1 = new LinkedList<>(list);
-    return ContainerSyncResponse.builder().isEcs(true).containerInfoList(list1).build();
+    return ContainerSyncResponse.builder().commandExecutionStatus(SUCCESS).isEcs(true).containerInfoList(list1).build();
   }
 
   private EcsContainerInfo createECSInfo(String id) {
@@ -2745,6 +2787,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   private ContainerSyncResponse createContainerSyncResponseWith(
       String releaseName, String namespace, String controllerName, String... podIds) {
     return ContainerSyncResponse.builder()
+        .commandExecutionStatus(SUCCESS)
         .namespace(namespace)
         .releaseName(releaseName)
         .containerInfoList(Arrays.stream(podIds)

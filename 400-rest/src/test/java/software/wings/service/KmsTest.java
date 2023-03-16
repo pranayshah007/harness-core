@@ -272,11 +272,12 @@ public class KmsTest extends WingsBaseTest {
     });
 
     when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(kmsEncryptor);
-    when(delegateProxyFactory.get(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
         .thenReturn(secretManagementDelegateService);
-    when(delegateProxyFactory.get(eq(EncryptionService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(EncryptionService.class), any(SyncTaskContext.class)))
         .thenReturn(encryptionService);
-    when(delegateProxyFactory.get(eq(ContainerService.class), any(SyncTaskContext.class))).thenReturn(containerService);
+    when(delegateProxyFactory.getV2(eq(ContainerService.class), any(SyncTaskContext.class)))
+        .thenReturn(containerService);
     when(containerService.validate(any(ContainerServiceParams.class), anyBoolean())).thenReturn(true);
     doNothing().when(newRelicService).validateConfig(anyObject(), anyObject(), anyObject());
     FieldUtils.writeField(secretService, "kmsRegistry", kmsEncryptorsRegistry, true);

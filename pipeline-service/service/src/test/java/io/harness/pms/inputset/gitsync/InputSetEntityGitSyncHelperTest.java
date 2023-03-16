@@ -22,9 +22,9 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.beans.InputSetReference;
 import io.harness.category.element.UnitTests;
-import io.harness.common.EntityReference;
 import io.harness.context.GlobalContext;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -104,15 +104,15 @@ public class InputSetEntityGitSyncHelperTest extends CategoryTest {
     String objectId = "objectId";
     doReturn(Optional.of(InputSetEntity.builder().objectIdOfYaml(objectId).build()))
         .when(pmsInputSetService)
-        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean());
+        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean(), anyBoolean(), anyBoolean());
     EntityGitDetails returnedEntity =
         inputSetEntityGitSyncHelper.getEntityDetailsIfExists(accountId, inputSetYaml).get();
     verify(pmsInputSetService, times(1))
-        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean());
+        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean(), anyBoolean(), anyBoolean());
     assertEquals(returnedEntity.getObjectId(), objectId);
     returnedEntity = inputSetEntityGitSyncHelper.getEntityDetailsIfExists(accountId, overLayYaml).get();
     verify(pmsInputSetService, times(2))
-        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean());
+        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean(), anyBoolean(), anyBoolean());
     assertEquals(returnedEntity.getObjectId(), objectId);
   }
 

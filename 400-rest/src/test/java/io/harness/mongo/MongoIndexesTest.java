@@ -38,6 +38,7 @@ import org.junit.experimental.categories.Category;
 @Slf4j
 public class MongoIndexesTest extends WingsBaseTest {
   @Inject HPersistence persistence;
+
   @Inject @Named("morphiaClasses") Set<Class> classes;
   @Inject ObjectFactory objectFactory;
 

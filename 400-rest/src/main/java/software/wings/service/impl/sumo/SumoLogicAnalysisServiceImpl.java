@@ -10,7 +10,7 @@ package software.wings.service.impl.sumo;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.VerificationOperationException;
@@ -52,7 +52,7 @@ public class SumoLogicAnalysisServiceImpl extends AnalysisServiceImpl implements
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                           .build();
     try {
-      return delegateProxyFactory.get(SumoDelegateService.class, sumoTaskContext)
+      return delegateProxyFactory.getV2(SumoDelegateService.class, sumoTaskContext)
           .getLogDataByHost(accountId, (SumoConfig) settingAttribute.getValue(), sumoLogicSetupTestNodedata.getQuery(),
               sumoLogicSetupTestNodedata.getHostNameField(), mlServiceUtils.getHostName(sumoLogicSetupTestNodedata),
               encryptedDataDetails,

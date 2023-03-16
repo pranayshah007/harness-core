@@ -8,6 +8,7 @@
 package io.harness.delegate.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -41,6 +42,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Builder
 @FieldNameConstants(innerTypeName = "TaskSelectorMapKeys")
 @StoreIn(DbAliases.HARNESS)
+@SecondaryStoreIn(DbAliases.DMS)
 @Entity(value = "taskSelectorMaps", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class TaskSelectorMap implements PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware, UpdatedAtAware,

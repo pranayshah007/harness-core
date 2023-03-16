@@ -55,7 +55,7 @@ public class DockerBuildServiceImplTest extends WingsBaseTest {
   public void shouldGetBuildsWithoutCredentials() {
     DockerInternalConfig dockerInternalConfig =
         DockerInternalConfig.builder().dockerRegistryUrl(DOCKER_REGISTRY_URL).build();
-    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(dockerInternalConfig, "library/mysql", 5);
+    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(dockerInternalConfig, "library/mysql", 5, null);
     log.info(builds.toString());
     assertThat(builds.size()).isEqualTo(5);
   }
@@ -71,7 +71,7 @@ public class DockerBuildServiceImplTest extends WingsBaseTest {
             .username("anubhaw")
             .password(scmSecret.decryptToString(new SecretName("docker_config_anubhaw_password")))
             .build();
-    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(dockerInternalConfig, "library/mysql", 5);
+    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(dockerInternalConfig, "library/mysql", 5, null);
     log.info(builds.toString());
     assertThat(builds.size()).isGreaterThanOrEqualTo(5);
   }

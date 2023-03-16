@@ -32,7 +32,7 @@ import io.harness.metrics.modules.MetricsModule;
 import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.persistence.HPersistence;
 import io.harness.security.DelegateTokenAuthenticator;
-import io.harness.service.impl.AgentMtlsEndpointServiceReadOnlyImpl;
+import io.harness.service.impl.agent.mtls.AgentMtlsEndpointServiceReadOnlyImpl;
 import io.harness.service.intfc.AgentMtlsEndpointService;
 import io.harness.threading.ExecutorModule;
 

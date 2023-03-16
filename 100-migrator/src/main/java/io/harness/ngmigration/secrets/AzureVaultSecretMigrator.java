@@ -25,7 +25,7 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.secretmanagerclient.ValueType;
 
 import software.wings.beans.AzureVaultConfig;
@@ -66,8 +66,8 @@ public class AzureVaultSecretMigrator implements SecretMigrator {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
 
-    String secretKey =
-        String.format("migratedAzureSecret_%s", MigratorUtility.generateIdentifier(azureVaultConfig.getName()));
+    String secretKey = String.format("migratedAzureSecret_%s",
+        MigratorUtility.generateIdentifier(azureVaultConfig.getName(), inputDTO.getIdentifierCaseFormat()));
     NgEntityDetail secretEntityDetail = NgEntityDetail.builder()
                                             .identifier(secretKey)
                                             .orgIdentifier(orgIdentifier)

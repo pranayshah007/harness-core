@@ -9,6 +9,7 @@ package io.harness.connector.impl;
 
 import static io.harness.NGConstants.CONNECTOR_HEARTBEAT_LOG_PREFIX;
 import static io.harness.NGConstants.CONNECTOR_STRING;
+import static io.harness.NGConstants.CONNECTOR_TYPE_NAME;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONNECTORS;
 
 import io.harness.EntityType;
@@ -34,6 +35,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -71,7 +73,10 @@ public class ConnectorActivityServiceImpl implements ConnectorActivityService {
   private EntityActivityCreateDTO createNGActivityObject(
       String accountIdentifier, ConnectorInfoDTO connector, String activityDescription, NGActivityType type) {
     IdentifierRefProtoDTO identifierRefProtoDTO = identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
-        accountIdentifier, connector.getOrgIdentifier(), connector.getProjectIdentifier(), connector.getIdentifier());
+        accountIdentifier, connector.getOrgIdentifier(), connector.getProjectIdentifier(), connector.getIdentifier(),
+        connector.getConnectorType() != null
+            ? Collections.singletonMap(CONNECTOR_TYPE_NAME, connector.getConnectorType().name())
+            : null);
     EntityDetailProtoDTO referredEntity = EntityDetailProtoDTO.newBuilder()
                                               .setType(CONNECTORS)
                                               .setIdentifierRef(identifierRefProtoDTO)

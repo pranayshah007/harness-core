@@ -22,28 +22,32 @@ import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class AbstractBaseConsumerCg extends RedisTraceConsumer implements RedisConsumerCg {
+  private static final String CACHE_KEY = "%s_%s";
   private static final int WAIT_TIME_IN_SECONDS = 10;
   private static final int SLEEP_SECONDS = 10;
   private final Consumer redisConsumer;
-  private final List<MessageListener> messageListenersList;
+  private final MessageListener messageListener;
   private final QueueController queueController;
 
   private final AtomicBoolean shouldStop;
 
+  private Cache<String, Integer> eventsCache;
+
   @Inject
-  protected AbstractBaseConsumerCg(
-      Consumer redisConsumer, MessageListener messageListener, QueueController queueController) {
+  protected AbstractBaseConsumerCg(Consumer redisConsumer, MessageListener messageListener,
+      QueueController queueController, Cache<String, Integer> eventsCache) {
     this.redisConsumer = redisConsumer;
     this.queueController = queueController;
-    this.messageListenersList = Collections.singletonList(messageListener);
+    this.messageListener = messageListener;
+    this.eventsCache = eventsCache;
     this.shouldStop = new AtomicBoolean(false);
   }
 
@@ -100,14 +104,43 @@ public abstract class AbstractBaseConsumerCg extends RedisTraceConsumer implemen
 
   @Override
   protected boolean processMessage(Message message) {
-    AtomicBoolean success = new AtomicBoolean(true);
-    messageListenersList.forEach(messageListener -> {
-      if (!messageListener.handleMessage(message)) {
-        success.set(false);
-      }
-    });
+    if (isAlreadyProcessed(message)) {
+      return true;
+    }
 
-    return success.get();
+    if (messageListener.handleMessage(message)) {
+      insertMessageInCache(message.getId());
+      return true;
+    }
+
+    return false;
+  }
+
+  private void insertMessageInCache(String messageId) {
+    try {
+      eventsCache.put(String.format(CACHE_KEY, this.getClass().getSimpleName(), messageId), 1);
+    } catch (Exception ex) {
+      log.error("Exception occurred while storing message id in cache", ex);
+    }
+  }
+
+  private boolean isAlreadyProcessed(Message message) {
+    try {
+      String key = String.format(CACHE_KEY, this.getClass().getSimpleName(), message.getId());
+      boolean isProcessed = eventsCache.containsKey(key);
+      if (isProcessed) {
+        log.warn(String.format("Duplicate redis notification received to consumer [%s] with messageId [%s]",
+            this.getClass().getSimpleName(), message.getId()));
+        Integer count = eventsCache.get(key);
+        if (count != null) {
+          eventsCache.put(String.format(CACHE_KEY, this.getClass().getSimpleName(), message.getId()), count + 1);
+        }
+      }
+      return isProcessed;
+    } catch (Exception ex) {
+      log.error("Exception occurred while checking for duplicate notification", ex);
+      return false;
+    }
   }
 
   @Override

@@ -21,5 +21,5 @@ import lombok.Value;
 @Value
 @Builder
 public class AckResponse {
-  String itemID;
+  String itemId;
 }

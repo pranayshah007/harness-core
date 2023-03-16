@@ -85,7 +85,8 @@ public class ArtifactoryStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.timeout",
             "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.spec.sourcePath",
             "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.name",
-            "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.spec.connectorRef");
+            "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.spec.connectorRef",
+            "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -97,7 +98,6 @@ public class ArtifactoryStepVariableCreatorTest extends CategoryTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.type",
             "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.identifier",
-            "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.when",
             "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.startTs",
             "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.endTs");
 

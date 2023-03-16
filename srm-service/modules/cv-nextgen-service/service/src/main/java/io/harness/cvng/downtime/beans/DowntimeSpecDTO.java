@@ -14,11 +14,13 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "DowntimeSpecKeys")
+@EqualsAndHashCode()
 public class DowntimeSpecDTO {
   @JsonProperty(DOWNTIME_SPEC_TYPE) DowntimeType type;
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = DOWNTIME_SPEC_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY,

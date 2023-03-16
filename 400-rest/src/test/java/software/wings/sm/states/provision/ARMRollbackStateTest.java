@@ -330,7 +330,7 @@ public class ARMRollbackStateTest extends WingsBaseTest {
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
 
     ExecutionResponse response = armRollbackState.executeInternal(mockContext);
-    verify(delegateService, times(1)).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService, times(1)).queueTaskV2(delegateTaskArgumentCaptor.capture());
     DelegateTask delegateTask = delegateTaskArgumentCaptor.getValue();
 
     assertThat(response).isNotNull();

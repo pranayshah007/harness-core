@@ -17,6 +17,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
+import static software.wings.beans.LogColor.Red;
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
@@ -117,8 +118,8 @@ public class StreamPackageDeploymentLogsTask implements Runnable {
                     errorLog = errorMessage;
                     logCallback.saveExecutionLog(
                         color(String.format(FAIL_LOG_STREAMING, slotName, isEmpty(errorMessage) ? "" : errorMessage),
-                            White, Bold),
-                        INFO, SUCCESS);
+                            Red, Bold),
+                        ERROR, FAILURE);
                   }
                   operationFailed.set(true);
                   operationCompleted.set(true);

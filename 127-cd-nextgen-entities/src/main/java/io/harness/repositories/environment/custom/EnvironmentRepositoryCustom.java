@@ -32,4 +32,6 @@ public interface EnvironmentRepositoryCustom {
   List<Environment> fetchesNonDeletedEnvironmentFromListOfIdentifiers(Criteria criteria);
 
   List<Environment> findAll(Criteria criteria);
+
+  List<String> getEnvironmentIdentifiers(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

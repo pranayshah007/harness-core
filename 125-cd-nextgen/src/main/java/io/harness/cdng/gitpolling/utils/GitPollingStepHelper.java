@@ -50,7 +50,7 @@ public class GitPollingStepHelper {
               WingsException.USER);
         }
         return GitPollingConfigToDelegateReqMapper.getGitHubDelegateRequest(
-            connectorDetails, gitHubPollingConfig.getWebhookId());
+            connectorDetails, gitHubPollingConfig.getWebhookId(), gitHubPollingConfig.getRepository().getValue());
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown GitPolling/Webhook Config type: [%s]", gitPollingConfig.getSourceType()));

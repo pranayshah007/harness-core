@@ -22,18 +22,22 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigrationAsyncTracker;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.DiscoveryInput;
-import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.summary.BaseSummary;
+import io.harness.ngmigration.beans.summary.DiscoverySummaryReqDTO;
+import io.harness.ngmigration.dto.BulkCreateProjectsDTO;
 import io.harness.ngmigration.dto.ImportDTO;
+import io.harness.ngmigration.dto.ProjectCreateResultDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.dto.SimilarWorkflowDetail;
-import io.harness.ngmigration.service.AsyncDiscoveryHandler;
-import io.harness.ngmigration.service.AsyncSimilarWorkflowHandler;
+import io.harness.ngmigration.service.CreateProjectService;
 import io.harness.ngmigration.service.DiscoveryService;
 import io.harness.ngmigration.service.MigrationResourceService;
 import io.harness.ngmigration.service.UsergroupImportService;
+import io.harness.ngmigration.service.async.AsyncDiscoveryHandler;
+import io.harness.ngmigration.service.async.AsyncSimilarWorkflowHandler;
+import io.harness.ngmigration.service.async.AsyncUpgradeHandler;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -56,13 +60,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.entity.ContentType;
@@ -80,6 +84,8 @@ public class NgMigrationResource {
   @Inject MigrationResourceService migrationResourceService;
   @Inject UsergroupImportService usergroupImportService;
   @Inject AsyncSimilarWorkflowHandler asyncSimilarWorkflowHandler;
+  @Inject AsyncUpgradeHandler asyncUpgradeHandler;
+  @Inject CreateProjectService projectService;
 
   @POST
   @Path("/discover-multi")
@@ -122,9 +128,10 @@ public class NgMigrationResource {
   @Timed
   @ExceptionMetered
   @ApiKeyAuthorized(permissionType = LOGGED_IN)
-  public RestResponse<Map<String, String>> queueAccountLevelSummary(
-      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
-    String requestId = asyncDiscoveryHandler.queue(accountId);
+  public RestResponse<Map<String, String>> queueSummary(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @QueryParam("appId") String appId) {
+    String requestId = asyncDiscoveryHandler.queue(
+        null, accountId, DiscoverySummaryReqDTO.builder().appId(appId).accountId(accountId).build());
     return new RestResponse<>(ImmutableMap.of("requestId", requestId));
   }
 
@@ -154,19 +161,6 @@ public class NgMigrationResource {
   }
 
   @POST
-  @Path("/save")
-  @Timed
-  @ExceptionMetered
-  @ApiKeyAuthorized(permissionType = LOGGED_IN)
-  public RestResponse<SaveSummaryDTO> getMigratedFiles(@HeaderParam(X_API_KEY) String auth,
-      @QueryParam("entityId") String entityId, @QueryParam("appId") String appId,
-      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @QueryParam("entityType") NGMigrationEntityType entityType, MigrationInputDTO inputDTO) {
-    DiscoveryResult result = discoveryService.discover(accountId, appId, entityId, entityType, null);
-    return new RestResponse<>(discoveryService.migrateEntity(auth, inputDTO, result));
-  }
-
-  @POST
   @Path("/save/v2")
   @Timed
   @ExceptionMetered
@@ -178,38 +172,40 @@ public class NgMigrationResource {
   }
 
   @POST
+  @Path("/save/async")
+  @Timed
+  @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
+  public RestResponse<Map<String, String>> queueUpgrade(@HeaderParam(X_API_KEY) String auth,
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, ImportDTO importDTO) {
+    importDTO.setAccountIdentifier(accountId);
+    String requestId = asyncUpgradeHandler.queue(auth, accountId, importDTO);
+    return new RestResponse<>(ImmutableMap.of("requestId", requestId));
+  }
+
+  @GET
+  @Path("/save/async-result")
+  @Timed
+  @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
+  public RestResponse<MigrationAsyncTracker> getQueuedUpgradeResult(
+      @QueryParam("requestId") String reqId, @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
+    return new RestResponse<>(asyncUpgradeHandler.getTaskResult(accountId, reqId));
+  }
+
+  @POST
   @Path("/user-group/save")
   @Timed
   @ExceptionMetered
   @ApiKeyAuthorized(permissionType = LOGGED_IN)
-  public RestResponse<SaveSummaryDTO> saveUserGroups(
-      @HeaderParam(X_API_KEY) String auth, @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
-    return new RestResponse<>(usergroupImportService.importUserGroups(auth, accountId));
+  public RestResponse<SaveSummaryDTO> saveUserGroups(@HeaderParam(X_API_KEY) String auth,
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam("identifierCaseFormat") @DefaultValue("CAMEL_CASE") CaseFormat identifierCaseFormat) {
+    return new RestResponse<>(usergroupImportService.importUserGroups(auth, accountId, identifierCaseFormat));
   }
 
   @POST
   @Path("/export-yaml")
-  @Timed
-  @ExceptionMetered
-  @ApiKeyAuthorized(permissionType = LOGGED_IN)
-  public Response exportZippedYamlFiles(@HeaderParam(X_API_KEY) String auth, @QueryParam("entityId") String entityId,
-      @QueryParam("appId") String appId, @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @QueryParam("entityType") NGMigrationEntityType entityType, MigrationInputDTO inputDTO) {
-    DiscoveryResult result;
-    if (EmptyPredicate.isNotEmpty(inputDTO.getEntities())) {
-      result = discoveryService.discoverMulti(
-          accountId, DiscoveryInput.builder().entities(inputDTO.getEntities()).exportImage(false).build());
-    } else {
-      result = discoveryService.discover(accountId, appId, entityId, entityType, null);
-    }
-    inputDTO.setMigrateReferencedEntities(true);
-    return Response.ok(discoveryService.exportYamlFilesAsZip(inputDTO, result), MediaType.APPLICATION_OCTET_STREAM)
-        .header("content-disposition", format("attachment; filename = %s_%s_%s.zip", accountId, entityId, entityType))
-        .build();
-  }
-
-  @POST
-  @Path("/export-yaml/v2")
   @Timed
   @ExceptionMetered
   @ApiKeyAuthorized(permissionType = LOGGED_IN)
@@ -241,8 +237,8 @@ public class NgMigrationResource {
   @ExceptionMetered
   @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Map<String, String>> queueSimilarWorkflows(
-      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
-    String requestId = asyncSimilarWorkflowHandler.queue(accountId);
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @QueryParam("appId") String appId) {
+    String requestId = asyncSimilarWorkflowHandler.queue(null, accountId, null);
     return new RestResponse<>(ImmutableMap.of("requestId", requestId));
   }
 
@@ -254,5 +250,16 @@ public class NgMigrationResource {
   public RestResponse<MigrationAsyncTracker> getSimilarWorkflows(
       @QueryParam("requestId") String reqId, @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
     return new RestResponse<>(asyncSimilarWorkflowHandler.getTaskResult(accountId, reqId));
+  }
+
+  @POST
+  @Path("/projects/bulk")
+  @Timed
+  @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
+  public RestResponse<List<ProjectCreateResultDTO>> bulkCreateProjects(@HeaderParam(X_API_KEY) String auth,
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, BulkCreateProjectsDTO createProjectsDTO)
+      throws IOException {
+    return new RestResponse<>(projectService.bulkCreateProjects(accountId, auth, createProjectsDTO));
   }
 }

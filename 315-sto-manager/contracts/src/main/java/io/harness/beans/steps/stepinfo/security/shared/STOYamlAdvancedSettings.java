@@ -16,12 +16,14 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.sto.variables.STOYamlFailOnSeverity;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-import org.codehaus.jackson.annotate.JsonProperty;
 
 @Data
 @OwnedBy(STO)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class STOYamlAdvancedSettings {
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.beans.steps.stepinfo.security.shared.STOYamlLog")
@@ -33,11 +35,9 @@ public class STOYamlAdvancedSettings {
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH, name = "include_raw")
-  @JsonProperty("include_raw")
-  protected ParameterField<Boolean> includeRaw;
+  private ParameterField<Boolean> includeRaw;
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlFailOnSeverity", name = "fail_on_severity")
-  @JsonProperty("fail_on_severity")
-  protected STOYamlFailOnSeverity failOnSeverity;
+  private STOYamlFailOnSeverity failOnSeverity;
 }

@@ -76,8 +76,6 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    helper.checkIfTerragruntFeatureIsEnabled(ambiance, "Terragrunt Destroy");
-
     List<EntityDetail> entityDetailList = new ArrayList<>();
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -147,6 +145,8 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
 
     builder.stateFileId(helper.getLatestFileId(entityId))
         .entityId(entityId)
+        .tgModuleSourceInheritSSH(helper.isExportCredentialForSourceModule(
+            configuration.getSpec().getConfigFiles(), stepElementParameters.getType()))
         .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
         .configFilesStore(helper.getGitFetchFilesConfig(
             spec.getConfigFiles().getStore().getSpec(), ambiance, TerragruntStepHelper.TG_CONFIG_FILES))
@@ -177,11 +177,18 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
         ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier());
     TerragruntInheritOutput inheritOutput =
         helper.getSavedInheritOutput(provisionerIdentifier, TerragruntCommandType.DESTROY.name(), ambiance);
+
+    if (TerragruntTaskRunType.RUN_ALL == inheritOutput.getRunConfiguration().getRunType()) {
+      throw new InvalidRequestException(
+          "Inheriting from a plan which has used \"All Modules\" at Terragrunt Plan Step is not supported");
+    }
+
     TerragruntDestroyTaskParametersBuilder<?, ?> builder = TerragruntDestroyTaskParameters.builder();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
     builder.accountId(accountId)
         .entityId(entityId)
+        .tgModuleSourceInheritSSH(inheritOutput.isUseConnectorCredentials())
         .stateFileId(helper.getLatestFileId(entityId))
         .workspace(inheritOutput.getWorkspace())
         .configFilesStore(helper.getGitFetchFilesConfig(
@@ -216,6 +223,7 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
     builder.accountId(accountId)
         .entityId(entityId)
         .stateFileId(helper.getLatestFileId(entityId))
+        .tgModuleSourceInheritSSH(terragruntConfig.isUseConnectorCredentials())
         .workspace(terragruntConfig.getWorkspace())
         .configFilesStore(helper.getGitFetchFilesConfig(
             terragruntConfig.getConfigFiles().toGitStoreConfig(), ambiance, TerragruntStepHelper.TG_CONFIG_FILES))

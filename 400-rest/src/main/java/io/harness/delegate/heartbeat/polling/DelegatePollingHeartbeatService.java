@@ -35,7 +35,9 @@ public class DelegatePollingHeartbeatService extends DelegateHeartbeatService<De
   @Inject private DelegateJreVersionHelper delegateJreVersionHelper;
 
   @Override
-  public Optional<DelegateHeartbeatResponse> precheck(@NotNull final Delegate existingDelegate) {
+  public Optional<DelegateHeartbeatResponse> precheck(
+      @NotNull final Delegate existingDelegate, @NotNull final DelegateHeartbeatParams params) {
+    super.precheck(existingDelegate, params);
     if (licenseService.isAccountDeleted(existingDelegate.getAccountId())) {
       return Optional.of(getResponseBuilder(existingDelegate.getAccountId(), existingDelegate.getUuid())
                              .status(DelegateInstanceStatus.DELETED.toString())

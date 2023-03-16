@@ -18,6 +18,10 @@ public class TemplateFactory {
   private static final HttpTemplateService httpTemplateService = new HttpTemplateService();
 
   private static final ShellScriptTemplateService shellScriptTemplateService = new ShellScriptTemplateService();
+  private static final CustomDeploymentTemplateService customDeploymentTemplateService =
+      new CustomDeploymentTemplateService();
+  private static final CustomArtifactSourceTemplateService customArtifactSourceTemplateService =
+      new CustomArtifactSourceTemplateService();
   private static final ServiceCommandTemplateService serviceCommandTemplateService =
       new ServiceCommandTemplateService();
 
@@ -29,6 +33,10 @@ public class TemplateFactory {
       return httpTemplateService;
     } else if (TemplateType.SSH.name().equals(template.getType())) {
       return serviceCommandTemplateService;
+    } else if (TemplateType.CUSTOM_DEPLOYMENT_TYPE.name().equals(template.getType())) {
+      return customDeploymentTemplateService;
+    } else if (TemplateType.ARTIFACT_SOURCE.name().equals(template.getType())) {
+      return customArtifactSourceTemplateService;
     }
     return unSupportedTemplateService;
   }

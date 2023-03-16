@@ -183,12 +183,18 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
           canaryHandlerConfig.getKubernetesConfig(), canaryHandlerConfig.getCurrentRelease(),
           canaryHandlerConfig.getReleaseHistory(), canaryHandlerConfig.getReleaseName());
 
+      String canaryObjectsNames = canaryWorkload.getResourceId().namespaceKindNameRef();
+      if (k8sCanaryDeployTaskParameters.isUseDeclarativeRollback()) {
+        canaryObjectsNames = k8sCanaryBaseHandler.appendSecretAndConfigMapNamesToCanaryWorkloads(
+            canaryObjectsNames, canaryHandlerConfig.getResources());
+      }
+
       K8sCanaryDeployResponse k8sCanaryDeployResponse =
           K8sCanaryDeployResponse.builder()
               .releaseNumber(canaryHandlerConfig.getCurrentRelease().getReleaseNumber())
               .k8sPodList(allPods)
               .currentInstances(canaryHandlerConfig.getTargetInstances())
-              .canaryWorkload(canaryWorkload.getResourceId().namespaceKindNameRef())
+              .canaryWorkload(canaryObjectsNames)
               .gitFetchFilesConfig(gitFetchFilesConfig)
               .helmChartInfo(helmChartInfo)
               .build();
@@ -209,7 +215,13 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
     K8sCanaryDeployResponse k8sCanaryDeployResponse = K8sCanaryDeployResponse.builder().build();
     KubernetesResource canaryWorkload = canaryHandlerConfig.getCanaryWorkload();
     if (canaryWorkload != null && canaryWorkload.getResourceId() != null) {
-      k8sCanaryDeployResponse.setCanaryWorkload(canaryWorkload.getResourceId().namespaceKindNameRef());
+      String canaryObjectsNames = canaryWorkload.getResourceId().namespaceKindNameRef();
+      if (canaryHandlerConfig.isUseDeclarativeRollback()) {
+        canaryObjectsNames = k8sCanaryBaseHandler.appendSecretAndConfigMapNamesToCanaryWorkloads(
+            canaryObjectsNames, canaryHandlerConfig.getResources());
+      }
+
+      k8sCanaryDeployResponse.setCanaryWorkload(canaryObjectsNames);
     }
 
     return K8sTaskExecutionResponse.builder()

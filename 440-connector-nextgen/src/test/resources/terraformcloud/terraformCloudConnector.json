@@ -1,0 +1,25 @@
+{
+  "connector": {
+    "name": "name",
+    "identifier": "identifier",
+    "description": "description",
+    "orgIdentifier": "orgIdentifier",
+    "projectIdentifier": "projectIdentifier",
+    "tags": {
+      "company": "Harness",
+      "env": "dev"
+    },
+    "type": "TerraformCloud",
+    "spec": {
+      "terraformCloudUrl" : "https://some.io",
+      "credential": {
+        "type": "ApiToken",
+        "spec": {
+          "apiToken": "account.tokenRef"
+        }
+      },
+      "executeOnDelegate": true,
+      "delegateSelectors": null
+    }
+  }
+}

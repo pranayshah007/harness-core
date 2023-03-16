@@ -14,6 +14,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.core.intfc.OverrideConnectorRef;
 import io.harness.yaml.core.intfc.OverridesApplier;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -22,7 +23,7 @@ import java.io.Serializable;
 
 @OwnedBy(PIPELINE)
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-public interface StoreConfig extends OverridesApplier<StoreConfig>, Serializable {
+public interface StoreConfig extends OverridesApplier<StoreConfig>, OverrideConnectorRef, Serializable {
   @JsonIgnore String getKind();
   @JsonIgnore StoreConfig cloneInternal();
   @JsonIgnore ParameterField<String> getConnectorReference();

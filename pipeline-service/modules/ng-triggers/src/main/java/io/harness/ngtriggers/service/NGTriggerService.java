@@ -18,11 +18,11 @@ import io.harness.ngtriggers.beans.dto.WebhookEventProcessingDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
+import io.harness.ngtriggers.beans.source.GitMoveOperationType;
+import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.ngtriggers.validations.ValidationResult;
-import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -60,22 +60,23 @@ public interface NGTriggerService {
   List<ConnectorResponseDTO> fetchConnectorsByFQN(String accountId, List<String> fqns);
 
   void validateTriggerConfig(TriggerDetails triggerDetails);
-  void validateInputSets(TriggerDetails triggerDetails);
   boolean deleteAllForPipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 
   WebhookEventProcessingDetails fetchTriggerEventHistory(String accountId, String eventId);
   NGTriggerEntity updateTriggerWithValidationStatus(NGTriggerEntity ngTriggerEntity, ValidationResult validationResult);
-  Map<String, Map<String, String>> generateErrorMap(InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS);
   TriggerDetails fetchTriggerEntity(String accountId, String orgId, String projectId, String pipelineId,
       String triggerId, String newYaml, boolean withServiceV2);
   Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId);
 
   List<TriggerCatalogItem> getTriggerCatalog(String accountIdentifier);
 
-  Map<String, Map<String, String>> validatePipelineRef(TriggerDetails triggerDetails);
+  void validatePipelineRef(TriggerDetails triggerDetails);
 
   void checkAuthorization(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<HeaderConfig> headerConfigs);
   TriggerYamlDiffDTO getTriggerYamlDiff(TriggerDetails triggerDetails);
+
+  TriggerUpdateCount updateBranchName(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, GitMoveOperationType operationType, String pipelineBranchName);
 }

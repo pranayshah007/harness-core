@@ -23,7 +23,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.chartmuseum.ChartmuseumClient;
 import io.harness.chartmuseum.ChartmuseumClientFactory;
 import io.harness.delegate.chartmuseum.CgChartmuseumClientFactory;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.rule.Owner;
 
 import software.wings.beans.AwsConfig;

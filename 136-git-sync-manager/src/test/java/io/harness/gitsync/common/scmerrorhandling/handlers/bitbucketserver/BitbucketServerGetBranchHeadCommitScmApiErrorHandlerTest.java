@@ -63,4 +63,18 @@ public class BitbucketServerGetBranchHeadCommitScmApiErrorHandlerTest extends Gi
       assertThat(exception.getMessage()).isEqualTo(BITBUCKET_REPOSITORY_OR_BRANCH_NOT_FOUND_ERROR);
     }
   }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testHandleErrorWhenRateLimitCode() {
+    try {
+      bitbucketServerGetBranchHeadCommitScmApiErrorHandler.handleError(
+          429, errorMessage, ErrorMetadata.builder().build());
+    } catch (Exception ex) {
+      WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
+      assertThat(exception).isNotNull();
+      assertThat(exception.getMessage()).isEqualTo(errorMessage);
+    }
+  }
 }

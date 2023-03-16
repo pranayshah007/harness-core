@@ -145,7 +145,7 @@ public class AccountRolesApiImpl implements AccountRolesApi {
     PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter, true);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
-        ApiUtils.addLinksHeader(responseBuilder, "/v1/roles", pageResponse.getContent().size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotalItems(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()
                     .stream()

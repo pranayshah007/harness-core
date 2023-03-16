@@ -23,11 +23,10 @@ import retrofit2.http.Url;
 
 @OwnedBy(CDC)
 public interface DockerRegistryRestClient {
-  //  https://auth.docker.io/token?service=registry.docker.io&scope=repository:samalba/my-app:pull,push
-
   @GET("/token")
   Call<DockerRegistryToken> getGithubContainerRegistryToken(@Header("Authorization") String basicAuthHeader);
 
+  //  https://auth.docker.io/token?service=registry.docker.io&scope=repository:samalba/my-app:pull,push
   @GET
   Call<DockerRegistryToken> getToken(@Header("Authorization") String basicAuthHeader, @Url String url,
       @Query("service") String service, @Query("scope") String scope);

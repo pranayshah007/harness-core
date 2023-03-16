@@ -7,6 +7,7 @@
 
 package io.harness.cdng.infra.yaml;
 
+import static io.harness.cdng.k8s.K8sEntityHelper.K8S_INFRA_NAMESPACE_REGEX_PATTERN;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
@@ -57,7 +58,7 @@ public class K8sAzureInfrastructure
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @YamlSchemaTypes({expression})
-  @Pattern(regexp = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
+  @Pattern(regexp = K8S_INFRA_NAMESPACE_REGEX_PATTERN)
   @Wither
   ParameterField<String> namespace;
   @NotNull

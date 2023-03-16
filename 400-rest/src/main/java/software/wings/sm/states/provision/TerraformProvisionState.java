@@ -656,7 +656,8 @@ public abstract class TerraformProvisionState extends State {
       collectVariables(others, terraformExecutionData.getVariables(), VARIABLES_KEY, ENCRYPTED_VARIABLES_KEY, true);
 
       if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())
-          && terraformExecutionData.getBackendConfigs() != null
+          && isNotEmpty(terraformExecutionData.getBackendConfigs())
+          && terraformExecutionData.getBackendConfigStoreType() != null
           && !terraformExecutionData.getBackendConfigStoreType().equals(S3_STORE_TYPE)) {
         if (LOCAL_STORE_TYPE.equals(terraformExecutionData.getBackendConfigStoreType())) {
           collectVariables(others, terraformExecutionData.getBackendConfigs(), BACKEND_CONFIGS_KEY,
@@ -675,6 +676,7 @@ public abstract class TerraformProvisionState extends State {
         }
       } else if (featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, context.getAccountId())
           && terraformExecutionData.getRemoteS3BackendConfig() != null
+          && terraformExecutionData.getBackendConfigStoreType() != null
           && terraformExecutionData.getBackendConfigStoreType().equals(S3_STORE_TYPE)) {
         S3FileConfig s3FileConfig = terraformExecutionData.getRemoteS3BackendConfig().getS3FileConfig();
         others.put(REMOTE_BE_CONFIG_S3_CONFIG_ID_KEY, s3FileConfig.getAwsConfigId());
@@ -1079,7 +1081,7 @@ public abstract class TerraformProvisionState extends State {
                                                       .build();
     renderDelegateTask(executionContext, delegateTask, stateExecutionContext);
 
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(executionContext, delegateTask);
 
     return ExecutionResponse.builder()

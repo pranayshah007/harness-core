@@ -35,10 +35,10 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.EntityReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.SortOrder;
 import io.harness.beans.SortOrder.OrderType;
-import io.harness.common.EntityReference;
 import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
@@ -176,6 +176,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   OutboxService outboxService;
   YamlGitConfigClient yamlGitConfigClient;
   EntitySetupUsageService entitySetupUsageService;
+  private static final String CONNECTOR = "connector";
 
   @Override
   public Optional<ConnectorResponseDTO> get(
@@ -188,8 +189,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   @Override
   public Optional<ConnectorResponseDTO> getByRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
-    IdentifierRef identifierRef =
-        IdentifierRefHelper.getIdentifierRef(connectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(
+        connectorRef, accountIdentifier, orgIdentifier, projectIdentifier, CONNECTOR);
     return get(identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(),
         identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
   }
@@ -358,11 +359,11 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
 
   public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
-      ConnectorCategory sourceCategory) {
+      ConnectorCategory sourceCategory, String version) {
     Boolean isBuiltInSMDisabled = isBuiltInSMDisabled(accountIdentifier);
 
     Criteria criteria = filterService.createCriteriaFromConnectorFilter(accountIdentifier, orgIdentifier,
-        projectIdentifier, searchTerm, type, category, sourceCategory, isBuiltInSMDisabled);
+        projectIdentifier, searchTerm, type, category, sourceCategory, isBuiltInSMDisabled, version);
     Pageable pageable = getPageRequest(
         PageRequest.builder()
             .pageIndex(page)
@@ -792,7 +793,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   @Override
   public long count(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = filterService.createCriteriaFromConnectorFilter(
-        accountIdentifier, orgIdentifier, projectIdentifier, null, null, null, null, false);
+        accountIdentifier, orgIdentifier, projectIdentifier, null, null, null, null, false, null);
     return connectorRepository.count(criteria);
   }
 

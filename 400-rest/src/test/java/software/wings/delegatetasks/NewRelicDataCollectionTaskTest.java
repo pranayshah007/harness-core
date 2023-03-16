@@ -32,6 +32,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.NewRelicConfig;
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.impl.analysis.DataCollectionTaskResult;
 import software.wings.service.impl.analysis.TimeSeriesMlAnalysisType;
@@ -41,7 +42,6 @@ import software.wings.service.impl.newrelic.NewRelicMetric;
 import software.wings.service.impl.newrelic.NewRelicMetricData;
 import software.wings.service.impl.newrelic.NewRelicMetricData.NewRelicMetricSlice;
 import software.wings.service.impl.newrelic.NewRelicMetricData.NewRelicMetricTimeSlice;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.newrelic.NewRelicDelegateService;
 
 import com.google.common.collect.Lists;

@@ -23,6 +23,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.terragrunt.request.TerragruntApplyTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntApplyTaskParameters.TerragruntApplyTaskParametersBuilder;
@@ -85,9 +86,9 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     TerragruntRollbackStepParameters stepParametersSpec = (TerragruntRollbackStepParameters) stepParameters.getSpec();
     log.info("Running Obtain Task for Terragrunt Rollback Step");
-    String provisionerIdentifier = stepParametersSpec.getProvisionerIdentifier();
-    String entityId =
-        terragruntStepHelper.generateFullIdentifier(stepParametersSpec.getProvisionerIdentifier(), ambiance);
+    String provisionerIdentifier =
+        ParameterFieldHelper.getParameterFieldValue(stepParametersSpec.getProvisionerIdentifier());
+    String entityId = terragruntStepHelper.generateFullIdentifier(provisionerIdentifier, ambiance);
 
     try (HIterator<TerragruntConfig> configIterator = terragruntConfigDAL.getIterator(ambiance, entityId)) {
       if (!configIterator.hasNext()) {
@@ -232,6 +233,7 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
     String entityId = terragruntStepHelper.generateFullIdentifier(provisionerIdentifier, ambiance);
     builder.accountId(accountId)
         .entityId(entityId)
+        .tgModuleSourceInheritSSH(terragruntConfig.isUseConnectorCredentials())
         .stateFileId(terragruntStepHelper.getLatestFileId(entityId))
         .workspace(terragruntConfig.getWorkspace())
         .configFilesStore(terragruntStepHelper.getGitFetchFilesConfig(
@@ -259,6 +261,7 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
     String entityId = terragruntStepHelper.generateFullIdentifier(provisionerIdentifier, ambiance);
     builder.accountId(accountId)
         .entityId(entityId)
+        .tgModuleSourceInheritSSH(terragruntConfig.isUseConnectorCredentials())
         .stateFileId(terragruntStepHelper.getLatestFileId(entityId))
         .workspace(terragruntConfig.getWorkspace())
         .configFilesStore(terragruntStepHelper.getGitFetchFilesConfig(
@@ -286,7 +289,6 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    terragruntStepHelper.checkIfTerragruntFeatureIsEnabled(ambiance, "Terragrunt Destroy");
     // no connectors/secret managers to validate
   }
 }

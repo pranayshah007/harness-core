@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.plancreator.steps.internal.PmsStepPlanCreatorUtils;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -22,6 +23,7 @@ import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
+import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -48,6 +50,7 @@ import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.pipelinestage.PipelineStageConfig;
 import io.harness.steps.pipelinestage.PipelineStageNode;
 import io.harness.steps.pipelinestage.PipelineStageOutputs;
+import io.harness.utils.PipelineGitXHelper;
 import io.harness.when.utils.RunInfoUtils;
 
 import com.google.inject.Inject;
@@ -64,6 +67,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
   @Inject private PipelineStageHelper pipelineStageHelper;
   @Inject private PMSPipelineService pmsPipelineService;
   @Inject KryoSerializer kryoSerializer;
+  @Inject private PmsGitSyncHelper pmsGitSyncHelper;
   @Override
   public Class<PipelineStageNode> getFieldClass() {
     return PipelineStageNode.class;
@@ -107,8 +111,12 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
     if (config == null) {
       throw new InvalidRequestException("Pipeline Stage Yaml does not contain spec");
     }
-    // Principal is added to fetch Git Entity
+    // Principal is added to fetch Git Entity. GitContext is to set GitContext for child pipeline. This was missed where
+    // parent pipeline is in non-default branch. With this change, chained pipeline will be executed with same branch as
+    // that of parent pipeline branch
     setSourcePrincipal(ctx.getMetadata());
+    setGitContextForChildPipeline(ctx);
+
     Optional<PipelineEntity> childPipelineEntity = pmsPipelineService.getPipeline(
         ctx.getAccountIdentifier(), config.getOrg(), config.getProject(), config.getPipeline(), false, false);
 
@@ -153,7 +161,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
                     .getField(YAMLFieldNameConstants.INPUTS),
                 planNodeId, childPipelineEntity.get().getHarnessVersion()))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-            .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
+            .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
@@ -174,6 +182,11 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
                 .putDependencyMetadata(stageNode.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
                 .build())
         .build();
+  }
+
+  private void setGitContextForChildPipeline(PlanCreationContext ctx) {
+    EntityGitDetails entityGitDetails = pmsGitSyncHelper.getEntityGitDetailsFromBytes(ctx.getGitSyncBranchContext());
+    PipelineGitXHelper.setupEntityDetails(entityGitDetails);
   }
 
   private void addDependencyForStrategy(PlanCreationContext ctx, PipelineStageNode stageNode,

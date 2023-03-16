@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.anySet;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -50,6 +51,7 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScripts;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.artifact.steps.constants.ArtifactsStepV2Constants;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
@@ -57,7 +59,7 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.cdng.service.steps.ServiceStepsHelper;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -213,6 +215,9 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
         .submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
 
     doCallRealMethod().when(cdStepHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), anySet());
+    doCallRealMethod()
+        .when(cdStepHelper)
+        .mapTaskRequestToDelegateTaskRequest(any(), any(), anySet(), anyString(), anyBoolean());
 
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(1, String.class))
         .when(expressionResolver)
@@ -306,15 +311,10 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
-    verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
-    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+    verify(expressionResolver, never()).updateExpressions(any(Ambiance.class), any());
     verify(delegateGrpcClientWrapper, never()).submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
 
-    ArtifactsStepV2SweepingOutput output = captor.getValue();
-
-    assertThat(output.getArtifactConfigMap()).isEmpty();
-    assertThat(output.getPrimaryArtifactTaskId()).isNull();
-    assertThat(response.getCallbackIdsCount()).isEqualTo(0);
+    assertThat(response.getCallbackIdsCount()).isZero();
   }
 
   @Test
@@ -763,15 +763,16 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     doReturn(callRequest)
         .when(templateResourceClient)
         .applyTemplatesOnGivenYamlV2("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, null, null, null, null, null, null,
-            null, null, TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).checkForAccess(true).build());
+            null, null, TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).checkForAccess(true).build(),
+            false);
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
         ValidateTemplateInputsResponseDTO.builder().build();
     when(callRequest.execute())
         .thenThrow(new NGTemplateResolveExceptionV2(
             "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponseDTO, null));
     assertThatThrownBy(() -> step.resolveArtifactSourceTemplateRefs("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", givenYaml))
-        .isInstanceOf(NGTemplateResolveExceptionV2.class)
-        .hasMessage("Exception in resolving template refs in given yaml.");
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Exception in resolving template refs in given service yaml.");
   }
 
   @Test
@@ -784,7 +785,8 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     doReturn(callRequest)
         .when(templateResourceClient)
         .applyTemplatesOnGivenYamlV2("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, null, null, null, null, null, null,
-            null, null, TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).checkForAccess(true).build());
+            null, null, TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).checkForAccess(true).build(),
+            false);
     when(callRequest.execute())
         .thenReturn(Response.success(
             ResponseDTO.newResponse(TemplateMergeResponseDTO.builder().mergedPipelineYaml(givenYaml).build())));
@@ -800,6 +802,22 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     String serviceYamlFileName = "service-with-multiple-artifact-sources-template-ref.yaml";
     // merged service yaml
     String serviceYamlFromSweepingOutput = readFile(serviceYamlFileName).replace("$PRIMARY_ARTIFACT_REF", "fromtemp1");
+
+    // primary artifact processed
+    String actualServiceYaml = stepHelper.getArtifactProcessedServiceYaml(ambiance, serviceYamlFromSweepingOutput);
+    String processedServiceYamlFileName = "service-with-processed-primaryartifact.yaml";
+    String expectedServiceYaml = readFile(processedServiceYamlFileName);
+    assertThat(actualServiceYaml).isEqualTo(expectedServiceYaml);
+  }
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testProcessServiceYamlWithPrimaryArtifactRefInputValidator() {
+    String serviceYamlFileName = "service-with-multiple-artifact-sources-template-ref.yaml";
+    // merged service yaml
+    String serviceYamlFromSweepingOutput =
+        readFile(serviceYamlFileName)
+            .replace("$PRIMARY_ARTIFACT_REF", "fromtemp1.allowedValues(fromtemp1,fromtemp2,gcr)");
 
     // primary artifact processed
     String actualServiceYaml = stepHelper.getArtifactProcessedServiceYaml(ambiance, serviceYamlFromSweepingOutput);
@@ -874,7 +892,8 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
             TemplateApplyRequestDTO.builder()
                 .originalEntityYaml(processedServiceYamlWithTemplateRefs)
                 .checkForAccess(true)
-                .build());
+                .build(),
+            false);
     when(callRequest.execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(
             TemplateMergeResponseDTO.builder().mergedPipelineYaml(resolvedServiceYaml).build())));
@@ -949,7 +968,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     levels.add(Level.newBuilder()
                    .setRuntimeId(generateUuid())
                    .setSetupId(generateUuid())
-                   .setStepType(ArtifactsStepV2.STEP_TYPE)
+                   .setStepType(ArtifactsStepV2Constants.STEP_TYPE)
                    .build());
     return Ambiance.newBuilder()
         .setPlanExecutionId(generateUuid())

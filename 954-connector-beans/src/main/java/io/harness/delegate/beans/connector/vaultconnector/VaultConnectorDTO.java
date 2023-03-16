@@ -20,7 +20,6 @@ import static io.harness.SecretManagerDescriptionConstants.VAULT_K8S_AUTH_ROLE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.encryption.SecretRefHelper.getSecretConfigString;
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.exception.WingsException.USER;
 
@@ -192,11 +191,6 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
       if (isBlank(getAwsRegion())) {
         throw new InvalidRequestException(
             "You must provide a aws region if you are using Vault with Aws Iam Auth method", INVALID_REQUEST, USER);
-      }
-      if (isBlank(getSecretConfigString(getHeaderAwsIam()))) {
-        throw new InvalidRequestException(
-            "You must provide Iam Header Server ID if you are using Vault with Aws Iam Auth method", INVALID_REQUEST,
-            USER);
       }
       if (isEmpty(getDelegateSelectors())) {
         throw new InvalidRequestException(

@@ -383,12 +383,15 @@ public class AzureDelegateHelperService {
       AzureEnvironment azureEnvironment = getAzureEnvironment(azureConfig.getAzureEnvironmentType());
       HttpClient httpClient = AzureUtils.getAzureHttpClient();
 
-      ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
-                                                          .clientId(azureConfig.getClientId())
-                                                          .tenantId(azureConfig.getTenantId())
-                                                          .clientSecret(String.valueOf(azureConfig.getKey()))
-                                                          .httpClient(httpClient)
-                                                          .build();
+      ClientSecretCredential clientSecretCredential =
+          new ClientSecretCredentialBuilder()
+              .clientId(azureConfig.getClientId())
+              .tenantId(azureConfig.getTenantId())
+              .clientSecret(String.valueOf(azureConfig.getKey()))
+              .httpClient(httpClient)
+              .authorityHost(
+                  AzureUtils.getAuthorityHost(azureConfig.getAzureEnvironmentType(), azureConfig.getTenantId()))
+              .build();
 
       String token = clientSecretCredential
                          .getToken(AzureUtils.getTokenRequestContext(

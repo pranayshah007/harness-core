@@ -10,6 +10,7 @@ package io.harness.cdng.environment.yaml;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtimeEmptyStringAllowed;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,6 +22,7 @@ import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
@@ -66,7 +68,7 @@ public class EnvironmentYamlV2 implements Visitable {
   ParameterField<List<FilterYaml>> filters;
 
   @ApiModelProperty(dataType = SwaggerConstants.INFRASTRUCTURE_DEFINITION_YAML_NODE_LIST_CLASSPATH)
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({runtimeEmptyStringAllowed})
   ParameterField<List<InfraStructureDefinitionYaml>> infrastructureDefinitions;
 
   @ApiModelProperty(dataType = "io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml")
@@ -77,11 +79,11 @@ public class EnvironmentYamlV2 implements Visitable {
 
   // environmentInputs
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtimeEmptyStringAllowed})
   ParameterField<Map<String, Object>> environmentInputs;
 
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtimeEmptyStringAllowed})
   ParameterField<Map<String, Object>> serviceOverrideInputs;
 
   @ApiModelProperty(dataType = SwaggerConstants.CLUSTER_YAML_NODE_LIST_CLASSPATH)
@@ -119,5 +121,18 @@ public class EnvironmentYamlV2 implements Visitable {
         .provisioner(this.provisioner)
         .serviceOverrideInputs(this.serviceOverrideInputs)
         .build();
+  }
+
+  @Override
+  public VisitableChildren getChildrenToWalk() {
+    VisitableChildren children = VisitableChildren.builder().build();
+    if (ParameterField.isNotNull(infrastructureDefinitions) && infrastructureDefinitions.getValue() != null) {
+      infrastructureDefinitions.getValue().forEach(id -> children.add("infrastructureDefinitions", id));
+    }
+
+    if (ParameterField.isNotNull(infrastructureDefinition) && infrastructureDefinition.getValue() != null) {
+      children.add("infrastructureDefinition", infrastructureDefinition);
+    }
+    return children;
   }
 }

@@ -10,6 +10,7 @@ package io.harness.perpetualtask.internal;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
@@ -48,6 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 @FieldNameConstants(innerTypeName = "PerpetualTaskRecordKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @StoreIn(DbAliases.HARNESS)
+@SecondaryStoreIn(DbAliases.DMS)
 @Entity(value = "perpetualTask", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @Slf4j

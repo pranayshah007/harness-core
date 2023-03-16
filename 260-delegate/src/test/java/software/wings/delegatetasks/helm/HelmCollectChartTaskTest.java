@@ -25,7 +25,7 @@ import io.harness.perpetualtask.manifest.ArtifactoryHelmRepositoryService;
 import io.harness.perpetualtask.manifest.HelmRepositoryService;
 import io.harness.rule.Owner;
 
-import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.dto.HelmChart;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams.HelmChartCollectionType;

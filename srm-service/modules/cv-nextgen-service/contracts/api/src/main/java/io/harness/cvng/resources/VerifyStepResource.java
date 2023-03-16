@@ -14,6 +14,7 @@ import io.harness.cvng.cdng.beans.v2.HealthSource;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.beans.v2.VerificationOverview;
 import io.harness.cvng.cdng.beans.v2.VerifyStepPathParams;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -23,7 +24,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import java.util.List;
 import javax.validation.Valid;
-import javax.validation.constraints.Min;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -73,6 +73,5 @@ public interface VerifyStepResource {
       @QueryParam("anomalousMetricsOnly") @DefaultValue("false") boolean anomalousMetricsOnly,
       @QueryParam("healthSource") List<String> healthSources,
       @QueryParam("transactionGroup") List<String> transactionGroups, @QueryParam("node") List<String> nodes,
-      @QueryParam("limit") @DefaultValue("30") @Min(1) int limit,
-      @QueryParam("page") @DefaultValue("1") @Min(1) int page);
+      @BeanParam @Valid PageRequest pageRequest);
 }

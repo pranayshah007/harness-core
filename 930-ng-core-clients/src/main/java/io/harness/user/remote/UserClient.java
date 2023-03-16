@@ -50,6 +50,7 @@ public interface UserClient {
   String USERS_SIGNUP_INVITE_API = "ng/user/signup-invite";
   String USER_SIGNUP_COMMUNITY = "ng/user/signup-invite/community";
   String USER_BATCH_LIST_API = "ng/user/batch";
+  String USER_EMAILS_BATCH_LIST_API = "ng/user/batch-emails";
   String SCIM_USER_SEARCH = "ng/user/scim/search";
   String SCIM_USER_PATCH_UPDATE = "ng/user/scim/patch";
   String SCIM_USER_PATCH_UPDATE_DETAILS = "ng/user/scim/patch/details";
@@ -60,10 +61,10 @@ public interface UserClient {
   String UPDATE_USER_API = "ng/user/user";
   String CREATE_USER_VIA_INVITE = "ng/user/invites/create-user";
   String CHECK_USER_LIMIT = "ng/user/limit-check";
-
   String USER_TWO_FACTOR_AUTH_SETTINGS = "ng/user/two-factor-auth/{auth-mechanism}";
   String USER_ENABLE_TWO_FACTOR_AUTH = "ng/user/enable-two-factor-auth";
   String USER_DISABLE_TWO_FACTOR_AUTH = "ng/user/disable-two-factor-auth";
+  String USER_RESET_TWO_FACTOR_AUTH = "ng/user/reset-two-factor-auth/{userId}";
   String USER_UNLOCK = "ng/user/unlock-user";
   String ALL_PROJECTS_ACCESSIBLE_TO_USER_API = "ng/user/all-projects";
 
@@ -116,6 +117,9 @@ public interface UserClient {
   @POST(USER_BATCH_LIST_API)
   Call<RestResponse<List<UserInfo>>> listUsers(@Query("accountId") String accountId, @Body UserFilterNG userFilterNG);
 
+  @POST(USER_EMAILS_BATCH_LIST_API)
+  Call<RestResponse<List<UserInfo>>> listUsersEmails(@Query("accountId") String accountId);
+
   @GET(SCIM_USER_SEARCH)
   Call<RestResponse<ScimListResponse<ScimUser>>> searchScimUsers(@Query("accountId") String accountId,
       @Query("searchQuery") String searchQuery, @Query("count") Integer count, @Query("startIndex") Integer startIndex);
@@ -146,6 +150,10 @@ public interface UserClient {
 
   @PUT(USER_DISABLE_TWO_FACTOR_AUTH)
   Call<RestResponse<Optional<UserInfo>>> disableUserTwoFactorAuth(@Query(value = "emailId") String emailId);
+
+  @GET(USER_RESET_TWO_FACTOR_AUTH)
+  Call<RestResponse<Boolean>> sendTwoFactorAuthenticationResetEmail(
+      @Path(value = "userId") String userId, @Query("accountId") String accountId);
 
   @GET(USERS_API + "/user-password-present")
   Call<RestResponse<Boolean>> isUserPasswordSet(@Query("accountId") String accountId, @Query("emailId") String emailId);

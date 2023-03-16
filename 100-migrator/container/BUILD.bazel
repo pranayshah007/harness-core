@@ -27,7 +27,6 @@ pkg_tar(
         "//360-cg-manager:config.yml",
         "//360-cg-manager:keystore.jks",
         "//360-cg-manager:newrelic.yml",
-        "//400-rest/src/main/resources:hazelcast.xml",
         "//400-rest/src/main/resources:redisson-jcache.yaml",
     ],
     files = {

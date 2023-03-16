@@ -25,9 +25,11 @@ import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentNode;
 import io.harness.cvng.cdng.beans.v2.AnalysedNodeType;
 import io.harness.cvng.cdng.beans.v2.AnalysisReason;
@@ -97,7 +99,7 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     injector.injectMembers(verifyStepResource);
     builderFactory = BuilderFactory.getDefault();
     verifyStepExecutionId = generateUuid();
-    baseUrl = "http://localhost:9998/accounts/" + builderFactory.getContext().getAccountId() + "/orgs/"
+    baseUrl = "http://localhost:9998/account/" + builderFactory.getContext().getAccountId() + "/orgs/"
         + builderFactory.getContext().getOrgIdentifier() + "/projects/"
         + builderFactory.getContext().getProjectIdentifier() + "/verifications/" + verifyStepExecutionId;
 
@@ -167,9 +169,9 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     assertThat(response.getStatus()).isEqualTo(200);
     List<HealthSource> healthSources = response.readEntity(new GenericType<List<HealthSource>>() {});
     assertThat(healthSources).hasSize(1);
-    assertThat(healthSources.get(0).getHealthSourceName()).isEqualTo("healthSourceName");
-    assertThat(healthSources.get(0).getHealthSourceIdentifier()).isEqualTo("healthSourceIdentifier");
-    assertThat(healthSources.get(0).getProviderName()).isEqualTo(DataSourceType.CLOUDWATCH_METRICS);
+    assertThat(healthSources.get(0).getName()).isEqualTo("healthSourceName");
+    assertThat(healthSources.get(0).getIdentifier()).isEqualTo("healthSourceIdentifier");
+    assertThat(healthSources.get(0).getType()).isEqualTo(MonitoredServiceDataSourceType.CLOUDWATCH_METRICS);
     assertThat(healthSources.get(0).getProviderType()).isEqualTo(ProviderType.METRICS);
   }
 
@@ -200,10 +202,19 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     assertThat(analysedDeploymentTestNode.getFailedLogClusters()).isEqualTo(1);
     assertThat(analysedDeploymentTestNode.getFailedMetrics()).isEqualTo(1);
 
-    assertThat(verificationOverview.getSpec().getAnalysisType()).isEqualTo(VerificationJobType.CANARY);
+    assertThat(verificationOverview.getSpec().getAnalysisType()).isEqualTo(VerificationJobType.TEST);
     assertThat(verificationOverview.getSpec().getDurationInMinutes()).isEqualTo(10);
     assertThat(verificationOverview.getSpec().getIsFailOnNoAnalysis()).isFalse();
     assertThat(verificationOverview.getSpec().getSensitivity()).isEqualTo(Sensitivity.MEDIUM);
+    assertThat(verificationOverview.getSpec().getAnalysedServiceIdentifier())
+        .isEqualTo(builderFactory.getContext().getServiceIdentifier());
+    assertThat(verificationOverview.getSpec().getAnalysedEnvIdentifier())
+        .isEqualTo(builderFactory.getContext().getEnvIdentifier());
+    assertThat(verificationOverview.getSpec().getMonitoredServiceIdentifier())
+        .isEqualTo(builderFactory.getContext().getMonitoredServiceIdentifier());
+    assertThat(verificationOverview.getSpec().getMonitoredServiceTemplateIdentifier()).isNull();
+    assertThat(verificationOverview.getSpec().getMonitoredServiceTemplateVersionLabel()).isNull();
+    assertThat(verificationOverview.getSpec().getMonitoredServiceType()).isEqualTo(MonitoredServiceSpecType.DEFAULT);
 
     assertThat(verificationOverview.getMetricsAnalysis().getNoAnalysis()).isEqualTo(1);
     assertThat(verificationOverview.getMetricsAnalysis().getHealthy()).isEqualTo(1);
@@ -222,6 +233,32 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
+  public void testGetVerificationOverviewForVerifyStepExecutionId_monitoredServiceSpecTypeIsTemplate() {
+    verificationJobInstance.getResolvedJob().setMonitoredServiceTemplateIdentifier(
+        "monitoredServiceTemplateIdentifier");
+    verificationJobInstance.getResolvedJob().setMonitoredServiceTemplateVersionLabel(
+        "monitoredServiceTemplateVersionLabel");
+
+    Response response = RESOURCES.client().target(baseUrl + "/overview").request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    VerificationOverview verificationOverview = response.readEntity(new GenericType<VerificationOverview>() {});
+
+    assertThat(verificationOverview.getSpec().getAnalysedServiceIdentifier())
+        .isEqualTo(builderFactory.getContext().getServiceIdentifier());
+    assertThat(verificationOverview.getSpec().getAnalysedEnvIdentifier())
+        .isEqualTo(builderFactory.getContext().getEnvIdentifier());
+    assertThat(verificationOverview.getSpec().getMonitoredServiceIdentifier())
+        .isEqualTo(builderFactory.getContext().getMonitoredServiceIdentifier());
+    assertThat(verificationOverview.getSpec().getMonitoredServiceTemplateIdentifier())
+        .isEqualTo("monitoredServiceTemplateIdentifier");
+    assertThat(verificationOverview.getSpec().getMonitoredServiceTemplateVersionLabel())
+        .isEqualTo("monitoredServiceTemplateVersionLabel");
+    assertThat(verificationOverview.getSpec().getMonitoredServiceType()).isEqualTo(MonitoredServiceSpecType.TEMPLATE);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
   public void testGetMetricsAnalysisForVerifyStepExecutionId() {
     Response response =
         RESOURCES.client().target(baseUrl + "/analysis/metrics").request(MediaType.APPLICATION_JSON_TYPE).get();
@@ -234,7 +271,7 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("metricName");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isEqualTo("metricIdentifier");
     assertThat(metricsAnalyses.get(0).getThresholds()).hasSize(1);
-    assertThat(metricsAnalyses.get(0).getHealthSourceIdentifier()).isEqualTo("healthSourceIdentifier");
+    assertThat(metricsAnalyses.get(0).getHealthSource().getIdentifier()).isEqualTo("healthSourceIdentifier");
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("transactionGroup");
     assertThat(metricsAnalyses.get(0).getTestDataNodes()).hasSize(1);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAnalysisResult())

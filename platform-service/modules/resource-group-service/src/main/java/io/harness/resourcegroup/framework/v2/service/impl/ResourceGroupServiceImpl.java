@@ -12,11 +12,20 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.resourcegroup.ResourceGroupPermissions.VIEW_RESOURCEGROUP_PERMISSION;
+import static io.harness.resourcegroup.ResourceGroupResourceTypes.RESOURCE_GROUP;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.utils.PageUtils.getPageRequest;
 
 import static java.lang.Boolean.TRUE;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
@@ -25,6 +34,7 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
+import io.harness.ng.core.dto.EntityScopeInfo;
 import io.harness.outbox.api.OutboxService;
 import io.harness.resourcegroup.framework.v1.events.ResourceGroupCreateEvent;
 import io.harness.resourcegroup.framework.v1.events.ResourceGroupDeleteEvent;
@@ -40,14 +50,20 @@ import io.harness.resourcegroup.v2.model.ResourceGroup.ResourceGroupKeys;
 import io.harness.resourcegroup.v2.model.ResourceSelector.ResourceSelectorKeys;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
+import io.harness.utils.PageUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.serializer.HObjectMapper;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -68,15 +84,18 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
   ResourceGroupValidatorImpl resourceGroupValidatorImpl;
   OutboxService outboxService;
   TransactionTemplate transactionTemplate;
+  AccessControlClient accessControlClient;
 
   @Inject
   public ResourceGroupServiceImpl(ResourceGroupV2Repository resourceGroupV2Repository,
       ResourceGroupValidatorImpl resourceGroupValidatorImpl, OutboxService outboxService,
-      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate) {
+      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
+      AccessControlClient accessControlClient) {
     this.resourceGroupV2Repository = resourceGroupV2Repository;
     this.resourceGroupValidatorImpl = resourceGroupValidatorImpl;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
+    this.accessControlClient = accessControlClient;
   }
 
   private ResourceGroup createInternal(ResourceGroup resourceGroup, boolean pushEvent) {
@@ -125,7 +144,8 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
     }
   }
 
-  private Criteria getResourceGroupFilterCriteria(ResourceGroupFilterDTO resourceGroupFilterDTO) {
+  @VisibleForTesting
+  protected Criteria getResourceGroupFilterCriteria(ResourceGroupFilterDTO resourceGroupFilterDTO) {
     Criteria criteria = new Criteria();
     if (isNotEmpty(resourceGroupFilterDTO.getIdentifierFilter())) {
       criteria.and(ResourceGroupKeys.identifier).in(resourceGroupFilterDTO.getIdentifierFilter());
@@ -186,13 +206,35 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
 
   @Override
   public Page<ResourceGroupResponse> list(ResourceGroupFilterDTO resourceGroupFilterDTO, PageRequest pageRequest) {
+    Page<ResourceGroup> resourceGroupPageResponse;
     Criteria criteria = getResourceGroupFilterCriteria(resourceGroupFilterDTO);
-    return resourceGroupV2Repository.findAll(criteria, getPageRequest(pageRequest))
-        .map(ResourceGroupMapper::toResponseWrapper);
+    if (!accessControlClient.hasAccess(
+            ResourceScope.of(resourceGroupFilterDTO.getAccountIdentifier(), resourceGroupFilterDTO.getOrgIdentifier(),
+                resourceGroupFilterDTO.getProjectIdentifier()),
+            Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION)) {
+      List<ResourceGroup> resourceGroups = resourceGroupV2Repository.findAll(criteria, Pageable.unpaged()).getContent();
+
+      resourceGroups = getPermittedResourceGroups(resourceGroups);
+      resourceGroupPageResponse =
+          getPaginatedResult(resourceGroups, pageRequest.getPageIndex(), pageRequest.getPageSize());
+    } else {
+      resourceGroupPageResponse = resourceGroupV2Repository.findAll(criteria, getPageRequest(pageRequest));
+    }
+    return resourceGroupPageResponse.map(ResourceGroupMapper::toResponseWrapper);
+  }
+
+  private Page<ResourceGroup> getPaginatedResult(List<ResourceGroup> unpagedResourceGroup, int page, int size) {
+    if (unpagedResourceGroup.isEmpty()) {
+      return Page.empty();
+    }
+    List<ResourceGroup> resourceGroups = new ArrayList<>(unpagedResourceGroup);
+    resourceGroups.sort(Comparator.comparing(ResourceGroup::getCreatedAt).reversed());
+    return PageUtils.getPage(resourceGroups, page, size);
   }
 
   @Override
   public Page<ResourceGroupResponse> list(Scope scope, PageRequest pageRequest, String searchTerm) {
+    Page<ResourceGroup> resourceGroupPageResponse;
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder harnessManagedOrder =
           SortOrder.Builder.aSortOrder().withField(ResourceGroupKeys.harnessManaged, SortOrder.OrderType.DESC).build();
@@ -208,7 +250,71 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
                                                         .searchTerm(searchTerm)
                                                         .build();
     Criteria criteria = getResourceGroupFilterCriteria(resourceGroupFilterDTO);
-    return resourceGroupV2Repository.findAll(criteria, page).map(ResourceGroupMapper::toResponseWrapper);
+
+    if (!accessControlClient.hasAccess(
+            ResourceScope.of(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier()),
+            Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION)) {
+      List<ResourceGroup> resourceGroups = resourceGroupV2Repository.findAll(criteria, Pageable.unpaged()).getContent();
+      resourceGroups = getPermittedResourceGroups(resourceGroups);
+      resourceGroupPageResponse =
+          getPaginatedResult(resourceGroups, pageRequest.getPageIndex(), pageRequest.getPageSize());
+    } else {
+      resourceGroupPageResponse = resourceGroupV2Repository.findAll(criteria, page);
+    }
+    return resourceGroupPageResponse.map(ResourceGroupMapper::toResponseWrapper);
+  }
+
+  private List<ResourceGroup> getPermittedResourceGroups(List<ResourceGroup> resourceGroups) {
+    if (isEmpty(resourceGroups)) {
+      return Collections.emptyList();
+    }
+
+    Map<EntityScopeInfo, List<ResourceGroup>> entityScopeInfoListMap = resourceGroups.stream().collect(
+        Collectors.groupingBy(ResourceGroupServiceImpl::getEntityScopeInfoFromResourceGroup));
+
+    List<PermissionCheckDTO> permissionChecks =
+        resourceGroups.stream()
+            .map(resourceGroup
+                -> PermissionCheckDTO.builder()
+                       .permission(VIEW_RESOURCEGROUP_PERMISSION)
+                       .resourceIdentifier(resourceGroup.getIdentifier())
+                       .resourceScope(ResourceScope.of(resourceGroup.getAccountIdentifier(),
+                           resourceGroup.getOrgIdentifier(), resourceGroup.getProjectIdentifier()))
+                       .resourceType(RESOURCE_GROUP)
+                       .build())
+            .collect(Collectors.toList());
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+
+    List<ResourceGroup> permittedResourceGroup = new ArrayList<>();
+    for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
+      if (accessControlDTO.isPermitted()) {
+        permittedResourceGroup.add(
+            entityScopeInfoListMap.get(getEntityScopeInfoFromAccessControlDTO(accessControlDTO)).get(0));
+      }
+    }
+    return permittedResourceGroup;
+  }
+
+  private static EntityScopeInfo getEntityScopeInfoFromAccessControlDTO(AccessControlDTO accessControlDTO) {
+    return EntityScopeInfo.builder()
+        .accountIdentifier(accessControlDTO.getResourceScope().getAccountIdentifier())
+        .orgIdentifier(isBlank(accessControlDTO.getResourceScope().getOrgIdentifier())
+                ? null
+                : accessControlDTO.getResourceScope().getOrgIdentifier())
+        .projectIdentifier(isBlank(accessControlDTO.getResourceScope().getProjectIdentifier())
+                ? null
+                : accessControlDTO.getResourceScope().getProjectIdentifier())
+        .identifier(accessControlDTO.getResourceIdentifier())
+        .build();
+  }
+
+  private static EntityScopeInfo getEntityScopeInfoFromResourceGroup(ResourceGroup resourceGroup) {
+    return EntityScopeInfo.builder()
+        .accountIdentifier(resourceGroup.getAccountIdentifier())
+        .orgIdentifier(isBlank(resourceGroup.getOrgIdentifier()) ? null : resourceGroup.getOrgIdentifier())
+        .projectIdentifier(isBlank(resourceGroup.getProjectIdentifier()) ? null : resourceGroup.getProjectIdentifier())
+        .identifier(resourceGroup.getIdentifier())
+        .build();
   }
 
   @Override

@@ -36,6 +36,7 @@ public class ParameterFieldHelperTest extends CategoryTest {
   ParameterField<Integer> intField = ParameterField.createValueField(23);
   ParameterField<Boolean> booleanField = ParameterField.createValueField(false);
   ParameterField<List<Boolean>> booleanListField = ParameterField.createValueField(Collections.singletonList(false));
+  ParameterField<Double> doubleField = ParameterField.createValueField(2.0);
 
   @Test
   @Owner(developers = NAMAN)
@@ -126,5 +127,18 @@ public class ParameterFieldHelperTest extends CategoryTest {
         ParameterFieldHelper.hasValueOrExpression(
             ParameterField.createFieldWithDefaultValue(true, false, "<+expression>", mapValue, null, false), true))
         .isTrue();
+  }
+
+  @Category(UnitTests.class)
+  public void testGetIntegerParameterFieldValue() {
+    assertThat(ParameterFieldHelper.getIntegerParameterFieldValue(nullField)).isNull();
+
+    assertThatThrownBy(() -> ParameterFieldHelper.getIntegerParameterFieldValue(booleanField))
+        .isInstanceOf(IllegalArgumentException.class);
+
+    ParameterField<String> str23 = ParameterField.createValueField("23");
+    assertThat(ParameterFieldHelper.getIntegerParameterFieldValue(str23)).isEqualTo(23);
+
+    assertThat(ParameterFieldHelper.getIntegerParameterFieldValue(doubleField)).isEqualTo(2);
   }
 }

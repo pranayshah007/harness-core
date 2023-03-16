@@ -14,6 +14,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.gitaware.helper.TemplateMoveConfigOperationType.INLINE_TO_REMOTE;
+import static io.harness.gitaware.helper.TemplateMoveConfigOperationType.getMoveConfigType;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
 
@@ -45,6 +47,10 @@ import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitaware.helper.TemplateMoveConfigOperationDTO;
+import io.harness.gitaware.helper.TemplateMoveConfigOperationType;
+import io.harness.gitaware.helper.TemplateMoveConfigRequestDTO;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
@@ -52,14 +58,15 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
+import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.grpc.utils.StringValueUtils;
+import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
-import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.organization.remote.OrganizationClient;
@@ -76,6 +83,7 @@ import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.beans.TemplateListRepoResponse;
+import io.harness.template.beans.TemplateMoveConfigResponse;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -87,6 +95,7 @@ import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.resources.NGTemplateResource;
 import io.harness.template.utils.TemplateUtils;
 import io.harness.template.yaml.TemplateRefHelper;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.PageUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -102,6 +111,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.PredicateUtils;
@@ -133,6 +143,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
 
   @Inject private TemplateGitXService templateGitXService;
+  @Inject private GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
   private static final String DUP_KEY_EXP_FORMAT_STRING =
@@ -143,7 +154,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
   @Override
-  public TemplateEntity create(TemplateEntity templateEntity, boolean setStableTemplate, String comments) {
+  public TemplateEntity create(
+      TemplateEntity templateEntity, boolean setStableTemplate, String comments, boolean isNewTemplate) {
     enforcementClientService.checkAvailability(
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
 
@@ -164,6 +176,15 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           "The template with identifier %s and version label %s already exists in the account %s, org %s, project %s",
           templateEntity.getIdentifier(), templateEntity.getVersionLabel(), templateEntity.getAccountId(),
           templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier()));
+    }
+
+    if (isNewTemplate
+        && validateIsNewTemplateIdentifier(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+            templateEntity.getProjectIdentifier(), templateEntity.getIdentifier())) {
+      throw new InvalidRequestException(String.format(
+          "The template with identifier %s already exists in account %s, org %s, project %s, if you want to create a new version %s of this template then use save as new version option from the given template or if you want to create a new Template then use a different identifier.",
+          templateEntity.getIdentifier(), templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+          templateEntity.getProjectIdentifier(), templateEntity.getVersionLabel()));
     }
 
     if (!isRemoteTemplateAndGitEntity(templateEntity)) {
@@ -265,26 +286,17 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   private void applyTemplatesToYamlAndValidateSchema(TemplateEntity templateEntity) {
-    try {
-      TemplateMergeResponseDTO templateMergeResponseDTO = null;
-      templateMergeResponseDTO =
-          templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
-              templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false, false);
-      populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
-      checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
-          templateEntity.getProjectIdentifier(), templateMergeResponseDTO);
+    TemplateMergeResponseDTO templateMergeResponseDTO = null;
+    templateMergeResponseDTO =
+        templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+            templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false, false, false);
+    populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
+    checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+        templateEntity.getProjectIdentifier(), templateMergeResponseDTO);
 
-      // validate schema on resolved yaml to validate template inputs value as well.
-      ngTemplateSchemaService.validateYamlSchemaInternal(templateMergeResponseDTO == null
-              ? templateEntity
-              : templateEntity.withYaml(templateMergeResponseDTO.getMergedPipelineYaml()));
-    } catch (NGTemplateResolveExceptionV2 ex) {
-      ValidateTemplateInputsResponseDTO validateTemplateInputsResponse = ex.getValidateTemplateInputsResponseDTO();
-      validateTemplateInputsResponse.getErrorNodeSummary().setTemplateResponse(
-          NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity));
-      throw new NGTemplateResolveExceptionV2(
-          "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponse, null);
-    }
+    // validate schema on resolved yaml to validate template inputs value as well.
+    ngTemplateSchemaService.validateYamlSchemaInternal(
+        templateEntity.withYaml(templateMergeResponseDTO.getMergedPipelineYaml()));
   }
 
   private void populateLinkedTemplatesModules(
@@ -797,6 +809,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   @Override
+  public boolean validateIsNewTemplateIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier) {
+    return templateRepository.existsByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier);
+  }
+
+  @Override
   public TemplateEntity updateGitFilePath(TemplateEntity templateEntity, String newFilePath) {
     Criteria criteria = Criteria.where(TemplateEntityKeys.accountId)
                             .is(templateEntity.getAccountId())
@@ -1125,6 +1144,32 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
+  public PageResponse<EntitySetupUsageDTO> listTemplateReferences(int page, int size, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel, String searchTerm,
+      boolean isStableTemplate) {
+    PageResponse<EntitySetupUsageDTO> referredEntities;
+    String referredEntityFQN =
+        createFqnForTemplate(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel);
+    if (isStableTemplate) {
+      String referredEntityFQNForStableTemplate =
+          createFqnForTemplate(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, "");
+      referredEntities = NGRestUtils.getResponse(entitySetupUsageClient.listAllEntityUsageWith2Fqns(page, size,
+          accountIdentifier, referredEntityFQN, referredEntityFQNForStableTemplate, EntityType.TEMPLATE, searchTerm));
+    } else {
+      referredEntities = NGRestUtils.getResponse(entitySetupUsageClient.listAllEntityUsage(
+          page, size, accountIdentifier, referredEntityFQN, EntityType.TEMPLATE, searchTerm));
+    }
+    return referredEntities;
+  }
+
+  private String createFqnForTemplate(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel) {
+    return String.format("%s/%s",
+        FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier),
+        EmptyPredicate.isNotEmpty(versionLabel) ? versionLabel + "/" : STABLE_VERSION + "/");
+  }
+
   private void makePreviousLastUpdatedTemplateFalse(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String currentTemplateVersion) {
     NGTemplateServiceHelper.validatePresenceOfRequiredFields(accountIdentifier, templateIdentifier);
@@ -1298,5 +1343,130 @@ public class NGTemplateServiceImpl implements NGTemplateService {
             templateVersionFromGit, versionLabel));
       }
     }
+  }
+
+  @Override
+  public TemplateMoveConfigResponse moveTemplateStoreTypeConfig(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, TemplateMoveConfigRequestDTO templateMoveConfigRequestDTO) {
+    String versionLabel = templateMoveConfigRequestDTO.getVersionLabel();
+    TemplateMoveConfigOperationDTO moveConfigOperationDTO =
+        TemplateMoveConfigOperationDTO.builder()
+            .repoName(templateMoveConfigRequestDTO.getRepoName())
+            .branch(templateMoveConfigRequestDTO.getBranch())
+            .moveConfigOperationType(getMoveConfigType(templateMoveConfigRequestDTO.getMoveConfigOperationType()))
+            .connectorRef(templateMoveConfigRequestDTO.getConnectorRef())
+            .baseBranch(templateMoveConfigRequestDTO.getBaseBranch())
+            .commitMessage(templateMoveConfigRequestDTO.getCommitMsg())
+            .isNewBranch(templateMoveConfigRequestDTO.getIsNewBranch())
+            .filePath(templateMoveConfigRequestDTO.getFilePath())
+            .build();
+
+    Optional<TemplateEntity> templateEntityOptional =
+        get(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false, false);
+
+    if (templateEntityOptional.isPresent()) {
+      TemplateEntity movedTemplateEntity = moveTemplateEntity(accountIdentifier, orgIdentifier, projectIdentifier,
+          templateIdentifier, versionLabel, moveConfigOperationDTO, templateEntityOptional.get());
+
+      return TemplateMoveConfigResponse.builder()
+          .templateIdentifier(movedTemplateEntity.getIdentifier())
+          .versionLabel(movedTemplateEntity.getVersionLabel())
+          .build();
+    } else {
+      throw new NotFoundException(
+          String.format("Template with the given Identifier: %s and versionLabel %s does not exist or has been deleted",
+              templateIdentifier, versionLabel));
+    }
+  }
+
+  @VisibleForTesting
+  protected TemplateEntity moveTemplateEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, TemplateMoveConfigOperationDTO moveConfigOperationDTO,
+      TemplateEntity templateEntity) {
+    Criteria templateCriteria = Criteria.where(TemplateEntityKeys.accountId)
+                                    .is(accountIdentifier)
+                                    .and(TemplateEntityKeys.orgIdentifier)
+                                    .is(orgIdentifier)
+                                    .and(TemplateEntityKeys.projectIdentifier)
+                                    .is(projectIdentifier)
+                                    .and(TemplateEntityKeys.identifier)
+                                    .is(templateIdentifier)
+                                    .and(TemplateEntityKeys.versionLabel)
+                                    .in(versionLabel)
+                                    .and(TemplateEntityKeys.deleted)
+                                    .is(false);
+
+    Update templateUpdate;
+
+    if (INLINE_TO_REMOTE.equals(moveConfigOperationDTO.getMoveConfigOperationType())) {
+      setupGitContext(moveConfigOperationDTO);
+      templateUpdate = templateServiceHelper.getTemplateUpdateForInlineToRemote(
+          accountIdentifier, orgIdentifier, projectIdentifier, moveConfigOperationDTO);
+    } else {
+      throw new InvalidRequestException(String.format(
+          "Invalid move config operation specified [%s].", moveConfigOperationDTO.getMoveConfigOperationType().name()));
+    }
+    return updateMoveConfigForTemplateEntity(
+        templateEntity, templateUpdate, templateCriteria, moveConfigOperationDTO.getMoveConfigOperationType());
+  }
+
+  TemplateEntity updateMoveConfigForTemplateEntity(TemplateEntity templateEntity, Update templateUpdate,
+      Criteria templateCriteria, TemplateMoveConfigOperationType moveConfigOperationType) {
+    return transactionHelper.performTransaction(
+        () -> moveConfigOperations(templateEntity, templateUpdate, templateCriteria, moveConfigOperationType));
+  }
+
+  TemplateEntity moveConfigOperations(TemplateEntity templateEntityToMove, Update templateUpdate,
+      Criteria templateCriteria, TemplateMoveConfigOperationType moveConfigOperationType) {
+    //   create file if inline to remote
+    if (INLINE_TO_REMOTE.equals(moveConfigOperationType)) {
+      createRemoteEntity(templateEntityToMove);
+    }
+    //    update the mongo db
+    return updateTemplateConfig(templateEntityToMove.getAccountId(), templateEntityToMove.getOrgIdentifier(),
+        templateEntityToMove.getProjectIdentifier(), templateCriteria, templateUpdate);
+  }
+
+  private TemplateEntity updateTemplateConfig(String accountId, String orgIdentifier, String projectIdentifier,
+      Criteria templateCriteria, Update templateUpdate) {
+    return templateRepository.update(accountId, orgIdentifier, projectIdentifier, templateCriteria, templateUpdate);
+  }
+
+  private ScmCreateFileGitResponse createRemoteEntity(TemplateEntity templateEntityToMove) {
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+
+    io.harness.beans.Scope scope = io.harness.beans.Scope.of(templateEntityToMove.getAccountIdentifier(),
+        templateEntityToMove.getOrgIdentifier(), templateEntityToMove.getProjectIdentifier());
+    String yamlToPush = templateEntityToMove.getYaml();
+    addGitParamsToTemplateEntity(templateEntityToMove, gitEntityInfo);
+
+    return gitAwareEntityHelper.createEntityOnGit(templateEntityToMove, yamlToPush, scope);
+  }
+
+  private void addGitParamsToTemplateEntity(TemplateEntity templateEntityToMove, GitEntityInfo gitEntityInfo) {
+    templateEntityToMove.setStoreType(StoreType.REMOTE);
+    if (EmptyPredicate.isEmpty(templateEntityToMove.getRepoURL())) {
+      templateEntityToMove.setRepoURL(gitAwareEntityHelper.getRepoUrl(templateEntityToMove.getAccountId(),
+          templateEntityToMove.getOrgIdentifier(), templateEntityToMove.getProjectIdentifier()));
+    }
+    templateEntityToMove.setConnectorRef(gitEntityInfo.getConnectorRef());
+    templateEntityToMove.setRepo(gitEntityInfo.getRepoName());
+    templateEntityToMove.setFilePath(gitEntityInfo.getFilePath());
+    templateEntityToMove.setFallBackBranch(gitEntityInfo.getBranch());
+  }
+
+  private void setupGitContext(TemplateMoveConfigOperationDTO moveConfigDTO) {
+    GitAwareContextHelper.populateGitDetails(
+        GitEntityInfo.builder()
+            .branch(moveConfigDTO.getBranch())
+            .filePath(moveConfigDTO.getFilePath())
+            .commitMsg(moveConfigDTO.getCommitMessage())
+            .isNewBranch(isNotEmpty(moveConfigDTO.getBranch()) && isNotEmpty(moveConfigDTO.getBaseBranch()))
+            .baseBranch(moveConfigDTO.getBaseBranch())
+            .connectorRef(moveConfigDTO.getConnectorRef())
+            .storeType(StoreType.REMOTE)
+            .repoName(moveConfigDTO.getRepoName())
+            .build());
   }
 }

@@ -16,7 +16,7 @@ import io.harness.ccm.billing.preaggregated.PreAggregateConstants;
 
 import software.wings.graphql.schema.type.aggregation.QLSortOrder;
 
-import com.hazelcast.internal.util.Preconditions;
+import com.google.common.base.Preconditions;
 import com.healthmarketscience.sqlbuilder.OrderObject;
 import com.healthmarketscience.sqlbuilder.SqlObject;
 import lombok.Builder;

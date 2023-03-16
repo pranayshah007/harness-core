@@ -37,6 +37,7 @@ import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 import com.amazonaws.services.costexplorer.model.EC2ResourceDetails;
 import com.amazonaws.services.costexplorer.model.RecommendationTarget;
 import com.amazonaws.services.costexplorer.model.RightsizingRecommendation;
+import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.time.Instant;
@@ -69,6 +70,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
   @Autowired private AwsAccountFieldHelper awsAccountFieldHelper;
 
   private static final String MODIFY = "Modify";
+  private static final int METRICS_DATA_BATCH_SIZE = 20;
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
@@ -135,10 +137,13 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
             throw new BatchProcessingException("No recommendation could be saved successfully", null);
           }
           List<AWSEC2Details> instances = extractEC2InstanceDetails(ec2RecommendationResponse);
-          List<Ec2UtilzationData> utilizationData = ec2MetricHelper.getUtilizationMetrics(
-              infraAccCrossArn.getValue(), Date.from(now.minus(1, ChronoUnit.DAYS)), Date.from(now), instances);
-          if (!utilizationData.isEmpty()) {
-            saveUtilDataToTimescaleDB(accountId, utilizationData);
+          // We do this in batches because AWS's getMetricData API throws error if the list is too huge
+          for (List<AWSEC2Details> instancesPartition : Lists.partition(instances, METRICS_DATA_BATCH_SIZE)) {
+            List<Ec2UtilzationData> utilizationData = ec2MetricHelper.getUtilizationMetrics(infraAccCrossArn.getValue(),
+                Date.from(now.minus(1, ChronoUnit.DAYS)), Date.from(now), instancesPartition);
+            if (!utilizationData.isEmpty()) {
+              saveUtilDataToTimescaleDB(accountId, utilizationData);
+            }
           }
         }
       }

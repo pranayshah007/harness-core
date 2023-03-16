@@ -158,6 +158,10 @@ public class K8InitializeStepUtilsHelper {
     return arrayNode;
   }
 
+  public static JsonNode getSingleRunStepAsJsonNode() throws Exception {
+    return getRunStepElementConfigAsJsonNode();
+  }
+
   public static CIExecutionArgs getCIExecutionArgs() {
     return CIExecutionArgs.builder()
         .executionSource(ManualExecutionSource.builder().branch(REPO_BRANCH).build())
@@ -165,7 +169,7 @@ public class K8InitializeStepUtilsHelper {
         .build();
   }
 
-  private static JsonNode getRunStepElementConfigAsJsonNode() {
+  public static JsonNode getRunStepElementConfigAsJsonNode() {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode stepElementConfig = mapper.createObjectNode();
     stepElementConfig.put("identifier", RUN_STEP_ID);
@@ -179,6 +183,31 @@ public class K8InitializeStepUtilsHelper {
     stepSpecType.put("command", BUILD_SCRIPT);
     stepSpecType.put("image", RUN_STEP_IMAGE);
     stepSpecType.put("connectorRef", RUN_STEP_CONNECTOR);
+
+    stepElementConfig.set("spec", stepSpecType);
+    return stepElementConfig;
+  }
+
+  public static JsonNode getRunStepElementConfigWithVariables() {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode stepElementConfig = mapper.createObjectNode();
+    stepElementConfig.put("identifier", RUN_STEP_ID);
+
+    stepElementConfig.put("type", "Run");
+    stepElementConfig.put("name", RUN_STEP_NAME);
+
+    ObjectNode stepSpecType = mapper.createObjectNode();
+    stepSpecType.put("identifier", RUN_STEP_ID);
+    stepSpecType.put("name", RUN_STEP_NAME);
+    stepSpecType.put("command", BUILD_SCRIPT);
+    stepSpecType.put("image", RUN_STEP_IMAGE);
+    stepSpecType.put("connectorRef", RUN_STEP_CONNECTOR);
+
+    Map<String, String> envMap = new HashMap<>();
+    envMap.put("stepVar", "stepVar");
+    envMap.put("pipelineVar1", "stepVarOverride");
+    envMap.put("stageVar3", "9.0");
+    stepSpecType.putPOJO("envVariables", envMap);
 
     stepElementConfig.set("spec", stepSpecType);
     return stepElementConfig;

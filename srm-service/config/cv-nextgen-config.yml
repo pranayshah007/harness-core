@@ -61,6 +61,11 @@ ngManagerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+webhookConfig:
+  webhookBaseUrl: http://localhost:6457/cv/api/
+
+enableDebugAPI: false
+
 enforcementClientConfiguration:
   enforcementCheckEnabled: true
 
@@ -124,6 +129,13 @@ eventsFramework:
       enabled: false
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
+
+policyManagerSecret: secret
+
+opaClientConfig:
+  baseUrl: http://localhost:3000
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
 
 pmsSdkGrpcServerConfig:
   connectors:

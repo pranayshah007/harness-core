@@ -128,8 +128,8 @@ public class OrgConnectorApiImpl implements OrgConnectorApi {
     List<ConnectorResponse> connectorResponses = connectorApiUtils.toConnectorResponses(connectorResponseDTOS);
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-        responseBuilder, String.format("/v1/orgs/%s/connectors", org), connectorResponses.size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotalItems(), page, limit);
 
     return responseBuilderWithLinks.entity(connectorResponses).build();
   }

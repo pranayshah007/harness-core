@@ -80,6 +80,7 @@ import retrofit2.http.Body;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 @NextGenManagerAuth
+@Hidden
 public class LicenseResource {
   private static final String MODULE_TYPE_KEY = "moduleType";
   private final LicenseService licenseService;
@@ -101,6 +102,7 @@ public class LicenseResource {
         ApiResponse(responseCode = "default", description = "Returns all of a module's licenses")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @InternalApi
   public ResponseDTO<List<ModuleLicenseDTO>>
   getModuleLicenses(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @PathParam(
                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -122,6 +124,7 @@ public class LicenseResource {
         ApiResponse(responseCode = "default", description = "Returns a module's license summary")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @InternalApi
   public ResponseDTO<LicensesWithSummaryDTO>
   getLicensesWithSummary(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @PathParam(
                              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -141,6 +144,7 @@ public class LicenseResource {
         ApiResponse(responseCode = "default", description = "Returns all licenses for an account")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @InternalApi
   public ResponseDTO<AccountLicenseDTO>
   getAccountLicensesDTO(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
@@ -158,7 +162,6 @@ public class LicenseResource {
         ApiResponse(responseCode = "default", description = "Returns all module licenses for an account")
       })
   @InternalApi
-  @Hidden
   public ResponseDTO<List<ModuleLicenseDTO>>
   getAllAccountModuleLicenses(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
@@ -176,6 +179,7 @@ public class LicenseResource {
         ApiResponse(responseCode = "default", description = "Returns a module's license")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @InternalApi
   public ResponseDTO<ModuleLicenseDTO>
   get(@Parameter(required = true, description = "The module license identifier") @PathParam(
           "identifier") String identifier,
@@ -195,6 +199,7 @@ public class LicenseResource {
         ApiResponse(responseCode = "default", description = "Returns the Free License of the specified Module.")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @InternalApi
   public ResponseDTO<ModuleLicenseDTO>
   startFreeLicense(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -210,7 +215,6 @@ public class LicenseResource {
   @POST
   @Path("community")
   @ApiOperation(value = "Starts Community License For A Module", nickname = "startCommunityLicense")
-  @Hidden
   @InternalApi
   public ResponseDTO<ModuleLicenseDTO> startCommunityLicense(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -228,6 +232,7 @@ public class LicenseResource {
         ApiResponse(responseCode = "default", description = "Returns the Trial License of the specified Module.")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @InternalApi
   public ResponseDTO<ModuleLicenseDTO>
   startTrialLicense(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -248,6 +253,7 @@ public class LicenseResource {
         ApiResponse(responseCode = "default", description = "Returns the Trial License of the specified Module.")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @InternalApi
   public ResponseDTO<ModuleLicenseDTO>
   extendTrialLicense(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -267,6 +273,7 @@ public class LicenseResource {
         ApiResponse(responseCode = "default", description = "Returns all actions under each edition")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @InternalApi
   public ResponseDTO<Map<Edition, Set<EditionActionDTO>>>
   getEditionActions(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -287,6 +294,7 @@ public class LicenseResource {
         ApiResponse(responseCode = "default", description = "Returns last modified time under each module type")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @InternalApi
   public ResponseDTO<Map<ModuleType, Long>>
   getLastModifiedTimeForAllModuleTypes(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
@@ -298,7 +306,6 @@ public class LicenseResource {
   @ApiOperation(
       value = "Deprecated Check All Inactive", nickname = "checkNGLicensesAllInactiveDeprecated", hidden = true)
   @InternalApi
-  @Hidden
   public ResponseDTO<CheckExpiryResultDTO>
   checkExpiry(@PathParam("accountId") String accountId) {
     return ResponseDTO.newResponse(licenseService.checkExpiry(accountId));
@@ -308,7 +315,6 @@ public class LicenseResource {
   @Path("{accountId}/soft-delete")
   @ApiOperation(value = "Deprecated Soft Delete", nickname = "softDeleteDeprecated", hidden = true)
   @InternalApi
-  @Hidden
   public ResponseDTO<Boolean> softDelete(@PathParam("accountId") String accountId) {
     licenseService.softDelete(accountId);
     return ResponseDTO.newResponse(Boolean.TRUE);
@@ -320,7 +326,6 @@ public class LicenseResource {
       value = "Get Module Licenses for Specific Module Type which Expiry Time is Greater or Equal to the Provided Time",
       nickname = "getModuleLicenseForSpecificModuleType", hidden = true)
   @InternalApi
-  @Hidden
   public ResponseDTO<List<ModuleLicenseDTO>>
   getModuleLicensesByModuleType(@Parameter(required = true, description = "A Harness Platform module.") @NotNull
                                 @PathParam(NGCommonEntityConstants.MODULE_TYPE) ModuleType moduleType,

@@ -10,21 +10,25 @@ package io.harness.ngmigration.service.step.k8s;
 import io.harness.cdng.k8s.K8sBlueGreenStepInfo;
 import io.harness.cdng.k8s.K8sBlueGreenStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
-import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GraphNode;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sBlueGreenDeploy;
 
 import java.util.Map;
 
-public class K8sBlueGreenDeployStepMapperImpl implements StepMapper {
+public class K8sBlueGreenDeployStepMapperImpl extends StepMapper {
+  @Override
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
+  }
+
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.K8S_BLUE_GREEN_DEPLOY;
@@ -32,18 +36,17 @@ public class K8sBlueGreenDeployStepMapperImpl implements StepMapper {
 
   @Override
   public State getState(GraphNode stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+    Map<String, Object> properties = getProperties(stepYaml);
     K8sBlueGreenDeploy state = new K8sBlueGreenDeploy(stepYaml.getName());
     state.parseProperties(properties);
     return state;
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     K8sBlueGreenDeploy state = (K8sBlueGreenDeploy) getState(graphNode);
     K8sBlueGreenStepNode stepNode = new K8sBlueGreenStepNode();
-    baseSetup(graphNode, stepNode);
+    baseSetup(graphNode, stepNode, context.getIdentifierCaseFormat());
     K8sBlueGreenStepInfo stepInfo =
         K8sBlueGreenStepInfo.infoBuilder()
             .pruningEnabled(ParameterField.createValueField(false))

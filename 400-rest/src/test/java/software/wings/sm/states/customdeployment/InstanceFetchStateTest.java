@@ -56,6 +56,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskData.TaskDataKeys;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.deployment.InstanceDetails;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.rule.Owner;
@@ -129,6 +130,7 @@ public class InstanceFetchStateTest extends WingsBaseTest {
   @Mock private ServiceTemplateService mockServiceTemplateService;
   @Mock private ServiceTemplateHelper serviceTemplateHelper;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
@@ -236,7 +238,7 @@ public class InstanceFetchStateTest extends WingsBaseTest {
                       .timeout(5 * 60 * 1000)
                       .build())
             .build();
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     verify(expressionEvaluator, times(1)).substitute(anyString(), anyMap());
 
     final DelegateTask task = captor.getValue();
@@ -463,7 +465,7 @@ public class InstanceFetchStateTest extends WingsBaseTest {
 
     state.execute(context);
 
-    verify(delegateService).queueTask(any(DelegateTask.class));
+    verify(delegateService).queueTaskV2(any(DelegateTask.class));
 
     // empty host object array path
     doReturn(CustomDeploymentTypeTemplate.builder()
@@ -512,7 +514,7 @@ public class InstanceFetchStateTest extends WingsBaseTest {
 
     state.execute(context);
 
-    verify(delegateService).queueTask(any(DelegateTask.class));
+    verify(delegateService).queueTaskV2(any(DelegateTask.class));
 
     doReturn(CustomDeploymentTypeTemplate.builder()
                  .fetchInstanceScript("")
@@ -560,7 +562,7 @@ public class InstanceFetchStateTest extends WingsBaseTest {
 
     state.execute(context);
 
-    verify(delegateService, times(1)).queueTask(any(DelegateTask.class));
+    verify(delegateService, times(1)).queueTaskV2(any(DelegateTask.class));
 
     Map<String, String> attributes = new HashMap<>();
     attributes.put("key", "value");

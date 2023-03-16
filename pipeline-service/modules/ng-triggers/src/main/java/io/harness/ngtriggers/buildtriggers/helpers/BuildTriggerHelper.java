@@ -88,14 +88,17 @@ public class BuildTriggerHelper {
   public static final String NPM = "npm";
   public static final String NUGET = "nuget";
 
-  public Optional<String> fetchPipelineForTrigger(TriggerDetails triggerDetails) {
+  public Optional<String> fetchPipelineYamlForTrigger(TriggerDetails triggerDetails) {
+    PMSPipelineResponseDTO response = fetchPipelineForTrigger(triggerDetails);
+    return response != null ? Optional.of(response.getYamlPipeline()) : Optional.empty();
+  }
+
+  public PMSPipelineResponseDTO fetchPipelineForTrigger(TriggerDetails triggerDetails) {
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
     NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
-    PMSPipelineResponseDTO response = NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(
-        ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-        ngTriggerEntity.getProjectIdentifier(), ngTriggerConfigV2.getPipelineBranchName(), null, false));
-
-    return response != null ? Optional.of(response.getYamlPipeline()) : Optional.empty();
+    return NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(ngTriggerEntity.getTargetIdentifier(),
+        ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
+        ngTriggerConfigV2.getPipelineBranchName(), null, false));
   }
 
   public Optional<String> fetchResolvedTemplatesPipelineForTrigger(TriggerDetails triggerDetails) {
@@ -299,6 +302,8 @@ public class BuildTriggerHelper {
       validatePollingItemForAzureArtifacts(pollingItem);
     } else if (pollingPayloadData.hasAmiPayload()) {
       validatePollingItemForAMI(pollingItem);
+    } else if (pollingPayloadData.hasGoogleCloudStoragePayload()) {
+      validatePollingItemForGoogleCloudStorage(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
     }
@@ -339,6 +344,14 @@ public class BuildTriggerHelper {
   private void validatePollingItemForS3(PollingItem pollingItem) {
     AmazonS3Payload amazonS3Payload = pollingItem.getPollingPayloadData().getAmazonS3Payload();
     String error = checkFiledValueError("bucketName", amazonS3Payload.getBucketName());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  public void validatePollingItemForGoogleCloudStorage(PollingItem pollingItem) {
+    String error =
+        checkFiledValueError("bucket", pollingItem.getPollingPayloadData().getGoogleCloudStoragePayload().getBucket());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }

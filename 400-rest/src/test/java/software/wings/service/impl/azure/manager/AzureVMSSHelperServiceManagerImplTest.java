@@ -51,7 +51,7 @@ public class AzureVMSSHelperServiceManagerImplTest extends CategoryTest {
                                             .build())
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
 
     AzureConfig azureConfig =
         AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
@@ -76,7 +76,7 @@ public class AzureVMSSHelperServiceManagerImplTest extends CategoryTest {
                                             .build())
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
 
     AzureConfig azureConfig =
         AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
@@ -106,7 +106,7 @@ public class AzureVMSSHelperServiceManagerImplTest extends CategoryTest {
                                             .build())
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
 
     AzureConfig azureConfig =
         AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
@@ -138,7 +138,7 @@ public class AzureVMSSHelperServiceManagerImplTest extends CategoryTest {
                          .build())
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
 
     AzureConfig azureConfig =
         AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();

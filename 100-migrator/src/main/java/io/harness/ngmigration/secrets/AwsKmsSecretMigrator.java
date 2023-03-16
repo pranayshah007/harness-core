@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.secrets;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -31,7 +32,7 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.secretmanagerclient.ValueType;
 
 import software.wings.beans.KmsConfig;
@@ -54,7 +55,7 @@ public class AwsKmsSecretMigrator implements SecretMigrator {
         .type(SecretText)
         .spec(SecretTextSpecDTO.builder()
                   .valueType(ValueType.Inline)
-                  .value("__PLEASE_FIX_ME__")
+                  .value(PLEASE_FIX_ME)
                   .secretManagerIdentifier(secretManagerIdentifier)
                   .build());
   }
@@ -71,7 +72,8 @@ public class AwsKmsSecretMigrator implements SecretMigrator {
 
     List<SecretDTOV2> secrets = new ArrayList<>();
 
-    String keyArn = String.format("migratedAwsArm_%s", MigratorUtility.generateIdentifier(kmsConfig.getName()));
+    String keyArn = String.format("migratedAwsArm_%s",
+        MigratorUtility.generateIdentifier(kmsConfig.getName(), inputDTO.getIdentifierCaseFormat()));
     NgEntityDetail keyArnEntityDetail = NgEntityDetail.builder()
                                             .identifier(keyArn)
                                             .orgIdentifier(orgIdentifier)
@@ -91,14 +93,15 @@ public class AwsKmsSecretMigrator implements SecretMigrator {
 
     // Handle Auth Token
     if (StringUtils.isNotBlank(kmsConfig.getAccessKey())) {
-      String awsAccessKey = String.format("migratedAwsKey_%s", MigratorUtility.generateIdentifier(kmsConfig.getName()));
+      String awsAccessKey = String.format("migratedAwsKey_%s",
+          MigratorUtility.generateIdentifier(kmsConfig.getName(), inputDTO.getIdentifierCaseFormat()));
       NgEntityDetail awsAccessKeyEntityDetail = NgEntityDetail.builder()
                                                     .identifier(awsAccessKey)
                                                     .orgIdentifier(orgIdentifier)
                                                     .projectIdentifier(projectIdentifier)
                                                     .build();
-      String awsSecretKey =
-          String.format("migratedAwsSecret_%s", MigratorUtility.generateIdentifier(kmsConfig.getName()));
+      String awsSecretKey = String.format("migratedAwsSecret_%s",
+          MigratorUtility.generateIdentifier(kmsConfig.getName(), inputDTO.getIdentifierCaseFormat()));
       NgEntityDetail awsSecretEntityDetail = NgEntityDetail.builder()
                                                  .identifier(awsAccessKey)
                                                  .orgIdentifier(orgIdentifier)

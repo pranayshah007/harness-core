@@ -58,8 +58,8 @@ import io.harness.helm.HelmClient;
 import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.helm.HelmCommandResponseMapper;
 import io.harness.helm.HelmCommandType;
-import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HelmVersion;
@@ -340,10 +340,11 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       throws Exception {
     String workingDirPath = Paths.get(commandRequest.getWorkingDir()).normalize().toAbsolutePath().toString();
 
-    List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplateForHelm(
-        helmClient.getHelmPath(commandRequest.getHelmVersion()), workingDirPath, variableOverridesYamlFiles,
-        commandRequest.getReleaseName(), commandRequest.getContainerServiceParams().getNamespace(),
-        executionLogCallback, commandRequest.getHelmVersion(), timeoutInMillis, commandRequest.getHelmCommandFlag());
+    List<FileData> manifestFiles =
+        k8sTaskHelperBase.renderTemplateForHelm(helmClient.getHelmPath(commandRequest.getHelmVersion()), workingDirPath,
+            variableOverridesYamlFiles, commandRequest.getReleaseName(),
+            commandRequest.getContainerServiceParams().getNamespace(), executionLogCallback,
+            commandRequest.getHelmVersion(), timeoutInMillis, commandRequest.getHelmCommandFlag(), "");
 
     List<KubernetesResource> resources = k8sTaskHelperBase.readManifests(manifestFiles, executionLogCallback);
     k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(

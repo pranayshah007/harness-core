@@ -9,6 +9,7 @@ package io.harness.waiter;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.GeneralException;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ProgressData;
 import io.harness.waiter.persistence.PersistenceWrapper;
@@ -49,11 +50,11 @@ public class ProgressUpdateService implements Runnable {
 
   @Override
   public void run() {
+    ProgressUpdate progressUpdate = null;
     while (true) {
       try {
         final long now = System.currentTimeMillis();
-        ProgressUpdate progressUpdate =
-            waitInstanceService.fetchForProcessingProgressUpdate(busyCorrelationIds.asMap().keySet(), now);
+        progressUpdate = waitInstanceService.fetchForProcessingProgressUpdate(busyCorrelationIds.asMap().keySet(), now);
         if (progressUpdate == null) {
           break;
         }
@@ -73,17 +74,34 @@ public class ProgressUpdateService implements Runnable {
         List<WaitInstance> waitInstances = persistenceWrapper.fetchWaitInstances(progressUpdate.getCorrelationId());
         for (WaitInstance waitInstance : waitInstances) {
           ProgressCallback progressCallback = waitInstance.getProgressCallback();
-          injector.injectMembers(progressCallback);
-          progressCallback.notify(progressUpdate.getCorrelationId(), progressData);
+          if (progressCallback != null) {
+            injector.injectMembers(progressCallback);
+            progressCallback.notify(progressUpdate.getCorrelationId(), progressData);
+          } else {
+            log.warn(String.format("Found null callback for correlationId: [%s]", progressUpdate.getCorrelationId()));
+          }
         }
         if (log.isDebugEnabled()) {
           log.debug("Processed progress response for correlationId - " + progressUpdate.getCorrelationId()
               + " and waitInstanceIds - "
               + waitInstances.stream().map(WaitInstance::getUuid).collect(Collectors.toList()));
         }
-        persistenceWrapper.delete(progressUpdate);
       } catch (Exception e) {
         log.error("Exception occurred while running progress service", e);
+      } finally {
+        try {
+          if (progressUpdate != null) {
+            log.debug(String.format(
+                "Deleting progressUpdate record for correlationId: [%s]", progressUpdate.getCorrelationId()));
+            persistenceWrapper.delete(progressUpdate);
+          }
+        } catch (GeneralException e) {
+          // do nothing as failure in delete because of 0 count can be ignored
+        } catch (Exception e) {
+          log.error("Exception occurred while deleting progressUpdate service record for uuid "
+                  + progressUpdate.getUuid() + " and correlationId " + progressUpdate.getCorrelationId(),
+              e);
+        }
       }
     }
   }

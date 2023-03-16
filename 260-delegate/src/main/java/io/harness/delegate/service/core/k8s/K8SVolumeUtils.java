@@ -7,8 +7,10 @@
 
 package io.harness.delegate.service.core.k8s;
 
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -21,10 +23,12 @@ public class K8SVolumeUtils {
     return new V1Volume().name(name).configMap(new V1ConfigMapVolumeSource().name(configMap.getMetadata().getName()));
   }
 
-  public static V1Volume fromSecret(final V1Secret secret) {
-    return new V1Volume()
-        .name("secret-vol")
-        .secret(new V1SecretVolumeSource().secretName(secret.getMetadata().getName()));
+  public static V1Volume fromSecret(final V1Secret secret, final String name) {
+    return new V1Volume().name(name).secret(new V1SecretVolumeSource().secretName(secret.getMetadata().getName()));
+  }
+
+  public static V1Volume emptyDir(final String name) {
+    return new V1Volume().name(name).emptyDir(new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("50Mi")));
   }
 
   public static V1VolumeMount createVolumeMount(final V1Volume volume, final String mountPath) {

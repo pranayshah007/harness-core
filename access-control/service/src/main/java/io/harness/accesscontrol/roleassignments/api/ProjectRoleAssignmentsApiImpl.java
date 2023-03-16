@@ -231,9 +231,8 @@ public class ProjectRoleAssignmentsApiImpl implements ProjectRoleAssignmentsApi 
 
     ResponseBuilder responseBuilder = Response.ok();
 
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
-        String.format("/v1/orgs/%s/projects/%s/role-assignments", org, project), roleAssignmentResponses.size(), page,
-        limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotalItems(), page, limit);
 
     return responseBuilderWithLinks.entity(roleAssignmentResponses).build();
   }

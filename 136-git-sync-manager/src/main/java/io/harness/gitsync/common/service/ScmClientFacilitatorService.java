@@ -13,8 +13,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitPRCreateRequest;
+import io.harness.beans.request.GitFileBatchRequest;
 import io.harness.beans.request.GitFileRequest;
 import io.harness.beans.request.ListFilesInCommitRequest;
+import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -121,4 +123,6 @@ public interface ScmClientFacilitatorService {
   GetLatestCommitResponse getBranchHeadCommitDetails(Scope scope, ScmConnector scmConnector, String branch);
 
   ListFilesInCommitResponse listFiles(Scope scope, ScmConnector scmConnector, ListFilesInCommitRequest request);
+
+  GitFileBatchResponse getFileBatch(GitFileBatchRequest gitFileBatchRequest);
 }

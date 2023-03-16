@@ -248,7 +248,7 @@ public class InstanceFetchState extends State {
             .expressionFunctorToken(expressionFunctorToken)
             .build());
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     appendDelegateTaskDetails(context, delegateTask);
 

@@ -23,8 +23,8 @@ import io.harness.repositories.ng.userprofile.spring.SourceCodeManagerRepository
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.PrincipalType;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
-import com.hazelcast.internal.util.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +32,6 @@ import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PL)
 @NoArgsConstructor
@@ -117,9 +116,7 @@ public class SourceCodeManagerServiceImpl implements SourceCodeManagerService {
 
   @Override
   public void deleteByAccount(String accountId) {
-    Criteria criteria = new Criteria();
-    criteria.and(SourceCodeManager.SCMKeys.accountIdentifier).is(accountId);
-    sourceCodeManagerRepository.deleteAll(sourceCodeManagerRepository.findAllByAccountIdentifier(accountId));
+    sourceCodeManagerRepository.deleteAllByAccountIdentifier(accountId);
   }
 
   private Optional<String> getUserIdentifier() {

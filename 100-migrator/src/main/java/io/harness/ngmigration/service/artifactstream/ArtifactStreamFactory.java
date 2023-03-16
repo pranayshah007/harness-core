@@ -35,7 +35,7 @@ public class ArtifactStreamFactory {
   private static final ArtifactStreamMapper amazonS3Mapper = new AmazonS3ArtifactStreamMapper();
 
   private static final ArtifactStreamMapper acrMapper = new ACRArtifactStreamMapper();
-
+  private static final ArtifactStreamMapper amiMapper = new AmiArtifactStreamMapper();
   private static final Map<ArtifactStreamType, ArtifactStreamMapper> ARTIFACT_STREAM_MAPPER_MAP =
       ImmutableMap.<ArtifactStreamType, ArtifactStreamMapper>builder()
           .put(ArtifactStreamType.ARTIFACTORY, artifactoryMapper)
@@ -48,14 +48,18 @@ public class ArtifactStreamFactory {
           .put(ArtifactStreamType.AZURE_ARTIFACTS, azureArtifactMapper)
           .put(ArtifactStreamType.AMAZON_S3, amazonS3Mapper)
           .put(ArtifactStreamType.ACR, acrMapper)
+          .put(ArtifactStreamType.AMI, amiMapper)
           .build();
 
   public static ArtifactStreamMapper getArtifactStreamMapper(ArtifactStream artifactStream) {
-    ArtifactStreamType artifactStreamType = ArtifactStreamType.valueOf(artifactStream.getArtifactStreamType());
+    return getArtifactStreamMapper(artifactStream.getArtifactStreamType());
+  }
+
+  public static ArtifactStreamMapper getArtifactStreamMapper(String streamType) {
+    ArtifactStreamType artifactStreamType = ArtifactStreamType.valueOf(streamType);
     if (ARTIFACT_STREAM_MAPPER_MAP.containsKey(artifactStreamType)) {
       return ARTIFACT_STREAM_MAPPER_MAP.get(artifactStreamType);
     }
-    throw new InvalidRequestException(
-        String.format("Unsupported artifact stream of type %s", artifactStream.getArtifactStreamType()));
+    throw new InvalidRequestException(String.format("Unsupported artifact stream of type %s", streamType));
   }
 }

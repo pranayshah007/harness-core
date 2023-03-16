@@ -89,7 +89,7 @@ public class AzureVaultEncryptorTest extends CategoryTest {
 
     keyVaultClient = mock(SecretClient.class);
     keyVaultAuthenticatorMockedStatic = Mockito.mockStatic(KeyVaultAuthenticator.class);
-    keyVaultAuthenticatorMockedStatic.when(() -> KeyVaultAuthenticator.getSecretsClient(anyString(), any()))
+    keyVaultAuthenticatorMockedStatic.when(() -> KeyVaultAuthenticator.getSecretsClient(anyString(), any(), any()))
         .thenReturn(keyVaultClient);
   }
 
@@ -160,7 +160,7 @@ public class AzureVaultEncryptorTest extends CategoryTest {
   public void testCreateSecretAuthenticationException() {
     String plainText = UUIDGenerator.generateUuid();
     String name = UUIDGenerator.generateUuid();
-    keyVaultAuthenticatorMockedStatic.when(() -> KeyVaultAuthenticator.getSecretsClient(anyString(), any()))
+    keyVaultAuthenticatorMockedStatic.when(() -> KeyVaultAuthenticator.getSecretsClient(anyString(), any(), any()))
         .thenThrow(new MsalServiceException(
             "'38fca8d7-4dda-41d5-b106-e5d8712b733b' was not found in the directory 'Harness Inc'.", "AADXXXXXX"));
 
@@ -308,7 +308,7 @@ public class AzureVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
                                     .build();
-    keyVaultAuthenticatorMockedStatic.when(() -> KeyVaultAuthenticator.getSecretsClient(anyString(), any()))
+    keyVaultAuthenticatorMockedStatic.when(() -> KeyVaultAuthenticator.getSecretsClient(anyString(), any(), any()))
         .thenThrow(new MsalServiceException(
             "'38fca8d7-4dda-41d5-b106-e5d8712b733b' was not found in the directory 'Harness Inc'.", "AADXXXXXX"));
 
@@ -426,7 +426,7 @@ public class AzureVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
                                     .build();
-    keyVaultAuthenticatorMockedStatic.when(() -> KeyVaultAuthenticator.getSecretsClient(anyString(), any()))
+    keyVaultAuthenticatorMockedStatic.when(() -> KeyVaultAuthenticator.getSecretsClient(anyString(), any(), any()))
         .thenThrow(new MsalServiceException(
             "'38fca8d7-4dda-41d5-b106-e5d8712b733b' was not found in the directory 'Harness Inc'.", "AADXXXXXX"));
 
@@ -510,7 +510,7 @@ public class AzureVaultEncryptorTest extends CategoryTest {
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
                                     .build();
 
-    keyVaultAuthenticatorMockedStatic.when(() -> KeyVaultAuthenticator.getSecretsClient(anyString(), any()))
+    keyVaultAuthenticatorMockedStatic.when(() -> KeyVaultAuthenticator.getSecretsClient(anyString(), any(), any()))
         .thenThrow(new MsalServiceException(
             "'38fca8d7-4dda-41d5-b106-e5d8712b733b' was not found in the directory 'Harness Inc'.", "AADXXXXXX"));
 
@@ -530,7 +530,7 @@ public class AzureVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
                                     .build();
-    keyVaultAuthenticatorMockedStatic.when(() -> KeyVaultAuthenticator.getSecretsClient(anyString(), any()))
+    keyVaultAuthenticatorMockedStatic.when(() -> KeyVaultAuthenticator.getSecretsClient(anyString(), any(), any()))
         .thenThrow(new MsalServiceException(
             "'38fca8d7-4dda-41d5-b106-e5d8712b733b' was not found in the directory 'Harness Inc'.", "AADXXXXXX"));
 

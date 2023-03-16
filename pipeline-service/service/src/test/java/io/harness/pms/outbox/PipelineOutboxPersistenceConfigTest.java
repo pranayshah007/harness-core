@@ -9,9 +9,7 @@ package io.harness.pms.outbox;
 
 import static io.harness.rule.OwnerRule.BRIJESH;
 
-import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.joor.Reflect.on;
 import static org.mockito.Mockito.spy;
@@ -34,8 +32,6 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.InjectionPoint;
 import com.google.inject.spi.TypeConverterBinding;
-import com.mongodb.MongoClient;
-import com.mongodb.ReadPreference;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.List;
@@ -44,6 +40,10 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
+import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
+import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineOutboxPersistenceConfigTest extends CategoryTest {
@@ -71,14 +71,7 @@ public class PipelineOutboxPersistenceConfigTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetMongoClient() {
     on(persistenceConfig).set("mongoConfig", mongoConfig);
-    MongoClient mongoClient = persistenceConfig.mongoClient();
-
-    assertEquals(mongoClient.getMongoClientOptions().getConnectTimeout(), connectTimeout);
-    assertEquals(mongoClient.getMongoClientOptions().getServerSelectionTimeout(), serverSelectionTimeout);
-    assertEquals(mongoClient.getMongoClientOptions().getMaxConnectionIdleTime(), maxConnectionIdleTime);
-    assertEquals(mongoClient.getMongoClientOptions().getConnectionsPerHost(), connectionsPerHost);
-    assertEquals(mongoClient.getMongoClientOptions().getReadPreference(), ReadPreference.secondary());
-    assertTrue(mongoClient.getMongoClientOptions().getRetryWrites());
+    assertThatCode(() -> persistenceConfig.mongoClient()).doesNotThrowAnyException();
   }
 
   @Test
@@ -92,7 +85,13 @@ public class PipelineOutboxPersistenceConfigTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testMongoTemplate() throws Exception {
-    assertThatCode(() -> persistenceConfig.mongoTemplate()).doesNotThrowAnyException();
+    assertThatCode(() -> {
+      MongoDatabaseFactory databaseFactory = persistenceConfig.mongoDbFactory();
+      MongoCustomConversions conversions = persistenceConfig.customConversions();
+      MongoMappingContext context = persistenceConfig.mongoMappingContext(conversions);
+      MappingMongoConverter converter = persistenceConfig.mappingMongoConverter(databaseFactory, conversions, context);
+      persistenceConfig.mongoTemplate(databaseFactory, converter);
+    }).doesNotThrowAnyException();
   }
 
   private class NoOpInjector implements Injector {

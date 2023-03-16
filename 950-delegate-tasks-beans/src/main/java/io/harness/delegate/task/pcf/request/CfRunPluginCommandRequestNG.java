@@ -22,6 +22,7 @@ import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.pcf.model.CfCliVersion;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
@@ -34,7 +35,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class CfRunPluginCommandRequestNG extends AbstractTasTaskRequest {
+public class CfRunPluginCommandRequestNG extends AbstractTasTaskRequest implements NestedAnnotationResolver {
   @Expression(ALLOW_SECRETS) String renderedScriptString;
   @Expression(ALLOW_SECRETS) List<String> filePathsInScript;
   @Expression(ALLOW_SECRETS) List<FileData> fileDataList;

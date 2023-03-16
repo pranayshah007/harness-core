@@ -29,7 +29,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.expression.RegexFunctor;
 import io.harness.perpetualtask.manifest.ManifestRepositoryService;
 
-import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.dto.HelmChart;
 import software.wings.delegatetasks.DelegateLogService;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams.HelmChartCollectionType;

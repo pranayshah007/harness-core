@@ -27,6 +27,7 @@ import io.harness.beans.EnvironmentType;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
@@ -45,7 +46,6 @@ import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.K8InitializeServiceUtils;
 import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.utils.CIStagePlanCreationUtils;
 import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.data.structure.EmptyPredicate;
@@ -387,8 +387,6 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     }
 
     for (ExecutionWrapperConfig config : executionElement.getSteps()) {
-      // Inject the envVariables before calling strategy expansion
-      IntegrationStageUtils.injectLoopEnvVariables(config);
       ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
           strategyHelper.expandExecutionWrapperConfig(config, maxExpansionLimit);
       expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
@@ -399,6 +397,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
         ExecutionElementConfig.builder().steps(expandedExecutionElement).build());
     initializeStepInfo.setStrategyExpansionMap(strategyExpansionMap);
   }
+
   private StepResponse handleVmTaskResponse(CITaskExecutionResponse ciTaskExecutionResponse) {
     VmTaskExecutionResponse vmTaskExecutionResponse = (VmTaskExecutionResponse) ciTaskExecutionResponse;
     DependencyOutcome dependencyOutcome = getVmDependencyOutcome(vmTaskExecutionResponse);

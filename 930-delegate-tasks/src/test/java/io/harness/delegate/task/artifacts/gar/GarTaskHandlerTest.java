@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.artifacts.gar;
 
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,8 +16,12 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 
 import io.harness.CategoryTest;
+import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
+import io.harness.artifacts.gar.beans.GarPackageVersionResponse;
+import io.harness.artifacts.gar.beans.GarTags;
+import io.harness.artifacts.gar.service.GARApiServiceImpl;
 import io.harness.artifacts.gar.service.GarApiService;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
@@ -35,6 +40,7 @@ import io.harness.rule.Owner;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
@@ -316,5 +322,32 @@ public class GarTaskHandlerTest extends CategoryTest {
     assertThatThrownBy(() -> garArtifactTaskHandler.getBuilds(garDelegateRequest))
         .isInstanceOf(HintException.class)
         .hasMessage("Google Artifact Registry: Could not get Bearer Token");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testProcessPage() {
+    GarApiService garApiServiceLocal = new GARApiServiceImpl();
+    GarInternalConfig garInternalConfig = GarInternalConfig.builder()
+                                              .region("us")
+                                              .project("cd-play")
+                                              .pkg("mongo")
+                                              .bearerToken("Bearer null")
+                                              .repositoryName("vivek-repo")
+                                              .maxBuilds(Integer.MAX_VALUE)
+                                              .build();
+    GarTags garTag =
+        GarTags.builder()
+            .name("projects/cd-play/locations/us/repositories/vivek-repo/packages/mongo/tags/tag1")
+            .version(
+                "projects/cd-play/locations/us/repositories/vivek-repo/packages/mongo/versions/sha256:2548c62c97b3f328d1938d9f6dcc0e85476fb88fcf1a01751940148c6824dc93")
+            .build();
+    GarPackageVersionResponse tagsPage =
+        GarPackageVersionResponse.builder().Tags(Collections.singletonList(garTag)).build();
+    List<BuildDetailsInternal> processedPage = garApiServiceLocal.processPage(tagsPage, "tag*", garInternalConfig);
+    assertThat(processedPage.get(0).getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("tag1");
+    assertThat(processedPage.get(0).getMetadata().get(ArtifactMetadataKeys.IMAGE))
+        .isEqualTo("us-docker.pkg.dev/cd-play/vivek-repo/mongo:tag1");
   }
 }

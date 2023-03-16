@@ -9,6 +9,7 @@ package io.harness.engine.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -42,6 +43,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
 
 @Singleton
 @Slf4j
@@ -181,5 +183,16 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
     });
     inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Field either not present in pipeline or not a runtime input"));
     return errorMap;
+  }
+
+  @Override
+  public void deleteExecutionInputInstanceForGivenNodeExecutionIds(Set<String> nodeExecutionIds) {
+    if (EmptyPredicate.isEmpty(nodeExecutionIds)) {
+      return;
+    }
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      executionInputRepository.deleteAllByNodeExecutionIdIn(nodeExecutionIds);
+      return true;
+    });
   }
 }

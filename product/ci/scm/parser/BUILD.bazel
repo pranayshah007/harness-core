@@ -21,6 +21,7 @@ go_library(
         "@com_github_drone_go_scm//scm/driver/github",
         "@com_github_drone_go_scm//scm/driver/gitlab",
         "@com_github_drone_go_scm//scm/driver/gogs",
+        "@com_github_drone_go_scm//scm/driver/harness",
         "@com_github_drone_go_scm//scm/driver/stash",
         "@com_github_drone_go_scm_codecommit//codecommit",
         "@org_golang_google_grpc//codes",

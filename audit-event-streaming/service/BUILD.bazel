@@ -11,6 +11,13 @@ HarnessTeam = "PL"
 
 shared_dependencies = [
     "//:lombok",
+    "//890-sm-core:module",
+    "//910-delegate-service-driver:module",
+    "//930-delegate-tasks:module",
+    "//930-ng-core-clients:module",
+    "//940-secret-manager-client:module",
+    "//950-delegate-tasks-beans:module",
+    "//clients/audit:module",
     "//platform-service/modules/audit-service:module",
     "//platform-service/modules/audit-service/contracts:module",
     "@maven//:org_codehaus_janino_janino",
@@ -25,7 +32,7 @@ shared_dependencies = [
     "@maven//:org_apache_logging_log4j_log4j_api",
     "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
     "@maven//:org_jetbrains_kotlin_kotlin_stdlib",
-    "@maven//:org_mongodb_mongo_java_driver",
+    "@maven//:org_mongodb_mongodb_driver_core",
     "@maven//:org_projectlombok_lombok",
     "@maven//:org_springframework_batch_spring_batch_core",
     "@maven//:org_springframework_batch_spring_batch_infrastructure",

@@ -8,6 +8,7 @@
 package software.wings.app;
 
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
+import static io.harness.eventsframework.EventsFrameworkConstants.APPLICATION_TIMESCALE_REDIS_CHANGE_EVENT_CONSUMER;
 import static io.harness.eventsframework.EventsFrameworkConstants.CG_GENERAL_EVENT;
 import static io.harness.eventsframework.EventsFrameworkConstants.CG_GENERAL_EVENT_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.CG_GENERAL_EVENT_MAX_PROCESSING_TIME;
@@ -16,6 +17,8 @@ import static io.harness.eventsframework.EventsFrameworkConstants.CG_NOTIFY_EVEN
 import static io.harness.eventsframework.EventsFrameworkConstants.CG_NOTIFY_EVENT_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.CG_NOTIFY_EVENT_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.CG_NOTIFY_EVENT_TOPIC_SIZE;
+import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_GROUP_NAME;
+import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_TOPIC_NAME;
 
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -31,6 +34,8 @@ import io.harness.queue.consumers.listeners.NotifyEventMessageListenerCg;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
 
+import software.wings.search.redisConsumer.DebeziumConsumersConfig;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import lombok.AllArgsConstructor;
@@ -39,6 +44,7 @@ import org.redisson.api.RedissonClient;
 @AllArgsConstructor
 public class ManagerEventsFrameworkModule extends AbstractModule {
   private final EventsFrameworkConfiguration eventsFrameworkConfiguration;
+  private final DebeziumConsumersConfig debeziumConsumersConfigs;
 
   @Override
   protected void configure() {
@@ -54,6 +60,9 @@ public class ManagerEventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(CG_GENERAL_EVENT))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(APPLICATION_TIMESCALE_REDIS_CHANGE_EVENT_CONSUMER))
+          .toInstance(NoOpConsumer.of(DUMMY_TOPIC_NAME, DUMMY_GROUP_NAME));
     } else {
       RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
       bind(Producer.class)
@@ -73,7 +82,12 @@ public class ManagerEventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(CG_GENERAL_EVENT))
           .toInstance(RedisConsumer.of(CG_GENERAL_EVENT, MANAGER.getServiceId(), redissonClient,
               CG_GENERAL_EVENT_MAX_PROCESSING_TIME, CG_GENERAL_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
-
+      bind(Consumer.class)
+          .annotatedWith(Names.named(APPLICATION_TIMESCALE_REDIS_CHANGE_EVENT_CONSUMER))
+          .toInstance(RedisConsumer.of(debeziumConsumersConfigs.getApplicationTimescaleStreaming().getTopic(),
+              MANAGER.getServiceId(), redissonClient, EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
+              debeziumConsumersConfigs.getApplicationTimescaleStreaming().getBatchSize(),
+              redisConfig.getEnvNamespace()));
       bind(MessageListener.class).annotatedWith(Names.named(CG_NOTIFY_EVENT)).to(NotifyEventMessageListenerCg.class);
       bind(MessageListener.class).annotatedWith(Names.named(CG_GENERAL_EVENT)).to(GeneralEventMessageListenerCg.class);
     }

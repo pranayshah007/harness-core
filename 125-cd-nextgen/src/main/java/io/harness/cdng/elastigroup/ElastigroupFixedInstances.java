@@ -19,6 +19,7 @@ import io.harness.yaml.schema.beans.SupportedPossibleFieldTypes;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Value;
@@ -34,14 +35,17 @@ import org.springframework.data.annotation.TypeAlias;
 public class ElastigroupFixedInstances implements ElastigroupInstancesSpec {
   @YamlSchemaTypes({SupportedPossibleFieldTypes.expression})
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  @NotNull
   ParameterField<Integer> desired;
 
   @YamlSchemaTypes({SupportedPossibleFieldTypes.expression})
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  @NotNull
   ParameterField<Integer> min;
 
   @YamlSchemaTypes({SupportedPossibleFieldTypes.expression})
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  @NotNull
   ParameterField<Integer> max;
 
   @Override

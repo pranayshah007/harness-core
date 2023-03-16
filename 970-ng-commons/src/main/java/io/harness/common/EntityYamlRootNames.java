@@ -27,6 +27,7 @@ public class EntityYamlRootNames {
   public static final String GITOPS_MERGE_PR = "MergePR";
   public static final String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   public static final String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
+  public static final String GITOPS_SYNC = "GitOpsSync";
   public static final String ENVIRONMENT_GROUP = "environmentGroup";
   public static final String PROJECT = "project";
   public static final String PIPELINE = "pipeline";
@@ -157,6 +158,7 @@ public class EntityYamlRootNames {
   public static final String CLOUDFORMATION_ROLLBACK_STACK_STEP = "RollbackStack";
   public static final String INFRASTRUCTURE = "infrastructure";
   public static final String JENKINS_BUILD = "JenkinsBuild";
+  public static final String BAMBOO_BUILD = "BambooBuild";
   public static final String COMMAND = "Command";
   public static final String STRATEGY_NODE = "StrategyNode";
   public static final String AZURE_SLOT_DEPLOYMENT_STEP = "AzureSlotDeployment";
@@ -191,7 +193,6 @@ public class EntityYamlRootNames {
   public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
   public static final String IACM_TERRAFORM_PLAN = "IACMTerraformPlan";
   public static final String IACM_TEMPLATE = "IACMTemplate";
-
   public static final String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   public static final String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
   public static final String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
@@ -209,8 +210,24 @@ public class EntityYamlRootNames {
   public static final String ASG_BLUE_GREEN_DEPLOY = "AsgBlueGreenDeploy";
   public static final String ASG_BLUE_GREEN_ROLLBACK = "AsgBlueGreenRollback";
   public static final String CCM_GOVERNANCE_RULE = "policies";
+  public static final String GOOGLE_CLOUD_FUNCTIONS_DEPLOY = "DeployCloudFunction";
+  public static final String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "DeployCloudFunctionWithNoTraffic";
+  public static final String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "CloudFunctionTrafficShift";
+  public static final String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
+
   public static final String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   public static final String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
   public static final String K8S_DRY_RUN_MANIFEST = "K8sDryRun";
   public static final String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
+  public static final String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
+  public static final String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
+
+  public static final String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
+
+  // AWS SAM
+  public static final String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  public static final String AWS_SAM_ROLLBACK = "AwsSamRollback";
+
+  public static final String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
+  public static final String TAS_ROUTE_MAPPING = "TasRouteMapping";
 }

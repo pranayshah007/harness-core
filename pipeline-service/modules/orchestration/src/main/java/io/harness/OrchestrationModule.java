@@ -60,6 +60,8 @@ import io.harness.engine.progress.publisher.ProgressEventPublisher;
 import io.harness.engine.progress.publisher.RedisProgressEventPublisher;
 import io.harness.event.OrchestrationLogConfiguration;
 import io.harness.exception.exceptionmanager.ExceptionModule;
+import io.harness.execution.expansion.PlanExpansionService;
+import io.harness.execution.expansion.PlanExpansionServiceImpl;
 import io.harness.govern.ServersModule;
 import io.harness.graph.stepDetail.PmsGraphStepDetailsServiceImpl;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
@@ -146,6 +148,8 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
       bind(PmsFeatureFlagService.class).to(PmsFeatureFlagHelper.class);
       bind(PipelineSettingsService.class).to(PipelineSettingsServiceImpl.class).in(Singleton.class);
     }
+    bind(PlanExpansionService.class).to(PlanExpansionServiceImpl.class).in(Singleton.class);
+
     bind(NodeExecutionService.class).to(NodeExecutionServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionService.class).to(PlanExecutionServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionMonitorService.class).to(PlanExecutionMonitorServiceImpl.class).in(Singleton.class);

@@ -31,7 +31,6 @@ import io.harness.k8s.model.harnesscrds.RecreateDeploymentStrategyParams;
 import io.harness.k8s.model.harnesscrds.RollingDeploymentStrategyParams;
 import io.harness.k8s.utils.ObjectYamlUtils;
 import io.harness.k8s.utils.ResourceUtils;
-import io.harness.yaml.BooleanPatchedRepresenter;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -76,7 +75,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.ConstructorException;
 
 @Data
@@ -156,8 +154,7 @@ public class KubernetesResource {
     }
 
     try {
-      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
-          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
       this.spec = yaml.dump(k8sResource);
       this.value = readYaml(this.spec).get(0);
     } catch (IOException e) {
@@ -189,8 +186,7 @@ public class KubernetesResource {
     }
 
     try {
-      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
-          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
       this.spec = yaml.dump(k8sResource);
       this.value = readYaml(this.spec).get(0);
     } catch (IOException e) {
@@ -277,8 +273,7 @@ public class KubernetesResource {
     v1Service.getSpec().setSelector(selectors);
 
     try {
-      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
-          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
       this.spec = yaml.dump(k8sResource);
       this.value = readYaml(this.spec).get(0);
     } catch (IOException e) {
@@ -293,8 +288,7 @@ public class KubernetesResource {
     Object k8sResource = getK8sResource();
     updateName(k8sResource, transformer);
     try {
-      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
-          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
       this.spec = yaml.dump(k8sResource);
       this.value = readYaml(this.spec).get(0);
     } catch (IOException e) {
@@ -390,8 +384,7 @@ public class KubernetesResource {
     v1PodTemplateSpec.getMetadata().setLabels(podLabels);
 
     try {
-      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
-          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
       this.spec = yaml.dump(k8sResource);
       this.value = readYaml(this.spec).get(0);
     } catch (IOException e) {
@@ -409,8 +402,7 @@ public class KubernetesResource {
     updateSecretRef(k8sResource, secretRefTransformer);
 
     try {
-      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
-          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
       this.spec = yaml.dump(k8sResource);
       this.value = readYaml(this.spec).get(0);
     } catch (IOException e) {
@@ -438,8 +430,7 @@ public class KubernetesResource {
           e.setValue(redacted);
         }
       }
-      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
-          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
       result = yaml.dump(v1Secret);
     } catch (Exception e) {
       // do nothing
@@ -812,8 +803,7 @@ public class KubernetesResource {
     }
 
     try {
-      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
-          new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
+      org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
       return ResourceUtils.removeEmptyOrNullFields(yaml.dump(Yaml.loadAs(this.spec, V1StatefulSet.class)));
     } catch (IOException e) {
       // Return original spec

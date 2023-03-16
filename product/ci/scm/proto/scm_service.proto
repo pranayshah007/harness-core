@@ -1,0 +1,872 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.product.ci.scm.proto;
+
+option java_multiple_files = true;
+option go_package = "ciscmpb";
+
+import "google/protobuf/timestamp.proto";
+
+enum GitProvider {
+  BITBUCKET = 0;
+  GITEA = 1;
+  GITHUB = 2;
+  GITLAB = 3;
+  GOGS = 4;
+  STASH = 5;
+  CODECOMMIT = 6;
+  AZURE = 7;
+  HARNESS = 8;
+}
+
+enum Action {
+  UNKNOWN = 0;
+  CREATE = 1;
+  UPDATE = 2;
+  DELETE = 3;
+  // Issues
+  OPEN = 4;
+  REOPEN = 5;
+  CLOSE = 6;
+  LABEL = 7;
+  UNLABEL = 8;
+  // pull requests
+  SYNC = 9;
+  MERGE = 10;
+  EDIT = 11;
+  // releases
+  PUBLISH = 12;
+  UNPUBLISH = 13;
+  PRERELEASE = 14;
+  RELEASE = 15;
+}
+
+// User represents a user account.
+message User {
+  string login = 1;
+  string name = 2;
+  string email = 3;
+  string avatar = 4;
+  google.protobuf.Timestamp created = 5;
+  google.protobuf.Timestamp updated = 6;
+  string id = 7;
+}
+
+// Reference represents a git reference.
+message Reference {
+  string name = 1;
+  string path = 2;
+  string sha = 3;
+}
+
+// Perm represents a user's repository permissions.
+message Perm {
+  bool pull = 1;
+  bool push = 2;
+  bool admin = 3;
+}
+
+// Repository represents a git repository.
+message Repository {
+  string id = 1;
+  string namespace = 2;
+  string name = 3;
+  Perm perm = 4;
+  string branch = 5;
+  bool private = 6;
+  string clone = 7;
+  string clone_ssh = 8;
+  string link = 9;
+  google.protobuf.Timestamp created = 10;
+  google.protobuf.Timestamp updated = 11;
+}
+
+// Signature identifies a git commit creator.
+message Signature {
+  string name = 1;
+  string email = 2;
+  google.protobuf.Timestamp date = 3;
+  string login = 4;
+  string avatar = 5;
+}
+
+// Commit represents a repository commit.
+message Commit {
+  string sha = 1;
+  string message = 2;
+  Signature author = 3;
+  Signature committer = 4;
+  string link = 5;
+}
+
+message Label {
+  string name = 1;
+  string color = 2;
+}
+
+message PullRequest {
+  int64 number = 1;
+  string title = 2;
+  string body = 3;
+  string sha = 4;
+  string ref = 5;
+  string source = 6;
+  string target = 7;
+  string fork = 8;
+  string link = 9;
+  bool closed = 10;
+  bool merged = 11;
+  Reference base = 12;
+  Reference head = 13;
+  User author = 14;
+  google.protobuf.Timestamp created = 15;
+  google.protobuf.Timestamp updated = 16;
+  repeated Label labels = 17;
+  repeated Commit commits = 18;  // List of commits associated with the pull request
+  string mergeSha = 19;
+}
+
+message Release {
+  string title = 1;
+  string description = 2;
+  string link = 3;
+  string tag = 4;
+  bool draft = 5;
+  bool prerelease = 6;
+  google.protobuf.Timestamp created = 7;
+  google.protobuf.Timestamp published = 8;
+}
+
+message PullRequestHook {
+  Action action = 1;
+  Repository repo = 2;
+  PullRequest pr = 3;
+  User sender = 4;
+}
+
+message IssueCommentHook {
+  Action action = 1;
+  Repository repo = 2;
+  Issue issue = 3;
+  User sender = 4;
+  Comment comment = 5;
+}
+
+message BranchHook {
+  Action action = 1;    // branch hook action can be create or delete
+  Repository repo = 2;  // repository where the event occurred
+  User sender = 3;      // user that triggered the event
+  Reference ref = 4;    // git ref object
+}
+
+message ReleaseHook {
+  Action action = 1;
+  Repository repo = 2;
+  Release release = 3;
+  User sender = 4;
+}
+
+message Comment {
+  int32 id = 1;
+  string body = 2;
+  User user = 3;
+  google.protobuf.Timestamp created = 4;
+  google.protobuf.Timestamp updated = 5;
+}
+
+message Issue {
+  int32 number = 1;
+  string title = 2;
+  string body = 3;
+  string link = 4;
+  repeated string labels = 5;
+  bool closed = 6;
+  bool locked = 7;
+  User user = 8;
+  PullRequest pr = 9;
+  google.protobuf.Timestamp created = 10;
+  google.protobuf.Timestamp updated = 11;
+}
+
+message PushHook {
+  string ref = 1;
+  string base_ref = 2;
+  Repository repo = 3;
+  string before = 4;
+  string after = 5;
+  Commit commit = 6;
+  User sender = 7;
+  repeated Commit commits = 8;  // List of commits associated with the push request
+}
+
+message Header {
+  message Pair {
+    string key = 1;
+    repeated string values = 2;
+  }
+  repeated Pair fields = 1;
+}
+
+message ParseWebhookRequest {
+  Header header = 1;
+  string body = 2;
+  string secret = 3;
+  GitProvider provider = 4;
+}
+
+message ParseWebhookResponse {
+  oneof hook {
+    PullRequestHook pr = 1;
+    PushHook push = 2;
+    IssueCommentHook comment = 3;
+    BranchHook branch = 4;
+    ReleaseHook release = 5;
+  }
+}
+
+message GithubApp {
+  string app_id = 1;
+  string private_key = 2;
+}
+
+message GithubProvider {
+  oneof provider {
+    string access_token = 1;
+    GithubApp github_app = 2;
+  }
+  bool isGithubApp = 3;
+}
+
+message GitlabProvider {
+  oneof provider {
+    string access_token = 1;
+    string personal_token = 2;
+  }
+}
+
+message GiteaProvider {
+  string access_token = 1;
+}
+
+message BitbucketCloudProvider {
+  string username = 1;
+  string app_password = 2;
+}
+
+message BitbucketServerProvider {
+  string username = 1;
+  string personal_access_token = 2;
+}
+
+message CodecommitProvider {
+  string access_key = 1;
+  string secret_key = 2;
+}
+
+message AzureProvider {
+  string personal_access_token = 1;
+  string organization = 2;
+  string project = 3;
+}
+
+message HarnessAccessToken {
+  string access_token = 1;
+  string account = 2;
+  string organization = 3;
+  string project = 4;
+}
+
+message HarnessJWT {
+  string token = 1;
+  string account = 2;
+  string organization = 3;
+  string project = 4;
+}
+
+message HarnessProvider {
+  oneof provider {
+    HarnessJWT harness_jwt = 1;
+    HarnessAccessToken harness_access_token = 2;
+  }
+}
+
+message Provider {
+  oneof hook {
+    GithubProvider github = 1;
+    GitlabProvider gitlab = 2;
+    GiteaProvider gitea = 3;
+    BitbucketCloudProvider bitbucket_cloud = 4;
+    BitbucketServerProvider bitbucket_server = 5;
+    CodecommitProvider codecommit = 6;
+    AzureProvider azure = 11;
+    HarnessProvider harness = 12;
+  }
+  string endpoint = 7;
+  bool skipVerify = 8;
+  bool debug = 9;
+  // If skipVerify is false, we can pass in a path of additional certs to allow
+  // This might be useful in self hosted repositories which use self signed certs.
+  string additional_certs_path = 10;
+}
+
+/*
+For an invalid page request, next = 0
+For the last valid page response, next = 0
+For other cases, next = request.pageRequest.page + 1 // basically it corresponds to the next valid page
+ */
+message PageResponse {
+  int32 next = 1;
+  string next_url = 2;
+}
+
+message PageRequest {
+  int32 page = 1;
+  string url = 2;
+  int32 size = 3;
+}
+
+message GetFileRequest {
+  string slug = 1;
+  string path = 2;
+  oneof type {
+    string branch = 3;
+    string ref = 4;
+  }
+  Provider provider = 5;
+  bool base64Encoding = 6;
+}
+
+message GetBatchFileRequest {
+  repeated GetFileRequest findRequest = 1;
+}
+
+message GetLatestFileRequest {
+  string slug = 1;
+  string path = 2;
+  string branch = 3;
+  Provider provider = 4;
+}
+
+message DeleteFileRequest {
+  string slug = 1;
+  string path = 2;
+  string branch = 3;
+  string message = 4;
+  string commit_id = 5;
+  string blob_id = 6;
+  Signature signature = 7;
+  Provider provider = 8;
+}
+
+message DeleteFileResponse {
+  int32 status = 1;
+  string error = 2;
+  string commit_id = 3;
+  string blob_id = 4;
+}
+
+message CreateFileResponse {
+  int32 status = 1;
+  string error = 2;
+  string commit_id = 3;
+  string blob_id = 4;
+}
+
+message UpdateFileResponse {
+  int32 status = 1;
+  string error = 2;
+  string commit_id = 3;
+  string blob_id = 4;
+}
+
+message FileModifyRequest {
+  string slug = 1;
+  string path = 2;
+  string branch = 3;
+  string content = 4;
+  string message = 5;
+  string commit_id = 6;
+  string blob_id = 7;
+  Signature signature = 8;
+  Provider provider = 9;
+  bool useGitClient = 10;
+}
+
+message FileContent {
+  string content = 1;
+  int32 status = 2;
+  string path = 3;
+  string commit_id = 4;
+  string blob_id = 5;
+  string error = 6;
+}
+
+message FileBatchContentResponse {
+  repeated FileContent file_contents = 1;
+}
+
+message FindFilesInBranchRequest {
+  string slug = 1;
+  oneof type {
+    string branch = 2;
+    string ref = 6;
+  }
+  string path = 3;
+  PageRequest pagination = 4;
+  Provider provider = 5;
+}
+
+message FindFilesInBranchResponse {
+  repeated FileChange file = 1;
+  PageResponse pagination = 2;
+}
+
+message FindFilesInCommitRequest {
+  string slug = 1;
+  string ref = 2;
+  string path = 3;
+  PageRequest pagination = 4;
+  Provider provider = 5;
+}
+
+message FindFilesInCommitResponse {
+  repeated FileChange file = 1;
+  PageResponse pagination = 2;
+  int32 status = 3;
+  string error = 4;
+}
+
+enum ContentType {
+  UNKNOWN_CONTENT = 0;
+  FILE = 1;
+  DIRECTORY = 2;
+  SYMLINK = 3;
+  GITLINK = 4;
+}
+
+message FileChange {
+  string path = 1;
+  ContentType content_type = 2;
+  string commit_id = 3;
+  string blob_id = 4;
+}
+
+message IsLatestFileRequest {
+  string slug = 1;
+  string path = 2;
+  oneof type {
+    string branch = 3;
+    string ref = 4;
+  }
+  string commit_id = 5;
+  string blob_id = 6;
+  Provider provider = 7;
+}
+
+message IsLatestFileResponse {
+  bool latest = 1;
+}
+
+message CreatePRRequest {
+  string slug = 1;
+  string title = 2;
+  string body = 3;
+  string source = 4;
+  string target = 5;
+  Provider provider = 6;
+}
+
+message CreatePRResponse {
+  int32 status = 1;
+  int32 number = 2;
+  string error = 3;
+}
+
+message FindFilesInPRRequest {
+  string slug = 1;
+  int32 number = 2;
+  PageRequest pagination = 3;
+  Provider provider = 4;
+}
+
+message PRFile {
+  string path = 1;
+  bool added = 2;
+  bool renamed = 3;
+  bool deleted = 4;
+  string prev_file_path = 5;
+}
+
+message FindFilesInPRResponse {
+  repeated PRFile files = 1;
+  PageResponse pagination = 2;
+}
+
+message CreateBranchRequest {
+  string slug = 1;
+  string name = 2;
+  string commit_id = 3;
+  Provider provider = 4;
+}
+
+message CreateBranchResponse {
+  int32 status = 1;
+  string error = 2;
+}
+
+message GetLatestCommitRequest {
+  string slug = 1;
+  oneof type {
+    string branch = 2;
+    string ref = 4;
+  }
+  Provider provider = 3;
+}
+
+message GetLatestCommitResponse {
+  string commit_id = 1;
+  int32 status = 2;
+  string error = 3;
+  Commit commit = 4;
+}
+
+message ListBranchesRequest {
+  string slug = 1;
+  PageRequest pagination = 2;
+  Provider provider = 3;
+}
+
+message ListBranchesWithDefaultRequest {
+  string slug = 1;
+  PageRequest pagination = 2;
+  Provider provider = 3;
+}
+
+message ListBranchesResponse {
+  repeated string branches = 1;
+  PageResponse pagination = 2;
+  int32 status = 3;
+  string error = 4;
+}
+
+message ListBranchesWithDefaultResponse {
+  int32 status = 1;
+  repeated string branches = 2;
+  string default_branch = 3;
+  PageResponse pagination = 4;
+  string error = 5;
+}
+
+message CompareCommitsRequest {
+  string slug = 1;
+  string source = 2;
+  string target = 3;
+  PageRequest pagination = 4;
+  Provider provider = 5;
+}
+
+message CompareCommitsResponse {
+  repeated PRFile files = 1;
+  PageResponse pagination = 2;
+}
+
+message ListCommitsRequest {
+  string slug = 1;
+  oneof type {
+    string branch = 2;
+    string ref = 3;
+  }
+  PageRequest pagination = 4;
+  Provider provider = 5;
+  string filePath = 6;
+}
+
+message ListCommitsResponse {
+  repeated string commit_ids = 1;
+  PageResponse pagination = 2;
+}
+
+message GetLatestCommitOnFileRequest {
+  string slug = 1;
+  string branch = 2;
+  Provider provider = 3;
+  string filePath = 4;
+}
+
+message GetLatestCommitOnFileResponse {
+  string commit_id = 1;
+  string error = 2;
+}
+
+message ListCommitsInPRRequest {
+  string slug = 1;
+  int64 number = 2;
+  PageRequest pagination = 3;
+  Provider provider = 4;
+}
+
+message ListCommitsInPRResponse {
+  repeated Commit commits = 1;
+  PageResponse pagination = 2;
+}
+
+enum GithubWebhookEvent {
+  GITHUB_CREATE = 0;
+  GITHUB_DELETE = 1;
+  GITHUB_DEPLOYMENT = 2;
+  GITHUB_ISSUE = 3;
+  GITHUB_ISSUE_COMMENT = 4;
+  GITHUB_PULL_REQUEST = 5;
+  GITHUB_PULL_REQUEST_REVIEW = 6;
+  GITHUB_PUSH = 7;
+  GITHUB_RELEASE = 8;
+}
+
+enum GitlabWebhookEvent {
+  GITLAB_COMMENT = 0;
+  GITLAB_ISSUES = 1;
+  GITLAB_MERGE = 2;
+  GITLAB_PUSH = 3;
+  GITLAB_TAG = 4;
+}
+
+enum BitbucketCloudWebhookEvent {
+  BITBUCKET_CLOUD_ISSUE = 0;
+  BITBUCKET_CLOUD_ISSUE_COMMENT = 1;
+  BITBUCKET_CLOUD_PULL_REQUEST = 2;
+  BITBUCKET_CLOUD_PULL_REQUEST_COMMENT = 3;
+  BITBUCKET_CLOUD_PUSH = 4;
+}
+
+enum BitbucketServerWebhookEvent {
+  BITBUCKET_SERVER_BRANCH_PUSH_TAG = 0;
+  BITBUCKET_SERVER_PR = 1;
+  BITBUCKET_SERVER_PR_COMMENT = 2;
+}
+
+enum AzureWebhookEvent {
+  AZURE_PUSH = 0;
+  AZURE_PULLREQUEST_CREATED = 1;
+  AZURE_PULLREQUEST_UPDATED = 2;
+  AZURE_PULLREQUEST_MERGED = 3;
+  AZURE_PULL_REQUEST_ISSUE_COMMENT = 4;
+}
+
+enum HarnessWebhookEvent {
+  HARNESS_BRANCH_CREATED = 0;
+  HARNESS_BRANCH_DELETED = 1;
+  HARNESS_BRANCH_UPDATED = 2;
+  HARNESS_PULLREQ_BRANCH_UPDATED = 3;
+  HARNESS_PULLREQ_CREATED = 4;
+  HARNESS_PULLREQ_REOPENED = 5;
+  HARNESS_TAG_CREATED = 6;
+  HARNESS_TAG_DELETED = 7;
+  HARNESS_TAG_UPDATED = 8;
+}
+
+message GithubWebhookEvents {
+  repeated GithubWebhookEvent events = 1;
+}
+
+message GitlabWebhookEvents {
+  repeated GitlabWebhookEvent events = 1;
+}
+
+message BitbucketCloudWebhookEvents {
+  repeated BitbucketCloudWebhookEvent events = 1;
+}
+
+message BitbucketServerWebhookEvents {
+  repeated BitbucketServerWebhookEvent events = 1;
+}
+
+message AzureWebhookEvents {
+  // Azure only allows one event type per hook
+  repeated AzureWebhookEvent events = 1;
+}
+
+message HarnessWebhookEvents {
+  repeated HarnessWebhookEvent events = 1;
+}
+
+message NativeEvents {
+  oneof nativeEvents {
+    GithubWebhookEvents github = 1;
+    GitlabWebhookEvents gitlab = 2;
+    BitbucketCloudWebhookEvents bitbucket_cloud = 3;
+    BitbucketServerWebhookEvents bitbucket_server = 4;
+    AzureWebhookEvents azure = 5;
+    HarnessWebhookEvents harness = 6;
+  }
+}
+
+message CreateWebhookRequest {
+  string slug = 1;
+  string name = 2;
+  string target = 3;
+  string secret = 4;
+  NativeEvents nativeEvents = 5;
+  bool skipVerify = 6;
+  Provider provider = 7;
+}
+
+message WebhookResponse {
+  string id = 1;
+  string name = 2;
+  string target = 3;
+  NativeEvents nativeEvents = 4;
+  bool active = 5;
+  bool skipVerify = 6;
+}
+
+message CreateWebhookResponse {
+  WebhookResponse webhook = 1;
+  int32 status = 2;
+  string error = 3;
+}
+
+message DeleteWebhookRequest {
+  string slug = 1;
+  string id = 2;
+  Provider provider = 3;
+}
+
+message DeleteWebhookResponse {
+  int32 status = 1;
+  string error = 2;
+}
+
+message ListWebhooksRequest {
+  string slug = 1;
+  PageRequest pagination = 2;
+  Provider provider = 3;
+}
+
+message ListWebhooksResponse {
+  repeated WebhookResponse webhooks = 1;
+  int32 status = 2;
+  string error = 3;
+  PageResponse pagination = 4;
+}
+
+message GetAuthenticatedUserRequest {
+  Provider provider = 1;
+}
+
+message GetAuthenticatedUserResponse {
+  string username = 1;
+  string error = 2;
+}
+
+message GetUserReposRequest {
+  PageRequest pagination = 1;
+  Provider provider = 2;
+  bool fetchAllRepos = 3;
+}
+
+message GetUserReposResponse {
+  repeated Repository repos = 1;
+  PageResponse pagination = 2;
+  int32 status = 3;
+  string error = 4;
+}
+
+message GetUserRepoRequest {
+  string slug = 1;
+  Provider provider = 2;
+}
+
+message GetUserRepoResponse {
+  Repository repo = 1;
+  int32 status = 2;
+  string error = 3;
+}
+
+message FindPRRequest {
+  int64 number = 1;
+  string slug = 2;
+  Provider provider = 3;
+}
+
+message FindCommitRequest {
+  string slug = 1;
+  string ref = 2;
+  Provider provider = 3;
+}
+
+message FindPRResponse {
+  PullRequest pr = 1;
+  int32 status = 2;
+  string error = 3;
+}
+
+message FindCommitResponse {
+  int32 status = 1;
+  string error = 2;
+  Commit commit = 3;
+}
+
+message RefreshTokenRequest {
+  string clientID = 1;
+  string clientSecret = 2;
+  string endpoint = 3;
+  string redirectUri = 4;
+  string refreshToken = 5;
+}
+
+message RefreshTokenResponse {
+  string accessToken = 1;
+  int32 expiresIn = 3;
+  string refreshToken = 4;
+}
+
+service SCM {
+  // RPC to stop tailing on a file.
+  rpc ParseWebhook(ParseWebhookRequest) returns (ParseWebhookResponse);
+
+  // File functions
+  rpc GetFile(GetFileRequest) returns (FileContent);
+  rpc GetBatchFile(GetBatchFileRequest) returns (FileBatchContentResponse);
+  rpc GetLatestFile(GetLatestFileRequest) returns (FileContent);
+  rpc IsLatestFile(IsLatestFileRequest) returns (IsLatestFileResponse);
+  rpc FindFilesInBranch(FindFilesInBranchRequest) returns (FindFilesInBranchResponse);
+  rpc FindFilesInCommit(FindFilesInCommitRequest) returns (FindFilesInCommitResponse);
+  rpc PushFile(FileModifyRequest) returns (FileContent);
+  // helpers
+  rpc CreateFile(FileModifyRequest) returns (CreateFileResponse);
+  rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse);
+  rpc UpdateFile(FileModifyRequest) returns (UpdateFileResponse);
+
+  // Git functions. branch and commits
+  rpc CreatePR(CreatePRRequest) returns (CreatePRResponse);
+  rpc FindPR(FindPRRequest) returns (FindPRResponse);
+  rpc FindCommit(FindCommitRequest) returns (FindCommitResponse);
+  rpc FindFilesInPR(FindFilesInPRRequest) returns (FindFilesInPRResponse);
+  rpc CreateBranch(CreateBranchRequest) returns (CreateBranchResponse);
+  rpc GetLatestCommit(GetLatestCommitRequest) returns (GetLatestCommitResponse);
+  rpc ListBranches(ListBranchesRequest) returns (ListBranchesResponse);
+  rpc ListBranchesWithDefault(ListBranchesWithDefaultRequest) returns (ListBranchesWithDefaultResponse);
+  rpc ListCommits(ListCommitsRequest) returns (ListCommitsResponse);
+  rpc CompareCommits(CompareCommitsRequest) returns (CompareCommitsResponse);
+  rpc GetLatestCommitOnFile(GetLatestCommitOnFileRequest) returns (GetLatestCommitOnFileResponse);
+
+  // Push Request functions.
+  rpc ListCommitsInPR(ListCommitsInPRRequest) returns (ListCommitsInPRResponse);
+
+  // User functions
+  rpc GetAuthenticatedUser(GetAuthenticatedUserRequest) returns (GetAuthenticatedUserResponse);
+  rpc GetUserRepos(GetUserReposRequest) returns (GetUserReposResponse);
+  rpc GetUserRepo(GetUserRepoRequest) returns (GetUserRepoResponse);
+
+  // repo functions from go-scm
+  rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse);
+  rpc DeleteWebhook(DeleteWebhookRequest) returns (DeleteWebhookResponse);
+  rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse);
+
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+}

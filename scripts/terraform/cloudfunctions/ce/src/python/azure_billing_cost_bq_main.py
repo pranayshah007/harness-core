@@ -61,6 +61,11 @@ def insert_data_into_azure_cost_table(azure_cost_table_id, jsonData):
 
 def update_query_strings(azure_cost_table_column, azure_billing_table_column, fx_rate_multiplier_query, insert_query, select_query):
     if (not AZURE_BILLING_TABLE_COLUMNS) or (azure_billing_table_column in AZURE_BILLING_TABLE_COLUMNS):
+        azure_billing_table_column = """
+        IF(REGEXP_CONTAINS(CAST(%s AS STRING), r'^(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])/\d{4}$'), 
+                            PARSE_TIMESTAMP("%%m/%%d/%%Y", CAST(%s AS STRING)), 
+                            TIMESTAMP(%s))  
+        """ % (azure_billing_table_column, azure_billing_table_column, azure_billing_table_column)
         insert_query += (", " if insert_query else "")
         insert_query += azure_cost_table_column
 

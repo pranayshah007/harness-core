@@ -12,9 +12,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.k8s.resources.gcp.GcpResponseDTO;
+import io.harness.cdng.k8s.resources.gcp.dtos.GcpProjectDetails;
+
+import java.util.List;
 
 @OwnedBy(CDP)
 public interface GcpResourceService {
   GcpResponseDTO getClusterNames(
+      IdentifierRef gcpConnectorRef, String accountId, String orgIdentifier, String projectIdentifier);
+
+  List<GcpProjectDetails> getProjectNames(
       IdentifierRef gcpConnectorRef, String accountId, String orgIdentifier, String projectIdentifier);
 }

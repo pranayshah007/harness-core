@@ -50,6 +50,7 @@ public class DebeziumServiceConfiguration extends Configuration {
   @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
   @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
+  @JsonProperty("listOfErrorCodesForOffsetReset") private List<Integer> listOfErrorCodesForOffsetReset;
 
   public DebeziumServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();

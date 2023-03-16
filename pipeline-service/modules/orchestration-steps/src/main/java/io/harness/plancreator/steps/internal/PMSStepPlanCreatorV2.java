@@ -32,6 +32,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
+import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.utils.TimeoutUtils;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.timeout.Timeout;
@@ -77,7 +78,7 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
             .adviserObtainments(adviserObtainmentFromMetaData)
             .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
             .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
-                                                : RunInfoUtils.getRunCondition(stepElement.getWhen()))
+                                                : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()
                     .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
@@ -112,7 +113,7 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
       stepElement.setTimeout(TimeoutUtils.getTimeout(stepElement.getTimeout()));
       return ((PMSStepInfo) stepElement.getStepSpecType())
           .getStepParameters(stepElement,
-              PmsStepPlanCreatorUtils.getRollbackParameters(
+              PlanCreatorUtilsCommon.getRollbackParameters(
                   ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN),
               ctx);
     }

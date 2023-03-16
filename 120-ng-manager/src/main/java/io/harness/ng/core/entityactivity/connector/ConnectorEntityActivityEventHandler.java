@@ -8,6 +8,7 @@
 package io.harness.ng.core.entityactivity.connector;
 
 import static io.harness.NGConstants.CONNECTOR_STRING;
+import static io.harness.NGConstants.CONNECTOR_TYPE_NAME;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.NextGenModule.CONNECTOR_DECORATOR_SERVICE;
 
@@ -17,11 +18,13 @@ import io.harness.beans.IdentifierRef;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.helper.ConnectorLogContext;
 import io.harness.connector.services.ConnectorService;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.activityhistory.dto.ConnectivityCheckActivityDetailDTO;
 import io.harness.ng.core.activityhistory.dto.EntityUsageActivityDetailDTO;
 import io.harness.ng.core.activityhistory.dto.NGActivityDTO;
+import io.harness.polling.service.intfc.PollingService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -32,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ConnectorEntityActivityEventHandler {
   @Inject @Named(CONNECTOR_DECORATOR_SERVICE) private ConnectorService connectorService;
+  @Inject private PollingService pollingService;
 
   public void updateActivityResultInConnectors(NGActivityDTO ngActivityDTO) {
     String accountIdentifier = ngActivityDTO.getAccountIdentifier();
@@ -66,6 +70,9 @@ public class ConnectorEntityActivityEventHandler {
               createConnectorValidatonResultFromEntityUsage(entityUsageActivityDetailDTO, activityTime);
           break;
         case ENTITY_UPDATE:
+          processUpdateEvent(entityRef);
+          activityTime = ngActivityDTO.getActivityTime();
+          break;
         case ENTITY_CREATION:
           activityTime = ngActivityDTO.getActivityTime();
           break;
@@ -85,5 +92,14 @@ public class ConnectorEntityActivityEventHandler {
         .errors(entityUsageActivityDetailDTO.getErrors())
         .testedAt(activityTime)
         .build();
+  }
+
+  private void processUpdateEvent(IdentifierRef entityRef) {
+    if (entityRef.getMetadata() != null
+        && ConnectorType.getArtifactConnectorTypes().contains(entityRef.getMetadata().get(CONNECTOR_TYPE_NAME))) {
+      log.info("Resetting polling documents perpetual tasks for account {} , connector {}",
+          entityRef.getAccountIdentifier(), entityRef.getIdentifier());
+      pollingService.resetPerpetualTasksForConnector(entityRef.getAccountIdentifier(), entityRef.getIdentifier());
+    }
   }
 }

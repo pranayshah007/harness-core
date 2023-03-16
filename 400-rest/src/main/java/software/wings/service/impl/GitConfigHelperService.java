@@ -123,7 +123,7 @@ public class GitConfigHelperService {
     convertToRepoGitConfig(gitConfig, gitConfig.getRepoName());
 
     try {
-      DelegateResponseData notifyResponseData = delegateService.executeTask(
+      DelegateResponseData notifyResponseData = delegateService.executeTaskV2(
           DelegateTask.builder()
               .accountId(gitConfig.getAccountId())
               .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, SCOPE_WILDCARD)

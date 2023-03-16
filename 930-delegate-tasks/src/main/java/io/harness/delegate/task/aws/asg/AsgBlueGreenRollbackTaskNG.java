@@ -9,13 +9,12 @@ package io.harness.delegate.task.aws.asg;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.aws.asg.AsgPrepareRollbackDataCommandTaskHandler;
+import io.harness.delegate.aws.asg.AsgBlueGreenRollbackCommandTaskHandler;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
 
 import com.google.inject.Inject;
@@ -26,7 +25,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @OwnedBy(HarnessTeam.CDP)
 public class AsgBlueGreenRollbackTaskNG extends AbstractDelegateRunnableTask {
   @Inject private AsgDelegateTaskHelper asgDelegateTaskHelper;
-  @Inject private AsgPrepareRollbackDataCommandTaskHandler asgPrepareRollbackDataCommandTaskHandler;
+  @Inject private AsgBlueGreenRollbackCommandTaskHandler taskHandler;
   public AsgBlueGreenRollbackTaskNG(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
       BooleanSupplier preExecute) {
@@ -43,14 +42,7 @@ public class AsgBlueGreenRollbackTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public AsgCommandResponse run(TaskParameters parameters) {
     AsgCommandRequest asgCommandRequest = (AsgCommandRequest) parameters;
-    // TODO
-    return AsgBlueGreenRollbackResponse.builder()
-        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-        .asgBlueGreenRollbackResult(
-            AsgBlueGreenRollbackResult.builder()
-                .autoScalingGroupContainer(AutoScalingGroupContainer.builder().autoScalingGroupName("myasg").build())
-                .build())
-        .build();
+    return asgDelegateTaskHelper.getAsgCommandResponse(taskHandler, asgCommandRequest, getLogStreamingTaskClient());
   }
 
   @Override

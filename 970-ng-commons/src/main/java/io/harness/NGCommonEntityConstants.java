@@ -24,6 +24,8 @@ public class NGCommonEntityConstants {
   public static final String ORGS_KEY = "orgIdentifiers";
   public static final String PROJECT_KEY = "projectIdentifier";
 
+  public static final String UUID = "uuid";
+
   public static final String FORCE_DELETE = "forceDelete";
   public static final String VERSION_LABEL_KEY = "versionLabel";
   public static final String SERVICE_KEY = "serviceId";
@@ -49,6 +51,7 @@ public class NGCommonEntityConstants {
   public static final String LAST_DEPLOYED_AT = "lastDeployedAt";
   public static final String INPUT_SET_IDENTIFIER_KEY = "inputSetIdentifier";
   public static final String ENVIRONMENT_IDENTIFIER_KEY = "environmentIdentifier";
+  public static final String ENVIRONMENT_TYPE_KEY = "environmentType";
   public static final String STATUS = "status";
   public static final String MONGODB_ID = "_id";
   public static final String CONNECTOR_IDENTIFIER_KEY = "connectorIdentifier";
@@ -83,6 +86,7 @@ public class NGCommonEntityConstants {
   public static final String EXPIRY_TIME = "expiryTime";
   public static final String SORT = "sort";
   public static final String FILE_PATH_KEY = "path";
+  public static final String LICENSE_TYPE_KEY = "licenseType";
 
   // TODO(UTSAV): Move to ce-nextgen
   public static final String IS_EVENTS_ENABLED = "eventsEnabled";
@@ -123,6 +127,8 @@ public class NGCommonEntityConstants {
 
   public static final String PAGE_PARAM_MESSAGE = "Page Index of the results to fetch."
       + "Default Value: 0";
+  public static final String PAGE_TOKEN_PARAM_MESSAGE = "Page Token of the next results to fetch."
+      + "Default Value: ''";
   public static final String SIZE_PARAM_MESSAGE = "Results per page";
   public static final String SORT_PARAM_MESSAGE = "Sort criteria for the elements.";
   public static final String BAD_REQUEST_PARAM_MESSAGE = "Bad Request";
@@ -134,6 +140,7 @@ public class NGCommonEntityConstants {
   public static final String OPERATOR_PARAM_MESSAGE = "Operator Criteria for Criterias ";
   public static final String RESOURCE = "Resource it targets (For icons)";
   public static final String POLICY = "Get YAML of the policy";
+  public static final String LICENSE_TYPE_PARAM_MESSAGE = "CD License type";
 
   // Environment Group
   public static final String ENVIRONMENT_GROUP_KEY = "envGroupIdentifier";
@@ -166,8 +173,16 @@ public class NGCommonEntityConstants {
   public static final String JOB_NAME = "jobName";
   public static final String FQN_PATH = "fqnPath";
   public static final String ARTIFACT_PATH = "artifactPath";
+  public static final String ARTIFACT = "artifact";
   public static final String PARENT_JOB_NAME = "parentJobName";
   public static final String HARNESS_IMAGE = "harnessImage";
   public static final String METHOD_NAME = "methodName";
   public static final String AGENT_KEY = "agentIdentifier";
+  public static final String IS_STABLE_TEMPLATE = "isStableTemplate";
+  public static final String CONFIG_FILE_FUNCTOR = "configFile";
+  public static final String FUNCTOR_STRING_METHOD_NAME = "getAsString";
+  public static final String FUNCTOR_BASE64_METHOD_NAME = "getAsBase64";
+  public static final String FILE_STORE_FUNCTOR = "fileStore";
+  public static final String PLAN_NAME = "planName";
+  public static final String TARGET_IDENTIFIER_KEY = "targetIdentifier";
 }

@@ -11,7 +11,7 @@ import static io.harness.network.Http.getOkHttpClientBuilder;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.hsqs.client.HsqsServiceClient;
+import io.harness.hsqs.client.HsqsClient;
 import io.harness.network.Http;
 
 import software.wings.app.MainConfiguration;
@@ -26,11 +26,11 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 @OwnedBy(HarnessTeam.DEL)
-public class HQueueServiceClientFactory implements Provider<HsqsServiceClient> {
+public class HQueueServiceClientFactory implements Provider<HsqsClient> {
   @Inject private MainConfiguration mainConfiguration;
 
   @Override
-  public HsqsServiceClient get() {
+  public HsqsClient get() {
     String url = mainConfiguration.getQueueServiceConfig().getQueueServiceConfig().getBaseUrl();
     OkHttpClient okHttpClient = getOkHttpClientBuilder()
                                     .connectTimeout(5, TimeUnit.SECONDS)
@@ -47,6 +47,6 @@ public class HQueueServiceClientFactory implements Provider<HsqsServiceClient> {
                             .addConverterFactory(GsonConverterFactory.create(gson))
                             .build();
 
-    return retrofit.create(HsqsServiceClient.class);
+    return retrofit.create(HsqsClient.class);
   }
 }

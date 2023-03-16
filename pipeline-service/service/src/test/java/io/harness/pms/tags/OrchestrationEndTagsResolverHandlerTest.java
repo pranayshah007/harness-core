@@ -30,7 +30,6 @@ import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import org.apache.groovy.util.Maps;
 import org.junit.Before;

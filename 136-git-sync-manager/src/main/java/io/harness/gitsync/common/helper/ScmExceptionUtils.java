@@ -9,6 +9,7 @@ package io.harness.gitsync.common.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ReportTarget.REST_API;
+import static io.harness.gitsync.common.scmerrorhandling.ScmErrorCodeToHttpStatusCodeMapping.HTTP_500;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,6 +23,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.ErrorMetadataDTO;
 import io.harness.gitsync.common.beans.ScmErrorDetails;
 import io.harness.gitsync.common.dtos.GitErrorMetadata;
+import io.harness.gitsync.common.scmerrorhandling.ScmErrorCodeToHttpStatusCodeMapping;
 
 import java.util.List;
 import lombok.experimental.UtilityClass;
@@ -65,7 +67,7 @@ public class ScmExceptionUtils {
     return "Unexpected error occurred while performing scm operation.";
   }
 
-  public static GitErrorMetadata getGitErrorMetadata(WingsException ex) {
+  public static GitErrorMetadata getGitErrorMetadata(Exception ex) {
     ErrorMetadataDTO errorMetadata = ExceptionUtils.getErrorMetadata(ex, GitErrorMetadata.TYPE);
     if (errorMetadata == null) {
       return GitErrorMetadata.builder().build();
@@ -82,6 +84,21 @@ public class ScmExceptionUtils {
         .error(exception.getMessage())
         .explanation(ScmExceptionUtils.getExplanationMessage(exception))
         .hint(ScmExceptionUtils.getHintMessage(exception))
+        .gitErrorMetadata(ScmExceptionUtils.getGitErrorMetadata(exception))
+        .statusCode(ScmExceptionUtils.getStatusCode(exception))
         .build();
+  }
+
+  public static int getStatusCode(Exception exception) {
+    if (!(exception instanceof WingsException)) {
+      return HTTP_500;
+    }
+    WingsException wingsException = (WingsException) exception;
+    ScmException scmException = ScmExceptionUtils.getScmException(wingsException);
+    if (scmException == null) {
+      return wingsException.getCode().getStatus().getCode();
+    } else {
+      return ScmErrorCodeToHttpStatusCodeMapping.getHttpStatusCode(scmException.getCode());
+    }
   }
 }

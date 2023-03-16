@@ -64,9 +64,9 @@ public class DockerArtifactTaskHandler extends DelegateArtifactTaskHandler<Docke
 
   @Override
   public ArtifactTaskExecutionResponse getBuilds(DockerArtifactDelegateRequest attributesRequest) {
-    List<BuildDetailsInternal> builds =
-        dockerRegistryService.getBuilds(DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest),
-            attributesRequest.getImagePath(), DockerRegistryService.MAX_NO_OF_TAGS_PER_IMAGE);
+    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(
+        DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest), attributesRequest.getImagePath(),
+        DockerRegistryService.MAX_NO_OF_TAGS_PER_IMAGE, attributesRequest.getTagRegex());
     List<DockerArtifactDelegateResponse> dockerArtifactDelegateResponseList =
         builds.stream()
             .sorted(new BuildDetailsInternalComparatorDescending())
@@ -98,9 +98,11 @@ public class DockerArtifactTaskHandler extends DelegateArtifactTaskHandler<Docke
   }
 
   public ArtifactMetaInfo getArtifactMedataInfo(DockerArtifactDelegateRequest attributesRequest) {
+    boolean shouldFetchDockerV2DigestSHA256 =
+        Boolean.TRUE.equals(attributesRequest.getShouldFetchDockerV2DigestSHA256());
     return dockerRegistryService.getArtifactMetaInfo(
         DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest), attributesRequest.getImagePath(),
-        attributesRequest.getTag(), attributesRequest.getShouldFetchDockerV2DigestSHA256());
+        attributesRequest.getTag(), shouldFetchDockerV2DigestSHA256);
   }
 
   private ArtifactTaskExecutionResponse getSuccessTaskExecutionResponse(

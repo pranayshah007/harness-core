@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.plan.steps.aws.asg;
 
+import static io.harness.cdng.visitor.YamlTypes.ASG_BLUE_GREEN_DEPLOY;
 import static io.harness.cdng.visitor.YamlTypes.ASG_BLUE_GREEN_SWAP_SERVICE;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -44,11 +45,11 @@ public class AsgBlueGreenSwapServiceStepPlanCreator extends CDPMSStepPlanCreator
   protected StepParameters getStepParameters(PlanCreationContext ctx, AsgBlueGreenSwapServiceStepNode stepElement) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
 
-    // String asgBlueGreenDeployFnq = getExecutionStepFqn(ctx.getCurrentField(), ASG_BLUE_GREEN_DEPLOY);
+    String asgBlueGreenDeployFnq = getExecutionStepFqn(ctx.getCurrentField(), ASG_BLUE_GREEN_DEPLOY);
     String asgBlueGreenSwapServiceFnq = getExecutionStepFqn(ctx.getCurrentField(), ASG_BLUE_GREEN_SWAP_SERVICE);
     AsgBlueGreenSwapServiceStepParameters asgBlueGreenSwapServiceStepParameters =
         (AsgBlueGreenSwapServiceStepParameters) ((StepElementParameters) stepParameters).getSpec();
-    // asgBlueGreenSwapServiceStepParameters.setAsgBlueGreenDeployFqn(asgBlueGreenDeployFnq);
+    asgBlueGreenSwapServiceStepParameters.setAsgBlueGreenDeployFqn(asgBlueGreenDeployFnq);
     asgBlueGreenSwapServiceStepParameters.setAsgBlueGreenSwapServiceFqn(asgBlueGreenSwapServiceFnq);
 
     return stepParameters;

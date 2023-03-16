@@ -38,6 +38,8 @@ public class StatsCollectorImpl implements StatsCollector {
   private static final int SYNC_INTERVAL_MINUTES = 10;
   private static final long SYNC_INTERVAL = TimeUnit.MINUTES.toMinutes(SYNC_INTERVAL_MINUTES);
 
+  private static final int MAX_CALLS_PER_ACCOUNT = 60 / SYNC_INTERVAL_MINUTES * 6;
+
   private InstanceStatService statService;
   private ServerlessInstanceStatService serverlessInstanceStatService;
   private DashboardStatisticsService dashboardStatisticsService;
@@ -65,16 +67,48 @@ public class StatsCollectorImpl implements StatsCollector {
 
     SnapshotTimeProvider snapshotTimeProvider = new SnapshotTimeProvider(lastSnapshot, SYNC_INTERVAL);
     boolean ranAtLeastOnce = false;
+    int instanceStatsCallsMade = 0;
     while (snapshotTimeProvider.hasNext()) {
+      if (instanceStatsCallsMade >= MAX_CALLS_PER_ACCOUNT) {
+        log.warn("Tried publishing {} stats for accountId {}. Pending backlog will be published in the next iteration",
+            MAX_CALLS_PER_ACCOUNT, accountId);
+        break;
+      }
       Instant nextTs = snapshotTimeProvider.next();
       if (nextTs == null) {
         throw new IllegalStateException("nextTs is null even though hasNext() returned true. Shouldn't be possible");
       }
       boolean success = createStats(accountId, nextTs);
       ranAtLeastOnce = ranAtLeastOnce || success;
+      instanceStatsCallsMade++;
     }
 
     return ranAtLeastOnce;
+  }
+
+  @Override
+  public boolean createStatsAtIfMissing(String accountId, long timestamp) {
+    Instant snapshotTimestamp = Instant.ofEpochMilli(timestamp);
+    Instant lastSnapshotTimestamp = statService.getLastSnapshotTime(accountId);
+    if (lastSnapshotTimestamp != null && lastSnapshotTimestamp.isAfter(snapshotTimestamp)) {
+      log.info(
+          "Instance stats snapshots already exist for account {}, lastSnapshotTimestamp: {}, snapshotTimestamp: {}",
+          accountId, lastSnapshotTimestamp, snapshotTimestamp);
+      return true;
+    } else {
+      log.info(
+          "Start creating instance stats snapshot for account {}, lastSnapshotTimestamp: {}, snapshotTimestamp: {}",
+          accountId, lastSnapshotTimestamp, snapshotTimestamp);
+      boolean statsSaved = createStats(accountId, alignedWithMinute(snapshotTimestamp, SYNC_INTERVAL_MINUTES));
+      if (statsSaved) {
+        log.info("Instance stats snapshot is created successfully for account {}", accountId);
+      }
+      if (!statsSaved) {
+        log.info("Failed to create instance stats for account {}", accountId);
+      }
+
+      return statsSaved;
+    }
   }
 
   @Override
@@ -86,13 +120,21 @@ public class StatsCollectorImpl implements StatsCollector {
 
     SnapshotTimeProvider snapshotTimeProvider = new SnapshotTimeProvider(lastSnapshot, SYNC_INTERVAL);
     boolean ranAtLeastOnce = false;
+    int instanceStatsCallsMade = 0;
     while (snapshotTimeProvider.hasNext()) {
+      if (instanceStatsCallsMade >= MAX_CALLS_PER_ACCOUNT) {
+        log.warn(
+            "Tried publishing {} serverless stats for accountId {}. Pending backlog will be published in the next iteration",
+            MAX_CALLS_PER_ACCOUNT, accountId);
+        break;
+      }
       Instant nextTs = snapshotTimeProvider.next();
       if (nextTs == null) {
         throw new IllegalStateException("nextTs is null even though hasNext() returned true. Shouldn't be possible");
       }
       boolean success = createServerlessStats(accountId, nextTs);
       ranAtLeastOnce = ranAtLeastOnce || success;
+      instanceStatsCallsMade++;
     }
 
     return ranAtLeastOnce;

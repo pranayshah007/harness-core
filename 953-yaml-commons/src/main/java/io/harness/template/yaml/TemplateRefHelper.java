@@ -23,6 +23,20 @@ public class TemplateRefHelper {
   public final String TEMPLATE = "template";
   public final String CUSTOM_DEPLOYMENT_TEMPLATE = "customDeploymentRef";
 
+  public boolean hasTemplateRef(String yaml, boolean checkDuplicate) {
+    // This is added to prevent duplicate fields in the yaml. Without this, through api duplicate fields were allowed to
+    // save. The below yaml is invalid and should not be allowed to save.
+    /*
+    pipeline:
+      name: pipeline
+      orgIdentifier: org
+      projectIdentifier: project
+      orgIdentifier: org
+     */
+    YamlConfig yamlConfig = new YamlConfig(yaml, checkDuplicate);
+    return hasTemplateRef(yamlConfig);
+  }
+
   public boolean hasTemplateRef(String yaml) {
     YamlConfig yamlConfig = new YamlConfig(yaml);
     return hasTemplateRef(yamlConfig);

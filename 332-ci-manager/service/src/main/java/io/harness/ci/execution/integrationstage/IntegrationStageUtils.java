@@ -32,6 +32,9 @@ import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
 import static io.harness.delegate.beans.connector.scm.adapter.AzureRepoToGitMapper.mapToGitConnectionType;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.CI;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.CI_CODE_BASE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.PROPERTIES;
 
 import static java.lang.String.format;
 import static org.springframework.util.StringUtils.trimLeadingCharacter;
@@ -45,7 +48,9 @@ import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageNode;
@@ -56,13 +61,16 @@ import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
+import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.InfraInfoUtils;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.pipeline.executions.beans.CIImageDetails;
 import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
 import io.harness.ci.pipeline.executions.beans.CIScmDetails;
@@ -93,13 +101,16 @@ import io.harness.k8s.model.ImageDetails;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -116,6 +127,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.fabric8.utils.Strings;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -152,7 +164,12 @@ public class IntegrationStageUtils {
     try {
       return YamlUtils.read(executionWrapperConfig.getStep().toString(), CIAbstractStepNode.class);
     } catch (Exception ex) {
-      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
+      String errorMessage = "Failed to deserialize ExecutionWrapperConfig step node";
+      Throwable throwable = ex.getCause();
+      if (throwable != null && Strings.isNotBlank(throwable.getMessage())) {
+        errorMessage = throwable.getMessage();
+      }
+      throw new CIStageExecutionException(errorMessage, ex);
     }
   }
 
@@ -201,6 +218,49 @@ public class IntegrationStageUtils {
         ParsedPayload parsedPayload = triggerPayload.getParsedPayload();
         if (treatWebhookAsManualExecutionWithContext(
                 connectorIdentifier, connectorUtils, ctx, parsedPayload, codeBase, triggerPayload.getVersion())) {
+          return handleManualExecution(parameterFieldBuild, identifier);
+        }
+        return WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
+      } else if (executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.WEBHOOK_CUSTOM) {
+        return buildCustomExecutionSource(identifier, parameterFieldBuild);
+      } else {
+        throw new InvalidRequestException("CI stage cannot be triggered by trigger of type: "
+            + executionTriggerInfo.getRerunInfo().getRootTriggerType());
+      }
+    }
+  }
+
+  public static ExecutionSource buildExecutionSourceV2(Ambiance ambiance, ExecutionTriggerInfo executionTriggerInfo,
+      TriggerPayload triggerPayload, String identifier, ParameterField<Build> parameterFieldBuild,
+      String connectorIdentifier, ConnectorUtils connectorUtils, CodeBase codeBase, boolean cloneManually) {
+    if (!executionTriggerInfo.getIsRerun()) {
+      if (executionTriggerInfo.getTriggerType() == TriggerType.MANUAL
+          || executionTriggerInfo.getTriggerType() == TriggerType.SCHEDULER_CRON) {
+        return handleManualExecution(parameterFieldBuild, identifier);
+      } else if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
+        ParsedPayload parsedPayload = triggerPayload.getParsedPayload();
+        if (cloneManually
+            || treatWebhookAsManualExecutionWithContextV2(
+                ambiance, connectorIdentifier, connectorUtils, parsedPayload, codeBase, triggerPayload.getVersion())) {
+          return handleManualExecution(parameterFieldBuild, identifier);
+        }
+
+        return WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
+      } else if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK_CUSTOM) {
+        return buildCustomExecutionSource(identifier, parameterFieldBuild);
+      } else {
+        throw new InvalidRequestException(
+            "CI stage cannot be triggered by trigger of type: " + executionTriggerInfo.getTriggerType());
+      }
+    } else {
+      if (executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.MANUAL
+          || executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.SCHEDULER_CRON) {
+        return handleManualExecution(parameterFieldBuild, identifier);
+      } else if (executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.WEBHOOK) {
+        ParsedPayload parsedPayload = triggerPayload.getParsedPayload();
+        if (cloneManually
+            || treatWebhookAsManualExecutionWithContextV2(
+                ambiance, connectorIdentifier, connectorUtils, parsedPayload, codeBase, triggerPayload.getVersion())) {
           return handleManualExecution(parameterFieldBuild, identifier);
         }
         return WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
@@ -267,6 +327,46 @@ public class IntegrationStageUtils {
     }
   }
 
+  public static boolean treatWebhookAsManualExecutionV2(
+      ConnectorDetails connectorDetails, CodeBase codeBase, ParsedPayload parsedPayload, long version) {
+    String url = getGitURLFromConnector(connectorDetails, codeBase);
+    WebhookExecutionSource webhookExecutionSource = WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
+
+    // if url is not same then always treat as manual execution
+    if (!isURLSame(webhookExecutionSource, url)) {
+      return true;
+    }
+
+    Build build = RunTimeInputHandler.resolveBuild(codeBase.getBuild());
+    if (build != null) {
+      if (build.getType() == BuildType.PR && webhookExecutionSource.getWebhookEvent().getType() == BRANCH) {
+        throw new CIStageExecutionException(
+            "Building PR with expression <+trigger.prNumber> for push event is not supported");
+      }
+
+      if (build.getType() == BuildType.BRANCH) {
+        ParameterField<String> branch = ((BranchBuildSpec) build.getSpec()).getBranch();
+        String branchString =
+            RunTimeInputHandler.resolveStringParameter("branch", "Git Clone", "identifier", branch, false);
+        if (isEmpty(branchString)) {
+          throw new CIStageExecutionException("Branch should not be empty for branch build type");
+        }
+      }
+
+      if (build.getType() == BuildType.TAG) {
+        ParameterField<String> tag = ((TagBuildSpec) build.getSpec()).getTag();
+        String tagString = RunTimeInputHandler.resolveStringParameter("tag", "Git Clone", "identifier", tag, false);
+        if (isNotEmpty(tagString)) {
+          return true;
+        } else {
+          throw new CIStageExecutionException("Tag should not be empty for tag build type");
+        }
+      }
+    }
+
+    return false;
+  }
+
   public static boolean isURLSame(WebhookExecutionSource webhookExecutionSource, String url) {
     if (webhookExecutionSource.getWebhookEvent().getType() == PR) {
       PRWebhookEvent prWebhookEvent = (PRWebhookEvent) webhookExecutionSource.getWebhookEvent();
@@ -275,8 +375,8 @@ public class IntegrationStageUtils {
           || prWebhookEvent.getRepository().getHttpURL() == null) {
         return false;
       }
-      if (prWebhookEvent.getRepository().getHttpURL().equals(url)
-          || prWebhookEvent.getRepository().getSshURL().equals(url)) {
+      if (prWebhookEvent.getRepository().getHttpURL().equalsIgnoreCase(url)
+          || prWebhookEvent.getRepository().getSshURL().equalsIgnoreCase(url)) {
         return true;
       }
     } else if (webhookExecutionSource.getWebhookEvent().getType() == BRANCH) {
@@ -286,8 +386,8 @@ public class IntegrationStageUtils {
           || branchWebhookEvent.getRepository().getHttpURL() == null) {
         return false;
       }
-      if (branchWebhookEvent.getRepository().getHttpURL().equals(url)
-          || branchWebhookEvent.getRepository().getSshURL().equals(url)) {
+      if (branchWebhookEvent.getRepository().getHttpURL().equalsIgnoreCase(url)
+          || branchWebhookEvent.getRepository().getSshURL().equalsIgnoreCase(url)) {
         return true;
       }
     }
@@ -303,6 +403,13 @@ public class IntegrationStageUtils {
 
     ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(baseNGAccess, connectorIdentifier);
     return treatWebhookAsManualExecution(connectorDetails, codeBase, parsedPayload, version);
+  }
+
+  private static boolean treatWebhookAsManualExecutionWithContextV2(Ambiance ambiance, String connectorIdentifier,
+      ConnectorUtils connectorUtils, ParsedPayload parsedPayload, CodeBase codeBase, long version) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);
+    return treatWebhookAsManualExecutionV2(connectorDetails, codeBase, parsedPayload, version);
   }
 
   public static BaseNGAccess getBaseNGAccess(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -339,9 +446,7 @@ public class IntegrationStageUtils {
         throw new IllegalArgumentException("Repo name is not set in CI codebase spec");
       }
       if (connectionType == GitConnectionType.PROJECT) {
-        if (url.contains(AZURE_REPO_BASE_URL)) {
-          gitUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(url, repoName);
-        }
+        gitUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(url, repoName);
       } else {
         gitUrl = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR,
             StringUtils.stripStart(repoName, PATH_SEPARATOR));
@@ -359,30 +464,34 @@ public class IntegrationStageUtils {
       return null;
     }
 
+    String url = "";
     if (gitConnector.getConnectorType() == GITHUB) {
       GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == AZURE_REPO) {
       AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
       GitConnectionType gitConnectionType = mapToGitConnectionType(gitConfigDTO.getConnectionType());
-      return getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == BITBUCKET) {
       BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == CODECOMMIT) {
       AwsCodeCommitConnectorDTO gitConfigDTO = (AwsCodeCommitConnectorDTO) gitConnector.getConnectorConfig();
       GitConnectionType gitConnectionType =
           gitConfigDTO.getUrlType() == AwsCodeCommitUrlType.REPO ? GitConnectionType.REPO : GitConnectionType.ACCOUNT;
-      return getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GIT) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
-      return getGitURL(ciCodebase, gitConfigDTO.getGitConnectionType(), gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConfigDTO.getGitConnectionType(), gitConfigDTO.getUrl());
     } else {
       throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
     }
+
+    url = GitClientHelper.convertToHttps(url);
+    return url;
   }
 
   private static ManualExecutionSource handleManualExecution(
@@ -646,6 +755,24 @@ public class IntegrationStageUtils {
     return resolveOSType(k8sDirectInfraYaml.getSpec().getOs());
   }
 
+  public static OSType getBuildType(Infrastructure infra) {
+    if (infra instanceof VmInfraYaml) {
+      VmInfraYaml infrastructure = (VmInfraYaml) infra;
+      return RunTimeInputHandler.resolveOSType(((VmPoolYaml) infrastructure.getSpec()).getSpec().getOs());
+    } else if (infra instanceof DockerInfraYaml) {
+      DockerInfraYaml infrastructure = (DockerInfraYaml) infra;
+      return RunTimeInputHandler.resolveOSType(infrastructure.getSpec().getPlatform().getValue().getOs());
+    } else if (infra instanceof K8sDirectInfraYaml) {
+      K8sDirectInfraYaml infrastructure = (K8sDirectInfraYaml) infra;
+      return RunTimeInputHandler.resolveOSType(infrastructure.getSpec().getOs());
+    } else if (infra instanceof HostedVmInfraYaml) {
+      HostedVmInfraYaml infrastructure = (HostedVmInfraYaml) infra;
+      return RunTimeInputHandler.resolveOSType(infrastructure.getSpec().getPlatform().getValue().getOs());
+    } else {
+      throw new CIStageExecutionException("unexpected type of infra received");
+    }
+  }
+
   public static ArrayList<String> populateConnectorIdentifiers(List<ExecutionWrapperConfig> wrappers) {
     ArrayList<String> connectorIdentifiers = new ArrayList<>();
     for (ExecutionWrapperConfig executionWrapper : wrappers) {
@@ -818,5 +945,60 @@ public class IntegrationStageUtils {
       default:
     }
     return DEFAULT_BUILD_MULTIPLIER;
+  }
+
+  public static CodeBase getCICodebase(PlanCreationContext ctx) {
+    CodeBase ciCodeBase = null;
+    try {
+      YamlNode properties = YamlUtils.getGivenYamlNodeFromParentPath(ctx.getCurrentField().getNode(), PROPERTIES);
+      YamlNode ciCodeBaseNode = properties.getField(CI).getNode().getField(CI_CODE_BASE).getNode();
+      ciCodeBase = IntegrationStageUtils.getCiCodeBase(ciCodeBaseNode);
+    } catch (Exception ex) {
+      // Ignore exception because code base is not mandatory in case git clone is false
+      log.warn("Failed to retrieve ciCodeBase from pipeline");
+    }
+
+    return ciCodeBase;
+  }
+
+  public static String retrieveLastCommitSha(WebhookExecutionSource webhookExecutionSource) {
+    if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.PR) {
+      PRWebhookEvent prWebhookEvent = (PRWebhookEvent) webhookExecutionSource.getWebhookEvent();
+      return prWebhookEvent.getBaseAttributes().getAfter();
+    } else if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.BRANCH) {
+      BranchWebhookEvent branchWebhookEvent = (BranchWebhookEvent) webhookExecutionSource.getWebhookEvent();
+      return branchWebhookEvent.getBaseAttributes().getAfter();
+    }
+
+    log.error("Non supported event type, status will be empty");
+    return "";
+  }
+
+  public static boolean shouldCloneManually(CodeBase codeBase) {
+    if (codeBase == null) {
+      return false;
+    }
+    Build build = RunTimeInputHandler.resolveBuild(codeBase.getBuild());
+    if (build == null) {
+      return false;
+    }
+    switch (build.getType()) {
+      case BRANCH:
+        ParameterField<String> branch = ((BranchBuildSpec) build.getSpec()).getBranch();
+        String branchString =
+            RunTimeInputHandler.resolveStringParameter("branch", "Git Clone", "identifier", branch, false);
+        return isNotEmpty(branchString) && !branchString.equals(BRANCH_EXPRESSION);
+      case PR:
+        ParameterField<String> number = ((PRBuildSpec) build.getSpec()).getNumber();
+        String numberString =
+            RunTimeInputHandler.resolveStringParameter("number", "Git Clone", "identifier", number, false);
+        return isNotEmpty(numberString) && !numberString.equals(PR_EXPRESSION);
+      case TAG:
+        ParameterField<String> tag = ((TagBuildSpec) build.getSpec()).getTag();
+        String tagString = RunTimeInputHandler.resolveStringParameter("tag", "Git Clone", "identifier", tag, false);
+        return isNotEmpty(tagString) && !tagString.equals(TAG_EXPRESSION);
+      default:
+    }
+    return false;
   }
 }

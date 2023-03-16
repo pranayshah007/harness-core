@@ -9,6 +9,7 @@ package io.harness.delegate.task.shell.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -27,9 +29,11 @@ import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.TailFilePatternDto;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
+import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
+import io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit;
 import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
@@ -350,5 +354,52 @@ public class SshInitCommandHandlerTest extends CategoryTest {
                 NgCleanupCommandUnit.builder().build(), logStreamingTaskClient, commandUnitsProgress, taskContext))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Invalid command unit specified for command task.");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testEvaluateCommandUnitsVariables() {
+    String copyDestinationPathVariable = "$cpDestinationPath";
+    String copyDestinationPath = "copyDestinationPath";
+    String scriptWorkingDirVariable = "$tmpWorkingDir";
+    String scriptWorkingDir = "scriptWorkingDir";
+    String downloadDestinationPathVariable = "$downloadDestinationPath";
+    String downloadDestinationPath = "downloadDestinationPath";
+    SshExecutorFactoryContext mockContext = mock(SshExecutorFactoryContext.class);
+
+    NgInitCommandUnit initCommandUnit = NgInitCommandUnit.builder().build();
+    ScriptCommandUnit scriptCommandUnit =
+        ScriptCommandUnit.builder().workingDirectory(scriptWorkingDirVariable).build();
+    CopyCommandUnit copyCommandUnit = CopyCommandUnit.builder().destinationPath(copyDestinationPathVariable).build();
+    NgDownloadArtifactCommandUnit downloadArtifactCommandUnit =
+        NgDownloadArtifactCommandUnit.builder().destinationPath(downloadDestinationPathVariable).build();
+    NgCleanupCommandUnit cleanupCommandUnit = NgCleanupCommandUnit.builder().build();
+
+    when(mockContext.evaluateVariable(eq(scriptWorkingDirVariable))).thenReturn(scriptWorkingDir);
+    when(mockContext.evaluateVariable(eq(copyDestinationPathVariable))).thenReturn(copyDestinationPath);
+    when(mockContext.evaluateVariable(eq(downloadDestinationPathVariable))).thenReturn(downloadDestinationPath);
+
+    List<NgCommandUnit> ngCommandUnits =
+        List.of(initCommandUnit, scriptCommandUnit, copyCommandUnit, downloadArtifactCommandUnit, cleanupCommandUnit);
+    sshInitCommandHandler.evaluateCommandUnitsVariables(mockContext, ngCommandUnits);
+
+    assertThat(ngCommandUnits.size()).isEqualTo(5);
+    assertThat(ngCommandUnits.get(0)).isInstanceOf(NgInitCommandUnit.class);
+
+    assertThat(ngCommandUnits.get(1)).isInstanceOf(ScriptCommandUnit.class);
+    ScriptCommandUnit evaluatedScriptCommandUnit = (ScriptCommandUnit) ngCommandUnits.get(1);
+    assertThat(evaluatedScriptCommandUnit.getWorkingDirectory()).isEqualTo(scriptWorkingDir);
+
+    assertThat(ngCommandUnits.get(2)).isInstanceOf(CopyCommandUnit.class);
+    CopyCommandUnit evaluatedCopyCommandUnit = (CopyCommandUnit) ngCommandUnits.get(2);
+    assertThat(evaluatedCopyCommandUnit.getDestinationPath()).isEqualTo(copyDestinationPath);
+
+    assertThat(ngCommandUnits.get(3)).isInstanceOf(NgDownloadArtifactCommandUnit.class);
+    NgDownloadArtifactCommandUnit evaluatedDownloadArtifactCommandUnit =
+        (NgDownloadArtifactCommandUnit) ngCommandUnits.get(3);
+    assertThat(evaluatedDownloadArtifactCommandUnit.getDestinationPath()).isEqualTo(downloadDestinationPath);
+
+    assertThat(ngCommandUnits.get(4)).isInstanceOf(NgCleanupCommandUnit.class);
   }
 }

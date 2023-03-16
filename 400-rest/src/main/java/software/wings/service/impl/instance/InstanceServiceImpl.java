@@ -192,7 +192,8 @@ public class InstanceServiceImpl implements InstanceService {
     } else if (instance.getPodInstanceKey() != null) {
       PodInstanceKey podInstanceKey = instance.getPodInstanceKey();
       query.filter("podInstanceKey.podName", podInstanceKey.getPodName())
-          .filter("podInstanceKey.namespace", podInstanceKey.getNamespace());
+          .filter("podInstanceKey.namespace", podInstanceKey.getNamespace())
+          .filter(InstanceKeys.infraMappingId, instance.getInfraMappingId());
       return podInstanceKey;
     } else {
       String msg = "Either host or container or pcf instance key needs to be set";
@@ -234,10 +235,16 @@ public class InstanceServiceImpl implements InstanceService {
   public void deleteByAccountId(String accountId) {
     pruneByEntity("accountId", accountId);
     deleteManualSyncJobsByAccountId(accountId);
+    deleteContainerDeploymentInfo(accountId);
   }
 
   private void deleteManualSyncJobsByAccountId(String accountId) {
     wingsPersistence.delete(wingsPersistence.createQuery(ManualSyncJob.class).filter(ACCOUNT_ID_KEY2, accountId));
+  }
+
+  private void deleteContainerDeploymentInfo(String accountId) {
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(ContainerDeploymentInfo.class).filter(ACCOUNT_ID_KEY2, accountId));
   }
 
   @Override

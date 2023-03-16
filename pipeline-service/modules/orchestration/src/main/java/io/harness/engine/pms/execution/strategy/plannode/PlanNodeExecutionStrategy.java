@@ -18,6 +18,7 @@ import io.harness.engine.ExecutionCheck;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.execution.WaitForExecutionInputHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.facilitation.FacilitationHelper;
 import io.harness.engine.facilitation.RunPreFacilitationChecker;
@@ -38,6 +39,7 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.NodeExecutionMetadata;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -57,6 +59,7 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.springdata.TransactionHelper;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -97,9 +100,14 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private PmsOutcomeService outcomeService;
   @Inject private KryoSerializer kryoSerializer;
+
+  @Inject private PlanExpansionService planExpansionService;
+
   @Inject @Named("EngineExecutorService") ExecutorService executorService;
   @Inject WaitForExecutionInputHelper waitForExecutionInputHelper;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject PlanExecutionService planExecutionService;
+  @Inject TransactionHelper transactionHelper;
 
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull PlanNode node,
@@ -137,10 +145,15 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode());
     PmsStepParameters resolvedParameters = PmsStepParameters.parse(
         OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedStepParameters));
-    // TODO (prashant) : This is a hack right now to serialize in binary as findAndModify is not honoring converter
-    // for maps Find a better way to do this
-    nodeExecutionService.updateV2(nodeExecutionId,
-        ops -> ops.set(NodeExecutionKeys.resolvedParams, kryoSerializer.asDeflatedBytes(resolvedParameters)));
+
+    transactionHelper.performTransaction(() -> {
+      // TODO (prashant) : This is a hack right now to serialize in binary as findAndModify is not honoring converter
+      // for maps Find a better way to do this
+      nodeExecutionService.updateV2(nodeExecutionId,
+          ops -> ops.set(NodeExecutionKeys.resolvedParams, kryoSerializer.asDeflatedBytes(resolvedParameters)));
+      planExpansionService.addStepInputs(ambiance, resolvedParameters);
+      return resolvedParameters;
+    });
     log.info("Resolved to step parameters");
   }
 
@@ -214,6 +227,14 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         log.info("Marking the nodeExecution with id {} as RUNNING", nodeExecutionId);
         nodeExecution = Preconditions.checkNotNull(
             nodeExecutionService.updateStatusWithOps(nodeExecutionId, RUNNING, null, EnumSet.noneOf(Status.class)));
+        // After resuming, pipeline status need to be set. Ex: Pipeline waiting on approval step, pipeline status is
+        // waiting, after approval, node execution is marked as running and,  similarly we are marking for pipeline.
+        // Earlier pipeline status was marked from step itself.
+        Status planStatus =
+            planExecutionService.calculateStatusExcluding(ambiance.getPlanExecutionId(), nodeExecutionId);
+        if (!StatusUtils.isFinalStatus(planStatus)) {
+          planExecutionService.updateStatus(ambiance.getPlanExecutionId(), planStatus);
+        }
       } else {
         // This will happen if the node is not in any paused or waiting statuses.
         log.debug("NodeExecution with id {} is already in Running status", nodeExecutionId);
@@ -282,10 +303,8 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Override
   public void endNodeExecution(Ambiance ambiance) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    NodeExecution nodeExecution = nodeExecutionService.update(nodeExecutionId,
-        ops
-        -> ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis()),
-        NodeProjectionUtils.fieldsForExecutionStrategy);
+    NodeExecution nodeExecution =
+        nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForExecutionStrategy);
     if (isNotEmpty(nodeExecution.getNotifyId())) {
       Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
       StepResponseNotifyData responseData = StepResponseNotifyData.builder()

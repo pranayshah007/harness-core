@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.audit.remote.v1.api.streaming.StreamingDestinationPermissions.VIEW_STREAMING_DESTINATION_PERMISSION;
 import static io.harness.audit.remote.v1.api.streaming.StreamingDestinationResourceTypes.STREAMING_DESTINATION;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.spec.server.audit.v1.model.StreamingDestinationStatus.ACTIVE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.NGResourceFilterConstants;
@@ -30,6 +31,9 @@ import io.harness.audit.events.StreamingDestinationDeleteEvent;
 import io.harness.audit.events.StreamingDestinationUpdateEvent;
 import io.harness.audit.mapper.streaming.StreamingDestinationMapper;
 import io.harness.audit.repositories.streaming.StreamingDestinationRepository;
+import io.harness.beans.IdentifierRef;
+import io.harness.connector.ConnectorDTO;
+import io.harness.connector.ConnectorResourceClient;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.exception.DuplicateFieldException;
@@ -37,15 +41,13 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.ng.core.dto.EntityScopeInfo;
 import io.harness.outbox.api.OutboxService;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
-import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PageUtils;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Streams;
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -69,21 +71,33 @@ public class StreamingServiceImpl implements StreamingService {
   private final StreamingDestinationRepository streamingDestinationRepository;
   OutboxService outboxService;
   TransactionTemplate transactionTemplate;
+  private final ConnectorResourceClient connectorResourceClient;
   private final AccessControlClient accessControlClient;
 
   @Inject
   public StreamingServiceImpl(StreamingDestinationMapper streamingDestinationMapper,
       StreamingDestinationRepository streamingDestinationRepository, OutboxService outboxService,
-      TransactionTemplate transactionTemplate, AccessControlClient accessControlClient) {
+      TransactionTemplate transactionTemplate, ConnectorResourceClient connectorResourceClient,
+      AccessControlClient accessControlClient) {
     this.streamingDestinationMapper = streamingDestinationMapper;
     this.streamingDestinationRepository = streamingDestinationRepository;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
+    this.connectorResourceClient = connectorResourceClient;
     this.accessControlClient = accessControlClient;
   }
 
   @Override
   public StreamingDestination create(String accountIdentifier, @Valid StreamingDestinationDTO streamingDestinationDTO) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(streamingDestinationDTO.getConnectorRef(), accountIdentifier, null, null);
+    Optional<ConnectorDTO> connectorDTO = NGRestUtils.getResponse(
+        connectorResourceClient.get(connectorRef.getIdentifier(), accountIdentifier, null, null));
+    if (connectorDTO.isEmpty()) {
+      String message = String.format("Connector with identifier [%s] doesn't exist.", connectorRef.getIdentifier());
+      throw new InvalidRequestException(message);
+    }
+
     StreamingDestination streamingDestination =
         streamingDestinationMapper.toStreamingDestinationEntity(accountIdentifier, streamingDestinationDTO);
     try {
@@ -185,7 +199,7 @@ public class StreamingServiceImpl implements StreamingService {
   @Override
   public boolean delete(String accountIdentifier, String identifier) {
     StreamingDestination streamingDestination = getStreamingDestination(accountIdentifier, identifier);
-    if (streamingDestination.getStatus().equals(StatusEnum.ACTIVE)) {
+    if (streamingDestination.getStatus().equals(ACTIVE)) {
       String message = String.format(
           "Streaming destination with identifier [%s] cannot be deleted because it is active.", identifier);
       log.error(message);
@@ -209,6 +223,13 @@ public class StreamingServiceImpl implements StreamingService {
     validateUpdateRequest(streamingDestinationIdentifier, streamingDestinationDTO, currentStreamingDestination);
 
     return updateAndReturnStreamingDestination(streamingDestinationDTO, currentStreamingDestination, accountIdentifier);
+  }
+
+  @Override
+  public boolean validateUniqueness(String accountIdentifier, String identifier) {
+    Optional<StreamingDestination> optionalStreamingDestination =
+        streamingDestinationRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, identifier);
+    return optionalStreamingDestination.isEmpty();
   }
 
   private Criteria getCriteriaForStreamingDestinationList(

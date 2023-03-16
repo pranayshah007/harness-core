@@ -81,8 +81,6 @@ public class HarnessResourceGroupResourceImpl implements HarnessResourceGroupRes
 
   public ResponseDTO<PageResponse<ResourceGroupResponse>> list(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, PageRequest pageRequest) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION);
     return ResponseDTO.newResponse(getNGPageResponse(
         resourceGroupService
             .list(Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), pageRequest, searchTerm)
@@ -91,10 +89,6 @@ public class HarnessResourceGroupResourceImpl implements HarnessResourceGroupRes
 
   public ResponseDTO<PageResponse<ResourceGroupResponse>> list(
       ResourceGroupFilterDTO resourceGroupFilterDTO, String accountIdentifier, PageRequest pageRequest) {
-    accessControlClient.checkForAccessOrThrow(
-        ResourceScope.of(resourceGroupFilterDTO.getAccountIdentifier(), resourceGroupFilterDTO.getOrgIdentifier(),
-            resourceGroupFilterDTO.getProjectIdentifier()),
-        Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION);
     return ResponseDTO.newResponse(getNGPageResponse(
         resourceGroupService.list(resourceGroupFilterDTO, pageRequest).map(ResourceGroupMapper::toV1Response)));
   }

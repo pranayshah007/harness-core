@@ -19,8 +19,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.beans.dto.CITaskDetails;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.outcomes.VmDetailsOutcome;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.delegate.TaskSelector;
@@ -28,6 +28,8 @@ import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.encryption.Scope;
+import io.harness.hsqs.client.api.HsqsClientService;
+import io.harness.hsqs.client.model.AckRequest;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logstreaming.LogStreamingHelper;
@@ -64,6 +66,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
@@ -76,6 +79,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   @Inject private CITaskDetailsRepository ciTaskDetailsRepository;
   @Inject private CIAccountExecutionMetadataRepository ciAccountExecutionMetadataRepository;
   @Inject private QueueExecutionUtils queueExecutionUtils;
+  @Inject private HsqsClientService hsqsClientService;
 
   private final String SERVICE_NAME_CI = "ci";
   private final int MAX_ATTEMPTS = 3;
@@ -93,11 +97,6 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     Status status = event.getStatus();
     ciRatelimitHandlerExecutor.submit(() -> { updateDailyBuildCount(level, status, serviceName, accountId); });
     executorService.submit(() -> {
-      try {
-        queueExecutionUtils.addActiveExecutionBuild(event, accountId, level.getRuntimeId());
-      } catch (Exception ex) {
-        log.error("Failed to add Execution record for {}", level.getRuntimeId(), ex);
-      }
       sendGitStatus(level, ambiance, status, event, accountId);
       sendCleanupRequest(level, ambiance, status, accountId);
     });
@@ -111,7 +110,23 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       Failsafe.with(retryPolicy).run(() -> {
         if (level.getStepType().getStepCategory() == StepCategory.STAGE && isFinalStatus(status)) {
           // TODO: Once Robust Cleanup implementation is done shift this after response from delegate is received.
-          queueExecutionUtils.deleteActiveExecutionRecord(level.getRuntimeId());
+          try {
+            CIExecutionMetadata ciExecutionMetadata =
+                queueExecutionUtils.deleteActiveExecutionRecord(ambiance.getStageExecutionId());
+            if (ciExecutionMetadata != null && StringUtils.isNotBlank(ciExecutionMetadata.getQueueId())) {
+              // ack the request so that its not processed again.
+              AckRequest ackRequest = AckRequest.builder()
+                                          .itemId(ciExecutionMetadata.getQueueId())
+                                          .consumerName(SERVICE_NAME_CI)
+                                          .topic(SERVICE_NAME_CI)
+                                          .subTopic(accountId)
+                                          .build();
+              hsqsClientService.ack(ackRequest);
+            }
+          } catch (Exception ex) {
+            log.info("failed to remove execution record from db", ex);
+          }
+
           CICleanupTaskParams ciCleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
 
           log.info("Received event with status {} to clean planExecutionId {}, stage {}", status,
@@ -136,6 +151,10 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           // like in k8s node pressure evictions) - then this is where we move all of them to blob storage.
           ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), logKey, true, true);
           // Now Delete the build from db while cleanup is happening. \
+        } else if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
+          log.info("Skipping cleanup for stageExecutionID {} and stepCategory {} with status and pipeline {}",
+              ambiance.getStageExecutionId(), level.getStepType().getStepCategory(), status,
+              ambiance.getMetadata().getPipelineIdentifier());
         }
       });
     } catch (Exception ex) {

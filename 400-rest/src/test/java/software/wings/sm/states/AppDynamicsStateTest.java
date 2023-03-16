@@ -53,11 +53,11 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.metrics.MetricType;
 import software.wings.metrics.appdynamics.AppdynamicsConstants;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.ContinuousVerificationExecutionMetaData;
 import software.wings.service.impl.appdynamics.AppdynamicsDataCollectionInfo;
@@ -801,7 +801,7 @@ public class AppDynamicsStateTest extends APMStateVerificationTestBase {
     spyAppDynamicsState.triggerAnalysisDataCollection(executionContext, AnalysisContext.builder().build(),
         VerificationStateAnalysisExecutionData.builder().build(), Collections.singletonMap("host", "groupName"));
     ArgumentCaptor<DelegateTask> argument = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(argument.capture());
+    verify(delegateService).queueTaskV2(argument.capture());
     TaskData taskData = argument.getValue().getData();
     Object parameters[] = taskData.getParameters();
     assertThat(1).isEqualTo(parameters.length);
@@ -863,7 +863,7 @@ public class AppDynamicsStateTest extends APMStateVerificationTestBase {
     spyAppDynamicsState.triggerAnalysisDataCollection(executionContext, AnalysisContext.builder().build(),
         VerificationStateAnalysisExecutionData.builder().build(), Collections.singletonMap("host", "groupName"));
     ArgumentCaptor<DelegateTask> argument = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(argument.capture());
+    verify(delegateService).queueTaskV2(argument.capture());
     TaskData taskData = argument.getValue().getData();
     Object parameters[] = taskData.getParameters();
     assertThat(1).isEqualTo(parameters.length);

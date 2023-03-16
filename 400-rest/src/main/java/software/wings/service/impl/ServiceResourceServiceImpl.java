@@ -382,7 +382,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
       }
     }
     PageResponse<Service> pageResponse =
-        resourceLookupService.listWithTagFilters(request, tagFilter, EntityType.SERVICE, withTags);
+        resourceLookupService.listWithTagFilters(request, tagFilter, EntityType.SERVICE, withTags, false);
 
     List<Service> services = pageResponse.getResponse();
     if (withServiceCommands) {

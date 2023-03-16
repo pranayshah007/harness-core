@@ -10,11 +10,10 @@ package io.harness.ci.enforcement;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.beans.entities.ExecutionQueueLimit;
-import io.harness.cf.openapi.StringUtil;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.ci.config.ExecutionLimits;
 import io.harness.ci.config.ExecutionLimits.ExecutionLimitSpec;
 import io.harness.ci.execution.QueueExecutionUtils;
-import io.harness.ci.license.CILicenseService;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.repositories.ExecutionQueueLimitRepository;
 
@@ -46,9 +45,10 @@ public class CIBuildEnforcerImpl implements CIBuildEnforcer {
       ExecutionQueueLimit executionQueueLimit = overriddenConfig.get();
       if (StringUtils.isNotEmpty(executionQueueLimit.getTotalExecLimit())) {
         macLimit = Integer.parseInt(executionQueueLimit.getMacExecLimit());
-        totalLimit = Integer.parseInt((executionQueueLimit.getTotalExecLimit()));
+        totalLimit = Integer.parseInt(executionQueueLimit.getTotalExecLimit());
       }
-      log.info("overridden limits for the account: {}, total: {}, mac: {}", accountId, totalLimit, macLimit);
+      log.info("overridden limits for account: {}, total: {}, mac: {}. Current count: total: {}, mac: {}", accountId,
+          totalLimit, macLimit, currExecutionCount, macExecutionsCount);
       return currExecutionCount <= totalLimit && macExecutionsCount <= macLimit;
     }
 
@@ -65,9 +65,11 @@ public class CIBuildEnforcerImpl implements CIBuildEnforcer {
         default:
           executionLimitSpec = executionLimits.getFree();
       }
-
-      return currExecutionCount <= executionLimitSpec.getDefaultTotalExecutionCount()
-          && macExecutionsCount <= executionLimitSpec.getDefaultMacExecutionCount();
+      long defaultTotalExecutionCount = executionLimitSpec.getDefaultTotalExecutionCount();
+      long defaultMacExecutionCount = executionLimitSpec.getDefaultMacExecutionCount();
+      log.info("queue limits for the account: {}, total: {}, mac: {}. Current count: total: {}, mac: {}", accountId,
+          defaultTotalExecutionCount, defaultMacExecutionCount, currExecutionCount, macExecutionsCount);
+      return currExecutionCount <= defaultTotalExecutionCount && macExecutionsCount <= defaultMacExecutionCount;
     }
     // in case of any failures in fetching the license, keeping the default behaviour as allowed
     return true;

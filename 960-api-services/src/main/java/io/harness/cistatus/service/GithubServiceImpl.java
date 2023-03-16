@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Credentials;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpStatus;
 import org.json.JSONObject;
@@ -194,7 +195,7 @@ public class GithubServiceImpl implements GithubService {
     try {
       Response<List<GitPollingWebhookEventMetadata>> response =
           getGithubClient(GithubAppConfig.builder().githubUrl(apiUrl).build())
-              .getWebhookRecentDeliveryEventsIds(getAuthToken(token), repoOwner, repoName, webhookId)
+              .getWebhookRecentDeliveryEventsIds(getBasicAuthHeader(repoOwner, token), repoOwner, repoName, webhookId)
               .execute();
 
       Predicate<GitPollingWebhookEventMetadata> filterHttpStatuses = filterStatusPredicates(delivery
@@ -204,16 +205,19 @@ public class GithubServiceImpl implements GithubService {
       if (response.isSuccessful()) {
         List<GitPollingWebhookEventMetadata> filteredEvents =
             response.body().stream().filter(filterHttpStatuses).collect(Collectors.toList());
-
+        log.info("Received {} webhook metadata filtered events successfully from github. "
+                + "Url {}, repo {} and  webhookId {}",
+            filteredEvents.size(), apiUrl, repoName, webhookId);
         return getWebhookDeliveryFullEvents(filteredEvents, apiUrl, token, repoOwner, repoName, webhookId);
       }
 
-      log.error("Failed to fetch repo events for github url {}, repo {}, webhookId {}, error {} ", apiUrl, repoName,
-          webhookId, response.errorBody());
+      log.error("Failed to fetch webhook metadata events for github url {}, repo {}, webhookId {}, error {} ", apiUrl,
+          repoName, webhookId, response.errorBody());
 
     } catch (Exception e) {
-      log.error(
-          "Failed to fetch repo events for github url {}, webhookId {} and repo {} ", apiUrl, repoName, webhookId, e);
+      log.error("Exception while fetching webhook metadata events from github. "
+              + "Url {}, webhookId {} and repo {} ",
+          apiUrl, webhookId, repoName, e);
     }
     return Collections.emptyList();
   }
@@ -231,7 +235,8 @@ public class GithubServiceImpl implements GithubService {
       try {
         Response<GitHubPollingWebhookEventDelivery> fullWebhookResponse =
             getGithubClient(GithubAppConfig.builder().githubUrl(apiUrl).build())
-                .getWebhookDeliveryId(getAuthToken(token), repoOwner, repoName, webhookId, webhookEvent.getId())
+                .getWebhookDeliveryId(
+                    getBasicAuthHeader(repoOwner, token), repoOwner, repoName, webhookId, webhookEvent.getId())
                 .execute();
         ObjectMapper mapper = new ObjectMapper();
         if (fullWebhookResponse.isSuccessful()) {
@@ -242,19 +247,22 @@ public class GithubServiceImpl implements GithubService {
                           .payload(payload)
                           .deliveryId(fullWebhookResponse.body().getId())
                           .headers(createHeaders(headers))
-
                           .build());
         } else {
-          log.error("Failed to fetch full webhook response github response. Url {}, repo {}, hookId {} and error {} ",
-              apiUrl, repoName, webhookId, fullWebhookResponse.errorBody());
+          log.error("Failed to fetch full webhook event github response. "
+                  + "Url {}, repo {}, hookId {}, deliveryId {}, error {} ",
+              apiUrl, repoName, webhookId, webhookEvent.getId(), fullWebhookResponse.errorBody());
         }
-
       } catch (Exception e) {
-        log.error("Failed to fetch full webhook events for github url {}, hookId {} and repo {} ", apiUrl, webhookId,
-            repoName, e);
+        log.error("Exception while fetching full webhook event from github. "
+                + "Url {}, hookId {}, deliveryId {} and repo {} ",
+            apiUrl, webhookId, webhookEvent.getId(), repoName, e);
       }
     });
 
+    log.info("Total number of full webhook events fetched {}. "
+            + "Url {}, repo {}, hookId {} ",
+        results.size(), apiUrl, repoName, webhookId);
     return results;
   }
 
@@ -322,5 +330,9 @@ public class GithubServiceImpl implements GithubService {
 
   private String getAuthToken(String authToken) {
     return format("Bearer %s", authToken);
+  }
+
+  private String getBasicAuthHeader(String username, String password) {
+    return Credentials.basic(username, password);
   }
 }

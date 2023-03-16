@@ -35,10 +35,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ClassUtils;
 import org.json.JSONException;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -110,9 +112,47 @@ public class RecastOrchestrationUtils {
     return map.put(Recaster.ENCODED_VALUE, newValue);
   }
 
+  /**
+   * This function removes the uuid field and also the keys added by the recaster framework
+   * Currently not being used but can be used if we want to filter uuid and recaster annotation from a given string.
+   */
+  public <T> String pruneRecasterAdditions(T entity) {
+    Map<String, Object> document = recast.toMap(entity);
+    return pruneRecasterAdditions(document);
+  }
+
+  public String pruneRecasterAdditions(Map<String, Object> document) {
+    if (document == null) {
+      return null;
+    }
+    if (document.containsKey(Recaster.RECAST_CLASS_KEY)) {
+      return traverseForRemovingRecasterAdditions(document);
+    }
+    return toJsonInternal(document);
+  }
+
   public <T> String toSimpleJson(T entity) {
     Map<String, Object> document = recast.toMap(entity);
     return toSimpleJson(document);
+  }
+
+  private String traverseForRemovingRecasterAdditions(Map<String, Object> document) {
+    for (Map.Entry<String, Object> entry : document.entrySet()) {
+      if (entry.getKey().equals(Recaster.RECAST_CLASS_KEY)) {
+        continue;
+      }
+      if (entry.getKey().equals(Recaster.ENCODED_VALUE)) {
+        return processEncodedValue(document);
+      }
+      Object obj = checkForRecasterAdditions(entry.getValue());
+      if (!Objects.equals(obj, "{}")) {
+        document.put(entry.getKey(), obj);
+      }
+    }
+    document.remove("uuid");
+    document.remove(Recaster.RECAST_CLASS_KEY);
+
+    return toJsonInternal(document);
   }
 
   public String toSimpleJson(Map<String, Object> document) {
@@ -154,6 +194,28 @@ public class RecastOrchestrationUtils {
       documentList.add(check(currentValue));
     }
     return documentList;
+  }
+
+  private Object checkForRecasterAdditions(Object value) {
+    if (value == null) {
+      return null;
+    }
+    if (value instanceof Map) {
+      Map<String, Object> value1 = (Map<String, Object>) value;
+      if (isParameterField(value1)) {
+        return handleParameterFieldForPruning(value1);
+      }
+      if (value1.containsKey(Recaster.ENCODED_VALUE)) {
+        return handleEncodeValue(value1);
+      }
+      traverseForRemovingRecasterAdditions(value1);
+    } else if (RecastReflectionUtils.implementsInterface(value.getClass(), Iterable.class)) {
+      return traverseIterable((Iterable<Object>) value);
+    } else if (needConversion(value.getClass())) {
+      value = RecastOrchestrationUtils.toMap(value);
+      traverse((Map<String, Object>) value);
+    }
+    return value;
   }
 
   @SuppressWarnings("unchecked")
@@ -208,11 +270,27 @@ public class RecastOrchestrationUtils {
                     .orElse("")));
   }
 
+  private Object handleParameterFieldForPruning(Map<String, Object> value1) {
+    Object obj = handleParameterField(value1);
+    if (obj == null) {
+      return null;
+    }
+    if (obj instanceof String) {
+      return obj;
+    }
+    if (ClassUtils.isPrimitiveOrWrapper(obj.getClass())) {
+      return obj;
+    }
+    Map<String, Object> value = RecastOrchestrationUtils.toMap(obj);
+    traverse(value);
+    return value;
+  }
+
   @SuppressWarnings("unchecked")
   private Object handleParameterField(Map<String, Object> value1) {
     Optional<ParameterDocumentField> parameterDocumentField =
         ParameterDocumentFieldMapper.fromParameterFieldMap(value1);
-    if (!parameterDocumentField.isPresent()) {
+    if (parameterDocumentField.isEmpty()) {
       return null;
     }
     Object jsonFieldValue = parameterDocumentField.get().fetchFinalValue();

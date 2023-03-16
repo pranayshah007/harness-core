@@ -209,7 +209,7 @@ public class AzureVMSSSwitchRoutesState extends State {
             .selectionLogsTrackingEnabled(isSelectionLogsTrackingForTasksEnabled())
             .description("Azure VMSS switch routes task execution")
             .build();
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
     return stateExecutionData;
   }

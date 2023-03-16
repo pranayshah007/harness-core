@@ -344,6 +344,7 @@ public class AzureVaultEncryptor implements VaultEncryptor {
     return KeyVaultAuthenticator.getSecretsClient(azureVaultConfig.getVaultName(),
         KeyVaultAuthenticator.getAzureHttpPipeline(azureVaultConfig.getClientId(), azureVaultConfig.getSecretKey(),
             azureVaultConfig.getTenantId(), azureVaultConfig.getSubscription(),
-            azureVaultConfig.getAzureEnvironmentType()));
+            azureVaultConfig.getAzureEnvironmentType()),
+        azureVaultConfig.getAzureEnvironmentType());
   }
 }

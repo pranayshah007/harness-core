@@ -13,6 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestStoreType;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfig;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.filters.ConnectorRefExtractorHelper;
@@ -91,5 +92,15 @@ public class OciHelmChartConfig implements StoreConfig, Visitable, WithConnector
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, getConnectorReference());
     return connectorRefMap;
+  }
+
+  @Override
+  public void overrideConnectorRef(ParameterField<String> overridingConnectorRef) {
+    if (ParameterField.isNotNull(config)) {
+      OciHelmChartStoreConfig ociStoreConfig = config.getValue().getSpec();
+      if (ociStoreConfig != null && !ParameterField.isNull(overridingConnectorRef)) {
+        ociStoreConfig.overrideConnectorRef(overridingConnectorRef);
+      }
+    }
   }
 }

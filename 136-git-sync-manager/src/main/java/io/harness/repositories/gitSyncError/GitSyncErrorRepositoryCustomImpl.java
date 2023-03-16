@@ -75,7 +75,7 @@ public class GitSyncErrorRepositoryCustomImpl implements GitSyncErrorRepositoryC
   }
 
   @Override
-  public List<GitSyncError> deleteAll(Criteria criteria) {
-    return mongoTemplate.findAllAndRemove(query(criteria), GitSyncError.class);
+  public DeleteResult deleteAll(Criteria criteria) {
+    return mongoTemplate.remove(query(criteria), GitSyncError.class);
   }
 }

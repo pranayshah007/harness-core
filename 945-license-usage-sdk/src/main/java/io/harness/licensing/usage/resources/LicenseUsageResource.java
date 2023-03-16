@@ -14,10 +14,14 @@ import static io.harness.NGCommonEntityConstants.SIZE_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.SORT;
 import static io.harness.NGCommonEntityConstants.SORT_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.TIMESTAMP;
+import static io.harness.filesystem.FileIo.deleteFileIfExists;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.ACTIVE_SERVICES_FILTER_PARAM_MESSAGE;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.ACTIVE_SERVICES_SORT_QUERY_PROPERTIES;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.SERVICE_INSTANCES_QUERY_PROPERTY;
 import static io.harness.licensing.usage.utils.PageableUtils.validateSort;
+
+import static java.lang.String.format;
+import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 
 import io.harness.ModuleType;
 import io.harness.NGCommonEntityConstants;
@@ -44,12 +48,15 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
@@ -61,6 +68,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -165,6 +175,7 @@ public class LicenseUsageResource {
   @POST
   @Path("cd/active-services")
   @ApiOperation(value = "List Active Services in CD Module", nickname = "lisCDActiveServices")
+  @Hidden
   @Operation(operationId = "listCDActiveServices",
       summary =
           "List Active Services with instances, last deployed and licenses consumed details on Account, Organization and Project level",
@@ -189,6 +200,41 @@ public class LicenseUsageResource {
 
     return ResponseDTO.newResponse((Page<ActiveServiceDTO>) licenseUsageInterface.listLicenseUsage(
         accountIdentifier, ModuleType.CD, currentTsInMs, requestParams));
+  }
+
+  @GET
+  @Path("cd/active-services/csv/download")
+  @ApiOperation(value = "Download CSV Active Services report", nickname = "downloadActiveServiceCSVReport")
+  @Operation(operationId = "downloadActiveServiceCSVReport", summary = "Download CSV Active Services report",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Download CSV Active Services report")
+      })
+  @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
+  public Response
+  downloadActiveServiceCSVReport(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                                     ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @QueryParam(TIMESTAMP) @DefaultValue("0") long currentTsInMs) {
+    currentTsInMs = fixOptionalCurrentTs(currentTsInMs);
+    File file = licenseUsageInterface.getLicenseUsageCSVReport(accountIdentifier, ModuleType.CD, currentTsInMs);
+
+    return Response
+        .ok(
+            (StreamingOutput) output
+            -> {
+              Files.copy(file.toPath(), output);
+              deleteFileIfExists(file.getPath());
+            },
+            APPLICATION_OCTET_STREAM)
+        .header(
+            "Content-Disposition", "attachment; filename=" + prepareCSVReportFileName(accountIdentifier, currentTsInMs))
+        .build();
+  }
+
+  @NotNull
+  private String prepareCSVReportFileName(String accountIdentifier, long currentTsInMs) {
+    return format("%s-%s.csv", accountIdentifier, currentTsInMs);
   }
 
   private long fixOptionalCurrentTs(long currentTsMs) {

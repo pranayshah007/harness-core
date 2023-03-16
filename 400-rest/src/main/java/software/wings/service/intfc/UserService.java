@@ -287,6 +287,8 @@ public interface UserService extends OwnedByAccount {
 
   User getUserByEmail(String email, String accountId);
 
+  List<User> getUsersEmails(String accountId);
+
   User getUserWithAcceptedInviteByEmail(String email, String accountId);
 
   UserInvite getUserInviteByEmailAndAccount(String email, String accountId);
@@ -638,7 +640,7 @@ public interface UserService extends OwnedByAccount {
   String saveUserInvite(UserInvite userInvite);
 
   List<User> listUsers(PageRequest pageRequest, String accountId, String searchTerm, Integer offset, Integer pageSize,
-      boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance);
+      boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled);
 
   long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance);
 

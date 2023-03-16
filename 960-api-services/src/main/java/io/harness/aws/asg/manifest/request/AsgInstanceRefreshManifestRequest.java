@@ -15,9 +15,9 @@ import lombok.Getter;
 
 @Getter
 public class AsgInstanceRefreshManifestRequest extends ManifestRequest {
-  public boolean skipMatching;
-  public Integer instanceWarmup;
-  public Integer minimumHealthyPercentage;
+  private boolean skipMatching;
+  private Integer instanceWarmup;
+  private Integer minimumHealthyPercentage;
   @Builder
   public AsgInstanceRefreshManifestRequest(
       List<String> manifests, boolean skipMatching, Integer instanceWarmup, Integer minimumHealthyPercentage) {

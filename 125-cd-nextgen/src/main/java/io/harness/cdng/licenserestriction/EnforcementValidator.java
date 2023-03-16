@@ -14,7 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.PipelineSetupUsageUtils;
-import io.harness.common.EntityReference;
+import io.harness.beans.EntityReference;
 import io.harness.enforcement.beans.metadata.RestrictionMetadataDTO;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;

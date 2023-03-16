@@ -19,6 +19,7 @@ import static io.harness.ngtriggers.Constants.ECR;
 import static io.harness.ngtriggers.Constants.GCR;
 import static io.harness.ngtriggers.Constants.GITHUB_PACKAGES;
 import static io.harness.ngtriggers.Constants.GOOGLE_ARTIFACT_REGISTRY;
+import static io.harness.ngtriggers.Constants.GOOGLE_CLOUD_STORAGE;
 import static io.harness.ngtriggers.Constants.JENKINS;
 import static io.harness.ngtriggers.Constants.NEXUS2_REGISTRY;
 import static io.harness.ngtriggers.Constants.NEXUS3_REGISTRY;
@@ -48,7 +49,8 @@ import java.util.List;
       @JsonSubTypes.Type(value = GarSpec.class, name = GOOGLE_ARTIFACT_REGISTRY),
       @JsonSubTypes.Type(value = GithubPackagesSpec.class, name = GITHUB_PACKAGES),
       @JsonSubTypes.Type(value = AzureArtifactsRegistrySpec.class, name = AZURE_ARTIFACTS),
-      @JsonSubTypes.Type(value = AMIRegistrySpec.class, name = AMI)
+      @JsonSubTypes.Type(value = AMIRegistrySpec.class, name = AMI),
+      @JsonSubTypes.Type(value = GoolgeCloudStorageRegistrySpec.class, name = GOOGLE_CLOUD_STORAGE)
 })
 
 @OwnedBy(PIPELINE)

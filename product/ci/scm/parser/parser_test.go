@@ -83,6 +83,40 @@ func TestAzureParsePRWebhookPRSuccess(t *testing.T) {
 	}
 }
 
+func TestHarnessParsePRWebhookPRSuccess(t *testing.T) {
+	data, _ := os.ReadFile("testdata/harness_pr.json")
+	in := &pb.ParseWebhookRequest{
+		Body: string(data),
+		Header: &pb.Header{
+			Fields: []*pb.Header_Pair{
+				{
+					Key:    "X-Harness-Trigger",
+					Values: []string{"pullreq_created"},
+				},
+			},
+		},
+		Secret:   "",
+		Provider: pb.GitProvider_HARNESS,
+	}
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	got, err := ParseWebhook(context.Background(), in, log.Sugar())
+	assert.Nil(t, err)
+
+	want := &pb.ParseWebhookResponse{}
+	raw, _ := os.ReadFile("testdata/harness_pr.json.golden")
+	jsonErr := jsonpb.UnmarshalString(string(raw), want)
+	if jsonErr != nil {
+		t.Errorf("JSON parsing error%s", jsonErr)
+	}
+
+	if !proto.Equal(got, want) {
+		t.Errorf("Unexpected Results:\n")
+		t.Log("got", got)
+		t.Log("want", want)
+	}
+}
+
 func TestParsePRWebhook_UnknownActionErr(t *testing.T) {
 	raw, _ := os.ReadFile("testdata/pr.json")
 	in := &pb.ParseWebhookRequest{

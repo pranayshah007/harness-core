@@ -233,7 +233,7 @@ public abstract class AbstractAzureAppServiceState extends State {
                       .timeout(TimeUnit.MINUTES.toMillis(GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT))
                       .build())
             .build();
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
     return ExecutionResponse.builder()
         .async(true)
@@ -303,7 +303,7 @@ public abstract class AbstractAzureAppServiceState extends State {
                                                       .build();
     renderDelegateTask(context, delegateTask, stateExecutionContext);
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
     return stateExecutionData;
   }

@@ -15,9 +15,11 @@ import io.harness.cvng.beans.DataCollectionRequestType;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+@Data
 @JsonTypeName("PAGERDUTY_SERVICES")
 @SuperBuilder
 @NoArgsConstructor

@@ -44,12 +44,15 @@ public class ErrorTrackingTemplateDataGenerator
   public static final String EMAIL_LINK_BEGIN = "<a style=\"text-decoration: none; color: #0278D5;\" href=\"";
   public static final String EMAIL_LINK_MIDDLE = "\">";
   public static final String EMAIL_LINK_END = "</a>";
+  public static final String EMAIL_HORIZONTAL_LINE_DIV =
+      "<div style=\"display: inline; border-right: 1px solid #b0b1c3; height: 20px; margin: 0px 16px 0px 16px\"></div>";
 
   @Override
   public Map<String, String> getTemplateData(ProjectParams projectParams, String name, String identifier,
-      String serviceIdentifier, MonitoredServiceCodeErrorCondition condition, Map<String, String> notificationDataMap) {
-    final Map<String, String> templateData =
-        super.getTemplateData(projectParams, name, identifier, serviceIdentifier, condition, notificationDataMap);
+      String serviceIdentifier, String monitoredServiceIdentifier, MonitoredServiceCodeErrorCondition condition,
+      Map<String, String> notificationDataMap) {
+    final Map<String, String> templateData = super.getTemplateData(
+        projectParams, name, identifier, serviceIdentifier, monitoredServiceIdentifier, condition, notificationDataMap);
 
     templateData.putAll(getConditionTemplateVariables(condition));
 
@@ -88,7 +91,7 @@ public class ErrorTrackingTemplateDataGenerator
    * Sets variables from the Monitored Service condition that triggered the notification
    */
   private Map<String, String> getConditionTemplateVariables(MonitoredServiceCodeErrorCondition condition) {
-    // Event status example is "New Event", note for now we are only handling new events
+    // Event status example is "New Events" or "Critical Events"
     String changeEventStatusString = condition.getErrorTrackingEventStatus()
                                          .stream()
                                          .map(ErrorTrackingEventStatus::getDisplayName)

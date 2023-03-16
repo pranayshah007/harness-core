@@ -44,7 +44,6 @@ import io.harness.beans.request.GitFileRequest;
 import io.harness.beans.request.GitFileRequestV2;
 import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.beans.response.GitFileResponse;
-import io.harness.beans.response.ScmGitMetadata;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.constants.Constants;
@@ -428,8 +427,7 @@ public class ScmServiceClientImplTest extends CategoryTest {
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
   public void testGetBatchFile() {
-    doReturn(getGitFileResponse(fileContent, commitId, objectId, filepath, branch,
-                 ScmGitMetadata.builder().repoName(repoName).scmConnector(scmConnector).build()))
+    doReturn(getGitFileResponse(fileContent, commitId, objectId, filepath, branch))
         .when(scmServiceClient)
         .getFile(any(), any(), eq(scmBlockingStub));
     String requestIdentifier = "request-1";
@@ -452,7 +450,6 @@ public class ScmServiceClientImplTest extends CategoryTest {
     assertThat(gitFileResponse.getContent()).isEqualTo(fileContent);
     assertThat(gitFileResponse.getBranch()).isEqualTo(branch);
     assertThat(gitFileResponse.getObjectId()).isEqualTo(objectId);
-    assertThat(gitFileResponse.getScmGitMetadata()).isNotNull();
   }
 
   private GitFileDetails getGitFileDetailsDefault() {
@@ -525,14 +522,13 @@ public class ScmServiceClientImplTest extends CategoryTest {
   }
 
   private GitFileResponse getGitFileResponse(
-      String content, String commitId, String objectId, String filepath, String branch, ScmGitMetadata scmGitMetadata) {
+      String content, String commitId, String objectId, String filepath, String branch) {
     return GitFileResponse.builder()
         .commitId(commitId)
         .content(content)
         .objectId(objectId)
         .filepath(filepath)
         .branch(branch)
-        .scmGitMetadata(scmGitMetadata)
         .build();
   }
 }

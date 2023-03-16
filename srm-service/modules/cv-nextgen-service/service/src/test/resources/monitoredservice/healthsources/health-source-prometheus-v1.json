@@ -1,0 +1,65 @@
+{
+  "name": "prometheus",
+  "identifier": "prometheus",
+  "type": "Prometheus",
+  "spec": {
+    "connectorRef": "account.prometheus_do_not_delete",
+    "metricPacks": [],
+    "metricDefinitions": [
+      {
+        "identifier": "prometheus_metric",
+        "metricName": "Prometheus Metric",
+        "riskProfile": {
+          "category": "Performance",
+          "metricType": "RESP_TIME",
+          "riskCategory": "Performance_ResponseTime",
+          "thresholdTypes": [
+            "ACT_WHEN_HIGHER"
+          ]
+        },
+        "analysis": {
+          "liveMonitoring": {
+            "enabled": true
+          },
+          "deploymentVerification": {
+            "enabled": false
+          },
+          "riskProfile": {
+            "category": "Performance",
+            "metricType": "RESP_TIME",
+            "riskCategory": "Performance_ResponseTime",
+            "thresholdTypes": [
+              "ACT_WHEN_HIGHER"
+            ]
+          }
+        },
+        "sli": {
+          "enabled": true
+        },
+        "query": "count(apiserver_request_total{version=\"v1\",component=\"apiserver\",job=\"kubernetes-apiservers\"})",
+        "groupName": "g1",
+        "prometheusMetric": "apiserver_request_total",
+        "serviceFilter": [
+          {
+            "labelName": "version",
+            "labelValue": "v1"
+          }
+        ],
+        "envFilter": [
+          {
+            "labelName": "component",
+            "labelValue": "apiserver"
+          }
+        ],
+        "additionalFilters": [
+          {
+            "labelName": "job",
+            "labelValue": "kubernetes-apiservers"
+          }
+        ],
+        "aggregation": "count",
+        "isManualQuery": false
+      }
+    ]
+  }
+}

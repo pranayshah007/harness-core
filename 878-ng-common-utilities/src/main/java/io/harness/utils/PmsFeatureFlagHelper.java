@@ -9,45 +9,47 @@ package io.harness.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureFlag;
 import io.harness.beans.FeatureName;
-import io.harness.remote.client.CGRestUtils;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PIPELINE)
 @Slf4j
 @Singleton
 public class PmsFeatureFlagHelper implements PmsFeatureFlagService {
-  @Inject private AccountClient accountClient;
+  @Inject FeatureFlagService featureFlagService;
 
-  private static final int CACHE_EVICTION_TIME_HOUR = 1;
+  private static final int CACHE_EVICTION_TIME_MINUTES = 5;
 
-  private final LoadingCache<String, Set<String>> featureFlagCache =
+  private final LoadingCache<FeatureNameAndAccountId, Boolean> featureFlagCache =
       CacheBuilder.newBuilder()
-          .expireAfterWrite(CACHE_EVICTION_TIME_HOUR, TimeUnit.HOURS)
-          .build(new CacheLoader<String, Set<String>>() {
+          .expireAfterWrite(CACHE_EVICTION_TIME_MINUTES, TimeUnit.MINUTES)
+          .build(new CacheLoader<FeatureNameAndAccountId, Boolean>() {
             @Override
-            public Set<String> load(@org.jetbrains.annotations.NotNull final String accountId) {
-              return listAllEnabledFeatureFlagsForAccount(accountId);
+            public Boolean load(
+                @org.jetbrains.annotations.NotNull final FeatureNameAndAccountId featureNameAndAccountId) {
+              return featureFlagService.isEnabled(
+                  featureNameAndAccountId.getFeatureName(), featureNameAndAccountId.getAccountId());
             }
           });
 
   public boolean isEnabled(String accountId, @NotNull FeatureName featureName) {
     try {
-      return featureFlagCache.get(accountId).contains(featureName.name());
+      return featureFlagCache.get(
+          FeatureNameAndAccountId.builder().accountId(accountId).featureName(featureName).build());
     } catch (Exception e) {
       log.error("Error getting feature flags for given account: " + accountId);
       return false;
@@ -56,37 +58,23 @@ public class PmsFeatureFlagHelper implements PmsFeatureFlagService {
 
   public boolean isEnabled(String accountId, @NotNull String featureName) {
     try {
-      return featureFlagCache.get(accountId).contains(featureName);
+      return featureFlagCache.get(
+          FeatureNameAndAccountId.builder().accountId(accountId).featureName(FeatureName.valueOf(featureName)).build());
     } catch (Exception e) {
       log.error("Error getting feature flags for given account: " + accountId);
       return false;
     }
   }
 
-  private Set<String> listAllEnabledFeatureFlagsForAccount(String accountId) {
-    return CGRestUtils.getResponse(accountClient.listAllFeatureFlagsForAccount(accountId))
-        .stream()
-        .filter(FeatureFlag::isEnabled)
-        .map(FeatureFlag::getName)
-        .collect(Collectors.toSet());
+  public boolean refreshCacheForGivenAccountId(String accountId) throws InvalidRequestException {
+    throw new InvalidRequestException("Cache will be automatically refreshed within 5 mins");
   }
 
-  public void updateCache(String accountId, boolean enable, String featureName) throws ExecutionException {
-    if (!featureFlagCache.asMap().containsKey(accountId)) {
-      return;
-    }
-    if (!enable) {
-      featureFlagCache.get(accountId).remove(featureName);
-    } else {
-      featureFlagCache.get(accountId).add(featureName);
-    }
-  }
-
-  public boolean refreshCacheForGivenAccountId(String accountId) throws ExecutionException {
-    if (!featureFlagCache.asMap().containsKey(accountId)) {
-      return true;
-    }
-    featureFlagCache.refresh(accountId);
-    return true;
+  @Getter
+  @Builder
+  @EqualsAndHashCode
+  static class FeatureNameAndAccountId {
+    String accountId;
+    FeatureName featureName;
   }
 }

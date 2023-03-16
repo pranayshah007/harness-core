@@ -12,7 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//960-api-services/src/main/java/io/harness/artifacts/beans:module",
-        "//970-api-services-beans:module",
+        "//970-api-services-beans/src/main/java/software/wings/helpers/ext/jenkins:module",
         "//980-commons/src/main/java/io/harness/artifact:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
     ],

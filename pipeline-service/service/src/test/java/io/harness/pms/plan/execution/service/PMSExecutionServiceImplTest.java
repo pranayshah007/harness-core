@@ -8,12 +8,16 @@
 package io.harness.pms.plan.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.contracts.interrupts.InterruptType.ABORT_ALL;
 import static io.harness.rule.OwnerRule.DEVESH;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAMARTH;
+import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -22,24 +26,38 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.CategoryTest;
 import io.harness.ModuleType;
-import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.OrchestrationService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
+import io.harness.engine.interrupts.InterruptPackage;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.interrupts.Interrupt;
+import io.harness.pms.contracts.triggers.ManifestData;
+import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.contracts.triggers.Type;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.merger.helpers.InputSetMergeHelper;
+import io.harness.pms.merger.helpers.InputSetTemplateHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
+import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
+import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.UserPrincipal;
 
+import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
 import com.google.common.io.Resources;
 import com.mongodb.BasicDBList;
 import com.mongodb.client.result.UpdateResult;
@@ -54,14 +72,21 @@ import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Assertions;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(PIPELINE)
-public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
+public class PMSExecutionServiceImplTest extends CategoryTest {
   @Mock private PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   @Mock private UpdateResult updateResult;
   @InjectMocks private PMSExecutionServiceImpl pmsExecutionService;
@@ -69,6 +94,7 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
   @Mock private ValidateAndMergeHelper validateAndMergeHelper;
   @Mock private PlanExecutionMetadataService planExecutionMetadataService;
   @Mock private GitSyncSdkService gitSyncSdkService;
+  @Mock OrchestrationService orchestrationService;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -372,5 +398,113 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
     assertThatThrownBy(() -> pmsExecutionService.getExecutionData(planExecutionID))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format("Execution with id [%s] is not present or deleted", planExecutionID));
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetExecutionMetadataDetails() {
+    String planExecutionID = "tempID";
+
+    PlanExecutionMetadata planExecutionMetadata =
+        PlanExecutionMetadata.builder()
+            .yaml(executionYaml)
+            .planExecutionId(planExecutionID)
+            .triggerPayload(TriggerPayload.newBuilder()
+                                .setType(Type.MANIFEST)
+                                .setManifestData(ManifestData.newBuilder().setVersion("1.0").build())
+                                .build())
+            .build();
+
+    doReturn(Optional.of(planExecutionMetadata))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(planExecutionID);
+
+    ExecutionMetaDataResponseDetailsDTO executionData = pmsExecutionService.getExecutionDataDetails(planExecutionID);
+
+    assertThat(executionData.getExecutionYaml()).isEqualTo(planExecutionMetadata.getYaml());
+    assertThat(executionData.getTriggerPayload().getType()).isEqualTo(Type.MANIFEST);
+    assertThat(executionData.getTriggerPayload().getManifestData().getVersion()).isEqualTo("1.0");
+    verify(planExecutionMetadataService, times(1)).findByPlanExecutionId(planExecutionID);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetExecutionMetadataDetailsFailure() {
+    String planExecutionID = "tempID";
+
+    assertThatThrownBy(() -> pmsExecutionService.getExecutionDataDetails(planExecutionID))
+        .isInstanceOf(ResourceNotFoundException.class)
+        .hasMessageContaining(String.format("Execution with id [%s] is not present or deleted", planExecutionID));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetInputSetYamlForRerun() {
+    doReturn(Optional.of(PipelineExecutionSummaryEntity.builder().inputSetYaml("inputSetYaml").build()))
+        .when(pmsExecutionSummaryRepository)
+        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, true);
+    assertEquals("inputSetYaml",
+        pmsExecutionService.getInputSetYamlForRerun(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, false));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testMergeInputSetIntoPipelineForRerun() {
+    doReturn(PipelineEntity.builder().yaml("pipelineYaml").build())
+        .when(validateAndMergeHelper)
+        .getPipelineEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, false);
+    doReturn(Optional.of(PipelineExecutionSummaryEntity.builder().inputSetYaml("inputSetYaml").build()))
+        .when(pmsExecutionSummaryRepository)
+        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, true);
+    MockedStatic<InputSetMergeHelper> aStatic = Mockito.mockStatic(InputSetMergeHelper.class);
+    aStatic.when(() -> InputSetMergeHelper.mergeInputSetIntoPipeline("pipelineTemplate", "inputSetYaml", false))
+        .thenReturn("finalMergedYaml");
+    MockedStatic<InputSetTemplateHelper> bStatic = Mockito.mockStatic(InputSetTemplateHelper.class);
+    bStatic.when(() -> InputSetTemplateHelper.createTemplateFromPipeline("pipelineYaml"))
+        .thenReturn("pipelineTemplate");
+    Assertions.assertEquals("finalMergedYaml",
+        pmsExecutionService.mergeRuntimeInputIntoPipelineForRerun(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, PLAN_EXECUTION_ID, null, null, Collections.emptyList()));
+    bStatic.when(() -> InputSetTemplateHelper.createTemplateFromPipeline("pipelineYaml")).thenReturn("");
+    assertThat(pmsExecutionService.mergeRuntimeInputIntoPipelineForRerun(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                   PIPELINE_IDENTIFIER, PLAN_EXECUTION_ID, null, null, Collections.emptyList()))
+        .isEqualTo("");
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testRegisterInterrupt() {
+    MockedStatic<SecurityContextBuilder> mockedStatic = Mockito.mockStatic(SecurityContextBuilder.class);
+    mockedStatic.when(() -> SecurityContextBuilder.getPrincipal())
+        .thenReturn(new UserPrincipal("name1", "user1@harness.io", "user1", "accountId"));
+    Interrupt interrupt = Interrupt.builder().uuid("uuid").type(ABORT_ALL).planExecutionId("planExecutionId").build();
+    when(orchestrationService.registerInterrupt(any())).thenReturn(interrupt);
+    InterruptDTO interruptDTO = pmsExecutionService.registerInterrupt(
+        PlanExecutionInterruptType.ABORTALL, "planExecutionId", "nodeExecutionId");
+    assertEquals(interruptDTO.getPlanExecutionId(), "planExecutionId");
+    assertEquals(interruptDTO.getId(), "uuid");
+    assertEquals(interruptDTO.getType(), PlanExecutionInterruptType.ABORTALL);
+    ArgumentCaptor<InterruptPackage> interruptPackageArgumentCaptor = ArgumentCaptor.forClass(InterruptPackage.class);
+    verify(orchestrationService, times(1)).registerInterrupt(interruptPackageArgumentCaptor.capture());
+    assertEquals(
+        interruptPackageArgumentCaptor.getValue().getInterruptConfig().getIssuedBy().getManualIssuer().getEmailId(),
+        "user1@harness.io");
+    assertEquals(
+        interruptPackageArgumentCaptor.getValue().getInterruptConfig().getIssuedBy().getManualIssuer().getUserId(),
+        "user1");
+    assertEquals(
+        interruptPackageArgumentCaptor.getValue().getInterruptConfig().getIssuedBy().getManualIssuer().getIdentifier(),
+        "name1");
+    assertEquals(
+        interruptPackageArgumentCaptor.getValue().getInterruptConfig().getIssuedBy().getManualIssuer().getType(),
+        "USER");
   }
 }

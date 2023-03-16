@@ -23,4 +23,8 @@ public class ScmErrorHints {
       "Please check the requested file path<FILEPATH> / branch<BRANCH> / repo name<REPO> if they exist or not.";
   public static final String WRONG_REPO_OR_BRANCH =
       "Please check if the provided branch<BRANCH> or the Bitbucket repo name<REPO> are valid.";
+
+  public static final String RATE_LIMIT = "Please try these out: \n"
+      + "1. Please try and rotate your tokens used for GIT operations.\n"
+      + "2. Please check your rate limits with your BitBucket GIT provider";
 }

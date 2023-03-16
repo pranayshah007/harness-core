@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
@@ -226,6 +228,9 @@ public class JiraResourceServiceImpl implements JiraResourceService {
   }
 
   private List<EncryptedDataDetail> getEncryptionDetails(JiraConnectorDTO jiraConnectorDTO, NGAccess ngAccess) {
+    if (!isNull(jiraConnectorDTO.getAuth()) && !isNull(jiraConnectorDTO.getAuth().getCredentials())) {
+      return secretManagerClientService.getEncryptionDetails(ngAccess, jiraConnectorDTO.getAuth().getCredentials());
+    }
     return secretManagerClientService.getEncryptionDetails(ngAccess, jiraConnectorDTO);
   }
 

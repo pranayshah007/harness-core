@@ -12,12 +12,12 @@ import re
 import requests
 from util import create_dataset, print_, if_tbl_exists, createTable, run_batch_query, COSTAGGREGATED, UNIFIED, \
     CEINTERNALDATASET, update_connector_data_sync_status, GCPCONNECTORINFOTABLE, CURRENCYCONVERSIONFACTORUSERINPUT, \
-    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES
+    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES, send_event
 from calendar import monthrange
 from google.cloud import bigquery
 from google.cloud import secretmanager
 from google.oauth2 import service_account
-from google.auth import impersonated_credentials
+from google.auth import impersonated_credentials, default
 from google.cloud import bigquery_datatransfer_v1
 from google.cloud import pubsub_v1
 from google.cloud import functions_v2
@@ -33,7 +33,9 @@ This is the event when batch ingests:
     "sourceDataSetRegion": "eu",
     "connectorId": "1234",
     "sourceGcpTableName": "gcp_billing_export_v1_01E207_52C4CA_2CF8E2",
-    "triggerHistoricalCostUpdateInPreferredCurrency": "False"
+    "triggerHistoricalCostUpdateInPreferredCurrency": False,
+    "deployMode": "ONPREM" # "SAAS",
+    "useWorkloadIdentity": "False"
 }
 
 Below is the event we send from batch for triggering historical update if required.
@@ -61,7 +63,7 @@ Below is the event when BQ Data Transfer finishes for non us regions
 	'state': 'SUCCEEDED',
 	'updateTime': '2021-08-11T18:57:24.670501Z',
 	'userId': '6106063769767823872'
-}
+} 
 """
 
 PROJECTID = os.environ.get('GCP_PROJECT', 'ccm-play')
@@ -69,14 +71,15 @@ KEY = "CCM_GCP_CREDENTIALS"
 client = bigquery.Client(PROJECTID)
 dt_client = bigquery_datatransfer_v1.DataTransferServiceClient()
 publisher = pubsub_v1.PublisherClient()
+COSTCATEGORIESUPDATETOPIC = os.environ.get('COSTCATEGORIESUPDATETOPIC', 'ccm-bigquery-batch-update')
 GCPCFTOPIC = publisher.topic_path(PROJECTID, os.environ.get('GCPCFTOPIC', 'ce-gcp-billing-cf'))
 GCP_STANDARD_EXPORT_COLUMNS = ["billing_account_id", "usage_start_time", "usage_end_time", "export_time",
                                "cost", "currency", "currency_conversion_rate", "cost_type", "labels",
-                               "system_labels", "tags", "credits", "usage", "invoice", "adjustment_info",
+                               "system_labels", "credits", "usage", "invoice", "adjustment_info",
                                "service", "sku", "project", "location"]
 GCP_DETAILED_EXPORT_COLUMNS = ["billing_account_id", "usage_start_time", "usage_end_time", "export_time",
                                "cost", "currency", "currency_conversion_rate", "cost_type", "labels",
-                               "system_labels", "tags", "credits", "usage", "invoice", "adjustment_info",
+                               "system_labels", "credits", "usage", "invoice", "adjustment_info",
                                "service", "sku", "project", "location", "resource"]
 
 
@@ -103,7 +106,8 @@ def main(event, context):
         gcp_billing_export_bq_table_name = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
         try:
             gcp_billing_export_bq_table = client.get_table(gcp_billing_export_bq_table_name)
-            jsonData["gcpBillingExportTablePartitionColumnName"] = "_PARTITIONTIME" if gcp_billing_export_bq_table.time_partitioning.field is None else gcp_billing_export_bq_table.time_partitioning.field
+            jsonData[
+                "gcpBillingExportTablePartitionColumnName"] = "_PARTITIONTIME" if gcp_billing_export_bq_table.time_partitioning.field is None else gcp_billing_export_bq_table.time_partitioning.field
         except:
             # table doesn't exist yet, use usage_start_time as partition column for new table
             # however, for cross_region_copy, table will always exist
@@ -115,7 +119,7 @@ def main(event, context):
         if jsonData.get("isFreshSync"):
             jsonData["interval"] = '180'
         elif jsonData["ccmPreferredCurrency"]:
-            jsonData["interval"] = str(datetime.datetime.utcnow().date().day-1)
+            jsonData["interval"] = str(datetime.datetime.utcnow().date().day - 1)
         else:
             jsonData["interval"] = '3'
 
@@ -133,6 +137,16 @@ def main(event, context):
         ingest_into_unified(jsonData)
         update_connector_data_sync_status(jsonData, PROJECTID, client)
         ingest_data_to_costagg(jsonData)
+        send_event(publisher.topic_path(PROJECTID, COSTCATEGORIESUPDATETOPIC), {
+            "eventType": "COST_CATEGORY_UPDATE",
+            "message": {
+                "accountId": jsonData["accountId"],
+                "startDate": "%s" % (datetime.datetime.today() - datetime.timedelta(days=int(jsonData["interval"]))).date(),
+                "endDate": "%s" % datetime.datetime.today().date(),
+                "cloudProvider": "GCP",
+                "cloudProviderAccountIds": jsonData["billingAccountIdsList"]
+            }
+        })
         return
     # Set the accountId for GCP logging
     util.ACCOUNTID_LOG = jsonData.get("accountId")
@@ -146,12 +160,14 @@ def main(event, context):
     unifiedTableRef = dataset.table("unifiedTable")
     unifiedTableTableName = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], "unifiedTable")
     currencyConversionFactorUserInputTableRef = dataset.table(CURRENCYCONVERSIONFACTORUSERINPUT)
-    currencyConversionFactorUserInputTableName = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], CURRENCYCONVERSIONFACTORUSERINPUT)
+    currencyConversionFactorUserInputTableName = "%s.%s.%s" % (
+        PROJECTID, jsonData["datasetName"], CURRENCYCONVERSIONFACTORUSERINPUT)
 
     if not if_tbl_exists(client, unifiedTableRef):
         print_("%s table does not exists, creating table..." % unifiedTableRef)
         createTable(client, unifiedTableRef)
     else:
+        # alter_unified_table(jsonData)
         print_("%s table exists" % unifiedTableTableName)
 
     if not if_tbl_exists(client, preAggragatedTableRef):
@@ -187,7 +203,8 @@ def main(event, context):
     gcp_billing_export_bq_table_name = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
     try:
         gcp_billing_export_bq_table = client.get_table(gcp_billing_export_bq_table_name)
-        jsonData["gcpBillingExportTablePartitionColumnName"] = "_PARTITIONTIME" if gcp_billing_export_bq_table.time_partitioning.field is None else gcp_billing_export_bq_table.time_partitioning.field
+        jsonData[
+            "gcpBillingExportTablePartitionColumnName"] = "_PARTITIONTIME" if gcp_billing_export_bq_table.time_partitioning.field is None else gcp_billing_export_bq_table.time_partitioning.field
     except:
         # table doesn't exist yet, use usage_start_time as partition column for new table
         jsonData["gcpBillingExportTablePartitionColumnName"] = "usage_start_time"
@@ -196,6 +213,16 @@ def main(event, context):
     # Sync dataset
     jsonData["isFreshSync"] = isFreshSync(jsonData)
     syncDataset(jsonData)
+    send_event(publisher.topic_path(PROJECTID, COSTCATEGORIESUPDATETOPIC), {
+        "eventType": "COST_CATEGORY_UPDATE",
+        "message": {
+            "accountId": jsonData["accountId"],
+            "startDate": "%s" % (datetime.datetime.today() - datetime.timedelta(days=int(jsonData["interval"]))).date(),
+            "endDate": "%s" % datetime.datetime.today().date(),
+            "cloudProvider": "GCP",
+            "cloudProviderAccountIds": jsonData["billingAccountIdsList"]
+        }
+    })
     print_("Completed")
     return
 
@@ -257,7 +284,8 @@ def trigger_historical_cost_update_in_preferred_currency(jsonData):
             "months": list(historical_update_months),
             "userInputFxRates": custom_factors_dict
         }
-        url = get_cf_v2_uri(f"projects/{PROJECTID}/locations/us-central1/functions/ce-gcp-historical-currency-update-bq-terraform")
+        url = get_cf_v2_uri(
+            f"projects/{PROJECTID}/locations/us-central1/functions/ce-gcp-historical-currency-update-bq-terraform")
         try:
             # Set up metadata server request
             # See https://cloud.google.com/compute/docs/instances/verifying-instance-identity#request_signature
@@ -348,7 +376,7 @@ def insert_currencies_with_unit_conversion_factors_in_bq(jsonData):
            current_timestamp, current_timestamp,
            PROJECTID, jsonData["datasetName"], jsonData["tableName"],
            jsonData["gcpBillingExportTablePartitionColumnName"],
-           str(datetime.datetime.utcnow().date().day-1),
+           str(datetime.datetime.utcnow().date().day - 1),
            date_start, date_end,
            PROJECTID,
            jsonData.get("accountId"),
@@ -383,7 +411,7 @@ def initialize_fx_rates_dict(jsonData):
                 DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY);
                 """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"],
                        jsonData["gcpBillingExportTablePartitionColumnName"],
-                       str(int(jsonData["interval"])+7),
+                       str(int(jsonData["interval"]) + 7),
                        jsonData["interval"])
     try:
         job_config = bigquery.QueryJobConfig(
@@ -424,7 +452,8 @@ def fetch_default_conversion_factors_from_API(jsonData):
         # cdn.jsdelivr.net api returns currency-codes in lowercase
         print_(f"Hitting fxRate API for the month: {billing_month}")
         try:
-            response = requests.get(f"https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/{billing_month}/currencies/usd.json")
+            response = requests.get(
+                f"https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/{billing_month}/currencies/usd.json")
             fx_rates_from_api = response.json()
             if billing_month == date_start:
                 current_fx_rates_from_api = response.json()
@@ -445,13 +474,15 @@ def fetch_default_conversion_factors_from_API(jsonData):
                 # 1 src = (y/x) dest
                 if srcCurrency.upper() in jsonData["fx_rates_srcCcy_to_destCcy"][billing_month]:
                     jsonData["fx_rates_srcCcy_to_destCcy"][billing_month][srcCurrency.upper()] = \
-                        fx_rates_from_api["usd"][jsonData["ccmPreferredCurrency"].lower()] / fx_rates_from_api["usd"][srcCurrency]
+                        fx_rates_from_api["usd"][jsonData["ccmPreferredCurrency"].lower()] / fx_rates_from_api["usd"][
+                            srcCurrency]
             except Exception as e:
                 print_(e, "WARN")
                 print_(f"fxRate for {srcCurrency} to {jsonData['ccmPreferredCurrency']} was not found in API response.")
 
     # update currencyConversionFactorDefault table for current month's currencies
-    currency_pairs_from_api = ", ".join([f"'USD_{srcCurrency.upper()}'" for srcCurrency in current_fx_rates_from_api["usd"]])
+    currency_pairs_from_api = ", ".join(
+        [f"'USD_{srcCurrency.upper()}'" for srcCurrency in current_fx_rates_from_api["usd"]])
     select_query = ""
     for currency in current_fx_rates_from_api["usd"]:
         if currency.upper() not in CURRENCY_LIST:
@@ -521,7 +552,7 @@ def fetch_default_conversion_factors_from_billing_export(jsonData):
                 DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY);
                 """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"],
                        jsonData["gcpBillingExportTablePartitionColumnName"],
-                       str(int(jsonData["interval"])+7),
+                       str(int(jsonData["interval"]) + 7),
                        jsonData["interval"])
     try:
         job_config = bigquery.QueryJobConfig(
@@ -543,8 +574,10 @@ def fetch_default_conversion_factors_from_billing_export(jsonData):
                 "fxRate": 1.0 / float(row.currency_conversion_rate),
                 "billing_month": row.billing_month
             })
-            if row.currency.upper() in jsonData["fx_rates_srcCcy_to_destCcy"] and jsonData["ccmPreferredCurrency"] == "USD":
-                jsonData["fx_rates_srcCcy_to_destCcy"][row.billing_month][row.currency.upper()] = 1.0 / float(row.currency_conversion_rate)
+            if row.currency.upper() in jsonData["fx_rates_srcCcy_to_destCcy"] and jsonData[
+                "ccmPreferredCurrency"] == "USD":
+                jsonData["fx_rates_srcCcy_to_destCcy"][row.billing_month][row.currency.upper()] = 1.0 / float(
+                    row.currency_conversion_rate)
     except Exception as e:
         print_(e)
         print_("Failed to fetch conversion-factors from the BILLING_EXPORT", "WARN")
@@ -552,7 +585,9 @@ def fetch_default_conversion_factors_from_billing_export(jsonData):
     # update currencyConversionFactorDefault table with the conversion factors obtained from billing export
     current_timestamp = datetime.datetime.utcnow()
 
-    currency_pairs_from_billing_export = ", ".join([f"'{row['billing_month']}_{row['sourceCurrency']}_{row['destinationCurrency']}'" for row in fx_rates_from_billing_export])
+    currency_pairs_from_billing_export = ", ".join(
+        [f"'{row['billing_month']}_{row['sourceCurrency']}_{row['destinationCurrency']}'" for row in
+         fx_rates_from_billing_export])
     select_query = ""
     for row in fx_rates_from_billing_export:
         if select_query:
@@ -643,8 +678,10 @@ def fetch_custom_conversion_factors(jsonData):
             query_job = client.query(query)
             results = query_job.result()  # wait for job to complete
             for row in results:
-                if row.sourceCurrency.upper() in jsonData["fx_rates_srcCcy_to_destCcy"][billing_month_start] and row.conversion_type == "CUSTOM":
-                    jsonData["fx_rates_srcCcy_to_destCcy"][billing_month_start][row.sourceCurrency.upper()] = float(row.fx_rate)
+                if row.sourceCurrency.upper() in jsonData["fx_rates_srcCcy_to_destCcy"][
+                    billing_month_start] and row.conversion_type == "CUSTOM":
+                    jsonData["fx_rates_srcCcy_to_destCcy"][billing_month_start][row.sourceCurrency.upper()] = float(
+                        row.fx_rate)
         except Exception as e:
             print_(e)
             print_("Failed to fetch custom conversion-factors for account", "WARN")
@@ -694,7 +731,7 @@ def update_fx_rate_column_in_raw_table(jsonData):
                 AND currency IS NOT NULL;
                 """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"], fx_rate_case_when_query,
                        jsonData["gcpBillingExportTablePartitionColumnName"],
-                       str(int(jsonData["interval"])+7),
+                       str(int(jsonData["interval"]) + 7),
                        jsonData["interval"])
     try:
         job_config = bigquery.QueryJobConfig(
@@ -711,16 +748,25 @@ def update_fx_rate_column_in_raw_table(jsonData):
         query_job.result()  # wait for job to complete
     except Exception as e:
         print_(e)
-        print_("Failed to update fxRateSrcToDest column in raw table %s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"]), "WARN")
+        print_("Failed to update fxRateSrcToDest column in raw table %s.%s.%s" % (
+            PROJECTID, jsonData["datasetName"], jsonData["tableName"]), "WARN")
 
 
 def get_impersonated_credentials(jsonData):
     # Get source credentials
+    if jsonData["deployMode"] == "ONPREM":
+        # Impersonation not required in onprem mode
+        return
+
     target_scopes = [
         'https://www.googleapis.com/auth/cloud-platform']
-    json_acct_info = json.loads(get_secret_key())
-    credentials = service_account.Credentials.from_service_account_info(json_acct_info)
-    source_credentials = credentials.with_scopes(target_scopes)
+    if jsonData["useWorkloadIdentity"] == "True":
+        source_credentials, project = default()
+        # Google ADC
+    else:
+        json_acct_info = json.loads(get_secret_key())
+        credentials = service_account.Credentials.from_service_account_info(json_acct_info)
+        source_credentials = credentials.with_scopes(target_scopes)
 
     # Impersonate to target credentials
     target_credentials = impersonated_credentials.Credentials(
@@ -788,7 +834,8 @@ def syncDataset(jsonData):
             job_config = bigquery.QueryJobConfig(
                 destination=destination,
                 write_disposition=bigquery.job.WriteDisposition.WRITE_TRUNCATE,
-                time_partitioning=bigquery.table.TimePartitioning(field=jsonData["gcpBillingExportTablePartitionColumnName"]),
+                time_partitioning=bigquery.table.TimePartitioning(
+                    field=jsonData["gcpBillingExportTablePartitionColumnName"]),
                 query_parameters=[
                     bigquery.ScalarQueryParameter(
                         "run_date",
@@ -834,7 +881,12 @@ def syncDataset(jsonData):
             ]
         )
 
-    imclient = bigquery.Client(credentials=jsonData["credentials"], project=PROJECTID)
+    if jsonData["deployMode"] == "ONPREM":
+        # Uses Google ADC
+        imclient = bigquery.Client(project=PROJECTID)
+    else:
+        # for SAAS
+        imclient = bigquery.Client(credentials=jsonData["credentials"], project=PROJECTID)
     query_job = imclient.query(query, job_config=job_config)
     try:
         print_(query)
@@ -858,7 +910,7 @@ def syncDataset(jsonData):
     if jsonData.get("isFreshSync"):
         jsonData["interval"] = '180'
     elif jsonData["ccmPreferredCurrency"]:
-        jsonData["interval"] = str(datetime.datetime.utcnow().date().day-1)
+        jsonData["interval"] = str(datetime.datetime.utcnow().date().day - 1)
     else:
         jsonData["interval"] = '3'
     get_unique_billingaccount_id(jsonData)
@@ -882,6 +934,7 @@ def syncDataset(jsonData):
 def doBQTransfer(jsonData):
     print_("Doing bq data transfer operation as the region is not 'US'")
     dtDisplayName = "ccm_gcp_dataset_copy_%s_%s" % (jsonData["accountId"], jsonData["connectorId"])
+
     # Get the full path to your project.
     parent = dt_client.common_project_path(PROJECTID)
     print_("  Supported Data Sources in US region: %s, dt job display name: %s" % (parent, dtDisplayName))
@@ -897,7 +950,12 @@ def doBQTransfer(jsonData):
                 print_("  Existing data transfer name: %s, display name: %s" % (jsonData["dtName"], dtDisplayName))
                 break
 
-    imdt_client = bigquery_datatransfer_v1.DataTransferServiceClient(credentials=jsonData["credentials"])
+    if jsonData["deployMode"] == "ONPREM":
+        # Uses Google ADC
+        imdt_client = bigquery_datatransfer_v1.DataTransferServiceClient()
+    else:
+        imdt_client = bigquery_datatransfer_v1.DataTransferServiceClient(credentials=jsonData["credentials"])
+
     if jsonData.get("dtName") == None:
         # Fresh sync
         print_("  Creating transfer config for the first time")
@@ -915,7 +973,7 @@ def doBQTransfer(jsonData):
                 "source_dataset_id": jsonData["sourceDataSetId"]
             }
         )
-        #print_(transfer_config)
+        # print_(transfer_config)
         resp = imdt_client.create_transfer_config(transfer_config=transfer_config, parent=parent)
         print_("  Created transfer config %s" % resp)
         jsonData["dtName"] = resp.name
@@ -952,7 +1010,8 @@ def prepare_select_query(jsonData, columns_list):
 def ingest_into_gcp_cost_export_table(jsonData):
     # first, create gcp_cost_export table if not exists yet
     dataset = client.dataset(jsonData["datasetName"])
-    intermediary_table_name = jsonData["tableName"].replace("gcp_billing_export", "gcp_cost_export", 1) if jsonData["tableName"].startswith("gcp_billing_export") else f"gcp_cost_export_{jsonData['tableName']}"
+    intermediary_table_name = jsonData["tableName"].replace("gcp_billing_export", "gcp_cost_export", 1) if jsonData[
+        "tableName"].startswith("gcp_billing_export") else f"gcp_cost_export_{jsonData['tableName']}"
     gcpCostExportTableRef = dataset.table(intermediary_table_name)
     gcpCostExportTableTableName = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], intermediary_table_name)
     if not if_tbl_exists(client, gcpCostExportTableRef):
@@ -980,10 +1039,11 @@ def ingest_into_gcp_cost_export_table(jsonData):
                gcpCostExportTableTableName, insert_columns_query,
                select_columns_query,
                ("fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
-               (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData["ccmPreferredCurrency"] else "cast(null as string)"),
+               (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData[
+                   "ccmPreferredCurrency"] else "cast(null as string)"),
                PROJECTID, jsonData["datasetName"], jsonData["tableName"],
                jsonData["gcpBillingExportTablePartitionColumnName"],
-               str(int(jsonData["interval"])+7),
+               str(int(jsonData["interval"]) + 7),
                jsonData["interval"])
 
     job_config = bigquery.QueryJobConfig(
@@ -1049,12 +1109,13 @@ def ingest_into_unified(jsonData):
                 FROM `%s.%s`
                 WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND DATE(usage_start_time) <= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL 1 DAY) AND
                      DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY) ;
-        """ % ( jsonData["datasetName"], jsonData["interval"], jsonData["billingAccountIds"], jsonData["datasetName"],
-                fx_rate_multiplier_query, fx_rate_multiplier_query,
-                ("fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
-                (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData["ccmPreferredCurrency"] else "cast(null as string)"),
-                jsonData["datasetName"], jsonData["tableName"], jsonData["gcpBillingExportTablePartitionColumnName"],
-                str(int(jsonData["interval"])+7), jsonData["interval"])
+        """ % (jsonData["datasetName"], jsonData["interval"], jsonData["billingAccountIds"], jsonData["datasetName"],
+               fx_rate_multiplier_query, fx_rate_multiplier_query,
+               ("fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
+               (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData[
+                   "ccmPreferredCurrency"] else "cast(null as string)"),
+               jsonData["datasetName"], jsonData["tableName"], jsonData["gcpBillingExportTablePartitionColumnName"],
+               str(int(jsonData["interval"]) + 7), jsonData["interval"])
 
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
@@ -1094,9 +1155,10 @@ def ingest_into_preaggregated(jsonData):
         """ % (jsonData["datasetName"], jsonData["interval"], jsonData["billingAccountIds"], jsonData["datasetName"],
                fx_rate_multiplier_query, fx_rate_multiplier_query,
                ("max(fxRateSrcToDest)" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
-               (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData["ccmPreferredCurrency"] else "cast(null as string)"),
+               (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData[
+                   "ccmPreferredCurrency"] else "cast(null as string)"),
                jsonData["datasetName"], jsonData["tableName"], jsonData["gcpBillingExportTablePartitionColumnName"],
-               str(int(jsonData["interval"])+7), jsonData["interval"])
+               str(int(jsonData["interval"]) + 7), jsonData["interval"])
 
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
@@ -1126,7 +1188,7 @@ def get_unique_billingaccount_id(jsonData):
             """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"],
                    jsonData["gcpBillingExportTablePartitionColumnName"])
     # Configure the query job.
-    job_config = bigquery.QueryJobConfig(   
+    job_config = bigquery.QueryJobConfig(
         query_parameters=[
             bigquery.ScalarQueryParameter(
                 "run_date",
@@ -1143,12 +1205,15 @@ def get_unique_billingaccount_id(jsonData):
         for row in results:
             billingAccountIds.append(row.billing_account_id)
         jsonData["billingAccountIds"] = ", ".join(f"'{w}'" for w in billingAccountIds)
+        jsonData["billingAccountIdsList"] = billingAccountIds
     except Exception as e:
         print_(query)
         print_("  Failed to retrieve distinct billingAccountIds", "WARN")
         jsonData["billingAccountIds"] = ""
+        jsonData["billingAccountIdsList"] = []
         raise e
     print_("  Found unique billingAccountIds %s" % jsonData.get("billingAccountIds"))
+
 
 def ingest_data_to_costagg(jsonData):
     ds = "%s.%s" % (PROJECTID, jsonData["datasetName"])
@@ -1161,7 +1226,10 @@ def ingest_data_to_costagg(jsonData):
                 FROM `%s`  
                 WHERE DATE(startTime) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY) and cloudProvider = "GCP" 
                 GROUP BY day;
-     """ % (table_name, jsonData["interval"], jsonData.get("accountId"), table_name, jsonData.get("accountId"), source_table, jsonData["interval"])
+     """ % (
+        table_name, jsonData["interval"], jsonData.get("accountId"), table_name, jsonData.get("accountId"),
+        source_table,
+        jsonData["interval"])
 
     job_config = bigquery.QueryJobConfig(
         priority=bigquery.QueryPriority.BATCH,
@@ -1176,11 +1244,13 @@ def ingest_data_to_costagg(jsonData):
 
     run_batch_query(client, query, job_config, timeout=180)
 
+
 def update_datatransfer_job_config(jsonData):
     query = """INSERT INTO `%s.%s.%s` (accountId, connectorId, dataTransferConfig, createdAt, sourceGcpTableName) 
                 VALUES ('%s', '%s', '%s', '%s', '%s')
-            """ % ( PROJECTID, CEINTERNALDATASET, GCPCONNECTORINFOTABLE,
-                    jsonData["accountId"], jsonData["connectorId"], jsonData["dtName"], datetime.datetime.utcnow(), jsonData["sourceGcpTableName"])
+            """ % (PROJECTID, CEINTERNALDATASET, GCPCONNECTORINFOTABLE,
+                   jsonData["accountId"], jsonData["connectorId"], jsonData["dtName"], datetime.datetime.utcnow(),
+                   jsonData["sourceGcpTableName"])
 
     try:
         print_(query)
@@ -1190,13 +1260,14 @@ def update_datatransfer_job_config(jsonData):
         print_("  Failed to update connector info", "WARN")
         raise e
 
+
 def fetch_acc_from_gcp_conn_info(jsonData):
     # 	'name': 'projects/199539700734/locations/us/transferConfigs/615b6cc0-0000-2807-aed0-001a1143233a/runs/615b6cc2-0000-2807-aed0-001a1143233a',
     dt_name = "/".join(jsonData["name"].split("/")[:-2])
     query = """SELECT accountId, connectorId, sourceGcpTableName FROM `%s.%s.%s` 
                 WHERE dataTransferConfig='%s';
-            """ % ( PROJECTID, CEINTERNALDATASET, GCPCONNECTORINFOTABLE,
-                    dt_name)
+            """ % (PROJECTID, CEINTERNALDATASET, GCPCONNECTORINFOTABLE,
+                   dt_name)
 
     try:
         print_(query)
@@ -1211,3 +1282,20 @@ def fetch_acc_from_gcp_conn_info(jsonData):
     except Exception as e:
         raise e
     print_("retrieved info from gcpConnectrInfoTable")
+
+
+def alter_unified_table(jsonData):
+    print_("Altering unifiedTable Table")
+    ds = "%s.%s" % (PROJECTID, jsonData["datasetName"])
+    query = "ALTER TABLE `%s.unifiedTable` \
+        ADD COLUMN IF NOT EXISTS costCategory ARRAY<STRUCT<costCategoryName STRING, costBucketName STRING>>;" % ds
+
+    try:
+        print_(query)
+        query_job = client.query(query)
+        query_job.result()
+    except Exception as e:
+        # Error Running Alter Query
+        print_(e)
+    else:
+        print_("Finished Altering unifiedTable Table")

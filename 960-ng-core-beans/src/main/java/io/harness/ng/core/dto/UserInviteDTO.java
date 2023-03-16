@@ -34,6 +34,9 @@ public class UserInviteDTO {
   @NotNull private String token;
   @NotNull private String accountId;
   @NotNull private String name;
+  private String familyName;
+  private String givenName;
+  private String externalId;
 
   @Transient @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) @NotNull private String password;
 }

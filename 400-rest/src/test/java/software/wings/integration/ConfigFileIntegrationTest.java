@@ -98,7 +98,7 @@ public class ConfigFileIntegrationTest extends IntegrationTestBase {
     FieldUtils.writeField(configService, "secretManager", secretManager, true);
     loginAdminUser();
     kmsId = KMS_ID;
-    when(delegateProxyFactory.get(anyObject(), any(SyncTaskContext.class))).thenReturn(delegateService);
+    when(delegateProxyFactory.getV2(anyObject(), any(SyncTaskContext.class))).thenReturn(delegateService);
     when(limitCheckerFactory.getInstance(Mockito.any())).thenReturn(mockChecker());
 
     app = appService.save(anApplication().accountId(ACCOUNT_ID).name(APP_NAME + System.currentTimeMillis()).build());

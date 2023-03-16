@@ -11,14 +11,17 @@ import static io.harness.exception.WingsException.USER;
 
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK_NG;
 
-import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceRequest;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResponse;
@@ -45,10 +48,10 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
-import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -64,23 +67,19 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private OutcomeService outcomeService;
   @Inject private AsgStepCommonHelper asgStepCommonHelper;
-  @Inject private AccountService accountService;
-  @Inject private StepHelper stepHelper;
-
+  @Inject private InstanceInfoService instanceInfoService;
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
   }
-
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     // Nothing to validate
   }
-
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<AsgCommandResponse> responseDataSupplier) throws Exception {
-    StepResponse stepResponse = null;
+    StepResponse stepResponse;
     try {
       AsgBlueGreenSwapServiceResponse asgBlueGreenSwapServiceResponse =
           (AsgBlueGreenSwapServiceResponse) responseDataSupplier.get();
@@ -113,25 +112,33 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
 
       AsgBlueGreenSwapServiceOutcome asgBlueGreenSwapServiceOutcome =
           AsgBlueGreenSwapServiceOutcome.builder()
-              .loadBalancer(asgBlueGreenSwapServiceResult.getLoadBalancer())
-              .prodListenerArn(asgBlueGreenSwapServiceResult.getProdListenerArn())
-              .prodListenerRuleArn(asgBlueGreenSwapServiceResult.getProdListenerRuleArn())
-              .prodTargetGroupArnList(asgBlueGreenSwapServiceResult.getProdTargetGroupArnList())
-              .stageListenerArn(asgBlueGreenSwapServiceResult.getStageListenerArn())
-              .stageListenerRuleArn(asgBlueGreenSwapServiceResult.getStageListenerRuleArn())
-              .stageTargetGroupArnList(asgBlueGreenSwapServiceResult.getStageTargetGroupArnList())
+              .trafficShifted(asgBlueGreenSwapServiceResult.isTrafficShifted())
+              .stageAsg(asgBlueGreenSwapServiceResult.getStageAutoScalingGroupContainer())
+              .prodAsg(asgBlueGreenSwapServiceResult.getProdAutoScalingGroupContainer())
               .build();
 
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_BLUE_GREEN_SWAP_SERVICE_OUTCOME,
           asgBlueGreenSwapServiceOutcome, StepOutcomeGroup.STEP.name());
+
+      InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+          ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+      List<ServerInstanceInfo> serverInstanceInfos = asgStepCommonHelper.getServerInstanceInfos(
+          asgBlueGreenSwapServiceResponse, infrastructureOutcome.getInfrastructureKey(),
+          asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance).getRegion());
+
+      StepResponse.StepOutcome stepOutcome =
+          instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
 
       stepResponse = stepResponseBuilder.status(Status.SUCCEEDED)
                          .stepOutcome(StepResponse.StepOutcome.builder()
                                           .name(OutcomeExpressionConstants.OUTPUT)
                                           .outcome(asgBlueGreenSwapServiceOutcome)
                                           .build())
+                         .stepOutcome(stepOutcome)
                          .build();
     }
+
     return stepResponse;
   }
 
@@ -159,27 +166,35 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
     if (!asgBlueGreenPrepareRollbackDataOptional.isFound() || !asgBlueGreenDeployDataOptional.isFound()) {
       throw new InvalidRequestException(ASG_BLUE_GREEN_DEPLOY_STEP_MISSING, USER);
     }
-    /*
-        AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome =
-            (AsgBlueGreenPrepareRollbackDataOutcome) asgBlueGreenPrepareRollbackDataOptional.getOutput();
 
-        AsgBlueGreenDeployDataOutcome asgBlueGreenDeployDataOutcome =
-            (AsgBlueGreenDeployDataOutcome) asgBlueGreenDeployDataOptional.getOutput();
-    */
+    AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome =
+        (AsgBlueGreenPrepareRollbackDataOutcome) asgBlueGreenPrepareRollbackDataOptional.getOutput();
+
+    AsgBlueGreenDeployOutcome asgBlueGreenDeployDataOutcome =
+        (AsgBlueGreenDeployOutcome) asgBlueGreenDeployDataOptional.getOutput();
+
+    // first deploy and skip swapping
+    if (asgBlueGreenPrepareRollbackDataOutcome.getProdAsgName() == null) {
+      return TaskRequest.newBuilder()
+          .setSkipTaskRequest(
+              SkipTaskRequest.newBuilder().setMessage("Skipping swapping services as this is first deployment").build())
+          .build();
+    }
+
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    /*
-        AsgLoadBalancerConfig asgLoadBalancerConfig =
-            AsgLoadBalancerConfig.builder()
-                .loadBalancer(asgBlueGreenPrepareRollbackDataOutcome.getLoadBalancer())
-                .prodListenerArn(asgBlueGreenPrepareRollbackDataOutcome.getProdListenerArn())
-                .prodListenerRuleArn(asgBlueGreenPrepareRollbackDataOutcome.getProdListenerRuleArn())
-                .prodTargetGroupArn(asgBlueGreenPrepareRollbackDataOutcome.getProdTargetGroupArn())
-                .stageListenerArn(asgBlueGreenPrepareRollbackDataOutcome.getStageListenerArn())
-                .stageListenerRuleArn(asgBlueGreenPrepareRollbackDataOutcome.getStageListenerRuleArn())
-                .stageTargetGroupArn(asgBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArn())
-                .build();
-    */
+
+    AsgLoadBalancerConfig asgLoadBalancerConfig =
+        AsgLoadBalancerConfig.builder()
+            .loadBalancer(asgBlueGreenPrepareRollbackDataOutcome.getLoadBalancer())
+            .prodListenerArn(asgBlueGreenPrepareRollbackDataOutcome.getProdListenerArn())
+            .prodListenerRuleArn(asgBlueGreenPrepareRollbackDataOutcome.getProdListenerRuleArn())
+            .prodTargetGroupArnsList(asgBlueGreenPrepareRollbackDataOutcome.getProdTargetGroupArnsList())
+            .stageListenerArn(asgBlueGreenPrepareRollbackDataOutcome.getStageListenerArn())
+            .stageListenerRuleArn(asgBlueGreenPrepareRollbackDataOutcome.getStageListenerRuleArn())
+            .stageTargetGroupArnsList(asgBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArnsList())
+            .build();
+
     AsgBlueGreenSwapServiceRequest asgBlueGreenSwapServiceRequest =
         AsgBlueGreenSwapServiceRequest.builder()
             .accountId(accountId)
@@ -187,11 +202,11 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-            //.asgLoadBalancerConfig(asgLoadBalancerConfig)
-            //.oldServiceName(asgBlueGreenPrepareRollbackDataOutcome.getServiceName())
-            //.newServiceName(asgBlueGreenDeployDataOutcome.getServiceName())
-            .downsizeOldAsg(asgBlueGreenSwapServiceStepParameters.getDownsizeOldAsg().getValue() != null
-                && asgBlueGreenSwapServiceStepParameters.getDownsizeOldAsg().getValue())
+            .asgLoadBalancerConfig(asgLoadBalancerConfig)
+            .prodAsgName(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgName())
+            .stageAsgName(asgBlueGreenDeployDataOutcome.getStageAsg().getAutoScalingGroupName())
+            .downsizeOldAsg(ParameterFieldHelper.getBooleanParameterFieldValue(
+                asgBlueGreenSwapServiceStepParameters.getDownsizeOldAsg()))
             .build();
 
     return asgStepCommonHelper
@@ -199,11 +214,5 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
             AsgExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
             AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK_NG)
         .getTaskRequest();
-  }
-
-  private TaskRequest skipTaskRequest(Ambiance ambiance, String message) {
-    return TaskRequest.newBuilder()
-        .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(message).build())
-        .build();
   }
 }

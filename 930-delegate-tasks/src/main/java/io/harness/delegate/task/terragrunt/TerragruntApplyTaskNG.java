@@ -111,7 +111,8 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
   }
 
   private TerragruntApplyTaskResponse runApplyTask(TerragruntApplyTaskParameters applyTaskParameters,
-      CommandUnitsProgress commandUnitsProgress, LogCallback applyLogCallback, String baseDir) throws IOException {
+      CommandUnitsProgress commandUnitsProgress, LogCallback applyLogCallback, String baseDir)
+      throws IOException, InterruptedException {
     try (PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
       taskService.decryptTaskParameters(applyTaskParameters);
 

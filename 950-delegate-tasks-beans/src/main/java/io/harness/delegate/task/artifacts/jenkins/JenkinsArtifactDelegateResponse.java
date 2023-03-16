@@ -35,4 +35,10 @@ public class JenkinsArtifactDelegateResponse extends ArtifactDelegateResponse {
     this.jobName = jobName;
     this.artifactPath = artifactPath;
   }
+
+  @Override
+  public String describe() {
+    return "type: " + (getSourceType() != null ? getSourceType().getDisplayName() : null) + "\njobName: " + getJobName()
+        + "\nartifactPath: " + getArtifactPath() + "\nbuild: " + getBuild();
+  }
 }

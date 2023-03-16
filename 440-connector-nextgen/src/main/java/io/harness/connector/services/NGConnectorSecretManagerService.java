@@ -35,4 +35,6 @@ public interface NGConnectorSecretManagerService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 
   void resetHeartBeatTask(String accountId, String taskId);
+
+  SecretManagerConfigDTO getLocalConfigDTO(String accountIdentifier);
 }

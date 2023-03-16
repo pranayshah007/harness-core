@@ -34,6 +34,6 @@ public class AsgBlueGreenRollbackBaseStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @JsonIgnore String asgBlueGreenDeplyFnq;
+  @JsonIgnore String asgBlueGreenDeployFnq;
   @JsonIgnore String asgBlueGreenSwapServiceFnq;
 }

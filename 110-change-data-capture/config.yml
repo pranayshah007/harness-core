@@ -38,6 +38,8 @@ harness-mongo:
   indexManagerMode: MANUAL
   aliasDBName: harness
 
+changeStreamBatchSize: 5000
+
 events-mongo:
   uri: mongodb://localhost:27017/events
   socketTimeout: 360000

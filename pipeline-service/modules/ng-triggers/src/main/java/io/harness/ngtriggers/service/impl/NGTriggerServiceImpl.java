@@ -18,6 +18,7 @@ import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
+import static io.harness.ngtriggers.beans.source.YamlFields.PIPELINE_BRANCH_NAME;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 
 import static java.util.Collections.emptyList;
@@ -42,6 +43,7 @@ import io.harness.exception.InvalidYamlException;
 import io.harness.exception.TriggerException;
 import io.harness.exception.ngexception.NGPipelineNotFoundException;
 import io.harness.expression.common.ExpressionConstants;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.network.SafeHttpCall;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
@@ -61,8 +63,10 @@ import io.harness.ngtriggers.beans.entity.metadata.status.PollingSubscriptionSta
 import io.harness.ngtriggers.beans.entity.metadata.status.StatusResult;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.ValidationStatus;
+import io.harness.ngtriggers.beans.source.GitMoveOperationType;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
+import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.ngtriggers.beans.source.artifact.BuildAware;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
@@ -71,7 +75,6 @@ import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.events.TriggerCreateEvent;
 import io.harness.ngtriggers.events.TriggerDeleteEvent;
 import io.harness.ngtriggers.events.TriggerUpdateEvent;
-import io.harness.ngtriggers.exceptions.InvalidTriggerYamlException;
 import io.harness.ngtriggers.helpers.TriggerCatalogHelper;
 import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
@@ -83,13 +86,13 @@ import io.harness.ngtriggers.validations.TriggerValidationHandler;
 import io.harness.ngtriggers.validations.ValidationResult;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pipeline.remote.PipelineServiceClient;
-import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
-import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
-import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
+import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.rbac.PipelineRbacPermissions;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.polling.contracts.PollingItem;
@@ -115,12 +118,15 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -147,6 +153,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   public static final int WEBHOOK_POLLING_UNSUBSCRIBE = 0;
   public static final int WEBHOOOk_POLLING_MIN_INTERVAL = 2;
   public static final int WEBHOOOk_POLLING_MAX_INTERVAL = 60;
+  private static final long MIN_INTERVAL_MINUTES = 5;
 
   private final AccessControlClient accessControlClient;
   private final NGSettingsClient settingsClient;
@@ -160,7 +167,6 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   private final ExecutorService executorService;
   private final KryoSerializer kryoSerializer;
   private final PipelineServiceClient pipelineServiceClient;
-  private final BuildTriggerHelper buildTriggerHelper;
   private final TriggerCatalogHelper triggerCatalogHelper;
   private final PollingResourceClient pollingResourceClient;
   private final NGTriggerElementMapper ngTriggerElementMapper;
@@ -168,7 +174,6 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   private final PmsFeatureFlagService pmsFeatureFlagService;
   private final BuildTriggerHelper validationHelper;
-  private static final String PIPELINE = "pipeline";
   private static final String TRIGGER = "trigger";
   private static final String INPUT_YAML = "inputYaml";
 
@@ -650,13 +655,6 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       throw new InvalidArgumentsException("Name can not be empty");
     }
 
-    if (isNotEmpty(triggerDetails.getNgTriggerConfigV2().getInputYaml())) {
-      Map<String, Map<String, String>> errorMap = validatePipelineRef(triggerDetails);
-      if (!CollectionUtils.isEmpty(errorMap)) {
-        throw new InvalidTriggerYamlException("Invalid Yaml", errorMap, triggerDetails, null);
-      }
-    }
-
     NGTriggerSourceV2 triggerSource = triggerDetails.getNgTriggerConfigV2().getSource();
     NGTriggerSpecV2 spec = triggerSource.getSpec();
     switch (triggerSource.getType()) {
@@ -690,9 +688,18 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         CronParser cronParser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX));
         Cron cron = cronParser.parse(cronTriggerSpec.getExpression());
         ExecutionTime executionTime = ExecutionTime.forCron(cron);
-        Optional<ZonedDateTime> nextTime = executionTime.nextExecution(ZonedDateTime.now());
-        if (!nextTime.isPresent()) {
+        Optional<ZonedDateTime> firstExecutionTimeOptional = executionTime.nextExecution(ZonedDateTime.now());
+        if (!firstExecutionTimeOptional.isPresent()) {
           throw new InvalidArgumentsException("cannot find iteration time!");
+        }
+        ZonedDateTime firstExecutionTime = firstExecutionTimeOptional.get();
+        Optional<ZonedDateTime> secondExecutionTimeOptional = executionTime.nextExecution(firstExecutionTime);
+        if (secondExecutionTimeOptional.isPresent()) {
+          ZonedDateTime secondExecutionTime = secondExecutionTimeOptional.get();
+          if (Duration.between(firstExecutionTime, secondExecutionTime).getSeconds() < MIN_INTERVAL_MINUTES * 60) {
+            throw new InvalidArgumentsException(
+                "Cron interval must be greater than or equal to " + MIN_INTERVAL_MINUTES + " minutes.");
+          }
         }
         return;
       case MANIFEST:
@@ -709,66 +716,14 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   @Override
-  public void validateInputSets(TriggerDetails triggerDetails) {
-    MergeInputSetResponseDTOPMS mergeInputSetResponseDTOPMS = validateInputSetsInternal(triggerDetails);
-    if (mergeInputSetResponseDTOPMS != null
-        && (mergeInputSetResponseDTOPMS.isErrorResponse()
-            || mergeInputSetResponseDTOPMS.getInputSetErrorWrapper() != null)) {
-      InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS = mergeInputSetResponseDTOPMS.getInputSetErrorWrapper();
-
-      Map<String, Map<String, String>> errorMap = generateErrorMap(inputSetErrorWrapperDTOPMS);
-      throw new InvalidTriggerYamlException("Invalid Yaml", errorMap, triggerDetails, null);
-    }
-  }
-
-  public MergeInputSetResponseDTOPMS validateInputSetsInternal(TriggerDetails triggerDetails) {
+  public void validatePipelineRef(TriggerDetails triggerDetails) {
     if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
-      Map<String, Map<String, String>> errorMap = validatePipelineRef(triggerDetails);
-      if (!CollectionUtils.isEmpty(errorMap)) {
-        throw new InvalidTriggerYamlException("Invalid Yaml", errorMap, triggerDetails, null);
-      }
-      return null;
-    } else {
-      NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
-      if (isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
-        return null;
-      }
-      NGTriggerConfigV2 triggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerEntity);
-      String pipelineBranch = triggerConfigV2.getPipelineBranchName();
-      String branch = null;
-      if (isNotEmpty(pipelineBranch) && !isBranchExpr(pipelineBranch)) {
-        branch = pipelineBranch;
-      }
-      List<String> inputSetRefs = triggerConfigV2.getInputSetRefs();
-      return NGRestUtils.getResponse(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
-          ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
-          ngTriggerEntity.getTargetIdentifier(), branch,
-          MergeInputSetRequestDTOPMS.builder().inputSetReferences(inputSetRefs).build()));
-    }
-  }
-
-  @Override
-  public Map<String, Map<String, String>> validatePipelineRef(TriggerDetails triggerDetails) {
-    Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineForTrigger(triggerDetails);
-    Map<String, Map<String, String>> errorMap = new HashMap<>();
-    if (pipelineYmlOptional.isPresent()) {
-      String pipelineYaml = pipelineYmlOptional.get();
-      String templateYaml = createRuntimeInputForm(pipelineYaml);
-      String triggerYaml = triggerDetails.getNgTriggerEntity().getYaml();
-      String triggerPipelineYml = getPipelineComponent(triggerYaml);
-      Map<FQN, String> invalidFQNs = getInvalidFQNsInTrigger(templateYaml, triggerPipelineYml);
-      if (isEmpty(invalidFQNs)) {
-        return errorMap;
-      }
-
-      for (Map.Entry<FQN, String> entry : invalidFQNs.entrySet()) {
-        Map<String, String> innerMap = new HashMap<>();
-        innerMap.put("fieldName", entry.getKey().getFieldName());
-        innerMap.put("message", entry.getValue());
-        errorMap.put(entry.getKey().getExpressionFqn(), innerMap);
+      PMSPipelineResponseDTO pipelineResponse = validationHelper.fetchPipelineForTrigger(triggerDetails);
+      if (pipelineResponse != null && pipelineResponse.getStoreType() == StoreType.REMOTE
+          && isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
+        throw new InvalidRequestException("pipelineBranchName is missing or is empty.");
       }
     }
-    return errorMap;
   }
 
   private String getPipelineComponent(String triggerYml) {
@@ -810,7 +765,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
 
-  public Map<FQN, String> getInvalidFQNsInTrigger(String templateYaml, String triggerPipelineCompYaml) {
+  public Map<FQN, String> getInvalidFQNsInTrigger(
+      String templateYaml, String triggerPipelineCompYaml, String accountIdentifier) {
     Map<FQN, String> errorMap = new LinkedHashMap<>();
     YamlConfig triggerConfig = new YamlConfig(triggerPipelineCompYaml);
     Set<FQN> triggerFQNs = new LinkedHashSet<>(triggerConfig.getFqnToValueMap().keySet());
@@ -995,11 +951,6 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   @Override
-  public Map<String, Map<String, String>> generateErrorMap(InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS) {
-    return buildTriggerHelper.generateErrorMap(inputSetErrorWrapperDTOPMS);
-  }
-
-  @Override
   public TriggerDetails fetchTriggerEntity(String accountId, String orgId, String projectId, String pipelineId,
       String triggerId, String newYaml, boolean withServiceV2) {
     NGTriggerConfigV2 config = ngTriggerElementMapper.toTriggerConfigV2(newYaml);
@@ -1110,7 +1061,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       // No reconciliation can be done at trigger level if it is for remote pipeline or if it is using input sets
       newTriggerYaml = triggerYaml;
     } else {
-      Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineForTrigger(triggerDetails);
+      Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineYamlForTrigger(triggerDetails);
       if (pipelineYmlOptional.isPresent()) {
         String pipelineYaml = pipelineYmlOptional.get();
         String templateYaml = createRuntimeInputForm(pipelineYaml);
@@ -1123,5 +1074,44 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       }
     }
     return TriggerYamlDiffDTO.builder().oldYAML(triggerYaml).newYAML(newTriggerYaml).build();
+  }
+
+  public TriggerUpdateCount updateBranchName(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String targetIdentifier, GitMoveOperationType operationType, String pipelineBranchName) {
+    Optional<List<NGTriggerEntity>> listOfTriggers =
+        ngTriggerRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndDeletedNot(
+            accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, true);
+    List<NGTriggerEntity> listOfUpdatedTriggers = new ArrayList<>();
+    long failedYamlUpdateCount = 0;
+    if (listOfTriggers.isPresent()) {
+      for (NGTriggerEntity triggerEntity : listOfTriggers.get()) {
+        try {
+          YamlField yamlField = YamlUtils.readTree(triggerEntity.getYaml());
+          YamlNode triggerNode = yamlField.getNode().getField("trigger").getNode();
+          if (Objects.equals(operationType, GitMoveOperationType.INLINE_TO_REMOTE)) {
+            ((ObjectNode) triggerNode.getCurrJsonNode()).put(PIPELINE_BRANCH_NAME, pipelineBranchName);
+          } else if (Objects.equals(operationType, GitMoveOperationType.REMOTE_TO_INLINE)) {
+            ((ObjectNode) triggerNode.getCurrJsonNode()).remove(PIPELINE_BRANCH_NAME);
+          }
+          String updateYml = YamlUtils.writeYamlString(yamlField);
+          triggerEntity.setYaml(updateYml);
+          listOfUpdatedTriggers.add(triggerEntity);
+        } catch (Exception e) {
+          failedYamlUpdateCount++;
+          log.error(
+              "Error performing updateBranchName operation on trigger: " + TriggerHelper.getTriggerRef(triggerEntity),
+              e);
+        }
+      }
+
+      TriggerUpdateCount updateTriggerYamlResult = ngTriggerRepository.updateTriggerYaml(listOfUpdatedTriggers);
+      return TriggerUpdateCount.builder()
+          .failureCount(updateTriggerYamlResult.getFailureCount() + failedYamlUpdateCount)
+          .successCount(updateTriggerYamlResult.getSuccessCount())
+          .build();
+    } else {
+      log.info("No non-deleted Trigger found to update pipelineBranchName");
+      return TriggerUpdateCount.builder().successCount(0).failureCount(0).build();
+    }
   }
 }

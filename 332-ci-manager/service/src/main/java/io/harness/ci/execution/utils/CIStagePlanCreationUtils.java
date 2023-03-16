@@ -7,10 +7,10 @@
 
 package io.harness.ci.utils;
 
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.execution.CIAccountExecutionMetadata;
-import io.harness.ci.license.CILicenseService;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.licensing.Edition;
@@ -40,9 +40,10 @@ public class CIStagePlanCreationUtils {
     stageBuilder.name(stageNode.getName());
     stageBuilder.identifier(stageNode.getIdentifier());
     stageBuilder.description(SdkCoreStepUtils.getParameterFieldHandleValueNull(stageNode.getDescription()));
-    stageBuilder.failureStrategies(stageNode.getFailureStrategies());
+    stageBuilder.failureStrategies(
+        stageNode.getFailureStrategies() != null ? stageNode.getFailureStrategies().getValue() : null);
     stageBuilder.skipCondition(stageNode.getSkipCondition());
-    stageBuilder.when(stageNode.getWhen());
+    stageBuilder.when(stageNode.getWhen() != null ? stageNode.getWhen().getValue() : null);
     stageBuilder.type(stageNode.getType());
     stageBuilder.uuid(stageNode.getUuid());
     stageBuilder.variables(

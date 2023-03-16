@@ -9,17 +9,22 @@ package io.harness.pms.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.pms.merger.YamlConfig;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -33,13 +38,18 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(PIPELINE)
 public class YamlUtilsTest extends CategoryTest {
   private static String EXPECTED_YAML_WITHOUT_RUNTIME_INPUTS = "pipeline:\n"
-      + "  name: \"Manager Service Deployment\"\n"
       + "  identifier: \"managerServiceDeployment\"\n"
+      + "  name: \"Manager Service Deployment\"\n"
+      + "  variables:\n"
+      + "  - name: \"v1\"\n"
+      + "    type: \"Number\"\n"
+      + "    default: 1\n"
+      + "    value: \"<+input>\"\n"
       + "  stages:\n"
       + "  - stage:\n"
       + "      identifier: \"qaStage\"\n"
-      + "      name: \"qa stage\"\n"
       + "      type: \"Deployment\"\n"
+      + "      name: \"qa stage\"\n"
       + "      spec:\n"
       + "        service:\n"
       + "          identifier: \"manager\"\n"
@@ -82,9 +92,9 @@ public class YamlUtilsTest extends CategoryTest {
       + "                      - \"test/qa/values_1.yaml\"\n"
       + "        infrastructure:\n"
       + "          environment:\n"
-      + "            name: null\n"
       + "            identifier: \"stagingInfra\"\n"
       + "            type: \"PreProduction\"\n"
+      + "            name: null\n"
       + "            tags:\n"
       + "              cloud: \"AWS\"\n"
       + "              team: \"cdp\"\n"
@@ -97,16 +107,16 @@ public class YamlUtilsTest extends CategoryTest {
       + "        execution:\n"
       + "          steps:\n"
       + "          - step:\n"
-      + "              name: \"Rollout Deployment\"\n"
       + "              identifier: \"rolloutDeployment\"\n"
       + "              type: \"K8sRollingDeploy\"\n"
+      + "              name: \"Rollout Deployment\"\n"
       + "              spec:\n"
       + "                timeout: 120000\n"
       + "                skipDryRun: false\n"
       + "          - step:\n"
-      + "              name: \"http\"\n"
       + "              identifier: \"http\"\n"
       + "              type: \"Http\"\n"
+      + "              name: \"http\"\n"
       + "              spec:\n"
       + "                socketTimeoutMillis: 1000\n"
       + "                method: \"GET\"\n"
@@ -118,29 +128,29 @@ public class YamlUtilsTest extends CategoryTest {
       + "                executeOnDelegate: true\n"
       + "                connectionType: \"SSH\"\n"
       + "                scriptType: \"BASH\"\n"
-      + "                scriptString: \"echo 'I should not execute'\\n\"\n"
+      + "                scriptString: \"echo 'I should not execute'\"\n"
       + "          - parallel:\n"
       + "            - step:\n"
-      + "                name: \"http step 13\"\n"
       + "                identifier: \"http-step-13\"\n"
       + "                type: \"http\"\n"
+      + "                name: \"http step 13\"\n"
       + "                spec:\n"
       + "                  socketTimeoutMillis: 1000\n"
       + "                  method: \"GET\"\n"
       + "                  url: \"http://localhost:8080/temp-13.json\"\n"
       + "            - step:\n"
-      + "                name: \"http step 14\"\n"
       + "                identifier: \"http-step-14\"\n"
       + "                type: \"http\"\n"
+      + "                name: \"http step 14\"\n"
       + "                spec:\n"
       + "                  socketTimeoutMillis: 1000\n"
       + "                  method: \"GET\"\n"
       + "                  url: \"http://localhost:8080/temp-14.json\"\n"
       + "          rollbackSteps:\n"
       + "          - step:\n"
-      + "              name: \"Rollback Rollout Deployment\"\n"
       + "              identifier: \"rollbackRolloutDeployment\"\n"
       + "              type: \"K8sRollingRollback\"\n"
+      + "              name: \"Rollback Rollout Deployment\"\n"
       + "              spec:\n"
       + "                timeout: 120000\n"
       + "          - step:\n"
@@ -150,11 +160,11 @@ public class YamlUtilsTest extends CategoryTest {
       + "                executeOnDelegate: true\n"
       + "                connectionType: \"SSH\"\n"
       + "                scriptType: \"BASH\"\n"
-      + "                scriptString: \"echo 'I should be executed during rollback'\\n\"\n"
+      + "                scriptString: \"echo 'I should be executed during rollback'\"\n"
       + "  - stage:\n"
       + "      identifier: \"prodStage\"\n"
-      + "      name: \"prod stage\"\n"
       + "      type: \"Deployment\"\n"
+      + "      name: \"prod stage\"\n"
       + "      spec:\n"
       + "        service:\n"
       + "          identifier: \"manager\"\n"
@@ -197,9 +207,9 @@ public class YamlUtilsTest extends CategoryTest {
       + "                      - \"test/prod/values.yaml\"\n"
       + "        infrastructure:\n"
       + "          environment:\n"
-      + "            name: null\n"
       + "            identifier: \"stagingInfra\"\n"
       + "            type: \"PreProduction\"\n"
+      + "            name: null\n"
       + "            tags:\n"
       + "            - key: \"cloud\"\n"
       + "              value: \"AWS\"\n"
@@ -214,17 +224,17 @@ public class YamlUtilsTest extends CategoryTest {
       + "        execution:\n"
       + "          steps:\n"
       + "          - step:\n"
-      + "              name: \"Rollout Deployment\"\n"
       + "              identifier: \"rolloutDeployment\"\n"
       + "              type: \"K8sRollingDeploy\"\n"
+      + "              name: \"Rollout Deployment\"\n"
       + "              spec:\n"
       + "                timeout: 120000\n"
       + "                skipDryRun: false\n"
       + "  - parallel:\n"
       + "    - stage:\n"
       + "        identifier: \"parallelStage1\"\n"
-      + "        name: \"parallelStage1\"\n"
       + "        type: \"Deployment\"\n"
+      + "        name: \"parallelStage1\"\n"
       + "        spec:\n"
       + "          service:\n"
       + "            identifier: \"manager\"\n"
@@ -267,9 +277,9 @@ public class YamlUtilsTest extends CategoryTest {
       + "                        - \"test/qa/values_1.yaml\"\n"
       + "          infrastructure:\n"
       + "            environment:\n"
-      + "              name: null\n"
       + "              identifier: \"stagingInfra\"\n"
       + "              type: \"PreProduction\"\n"
+      + "              name: null\n"
       + "              tags:\n"
       + "                cloud: \"AWS\"\n"
       + "                team: \"cdp\"\n"
@@ -282,16 +292,16 @@ public class YamlUtilsTest extends CategoryTest {
       + "          execution:\n"
       + "            steps:\n"
       + "            - step:\n"
-      + "                name: \"Rollout Deployment\"\n"
       + "                identifier: \"rolloutDeployment\"\n"
       + "                type: \"K8sRollingDeploy\"\n"
+      + "                name: \"Rollout Deployment\"\n"
       + "                spec:\n"
       + "                  timeout: 120000\n"
       + "                  skipDryRun: false\n"
       + "            - step:\n"
-      + "                name: \"http\"\n"
       + "                identifier: \"http\"\n"
       + "                type: \"Http\"\n"
+      + "                name: \"http\"\n"
       + "                spec:\n"
       + "                  socketTimeoutMillis: 1000\n"
       + "                  method: \"GET\"\n"
@@ -303,29 +313,29 @@ public class YamlUtilsTest extends CategoryTest {
       + "                  executeOnDelegate: true\n"
       + "                  connectionType: \"SSH\"\n"
       + "                  scriptType: \"BASH\"\n"
-      + "                  scriptString: \"echo 'I should not execute'\\n\"\n"
+      + "                  scriptString: \"echo 'I should not execute'\"\n"
       + "            - parallel:\n"
       + "              - step:\n"
-      + "                  name: \"http step 13\"\n"
       + "                  identifier: \"http-step-13\"\n"
       + "                  type: \"http\"\n"
+      + "                  name: \"http step 13\"\n"
       + "                  spec:\n"
       + "                    socketTimeoutMillis: 1000\n"
       + "                    method: \"GET\"\n"
       + "                    url: \"http://localhost:8080/temp-13.json\"\n"
       + "              - step:\n"
-      + "                  name: \"http step 14\"\n"
       + "                  identifier: \"http-step-14\"\n"
       + "                  type: \"http\"\n"
+      + "                  name: \"http step 14\"\n"
       + "                  spec:\n"
       + "                    socketTimeoutMillis: 1000\n"
       + "                    method: \"GET\"\n"
       + "                    url: \"http://localhost:8080/temp-14.json\"\n"
       + "            rollbackSteps:\n"
       + "            - step:\n"
-      + "                name: \"Rollback Rollout Deployment\"\n"
       + "                identifier: \"rollbackRolloutDeployment\"\n"
       + "                type: \"K8sRollingRollback\"\n"
+      + "                name: \"Rollback Rollout Deployment\"\n"
       + "                spec:\n"
       + "                  timeout: 120000\n"
       + "            - step:\n"
@@ -335,11 +345,11 @@ public class YamlUtilsTest extends CategoryTest {
       + "                  executeOnDelegate: true\n"
       + "                  connectionType: \"SSH\"\n"
       + "                  scriptType: \"BASH\"\n"
-      + "                  scriptString: \"echo 'I should be executed during rollback'\\n\"\n"
+      + "                  scriptString: \"echo 'I should be executed during rollback'\"\n"
       + "    - stage:\n"
       + "        identifier: \"parallelStage2\"\n"
-      + "        name: \"parallelStage2\"\n"
       + "        type: \"Deployment\"\n"
+      + "        name: \"parallelStage2\"\n"
       + "        spec:\n"
       + "          service:\n"
       + "            identifier: \"manager\"\n"
@@ -382,9 +392,9 @@ public class YamlUtilsTest extends CategoryTest {
       + "                        - \"test/qa/values_1.yaml\"\n"
       + "          infrastructure:\n"
       + "            environment:\n"
-      + "              name: null\n"
       + "              identifier: \"stagingInfra\"\n"
       + "              type: \"PreProduction\"\n"
+      + "              name: null\n"
       + "              tags:\n"
       + "                cloud: \"AWS\"\n"
       + "                team: \"cdp\"\n"
@@ -397,16 +407,16 @@ public class YamlUtilsTest extends CategoryTest {
       + "          execution:\n"
       + "            steps:\n"
       + "            - step:\n"
-      + "                name: \"Rollout Deployment\"\n"
       + "                identifier: \"rolloutDeployment\"\n"
       + "                type: \"K8sRollingDeploy\"\n"
+      + "                name: \"Rollout Deployment\"\n"
       + "                spec:\n"
       + "                  timeout: 120000\n"
       + "                  skipDryRun: false\n"
       + "            - step:\n"
-      + "                name: \"http\"\n"
       + "                identifier: \"http\"\n"
       + "                type: \"Http\"\n"
+      + "                name: \"http\"\n"
       + "                spec:\n"
       + "                  socketTimeoutMillis: 1000\n"
       + "                  method: \"GET\"\n"
@@ -418,29 +428,29 @@ public class YamlUtilsTest extends CategoryTest {
       + "                  executeOnDelegate: true\n"
       + "                  connectionType: \"SSH\"\n"
       + "                  scriptType: \"BASH\"\n"
-      + "                  scriptString: \"echo 'I should not execute'\\n\"\n"
+      + "                  scriptString: \"echo 'I should not execute'\"\n"
       + "            - parallel:\n"
       + "              - step:\n"
-      + "                  name: \"http step 13\"\n"
       + "                  identifier: \"http-step-13\"\n"
       + "                  type: \"http\"\n"
+      + "                  name: \"http step 13\"\n"
       + "                  spec:\n"
       + "                    socketTimeoutMillis: 1000\n"
       + "                    method: \"GET\"\n"
       + "                    url: \"http://localhost:8080/temp-13.json\"\n"
       + "              - step:\n"
-      + "                  name: \"http step 14\"\n"
       + "                  identifier: \"http-step-14\"\n"
       + "                  type: \"http\"\n"
+      + "                  name: \"http step 14\"\n"
       + "                  spec:\n"
       + "                    socketTimeoutMillis: 1000\n"
       + "                    method: \"GET\"\n"
       + "                    url: \"http://localhost:8080/temp-14.json\"\n"
       + "            rollbackSteps:\n"
       + "            - step:\n"
-      + "                name: \"Rollback Rollout Deployment\"\n"
       + "                identifier: \"rollbackRolloutDeployment\"\n"
       + "                type: \"K8sRollingRollback\"\n"
+      + "                name: \"Rollback Rollout Deployment\"\n"
       + "                spec:\n"
       + "                  timeout: 120000\n"
       + "            - step:\n"
@@ -450,11 +460,11 @@ public class YamlUtilsTest extends CategoryTest {
       + "                  executeOnDelegate: true\n"
       + "                  connectionType: \"SSH\"\n"
       + "                  scriptType: \"BASH\"\n"
-      + "                  scriptString: \"echo 'I should be executed during rollback'\\n\"\n"
+      + "                  scriptString: \"echo 'I should be executed during rollback'\"\n"
       + "  - stage:\n"
       + "      identifier: \"prodStage2\"\n"
-      + "      name: \"prod stage2\"\n"
       + "      type: \"Deployment\"\n"
+      + "      name: \"prod stage2\"\n"
       + "      strategy:\n"
       + "        repeat:\n"
       + "          times: 2\n"
@@ -499,21 +509,21 @@ public class YamlUtilsTest extends CategoryTest {
       + "                      - \"test/prod/values.yaml\"\n"
       + "        infrastructure:\n"
       + "          environment:\n"
-      + "            name: null\n"
       + "            identifier: \"stagingInfra\"\n"
       + "            type: \"PreProduction\"\n"
+      + "            name: null\n"
       + "          infrastructureDefinition:\n"
       + "            type: \"KubernetesDirect\"\n"
       + "            spec:\n"
       + "              connectorRef: \"2JrX8ESYSTWbhBTPBu7slQ\"\n"
-      + "              namespace: \"default\"\n"
+      + "              namespace: \"a\"\n"
       + "              releaseName: \"vaibhav\"\n"
       + "        execution:\n"
       + "          steps:\n"
       + "          - step:\n"
-      + "              name: \"Rollout Deployment\"\n"
       + "              identifier: \"rolloutDeployment\"\n"
       + "              type: \"K8sRollingDeploy\"\n"
+      + "              name: \"Rollout Deployment\"\n"
       + "              spec:\n"
       + "                timeout: 120000\n"
       + "                skipDryRun: false\n";
@@ -812,7 +822,24 @@ public class YamlUtilsTest extends CategoryTest {
     YamlNode stepsNode =
         stage1Node.getField("spec").getNode().getField("execution").getNode().getField("steps").getNode();
     YamlNode step1Node = stepsNode.asArray().get(0).getField("step").getNode();
-    assertThat(YamlUtils.getStageFqnPath(step1Node)).isEqualTo("pipeline.stages.qaStage");
+    assertThat(YamlUtils.getStageFqnPath(step1Node, PipelineVersion.V0)).isEqualTo("pipeline.stages.qaStage");
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testGetStageFqnForV1() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipelineV1.yaml");
+    String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
+    YamlField yamlField = YamlUtils.readTree(YamlUtils.injectUuid(yamlContent));
+
+    // Stages Node
+    YamlField stagesNode = yamlField.getNode().getField("stages");
+    YamlNode stage1Node = stagesNode.getNode().asArray().get(0);
+    YamlNode stepsNode = stage1Node.getField("spec").getNode().getField("steps").getNode();
+    YamlNode step1Node = stepsNode.asArray().get(0);
+    assertThat(YamlUtils.getStageFqnPath(step1Node, PipelineVersion.V1)).isEqualTo("stages.stage1");
   }
 
   @Test
@@ -822,7 +849,8 @@ public class YamlUtilsTest extends CategoryTest {
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline-with-inputs.yaml");
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
-    assertThat(EXPECTED_YAML_WITHOUT_RUNTIME_INPUTS).isEqualTo(YamlUtils.getYamlWithoutInputs(yamlContent));
+    assertThat(EXPECTED_YAML_WITHOUT_RUNTIME_INPUTS)
+        .isEqualTo(YamlUtils.getYamlWithoutInputs(new YamlConfig(yamlContent)));
   }
 
   @Test
@@ -831,5 +859,23 @@ public class YamlUtilsTest extends CategoryTest {
   public void testCoercionConfig() throws IOException {
     assertThat(YamlUtils.read("\"\"", LinkedHashMap.class)).isNull();
     assertThat(YamlUtils.read("\"\"", ArrayList.class)).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testDuplicateField() {
+    String invalidYaml = "pipeline:\n"
+        + "  name: pipeline\n"
+        + "  project: project\n"
+        + "  project: identifier\n";
+    assertThatThrownBy(() -> YamlUtils.readTree(invalidYaml, true)).isInstanceOf(MismatchedInputException.class);
+    assertThatCode(() -> YamlUtils.readTree(invalidYaml)).doesNotThrowAnyException();
+    // valid yaml
+    String valid = "pipeline:\n"
+        + "  name: pipeline\n"
+        + "  project: project\n";
+    assertThatCode(() -> YamlUtils.readTree(valid, true)).doesNotThrowAnyException();
+    assertThatCode(() -> YamlUtils.readTree(valid)).doesNotThrowAnyException();
   }
 }

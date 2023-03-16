@@ -25,9 +25,9 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptSou
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScripts;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
-import io.harness.cdng.artifact.steps.ArtifactStep;
-import io.harness.cdng.artifact.steps.ArtifactStepParameters;
-import io.harness.cdng.artifact.steps.ArtifactSyncStep;
+import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
+import io.harness.cdng.artifact.steps.constants.ArtifactStepConstants;
+import io.harness.cdng.artifact.steps.constants.ArtifactSyncStepConstants;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
@@ -121,7 +121,7 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
     assertThat(sidecarPlanNode.getUuid()).isEqualTo(uuid);
     assertThat(sidecarPlanNode.getIdentifier()).isEqualTo(identifier);
     assertThat(sidecarPlanNode.getStepParameters()).isEqualTo(artifactStepParameters);
-    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactStep.STEP_TYPE);
+    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactStepConstants.STEP_TYPE);
     assertThat(sidecarPlanNode.getFacilitatorObtainments().get(0).getType().getType())
         .isEqualTo(OrchestrationFacilitatorType.TASK);
   }
@@ -152,7 +152,7 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
     assertThat(sidecarPlanNode.getUuid()).isEqualTo(uuid);
     assertThat(sidecarPlanNode.getIdentifier()).isEqualTo(identifier);
     assertThat(sidecarPlanNode.getStepParameters()).isEqualTo(artifactStepParameters);
-    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactSyncStep.STEP_TYPE);
+    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactSyncStepConstants.STEP_TYPE);
     assertThat(sidecarPlanNode.getFacilitatorObtainments().get(0).getType().getType())
         .isEqualTo(OrchestrationFacilitatorType.SYNC);
   }
@@ -198,7 +198,7 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
     assertThat(sidecarPlanNode.getUuid()).isEqualTo(uuid);
     assertThat(sidecarPlanNode.getIdentifier()).isEqualTo(identifier);
     assertThat(sidecarPlanNode.getStepParameters()).isEqualTo(artifactStepParameters);
-    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactStep.STEP_TYPE);
+    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactStepConstants.STEP_TYPE);
     assertThat(sidecarPlanNode.getFacilitatorObtainments().get(0).getType().getType())
         .isEqualTo(OrchestrationFacilitatorType.TASK);
   }
@@ -228,7 +228,7 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
     assertThat(sidecarPlanNode.getUuid()).isEqualTo(uuid);
     assertThat(sidecarPlanNode.getIdentifier()).isEqualTo(identifier);
     assertThat(sidecarPlanNode.getStepParameters()).isEqualTo(artifactStepParameters);
-    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactSyncStep.STEP_TYPE);
+    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactSyncStepConstants.STEP_TYPE);
     assertThat(sidecarPlanNode.getFacilitatorObtainments().get(0).getType().getType())
         .isEqualTo(OrchestrationFacilitatorType.SYNC);
   }
@@ -271,7 +271,7 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
     assertThat(sidecarPlanNode.getUuid()).isEqualTo(uuid);
     assertThat(sidecarPlanNode.getIdentifier()).isEqualTo(identifier);
     assertThat(sidecarPlanNode.getStepParameters()).isEqualTo(artifactStepParameters);
-    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactSyncStep.STEP_TYPE);
+    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactSyncStepConstants.STEP_TYPE);
     assertThat(sidecarPlanNode.getFacilitatorObtainments().get(0).getType().getType())
         .isEqualTo(OrchestrationFacilitatorType.SYNC);
   }

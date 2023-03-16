@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 43
+version: 49
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -52,6 +52,7 @@ roles:
         - core_serviceaccount_edit
         - core_serviceaccount_delete
         - core_serviceaccount_manageapikey
+        - core_serviceaccount_list
         - core_resourcegroup_view
         - core_resourcegroup_edit
         - core_resourcegroup_delete
@@ -88,6 +89,9 @@ roles:
         - chi_slo_view
         - chi_slo_edit
         - chi_slo_delete
+        - chi_downtime_view
+        - chi_downtime_edit
+        - chi_downtime_delete
         - gitops_agent_view
         - gitops_agent_edit
         - gitops_agent_delete
@@ -133,6 +137,7 @@ roles:
         - chaos_chaosexperiment_view
         - chaos_chaosexperiment_edit
         - chaos_chaosexperiment_delete
+        - chaos_chaosexperiment_execute
         - chaos_chaosgameday_view
         - chaos_chaosgameday_edit
         - chaos_chaosgameday_delete
@@ -163,11 +168,13 @@ roles:
         - core_role_view
         - core_resourcegroup_view
         - core_serviceaccount_view
+        - core_serviceaccount_list
         - core_template_view
         - core_governancePolicy_view
         - core_governancePolicySets_view
         - chi_monitoredservice_view
         - chi_slo_view
+        - chi_downtime_view
         - ff_featureflag_view
         - ff_targetgroup_view
         - ff_target_view
@@ -244,6 +251,7 @@ roles:
         - core_serviceaccount_edit
         - core_serviceaccount_delete
         - core_serviceaccount_manageapikey
+        - core_serviceaccount_list
         - core_resourcegroup_view
         - core_resourcegroup_edit
         - core_resourcegroup_delete
@@ -270,6 +278,9 @@ roles:
         - chi_slo_view
         - chi_slo_edit
         - chi_slo_delete
+        - chi_downtime_view
+        - chi_downtime_edit
+        - chi_downtime_delete
         - ff_featureflag_edit
         - ff_featureflag_delete
         - ff_featureflag_view
@@ -331,6 +342,7 @@ roles:
         - chaos_chaosexperiment_view
         - chaos_chaosexperiment_edit
         - chaos_chaosexperiment_delete
+        - chaos_chaosexperiment_execute
         - chaos_chaosgameday_view
         - chaos_chaosgameday_edit
         - chaos_chaosgameday_delete
@@ -360,6 +372,7 @@ roles:
         - core_role_view
         - core_resourcegroup_view
         - core_serviceaccount_view
+        - core_serviceaccount_list
         - core_template_view
         - core_governancePolicy_view
         - core_governancePolicySets_view
@@ -367,6 +380,7 @@ roles:
         - core_pipeline_view
         - chi_monitoredservice_view
         - chi_slo_view
+        - chi_downtime_view
         - ff_featureflag_view
         - ff_targetgroup_view
         - ff_target_view
@@ -455,6 +469,7 @@ roles:
         - core_serviceaccount_edit
         - core_serviceaccount_delete
         - core_serviceaccount_manageapikey
+        - core_serviceaccount_list
         - core_account_view
         - core_account_edit
         - core_dashboards_view
@@ -486,6 +501,9 @@ roles:
         - chi_slo_view
         - chi_slo_edit
         - chi_slo_delete
+        - chi_downtime_view
+        - chi_downtime_edit
+        - chi_downtime_delete
         - ff_featureflag_edit
         - ff_featureflag_delete
         - ff_featureflag_view
@@ -545,6 +563,7 @@ roles:
         - chaos_chaosexperiment_view
         - chaos_chaosexperiment_edit
         - chaos_chaosexperiment_delete
+        - chaos_chaosexperiment_execute
         - chaos_chaosgameday_view
         - chaos_chaosgameday_edit
         - chaos_chaosgameday_delete
@@ -577,12 +596,14 @@ roles:
         - ccm_cloudAssetGovernanceRule_edit
         - ccm_cloudAssetGovernanceRule_view
         - ccm_cloudAssetGovernanceRule_delete
+        - ccm_cloudAssetGovernanceRule_execute
         - ccm_cloudAssetGovernanceRuleSet_edit
         - ccm_cloudAssetGovernanceRuleSet_view
         - ccm_cloudAssetGovernanceRuleSet_delete
         - ccm_cloudAssetGovernanceEnforcement_edit
         - ccm_cloudAssetGovernanceEnforcement_view
         - ccm_cloudAssetGovernanceEnforcement_delete
+        - idp_idpsettings_manage
       allowedScopeLevels:
         - account
       managed: true
@@ -608,6 +629,7 @@ roles:
         - core_authsetting_view
         - core_account_view
         - core_serviceaccount_view
+        - core_serviceaccount_list
         - core_template_view
         - core_governancePolicy_view
         - core_governancePolicySets_view
@@ -616,6 +638,7 @@ roles:
         - core_pipeline_view
         - chi_monitoredservice_view
         - chi_slo_view
+        - chi_downtime_view
         - ff_featureflag_view
         - ff_targetgroup_view
         - ff_target_view
@@ -731,6 +754,35 @@ roles:
         - account
         - organization
         - project
+    - identifier: _chaos_admin
+      name: Chaos Admin
+      description: Can create, edit, and view Chaos Resources
+      permissions:
+        - chaos_chaoshub_view
+        - chaos_chaoshub_edit
+        - chaos_chaoshub_delete
+        - chaos_chaosinfrastructure_view
+        - chaos_chaosinfrastructure_edit
+        - chaos_chaosinfrastructure_delete
+        - chaos_chaosexperiment_view
+        - chaos_chaosexperiment_edit
+        - chaos_chaosexperiment_delete
+        - chaos_chaosgameday_view
+        - chaos_chaosgameday_edit
+        - chaos_chaosgameday_delete
+        - core_environment_view
+        - core_environment_edit
+        - core_environment_delete
+        - core_environment_access
+        - core_environmentgroup_view
+        - core_environmentgroup_edit
+        - core_environmentgroup_delete
+        - core_environmentgroup_access
+      managed: true
+      allowedScopeLevels:
+        - account
+        - organization
+        - project
     - identifier: _sto_developer_role
       name: Security Testing Developer Role
       description: Can work with security issues
@@ -832,6 +884,7 @@ roles:
         - ccm_cloudAssetGovernanceRule_edit
         - ccm_cloudAssetGovernanceRule_view
         - ccm_cloudAssetGovernanceRule_delete
+        - ccm_cloudAssetGovernanceRule_execute
         - ccm_cloudAssetGovernanceRuleSet_edit
         - ccm_cloudAssetGovernanceRuleSet_view
         - ccm_cloudAssetGovernanceRuleSet_delete
@@ -859,3 +912,21 @@ roles:
       managed: true
       allowedScopeLevels:
         - account
+    - identifier: _dashboard_viewer
+      name: Dashboard Viewer
+      description: Dashboard Viewer
+      permissions:
+        - core_dashboards_view
+      managed: true
+      allowedScopeLevels:
+        - account
+    - identifier: _dashboard_admin
+      name: Dashboard Admin
+      description: Dashboard Admin
+      permissions:
+        - core_dashboards_view
+        - core_dashboards_edit
+      managed: true
+      allowedScopeLevels:
+        - account
+

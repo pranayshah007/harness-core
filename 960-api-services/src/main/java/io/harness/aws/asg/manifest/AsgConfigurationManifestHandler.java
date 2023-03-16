@@ -21,12 +21,15 @@ import io.harness.manifest.request.ManifestRequest;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
+import com.amazonaws.services.autoscaling.model.Instance;
 import com.amazonaws.services.autoscaling.model.LifecycleHookSpecification;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @OwnedBy(CDP)
@@ -35,6 +38,7 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
     String minSize = "minSize";
     String maxSize = "maxSize";
     String desiredCapacity = "desiredCapacity";
+    String targetGroupARNs = "targetGroupARNs";
   }
 
   public AsgConfigurationManifestHandler(AsgSdkManager asgSdkManager, ManifestRequest manifestRequest) {
@@ -59,6 +63,9 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
           break;
         case OverrideProperties.desiredCapacity:
           createAutoScalingGroupRequest.setDesiredCapacity((Integer) entry.getValue());
+          break;
+        case OverrideProperties.targetGroupARNs:
+          createAutoScalingGroupRequest.setTargetGroupARNs((Collection<String>) entry.getValue());
           break;
         default:
           // do nothing
@@ -101,22 +108,41 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
     CreateAutoScalingGroupRequest createAutoScalingGroupRequest = manifests.get(0);
     createAutoScalingGroupRequest.setAutoScalingGroupName(asgName);
 
+    String operationName = format("Asg %s to reach steady state", asgName);
+
     if (autoScalingGroup == null) {
-      String operationName = format("Create Asg %s", asgName);
-      asgSdkManager.info("Operation `%s` has started", operationName);
+      asgSdkManager.info("Creating Asg %s", asgName);
       asgSdkManager.createASG(asgName, chainState.getLaunchTemplateVersion(), createAutoScalingGroupRequest);
+      asgSdkManager.info("Waiting for Asg %s to reach steady state", asgName);
       asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAllInstancesInReadyState, operationName);
-      asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
+      asgSdkManager.infoBold("Created Asg %s successfully", asgName);
     } else {
-      String operationName = format("Update Asg %s", asgName);
-      asgSdkManager.info("Operation `%s` has started", operationName);
+      asgSdkManager.info("Updating Asg %s", asgName);
       asgSdkManager.updateASG(asgName, chainState.getLaunchTemplateVersion(), createAutoScalingGroupRequest);
-      asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAllInstancesInReadyState, operationName);
-      asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
+      asgSdkManager.info("Waiting for Asg %s to reach steady state", asgName);
+      if (Integer.valueOf(0).equals(createAutoScalingGroupRequest.getDesiredCapacity())) {
+        asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAsgDownsizedToZero, operationName);
+      } else {
+        asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAllInstancesInReadyState, operationName);
+      }
+      asgSdkManager.infoBold("Updated Asg %s successfully", asgName);
     }
 
     AutoScalingGroup finalAutoScalingGroup = asgSdkManager.getASG(asgName);
     chainState.setAutoScalingGroup(finalAutoScalingGroup);
+
+    // wait all instances to be healthy in target groups
+    if (isNotEmpty(createAutoScalingGroupRequest.getTargetGroupARNs())) {
+      List<String> instanceIds =
+          finalAutoScalingGroup.getInstances().stream().map(Instance::getInstanceId).collect(Collectors.toList());
+      Predicate<List<String>> predicate = arg
+          -> asgSdkManager.checkAllTargetsRegistered(arg, createAutoScalingGroupRequest.getTargetGroupARNs(),
+              asgConfigurationManifestRequest.getAwsInternalConfig(), asgConfigurationManifestRequest.getRegion());
+      asgSdkManager.info("Waiting all instances to be healthy in target groups [%s]",
+          createAutoScalingGroupRequest.getTargetGroupARNs());
+      String operation = format("Asg %s to reach steady state", finalAutoScalingGroup.getAutoScalingGroupName());
+      asgSdkManager.waitReadyState(instanceIds, predicate, operation);
+    }
 
     return chainState;
   }
@@ -163,7 +189,7 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
         AsgContentParser.parseJson(autoScalingGroupContent, CreateAutoScalingGroupRequest.class, false);
     createAutoScalingGroupRequest.setLifecycleHookSpecificationList(lifecycleHookSpecificationList);
     createAutoScalingGroupRequest.setServiceLinkedRoleARN(null);
-    if ((createAutoScalingGroupRequest.getVPCZoneIdentifier()).equals("")) {
+    if ("".equals(createAutoScalingGroupRequest.getVPCZoneIdentifier())) {
       createAutoScalingGroupRequest.setVPCZoneIdentifier(null);
     }
 

@@ -17,12 +17,15 @@ import io.harness.mappers.InstanceDetailsMapper;
 import io.harness.mappers.InstanceMapper;
 import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.ActiveServiceInstanceInfoV2;
+import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.BuildsByEnvironment;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.models.InstanceDTOsByBuildId;
+import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsByBuildId;
+import io.harness.models.InstanceGroupedByPipelineExecution;
 import io.harness.models.InstancesByBuildId;
 import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.models.dashboard.InstanceCountDetails;
@@ -213,6 +216,20 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
   }
 
   @Override
+  public List<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
+      String displayName, boolean isGitOps, boolean filterOnArtifact) {
+    AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults =
+        instanceService.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier, projectIdentifier,
+            envIdentifier, serviceIdentifier, displayName, isGitOps, filterOnArtifact);
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList = new ArrayList<>();
+    aggregationResults.forEach(activeServiceInstanceInfoWithEnvType -> {
+      activeServiceInstanceInfoWithEnvTypeList.add(activeServiceInstanceInfoWithEnvType);
+    });
+    return activeServiceInstanceInfoWithEnvTypeList;
+  }
+
+  @Override
   public List<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     AggregationResults<ActiveServiceInstanceInfo> activeServiceInstanceInfoAggregationResults =
@@ -296,6 +313,35 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
         .buildId(buildId)
         .instances(instanceDetailsMapper.toInstanceDetailsDTOList(InstanceMapper.toDTO(instancesByBuildId), isGitops))
         .build();
+  }
+
+  @Override
+  public List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
+  getActiveInstanceDetailGroupedByPipelineExecution(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, String envId, EnvironmentType environmentType, String infraId,
+      String clusterIdentifier, String displayName, boolean isGitOps) {
+    AggregationResults<InstanceGroupedByPipelineExecution> aggregationResults =
+        instanceService.getActiveInstanceGroupedByPipelineExecution(accountIdentifier, orgIdentifier, projectIdentifier,
+            serviceId, envId, environmentType, infraId, clusterIdentifier, displayName);
+    List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
+        instanceGroupedByPipelineExecutionList = new ArrayList<>();
+    aggregationResults.forEach(instanceGroupedByPipelineExecution -> {
+      final String pipelineId = instanceGroupedByPipelineExecution.getLastPipelineExecutionName();
+      final String planExecutionId = instanceGroupedByPipelineExecution.getLastPipelineExecutionId();
+      final long lastDeployedAt = instanceGroupedByPipelineExecution.getLastDeployedAt();
+      final List<Instance> instances = instanceGroupedByPipelineExecution.getInstances();
+      if (pipelineId == null || planExecutionId == null || instances == null) {
+        return;
+      }
+      instanceGroupedByPipelineExecutionList.add(
+          InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution.builder()
+              .pipelineId(pipelineId)
+              .planExecutionId(planExecutionId)
+              .lastDeployedAt(lastDeployedAt)
+              .instances(instanceDetailsMapper.toInstanceDetailsDTOList(InstanceMapper.toDTO(instances), isGitOps))
+              .build());
+    });
+    return instanceGroupedByPipelineExecutionList;
   }
 
   /*

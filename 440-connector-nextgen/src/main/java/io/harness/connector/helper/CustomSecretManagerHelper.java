@@ -63,7 +63,7 @@ public class CustomSecretManagerHelper {
                 templateResourceClient.applyTemplatesOnGivenYaml(customNGSecretManagerConfigDTO.getAccountIdentifier(),
                     customNGSecretManagerConfigDTO.getOrgIdentifier(),
                     customNGSecretManagerConfigDTO.getProjectIdentifier(), null, null, null, BOOLEAN_FALSE_VALUE,
-                    TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build()))
+                    TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build(), false))
             .getMergedPipelineYaml();
 
     log.info("Yaml received from template service is \n" + mergedYaml);

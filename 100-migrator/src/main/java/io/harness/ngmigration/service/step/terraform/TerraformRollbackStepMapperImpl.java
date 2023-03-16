@@ -12,12 +12,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.provision.terraform.TerraformRollbackStepNode;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 
 import software.wings.beans.GraphNode;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.provision.TerraformRollbackState;
 
@@ -46,15 +45,14 @@ public class TerraformRollbackStepMapperImpl extends BaseTerraformProvisionerMap
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     TerraformRollbackState state = (TerraformRollbackState) getState(graphNode);
     TerraformRollbackStepNode terraformRollbackStepNode = new TerraformRollbackStepNode();
-    baseSetup(graphNode, terraformRollbackStepNode);
+    baseSetup(graphNode, terraformRollbackStepNode, context.getIdentifierCaseFormat());
 
     TerraformRollbackStepInfo terraformRollbackStepInfo = new TerraformRollbackStepInfo();
     terraformRollbackStepInfo.setDelegateSelectors(getDelegateSelectors(state));
-    terraformRollbackStepInfo.setProvisionerIdentifier("__PLEASE_FIX_ME__");
+    terraformRollbackStepInfo.setProvisionerIdentifier(MigratorUtility.RUNTIME_INPUT);
 
     terraformRollbackStepNode.setTerraformRollbackStepInfo(terraformRollbackStepInfo);
     return terraformRollbackStepNode;

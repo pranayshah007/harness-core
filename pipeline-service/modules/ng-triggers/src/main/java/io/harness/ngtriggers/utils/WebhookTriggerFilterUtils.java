@@ -19,6 +19,7 @@ import static io.harness.ngtriggers.Constants.MR_COMMENT_EVENT_TYPE;
 import static io.harness.ngtriggers.Constants.PR_COMMENT_EVENT_TYPE;
 import static io.harness.ngtriggers.Constants.PULL_REQUEST_EVENT_TYPE;
 import static io.harness.ngtriggers.Constants.PUSH_EVENT_TYPE;
+import static io.harness.ngtriggers.Constants.RELEASE_EVENT_TYPE;
 import static io.harness.ngtriggers.beans.source.webhook.WebhookAction.BT_PULL_REQUEST_UPDATED;
 
 import static java.util.stream.Collectors.toList;
@@ -78,6 +79,10 @@ public class WebhookTriggerFilterUtils {
     if (eventTypeFromPayload.equals(io.harness.beans.WebhookEvent.Type.ISSUE_COMMENT)) {
       return gitEvent.equals(ISSUE_COMMENT_EVENT_TYPE) || gitEvent.equals(MR_COMMENT_EVENT_TYPE)
           || gitEvent.equals(PR_COMMENT_EVENT_TYPE);
+    }
+
+    if (io.harness.beans.WebhookEvent.Type.RELEASE.equals(eventTypeFromPayload)) {
+      return RELEASE_EVENT_TYPE.equals(gitEvent);
     }
     return false;
   }

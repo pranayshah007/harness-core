@@ -17,9 +17,11 @@ import io.harness.steps.common.NGExecutionStep;
 import io.harness.steps.common.NGSectionStep;
 import io.harness.steps.common.NGSectionStepWithRollbackInfo;
 import io.harness.steps.common.noop.NoopStep;
+import io.harness.steps.common.rollback.RollbackStageStep;
 import io.harness.steps.common.steps.stepgroup.StepGroupStep;
 import io.harness.steps.fork.NGForkStep;
 import io.harness.steps.matrix.StrategyStep;
+import io.harness.steps.matrix.v1.StrategyStepV1;
 import io.harness.steps.section.chain.SectionChainStep;
 
 import java.util.HashMap;
@@ -39,7 +41,9 @@ public class NGCommonUtilStepsRegistrar {
     engineSteps.put(NGExecutionStep.STEP_TYPE, NGExecutionStep.class);
     engineSteps.put(StepGroupStep.STEP_TYPE, StepGroupStep.class);
     engineSteps.put(StrategyStep.STEP_TYPE, StrategyStep.class);
+    engineSteps.put(StrategyStepV1.STEP_TYPE, StrategyStepV1.class);
     engineSteps.put(NoopStep.STEP_TYPE, NoopStep.class);
+    engineSteps.put(RollbackStageStep.STEP_TYPE, RollbackStageStep.class);
     return engineSteps;
   }
 }

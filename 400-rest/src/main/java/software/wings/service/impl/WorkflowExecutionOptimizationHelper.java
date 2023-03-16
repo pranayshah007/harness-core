@@ -7,10 +7,14 @@
 
 package software.wings.service.impl;
 
+import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.beans.SearchFilter.Operator.IN;
 
 import static software.wings.beans.Environment.EnvironmentKeys;
 import static software.wings.beans.Service.ServiceKeys;
+import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_ENVIDS;
+import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_SERVICEIDS;
+import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_WORKFLOWID;
 
 import static java.util.Arrays.asList;
 
@@ -18,7 +22,9 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.SearchFilter;
 import io.harness.beans.SearchFilter.SearchFilterBuilder;
+import io.harness.beans.WorkflowType;
 import io.harness.ff.FeatureFlagService;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HPersistence;
 
 import software.wings.beans.Environment;
@@ -36,6 +42,7 @@ import dev.morphia.DatastoreImpl;
 import dev.morphia.mapping.Mapper;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,39 +58,60 @@ public class WorkflowExecutionOptimizationHelper {
     }
 
     Set<String> appIds = new HashSet<>();
-
     PageRequest<WorkflowExecution> dummyPageRequest = populatePageFilters(pageRequest);
-    dummyPageRequest.getFilters().forEach(filter -> {
-      if (WorkflowExecutionKeys.envIds.equals(filter.getFieldName())) {
-        List<Environment> environments = hPersistence.createQuery(Environment.class)
-                                             .filter(EnvironmentKeys.accountId, accountId)
-                                             .field(EnvironmentKeys.uuid)
-                                             .in(asList(filter.getFieldValues()))
-                                             .asList();
-        environments.forEach(environment -> appIds.add(environment.getAppId()));
-      } else if (WorkflowExecutionKeys.serviceIds.equals(filter.getFieldName())) {
-        List<Service> services = hPersistence.createQuery(Service.class)
-                                     .filter(ServiceKeys.accountId, accountId)
-                                     .field(ServiceKeys.uuid)
-                                     .in(asList(filter.getFieldValues()))
-                                     .asList();
-        services.forEach(service -> appIds.add(service.getAppId()));
-      } else if (WorkflowExecutionKeys.pipelineSummary_pipelineId.equals(filter.getFieldName())) {
-        List<Pipeline> pipelines = hPersistence.createQuery(Pipeline.class)
-                                       .filter(PipelineKeys.accountId, accountId)
-                                       .field(PipelineKeys.uuid)
+    Optional<SearchFilter> idFilter =
+        dummyPageRequest.getFilters()
+            .stream()
+            .filter(filter
+                -> WorkflowExecutionKeys.uuid.equals(filter.getFieldName()) || "_id".equals(filter.getFieldName()))
+            .findFirst();
+    if (idFilter.isEmpty()) {
+      dummyPageRequest.getFilters().forEach(filter -> {
+        if (WorkflowExecutionKeys.envIds.equals(filter.getFieldName())) {
+          List<Environment> environments = hPersistence.createQuery(Environment.class)
+                                               .filter(EnvironmentKeys.accountId, accountId)
+                                               .field(EnvironmentKeys.uuid)
+                                               .in(asList(filter.getFieldValues()))
+                                               .asList();
+          environments.forEach(environment -> appIds.add(environment.getAppId()));
+          pageRequest.setIndexHint(
+              BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_ENVIDS));
+        } else if (WorkflowExecutionKeys.serviceIds.equals(filter.getFieldName())) {
+          List<Service> services = hPersistence.createQuery(Service.class)
+                                       .filter(ServiceKeys.accountId, accountId)
+                                       .field(ServiceKeys.uuid)
                                        .in(asList(filter.getFieldValues()))
                                        .asList();
-        pipelines.forEach(pipeline -> appIds.add(pipeline.getAppId()));
-      } else if (WorkflowExecutionKeys.workflowId.equals(filter.getFieldName())) {
-        List<Workflow> workflows = hPersistence.createQuery(Workflow.class)
-                                       .filter(WorkflowKeys.accountId, accountId)
-                                       .field(WorkflowKeys.uuid)
-                                       .in(asList(filter.getFieldValues()))
-                                       .asList();
-        workflows.forEach(workflow -> appIds.add(workflow.getAppId()));
-      }
-    });
+          services.forEach(service -> appIds.add(service.getAppId()));
+          pageRequest.setIndexHint(
+              BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_SERVICEIDS));
+        } else if (WorkflowExecutionKeys.pipelineSummary_pipelineId.equals(filter.getFieldName())) {
+          List<Pipeline> pipelines = hPersistence.createQuery(Pipeline.class)
+                                         .filter(PipelineKeys.accountId, accountId)
+                                         .field(PipelineKeys.uuid)
+                                         .in(asList(filter.getFieldValues()))
+                                         .asList();
+          pipelines.forEach(pipeline -> appIds.add(pipeline.getAppId()));
+          pageRequest.addFilter(WorkflowExecutionKeys.workflowType, EQ, WorkflowType.PIPELINE);
+          pageRequest.addFilter(SearchFilter.builder()
+                                    .fieldValues(filter.getFieldValues())
+                                    .fieldName(WorkflowExecutionKeys.workflowId)
+                                    .op(filter.getOp())
+                                    .build());
+          pageRequest.setIndexHint(
+              BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_WORKFLOWID));
+        } else if (WorkflowExecutionKeys.workflowId.equals(filter.getFieldName())) {
+          List<Workflow> workflows = hPersistence.createQuery(Workflow.class)
+                                         .filter(WorkflowKeys.accountId, accountId)
+                                         .field(WorkflowKeys.uuid)
+                                         .in(asList(filter.getFieldValues()))
+                                         .asList();
+          workflows.forEach(workflow -> appIds.add(workflow.getAppId()));
+          pageRequest.setIndexHint(
+              BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_WORKFLOWID));
+        }
+      });
+    }
 
     if (!appIds.isEmpty()) {
       final SearchFilterBuilder filterBuilder = SearchFilter.builder();

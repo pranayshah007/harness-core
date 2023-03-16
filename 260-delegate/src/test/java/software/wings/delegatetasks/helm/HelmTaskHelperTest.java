@@ -72,7 +72,7 @@ import io.harness.exception.HelmClientException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.helm.HelmCliCommandType;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -80,8 +80,8 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GcpConfig;
-import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.dto.HelmChart;
 import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
 import software.wings.beans.settings.helm.GCSHelmRepoConfig;
@@ -214,7 +214,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
                                                                .build(),
                             V3, LONG_TIMEOUT_INTERVAL, "/home"))
         .withMessageContaining(
-            "Failed to login to the helm OCI Registry repo. Executed command v3/helm registry login localhost:5005/test-charts --username admin --password *******");
+            "Failed to login to the helm OCI Registry repo. Exit Code = [1]. Executed command = [v3/helm registry login localhost:5005/test-charts --username admin --password *******].");
   }
 
   @Test
@@ -235,7 +235,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
                         -> helmTaskHelper.addRepo("vault", "vault", "https://helm-server", "admin",
                             "secret-text".toCharArray(), "/home", V3, LONG_TIMEOUT_INTERVAL, StringUtils.EMPTY, null))
         .withMessageContaining(
-            "Failed to add helm repo. Executed command v3/helm repo add vault https://helm-server --username admin --password *******");
+            "Failed to add helm repo. Exit Code = [1]. Executed command = [v3/helm repo add vault https://helm-server --username admin --password ******* ]");
   }
 
   private void testAddRepoIfProcessExecException() {
@@ -1000,7 +1000,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     assertThatCode(() -> testAddHelmRepo(chartMuseumProcess, success)).doesNotThrowAnyException();
     assertThatThrownBy(() -> testAddHelmRepo(chartMuseumProcess, failure))
         .isInstanceOf(HelmClientException.class)
-        .hasMessageContaining("Failed to add helm repo. Executed command");
+        .hasMessageContaining("Failed to add helm repo. Exit Code = [1]. Executed command");
     assertThatThrownBy(() -> testAddHelmRepo(null, null)).isInstanceOf(InvalidRequestException.class);
   }
 

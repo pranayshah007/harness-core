@@ -20,20 +20,15 @@ import static org.mockito.Mockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
-import io.harness.context.GlobalContext;
 import io.harness.exception.DuplicateFileImportException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
-import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
-import io.harness.gitsync.scm.beans.ScmGetRepoUrlResponse;
-import io.harness.manage.GlobalContextManager;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.rule.Owner;
 import io.harness.template.beans.TemplateImportRequestDTO;
@@ -98,54 +93,6 @@ public class TemplateGitXServiceImplTest {
     MockitoAnnotations.initMocks(this);
     templateGitXService =
         new TemplateGitXServiceImpl(scmGitSyncHelper, gitSyncSdkService, templateRepository, gitAwareEntityHelper);
-  }
-
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
-  public void testGetWorkingBranchRemote() {
-    GitEntityInfo branchInfo = GitEntityInfo.builder()
-                                   .branch(BranchName)
-                                   .parentEntityRepoName(PARENT_ENTITY_REPO)
-                                   .parentEntityConnectorRef(PARENT_ENTITY_CONNECTOR_REF)
-                                   .parentEntityAccountIdentifier(ACCOUNT_IDENTIFIER)
-                                   .parentEntityOrgIdentifier(ORG_IDENTIFIER)
-                                   .parentEntityProjectIdentifier(PROJECT_IDENTIFIER)
-                                   .build();
-    setupGitContext(branchInfo);
-    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
-    doReturn(ScmGetRepoUrlResponse.builder().repoUrl(ENTITY_REPO_URL).build())
-        .when(scmGitSyncHelper)
-        .getRepoUrl(any(), any(), any(), any());
-    assertThat(templateGitXService.getWorkingBranch(ENTITY_REPO_URL)).isEqualTo(BranchName);
-
-    branchInfo = GitEntityInfo.builder()
-                     .branch(BranchName)
-                     .parentEntityRepoName(PARENT_ENTITY_REPO)
-                     .parentEntityConnectorRef(PARENT_ENTITY_CONNECTOR_REF)
-                     .build();
-    setupGitContext(branchInfo);
-    assertThat(templateGitXService.getWorkingBranch("random repo url")).isEqualTo("");
-    branchInfo = GitEntityInfo.builder().branch(BranchName).parentEntityRepoUrl(ENTITY_REPO_URL).build();
-    setupGitContext(branchInfo);
-    assertThat(templateGitXService.getWorkingBranch(ENTITY_REPO_URL)).isEqualTo(BranchName);
-  }
-
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
-  public void testGetWorkingBranchInline() {
-    GitEntityInfo branchInfo = GitEntityInfo.builder().branch(BranchName).build();
-    setupGitContext(branchInfo);
-    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
-    assertThat(templateGitXService.getWorkingBranch(ENTITY_REPO_URL)).isEqualTo(BranchName);
-  }
-
-  private void setupGitContext(GitEntityInfo branchInfo) {
-    if (!GlobalContextManager.isAvailable()) {
-      GlobalContextManager.set(new GlobalContext());
-    }
-    GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(branchInfo).build());
   }
 
   @Test

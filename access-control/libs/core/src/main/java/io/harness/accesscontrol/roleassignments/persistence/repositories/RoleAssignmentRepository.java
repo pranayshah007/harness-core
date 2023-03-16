@@ -23,7 +23,7 @@ public interface RoleAssignmentRepository
     extends PagingAndSortingRepository<RoleAssignmentDBO, String>, RoleAssignmentCustomRepository {
   Optional<RoleAssignmentDBO> findByIdentifierAndScopeIdentifier(String identifier, String parentIdentifier);
 
-  List<RoleAssignmentDBO> deleteByIdentifierAndScopeIdentifier(String identifier, String parentIdentifier);
+  Optional<RoleAssignmentDBO> deleteByIdentifierAndScopeIdentifier(String identifier, String parentIdentifier);
 
   List<RoleAssignmentDBO> findByPrincipalIdentifierAndPrincipalType(String principal, PrincipalType principalType);
 }

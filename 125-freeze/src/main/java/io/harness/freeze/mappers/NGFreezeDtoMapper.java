@@ -10,6 +10,7 @@ package io.harness.freeze.mappers;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.freeze.beans.CurrentOrUpcomingWindow;
 import io.harness.freeze.beans.FilterType;
 import io.harness.freeze.beans.FreezeEntityRule;
 import io.harness.freeze.beans.FreezeEntityType;
@@ -35,6 +36,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -97,6 +99,13 @@ public class NGFreezeDtoMapper {
         .type(freezeConfigEntity.getType())
         .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
         .build();
+  }
+
+  public List<FreezeSummaryResponseDTO> prepareFreezeResponseSummaryDto(
+      List<FreezeConfigEntity> freezeConfigEntityList) {
+    return freezeConfigEntityList.stream()
+        .map(NGFreezeDtoMapper::prepareFreezeResponseSummaryDto)
+        .collect(Collectors.toList());
   }
 
   public FreezeSummaryResponseDTO prepareFreezeResponseSummaryDto(FreezeConfigEntity freezeConfigEntity) {
@@ -241,8 +250,9 @@ public class NGFreezeDtoMapper {
     if (windows != null) {
       windows.stream().forEach(freezeWindow -> {
         try {
-          boolean active = FreezeTimeUtils.globalFreezeIsActive(freezeWindow);
-          if (!active && freezeInfoConfig.getStatus() == FreezeStatus.ENABLED) {
+          CurrentOrUpcomingWindow currentOrUpcomingWindow =
+              FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeInfoConfig.getWindows());
+          if (currentOrUpcomingWindow == null && freezeInfoConfig.getStatus() == FreezeStatus.ENABLED) {
             update[0] = true;
             return;
           }
@@ -297,9 +307,8 @@ public class NGFreezeDtoMapper {
     if (windows != null) {
       windows.stream().forEach(freezeWindow -> {
         try {
-          if (freezeConfig.getFreezeInfoConfig().getStatus() == FreezeStatus.ENABLED) {
-            FreezeTimeUtils.validateTimeRange(freezeWindow);
-          }
+          FreezeStatus freezeStatus = freezeConfig.getFreezeInfoConfig().getStatus();
+          FreezeTimeUtils.validateTimeRange(freezeWindow, freezeStatus);
         } catch (ParseException e) {
           throw new InvalidRequestException("Invalid time format provided.", e);
         } catch (DateTimeParseException e) {

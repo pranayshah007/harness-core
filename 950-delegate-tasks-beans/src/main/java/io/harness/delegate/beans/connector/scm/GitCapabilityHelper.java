@@ -30,11 +30,16 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CI)
 public class GitCapabilityHelper extends ConnectorCapabilityBaseHelper {
   public List<ExecutionCapability> fetchRequiredExecutionCapabilitiesSimpleCheck(GitConfigDTO gitConfig) {
+    return fetchRequiredExecutionCapabilitiesSimpleCheck(gitConfig, true);
+  }
+
+  public List<ExecutionCapability> fetchRequiredExecutionCapabilitiesSimpleCheck(
+      GitConfigDTO gitConfig, boolean includeDelegateSelectors) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     GitAuthType gitAuthType = gitConfig.getGitAuthType();
     switch (gitAuthType) {
       case HTTP:
-        capabilityList.addAll(ScmGitCapabilityHelper.getHttpConnectionCapability(gitConfig));
+        capabilityList.addAll(ScmGitCapabilityHelper.getHttpConnectionCapability(gitConfig, includeDelegateSelectors));
         break;
       case SSH:
         capabilityList.add(SocketConnectivityExecutionCapability.builder()
@@ -46,7 +51,9 @@ public class GitCapabilityHelper extends ConnectorCapabilityBaseHelper {
         throw new UnknownEnumTypeException("gitAuthType", gitAuthType.getDisplayName());
     }
 
-    populateDelegateSelectorCapability(capabilityList, gitConfig.getDelegateSelectors());
+    if (includeDelegateSelectors) {
+      populateDelegateSelectorCapability(capabilityList, gitConfig.getDelegateSelectors());
+    }
     return capabilityList;
   }
 

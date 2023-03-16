@@ -21,6 +21,7 @@ import (
 	"github.com/drone/go-scm/scm/driver/github"
 	"github.com/drone/go-scm/scm/driver/gitlab"
 	"github.com/drone/go-scm/scm/driver/gogs"
+	"github.com/drone/go-scm/scm/driver/harness"
 	"github.com/drone/go-scm/scm/driver/stash"
 	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/harness-core/product/ci/scm/converter"
@@ -177,6 +178,8 @@ func getClient(p pb.GitProvider) (*scm.Client, error) {
 		return codecommit.NewDefault(), nil
 	case pb.GitProvider_AZURE:
 		return azure.NewDefault("empty", "empty"), nil
+	case pb.GitProvider_HARNESS:
+		return harness.New("", "", "", "")
 	default:
 		return nil, status.Errorf(codes.InvalidArgument,
 			fmt.Sprintf("Unsupported git provider %s", p.String()))

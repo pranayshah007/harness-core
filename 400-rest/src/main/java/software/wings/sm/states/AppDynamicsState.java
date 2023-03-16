@@ -32,8 +32,8 @@ import software.wings.beans.AppDynamicsConfig;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.metrics.TimeSeriesMetricDefinition;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategyProvider;
 import software.wings.service.impl.analysis.AnalysisContext;
@@ -295,7 +295,7 @@ public class AppDynamicsState extends AbstractMetricAnalysisState {
     }
     List<String> delegateTaskIds = new ArrayList<>();
     for (DelegateTask task : delegateTasks) {
-      delegateTaskIds.add(delegateService.queueTask(task));
+      delegateTaskIds.add(delegateService.queueTaskV2(task));
     }
     return StringUtils.join(delegateTaskIds, ",");
   }

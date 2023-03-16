@@ -93,7 +93,7 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
                     .setType(
                         FacilitatorType.newBuilder().setType(stepNode.getStepSpecType().getFacilitatorType()).build())
                     .build())
-            .whenCondition(RunInfoUtils.getRunCondition(stepNode.getWhen()))
+            .whenCondition(RunInfoUtils.getRunConditionForStep(stepNode.getWhen()))
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()
                     .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)

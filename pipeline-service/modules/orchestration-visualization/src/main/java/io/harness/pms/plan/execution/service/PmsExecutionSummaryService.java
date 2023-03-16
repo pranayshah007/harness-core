@@ -21,6 +21,8 @@ import org.springframework.data.util.CloseableIterator;
 public interface PmsExecutionSummaryService {
   void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions);
   void update(String planExecutionId, Update update);
+  // Saves PipelineExecutionSummaryEntity in planExecutionsSummary collection in harness-pms db
+  PipelineExecutionSummaryEntity save(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity);
 
   /**
    * This method is used to query pipelineExecutionSummaryEntity using planExecutionId and the fields that should be set
@@ -54,4 +56,11 @@ public interface PmsExecutionSummaryService {
    */
   CloseableIterator<PipelineExecutionSummaryEntity> fetchPlanExecutionIdsFromAnalytics(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
+
+  /**
+   * Delete all PipelineExecutionSummaryEntity for given planExecutionIds
+   * Uses - planExecutionId_idx index
+   * @param planExecutionIds
+   */
+  void deleteAllSummaryForGivenPlanExecutionIds(Set<String> planExecutionIds);
 }

@@ -273,7 +273,7 @@ public class EcsServiceSetup extends State {
       Map<K8sValuesLocation, ApplicationManifest> applicationManifestMap, String activityId,
       EcsSetUpDataBag ecsSetUpDataBag) {
     final DelegateTask gitFetchFileTask = createGitFetchFileAsyncTask(context, applicationManifestMap, activityId);
-    delegateService.queueTask(gitFetchFileTask);
+    delegateService.queueTaskV2(gitFetchFileTask);
 
     EcsSetupStateExecutionData stateExecutionData =
         createStateExecutionData(activityId, applicationManifestMap, context, ecsSetUpDataBag);

@@ -10,7 +10,8 @@ package io.harness.auditevent.streaming.services.impl;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.entities.AuditEvent;
-import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
+import io.harness.auditevent.streaming.entities.StreamingBatch;
 import io.harness.auditevent.streaming.mappers.AuditEventMapper;
 import io.harness.auditevent.streaming.services.BatchProcessorService;
 
@@ -32,7 +33,9 @@ public class BatchProcessorServiceImpl implements BatchProcessorService {
   }
 
   @Override
-  public List<OutgoingAuditMessage> processAuditEvent(List<AuditEvent> auditEvents) {
-    return auditEvents.stream().map(auditEventMapper::toOutgoingAuditMessage).collect(Collectors.toList());
+  public List<OutgoingAuditMessage> processAuditEvent(StreamingBatch streamingBatch, List<AuditEvent> auditEvents) {
+    return auditEvents.stream()
+        .map(auditEvent -> auditEventMapper.toOutgoingAuditMessage(auditEvent, streamingBatch))
+        .collect(Collectors.toList());
   }
 }

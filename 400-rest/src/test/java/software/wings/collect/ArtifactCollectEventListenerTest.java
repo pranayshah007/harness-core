@@ -118,7 +118,7 @@ public class ArtifactCollectEventListenerTest extends WingsBaseTest {
                        .build());
 
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     DelegateTask delegateTask = delegateTaskArgumentCaptor.getValue();
     assertThat(delegateTask).isNotNull().hasFieldOrPropertyWithValue("data.taskType", JENKINS_COLLECTION.name());
     assertThat(delegateTask.getData().getParameters()[0])
@@ -144,7 +144,7 @@ public class ArtifactCollectEventListenerTest extends WingsBaseTest {
                        .build());
 
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     assertThat(delegateTaskArgumentCaptor.getValue())
         .isNotNull()
         .hasFieldOrPropertyWithValue("data.taskType", BAMBOO_COLLECTION.name());
@@ -172,7 +172,7 @@ public class ArtifactCollectEventListenerTest extends WingsBaseTest {
                        .build());
 
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     assertThat(delegateTaskArgumentCaptor.getValue())
         .isNotNull()
         .hasFieldOrPropertyWithValue("data.taskType", AZURE_ARTIFACTS_COLLECTION.name());

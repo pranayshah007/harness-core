@@ -29,6 +29,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -57,7 +58,7 @@ import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
-import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStore;
@@ -129,6 +130,7 @@ import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParam
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
@@ -250,6 +252,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
             .helmVersion(HelmVersion.V3)
+            .store(GitStore.builder().build())
             .skipResourceVersioning(ParameterField.createValueField(true))
             .build();
     ValuesManifestOutcome valuesManifestOutcome = ValuesManifestOutcome.builder().build();
@@ -259,6 +262,29 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     assertThat(nativeHelmStepHelper.getHelmSupportedManifestOutcome(manifestOutcomes))
         .isEqualTo(helmChartManifestOutcome);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetHelmChartManifestsOutcomeWithHarnessAndInheritFromManifestStore() {
+    HelmChartManifestOutcome helmChartManifestOutcome =
+        HelmChartManifestOutcome.builder()
+            .identifier("HelmChart")
+            .helmVersion(HelmVersion.V3)
+            .skipResourceVersioning(ParameterField.createValueField(true))
+            .store(HarnessStore.builder().build())
+            .build();
+    ValuesManifestOutcome valuesManifestOutcome =
+        ValuesManifestOutcome.builder().store(InheritFromManifestStoreConfig.builder().build()).build();
+    List<ManifestOutcome> manifestOutcomes = new ArrayList<>();
+    manifestOutcomes.add(helmChartManifestOutcome);
+    manifestOutcomes.add(valuesManifestOutcome);
+
+    assertThatThrownBy(() -> nativeHelmStepHelper.getHelmSupportedManifestOutcome(manifestOutcomes))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "InheritFromManifest store type is not supported with Manifest identifier: HelmChart, Manifest type: HelmChart, Manifest store type: Harness");
   }
 
   @Test
@@ -1144,6 +1170,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
         HelmChartManifestOutcome.builder()
             .identifier("helm")
             .store(harnessStore)
+            .chartName(ParameterField.createValueField("Todolist"))
             .valuesPaths(ParameterField.createValueField(asList("org:/path/to/helm/chart/valuesOverride.yaml")))
             .build();
 
@@ -1215,6 +1242,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     HelmChartManifestOutcome helmChartManifestOutcome = HelmChartManifestOutcome.builder()
                                                             .identifier("helm")
                                                             .store(customRemoteStoreConfig)
+                                                            .chartName(ParameterField.createValueField("Todolist"))
                                                             .valuesPaths(ParameterField.createValueField(null))
                                                             .build();
 

@@ -11,6 +11,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGE_USER_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USER;
 
+import static java.util.Objects.isNull;
+
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -112,6 +114,16 @@ public class UserInfoServiceImpl implements UserInfoService {
     } else {
       throw new IllegalStateException("user login required");
     }
+  }
+
+  @Override
+  public Boolean sendTwoFactorAuthenticationResetEmail(String userId, String accountId) {
+    Boolean twoFactorResetEmailSent =
+        CGRestUtils.getResponse(userClient.sendTwoFactorAuthenticationResetEmail(userId, accountId));
+    if (isNull(twoFactorResetEmailSent)) {
+      return false;
+    }
+    return twoFactorResetEmailSent;
   }
 
   @Override

@@ -51,7 +51,7 @@ public class AsgBlueGreenRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<
     String asgBlueGreenDeployFnq = getExecutionStepFqn(ctx.getCurrentField(), ASG_BLUE_GREEN_DEPLOY);
     String asgBlueGreenSwapServiceFnq = getExecutionStepFqn(ctx.getCurrentField(), ASG_BLUE_GREEN_SWAP_SERVICE);
 
-    asgBlueGreenRollbackStepParameters.setAsgBlueGreenDeplyFnq(asgBlueGreenDeployFnq);
+    asgBlueGreenRollbackStepParameters.setAsgBlueGreenDeployFnq(asgBlueGreenDeployFnq);
     asgBlueGreenRollbackStepParameters.setAsgBlueGreenSwapServiceFnq(asgBlueGreenSwapServiceFnq);
     asgBlueGreenRollbackStepParameters.setDelegateSelectors(
         stepElement.getAsgBlueGreenRollbackStepInfo().getDelegateSelectors());

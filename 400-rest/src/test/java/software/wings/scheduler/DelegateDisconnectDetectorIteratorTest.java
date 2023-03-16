@@ -52,10 +52,9 @@ import io.harness.service.intfc.DelegateCache;
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 import software.wings.beans.AwsConfig;
-import software.wings.beans.DelegateConnection;
 import software.wings.beans.TaskType;
 import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
-import software.wings.service.impl.DelegateConnectionDao;
+import software.wings.service.impl.DelegateDao;
 import software.wings.service.impl.DelegateObserver;
 import software.wings.service.impl.DelegateServiceImpl;
 import software.wings.service.impl.DelegateTaskServiceClassicImpl;
@@ -78,7 +77,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.joda.time.DateTime;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -108,7 +106,7 @@ public class DelegateDisconnectDetectorIteratorTest extends WingsBaseTest {
   @Mock
   private LoadingCache<ImmutablePair<String, String>, Optional<DelegateConnectionResult>> delegateConnectionResultCache;
 
-  @Inject private DelegateConnectionDao delegateConnectionDao;
+  @Inject private DelegateDao delegateDao;
   @Inject private KryoSerializer kryoSerializer;
 
   private final int port = LocalhostUtils.findFreePort();
@@ -154,22 +152,11 @@ public class DelegateDisconnectDetectorIteratorTest extends WingsBaseTest {
   @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
-  public void testDeleteDelegateConnectionResultsOnDelegateDisconnect() throws ExecutionException {
+  public void testDeleteDelegateMarkedAsDisconnected() throws ExecutionException {
     Delegate delegate = createDelegate(ACCOUNT_ID);
-    long lastHeartBeat = DateTime.now().getMillis();
-    DelegateConnection delegateConnection = DelegateConnection.builder()
-                                                .accountId(ACCOUNT_ID)
-                                                .delegateId(delegate.getUuid())
-                                                .disconnected(false)
-                                                .lastHeartbeat(lastHeartBeat)
-                                                .build();
-    persistence.save(delegateConnection);
-    List<DelegateConnection> delegateConnections = delegateConnectionDao.list(ACCOUNT_ID, delegate.getUuid());
-    assertThat(delegateConnections).hasSize(1);
     delegateDisconnectDetectorIterator.handle(delegate);
-    List<DelegateConnection> delegateConnectionsAfterDisconnect =
-        delegateConnectionDao.list(ACCOUNT_ID, delegate.getUuid());
-    assertThat(delegateConnectionsAfterDisconnect).hasSize(0);
+    Delegate updatedDelegate = persistence.get(Delegate.class, delegate.getUuid());
+    assertThat(updatedDelegate.isDisconnected()).isTrue();
   }
 
   @Test

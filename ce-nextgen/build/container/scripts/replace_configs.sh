@@ -61,6 +61,8 @@ replace_key_value eventsFramework.redis.password $EVENTS_FRAMEWORK_REDIS_PASSWOR
 replace_key_value eventsFramework.redis.sslConfig.enabled $EVENTS_FRAMEWORK_REDIS_SSL_ENABLED
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
+replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
 
 replace_key_value gcpConfig.gcpProjectId "$GCP_PROJECT_ID"
 replace_key_value gcpConfig.gcpAwsConnectorCrudPubSubTopic "$GCP_AWS_CONNECTOR_CRUD_PUBSUB_TOPIC"
@@ -72,6 +74,7 @@ replace_key_value ceAzureSetupConfig.azureAppClientSecret "$AZURE_APP_CLIENT_SEC
 replace_key_value ceAzureSetupConfig.enableFileCheckAtSource "$AZURE_ENABLE_FILE_CHECK_AT_SOURCE"
 
 replace_key_value ceGcpSetupConfig.enableServiceAccountPermissionsCheck "$GCP_ENABLE_SERVICE_ACCOUNT_PERMISSIONS_CHECK"
+replace_key_value ceGcpSetupConfig.serviceAccountEmail "$GCP_SERVICE_ACCOUNT_EMAIL"
 
 replace_key_value deploymentClusterName "$DEPLOYMENT_CLUSTER_NAME"
 
@@ -156,3 +159,10 @@ replace_key_value dkronClientConfig.connectTimeOutSeconds "$DKRON_CLIENT_CONNECT
 replace_key_value dkronClientConfig.readTimeOutSeconds "$DKRON_CLIENT_READTIMEOUT"
 
 replace_key_value currencyPreferences.historicalUpdateMonthsCount "$CURRENCY_PREFERENCE_HISTORICAL_UPDATE_MONTHS_COUNT"
+
+replace_key_value clickHouseConfig.url "$CLICKHOUSE_URL"
+replace_key_value clickHouseConfig.username "$CLICKHOUSE_USERNAME"
+replace_key_value clickHouseConfig.password "$CLICKHOUSE_PASSWORD"
+
+replace_key_value deployMode "$DEPLOY_MODE"
+replace_key_value isClickHouseEnabled "$CLICKHOUSE_ENABLED"

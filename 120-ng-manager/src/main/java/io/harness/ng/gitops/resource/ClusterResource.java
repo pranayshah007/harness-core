@@ -176,6 +176,7 @@ public class ClusterResource {
     checkForAccessOrThrow(accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef(),
         ENVIRONMENT_UPDATE_PERMISSION, "create");
 
+    // TODO: add validation that cluster scope can not be higher than env scope
     Cluster entity = ClusterEntityMapper.toEntity(accountId, request);
 
     Cluster created = clusterService.create(entity);
@@ -206,17 +207,20 @@ public class ClusterResource {
     }
     List<Cluster> entities = new ArrayList<>();
     if (!request.isLinkAllClusters()) {
+      // TODO: add validation that cluster scope can not be higher than env scope
       entities = ClusterEntityMapper.toEntities(accountId, request);
     } else {
       PageResponse<ClusterFromGitops> accountLevelClusters =
           fetchClustersFromGitopsService(0, UNLIMITED_PAGE_SIZE, accountId, "", "", request.getSearchTerm());
-      // check number of project level clusters
-      PageResponse<ClusterFromGitops> projectLevelClusters = fetchClustersFromGitopsService(0, UNLIMITED_PAGE_SIZE,
-          accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getSearchTerm());
       entities.addAll(ClusterEntityMapper.toEntities(accountId, request.getOrgIdentifier(),
           request.getProjectIdentifier(), request.getEnvRef(), accountLevelClusters.getContent()));
-      entities.addAll(ClusterEntityMapper.toEntities(accountId, request.getOrgIdentifier(),
-          request.getProjectIdentifier(), request.getEnvRef(), projectLevelClusters.getContent()));
+
+      if (isNotEmpty(request.getOrgIdentifier()) && isNotEmpty(request.getProjectIdentifier())) {
+        PageResponse<ClusterFromGitops> projectLevelClusters = fetchClustersFromGitopsService(0, UNLIMITED_PAGE_SIZE,
+            accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getSearchTerm());
+        entities.addAll(ClusterEntityMapper.toEntities(accountId, request.getOrgIdentifier(),
+            request.getProjectIdentifier(), request.getEnvRef(), projectLevelClusters.getContent()));
+      }
     }
     long linked = isNotEmpty(entities) ? clusterService.bulkCreate(entities) : 0;
     return ResponseDTO.newResponse(ClusterBatchResponse.builder().linked(linked).build());
@@ -305,7 +309,7 @@ public class ClusterResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
-      @Parameter(description = "Environment Identifier of the clusters", required = true) @QueryParam(
+      @Parameter(description = "Environment Identifier of the clusters", required = true) @NotNull @QueryParam(
           NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ResourceIdentifier String envIdentifier,
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
@@ -327,6 +331,7 @@ public class ClusterResource {
     // Account level clusters
     PageResponse<ClusterFromGitops> accountLevelClusters =
         fetchClustersFromGitopsService(page, size, accountId, "", "", searchTerm);
+
     // Project level clusters
     PageResponse<ClusterFromGitops> projectLevelClusters =
         fetchClustersFromGitopsService(page, size, accountId, orgIdentifier, projectIdentifier, searchTerm);
@@ -356,9 +361,18 @@ public class ClusterResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
-          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(
+          description =
+              "If true, returns cluster list based on the context(acc/org/project) passed in request. Else will aggregate from account and project levels.")
+      @QueryParam("scoped") @DefaultValue("false") boolean scoped) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
 
+    if (scoped) {
+      // Instead of aggregating from all the levels, we will send the clusters as per the level/context passed.
+      return ResponseDTO.newResponse(
+          fetchClustersFromGitopsService(page, size, accountId, orgIdentifier, projectIdentifier, searchTerm));
+    }
     // Account level clusters
     PageResponse<ClusterFromGitops> accountLevelClusters =
         fetchClustersFromGitopsService(page, size, accountId, "", "", searchTerm);

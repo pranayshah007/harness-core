@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,7 +45,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.creation.NodeTypeLookupService;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
-import io.harness.repositories.executions.PmsExecutionSummaryRepository;
+import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.rule.Owner;
 
 import java.text.SimpleDateFormat;
@@ -63,18 +64,18 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
   @Mock private PlanService planService;
   @Mock private PlanExecutionService planExecutionService;
   @Mock private NodeTypeLookupService nodeTypeLookupService;
-  @Mock private PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
   @Mock private NotificationHelper notificationHelper;
   @Mock private RecentExecutionsInfoHelper recentExecutionsInfoHelper;
+  @Mock PmsExecutionSummaryService pmsExecutionSummaryService;
 
   private ExecutionSummaryCreateEventHandler executionSummaryCreateEventHandler;
 
   @Before
   public void setUp() throws Exception {
     executionSummaryCreateEventHandler = new ExecutionSummaryCreateEventHandler(pmsPipelineService, planService,
-        planExecutionService, nodeTypeLookupService, pmsExecutionSummaryRespository, pmsGitSyncHelper,
-        notificationHelper, recentExecutionsInfoHelper);
+        planExecutionService, nodeTypeLookupService, pmsGitSyncHelper, notificationHelper, recentExecutionsInfoHelper,
+        pmsExecutionSummaryService);
   }
 
   @Test
@@ -137,7 +138,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
         .saveExecutionInfo(
             anyString(), anyString(), anyString(), anyString(), executionSummaryInfoArgumentCaptor.capture());
 
-    when(pmsExecutionSummaryRespository.save(pipelineExecutionSummaryEntityArgumentCaptor.capture())).thenReturn(null);
+    doReturn(null).when(pmsExecutionSummaryService).save(pipelineExecutionSummaryEntityArgumentCaptor.capture());
 
     when(nodeTypeLookupService.findNodeTypeServiceName(anyString())).thenReturn("pms");
 

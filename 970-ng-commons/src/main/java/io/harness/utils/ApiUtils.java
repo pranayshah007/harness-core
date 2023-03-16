@@ -7,14 +7,6 @@
 
 package io.harness.utils;
 
-import static io.harness.NGCommonEntityConstants.NEXT_REL;
-import static io.harness.NGCommonEntityConstants.PAGE;
-import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
-import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
-import static io.harness.NGCommonEntityConstants.SELF_REL;
-
-import static javax.ws.rs.core.UriBuilder.fromPath;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
@@ -22,12 +14,10 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.common.beans.NGTag;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.collections.CollectionUtils;
@@ -35,24 +25,16 @@ import org.apache.commons.collections.CollectionUtils;
 @OwnedBy(HarnessTeam.PL)
 @UtilityClass
 public class ApiUtils {
+  public final String X_TOTAL_ELEMENTS = "X-Total-Elements";
+  public final String X_PAGE_NUMBER = "X-Page-Number";
+  public final String X_PAGE_SIZE = "X-Page-Size";
+
   public ResponseBuilder addLinksHeader(
-      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
-    ArrayList<Link> links = new ArrayList<>();
-
-    links.add(
-        Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
-
-    if (page >= 1) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build())
-                    .rel(PREVIOUS_REL)
-                    .build());
-    }
-    if (limit == currentResultCount) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build())
-                    .rel(NEXT_REL)
-                    .build());
-    }
-    return responseBuilder.links(links.toArray(new Link[0]));
+      ResponseBuilder responseBuilder, long totalElements, long pageNumber, long pageSize) {
+    responseBuilder.header(X_TOTAL_ELEMENTS, totalElements);
+    responseBuilder.header(X_PAGE_NUMBER, pageNumber);
+    responseBuilder.header(X_PAGE_SIZE, pageSize);
+    return responseBuilder;
   }
 
   public static Map<String, String> getTags(List<NGTag> tags) {

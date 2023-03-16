@@ -10,49 +10,37 @@ package io.harness.ci.execution.queue;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 import static io.harness.threading.Morpheus.sleep;
 
-import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 
-import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.states.V1.InitializeTaskStepV2;
-import io.harness.eventsframework.api.EventsFrameworkDownException;
-import io.harness.hsqs.client.HsqsServiceClient;
+import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.AckRequest;
-import io.harness.hsqs.client.model.AckResponse;
 import io.harness.hsqs.client.model.DequeueRequest;
 import io.harness.hsqs.client.model.DequeueResponse;
 import io.harness.hsqs.client.model.UnAckRequest;
-import io.harness.hsqs.client.model.UnAckResponse;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import io.dropwizard.lifecycle.Managed;
-import java.io.IOException;
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
-import net.jodah.failsafe.RetryPolicy;
-import retrofit2.Response;
 
 @Slf4j
 public class CIExecutionPoller implements Managed {
-  @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject CIInitTaskMessageProcessor ciInitTaskMessageProcessor;
-  @Inject HsqsServiceClient hsqsServiceClient;
+  @Inject HsqsClientService hsqsClientService;
   @Inject InitializeTaskStepV2 initializeTaskStepV2;
   @Inject AsyncWaitEngine asyncWaitEngine;
   private AtomicBoolean shouldStop = new AtomicBoolean(false);
   private static final int WAIT_TIME_IN_SECONDS = 5;
   private final String moduleName = "ci";
-  private final int batchSize = 1;
-  private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
-  private final int MAX_ATTEMPTS = 3;
+  private final int batchSize = 5;
 
   @Override
   public void start() {
@@ -72,7 +60,7 @@ public class CIExecutionPoller implements Managed {
         TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);
       } while (!Thread.currentThread().isInterrupted() && !shouldStop.get());
     } catch (Exception ex) {
-      log.error("Consumer {} unexpectedly stopped", this.getClass().getSimpleName(), ex);
+      log.error("hsqs Consumer unexpectedly stopped", ex);
     } finally {
       log.info("finished consuming messages for ci init task");
     }
@@ -81,36 +69,24 @@ public class CIExecutionPoller implements Managed {
   private void readEventsFrameworkMessages() throws InterruptedException {
     try {
       pollAndProcessMessages();
-    } catch (EventsFrameworkDownException e) {
-      log.error("Events framework is down for " + this.getClass().getSimpleName() + " consumer. Retrying again...", e);
-      TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);
     } catch (Exception ex) {
-      log.error("got error while reading messages from hsqs " + this.getClass().getSimpleName()
-              + " consumer. Retrying again...",
-          ex);
-      TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);
+      log.error("got error while reading messages from hsqs consumer. Retrying again...", ex);
     }
   }
 
   @VisibleForTesting
-  void pollAndProcessMessages() throws InterruptedException {
+  void pollAndProcessMessages() {
     try {
-      Response<List<DequeueResponse>> messages = hsqsServiceClient
-                                                     .dequeue(DequeueRequest.builder()
-                                                                  .batchSize(batchSize)
-                                                                  .consumerName(moduleName)
-                                                                  .topic(moduleName)
-                                                                  .maxWaitDuration(100)
-                                                                  .build())
-                                                     .execute();
-      if (messages.body() == null) {
-        TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);
-        return;
-      }
-      for (DequeueResponse message : messages.body()) {
+      List<DequeueResponse> messages = hsqsClientService.dequeue(DequeueRequest.builder()
+                                                                     .batchSize(batchSize)
+                                                                     .consumerName(moduleName)
+                                                                     .topic(moduleName)
+                                                                     .maxWaitDuration(100)
+                                                                     .build());
+      for (DequeueResponse message : messages) {
         processMessage(message);
       }
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
@@ -120,43 +96,25 @@ public class CIExecutionPoller implements Managed {
 
   private void processMessage(DequeueResponse message) {
     log.info("Read message with message id {} from hsqs", message.getItemId());
-    String authToken = ciExecutionServiceConfig.getQueueServiceClient().getAuthToken();
-
-    RetryPolicy<Object> retryPolicy =
-        getRetryPolicy(format("[Retrying failed call to hsqs: {}"), format("Failed to call hsqs retrying {} times"));
-
+    ProcessMessageResponse processMessageResponse = ciInitTaskMessageProcessor.processMessage(message);
     try {
-      ProcessMessageResponse processMessageResponse = ciInitTaskMessageProcessor.processMessage(message);
       if (processMessageResponse.getSuccess()) {
-        Response<AckResponse> response = hsqsServiceClient
-                                             .ack(AckRequest.builder()
-                                                      .itemID(message.getItemId())
-                                                      .topic(moduleName)
-                                                      .subTopic(processMessageResponse.getAccountId())
-                                                      .build())
-                                             .execute();
-        log.info("ack response code: {}", response.code());
+        hsqsClientService.ack(AckRequest.builder()
+                                  .itemId(message.getItemId())
+                                  .topic(moduleName)
+                                  .subTopic(processMessageResponse.getAccountId())
+                                  .consumerName(moduleName)
+                                  .build());
       } else {
-        Response<UnAckResponse> response = hsqsServiceClient
-                                               .unack(UnAckRequest.builder()
-                                                          .itemID(message.getItemId())
-                                                          .topic(moduleName)
-                                                          .subTopic(processMessageResponse.getAccountId())
-                                                          .build())
-                                               .execute();
-        log.info("unack response code: {}", response.code());
+        UnAckRequest unAckRequest = UnAckRequest.builder()
+                                        .itemId(message.getItemId())
+                                        .topic(moduleName)
+                                        .subTopic(processMessageResponse.getAccountId())
+                                        .build();
+        hsqsClientService.unack(unAckRequest);
       }
     } catch (Exception ex) {
-      log.error("got error in calling hsqs client", ex);
+      log.error("got error in calling hsqs client for message id: {}", message.getItemId(), ex);
     }
-  }
-
-  private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
-    return new RetryPolicy<>()
-        .handle(Exception.class)
-        .withDelay(RETRY_SLEEP_DURATION)
-        .withMaxAttempts(MAX_ATTEMPTS)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
-        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
 }

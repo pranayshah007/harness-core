@@ -95,6 +95,7 @@ mktPlaceConfig:
   awsSecretKey: awsMktPlaceSecretKeyPlaceHolder
   awsMarketPlaceProductCode: awsMktPlaceProductCodePlaceHolder
   awsMarketPlaceCeProductCode: awsMktPlaceCeProductCodePlaceHolder
+  awsMarketPlaceFfProductCode: awsMktPlaceFfProductCodePlaceHolder
   azureMarketplaceAccessKey: "ZWRlZDEzMjMtYTk5Zi00MDc0LWJmMjMtOWFhZTYzN2M4ZGQy"
   azureMarketplaceSecretKey: "UmU4QmtxZkdKal9aWWhyTjlCTU5zRnFIcFNAXUI9ODc="
 
@@ -130,6 +131,20 @@ datadogConfig:
 
 distributedLockImplementation: REDIS
 
+redisDelegateConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
+
+
 redisLockConfig:
   sentinel: false
   masterName: "test"
@@ -143,7 +158,7 @@ redisLockConfig:
   nettyThreads: 16
   useScriptCache: true
 
-atmosphereBroadcaster: HAZELCAST
+atmosphereBroadcaster: MEMORY
 
 redisAtmosphereConfig:
   sentinel: false
@@ -288,7 +303,7 @@ dmsSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9O
 
 mongo:
   uri: mongodb://localhost:27017/harness
-  #uri: mongodb://mongo1:30001,mongo2:30002,mongo3:30003/harness
+  #uri: mongodb://mongo1:30001,mongo2:30002,mongo3:30003
   #locksUri: mongodb://localhost:27017/impermanent
   connectTimeout: 30000
   serverSelectionTimeout: 90000
@@ -317,6 +332,16 @@ events-mongo:
   indexManagerMode: AUTO
   aliasDBName: events
 
+dms-mongo:
+  uri: mongodb://localhost:27017/dms-harness
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  socketTimeout: 360000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 300
+  indexManagerMode: AUTO
+  aliasDBName: dms-harness
+
 searchEnabled: false
 graphQLEnabled: true
 
@@ -335,7 +360,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 1658d03e
+scmVersion: ef2d02fb
 
 ngAuthUIEnabled: false
 
@@ -372,7 +397,7 @@ totp:
     durationUnit: MINUTES
 
 cacheConfig:
-  cacheBackend: HAZELCAST
+  cacheBackend: NOOP
   cacheNamespace: ""
   disabledCaches: []
 
@@ -711,11 +736,19 @@ executorsConfig:
     idleTime: ${DATA_RECONCILIATION_IDLE_TIME:-10}
     timeUnit: ${DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT:-SECONDS}
 
+debeziumConsumersConfigs:
+  applicationTimescaleStreaming:
+    topic: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_harnessMongo.harness.applications}
+    threads: ${DEBEZIUM_CONSUMER_THREADS:-2}
+    batchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
+
 dataReconciliation:
   enabled: true
   duration: 900
 
 disableDelegateMgmtInManager: false
+
+enableRedisForDelegateService: false
 
 secretsConfiguration:
   secretResolutionEnabled: false

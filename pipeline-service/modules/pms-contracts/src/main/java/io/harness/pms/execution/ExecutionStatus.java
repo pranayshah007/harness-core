@@ -39,6 +39,11 @@ public enum ExecutionStatus {
   @JsonProperty("InterventionWaiting") INTERVENTIONWAITING(Status.INTERVENTION_WAITING, "InterventionWaiting"),
   @JsonProperty("ApprovalWaiting") APPROVALWAITING(Status.APPROVAL_WAITING, "ApprovalWaiting"),
   @JsonProperty("WaitStepRunning") WAITSTEPRUNNING(Status.WAIT_STEP_RUNNING, "WaitStepRunning"),
+  @JsonProperty("QueuedLicenseLimitReached")
+  QUEUED_LICENSE_LIMIT_REACHED(Status.QUEUED_LICENSE_LIMIT_REACHED, "QueuedLicenseLimitReached"),
+  @JsonProperty("QueuedExecutionConcurrencyReached")
+  QUEUED_EXECUTION_CONCURRENCY_REACHED(
+      Status.QUEUED_EXECUTION_CONCURRENCY_REACHED, "QueuedExecutionConcurrencyReached"),
   @JsonProperty("Success") SUCCESS(Status.SUCCEEDED, "Success"),
   @JsonProperty("Suspended") SUSPENDED(Status.SUSPENDED, "Suspended"),
   @JsonProperty("Skipped") SKIPPED(Status.SKIPPED, "Skipped"),

@@ -1,0 +1,54 @@
+pipeline:
+  name: My Deployment Pipeline
+  identifier: myPipeline1
+  description: This is my first pipeline. It is really concrete
+  variables:
+    - name: pipelineN1
+      type: String
+      value: stringValue1
+    - name: pipelineN2
+      type: Number
+      value: 11
+  stages:
+    - stage:
+        name: dev
+        identifier: stage0
+        type: Deployment
+        spec:
+          deploymentType: NativeHelm
+          service:
+            serviceRef: service1
+          environment:
+            environmentRef: my_env_dev
+            infrastructureDefinitions: <+input>
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false
+    - stage:
+        name: qa
+        identifier: stage1
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            serviceRef: service1
+            useFromStage:
+              stage: stage0
+            environment:
+              environmentRef: my_env_prod
+              infrastructureDefinitions: <+input>
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false

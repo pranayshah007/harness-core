@@ -134,6 +134,8 @@ public class AzureClient extends AzureClientBase {
                 .clientId(azureConfig.getClientId())
                 .tenantId(azureConfig.getTenantId())
                 .pemCertificate(azureConfig.getCertFilePath())
+                .authorityHost(
+                    AzureUtils.getAuthorityHost(azureConfig.getAzureEnvironmentType(), azureConfig.getTenantId()))
                 .httpClient(httpClient)
                 .build();
           case PFX:
@@ -141,6 +143,8 @@ public class AzureClient extends AzureClientBase {
                 .clientId(azureConfig.getClientId())
                 .tenantId(azureConfig.getTenantId())
                 .pfxCertificate(azureConfig.getCertFilePath(), azureConfig.getCertPassword())
+                .authorityHost(
+                    AzureUtils.getAuthorityHost(azureConfig.getAzureEnvironmentType(), azureConfig.getTenantId()))
                 .httpClient(httpClient)
                 .build();
           default:
@@ -161,6 +165,8 @@ public class AzureClient extends AzureClientBase {
             .clientId(azureConfig.getClientId())
             .tenantId(azureConfig.getTenantId())
             .clientSecret(String.valueOf(azureConfig.getKey()))
+            .authorityHost(
+                AzureUtils.getAuthorityHost(azureConfig.getAzureEnvironmentType(), azureConfig.getTenantId()))
             .httpClient(httpClient)
             .build();
     }

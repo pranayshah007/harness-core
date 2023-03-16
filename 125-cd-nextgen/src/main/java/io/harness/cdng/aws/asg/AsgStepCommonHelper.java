@@ -29,7 +29,7 @@ import io.harness.cdng.aws.asg.AsgRollingPrepareRollbackDataOutcome.AsgRollingPr
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
-import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -37,19 +37,35 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.mapper.AutoScalingGroupContainerToServerInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.exception.TaskNGDataException;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResponse;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResult;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResponse;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResult;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResponse;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResult;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployResponse;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployResult;
+import io.harness.delegate.task.aws.asg.AsgRollingRollbackResponse;
+import io.harness.delegate.task.aws.asg.AsgRollingRollbackResult;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.GeneralException;
 import io.harness.exception.IllegalArgumentException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -107,6 +123,10 @@ public class AsgStepCommonHelper extends CDStepHelper {
   @Inject private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   private final LogWrapper logger = new LogWrapper(log);
+  private static final String EXEC_STRATEGY_CANARY = "canary";
+  private static final String EXEC_STRATEGY_BLUEGREEN = "blue-green";
+  private static final String EXEC_STRATEGY_ROLLING = "rolling";
+  static final String VERSION_DELIMITER = "__";
 
   public TaskChainResponse startChainLink(
       AsgStepExecutor asgStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
@@ -244,7 +264,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
       taskChainResponse = asgStepExecutor.executeAsgTask(
           ambiance, stepElementParameters, executionPassThroughData, unitProgressData, asgStepExecutorParams);
-    } else if (asgStepExecutor instanceof AsgRollingDeployStep) {
+    } else if (asgStepExecutor instanceof AsgRollingDeployStep || asgStepExecutor instanceof AsgBlueGreenDeployStep) {
       AsgPrepareRollbackDataPassThroughData asgPrepareRollbackDataPassThroughData =
           AsgPrepareRollbackDataPassThroughData.builder()
               .infrastructureOutcome(infrastructureOutcome)
@@ -253,9 +273,10 @@ public class AsgStepCommonHelper extends CDStepHelper {
       taskChainResponse = asgStepExecutor.executeAsgPrepareRollbackDataTask(
           ambiance, stepElementParameters, asgPrepareRollbackDataPassThroughData, unitProgressData);
     } else {
-      // TODO
-      throw new RuntimeException("Not implemented yet");
+      throw new IllegalArgumentException(
+          format("Invalid instance of AsgStepExecutor %s", asgStepExecutor.getClass()), USER);
     }
+
     return taskChainResponse;
   }
 
@@ -268,7 +289,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
                             .async(true)
                             .build();
 
-    String taskName = taskType.getDisplayName() + " : " + commandRequest.getCommandName();
+    String taskName = taskType.getDisplayName();
 
     AsgSpecParameters asgSpecParameters = (AsgSpecParameters) stepElementParameters.getSpec();
 
@@ -509,7 +530,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
       identifier = gitFetchFilesConfig.getIdentifier();
       manifestType = gitFetchFilesConfig.getManifestType();
       logger.infoBold(
-          logCallback, "%nFetching %s manifest files with identifier `%s` from Git", manifestType, identifier);
+          logCallback, "Fetching %s manifest files with identifier `%s` from Git", manifestType, identifier);
       logger.info(logCallback, "Fetching following Files:");
       gitFetchFilesConfig.getGitStoreDelegateConfig().getPaths().stream().forEach(
           fp -> logger.info(logCallback, "- %s", fp));
@@ -575,5 +596,93 @@ public class AsgStepCommonHelper extends CDStepHelper {
       throw new IllegalArgumentException("AMI not available. Please specify the AMI artifact", WingsException.USER);
     }
     return image;
+  }
+
+  public List<ServerInstanceInfo> getServerInstanceInfos(
+      AsgCommandResponse asgCommandResponse, String infrastructureKey, String region) {
+    if (asgCommandResponse instanceof AsgRollingDeployResponse) {
+      AsgRollingDeployResult asgRollingDeployResult =
+          ((AsgRollingDeployResponse) asgCommandResponse).getAsgRollingDeployResult();
+      String asgName = asgRollingDeployResult.getAutoScalingGroupContainer().getAutoScalingGroupName();
+      return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgRollingDeployResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_ROLLING,
+          asgName, true);
+    }
+
+    else if (asgCommandResponse instanceof AsgRollingRollbackResponse) {
+      AsgRollingRollbackResult asgRollingRollbackResult =
+          ((AsgRollingRollbackResponse) asgCommandResponse).getAsgRollingRollbackResult();
+      String asgName = null;
+      if (asgRollingRollbackResult.getAutoScalingGroupContainer() != null) {
+        asgName = asgRollingRollbackResult.getAutoScalingGroupContainer().getAutoScalingGroupName();
+      }
+      return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgRollingRollbackResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_ROLLING,
+          asgName, true);
+    }
+
+    else if (asgCommandResponse instanceof AsgCanaryDeployResponse) {
+      AsgCanaryDeployResult asgCanaryDeployResult =
+          ((AsgCanaryDeployResponse) asgCommandResponse).getAsgCanaryDeployResult();
+      String asgName = asgCanaryDeployResult.getAutoScalingGroupContainer().getAutoScalingGroupName();
+      String asgNameWithoutSuffix = asgName.substring(0, asgName.length() - 8);
+      return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgCanaryDeployResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_CANARY,
+          asgNameWithoutSuffix, true);
+    }
+
+    else if (asgCommandResponse instanceof AsgCanaryDeleteResponse) {
+      return new ArrayList<>();
+    }
+
+    else if (asgCommandResponse instanceof AsgBlueGreenDeployResponse) {
+      AsgBlueGreenDeployResult asgBlueGreenDeployResult =
+          ((AsgBlueGreenDeployResponse) asgCommandResponse).getAsgBlueGreenDeployResult();
+      String stageAsgName = asgBlueGreenDeployResult.getStageAutoScalingGroupContainer().getAutoScalingGroupName();
+      String asgNameWithoutSuffix = stageAsgName.substring(0, stageAsgName.length() - 3);
+      List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+      serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgBlueGreenDeployResult.getProdAutoScalingGroupContainer(), infrastructureKey, region,
+          EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, true));
+      serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgBlueGreenDeployResult.getStageAutoScalingGroupContainer(), infrastructureKey, region,
+          EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, false));
+      return serverInstanceInfoList;
+    }
+
+    else if (asgCommandResponse instanceof AsgBlueGreenSwapServiceResponse) {
+      AsgBlueGreenSwapServiceResult asgBlueGreenSwapServiceResult =
+          ((AsgBlueGreenSwapServiceResponse) asgCommandResponse).getAsgBlueGreenSwapServiceResult();
+      String prodAsgName = asgBlueGreenSwapServiceResult.getProdAutoScalingGroupContainer().getAutoScalingGroupName();
+      String asgNameWithoutSuffix = prodAsgName.substring(0, prodAsgName.length() - 3);
+      List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+      serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgBlueGreenSwapServiceResult.getProdAutoScalingGroupContainer(), infrastructureKey, region,
+          EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, true));
+      serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgBlueGreenSwapServiceResult.getStageAutoScalingGroupContainer(), infrastructureKey, region,
+          EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, false));
+      return serverInstanceInfoList;
+    }
+
+    else if (asgCommandResponse instanceof AsgBlueGreenRollbackResponse) {
+      AsgBlueGreenRollbackResult asgBlueGreenRollbackResult =
+          ((AsgBlueGreenRollbackResponse) asgCommandResponse).getAsgBlueGreenRollbackResult();
+      String asgNameWithoutSuffix = null;
+      if (asgBlueGreenRollbackResult.getProdAutoScalingGroupContainer() != null) {
+        String prodAsgName = asgBlueGreenRollbackResult.getProdAutoScalingGroupContainer().getAutoScalingGroupName();
+        asgNameWithoutSuffix = prodAsgName.substring(0, prodAsgName.length() - 3);
+      }
+      List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+      serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgBlueGreenRollbackResult.getProdAutoScalingGroupContainer(), infrastructureKey, region,
+          EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, true));
+      serverInstanceInfoList.addAll(AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
+          asgBlueGreenRollbackResult.getStageAutoScalingGroupContainer(), infrastructureKey, region,
+          EXEC_STRATEGY_BLUEGREEN, asgNameWithoutSuffix, false));
+      return serverInstanceInfoList;
+    }
+
+    throw new GeneralException("Invalid asg command response instance");
   }
 }

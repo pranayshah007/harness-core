@@ -23,6 +23,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.impl.CIYamlSchemaServiceImpl;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
+import io.harness.beans.execution.license.CILicenseService;
+import io.harness.cache.CICacheManagementService;
+import io.harness.cache.CICacheManagementServiceImpl;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
@@ -36,10 +39,11 @@ import io.harness.ci.execution.queue.CIInitTaskMessageProcessor;
 import io.harness.ci.execution.queue.CIInitTaskMessageProcessorImpl;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.license.impl.CILicenseServiceImpl;
 import io.harness.ci.logserviceclient.CILogServiceClientModule;
 import io.harness.ci.tiserviceclient.TIServiceClientModule;
+import io.harness.ci.validation.CIAccountValidationService;
+import io.harness.ci.validation.CIAccountValidationServiceImpl;
 import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.ci.validation.CIYAMLSanitizationServiceImpl;
 import io.harness.cistatus.service.GithubService;
@@ -74,6 +78,7 @@ import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.opaclient.OpaClientModule;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
@@ -220,6 +225,7 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);
     bind(CILicenseService.class).to(CILicenseServiceImpl.class).in(Singleton.class);
     bind(CIOverviewDashboardService.class).to(CIOverviewDashboardServiceImpl.class);
+    bind(CICacheManagementService.class).to(CICacheManagementServiceImpl.class);
     bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
     bind(GithubService.class).to(GithubServiceImpl.class);
     bind(GitlabService.class).to(GitlabServiceImpl.class);
@@ -228,6 +234,7 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
     bind(CIBuildEnforcer.class).to(CIBuildEnforcerImpl.class);
     bind(CIYAMLSanitizationService.class).to(CIYAMLSanitizationServiceImpl.class).in(Singleton.class);
+    bind(CIAccountValidationService.class).to(CIAccountValidationServiceImpl.class).in(Singleton.class);
     install(NgLicenseHttpClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
 
@@ -302,6 +309,8 @@ public class CIManagerServiceModule extends AbstractModule {
     install(new TokenClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
     install(PersistentLockModule.getInstance());
+    install(new OpaClientModule(ciManagerConfiguration.getOpaClientConfig(),
+        ciManagerConfiguration.getPolicyManagerSecret(), CI_MANAGER.getServiceId()));
 
     install(new AbstractManagerGrpcClientModule() {
       @Override

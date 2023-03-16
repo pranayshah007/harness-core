@@ -17,10 +17,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateRing;
-import io.harness.delegate.service.impl.DelegateRingServiceImpl;
 import io.harness.delegate.utils.DelegateRingConstants;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
+import io.harness.service.impl.DelegateRingServiceImpl;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;

@@ -245,8 +245,8 @@ public class TriggerEventExecutionHelper {
     log.error("Trigger Authentication Failed {}", TriggerHelper.getTriggerRef(ngTriggerEntity));
     TargetExecutionSummary targetExecutionSummary =
         TriggerEventResponseHelper.prepareTargetExecutionSummary((PlanExecution) null, triggerDetails, null);
-    return TriggerEventResponseHelper.toResponse(
-        TRIGGER_AUTHENTICATION_FAILED, triggerWebhookEvent, null, ngTriggerEntity, null, targetExecutionSummary);
+    return TriggerEventResponseHelper.toResponse(TRIGGER_AUTHENTICATION_FAILED, triggerWebhookEvent, null,
+        ngTriggerEntity, "Please check if the secret provided for webhook is correct.", targetExecutionSummary);
   }
 
   public List<TriggerEventResponse> processTriggersForActivation(

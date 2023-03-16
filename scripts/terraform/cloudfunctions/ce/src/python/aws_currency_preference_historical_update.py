@@ -39,9 +39,9 @@ storage_client = storage.Client(PROJECTID)
 
 def main(request):
     try:
-        print_(request)
+        print(request)
         jsonData = request.get_json(force=True)
-        print_(jsonData)
+        print(jsonData)
 
         # Set accountid for GCP logging
         util.ACCOUNTID_LOG = jsonData.get("accountId")

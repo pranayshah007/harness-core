@@ -142,7 +142,7 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
       YamlUtils.readTree(rule.getRulesYaml());
       Set<String> ValidateMsg = yamlSchemaValidator.validate(rule.getRulesYaml(), EntityType.CCM_GOVERNANCE_RULE_AWS);
       if (ValidateMsg.size() > 0) {
-        throw new InvalidRequestException(ValidateMsg.toString());
+        log.info(ValidateMsg.toString());
       }
     } catch (IOException e) {
       throw new InvalidRequestException("Policy YAML is malformed");

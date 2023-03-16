@@ -47,7 +47,7 @@ public class CodebasePlanCreator {
 
   @NotNull
   @VisibleForTesting
-  static List<PlanNode> buildCodebasePlanNodes(String ciCodeBaseFieldUuid, String childNodeId,
+  public static List<PlanNode> buildCodebasePlanNodes(String ciCodeBaseFieldUuid, String childNodeId,
       KryoSerializer kryoSerializer, CodeBase ciCodeBase, ExecutionSource executionSource) {
     List<PlanNode> planNodeList = new ArrayList<>();
     PlanNode codeBaseDelegateTask =
@@ -66,7 +66,7 @@ public class CodebasePlanCreator {
             .stepParameters(CodeBaseStepParameters.builder()
                                 .codeBaseSyncTaskId(codeBaseSyncTask.getUuid())
                                 .codeBaseDelegateTaskId(codeBaseDelegateTask.getUuid())
-                                .connectorRef(ciCodeBase.getConnectorRef().getValue())
+                                .connectorRef(ciCodeBase.getConnectorRef())
                                 .executionSource(executionSource)
                                 .build())
             .facilitatorObtainment(

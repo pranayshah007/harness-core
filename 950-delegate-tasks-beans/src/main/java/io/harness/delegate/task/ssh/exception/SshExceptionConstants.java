@@ -102,4 +102,9 @@ public class SshExceptionConstants {
   public final String NEXUS_ARTIFACT_DOWNLOAD_HINT = "Please review the Nexus Artifact Details and check the"
       + " repository and package details. We recommend also checking for the artifact on Nexus server";
   public final String NEXUS_ARTIFACT_DOWNLOAD_EXPLANATION = "Failed to download Nexus Artifact with id: %s";
+
+  public final String DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_ARTIFACT =
+      "Download Artifact is not supported for %s artifacts";
+  public final String DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_ARTIFACT_EXPLANATION =
+      "Download Artifact is not supported for %s artifacts defined in service";
 }

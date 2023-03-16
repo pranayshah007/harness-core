@@ -10,6 +10,7 @@ package io.harness.ci;
 import io.harness.CIBeansModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.nodes.ActionStepNode;
 import io.harness.beans.steps.nodes.ArtifactoryUploadNode;
@@ -103,8 +104,7 @@ public class CIExecutionServiceModule extends AbstractModule {
   protected void configure() {
     install(CIBeansModule.getInstance());
     install(new io.harness.hsqs.client.HsqsServiceClientModule(
-        ciExecutionServiceConfig.getQueueServiceClient().getQueueServiceConfig(),
-        ciExecutionServiceConfig.getQueueServiceClient().getAuthToken(), "Bearer"));
+        ciExecutionServiceConfig.getQueueServiceClientConfig(), AuthorizationServiceHeader.BEARER.getServiceId()));
     bind(ExecutorService.class)
         .annotatedWith(Names.named("ciRatelimitHandlerExecutor"))
         .toInstance(ThreadPool.create(
@@ -115,7 +115,7 @@ public class CIExecutionServiceModule extends AbstractModule {
             20, 300, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Event-Handler-%d").build()));
     bind(ExecutorService.class)
         .annotatedWith(Names.named("ciBackgroundTaskExecutor"))
-        .toInstance(ThreadPool.create(10, 30, 5, TimeUnit.SECONDS,
+        .toInstance(ThreadPool.create(20, 50, 5, TimeUnit.SECONDS,
             new ThreadFactoryBuilder().setNameFormat("Background-Task-Handler-%d").build()));
     this.bind(CIExecutionServiceConfig.class).toInstance(this.ciExecutionServiceConfig);
     bind(new TypeLiteral<ProtobufStepSerializer<RunStepInfo>>() {}).toInstance(new RunStepProtobufSerializer());

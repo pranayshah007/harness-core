@@ -8,6 +8,7 @@
 package io.harness.cvng.statemachine.services.api;
 
 import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
@@ -15,12 +16,16 @@ import io.harness.cvng.metrics.beans.SLOMetricContext;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityInstancesHandlerService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLIMetricAnalysisTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
 import io.harness.cvng.statemachine.beans.AnalysisState;
@@ -38,6 +43,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMetricAnalysisState> {
+  @Inject private SLIDataUnavailabilityInstancesHandlerService sliDataUnavailabilityInstancesHandlerService;
+
   @Inject private SLIDataProcessorService sliDataProcessorService;
 
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
@@ -54,6 +61,8 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
 
   @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
 
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
+
   @Inject private MetricService metricService;
 
   @Inject private Clock clock;
@@ -65,20 +74,30 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
     String verificationTaskId = analysisState.getInputs().getVerificationTaskId();
     ServiceLevelIndicator serviceLevelIndicator =
         serviceLevelIndicatorService.get(verificationTaskService.getSliId(verificationTaskId));
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(serviceLevelIndicator.getAccountId())
+                                      .orgIdentifier(serviceLevelIndicator.getOrgIdentifier())
+                                      .projectIdentifier(serviceLevelIndicator.getProjectIdentifier())
+                                      .build();
+    String monitoredServiceIdentifier = serviceLevelIndicator.getMonitoredServiceIdentifier();
     List<TimeSeriesRecordDTO> timeSeriesRecordDTOS =
         timeSeriesRecordService.getTimeSeriesRecordDTOs(verificationTaskId, startTime, endTime);
     Map<String, List<SLIAnalyseRequest>> sliAnalyseRequest =
         sliMetricAnalysisTransformer.getSLIAnalyseRequest(timeSeriesRecordDTOS);
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
         serviceLevelIndicatorEntityAndDTOTransformer.getDto(serviceLevelIndicator);
-    List<SLIAnalyseResponse> sliAnalyseResponseList = sliDataProcessorService.process(
-        sliAnalyseRequest, serviceLevelIndicatorDTO.getSpec().getSpec(), startTime, endTime);
+    List<SLIAnalyseResponse> sliAnalyseResponseList = sliDataProcessorService.process(sliAnalyseRequest,
+        ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec(), startTime, endTime);
     List<SLIRecordParam> sliRecordList = sliMetricAnalysisTransformer.getSLIAnalyseResponse(sliAnalyseResponseList);
+    sliRecordList = sliDataUnavailabilityInstancesHandlerService.filterSLIRecordsToSkip(
+        sliRecordList, projectParams, startTime, endTime, monitoredServiceIdentifier, serviceLevelIndicator.getUuid());
     sliRecordService.create(
         sliRecordList, serviceLevelIndicator.getUuid(), verificationTaskId, serviceLevelIndicator.getVersion());
-    sloHealthIndicatorService.upsert(serviceLevelIndicator);
+    SimpleServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getFromSLIIdentifier(projectParams, serviceLevelIndicator.getIdentifier());
+    sloHealthIndicatorService.upsert(serviceLevelObjective);
     analysisState.setStatus(AnalysisStatus.SUCCESS);
-    // TODO (this end time won't always be the creation time, i.e in case of reclculation, we need to re-think this.
+    // TODO (this end time won't always be the creation time, i.e in case of recalculation, we need to re-think this.
     try (SLOMetricContext sloMetricContext = new SLOMetricContext(serviceLevelIndicator)) {
       metricService.recordDuration(
           CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC, Duration.between(clock.instant(), endTime));

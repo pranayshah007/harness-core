@@ -82,7 +82,8 @@ public class GCSUploadStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.spec.connectorRef",
             "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.name",
             "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.spec.sourcePath",
-            "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.spec.bucket");
+            "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.spec.bucket",
+            "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -94,7 +95,6 @@ public class GCSUploadStepVariableCreatorTest extends CategoryTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.stages.gcp_upload_success.spec.execution.steps.upload.type",
             "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.identifier",
-            "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.when",
             "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.startTs",
             "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.endTs");
 

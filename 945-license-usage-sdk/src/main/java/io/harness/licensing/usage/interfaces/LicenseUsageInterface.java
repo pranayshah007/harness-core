@@ -12,6 +12,7 @@ import io.harness.licensing.usage.beans.LicenseUsageDTO;
 import io.harness.licensing.usage.params.PageableUsageRequestParams;
 import io.harness.licensing.usage.params.UsageRequestParams;
 
+import java.io.File;
 import org.springframework.data.domain.Page;
 
 public interface LicenseUsageInterface<T extends LicenseUsageDTO, K extends UsageRequestParams> {
@@ -29,4 +30,14 @@ public interface LicenseUsageInterface<T extends LicenseUsageDTO, K extends Usag
    */
   <S extends LicenseUsageDTO> Page<S> listLicenseUsage(
       String accountIdentifier, ModuleType module, long currentTS, PageableUsageRequestParams usageRequest);
+
+  /**
+   * Get license usage CSV report
+   *
+   * @param accountIdentifier the account identifier
+   * @param moduleType the module type
+   * @param currentTsInMs the current timestamp in ms
+   * @return CSV report file
+   */
+  File getLicenseUsageCSVReport(String accountIdentifier, ModuleType moduleType, long currentTsInMs);
 }

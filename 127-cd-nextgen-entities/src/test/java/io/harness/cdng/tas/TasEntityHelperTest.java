@@ -7,10 +7,12 @@
 
 package io.harness.cdng.tas;
 
+import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -18,6 +20,8 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -25,6 +29,7 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasCredentialType;
 import io.harness.delegate.beans.connector.tasconnector.TasManualDetailsDTO;
 import io.harness.delegate.task.pcf.request.CfInfraMappingDataRequestNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
@@ -42,7 +47,9 @@ import software.wings.beans.TaskType;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,6 +64,7 @@ public class TasEntityHelperTest extends CategoryTest {
   private static final String PROJECT_IDENTIFIER = "project";
   private static final String ACCOUNT_IDENTIFIER = "account";
   private static final String ORG_IDENTIFIER = "org";
+  private static final String CONNECTOR = "connector";
   @Mock private ConnectorService connectorService;
   @Mock private SecretManagerClientService secretManagerClientService;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
@@ -75,10 +83,12 @@ public class TasEntityHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetEncryptionDetails() {
     ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorType(ConnectorType.TAS).build();
-    TasConnectorDTO tasConnectorDTO =
-        TasConnectorDTO.builder()
-            .credential(TasCredentialDTO.builder().spec(TasManualDetailsDTO.builder().build()).build())
-            .build();
+    TasConnectorDTO tasConnectorDTO = TasConnectorDTO.builder()
+                                          .credential(TasCredentialDTO.builder()
+                                                          .spec(TasManualDetailsDTO.builder().build())
+                                                          .type(TasCredentialType.MANUAL_CREDENTIALS)
+                                                          .build())
+                                          .build();
     connectorInfoDTO.setConnectorConfig(tasConnectorDTO);
     NGAccess ngAccess = BaseNGAccess.builder()
                             .accountIdentifier(ACCOUNT_IDENTIFIER)
@@ -89,6 +99,34 @@ public class TasEntityHelperTest extends CategoryTest {
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptedDataDetails);
     assertThatCode(() -> tasEntityHelper.getEncryptionDataDetails(connectorInfoDTO, ngAccess))
         .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetEncryptionDetailsWithEmptyDecryptableEntity() {
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorType(ConnectorType.TAS).build();
+    TasConnectorDTO tasConnectorDTO = TasConnectorDTO.builder().credential(TasCredentialDTO.builder().build()).build();
+    connectorInfoDTO.setConnectorConfig(tasConnectorDTO);
+    NGAccess ngAccess = BaseNGAccess.builder()
+                            .accountIdentifier(ACCOUNT_IDENTIFIER)
+                            .orgIdentifier(ORG_IDENTIFIER)
+                            .projectIdentifier(PROJECT_IDENTIFIER)
+                            .build();
+    List<EncryptedDataDetail> encryptedDataDetails = List.of(EncryptedDataDetail.builder().build());
+    when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptedDataDetails);
+    assertThatCode(() -> tasEntityHelper.getEncryptionDataDetails(connectorInfoDTO, ngAccess))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetBaseNGAccess() {
+    BaseNGAccess baseNGAccess = tasEntityHelper.getBaseNGAccess(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(baseNGAccess.getAccountIdentifier()).isEqualTo(ACCOUNT_IDENTIFIER);
+    assertThat(baseNGAccess.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
+    assertThat(baseNGAccess.getProjectIdentifier()).isEqualTo(PROJECT_IDENTIFIER);
   }
   @Test
   @Owner(developers = SOURABH)
@@ -104,6 +142,7 @@ public class TasEntityHelperTest extends CategoryTest {
     NGAccess ngAccess = BaseNGAccess.builder()
                             .accountIdentifier(ACCOUNT_IDENTIFIER)
                             .orgIdentifier(ORG_IDENTIFIER)
+                            .projectIdentifier(PROJECT_IDENTIFIER)
                             .projectIdentifier(PROJECT_IDENTIFIER)
                             .build();
     List<EncryptedDataDetail> encryptedDataDetails = List.of(EncryptedDataDetail.builder().build());
@@ -142,6 +181,34 @@ public class TasEntityHelperTest extends CategoryTest {
     assertThat(tasInfraConfig.getSpace()).isEqualTo("space");
     assertThat(tasInfraConfig.getTasConnectorDTO()).isEqualTo(tasConnectorDTO);
   }
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetConnectorInfoDTOForEmptyConnector() {
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.empty());
+    assertThatThrownBy(
+        () -> tasEntityHelper.getConnectorInfoDTO(CONNECTOR, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessageContaining("Connector not found for identifier :");
+  }
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetTasInfraConfigUnsupportedType() {
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorType(ConnectorType.TAS).build();
+    ConnectorResponseDTO connectorResponseDTO = ConnectorResponseDTO.builder().connector(connectorInfoDTO).build();
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(connectorResponseDTO));
+    List<EncryptedDataDetail> encryptedDataDetails = List.of(EncryptedDataDetail.builder().build());
+    when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptedDataDetails);
+    NGAccess ngAccess = BaseNGAccess.builder()
+                            .accountIdentifier(ACCOUNT_IDENTIFIER)
+                            .orgIdentifier(ORG_IDENTIFIER)
+                            .projectIdentifier(PROJECT_IDENTIFIER)
+                            .build();
+    K8sDirectInfrastructureOutcome infrastructureOutcome =
+        K8sDirectInfrastructureOutcome.builder().connectorRef("connector").build();
+    assertThatThrownBy(() -> tasEntityHelper.getTasInfraConfig(infrastructureOutcome, ngAccess))
+        .hasMessageContaining("Unsupported Infrastructure type:");
+  }
 
   @Test
   @Owner(developers = SOURABH)
@@ -167,9 +234,105 @@ public class TasEntityHelperTest extends CategoryTest {
         CfInfraMappingDataRequestNG.builder()
             .tasInfraConfig(TasInfraConfig.builder().tasConnectorDTO(tasConnectorDTO).build())
             .build();
+    Map<String, String> logStreamingAbstractions = new HashMap<>();
+    logStreamingAbstractions.put(SetupAbstractionKeys.accountId, ACCOUNT_IDENTIFIER);
+    logStreamingAbstractions.put(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER);
+    logStreamingAbstractions.put(SetupAbstractionKeys.projectIdentifier, PROJECT_IDENTIFIER);
+
+    Map<String, String> taskSetupAbstractions = new HashMap<>();
+    taskSetupAbstractions.put(SetupAbstractionKeys.ng, "true");
+    taskSetupAbstractions.put(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER);
+    taskSetupAbstractions.put(SetupAbstractionKeys.projectIdentifier, PROJECT_IDENTIFIER);
+    taskSetupAbstractions.put(SetupAbstractionKeys.owner, ORG_IDENTIFIER + "/" + PROJECT_IDENTIFIER);
+
     TaskType taskType = TaskType.TAS_DATA_FETCH;
     tasEntityHelper.executeSyncTask(cfInfraMappingDataRequestNG, ngAccess, taskType);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestArgumentCaptor.capture());
+    assertThat(delegateTaskRequestArgumentCaptor.getValue().getLogStreamingAbstractions())
+        .isEqualTo(logStreamingAbstractions);
+    assertThat(delegateTaskRequestArgumentCaptor.getValue().getTaskSetupAbstractions())
+        .isEqualTo(taskSetupAbstractions);
+    assertThat(delegateTaskRequestArgumentCaptor.getValue().getTaskType())
+        .isEqualTo(TaskType.TAS_DATA_FETCH.toString());
+    assertThat(delegateTaskRequestArgumentCaptor.getValue().getTaskParameters()).isEqualTo(cfInfraMappingDataRequestNG);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testExecSyncTaskOrgLevel() {
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorType(ConnectorType.TAS).build();
+    TasConnectorDTO tasConnectorDTO =
+        TasConnectorDTO.builder()
+            .credential(TasCredentialDTO.builder().spec(TasManualDetailsDTO.builder().build()).build())
+            .delegateSelectors(Collections.emptySet())
+            .build();
+    connectorInfoDTO.setConnectorConfig(tasConnectorDTO);
+    ConnectorResponseDTO connectorResponseDTO = ConnectorResponseDTO.builder().connector(connectorInfoDTO).build();
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(connectorResponseDTO));
+    List<EncryptedDataDetail> encryptedDataDetails = List.of(EncryptedDataDetail.builder().build());
+    when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptedDataDetails);
+    BaseNGAccess ngAccess =
+        BaseNGAccess.builder().accountIdentifier(ACCOUNT_IDENTIFIER).orgIdentifier(ORG_IDENTIFIER).build();
+    CfInfraMappingDataRequestNG cfInfraMappingDataRequestNG =
+        CfInfraMappingDataRequestNG.builder()
+            .tasInfraConfig(TasInfraConfig.builder().tasConnectorDTO(tasConnectorDTO).build())
+            .build();
+    Map<String, String> logStreamingAbstractions = new HashMap<>();
+    logStreamingAbstractions.put(SetupAbstractionKeys.accountId, ACCOUNT_IDENTIFIER);
+    logStreamingAbstractions.put(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER);
+
+    Map<String, String> taskSetupAbstractions = new HashMap<>();
+    taskSetupAbstractions.put(SetupAbstractionKeys.ng, "true");
+    taskSetupAbstractions.put(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER);
+    taskSetupAbstractions.put(SetupAbstractionKeys.owner, ORG_IDENTIFIER);
+
+    TaskType taskType = TaskType.TAS_DATA_FETCH;
+    tasEntityHelper.executeSyncTask(cfInfraMappingDataRequestNG, ngAccess, taskType);
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestArgumentCaptor.capture());
+    assertThat(delegateTaskRequestArgumentCaptor.getValue().getLogStreamingAbstractions())
+        .isEqualTo(logStreamingAbstractions);
+    assertThat(delegateTaskRequestArgumentCaptor.getValue().getTaskSetupAbstractions())
+        .isEqualTo(taskSetupAbstractions);
+    assertThat(delegateTaskRequestArgumentCaptor.getValue().getTaskType())
+        .isEqualTo(TaskType.TAS_DATA_FETCH.toString());
+    assertThat(delegateTaskRequestArgumentCaptor.getValue().getTaskParameters()).isEqualTo(cfInfraMappingDataRequestNG);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testExecSyncTaskAccountLevel() {
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorType(ConnectorType.TAS).build();
+    TasConnectorDTO tasConnectorDTO =
+        TasConnectorDTO.builder()
+            .credential(TasCredentialDTO.builder().spec(TasManualDetailsDTO.builder().build()).build())
+            .delegateSelectors(Collections.emptySet())
+            .build();
+    connectorInfoDTO.setConnectorConfig(tasConnectorDTO);
+    ConnectorResponseDTO connectorResponseDTO = ConnectorResponseDTO.builder().connector(connectorInfoDTO).build();
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(connectorResponseDTO));
+    List<EncryptedDataDetail> encryptedDataDetails = List.of(EncryptedDataDetail.builder().build());
+    when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptedDataDetails);
+    BaseNGAccess ngAccess = BaseNGAccess.builder().accountIdentifier(ACCOUNT_IDENTIFIER).build();
+    CfInfraMappingDataRequestNG cfInfraMappingDataRequestNG =
+        CfInfraMappingDataRequestNG.builder()
+            .tasInfraConfig(TasInfraConfig.builder().tasConnectorDTO(tasConnectorDTO).build())
+            .build();
+
+    Map<String, String> logStreamingAbstractions = new HashMap<>();
+    logStreamingAbstractions.put(SetupAbstractionKeys.accountId, ACCOUNT_IDENTIFIER);
+
+    Map<String, String> taskSetupAbstractions = new HashMap<>();
+    taskSetupAbstractions.put(SetupAbstractionKeys.ng, "true");
+
+    TaskType taskType = TaskType.TAS_DATA_FETCH;
+    tasEntityHelper.executeSyncTask(cfInfraMappingDataRequestNG, ngAccess, taskType);
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestArgumentCaptor.capture());
+    assertThat(delegateTaskRequestArgumentCaptor.getValue().getLogStreamingAbstractions())
+        .isEqualTo(logStreamingAbstractions);
+    assertThat(delegateTaskRequestArgumentCaptor.getValue().getTaskSetupAbstractions())
+        .isEqualTo(taskSetupAbstractions);
     assertThat(delegateTaskRequestArgumentCaptor.getValue().getTaskType())
         .isEqualTo(TaskType.TAS_DATA_FETCH.toString());
     assertThat(delegateTaskRequestArgumentCaptor.getValue().getTaskParameters()).isEqualTo(cfInfraMappingDataRequestNG);

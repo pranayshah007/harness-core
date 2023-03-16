@@ -14,9 +14,7 @@ import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
-import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
-import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.heartbeat.stream.DelegateStreamHeartbeatService;
 import io.harness.delegate.task.DelegateLogContext;
@@ -30,10 +28,10 @@ import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.metrics.impl.CachedMetricsPublisher;
 import io.harness.serializer.JsonUtils;
+import io.harness.service.intfc.DelegateAuthService;
 import io.harness.service.intfc.DelegateCache;
 
 import software.wings.logcontext.WebsocketLogContext;
-import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.DelegateService;
 
 import com.google.common.base.Splitter;
@@ -41,9 +39,6 @@ import com.google.common.io.CharStreams;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;
-/**
- * Created by peeyushaggarwal on 8/15/16.
- */
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.atmosphere.cache.UUIDBroadcasterCache;
@@ -63,12 +58,12 @@ import org.atmosphere.interceptor.AtmosphereResourceLifecycleInterceptor;
     broadcastFilters = {DelegateEventFilter.class})
 public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
   public static final Splitter SPLITTER = Splitter.on("/").omitEmptyStrings();
-
-  private final AuthService authService;
   private final DelegateService delegateService;
   private final DelegateCache delegateCache;
   private final CachedMetricsPublisher cachedMetrics;
   private final DelegateStreamHeartbeatService delegateStreamHeartbeatService;
+
+  private final DelegateAuthService delegateAuthService;
 
   @Override
   public void onRequest(AtmosphereResource resource) throws IOException {
@@ -103,7 +98,6 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
                    AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
                    AutoLogContext ignore3 = new WebsocketLogContext(event.getResource().uuid(), OVERRIDE_ERROR)) {
                 log.info("delegate socket disconnected {}", event);
-                Delegate delegate = delegateCache.get(accountId, delegateId, true);
                 delegateService.delegateDisconnected(accountId, delegateId, delegateConnectionId);
               }
             }
@@ -142,10 +136,8 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
            AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
            AutoLogContext ignore3 = new WebsocketLogContext(websocketId, OVERRIDE_ERROR)) {
         DelegateParams delegateParams = JsonUtils.asObject(CharStreams.toString(req.getReader()), DelegateParams.class);
-        String delegateVersion = delegateParams.getVersion();
-
         if (isNotEmpty(delegateParams.getToken())) {
-          authService.validateDelegateToken(accountId, delegateParams.getToken(), delegateId,
+          delegateAuthService.validateDelegateToken(accountId, delegateParams.getToken(), delegateId,
               delegateParams.getTokenName(), agentMtlsAuthority, false);
         }
         if ("ECS".equals(delegateParams.getDelegateType())) {
@@ -155,13 +147,12 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         } else {
           delegateStreamHeartbeatService.process(delegateParams.toBuilder().delegateId(delegateId).build());
         }
-        delegateService.registerHeartbeat(accountId, delegateId,
-            DelegateConnectionHeartbeat.builder()
-                .delegateConnectionId(delegateConnectionId)
-                .version(delegateVersion)
-                .location(delegateParams.getLocation())
-                .build(),
-            ConnectionMode.STREAMING);
+      } catch (WingsException e) {
+        sendError(resource, e.getCode());
+        return;
+      } catch (Exception e) {
+        log.error("Unknown error on socket ", e);
+        return;
       }
     }
   }

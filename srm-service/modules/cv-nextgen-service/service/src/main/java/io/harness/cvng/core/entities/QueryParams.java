@@ -14,4 +14,12 @@ import lombok.Value;
 @Builder
 public class QueryParams {
   String serviceInstanceField;
+
+  String index;
+
+  String timeStampIdentifier;
+
+  String timeStampFormat;
+
+  String messageIdentifier;
 }

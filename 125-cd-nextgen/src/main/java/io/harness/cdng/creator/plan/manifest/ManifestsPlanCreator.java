@@ -28,6 +28,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
@@ -220,15 +221,7 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
             .filter(entry -> supported.contains(entry.getValue().getParams().getType()))
             .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getParams().getType()));
 
-    if (manifestIdTypeMap.values().size() > 1) {
-      String manifestIdType = manifestIdTypeMap.entrySet()
-                                  .stream()
-                                  .map(entry -> String.format("%s : %s", entry.getKey(), entry.getValue()))
-                                  .collect(Collectors.joining(", "));
-      throw new InvalidRequestException(String.format(
-          "Multiple manifests found [%s]. %s deployment support only one manifest of one of types: %s. Remove all unused manifests",
-          manifestIdType, deploymentType, String.join(", ", supported)));
-    }
+    SvcEnvV2ManifestValidator.throwMultipleManifestsExceptionIfApplicable(manifestIdTypeMap, deploymentType, supported);
   }
 
   @Value

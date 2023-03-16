@@ -98,6 +98,7 @@ import io.harness.git.model.GitFile;
 import io.harness.helm.HelmSubCommandType;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.manifest.CustomManifestSource;
 import io.harness.manifest.CustomSourceFile;
@@ -127,6 +128,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -135,6 +137,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -146,6 +149,7 @@ public class K8sHelmCommonStepHelper {
       ImmutableSet.of(ManifestType.K8Manifest, ManifestType.HelmChart);
   protected static final Set<String> HELM_CHART_REPO_STORE_TYPES =
       ImmutableSet.of(ManifestStoreType.S3, ManifestStoreType.GCS, ManifestStoreType.HTTP, ManifestStoreType.OCI);
+  protected static final String SUB_CHARTS_FOLDER = "charts/";
   @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private K8sEntityHelper k8sEntityHelper;
@@ -179,20 +183,8 @@ public class K8sHelmCommonStepHelper {
     orderedValuesManifests.addFirst(valuesManifestOutcome);
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
         mapValuesManifestToGitFetchFileConfig(aggregatedValuesManifests, ambiance);
-    List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
     ManifestOutcome k8sManifestOutcome = k8sStepPassThroughData.getManifestOutcome();
 
-    if (!isEmpty(stepOverrides)) {
-      for (ManifestOutcome manifestOutcome : stepOverrides) {
-        if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
-          gitFetchFilesConfigs.add(getGitFetchFilesConfig(
-              ambiance, manifestOutcome.getStore(), manifestOutcome.getIdentifier(), manifestOutcome));
-          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
-        } else if (ManifestStoreType.INLINE.equals(manifestOutcome.getStore().getKind())) {
-          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
-        }
-      }
-    }
     if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
       gitFetchFilesConfigs.addAll(
           mapK8sOrHelmValuesManifestToGitFetchFileConfig(valuesManifestOutcome, ambiance, k8sManifestOutcome));
@@ -421,9 +413,9 @@ public class K8sHelmCommonStepHelper {
     HelmChartManifestDelegateConfig helmManifest = (HelmChartManifestDelegateConfig) getManifestDelegateConfig(
         k8sStepPassThroughData.getManifestOutcome(), ambiance);
 
-    List<HelmFetchFileConfig> helmFetchFileConfigList =
-        mapHelmChartManifestsToHelmFetchFileConfig(helmChartManifestOutcome.getIdentifier(),
-            getParameterFieldValue(helmChartManifestOutcome.getValuesPaths()), helmChartManifestOutcome.getType());
+    List<HelmFetchFileConfig> helmFetchFileConfigList = mapHelmChartManifestsToHelmFetchFileConfig(
+        helmChartManifestOutcome.getIdentifier(), getParameterFieldValue(helmChartManifestOutcome.getValuesPaths()),
+        helmChartManifestOutcome.getType(), helmManifest.getSubChartName());
 
     helmFetchFileConfigList.addAll(mapValuesManifestsToHelmFetchFileConfig(aggregatedValuesManifests));
     HelmValuesFetchRequest helmValuesFetchRequest =
@@ -498,6 +490,10 @@ public class K8sHelmCommonStepHelper {
       HelmChartManifestOutcome manifestOutcome = (HelmChartManifestOutcome) k8sManifestOutcome;
       valuesPaths = getParameterFieldValue(manifestOutcome.getValuesPaths());
       folderPath = getParameterFieldValue(gitStoreConfig.getFolderPath());
+      String subChartName = getParameterFieldValue(manifestOutcome.getSubChartName());
+      if (isNotEmpty(subChartName)) {
+        folderPath = Paths.get(folderPath, SUB_CHARTS_FOLDER, subChartName).toString();
+      }
     }
     List<GitFetchFilesConfig> gitFetchFilesConfigList = new ArrayList<>();
     populateGitFetchFilesConfigListWithValuesPaths(gitFetchFilesConfigList, gitStoreConfig, k8sManifestOutcome,
@@ -585,6 +581,10 @@ public class K8sHelmCommonStepHelper {
             .deleteRepoCacheDir(helmVersion != HelmVersion.V2)
             .skipApplyHelmDefaultValues(cdFeatureFlagHelper.isEnabled(
                 AmbianceUtils.getAccountId(ambiance), FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_NG))
+            .subChartName(
+                cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_CDS_HELM_SUB_CHARTS)
+                    ? getParameterFieldValue(helmChartManifestOutcome.getSubChartName())
+                    : "")
             .build();
 
       case ManifestType.Kustomize:
@@ -948,6 +948,7 @@ public class K8sHelmCommonStepHelper {
 
   public List<String> getValuesFileContents(Ambiance ambiance, List<String> valuesFileContents) {
     return valuesFileContents.stream()
+        .filter(Objects::nonNull)
         .map(valuesFileContent -> engineExpressionService.renderExpression(ambiance, valuesFileContent, false))
         .collect(Collectors.toList());
   }
@@ -971,10 +972,15 @@ public class K8sHelmCommonStepHelper {
   }
 
   public static List<HelmFetchFileConfig> mapHelmChartManifestsToHelmFetchFileConfig(
-      String identifier, List<String> valuesPaths, String manifestType) {
+      String identifier, List<String> valuesPaths, String manifestType, String subChartName) {
     List<HelmFetchFileConfig> helmFetchFileConfigList = new ArrayList<>();
-    helmFetchFileConfigList.add(
-        createHelmFetchFileConfig(identifier, manifestType, Arrays.asList(VALUES_YAML_KEY), true));
+    if (isEmpty(subChartName)) {
+      helmFetchFileConfigList.add(
+          createHelmFetchFileConfig(identifier, manifestType, Arrays.asList(VALUES_YAML_KEY), true));
+    } else {
+      helmFetchFileConfigList.add(createHelmFetchFileConfig(identifier, manifestType,
+          Arrays.asList(Paths.get(SUB_CHARTS_FOLDER, subChartName, VALUES_YAML_KEY).toString()), true));
+    }
     if (isNotEmpty(valuesPaths)) {
       helmFetchFileConfigList.add(createHelmFetchFileConfig(identifier, manifestType, valuesPaths, false));
     }
@@ -1162,8 +1168,16 @@ public class K8sHelmCommonStepHelper {
     try {
       FileStoreNodeDTO baseValuesFile =
           validateAndFetchFileFromHarnessStore(scopedManifestFilePath, ngAccess, manifestIdentifier).get();
-      fileContents.add(((FileNodeDTO) baseValuesFile).getContent());
-      logCallback.saveExecutionLog(color(format("%nSuccessfully fetched values.yaml file"), White));
+      FileNodeDTO fileNode = (FileNodeDTO) baseValuesFile;
+      String fileContent = fileNode.getContent() == null ? "" : fileNode.getContent();
+      fileContents.add(fileContent);
+
+      if (isEmpty(fileContent)) {
+        logCallback.saveExecutionLog(
+            format("%nFetched values.yaml file is empty [file path: %s]", scopedManifestFilePath), LogLevel.WARN);
+      } else {
+        logCallback.saveExecutionLog(color(format("%nSuccessfully fetched values.yaml file"), White));
+      }
     } catch (Exception ex) {
       logCallback.saveExecutionLog(
           color(format("No values.yaml found for manifest with identifier: %s.", manifestIdentifier), White));
@@ -1189,8 +1203,13 @@ public class K8sHelmCommonStepHelper {
         FileStoreNodeDTO fileStoreNodeDTO = valuesFile.get();
         if (NGFileType.FILE.equals(fileStoreNodeDTO.getType())) {
           FileNodeDTO file = (FileNodeDTO) fileStoreNodeDTO;
-          fileContents.add(file.getContent());
-          logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
+          String fileContent = file.getContent() == null ? "" : file.getContent();
+          fileContents.add(fileContent);
+          if (isEmpty(fileContent)) {
+            logCallback.saveExecutionLog(format("- %s is empty", scopedFilePath), LogLevel.WARN);
+          } else {
+            logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
+          }
         } else {
           throw new UnsupportedOperationException("Only File type is supported. Please enter the correct file path");
         }

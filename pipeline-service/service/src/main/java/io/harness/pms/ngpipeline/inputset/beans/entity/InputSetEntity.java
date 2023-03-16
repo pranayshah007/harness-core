@@ -65,7 +65,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 public class InputSetEntity implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
+    return ImmutableList
+        .<MongoIndex>builder()
+        //            TODO: remove the index once the old git sync is sunset
         .add(CompoundMongoIndex.builder()
                  .name("unique_accountId_organizationId_projectId_pipelineId_inputSetId_repo_branch")
                  .unique(true)
@@ -77,6 +79,16 @@ public class InputSetEntity implements GitAware, GitSyncableEntity, PersistentEn
                  .field(InputSetEntityKeys.yamlGitConfigRef)
                  .field(InputSetEntityKeys.branch)
                  .build())
+        //            This index will be used for get inputSet call and repo filter
+        .add(CompoundMongoIndex.builder()
+                 .name("gitx_accountId_organizationId_projectId_pipelineId_inputSetId_repo")
+                 .field(InputSetEntityKeys.accountId)
+                 .field(InputSetEntityKeys.orgIdentifier)
+                 .field(InputSetEntityKeys.projectIdentifier)
+                 .field(InputSetEntityKeys.pipelineIdentifier)
+                 .field(InputSetEntityKeys.identifier)
+                 .field(InputSetEntityKeys.repo)
+                 .build())
         .add(CompoundMongoIndex.builder()
                  .name("accountId_repoURL_filePath")
                  .field(InputSetEntityKeys.accountId)
@@ -84,6 +96,7 @@ public class InputSetEntity implements GitAware, GitSyncableEntity, PersistentEn
                  .field(InputSetEntityKeys.filePath)
                  .build())
         // for full sync
+        //            TODO: remove the index once the old git sync is sunset
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_organizationId_projectId_repo_branch")
                  .field(InputSetEntityKeys.accountId)
@@ -130,6 +143,7 @@ public class InputSetEntity implements GitAware, GitSyncableEntity, PersistentEn
   @Setter @NonFinal String repo;
   @Setter @NonFinal String connectorRef;
   @Wither @Setter @NonFinal String repoURL;
+  @Wither @Setter @NonFinal String fallBackBranch;
 
   @Wither @Builder.Default Boolean isInvalid = Boolean.FALSE;
 

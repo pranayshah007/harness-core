@@ -66,8 +66,9 @@ public class RunTestStepNode extends CIAbstractStepNode {
   }
 
   @Builder
-  public RunTestStepNode(String uuid, String identifier, String name, List<FailureStrategyConfig> failureStrategies,
-      RunTestsStepInfo runTestsStepInfo, RunTestStepNode.StepType type, ParameterField<Timeout> timeout) {
+  public RunTestStepNode(String uuid, String identifier, String name,
+      ParameterField<List<FailureStrategyConfig>> failureStrategies, RunTestsStepInfo runTestsStepInfo,
+      RunTestStepNode.StepType type, ParameterField<Timeout> timeout) {
     this.setUuid(uuid);
     this.setIdentifier(identifier);
     this.setName(name);

@@ -7,13 +7,18 @@
 
 package software.wings.beans.container;
 
+import static software.wings.ngmigration.NGMigrationEntityType.AMI_STARTUP_SCRIPT;
+
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.ng.DbAliases;
 
 import software.wings.beans.DeploymentSpecification;
+import software.wings.ngmigration.CgBasicInfo;
+import software.wings.ngmigration.NGMigrationEntity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.morphia.annotations.Entity;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -33,9 +38,27 @@ import org.hibernate.validator.constraints.NotEmpty;
 @StoreIn(DbAliases.HARNESS)
 @Entity("userDataSpecifications")
 @HarnessEntity(exportable = true)
-public class UserDataSpecification extends DeploymentSpecification {
+public class UserDataSpecification extends DeploymentSpecification implements NGMigrationEntity {
   @NotEmpty @FdUniqueIndex private String serviceId;
   @NotNull private String data;
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getMigrationEntityName())
+        .type(AMI_STARTUP_SCRIPT)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
+  }
+
+  @JsonIgnore
+  @Override
+  public String getMigrationEntityName() {
+    return getUuid();
+  }
 
   @Data
   @NoArgsConstructor

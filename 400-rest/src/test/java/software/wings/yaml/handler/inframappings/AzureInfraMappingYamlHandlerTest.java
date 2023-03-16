@@ -120,7 +120,7 @@ public class AzureInfraMappingYamlHandlerTest extends YamlHandlerTestBase {
     when(appService.getAppByName(anyString(), anyString())).thenReturn(getApplication());
     when(environmentService.getEnvironmentByName(anyString(), anyString())).thenReturn(getEnvironment());
     when(containerService.validate(anyObject(), anyBoolean())).thenReturn(true);
-    when(delegateProxyFactory.get(anyObject(), any(SyncTaskContext.class))).thenReturn(containerService);
+    when(delegateProxyFactory.getV2(anyObject(), any(SyncTaskContext.class))).thenReturn(containerService);
     when(serviceResourceService.getServiceByName(anyString(), anyString())).thenReturn(getService());
     when(serviceResourceService.getWithDetails(anyString(), anyString())).thenReturn(getService());
     when(serviceTemplateService.getTemplateRefKeysByService(anyString(), anyString(), anyString()))

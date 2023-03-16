@@ -37,6 +37,8 @@ import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,6 +51,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(CDP)
 public class OciHelmConnectivityDelegateTaskTest extends CategoryTest {
   @Mock private OciHelmValidationHandler ociHelmValidationHandler;
+  @InjectMocks private HelmTaskHelperBase helmTaskHelperBase;
   @InjectMocks
   private OciHelmConnectivityDelegateTask delegateTask =
       new OciHelmConnectivityDelegateTask(DelegateTaskPackage.builder()
@@ -103,5 +106,49 @@ public class OciHelmConnectivityDelegateTaskTest extends CategoryTest {
     OciHelmValidationParams helmValidationParams = (OciHelmValidationParams) connectorValidationParams;
     assertThat(helmValidationParams.getEncryptionDataDetails()).isEmpty();
     assertThat(helmValidationParams.getOciHelmConnectorDTO()).isEqualTo(helmConnectorDTO);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.PRATYUSH)
+  @Category(UnitTests.class)
+  public void testShouldCallValidationHandlerWithAnonymous() {
+    OciHelmConnectorDTO helmConnectorDTO =
+        OciHelmConnectorDTO.builder()
+            .helmRepoUrl("localhost")
+            .auth(OciHelmAuthenticationDTO.builder().authType(OciHelmAuthType.ANONYMOUS).build())
+            .build();
+    OciHelmConnectivityTaskParams taskParams = OciHelmConnectivityTaskParams.builder()
+                                                   .helmConnector(helmConnectorDTO)
+                                                   .encryptionDetails(Collections.emptyList())
+                                                   .build();
+
+    doReturn(SUCCESS).when(ociHelmValidationHandler).validate(any(), any());
+    DelegateResponseData responseData = delegateTask.run(taskParams);
+    assertThat(responseData).isNotNull();
+    assertThat(responseData).isInstanceOf(OciHelmConnectivityTaskResponse.class);
+    OciHelmConnectivityTaskResponse response = (OciHelmConnectivityTaskResponse) responseData;
+    assertThat(response.getConnectorValidationResult()).isEqualTo(SUCCESS);
+
+    ArgumentCaptor<ConnectorValidationParams> paramsArgumentCaptor =
+        ArgumentCaptor.forClass(ConnectorValidationParams.class);
+    verify(ociHelmValidationHandler, times(1)).validate(paramsArgumentCaptor.capture(), any());
+    ConnectorValidationParams connectorValidationParams = paramsArgumentCaptor.getValue();
+    assertThat(connectorValidationParams).isNotNull();
+    assertThat(connectorValidationParams).isInstanceOf(OciHelmValidationParams.class);
+    OciHelmValidationParams helmValidationParams = (OciHelmValidationParams) connectorValidationParams;
+    assertThat(helmValidationParams.getEncryptionDataDetails()).isEmpty();
+    assertThat(helmValidationParams.getOciHelmConnectorDTO()).isEqualTo(helmConnectorDTO);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetParsedURI() throws URISyntaxException {
+    String ociUrl = "localhost";
+    URI uri = helmTaskHelperBase.getParsedURI(ociUrl);
+    assertThat(uri.getScheme()).isEqualTo("oci");
+    assertThat(uri.getHost()).isEqualTo(ociUrl);
+    assertThat(uri.getPort()).isEqualTo(443);
+    assertThat(uri.toString()).isEqualTo("oci://localhost:443");
   }
 }

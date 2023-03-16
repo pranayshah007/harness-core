@@ -68,8 +68,16 @@ public class SweepingOutputServiceImpl implements SweepingOutputService {
       wingsPersistence.save(sweepingOutputInstance);
       return sweepingOutputInstance;
     } catch (DuplicateKeyException exception) {
+      log.error(
+          "Details of Sweeping output instance which was tried to be saved again are ID:{}, name:{}, appId: {}, phaseExecutionId: {}, workflowExecutionIds: {}, pipelineExecutionId: {}, stateExecutionId: {}",
+          sweepingOutputInstance.getUuid(), sweepingOutputInstance.getName(), sweepingOutputInstance.getAppId(),
+          sweepingOutputInstance.getPhaseExecutionId(), sweepingOutputInstance.getWorkflowExecutionIds().toString(),
+          sweepingOutputInstance.getPipelineExecutionId(), sweepingOutputInstance.getStateExecutionId());
       throw new InvalidRequestException(
-          format("Output with name %s, already saved in the context", sweepingOutputInstance.getName()), exception);
+          format(
+              "Output with name %s, already saved in the context. Please ensure that there are no duplicate output variable names within the workflow/pipeline scope.",
+              sweepingOutputInstance.getName()),
+          exception);
     }
   }
 
@@ -356,5 +364,11 @@ public class SweepingOutputServiceImpl implements SweepingOutputService {
         .workflowExecutionId(workflowExecutionId)
         .phaseExecutionId(phaseExecutionId)
         .stateExecutionId(stateExecutionId);
+  }
+
+  @Override
+  public void pruneByApplication(String appId) {
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(SweepingOutputInstance.class).filter(SweepingOutputInstanceKeys.appId, appId));
   }
 }

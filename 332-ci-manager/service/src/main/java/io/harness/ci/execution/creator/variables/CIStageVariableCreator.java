@@ -48,13 +48,6 @@ public class CIStageVariableCreator extends AbstractStageVariableCreator<Integra
               .build());
     }
 
-    YamlField variablesField = config.getNode().getField(YAMLFieldNameConstants.VARIABLES);
-    if (variablesField != null) {
-      VariableCreationResponse variablesResponse =
-          VariableCreatorHelper.createVariableResponseForVariables(variablesField, YAMLFieldNameConstants.STAGE);
-      responseMap.put(variablesField.getNode().getUuid(), variablesResponse);
-    }
-
     YamlField strategyField = config.getNode().getField(STRATEGY);
 
     if (strategyField != null) {

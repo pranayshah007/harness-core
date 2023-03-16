@@ -26,5 +26,6 @@ public class FreezeBannerDetails {
   String orgIdentifier;
   String projectIdentifier;
   Scope freezeScope;
+  String accountName;
   @NotEmpty String accountId;
 }

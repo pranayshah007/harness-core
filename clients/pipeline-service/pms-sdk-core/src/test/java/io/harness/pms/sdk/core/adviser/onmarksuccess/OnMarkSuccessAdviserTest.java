@@ -90,6 +90,21 @@ public class OnMarkSuccessAdviserTest extends PmsSdkCoreTestBase {
             .adviserParameters(kryoSerializer.asBytes(OnMarkSuccessAdviserParameters.builder().build()))
             .build();
     boolean canAdvise = onMarkSuccessAdviser.canAdvise(advisingEvent);
+    // No applicable failureType present in the adviserParams. Will return false.
+    assertThat(canAdvise).isFalse();
+
+    advisingEvent = AdvisingEvent.builder()
+                        .ambiance(ambiance)
+                        .toStatus(Status.FAILED)
+                        .failureInfo(FailureInfo.newBuilder().addFailureTypes(FailureType.APPLICATION_FAILURE).build())
+                        .adviserParameters(kryoSerializer.asBytes(
+                            OnMarkSuccessAdviserParameters.builder()
+                                .applicableFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE))
+                                .build()))
+                        .build();
+
+    // FailureTypes matching in adviserParams and failureInfo. Will return true.
+    canAdvise = onMarkSuccessAdviser.canAdvise(advisingEvent);
     assertThat(canAdvise).isTrue();
   }
 

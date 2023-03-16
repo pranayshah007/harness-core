@@ -38,7 +38,9 @@ public class DelegateStreamHeartbeatService
   @Inject private DelegateMetricsService delegateMetricsService;
 
   @Override
-  public Optional<DelegateHeartbeatResponseStreamingWrapper> precheck(@NotNull final Delegate existingDelegate) {
+  public Optional<DelegateHeartbeatResponseStreamingWrapper> precheck(
+      @NotNull final Delegate existingDelegate, @NotNull final DelegateHeartbeatParams params) {
+    super.precheck(existingDelegate, params);
     return delegateValidityCheckHelper.getBroadcastMessageFromDelegateValidityCheck(existingDelegate)
         .map(message -> {
           // TODO: define better metrics to show different types of error.

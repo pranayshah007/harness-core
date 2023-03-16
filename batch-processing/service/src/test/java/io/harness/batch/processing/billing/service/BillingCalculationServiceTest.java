@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.data.Offset;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -114,6 +115,13 @@ public class BillingCalculationServiceTest extends CategoryTest {
   private static final double STORAGE_REQUEST_VALUE = 1000D;
   // Increase offset's absolute value in case test fails with minor difference.
   private static final Offset<BigDecimal> BIG_DECIMAL_OFFSET = Assertions.within(new BigDecimal("0.000000000001"));
+
+  @Before
+  public void setup() {
+    when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
+             anyString(), any(CloudServiceProvider.class), any(Currency.class)))
+        .thenReturn(1.0);
+  }
 
   @Test
   @Owner(developers = OwnerRule.HITESH)
@@ -563,9 +571,6 @@ public class BillingCalculationServiceTest extends CategoryTest {
             PricingProfile.builder().accountId(ACCOUNT_ID).vCpuPricePerHr(0.2).memoryGbPricePerHr(0.05).build());
     when(instancePricingStrategyRegistry.getInstancePricingStrategy(InstanceType.K8S_NODE))
         .thenReturn(getComputeInstancePricingStrategy());
-    when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
-             anyString(), any(CloudServiceProvider.class), any(Currency.class)))
-        .thenReturn(1.0);
     Resource totalResource = getInstanceResource(4096, 16384);
     Resource instanceResource = getInstanceResource(3988, 14360);
     Map<String, String> metaData = new HashMap<>();
@@ -654,9 +659,6 @@ public class BillingCalculationServiceTest extends CategoryTest {
   public void testGetInstanceBillingAmountCustomInstance() throws IOException {
     when(instancePricingStrategyRegistry.getInstancePricingStrategy(InstanceType.K8S_POD))
         .thenReturn(getComputeInstancePricingStrategy());
-    when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
-             anyString(), any(CloudServiceProvider.class), any(Currency.class)))
-        .thenReturn(1.0);
     Resource instanceResource = getInstanceResource(4 * 1024, 5 * 1024);
     Map<String, String> metaData = new HashMap<>();
     metaData.put(InstanceMetaDataConstants.CLOUD_PROVIDER, CloudProvider.IBM.name());
@@ -686,9 +688,6 @@ public class BillingCalculationServiceTest extends CategoryTest {
   public void testGetInstanceBillingAmountIBMInstance() throws IOException {
     when(instancePricingStrategyRegistry.getInstancePricingStrategy(InstanceType.K8S_POD))
         .thenReturn(getComputeInstancePricingStrategy());
-    when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
-             anyString(), any(CloudServiceProvider.class), any(Currency.class)))
-        .thenReturn(1.0);
     Resource instanceResource = getInstanceResource(4 * 1024, 5 * 1024);
     Map<String, String> metaData = new HashMap<>();
     metaData.put(InstanceMetaDataConstants.CLOUD_PROVIDER, CloudProvider.IBM.name());
@@ -724,9 +723,6 @@ public class BillingCalculationServiceTest extends CategoryTest {
 
     when(instancePricingStrategyRegistry.getInstancePricingStrategy(InstanceType.K8S_PV))
         .thenReturn(new StoragePricingStrategy());
-    when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
-             anyString(), any(CloudServiceProvider.class), any(Currency.class)))
-        .thenReturn(1.0);
 
     BillingData billingAmount = billingCalculationService.getInstanceBillingAmount(
         instanceData, utilizationData, 86400.0, INSTANCE_START_TIMESTAMP, INSTANCE_STOP_TIMESTAMP);
@@ -754,9 +750,6 @@ public class BillingCalculationServiceTest extends CategoryTest {
 
     when(instancePricingStrategyRegistry.getInstancePricingStrategy(InstanceType.K8S_PV))
         .thenReturn(new StoragePricingStrategy());
-    when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
-             anyString(), any(CloudServiceProvider.class), any(Currency.class)))
-        .thenReturn(1.0);
 
     BillingData billingAmount = billingCalculationService.getInstanceBillingAmount(
         instanceData, utilizationData, 86400.0, INSTANCE_START_TIMESTAMP, INSTANCE_STOP_TIMESTAMP);
@@ -782,9 +775,6 @@ public class BillingCalculationServiceTest extends CategoryTest {
 
     when(instancePricingStrategyRegistry.getInstancePricingStrategy(InstanceType.K8S_PV))
         .thenReturn(new StoragePricingStrategy());
-    when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
-             anyString(), any(CloudServiceProvider.class), any(Currency.class)))
-        .thenReturn(1.0);
 
     BillingData billingAmount = billingCalculationService.getInstanceBillingAmount(
         instanceData, utilizationData, 43200.0, INSTANCE_START_TIMESTAMP, INSTANCE_STOP_TIMESTAMP);

@@ -25,7 +25,7 @@ import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 import io.harness.observer.Subject;
 
-import software.wings.service.impl.DelegateConnectionDao;
+import software.wings.service.impl.DelegateDao;
 import software.wings.service.impl.DelegateObserver;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 public class DelegateDisconnectDetectorIterator
-    extends IteratorPumpModeHandler implements MongoPersistenceIterator.Handler<Delegate> {
+    extends IteratorPumpAndRedisModeHandler implements MongoPersistenceIterator.Handler<Delegate> {
   private static final long DELEGATE_DISCONNECT_TIMEOUT = 5L;
   private static final long DELEGATE_EXPIRY_CHECK_MINUTES = 1L;
 
@@ -50,7 +50,7 @@ public class DelegateDisconnectDetectorIterator
   @Inject private MorphiaPersistenceProvider<Delegate> persistenceProvider;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private DelegateService delegateService;
-  @Inject private DelegateConnectionDao delegateConnectionDao;
+  @Inject private DelegateDao delegateDao;
   @Inject private DelegateMetricsService delegateMetricsService;
 
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
@@ -76,6 +76,25 @@ public class DelegateDisconnectDetectorIterator
   }
 
   @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<Delegate, MorphiaFilterExpander<Delegate>>)
+            persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions, Delegate.class,
+                MongoPersistenceIterator.<Delegate, MorphiaFilterExpander<Delegate>>builder()
+                    .clazz(Delegate.class)
+                    .fieldName(DelegateKeys.delegateDisconnectDetectorNextIteration)
+                    .filterExpander(q
+                        -> q.field(DelegateKeys.lastHeartBeat)
+                               .lessThan(
+                                   System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(DELEGATE_DISCONNECT_TIMEOUT)))
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(Duration.ofMinutes(DELEGATE_EXPIRY_CHECK_MINUTES + 2))
+                    .handler(this)
+                    .persistenceProvider(persistenceProvider));
+  }
+
+  @Override
   public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
     iteratorName = "DelegateDisconnectDetector";
 
@@ -94,10 +113,8 @@ public class DelegateDisconnectDetectorIterator
          AccountLogContext ignore2 = new AccountLogContext(delegate.getAccountId(), OVERRIDE_ERROR)) {
       // trigger disconnect event which marks started delegate task as expired and PT's as unassigned
       delegateService.onDelegateDisconnected(delegate.getAccountId(), delegate.getUuid());
-      // update delegateConnections
-      delegateConnectionDao.list(delegate.getAccountId(), delegate.getUuid())
-          .forEach(
-              connection -> delegateConnectionDao.delegateDisconnected(delegate.getAccountId(), connection.getUuid()));
+      // mark delegate as disconnected
+      delegateDao.delegateDisconnected(delegate.getAccountId(), delegate.getUuid());
       delegateService.updateLastExpiredEventHeartbeatTime(
           delegate.getLastHeartBeat(), delegate.getUuid(), delegate.getAccountId());
     }

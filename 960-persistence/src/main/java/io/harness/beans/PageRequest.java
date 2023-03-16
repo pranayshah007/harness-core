@@ -22,6 +22,7 @@ import io.harness.exception.InvalidRequestException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
+import com.mongodb.BasicDBObject;
 import dev.morphia.Key;
 import dev.morphia.mapping.MappedClass;
 import dev.morphia.mapping.MappedField;
@@ -72,6 +73,7 @@ public class PageRequest<T> {
   @JsonIgnore private boolean isOr;
 
   @JsonIgnore private List<Option> options;
+  @JsonIgnore private BasicDBObject indexHint;
   /**
    * Instantiates a new page request.
    */
@@ -244,6 +246,14 @@ public class PageRequest<T> {
 
   public List<Option> getOptions() {
     return options;
+  }
+
+  public BasicDBObject getIndexHint() {
+    return indexHint;
+  }
+
+  public void setIndexHint(BasicDBObject indexHint) {
+    this.indexHint = indexHint;
   }
 
   public void setOptions(List<Option> options) {
@@ -432,6 +442,7 @@ public class PageRequest<T> {
     clone.requestContext = this.requestContext;
     clone.isOr = this.isOr;
     clone.options = this.options;
+    clone.indexHint = this.indexHint;
     return clone;
   }
 
@@ -460,6 +471,7 @@ public class PageRequest<T> {
     clone.requestContext = this.requestContext;
     clone.isOr = this.isOr;
     clone.options = optionsCopy;
+    clone.indexHint = this.indexHint;
     return clone;
   }
 
@@ -507,6 +519,7 @@ public class PageRequest<T> {
         .add("limit", limit)
         .add("start", start)
         .add("offset", offset)
+        .add("indexHint", indexHint)
         .toString();
   }
 
@@ -540,6 +553,7 @@ public class PageRequest<T> {
     private List<String> fieldsIncluded = new ArrayList<>();
     private List<String> fieldsExcluded = new ArrayList<>();
     private UriInfo uriInfo;
+    private BasicDBObject indexHint;
 
     private PageRequestBuilder() {}
 
@@ -654,6 +668,11 @@ public class PageRequest<T> {
       return this;
     }
 
+    public PageRequestBuilder withIndexHint(BasicDBObject hint) {
+      this.indexHint = hint;
+      return this;
+    }
+
     /**
      * Builds the.
      *
@@ -668,6 +687,7 @@ public class PageRequest<T> {
       pageRequest.setFieldsIncluded(fieldsIncluded);
       pageRequest.setFieldsExcluded(fieldsExcluded);
       pageRequest.setUriInfo(uriInfo);
+      pageRequest.setIndexHint(indexHint);
       return pageRequest;
     }
   }

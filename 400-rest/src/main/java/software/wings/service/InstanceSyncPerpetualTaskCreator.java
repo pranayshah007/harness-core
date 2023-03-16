@@ -17,6 +17,7 @@ import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import software.wings.api.DeploymentSummary;
 import software.wings.beans.InfrastructureMapping;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,6 +28,11 @@ public interface InstanceSyncPerpetualTaskCreator {
 
   List<String> createPerpetualTasksForNewDeployment(List<DeploymentSummary> deploymentSummaries,
       List<PerpetualTaskRecord> existingPerpetualTasks, InfrastructureMapping infrastructureMapping);
+
+  default List<PerpetualTaskRecord> createPerpetualTasksBackup(List<DeploymentSummary> deploymentSummaries,
+      List<PerpetualTaskRecord> existingPerpetualTasks, InfrastructureMapping infrastructureMapping) {
+    return Collections.emptyList();
+  }
 
   default Optional<String> restorePerpetualTask(
       PerpetualTaskRecord perpetualTask, List<PerpetualTaskRecord> existingPerpetualTasks) {

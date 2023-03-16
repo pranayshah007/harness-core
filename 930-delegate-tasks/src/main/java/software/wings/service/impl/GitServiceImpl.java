@@ -74,6 +74,7 @@ import org.eclipse.jgit.util.FS;
 public class GitServiceImpl implements GitService {
   @Inject private GitClient gitClient;
   @Inject private GitClientV2 gitClientV2;
+  private static final String DEFAULT_FETCH_IDENTIFIER = "--default";
 
   @Override
   public String validate(GitConfig gitConfig) {
@@ -159,9 +160,18 @@ public class GitServiceImpl implements GitService {
   @Override
   public GitFetchFilesResult fetchFilesByPath(GitConfig gitConfig, String connectorId, String commitId, String branch,
       List<String> filePaths, boolean useBranch, boolean shouldExportCommitSha, LogCallback logCallback) {
+    return fetchFilesByPath(DEFAULT_FETCH_IDENTIFIER, gitConfig, connectorId, commitId, branch, filePaths, useBranch,
+        shouldExportCommitSha, null);
+  }
+
+  @Override
+  public GitFetchFilesResult fetchFilesByPath(String identifier, GitConfig gitConfig, String connectorId,
+      String commitId, String branch, List<String> filePaths, boolean useBranch, boolean shouldExportCommitSha,
+      LogCallback logCallback) {
     return gitClient.fetchFilesByPath(gitConfig,
         GitFetchFilesRequest.builder()
             .commitId(commitId)
+            .identifier(identifier)
             .branch(branch)
             .filePaths(filePaths)
             .gitConnectorId(connectorId)

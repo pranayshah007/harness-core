@@ -143,7 +143,7 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .skipAddingTrackSelectorToDeployment(cdStepHelper.isSkipAddingTrackSelectorToDeployment(accountId))
             .pruningEnabled(pruningEnabled)
-            .useDeclarativeRollback(cdStepHelper.useDeclarativeRollback(accountId));
+            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome));
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
       Map<String, String> k8sCommandFlag =
@@ -189,8 +189,10 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
 
     log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
     K8sExecutionPassThroughData k8sExecutionPassThroughData = (K8sExecutionPassThroughData) passThroughData;
-    K8sRollingOutcomeBuilder k8sRollingOutcomeBuilder = K8sRollingOutcome.builder().releaseName(
-        cdStepHelper.getReleaseName(ambiance, k8sExecutionPassThroughData.getInfrastructure()));
+    K8sRollingOutcomeBuilder k8sRollingOutcomeBuilder =
+        K8sRollingOutcome.builder()
+            .releaseName(cdStepHelper.getReleaseName(ambiance, k8sExecutionPassThroughData.getInfrastructure()))
+            .manifest(k8sExecutionPassThroughData.getK8sGitFetchInfo());
 
     K8sDeployResponse k8sTaskExecutionResponse;
     try {

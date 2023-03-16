@@ -69,6 +69,11 @@ import io.harness.delegate.beans.connector.azureconnector.AzureSecretType;
 import io.harness.delegate.beans.connector.azureconnector.AzureSystemAssignedMSIAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureUserAssignedMSIAuthDTO;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooAuthType;
+import io.harness.delegate.beans.connector.bamboo.BambooAuthenticationDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.AwsCurAttributesDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.delegate.beans.connector.ceazure.BillingExportSpecDTO;
@@ -114,7 +119,12 @@ import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
+import io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
+import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraPATDTO;
+import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthType;
@@ -223,6 +233,11 @@ import io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO;
 import io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO;
 import io.harness.delegate.beans.connector.tasconnector.TasCredentialType;
 import io.harness.delegate.beans.connector.tasconnector.TasManualDetailsDTO;
+import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
+import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialDTO;
+import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialSpecDTO;
+import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType;
+import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.serializer.KryoRegistrar;
 
@@ -431,6 +446,13 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(JenkinsConnectorDTO.class, 29115);
     kryo.register(JenkinsUserNamePasswordDTO.class, 29116);
     kryo.register(JenkinsBearerTokenDTO.class, 29130);
+
+    kryo.register(BambooAuthCredentialsDTO.class, 109112);
+    kryo.register(BambooAuthenticationDTO.class, 109113);
+    kryo.register(BambooAuthType.class, 109114);
+    kryo.register(BambooConnectorDTO.class, 109115);
+    kryo.register(BambooUserNamePasswordDTO.class, 109116);
+
     kryo.register(OciHelmAuthCredentialsDTO.class, 29131);
     kryo.register(OciHelmAuthenticationDTO.class, 29132);
     kryo.register(OciHelmAuthType.class, 29133);
@@ -459,5 +481,17 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(TasCredentialSpecDTO.class, 10000203);
     kryo.register(TasCredentialType.class, 10000204);
     kryo.register(TasManualDetailsDTO.class, 10000205);
+
+    kryo.register(TerraformCloudConnectorDTO.class, 10000300);
+    kryo.register(TerraformCloudCredentialDTO.class, 10000301);
+    kryo.register(TerraformCloudCredentialSpecDTO.class, 10000302);
+    kryo.register(TerraformCloudTokenCredentialsDTO.class, 10000303);
+    kryo.register(TerraformCloudCredentialType.class, 10000304);
+
+    kryo.register(JiraAuthenticationDTO.class, 10000450);
+    kryo.register(JiraAuthType.class, 10000451);
+    kryo.register(JiraAuthCredentialsDTO.class, 10000452);
+    kryo.register(JiraUserNamePasswordDTO.class, 10000453);
+    kryo.register(JiraPATDTO.class, 10000454);
   }
 }

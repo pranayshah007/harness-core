@@ -25,8 +25,8 @@ public interface ViewFieldConstants {
   String TASK_FIELD_ID = "taskId";
   String LAUNCH_TYPE_FIELD_ID = "launchType";
 
-  String AWS_SERVICE_FIELD_ID = "awsServiceCode";
-  String AWS_ACCOUNT_FIELD_ID = "awsUsageAccountId";
+  String AWS_SERVICE_FIELD_ID = "awsServicecode";
+  String AWS_ACCOUNT_FIELD_ID = "awsUsageaccountid";
   String AWS_INSTANCE_TYPE_FIELD_ID = "awsInstancetype";
   String AWS_USAGE_TYPE_ID = "awsUsageType";
 
@@ -39,5 +39,6 @@ public interface ViewFieldConstants {
   String GCP_SKU_DESCRIPTION_FIELD_ID = "gcpSkuDescription";
 
   String REGION_FIELD_ID = "region";
+  String PRODUCT_FIELD_ID = "product";
   long THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION = 4;
 }

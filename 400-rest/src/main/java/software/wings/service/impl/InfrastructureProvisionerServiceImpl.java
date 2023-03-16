@@ -492,7 +492,7 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
       PageRequest<InfrastructureProvisioner> pageRequest, boolean withTags, String tagFilter, @NotEmpty String appId) {
     final long apiStartTime = System.currentTimeMillis();
     PageResponse<InfrastructureProvisioner> pageResponse =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.PROVISIONER, withTags);
+        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.PROVISIONER, withTags, false);
 
     log.info(format("Time taken in fetching listWithTagFilters : [%s] ms", System.currentTimeMillis() - apiStartTime));
     long startTime = System.currentTimeMillis();
@@ -821,7 +821,7 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
 
     DelegateResponseData notifyResponseData;
     try {
-      notifyResponseData = delegateService.executeTask(delegateTask);
+      notifyResponseData = delegateService.executeTaskV2(delegateTask);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new InvalidRequestException("Thread was interrupted. Please try again.");
@@ -956,7 +956,7 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
             .build();
     DelegateResponseData responseData;
     try {
-      responseData = delegateService.executeTask(delegateTask);
+      responseData = delegateService.executeTaskV2(delegateTask);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new WingsException("Thread was interrupted. Please try again.");

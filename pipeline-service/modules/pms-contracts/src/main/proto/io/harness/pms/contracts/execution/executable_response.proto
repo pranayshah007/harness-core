@@ -10,6 +10,7 @@ package io.harness.pms.contracts.execution;
 option java_multiple_files = true;
 
 import "io/harness/pms/contracts/execution/tasks/task_request.proto";
+import "io/harness/pms/contracts/execution/status.proto";
 
 message ExecutableResponse {
   oneof response {
@@ -34,6 +35,7 @@ message AsyncExecutableResponse {
   repeated string logKeys = 2;
   repeated string units = 3;
   int32 timeout = 5;
+  Status status = 9;  // Async step can send the status they want to set for their step
 }
 
 message ChildExecutableResponse {

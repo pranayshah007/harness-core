@@ -296,12 +296,11 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
         PhaseStep phaseStep = findPhaseStep(orchestrationWorkflow, phaseElement, state);
         if (featureFlagService.isEnabled(
                 SPG_DISABLE_EXPIRING_TO_MANUAL_INTERVENTION_CANDIDATE, context.getAccountId())) {
-          if (state.getParentId() != null) {
-            if (isNotEmpty(phaseStep.getFailureStrategies())) {
-              FailureStrategy failureStrategy = selectTopMatchingStrategy(phaseStep.getFailureStrategies(),
-                  executionEvent.getFailureTypes(), state.getName(), phaseElement, FailureStrategyLevel.STEP);
+          if (state.getParentId() != null && isNotEmpty(phaseStep.getFailureStrategies())) {
+            for (FailureStrategy failureStrategy : phaseStep.getFailureStrategies()) {
               if (failureStrategy != null && failureStrategy.getRepairActionCode() == MANUAL_INTERVENTION
-                  && !state.getStateType().equals(APPROVAL.getType())) {
+                  && !state.getStateType().equals(APPROVAL.getType())
+                  && failureStrategy.getFailureTypes().contains(FailureType.TIMEOUT_ERROR)) {
                 wingsPersistence.updateField(StateExecutionInstance.class, stateExecutionInstance.getUuid(),
                     StateExecutionInstanceKeys.manualInterventionCandidate, true);
               }

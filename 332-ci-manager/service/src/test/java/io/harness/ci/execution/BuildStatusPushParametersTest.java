@@ -37,8 +37,10 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.task.ci.CIBuildStatusPushParameters;
 import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
@@ -67,6 +69,11 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   private Ambiance ambiance = Ambiance.newBuilder()
                                   .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
                                       "projectIdentfier", "orgIdentifier", "orgIdentifier"))
+                                  .addLevels(Level.newBuilder()
+                                                 .setSetupId("setupId")
+                                                 .setStepType(StepType.newBuilder().setStepCategoryValue(2).build())
+                                                 .build())
+                                  .setStageExecutionId("stageExecId")
                                   .build();
 
   @Before
@@ -176,7 +183,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testGetBuildDetailsUrlWithoutVanityUrl() throws IOException {
     prepareRepoLevelConnector(SOME_URL, null);
-    when(pipelineUtils.getBuildDetailsUrl(any(), any(), any(), any())).thenCallRealMethod();
+    when(pipelineUtils.getBuildDetailsUrl(any(), any(), any(), any(), any(), any())).thenCallRealMethod();
 
     ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
                                               .setExecutionUuid("executionuuid")
@@ -191,7 +198,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
     assertThat(pushParameters.getDetailsUrl())
         .isEqualTo(
-            "https://app.harness.io/ng/#/account/accountId/ci/orgs/orgIdentifier/projects/projectIdentfier/pipelines/shortPipelineId/executions/executionuuid/pipeline");
+            "https://app.harness.io/ng/#/account/accountId/ci/orgs/orgIdentifier/projects/projectIdentfier/pipelines/shortPipelineId/executions/executionuuid/pipeline?stage=setupId&stageExecId=stageExecId");
   }
 
   @Test
@@ -199,7 +206,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testGetBuildDetailsUrlWithVanityUrl() throws IOException {
     prepareRepoLevelConnector(SOME_URL, VANITY_URL);
-    when(pipelineUtils.getBuildDetailsUrl(any(), any(), any(), any())).thenCallRealMethod();
+    when(pipelineUtils.getBuildDetailsUrl(any(), any(), any(), any(), any(), any())).thenCallRealMethod();
 
     ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
                                               .setExecutionUuid("executionuuid")
@@ -214,7 +221,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
     assertThat(pushParameters.getDetailsUrl())
         .isEqualTo(
-            "https://vanity.harness.io/ng/#/account/accountId/ci/orgs/orgIdentifier/projects/projectIdentfier/pipelines/shortPipelineId/executions/executionuuid/pipeline");
+            "https://vanity.harness.io/ng/#/account/accountId/ci/orgs/orgIdentifier/projects/projectIdentfier/pipelines/shortPipelineId/executions/executionuuid/pipeline?stage=setupId&stageExecId=stageExecId");
   }
 
   @Test
@@ -344,7 +351,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
     when(connectorDetails.getConnectorConfig()).thenReturn(gitConfigDTO);
     when(gitConfigDTO.getUrl()).thenReturn(url);
     when(gitConfigDTO.getConnectionType()).thenReturn(ACCOUNT);
-    when(pipelineUtils.getBuildDetailsUrl(any(), any(), any(), any())).thenReturn(SOME_URL);
+    when(pipelineUtils.getBuildDetailsUrl(any(), any(), any(), any(), any(), any())).thenReturn(SOME_URL);
 
     Call vanityUrlCall = mock(Call.class);
     when(vanityUrlCall.execute()).thenReturn(Response.success(new RestResponse<>(vanityUrl)));
@@ -357,7 +364,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
     when(connectorDetails.getConnectorConfig()).thenReturn(gitConfigDTO);
     when(gitConfigDTO.getUrl()).thenReturn(url);
     when(gitConfigDTO.getConnectionType()).thenReturn(REPO);
-    when(pipelineUtils.getBuildDetailsUrl(any(), any(), any(), any())).thenReturn(SOME_URL);
+    when(pipelineUtils.getBuildDetailsUrl(any(), any(), any(), any(), any(), any())).thenReturn(SOME_URL);
 
     Call vanityUrlCall = mock(Call.class);
     when(vanityUrlCall.execute()).thenReturn(Response.success(new RestResponse<>(vanityUrl)));

@@ -96,7 +96,7 @@ public class SCMFilePathEvaluatorOnManager extends SCMFilePathEvaluator {
           Failsafe.with(retryPolicy)
               .get(()
                        -> scmServiceClient.compareCommits(
-                           connector, params.getLatestCommit(), params.getPreviousCommit(), scmBlockingStub));
+                           connector, params.getPreviousCommit(), params.getLatestCommit(), scmBlockingStub));
       if (compareCommitsResponse != null && compareCommitsResponse.getFilesCount() > 0) {
         filePaths = compareCommitsResponse.getFilesList().stream().map(PRFile::getPath).collect(toSet());
       }

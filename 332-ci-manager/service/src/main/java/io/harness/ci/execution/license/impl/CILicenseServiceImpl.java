@@ -13,7 +13,7 @@ import static java.lang.String.format;
 
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ci.license.CILicenseService;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;

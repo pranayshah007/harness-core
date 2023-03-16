@@ -50,7 +50,7 @@ public class AwsRoute53HelperServiceManagerImplTest extends CategoryTest {
                      AwsRoute53HostedZoneData.builder().hostedZoneId("h-id").hostedZoneName("h-name").build()))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());

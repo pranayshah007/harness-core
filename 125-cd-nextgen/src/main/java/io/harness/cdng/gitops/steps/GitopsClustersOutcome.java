@@ -47,8 +47,8 @@ public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
     return this;
   }
 
-  public GitopsClustersOutcome appendCluster(
-      @NotNull Metadata envGroup, @NotNull Metadata env, @NotNull String envType, @NotNull Metadata cluster) {
+  public GitopsClustersOutcome appendCluster(@NotNull Metadata envGroup, @NotNull Metadata env, @NotNull String envType,
+      @NotNull Metadata cluster, String agentId) {
     ScopeAndRef scopedAndRefForCluster = ClusterEntityMapper.getScopeFromClusterRef(cluster.getIdentifier());
     clustersData.add(ClusterData.builder()
                          .envGroupId(envGroup.getIdentifier())
@@ -60,12 +60,13 @@ public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
                          .scope(scopedAndRefForCluster.getScope().toString())
                          .clusterName(cluster.getName())
                          .variables(Collections.emptyMap())
+                         .agentId(agentId)
                          .build());
     return this;
   }
 
   public GitopsClustersOutcome appendCluster(@NotNull Metadata envGroup, @NotNull Metadata env, @NotNull String envType,
-      @NotNull Metadata cluster, Map<String, Object> variables) {
+      @NotNull Metadata cluster, Map<String, Object> variables, String agentId) {
     ScopeAndRef scopedAndRefForCluster = ClusterEntityMapper.getScopeFromClusterRef(cluster.getIdentifier());
     clustersData.add(ClusterData.builder()
                          .envGroupId(envGroup.getIdentifier())
@@ -77,6 +78,7 @@ public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
                          .scope(scopedAndRefForCluster.getScope().toString())
                          .clusterName(cluster.getName())
                          .variables(variables)
+                         .agentId(agentId)
                          .build());
     return this;
   }
@@ -95,6 +97,7 @@ public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
     String clusterId;
     String clusterName;
     String scope;
+    String agentId;
     Map<String, Object> variables;
   }
 }

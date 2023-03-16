@@ -10,6 +10,8 @@ package io.harness.entitysetupusageclient.remote;
 import static io.harness.NGConstants.REFERRED_BY_ENTITY_FQN;
 import static io.harness.NGConstants.REFERRED_BY_ENTITY_TYPE;
 import static io.harness.NGConstants.REFERRED_ENTITY_FQN;
+import static io.harness.NGConstants.REFERRED_ENTITY_FQN1;
+import static io.harness.NGConstants.REFERRED_ENTITY_FQN2;
 import static io.harness.NGConstants.REFERRED_ENTITY_TYPE;
 
 import io.harness.EntityType;
@@ -17,6 +19,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntityReferencesDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -25,7 +28,6 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.springframework.data.domain.Page;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
@@ -46,8 +48,8 @@ public interface EntitySetupUsageClient {
   String INTERNAL_ENTITY_REFERENCE_API = "entitySetupUsage/internal";
 
   @GET(INTERNAL_ENTITY_REFERENCE_API)
-  Call<ResponseDTO<Page<EntitySetupUsageDTO>>> listAllEntityUsage(@Query(NGResourceFilterConstants.PAGE_KEY) int page,
-      @Query(NGResourceFilterConstants.SIZE_KEY) int size,
+  Call<ResponseDTO<PageResponse<EntitySetupUsageDTO>>> listAllEntityUsage(
+      @Query(NGResourceFilterConstants.PAGE_KEY) int page, @Query(NGResourceFilterConstants.SIZE_KEY) int size,
       @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Query(REFERRED_ENTITY_FQN) String referredEntityFQN, @Query(REFERRED_ENTITY_TYPE) EntityType referredEntityType,
       @Query(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm);
@@ -57,6 +59,23 @@ public interface EntitySetupUsageClient {
       @Query(NGResourceFilterConstants.PAGE_KEY) int page, @Query(NGResourceFilterConstants.SIZE_KEY) int size,
       @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Query(REFERRED_BY_ENTITY_FQN) String referredByEntityFQN,
+      @Query(REFERRED_ENTITY_TYPE) EntityType referredEntityType,
+      @Query(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm);
+
+  /*
+   * This function is created for template references use case when 2 different fqn can exist for a single stable
+   * version of template Therefore we will using this endpoint to show the references for templates example :- for a
+   * following stable template with identifier templateIdentifier and version as versionLabel in accountId, orgId,
+   * projId possible fqns are as follows :-
+   * - accountId/orgId/projId/templateIdentifier/versionLabel/
+   * - accountId/orgId/projId/templateIdentifier/__STABLE__/
+   */
+  @GET(INTERNAL_ENTITY_REFERENCE_API + "/listAllEntityUsageV2With2Fqn")
+  Call<ResponseDTO<PageResponse<EntitySetupUsageDTO>>> listAllEntityUsageWith2Fqns(
+      @Query(NGResourceFilterConstants.PAGE_KEY) int page, @Query(NGResourceFilterConstants.SIZE_KEY) int size,
+      @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @Query(REFERRED_ENTITY_FQN1) String referredEntityFQN1,
+      @NotNull @Query(REFERRED_ENTITY_FQN2) String referredEntityFQN2,
       @Query(REFERRED_ENTITY_TYPE) EntityType referredEntityType,
       @Query(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm);
 

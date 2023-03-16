@@ -35,6 +35,7 @@ public class BuildFile {
   private static final Pattern JAVA_LIBRARY_RUNTIME_DEPS_PATTERN = Pattern.compile(
       "java_library\\([\\s\\S]*?(module|tests)[\\s\\S]*?(runtime_deps = \\[[\\s\\S]*?]),?", Pattern.MULTILINE);
   private static final int DEPS_CAPTURING_GROUP = 2;
+  private static final int BINARY_DEPS_CAPTURING_GROUP = 1;
 
   private final SortedSet<LoadStatement> loadStatements = new TreeSet<>();
   private final List<JavaLibrary> javaLibraries = new ArrayList<>();
@@ -157,6 +158,7 @@ public class BuildFile {
     // This will contain the latest values which should be updated in the file.
     String newDeps;
     Pattern pattern = null;
+    final int depsCapturingGroup;
     switch (buildRule) {
       case "java_library":
         newDeps = getNewLibraryDeps(updateField);
@@ -165,6 +167,7 @@ public class BuildFile {
         } else if (updateField.equalsIgnoreCase("runtime_deps")) {
           pattern = JAVA_LIBRARY_RUNTIME_DEPS_PATTERN;
         }
+        depsCapturingGroup = DEPS_CAPTURING_GROUP;
         break;
       case "java_binary":
         newDeps = getNewBinaryDeps(updateField);
@@ -173,6 +176,7 @@ public class BuildFile {
         } else if (updateField.equalsIgnoreCase("runtime_deps")) {
           pattern = JAVA_BINARY_RUNTIME_DEPS_PATTERN;
         }
+        depsCapturingGroup = BINARY_DEPS_CAPTURING_GROUP;
         break;
       default:
         log.warn("Unsupported buildRule: {}", buildRule);
@@ -190,10 +194,10 @@ public class BuildFile {
     builder.append(currContent);
     String replacedFileContent = "";
     while (matcher.find()) {
-      String textToReplace = matcher.group(DEPS_CAPTURING_GROUP);
+      String textToReplace = matcher.group(depsCapturingGroup);
       log.trace("Found text to replace: {}", textToReplace);
       replacedFileContent =
-          builder.replace(matcher.start(DEPS_CAPTURING_GROUP), matcher.end(DEPS_CAPTURING_GROUP), newDeps).toString();
+          builder.replace(matcher.start(depsCapturingGroup), matcher.end(depsCapturingGroup), newDeps).toString();
       log.trace("Replaced file content: {}", replacedFileContent);
     }
     if (!replacedFileContent.equalsIgnoreCase("")) {

@@ -78,11 +78,13 @@ import java.util.Set;
 import javax.validation.ConstraintViolation;
 import javax.validation.Valid;
 import javax.validation.Validator;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -187,6 +189,7 @@ public class NGSecretResourceV2 {
         SECRET_EDIT_PERMISSION, privateSecret ? SecurityContextBuilder.getPrincipal() : null);
 
     ngSecretService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
+    ngSecretService.validateSecretDtoSpec(dto.getSecret());
 
     if (privateSecret) {
       dto.getSecret().setOwner(SecurityContextBuilder.getPrincipal());
@@ -256,6 +259,7 @@ public class NGSecretResourceV2 {
         SECRET_EDIT_PERMISSION, privateSecret ? SecurityContextBuilder.getPrincipal() : null);
 
     ngSecretService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
+    ngSecretService.validateSecretDtoSpec(dto.getSecret());
     if (privateSecret) {
       dto.getSecret().setOwner(SecurityContextBuilder.getPrincipal());
     }
@@ -297,10 +301,12 @@ public class NGSecretResourceV2 {
               + " accessible at the scope. For eg if set as true, at the Project scope we will get"
               + " org and account Secrets also in the response") @QueryParam("includeAllSecretsAccessibleAtScope")
       @DefaultValue("false") boolean includeAllSecretsAccessibleAtScope,
-      @Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
+      @Parameter(description = "Navigation page number. By default, it is set to 0.") @QueryParam(
           NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(description = "Number of entries per page. The default value is 100 ") @QueryParam(
-          NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size) {
+      @Parameter(
+          description =
+              "Number of entries per page. The default number of entries per page is 100, while the maximum number allowed is 1000.")
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(1000) int size) {
     if (secretType != null) {
       secretTypes.add(secretType);
     }
@@ -325,10 +331,12 @@ public class NGSecretResourceV2 {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
       String projectIdentifier, @Body SecretResourceFilterDTO secretResourceFilterDTO,
-      @Parameter(description = "Page number of navigation. The default value of 0") @QueryParam(
+      @Parameter(description = "Navigation page number. By default, it is set to 0.") @QueryParam(
           NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(description = "Number of entries per page. The default value is 100") @QueryParam(
-          NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size) {
+      @Parameter(
+          description =
+              "Number of entries per page. The default number of entries per page is 100, while the maximum number allowed is 1000.")
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(1000) int size) {
     return ResponseDTO.newResponse(getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier,
         projectIdentifier, secretResourceFilterDTO.getIdentifiers(), secretResourceFilterDTO.getSecretTypes(),
         secretResourceFilterDTO.isIncludeSecretsFromEverySubScope(), secretResourceFilterDTO.getSearchTerm(), page,
@@ -353,14 +361,18 @@ public class NGSecretResourceV2 {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
-    SecretResponseWrapper secret =
-        ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier).orElse(null);
-    secretPermissionValidator.checkForAccessOrThrow(
-        ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(SECRET_RESOURCE_TYPE, identifier), SECRET_VIEW_PERMISSION,
-        secret != null ? secret.getSecret().getOwner() : null);
+    Optional<SecretResponseWrapper> secret =
+        ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    if (secret.isPresent()) {
+      secretPermissionValidator.checkForAccessOrThrow(
+          ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+          Resource.of(SECRET_RESOURCE_TYPE, identifier), SECRET_VIEW_PERMISSION, secret.get().getSecret().getOwner());
 
-    return ResponseDTO.newResponse(secret);
+      return ResponseDTO.newResponse(secret.get());
+    } else {
+      throw new NotFoundException(
+          String.format("Secret with identifier [%s] is not found in the given scope", identifier));
+    }
   }
 
   @DELETE
@@ -418,6 +430,7 @@ public class NGSecretResourceV2 {
         secret != null ? secret.getSecret().getOwner() : null);
 
     ngSecretService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
+    ngSecretService.validateSecretDtoSpec(dto.getSecret());
 
     return ResponseDTO.newResponse(
         ngSecretService.update(accountIdentifier, orgIdentifier, projectIdentifier, identifier, dto.getSecret()));
@@ -450,6 +463,7 @@ public class NGSecretResourceV2 {
         secret != null ? secret.getSecret().getOwner() : null);
 
     ngSecretService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
+    ngSecretService.validateSecretDtoSpec(dto.getSecret());
 
     return ResponseDTO.newResponse(ngSecretService.updateViaYaml(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier, dto.getSecret()));
@@ -616,7 +630,7 @@ public class NGSecretResourceV2 {
   @Hidden
   public ResponseDTO<DecryptedSecretValue> getDecryptedSecretValue(
       @Parameter(description = "Secret Identifier") @NotNull @PathParam(
-          NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier(maxLength = 128) String identifier,
+          NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier String identifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,

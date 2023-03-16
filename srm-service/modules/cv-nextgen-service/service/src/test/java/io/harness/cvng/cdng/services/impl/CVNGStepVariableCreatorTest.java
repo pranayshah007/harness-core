@@ -85,7 +85,8 @@ public class CVNGStepVariableCreatorTest extends CvNextGenTestBase {
             "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.description",
             "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.name",
             "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.spec.spec.sensitivity",
-            "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.spec.spec.failOnNoAnalysis");
+            "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.spec.spec.failOnNoAnalysis",
+            "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.when");
 
     String stepUuid = stepField.getNode().getUuid();
 
@@ -99,7 +100,6 @@ public class CVNGStepVariableCreatorTest extends CvNextGenTestBase {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.type",
             "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.identifier",
-            "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.when",
             "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.startTs",
             "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.endTs");
   }

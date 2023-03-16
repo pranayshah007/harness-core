@@ -15,12 +15,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackResponse;
+import io.harness.delegate.task.aws.asg.AsgRollingRollbackResult;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -44,6 +47,7 @@ import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -62,6 +66,7 @@ public class AsgRollingRollbackStep extends CdTaskExecutable<AsgCommandResponse>
   @Inject private OutcomeService outcomeService;
   @Inject private AccountService accountService;
   @Inject private StepHelper stepHelper;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -78,7 +83,7 @@ public class AsgRollingRollbackStep extends CdTaskExecutable<AsgCommandResponse>
       StepResponseBuilder stepResponseBuilder =
           StepResponse.builder().unitProgressList(asgRollingRollbackResponse.getUnitProgressData().getUnitProgresses());
 
-      stepResponse = generateStepResponse(asgRollingRollbackResponse, stepResponseBuilder);
+      stepResponse = generateStepResponse(asgRollingRollbackResponse, stepResponseBuilder, ambiance);
     } catch (Exception e) {
       log.error("Error while processing asg rolling rollback response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
@@ -87,11 +92,12 @@ public class AsgRollingRollbackStep extends CdTaskExecutable<AsgCommandResponse>
       stepHelper.sendRollbackTelemetryEvent(
           ambiance, stepResponse == null ? Status.FAILED : stepResponse.getStatus(), accountName);
     }
+
     return stepResponse;
   }
 
-  private StepResponse generateStepResponse(
-      AsgRollingRollbackResponse asgRollingRollbackResponse, StepResponseBuilder stepResponseBuilder) {
+  private StepResponse generateStepResponse(AsgRollingRollbackResponse asgRollingRollbackResponse,
+      StepResponseBuilder stepResponseBuilder, Ambiance ambiance) {
     StepResponse stepResponse;
 
     if (asgRollingRollbackResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
@@ -102,10 +108,29 @@ public class AsgRollingRollbackStep extends CdTaskExecutable<AsgCommandResponse>
                                .build())
               .build();
     } else {
-      stepResponse =
-          stepResponseBuilder.status(Status.SUCCEEDED)
-              .stepOutcome(StepResponse.StepOutcome.builder().name(OutcomeExpressionConstants.OUTPUT).build())
+      InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+          ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+      List<ServerInstanceInfo> serverInstanceInfos = asgStepCommonHelper.getServerInstanceInfos(
+          asgRollingRollbackResponse, infrastructureOutcome.getInfrastructureKey(),
+          asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance).getRegion());
+
+      StepResponse.StepOutcome stepOutcome =
+          instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
+
+      AsgRollingRollbackResult asgRollingRollbackResult = asgRollingRollbackResponse.getAsgRollingRollbackResult();
+      AsgRollingRollbackOutcome asgRollingRollbackOutcome =
+          AsgRollingRollbackOutcome.builder()
+              .autoScalingGroupContainer(asgRollingRollbackResult.getAutoScalingGroupContainer())
               .build();
+
+      stepResponse = stepResponseBuilder.status(Status.SUCCEEDED)
+                         .stepOutcome(StepResponse.StepOutcome.builder()
+                                          .name(OutcomeExpressionConstants.OUTPUT)
+                                          .outcome(asgRollingRollbackOutcome)
+                                          .build())
+                         .stepOutcome(stepOutcome)
+                         .build();
     }
     return stepResponse;
   }

@@ -148,5 +148,7 @@ public class EntitySetupUsage implements PersistentEntity, NGAccountAccess {
         EntitySetupUsageKeys.referredByEntity + "." + EntityDetailKeys.name;
     public static final String referredEntityRefScope =
         EntitySetupUsageKeys.referredEntity + "." + EntityDetailKeys.entityRef + "." + IdentifierRefKeys.scope;
+    public static final String referredEntityRef =
+        EntitySetupUsageKeys.referredEntity + "." + EntityDetailKeys.entityRef;
   }
 }

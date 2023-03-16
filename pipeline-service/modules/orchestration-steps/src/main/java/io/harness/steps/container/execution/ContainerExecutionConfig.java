@@ -21,14 +21,17 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("ContainerExecutionConfig")
 @RecasterAlias("io.harness.steps.container.execution.ContainerExecutionConfig")
 public class ContainerExecutionConfig extends ExecutionServiceConfig {
+  String logStreamingContainerStepBaseUrl;
   @Builder
-  @ConstructorProperties(
-      {"addonImageTag", "liteEngineImageTag", "defaultInternalImageConnector", "delegateServiceEndpointVariableValue",
-          "defaultMemoryLimit", "defaultCPULimit", "pvcDefaultStorageSize", "addonImage", "liteEngineImage", "isLocal"})
+  @ConstructorProperties({"addonImageTag", "liteEngineImageTag", "defaultInternalImageConnector",
+      "delegateServiceEndpointVariableValue", "defaultMemoryLimit", "defaultCPULimit", "pvcDefaultStorageSize",
+      "addonImage", "liteEngineImage", "isLocal", "logStreamingContainerStepBaseUrl"})
   public ContainerExecutionConfig(String addonImageTag, String liteEngineImageTag, String defaultInternalImageConnector,
       String delegateServiceEndpointVariableValue, Integer defaultMemoryLimit, Integer defaultCPULimit,
-      Integer pvcDefaultStorageSize, String addonImage, String liteEngineImage, boolean isLocal) {
+      Integer pvcDefaultStorageSize, String addonImage, String liteEngineImage, boolean isLocal,
+      String logStreamingContainerStepBaseUrl) {
     super(addonImageTag, liteEngineImageTag, defaultInternalImageConnector, delegateServiceEndpointVariableValue,
         defaultMemoryLimit, defaultCPULimit, pvcDefaultStorageSize, addonImage, liteEngineImage, isLocal);
+    this.logStreamingContainerStepBaseUrl = logStreamingContainerStepBaseUrl;
   }
 }

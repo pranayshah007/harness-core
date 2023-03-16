@@ -10,6 +10,7 @@ package io.harness.ng.serviceaccounts.service.impl;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_SERVICE_ACCOUNTS;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.ng.core.utils.NGUtils.verifyValuesNotChanged;
@@ -22,6 +23,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.accesscontrol.AccessControlAdminClient;
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.principals.PrincipalDTO;
 import io.harness.accesscontrol.resourcegroups.api.ResourceGroupDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentAggregateResponseDTO;
@@ -29,6 +31,7 @@ import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ScopeLevel;
+import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -64,6 +67,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.apache.commons.lang3.tuple.Pair;
@@ -85,8 +89,9 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
   @Inject private TokenService tokenService;
 
   @Override
-  public ServiceAccountDTO createServiceAccount(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, ServiceAccountDTO requestDTO) {
+  @FeatureRestrictionCheck(MULTIPLE_SERVICE_ACCOUNTS)
+  public ServiceAccountDTO createServiceAccount(@AccountIdentifier String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, ServiceAccountDTO requestDTO) {
     validateCreateServiceAccountRequest(accountIdentifier, orgIdentifier, projectIdentifier, requestDTO);
     ServiceAccount serviceAccount = ServiceAccountDTOMapper.getServiceAccountFromDTO(requestDTO);
     validate(serviceAccount);
@@ -181,6 +186,25 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
     }));
   }
 
+  @Override
+  public void deleteBatch(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    List<ServiceAccount> serviceAccounts =
+        serviceAccountRepository.findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier);
+    for (ServiceAccount serviceAccount : serviceAccounts) {
+      if (serviceAccount == null) {
+        continue;
+      }
+      try {
+        deleteServiceAccount(accountIdentifier, orgIdentifier, projectIdentifier, serviceAccount.getIdentifier());
+      } catch (NotFoundException ex) {
+        log.error(String.format(
+            "Unable to delete Service account. No Service account found with orgIdentifier- [%s], projectIdentifier- [%s] and Identifier- [%s]",
+            orgIdentifier, projectIdentifier, serviceAccount.getIdentifier()));
+      }
+    }
+  }
+
   private void deleteApiKeysAndTokensForServiceAccount(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     long deletedApis = apiKeyService.deleteAllByParentIdentifier(
@@ -198,7 +222,8 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
         serviceAccountRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     if (serviceAccount == null) {
-      throw new InvalidArgumentsException(String.format("Service account [%s] doesn't exist in scope", identifier));
+      throw new NotFoundException(
+          String.format("Secret with identifier [%s] is not found in the given scope", identifier));
     }
 
     return ServiceAccountDTOMapper.getDTOFromServiceAccount(serviceAccount);
@@ -361,5 +386,10 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
         .tokensCount(apiKeysCountMap.getOrDefault(serviceAccount.getIdentifier(), 0))
         .roleAssignmentsMetadataDTO(roleAssignmentsMap.getOrDefault(serviceAccount.getIdentifier(), new ArrayList<>()))
         .build();
+  }
+
+  @Override
+  public Long countServiceAccounts(String accountIdentifier) {
+    return serviceAccountRepository.countByAccountIdentifier(accountIdentifier);
   }
 }
