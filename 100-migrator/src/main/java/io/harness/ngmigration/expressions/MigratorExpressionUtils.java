@@ -11,6 +11,7 @@ import io.harness.beans.EncryptedData;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.NotExpression;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -41,8 +42,10 @@ import org.jetbrains.annotations.NotNull;
 public class MigratorExpressionUtils {
   private static final int MAX_DEPTH = 8;
 
-  public static Object render(Map<CgEntityId, CgEntityNode> cgEntities, Map<CgEntityId, NGYamlFile> migratedEntities,
-      Object object, Map<String, Object> customExpressions, CaseFormat identifierCaseFormat) {
+  public static Object render(
+      MigrationContext context, Object object, Map<String, Object> customExpressions, CaseFormat identifierCaseFormat) {
+    Map<CgEntityId, CgEntityNode> cgEntities = context.getEntities();
+    Map<CgEntityId, NGYamlFile> migratedEntities = context.getMigratedEntities();
     // Generate the secret map
     Map<String, String> secretRefMap = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(cgEntities) && EmptyPredicate.isNotEmpty(migratedEntities)) {
@@ -61,13 +64,13 @@ public class MigratorExpressionUtils {
       }
     }
 
-    Map<String, Object> context = prepareContextMap(secretRefMap, customExpressions, identifierCaseFormat);
-    return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(context));
+    Map<String, Object> ctx = prepareContextMap(context, secretRefMap, customExpressions, identifierCaseFormat);
+    return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(ctx));
   }
 
   @NotNull
-  static Map<String, Object> prepareContextMap(
-      Map<String, String> secretRefMap, Map<String, Object> customExpressions, CaseFormat identifierCaseFormat) {
+  static Map<String, Object> prepareContextMap(MigrationContext migrationContext, Map<String, String> secretRefMap,
+      Map<String, Object> customExpressions, CaseFormat identifierCaseFormat) {
     Map<String, Object> context = new HashMap<>();
 
     context.put("deploymentTriggeredBy", "<+pipeline.triggeredBy.name>");

@@ -8,7 +8,7 @@
 package io.harness.ngmigration.service.workflow;
 
 import io.harness.ng.core.template.TemplateEntityType;
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.plancreator.stages.StageElementWrapperConfig;
@@ -16,14 +16,11 @@ import io.harness.plancreator.stages.StageElementWrapperConfig;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.service.impl.yaml.handler.workflow.MultiServiceWorkflowYamlHandler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.util.List;
-import java.util.Map;
 
 public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   @Inject MultiServiceWorkflowYamlHandler multiServiceWorkflowYamlHandler;
@@ -46,16 +43,14 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public List<StageElementWrapperConfig> asStages(Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow, CaseFormat caseFormat) {
+  public List<StageElementWrapperConfig> asStages(MigrationContext migrationContext, Workflow workflow) {
     return getStagesForMultiServiceWorkflow(
-        WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow, caseFormat));
+        migrationContext, WorkflowMigrationContext.newInstance(migrationContext, workflow));
   }
 
   @Override
-  public JsonNode getTemplateSpec(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
-      Workflow workflow, CaseFormat caseFormat) {
+  public JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow, CaseFormat caseFormat) {
     return buildMultiStagePipelineTemplate(
-        WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow, caseFormat));
+        migrationContext, WorkflowMigrationContext.newInstance(migrationContext, workflow));
   }
 }

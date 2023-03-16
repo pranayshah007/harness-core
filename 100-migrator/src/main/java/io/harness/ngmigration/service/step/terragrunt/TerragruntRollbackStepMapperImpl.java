@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -45,7 +46,8 @@ public class TerragruntRollbackStepMapperImpl extends BaseTerragruntProvisionerM
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     TerragruntRollbackState state = (TerragruntRollbackState) getState(graphNode);
     TerragruntRollbackStepNode terragruntRollbackStepNode = new TerragruntRollbackStepNode();
     baseSetup(graphNode, terragruntRollbackStepNode, context.getIdentifierCaseFormat());

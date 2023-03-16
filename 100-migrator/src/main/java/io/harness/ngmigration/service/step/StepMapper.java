@@ -11,6 +11,7 @@ import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.SupportStatus;
@@ -80,19 +81,21 @@ public abstract class StepMapper {
     return Collections.emptyList();
   }
 
-  public abstract AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode);
+  public abstract AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode);
 
   public Set<String> getExpressions(GraphNode graphNode) {
     Map<String, Object> properties = graphNode.getProperties();
     return MigratorExpressionUtils.getExpressions(properties);
   }
 
-  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
+  public TemplateStepNode getTemplateSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
     return null;
   }
 
   public TemplateStepNode defaultTemplateSpecMapper(
-      WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
+      MigrationContext migrationContext, WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
     String templateId = graphNode.getTemplateUuid();
     NGYamlFile template;
     if (StringUtils.isBlank(templateId)) {
@@ -101,12 +104,12 @@ public abstract class StepMapper {
       template = context.getMigratedEntities().get(
           CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
     }
-    return getTemplateStepNode(context, phase, graphNode, template);
+    return getTemplateStepNode(migrationContext, context, phase, graphNode, template);
   }
 
   @NotNull
-  TemplateStepNode getTemplateStepNode(
-      WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode, NGYamlFile template) {
+  TemplateStepNode getTemplateStepNode(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, GraphNode graphNode, NGYamlFile template) {
     if (template == null) {
       log.warn("Found a step with template ID but not found in migrated context. Workflow ID - {} & Step - {}",
           context.getWorkflow().getUuid(), graphNode.getName());
@@ -117,7 +120,7 @@ public abstract class StepMapper {
     JsonNode templateInputs =
         migrationTemplateUtils.getTemplateInputs(template.getNgEntityDetail(), context.getWorkflow().getAccountId());
     if (templateInputs != null) {
-      overrideTemplateInputs(context, phase, graphNode, template, templateInputs);
+      overrideTemplateInputs(migrationContext, context, phase, graphNode, template, templateInputs);
     }
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(template.getNgEntityDetail()));
@@ -132,8 +135,8 @@ public abstract class StepMapper {
     return templateStepNode;
   }
 
-  public void overrideTemplateInputs(WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode,
-      NGYamlFile templateFile, JsonNode templateInputs) {}
+  public void overrideTemplateInputs(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, GraphNode graphNode, NGYamlFile templateFile, JsonNode templateInputs) {}
 
   public abstract boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2);
 

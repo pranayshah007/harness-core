@@ -70,8 +70,8 @@ public class ShellScriptTemplateService implements NgTemplateService {
           .forEach(value -> variables.add(getEnvironmentVariable(value, null)));
     }
 
-    MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(), shellScriptTemplate,
-        customExpressions, context.getInputDTO().getIdentifierCaseFormat());
+    MigratorExpressionUtils.render(
+        context, shellScriptTemplate, customExpressions, context.getInputDTO().getIdentifierCaseFormat());
 
     if (EmptyPredicate.isNotEmpty(template.getVariables())) {
       template.getVariables()
