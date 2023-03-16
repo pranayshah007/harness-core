@@ -10,6 +10,7 @@ package io.harness.idp.settings.resources;
 import static io.harness.idp.common.Constants.IDP_PERMISSION;
 import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
 
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -50,7 +51,8 @@ public class BackstagePermissionsApiImpl implements BackstagePermissionsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response createBackstagePermissions(@Valid BackstagePermissionsRequest body, String harnessAccount) {
+  public Response createBackstagePermissions(
+      @Valid BackstagePermissionsRequest body, @AccountIdentifier String harnessAccount) {
     BackstagePermissions backstagePermissions;
     try {
       backstagePermissions = backstagePermissionsService.createPermissions(body.getData(), harnessAccount);
@@ -67,7 +69,8 @@ public class BackstagePermissionsApiImpl implements BackstagePermissionsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response updateBackstagePermissions(@Valid BackstagePermissionsRequest body, String harnessAccount) {
+  public Response updateBackstagePermissions(
+      @Valid BackstagePermissionsRequest body, @AccountIdentifier String harnessAccount) {
     BackstagePermissions backstagePermissions;
     try {
       backstagePermissions = backstagePermissionsService.updatePermissions(body.getData(), harnessAccount);
