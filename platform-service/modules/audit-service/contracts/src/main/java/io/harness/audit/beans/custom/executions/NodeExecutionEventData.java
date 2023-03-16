@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.audit.beans.custom.template;
+package io.harness.audit.beans.custom.executions;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.audit.beans.custom.AuditEventDataTypeConstants.NODE_EXECUTION_EVENT_DATA;
@@ -22,6 +22,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(PIPELINE)
 @Data
+@Builder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(NODE_EXECUTION_EVENT_DATA)
@@ -32,19 +33,30 @@ public class NodeExecutionEventData extends AuditEventData {
   String projectIdentifier;
   String pipelineIdentifier;
   String stageIdentifier;
+  String stageType;
   String planExecutionId;
   String nodeExecutionId;
+  String status;
+  TriggeredByInfoAuditDetails triggeredBy;
+  long startTs;
+  long endTs;
 
   @Builder
   public NodeExecutionEventData(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String stageIdentifier, String planExecutionId, String nodeExecutionId) {
+      String pipelineIdentifier, String stageIdentifier, String stageType, String planExecutionId,
+      String nodeExecutionId, String status, TriggeredByInfoAuditDetails triggeredBy, long startTs, long endTs) {
     this.accountIdentifier = accountIdentifier;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipelineIdentifier = pipelineIdentifier;
     this.stageIdentifier = stageIdentifier;
+    this.stageType = stageType;
     this.planExecutionId = planExecutionId;
     this.nodeExecutionId = nodeExecutionId;
+    this.status = status;
+    this.triggeredBy = triggeredBy;
+    this.startTs = startTs;
+    this.endTs = endTs;
     this.type = NODE_EXECUTION_EVENT_DATA;
   }
 }

@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,21 +18,18 @@ import lombok.NoArgsConstructor;
 @OwnedBy(PIPELINE)
 @Data
 @NoArgsConstructor
-public class PipelineStartEvent extends NodeExecutionEvent {
+public class PipelineAbortEvent extends NodeExecutionEvent {
   private TriggeredInfo triggeredInfo;
-  private long startTs;
 
   @Builder
-  public PipelineStartEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String planExecutionId, TriggeredInfo triggeredInfo, Long startTs) {
+  public PipelineAbortEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String planExecutionId, TriggeredInfo triggeredInfo) {
     super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
     this.triggeredInfo = triggeredInfo;
-    this.startTs = startTs;
   }
 
-  @JsonIgnore
   @Override
   public String getEventType() {
-    return NodeExecutionOutboxEventConstants.PIPELINE_START;
+    return NodeExecutionOutboxEventConstants.PIPELINE_ABORT;
   }
 }

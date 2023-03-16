@@ -20,6 +20,7 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -341,5 +342,17 @@ public class AmbianceUtils {
       return ambiance.getMetadata().getPipelineIdentifier();
     }
     return null;
+  }
+
+  public String getTriggerIdentifier(Ambiance ambiance) {
+    return ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getIdentifier();
+  }
+
+  public TriggerType getTriggerType(Ambiance ambiance) {
+    return ambiance.getMetadata().getTriggerInfo().getTriggerType();
+  }
+
+  public TriggeredBy getTriggerBy(Ambiance ambiance) {
+    return ambiance.getMetadata().getTriggerInfo().getTriggeredBy();
   }
 }
