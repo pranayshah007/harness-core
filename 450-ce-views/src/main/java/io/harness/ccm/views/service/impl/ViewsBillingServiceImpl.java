@@ -898,9 +898,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     BigQuery bigQuery = bigQueryService.get();
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
-    List<ViewRule> viewRuleList = new ArrayList<>();
-    List<QLCEViewFilter> idFilters = AwsAccountFieldHelper.removeAccountNameFromAWSAccountIdFilter(
-        viewParametersHelper.getModifiedIdFilters(viewParametersHelper.getIdFilters(filters), isClusterTableQuery));
     List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
 
     String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromGroupBy(groupBy);
@@ -910,21 +907,21 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     BusinessMapping businessMapping = businessMappingId != null ? businessMappingService.get(businessMappingId) : null;
     boolean addSharedCostFromGroupBy = !businessMappingIds.contains(businessMappingId);
 
-    SelectQuery query = viewBillingServiceHelper.getTrendStatsQuery(filters, idFilters, timeFilters, groupBy,
-        aggregateFunction, viewRuleList, cloudProviderTableName, queryParams, sharedCostBusinessMappings);
-
     List<QLCEViewTimeFilter> trendTimeFilters = viewsQueryHelper.getTrendFilters(timeFilters);
-    SelectQuery prevTrendStatsQuery = viewBillingServiceHelper.getTrendStatsQuery(filters, idFilters, trendTimeFilters,
-        groupBy, aggregateFunction, viewRuleList, cloudProviderTableName, queryParams, sharedCostBusinessMappings);
+    List<QLCEViewFilterWrapper> filtersForPrevPeriod = viewsQueryHelper.getUpdatedFiltersForPrevPeriod(filters);
+
+    SelectQuery query = viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, Collections.emptyList(),
+        cloudProviderTableName, queryParams, sharedCostBusinessMappings);
+    SelectQuery prevTrendStatsQuery = viewBillingServiceHelper.getQuery(filtersForPrevPeriod, groupBy,
+        aggregateFunction, Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMappings);
 
     Instant trendStartInstant =
         Instant.ofEpochMilli(viewsQueryHelper.getTimeFilter(trendTimeFilters, AFTER).getValue().longValue());
 
     double sharedCostFromRulesAndFilters = getTotalSharedCostFromFilters(bigQuery, filters, groupBy, aggregateFunction,
         Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMappings);
-    double prevSharedCostFromRulesAndFilters = getTotalSharedCostFromFilters(bigQuery,
-        viewsQueryHelper.getUpdatedFiltersForPrevPeriod(filters), groupBy, aggregateFunction, Collections.emptyList(),
-        cloudProviderTableName, queryParams, sharedCostBusinessMappings);
+    double prevSharedCostFromRulesAndFilters = getTotalSharedCostFromFilters(bigQuery, filtersForPrevPeriod, groupBy,
+        aggregateFunction, Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMappings);
     ViewCostData costData = getViewTrendStatsCostData(
         bigQuery, query, isClusterTableQuery, businessMapping, addSharedCostFromGroupBy, sharedCostFromRulesAndFilters);
     ViewCostData prevCostData = getViewTrendStatsCostData(bigQuery, prevTrendStatsQuery, isClusterTableQuery,
@@ -1022,10 +1019,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     BigQuery bigQuery = bigQueryService.get();
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
-    List<ViewRule> viewRuleList = new ArrayList<>();
-    List<QLCEViewFilter> idFilters =
-        viewParametersHelper.getModifiedIdFilters(viewParametersHelper.getIdFilters(filters), isClusterTableQuery);
-    List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
     if (Lists.isNullOrEmpty(groupBy)) {
       Optional<QLCEViewFilterWrapper> viewMetadataFilter = viewParametersHelper.getViewMetadataFilter(filters);
       if (viewMetadataFilter.isPresent()) {
@@ -1049,8 +1042,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         viewParametersHelper.getSharedCostBusinessMappings(businessMappingIds);
     BusinessMapping businessMapping = businessMappingId != null ? businessMappingService.get(businessMappingId) : null;
     boolean addSharedCostFromGroupBy = !businessMappingIds.contains(businessMappingId);
-    SelectQuery query = viewBillingServiceHelper.getTrendStatsQuery(filters, idFilters, timeFilters, groupBy,
-        aggregateFunction, viewRuleList, cloudProviderTableName, queryParams, sharedCostBusinessMappings);
+    SelectQuery query = viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, Collections.emptyList(),
+        cloudProviderTableName, queryParams, sharedCostBusinessMappings);
     double sharedCostFromFiltersAndRules = getTotalSharedCostFromFilters(bigQuery, filters, groupBy, aggregateFunction,
         Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMappings);
     return getViewTrendStatsCostData(
@@ -1079,12 +1072,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     BigQuery bigQuery = bigQueryService.get();
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
-    List<QLCEViewFilter> idFilters =
-        viewParametersHelper.getModifiedIdFilters(viewParametersHelper.getIdFilters(filters), isClusterTableQuery);
-    List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
 
-    SelectQuery query = viewBillingServiceHelper.getTrendStatsQuery(filters, idFilters, timeFilters, groupBy,
-        aggregateFunction, new ArrayList<>(), cloudProviderTableName, queryParams, Collections.emptyList());
+    SelectQuery query = viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, Collections.emptyList(),
+        cloudProviderTableName, queryParams, Collections.emptyList());
     log.info("getActualCostGroupedByPeriod() query formed: " + query.toString());
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
     TableResult result;
