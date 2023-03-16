@@ -59,10 +59,8 @@ public class EnvironmentSecretsSyncJob implements Managed {
   public void run() {
     log.info("Environment secrets sync job started");
     try {
-      //            List<String> accounts = namespaceService.getAccountIds();
-      // TODO: Remove this once NamespaceService has a method to get all accounts
-      List<String> accounts = new ArrayList<>();
-      accounts.forEach(account -> {
+      List<String> accountIds = namespaceService.getAccountIds();
+      accountIds.forEach(account -> {
         List<EnvironmentSecret> secrets = environmentSecretService.findByAccountIdentifier(account);
         environmentSecretService.syncK8sSecret(secrets, account);
       });
