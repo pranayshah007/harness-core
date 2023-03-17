@@ -21,6 +21,7 @@ import io.harness.beans.DecryptedSecretValue;
 import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.secret.beans.entity.EnvironmentSecretEntity;
@@ -59,6 +60,7 @@ public class EnvironmentSecretServiceImplTest extends CategoryTest {
   @Mock K8sClient k8sClient;
   @Mock NamespaceService namespaceService;
   @Mock SecretManagerClientService ngSecretService;
+  @Mock SetupUsageProducer setupUsageProducer;
   @InjectMocks EnvironmentSecretServiceImpl environmentSecretServiceImpl;
 
   @Before
@@ -94,6 +96,8 @@ public class EnvironmentSecretServiceImplTest extends CategoryTest {
         .thenReturn(decryptedSecretValue);
     assertEquals(envSecret, environmentSecretServiceImpl.saveAndSyncK8sSecret(envSecret, TEST_ACCOUNT_IDENTIFIER));
     verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
+    verify(setupUsageProducer)
+        .publishSecretSetupUsage(eq(Collections.singletonList(envSecret)), eq(TEST_ACCOUNT_IDENTIFIER));
   }
 
   @Test
@@ -120,6 +124,8 @@ public class EnvironmentSecretServiceImplTest extends CategoryTest {
     assertEquals(envSecret1, responseSecrets.get(0));
     assertEquals(envSecret2, responseSecrets.get(1));
     verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
+    verify(setupUsageProducer)
+        .publishSecretSetupUsage(eq(Arrays.asList(envSecret1, envSecret2)), eq(TEST_ACCOUNT_IDENTIFIER));
   }
 
   @Test
@@ -138,6 +144,8 @@ public class EnvironmentSecretServiceImplTest extends CategoryTest {
         .thenReturn(decryptedSecretValue);
     assertEquals(envSecret, environmentSecretServiceImpl.updateAndSyncK8sSecret(envSecret, TEST_ACCOUNT_IDENTIFIER));
     verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
+    verify(setupUsageProducer)
+        .publishSecretSetupUsage(eq(Collections.singletonList(envSecret)), eq(TEST_ACCOUNT_IDENTIFIER));
   }
 
   @Test
@@ -164,6 +172,8 @@ public class EnvironmentSecretServiceImplTest extends CategoryTest {
     assertEquals(envSecret1, responseSecrets.get(0));
     assertEquals(envSecret2, responseSecrets.get(1));
     verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
+    verify(setupUsageProducer)
+        .publishSecretSetupUsage(eq(Arrays.asList(envSecret1, envSecret2)), eq(TEST_ACCOUNT_IDENTIFIER));
   }
 
   @Test
@@ -191,6 +201,9 @@ public class EnvironmentSecretServiceImplTest extends CategoryTest {
     environmentSecretServiceImpl.delete(TEST_SECRET_IDENTIFIER, TEST_ACCOUNT_IDENTIFIER);
     verify(k8sClient).removeSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyList());
     verify(environmentSecretRepository).delete(environmentSecretEntity);
+    verify(setupUsageProducer)
+        .deleteSecretSetupUsage(eq(Collections.singletonList(EnvironmentSecretMapper.toDTO(environmentSecretEntity))),
+            eq(TEST_ACCOUNT_IDENTIFIER));
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -209,12 +222,15 @@ public class EnvironmentSecretServiceImplTest extends CategoryTest {
     environmentSecretEntity1.setSecretIdentifier(TEST_SECRET_IDENTIFIER);
     EnvironmentSecretEntity environmentSecretEntity2 = EnvironmentSecretEntity.builder().build();
     environmentSecretEntity2.setSecretIdentifier(TEST_SECRET_IDENTIFIER1);
-    List<EnvironmentSecretEntity> secrets = Arrays.asList(environmentSecretEntity1, environmentSecretEntity2);
+    List<EnvironmentSecretEntity> secretEntities = Arrays.asList(environmentSecretEntity1, environmentSecretEntity2);
+    List<EnvironmentSecret> secrets = Arrays.asList(EnvironmentSecretMapper.toDTO(environmentSecretEntity1),
+        EnvironmentSecretMapper.toDTO(environmentSecretEntity2));
     List<String> secretsIds = Arrays.asList(TEST_SECRET_IDENTIFIER, TEST_SECRET_IDENTIFIER1);
-    when(environmentSecretRepository.findAllById(secretsIds)).thenReturn(secrets);
+    when(environmentSecretRepository.findAllById(secretsIds)).thenReturn(secretEntities);
     environmentSecretServiceImpl.deleteMulti(secretsIds, TEST_ACCOUNT_IDENTIFIER);
     verify(k8sClient).removeSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyList());
     verify(environmentSecretRepository).deleteAllById(secretsIds);
+    verify(setupUsageProducer).deleteSecretSetupUsage(eq(secrets), eq(TEST_ACCOUNT_IDENTIFIER));
   }
 
   @Test
@@ -239,6 +255,8 @@ public class EnvironmentSecretServiceImplTest extends CategoryTest {
         .thenReturn(decryptedSecretValue);
     environmentSecretServiceImpl.processSecretUpdate(entityChangeDTO);
     verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
+    verify(setupUsageProducer)
+        .publishSecretSetupUsage(eq(Collections.singletonList(envSecret)), eq(TEST_ACCOUNT_IDENTIFIER));
   }
 
   @Test
