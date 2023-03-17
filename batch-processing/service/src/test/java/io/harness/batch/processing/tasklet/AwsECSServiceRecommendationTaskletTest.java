@@ -33,6 +33,7 @@ import io.harness.ccm.commons.entities.ecs.ECSService;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
 import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
+import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.testsupport.BaseTaskletTest;
@@ -58,6 +59,7 @@ public class AwsECSServiceRecommendationTaskletTest extends BaseTaskletTest {
   @Mock private BillingDataServiceImpl billingDataService;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private RecommendationsIgnoreListService ignoreListService;
+  @Mock private AwsAccountFieldHelper awsAccountFieldHelper;
   @InjectMocks private AwsECSServiceRecommendationTasklet tasklet;
 
   private static final String AWS_ACCOUNT_ID = "awsAccountId";
@@ -155,6 +157,8 @@ public class AwsECSServiceRecommendationTaskletTest extends BaseTaskletTest {
     doNothing()
         .when(ignoreListService)
         .updateECSRecommendationState(anyString(), anyString(), anyString(), anyString());
+    when(awsAccountFieldHelper.mergeAwsAccountNameWithValues(any(), anyString()))
+        .thenReturn(Collections.singletonList("AWS Account Name (123)"));
     assertThat(tasklet.execute(null, chunkContext)).isNull();
     verify(ceClusterDao, times(1)).getClusterIdMapping(any());
     verify(utilizationDataService, times(1)).getUtilizationDataForECSClusters(any(), any(), any(), any());

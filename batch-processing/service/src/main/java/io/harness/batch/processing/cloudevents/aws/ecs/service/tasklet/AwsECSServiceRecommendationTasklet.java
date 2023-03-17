@@ -10,6 +10,7 @@ package io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet;
 import static io.harness.ccm.RecommenderUtils.EPSILON;
 import static io.harness.ccm.commons.utils.ResourceAmountUtils.convertToReadableForm;
 import static io.harness.ccm.commons.utils.ResourceAmountUtils.makeResourceMap;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.CPU;
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.MEMORY;
@@ -35,6 +36,7 @@ import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendati
 import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
 import io.harness.ccm.graphql.core.recommendation.fargate.CpuMillsAndMemoryBytes;
 import io.harness.ccm.graphql.core.recommendation.fargate.FargateResourceValues;
+import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.histogram.Histogram;
 import io.harness.histogram.HistogramCheckpoint;
@@ -54,6 +56,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +83,7 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
   @Autowired private FeatureFlagService featureFlagService;
   @Autowired private FargateResourceValues fargateResourceValues;
   @Autowired private RecommendationsIgnoreListService ignoreListService;
+  @Autowired private AwsAccountFieldHelper awsAccountFieldHelper;
 
   private static final int BATCH_SIZE = 20;
   private static final int MAX_UTILIZATION_WEIGHT = 1;
@@ -187,7 +191,13 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
         final Double monthlySaving =
             ofNullable(recommendation.getEstimatedSavings()).map(BigDecimal::doubleValue).orElse(null);
         // Save recommendation in timescale
-        ecsRecommendationDAO.upsertCeRecommendation(ecsServiceRecommendation.getUuid(), accountId, awsAccountId,
+        String awsAccountIdAndName = awsAccountId;
+        List<String> awsAccountIdAndNames =
+            awsAccountFieldHelper.mergeAwsAccountNameWithValues(Collections.singletonList(awsAccountId), accountId);
+        if (isNotEmpty(awsAccountIdAndNames)) {
+          awsAccountIdAndName = awsAccountIdAndNames.get(0);
+        }
+        ecsRecommendationDAO.upsertCeRecommendation(ecsServiceRecommendation.getUuid(), accountId, awsAccountIdAndName,
             clusterName, serviceName, monthlyCost, monthlySaving, recommendation.shouldShowRecommendation(),
             recommendation.getLastReceivedUtilDataAt());
         ignoreListService.updateECSRecommendationState(
