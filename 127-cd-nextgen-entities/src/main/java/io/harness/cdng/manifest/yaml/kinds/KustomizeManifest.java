@@ -85,6 +85,7 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
   @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> skipResourceVersioning;
   @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> enableDeclarativeRollback;
   @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> pluginPath;
+  @Wither List<KustomizeManifestCommandFlag> commandFlags;
 
   @Override
   public String getKind() {

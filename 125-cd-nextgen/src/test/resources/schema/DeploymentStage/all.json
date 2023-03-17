@@ -8567,6 +8567,12 @@
         {
           "type": "object",
           "properties": {
+            "commandFlags": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/KustomizeManifestCommandFlag"
+              }
+            },
             "enableDeclarativeRollback": {
               "oneOf": [
                 {
@@ -8623,6 +8629,25 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "KustomizeManifestCommandFlag": {
+      "type": "object",
+      "required": [
+        "kustomizeCommandFlagType"
+      ],
+      "properties": {
+        "flag": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kustomizeCommandFlagType": {
+          "type": "string",
+          "enum": [
+            "Build"
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "KustomizePatchesManifest": {
