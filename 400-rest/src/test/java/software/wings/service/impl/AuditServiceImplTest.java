@@ -7,8 +7,10 @@
 
 package software.wings.service.impl;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.AKRITI;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
@@ -22,9 +24,11 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.EmbeddedUser;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.ff.FeatureFlagService;
@@ -32,10 +36,14 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.audit.AuditHeader;
 import software.wings.audit.EntityAuditRecord;
 import software.wings.beans.AuditPreference;
 import software.wings.beans.EntityType;
 import software.wings.beans.EntityYamlRecord;
+import software.wings.beans.Event;
+import software.wings.beans.appmanifest.ApplicationManifest;
+import software.wings.beans.appmanifest.StoreType;
 import software.wings.beans.security.UserGroup;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.yaml.YamlResourceService;
@@ -56,6 +64,7 @@ public class AuditServiceImplTest extends WingsBaseTest {
   @Mock private FeatureFlagService mockFeatureFlagService;
   @Mock private YamlResourceService mockYamlResourceService;
   @Mock private WingsPersistence mockWingsPersistence;
+  @Mock private EntityMetadataHelper entityMetadataHelper;
   @Inject @InjectMocks protected AuditServiceImpl auditServiceImpl;
   @Inject private AuditPreferenceHelper auditPreferenceHelper;
 
@@ -173,5 +182,60 @@ public class AuditServiceImplTest extends WingsBaseTest {
     auditServiceImpl.changeAuditPreferenceForHomePage(auditPreference, ACCOUNT_ID);
     assertThat(auditPreference.getOperationTypes().contains("LOGIN")).isEqualTo(false);
     assertThat(auditPreference.getOperationTypes().contains("LOGIN_2FA")).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldAddDetailsExecuteMetadataHelper() {
+    String uuid = generateUuid();
+    AuditHeader header =
+        AuditHeader.Builder.anAuditHeader().withCreatedBy(EmbeddedUser.builder().uuid(uuid).build()).build();
+
+    Query<AuditHeader> query = mock(Query.class);
+    when(mockWingsPersistence.createQuery(AuditHeader.class)).thenReturn(query);
+    when(query.filter(AuditHeader.ID_KEY2, uuid)).thenReturn(query);
+    when(query.get()).thenReturn(header);
+
+    final ApplicationManifest entity = ApplicationManifest.builder().storeType(StoreType.Local).build();
+    auditServiceImpl.addDetails(ACCOUNT_ID, entity, uuid, Event.Type.CREATE);
+
+    verify(entityMetadataHelper).addUserDetails(ACCOUNT_ID, entity, header);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldAddDetailsNeverExecuteMetadataHelperWhenNoUserId() {
+    String uuid = generateUuid();
+    AuditHeader header = AuditHeader.Builder.anAuditHeader().withCreatedBy(EmbeddedUser.builder().build()).build();
+
+    Query<AuditHeader> query = mock(Query.class);
+    when(mockWingsPersistence.createQuery(AuditHeader.class)).thenReturn(query);
+    when(query.filter(AuditHeader.ID_KEY2, uuid)).thenReturn(query);
+    when(query.get()).thenReturn(header);
+
+    final ApplicationManifest entity = ApplicationManifest.builder().storeType(StoreType.Local).build();
+    auditServiceImpl.addDetails(ACCOUNT_ID, entity, uuid, Event.Type.CREATE);
+
+    verify(entityMetadataHelper, never()).addUserDetails(ACCOUNT_ID, entity, header);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldAddDetailsNeverExecuteMetadataHelperWhenNoCreatedBy() {
+    String uuid = generateUuid();
+    AuditHeader header = AuditHeader.Builder.anAuditHeader().build();
+
+    Query<AuditHeader> query = mock(Query.class);
+    when(mockWingsPersistence.createQuery(AuditHeader.class)).thenReturn(query);
+    when(query.filter(AuditHeader.ID_KEY2, uuid)).thenReturn(query);
+    when(query.get()).thenReturn(header);
+
+    final ApplicationManifest entity = ApplicationManifest.builder().storeType(StoreType.Local).build();
+    auditServiceImpl.addDetails(ACCOUNT_ID, entity, uuid, Event.Type.CREATE);
+
+    verify(entityMetadataHelper, never()).addUserDetails(ACCOUNT_ID, entity, header);
   }
 }

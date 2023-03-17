@@ -477,11 +477,12 @@ public class AuditServiceImpl implements AuditService {
     }
   }
 
-  private AuditHeader getAuditHeaderById(@NotNull String Id) {
-    return wingsPersistence.createQuery(AuditHeader.class).filter(AuditHeader.ID_KEY2, Id).get();
+  private AuditHeader getAuditHeaderById(@NotNull String id) {
+    return wingsPersistence.createQuery(AuditHeader.class).filter(AuditHeader.ID_KEY2, id).get();
   }
 
-  private <T> void addDetails(String accountId, T entity, String auditHeaderId, Type type) {
+  @VisibleForTesting
+  <T> void addDetails(String accountId, T entity, String auditHeaderId, Type type) {
     if (auditHeaderId == null) {
       return;
     }
@@ -494,7 +495,11 @@ public class AuditServiceImpl implements AuditService {
     } else if (entity instanceof ApiKeyEntry && type.equals(Type.INVOKED)) {
       entityMetadataHelper.addAPIKeyDetails(accountId, entity, header);
     } else if (header.getCreatedBy() != null) {
-      entityMetadataHelper.addUserDetails(accountId, entity, header);
+      if (isNotEmpty(header.getCreatedBy().getUuid())) {
+        entityMetadataHelper.addUserDetails(accountId, entity, header);
+      } else {
+        log.warn("Unable to audit entity due to missing userId [entity={},type={}]", entity.getClass(), type);
+      }
     }
   }
 
