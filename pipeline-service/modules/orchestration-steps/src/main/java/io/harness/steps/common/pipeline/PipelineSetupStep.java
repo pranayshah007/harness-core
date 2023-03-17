@@ -61,7 +61,7 @@ public class PipelineSetupStep implements ChildExecutable<PipelineSetupStepParam
         try {
           handleAbort(ambiance, interrupts.get(0).getInterruptConfig());
         } catch (Exception e) {
-          log.error("Error during interrupt registration ", e);
+          log.warn("Error during interrupt registration - Interrupt might already have been registered ", e);
         }
       }
     }
