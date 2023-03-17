@@ -65,7 +65,6 @@ import io.harness.metrics.service.api.MetricService;
 import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.beans.NGMigrationConfiguration;
-import io.harness.ng.OasSpecFirstYamlResource;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
