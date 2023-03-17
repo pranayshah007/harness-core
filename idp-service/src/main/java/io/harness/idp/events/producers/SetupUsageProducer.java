@@ -48,7 +48,7 @@ public class SetupUsageProducer {
       IdentifierRefProtoDTO secretReference = identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
           accountIdentifier, null, null, envSecret.getSecretIdentifier());
       IdentifierRefProtoDTO envSecretReference = identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
-          accountIdentifier, null, null, envSecret.getIdentifier());
+          accountIdentifier, null, null, envSecret.getEnvName());
       EntityDetailProtoDTO secretDetails = EntityDetailProtoDTO.newBuilder()
                                                .setIdentifierRef(secretReference)
                                                .setType(EntityTypeProtoEnum.SECRETS)
@@ -57,6 +57,7 @@ public class SetupUsageProducer {
       EntityDetailProtoDTO envSecretDetails = EntityDetailProtoDTO.newBuilder()
                                                   .setIdentifierRef(envSecretReference)
                                                   .setType(EntityTypeProtoEnum.ENVIRONMENT_SECRET)
+                                                  .setName(emptyIfNull(envSecret.getEnvName()))
                                                   .build();
       EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()
                                                            .setAccountIdentifier(accountIdentifier)
@@ -67,7 +68,7 @@ public class SetupUsageProducer {
       String messageId = eventProducer.send(
           Message.newBuilder()
               .putAllMetadata(ImmutableMap.of(ACCOUNT_ID, accountIdentifier,
-                  EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.ENVIRONMENT_SECRET.name(),
+                  EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.SECRETS.name(),
                   EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
               .setData(entityReferenceDTO.toByteString())
               .build());
@@ -80,7 +81,7 @@ public class SetupUsageProducer {
     envSecrets.forEach(envSecret -> {
       EntityDetailProtoDTO entityDetail = EntityDetailProtoDTO.newBuilder()
                                               .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
-                                                  accountIdentifier, null, null, envSecret.getIdentifier()))
+                                                  accountIdentifier, null, null, envSecret.getEnvName()))
                                               .setType(EntityTypeProtoEnum.ENVIRONMENT_SECRET)
                                               .build();
 

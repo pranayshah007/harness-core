@@ -120,8 +120,7 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
 
   @Override
   public void delete(String secretIdentifier, String accountIdentifier) {
-    Optional<EnvironmentSecretEntity> envSecretOpt =
-        environmentSecretRepository.findByAccountIdentifierAndSecretIdentifier(secretIdentifier, accountIdentifier);
+    Optional<EnvironmentSecretEntity> envSecretOpt = environmentSecretRepository.findById(secretIdentifier);
     if (envSecretOpt.isEmpty()) {
       throw new InvalidRequestException(
           format("Environment secret [%s] not found in account [%s]", secretIdentifier, accountIdentifier));
