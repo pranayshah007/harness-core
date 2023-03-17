@@ -40,6 +40,14 @@ public class RedisAcquiredLock implements AcquiredLock<RLock> {
 
   /**
    * This is implemented only as workaround for handling race condition in sentinel mode.
+   * In sentinel mode after redisson library upgrade from 3.13.3 to 3.17.7 we started facing issue where lock was
+   * hanging forever on lock.unlock() method call. During our investigation we found open bugs found on Redisson lib
+   * with similar behaviour See below for more details
+   * https://harness.atlassian.net/jira/software/c/projects/PL/issues/PL-31692
+   * https://github.com/redisson/redisson/issues/4822
+   * https://github.com/redisson/redisson/issues/4878
+   * Based on multiple trials we found that checking lock.isHeldByCurrentThread() along with lock.forceUnlock() is a
+   * feasible workaround considering Factors like Senitinel mode only being used in SMP, Load in SMP etc.
    */
   private void releaseInSentinelMode() {
     if (lock != null && (lock.isHeldByCurrentThread() || isLeaseInfinite)) {
