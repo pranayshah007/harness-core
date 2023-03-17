@@ -9,6 +9,7 @@ package io.harness.when.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -17,6 +18,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.when.beans.StageWhenCondition;
@@ -83,19 +85,26 @@ public class RunInfoUtilsTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void shouldTestGetStepRollbackRunCondition() {
-    String defaultRunConditionForRollback = RunInfoUtils.getRunConditionForRollback(null);
+    String defaultRunConditionForRollback = RunInfoUtils.getRunConditionForRollback(null, ExecutionMode.NORMAL);
     assertThat(defaultRunConditionForRollback).isEqualTo("<+OnStageFailure>");
 
-    assertThatThrownBy(()
-                           -> RunInfoUtils.getRunConditionForRollback(
-                               ParameterField.createValueField(StepWhenCondition.builder().build())))
+    assertThat(RunInfoUtils.getRunConditionForRollback(null, ExecutionMode.POST_EXECUTION_ROLLBACK))
+        .isEqualTo("<+Always>");
+    assertThat(RunInfoUtils.getRunConditionForRollback(null, ExecutionMode.PIPELINE_ROLLBACK)).isEqualTo("<+Always>");
+    assertThat(RunInfoUtils.getRunConditionForRollback(null, null)).isEqualTo("<+OnStageFailure>");
+
+    assertThatThrownBy(
+        ()
+            -> RunInfoUtils.getRunConditionForRollback(
+                ParameterField.createValueField(StepWhenCondition.builder().build()), ExecutionMode.NORMAL))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Stage Status in step when condition cannot be empty.");
     String successRunCondition = RunInfoUtils.getRunConditionForRollback(
         ParameterField.createValueField(StepWhenCondition.builder()
                                             .stageStatus(WhenConditionStatus.SUCCESS)
                                             .condition(ParameterField.createValueField("<+stage.name> == \"dev\""))
-                                            .build()));
+                                            .build()),
+        ExecutionMode.NORMAL);
     assertThat(successRunCondition).isNotEmpty();
     assertThat(successRunCondition).isEqualTo("<+OnStageSuccess> && (<+stage.name> == \"dev\")");
 
@@ -106,5 +115,16 @@ public class RunInfoUtilsTest extends CategoryTest {
                                             .build()));
     assertThat(failureRunCondition).isNotEmpty();
     assertThat(failureRunCondition).isEqualTo("<+OnStageFailure> && (<+stage.name> == \"dev\")");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testIsRollbackMode() {
+    assertThat(RunInfoUtils.isRollbackMode(null)).isFalse();
+    assertThat(RunInfoUtils.isRollbackMode(ExecutionMode.NORMAL)).isFalse();
+    assertThat(RunInfoUtils.isRollbackMode(ExecutionMode.UNDEFINED_MODE)).isFalse();
+    assertThat(RunInfoUtils.isRollbackMode(ExecutionMode.PIPELINE_ROLLBACK)).isTrue();
+    assertThat(RunInfoUtils.isRollbackMode(ExecutionMode.POST_EXECUTION_ROLLBACK)).isTrue();
   }
 }

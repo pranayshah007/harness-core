@@ -14,6 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -68,7 +70,11 @@ public class StepGroupsPmsPlanCreatorTest extends PmsSdkCoreTestBase {
 
     stepElementConfig = YamlUtils.read(stepGroupYamlField.getNode().toString(), StepGroupElementConfig.class);
 
-    context = PlanCreationContext.builder().currentField(stepGroupYamlField).build();
+    context = PlanCreationContext.builder()
+                  .currentField(stepGroupYamlField)
+                  .globalContext("metadata",
+                      PlanCreationContextValue.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build())
+                  .build();
   }
 
   @Test

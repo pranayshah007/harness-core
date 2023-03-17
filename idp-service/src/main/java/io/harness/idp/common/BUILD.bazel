@@ -12,6 +12,7 @@ java_library(
     visibility = ["//idp-service:__subpackages__"],
     deps = [
         "//:lombok",
+        "//980-commons/src/main/java/io/harness/exception:module",
         "//999-annotations:module",
         "@maven//:com_google_code_gson_gson",
     ],
