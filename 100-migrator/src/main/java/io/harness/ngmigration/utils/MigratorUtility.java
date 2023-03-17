@@ -699,4 +699,12 @@ public class MigratorUtility {
         .filter(tl -> StringUtils.isNoneBlank(tl.getKey(), tl.getValue()))
         .collect(Collectors.toMap(HarnessTagLink::getKey, HarnessTagLink::getValue));
   }
+
+  public static String getSafeNotEmptyString(String val) {
+    if (isEmpty(val) || isEmpty(val.trim())) {
+      return PLEASE_FIX_ME;
+    } else {
+      return val;
+    }
+  }
 }
