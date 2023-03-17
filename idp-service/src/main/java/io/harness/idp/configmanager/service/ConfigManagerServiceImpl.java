@@ -15,7 +15,10 @@ import io.harness.idp.configmanager.repositories.AppConfigRepository;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
@@ -29,11 +32,18 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       "Plugin config saving is unsuccessful for plugin - % in account - %s";
 
   @Override
+  public Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier) {
+    List<AppConfigEntity> allPluginConfig = appConfigRepository.findAllByAccountIdentifier(accountIdentifier);
+    return allPluginConfig.stream().collect(
+        Collectors.toMap(AppConfigEntity::getPluginId, AppConfigEntity::getEnabled));
+  }
+
+  @Override
   public AppConfig getPluginConfig(String accountIdentifier, String pluginId) {
     Optional<AppConfigEntity> pluginConfig =
         appConfigRepository.findByAccountIdentifierAndPluginId(accountIdentifier, pluginId);
     if (pluginConfig.isEmpty()) {
-      throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, pluginId, accountIdentifier));
+      return null;
     }
     return pluginConfig.map(AppConfigMapper::toDTO).get();
   }

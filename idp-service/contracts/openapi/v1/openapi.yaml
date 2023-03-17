@@ -1,6 +1,6 @@
 openapi: 3.0.3
 x-stoplight:
-  id: 9126byi2oelzs
+  id: 9i33e8gca28nf
 info:
   title: IDP
   version: '1.0'
@@ -481,6 +481,35 @@ paths:
       tags:
         - AppConfig
     parameters: []
+  /v1/plugins-info:
+    get:
+      summary: Get all plugins available
+      tags:
+        - PluginInfo
+      responses:
+        '200':
+          $ref: '#/components/responses/PluginInfoResponseList'
+      operationId: get-plugins
+      description: Get all plugins available
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+  '/v1/plugins-info/{pluginId}':
+    get:
+      summary: Get plugins details
+      tags:
+        - PluginInfo
+      responses:
+        '200':
+          $ref: '#/components/responses/PluginDetailedInfoResponse'
+      operationId: get-plugins-info-plugin-id
+      description: Get plugin details for given pluginId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/PluginId'
   /v1/app-config:
     get:
       summary: Your GET endpoint
@@ -811,6 +840,81 @@ components:
       x-stoplight:
         id: 4120n8fn8dfkx
       type: object
+    PluginInfo:
+      title: PluginInfo
+      x-stoplight:
+        id: kpoyftiybzwns
+      type: object
+      properties:
+        id:
+          type: string
+          x-stoplight:
+            id: 7bgn328jvn58s
+        name:
+          type: string
+          x-stoplight:
+            id: ql3oqpkls4fft
+        createdBy:
+          type: string
+          x-stoplight:
+            id: l22ptpcecyfoe
+        iconUrl:
+          type: string
+          x-stoplight:
+            id: 4arnqctb1wfyl
+        enabled:
+          type: boolean
+          x-stoplight:
+            id: 6opetnwiiai53
+    PluginInfoResponse:
+      title: PluginInfoResponse
+      x-stoplight:
+        id: pjaj5msyanbfi
+      type: object
+      properties:
+        plugin:
+          $ref: '#/components/schemas/PluginInfo'
+          x-stoplight:
+            id: ogk72ix9uoil2
+    PluginDetailedInfoResponse:
+      title: PluginDetailedInfoResponse
+      x-stoplight:
+        id: rp4p3xfki8wrk
+      type: object
+      properties:
+        plugin:
+          $ref: '#/components/schemas/PluginDetailedInfo'
+          x-stoplight:
+            id: ogk72ix9uoil3
+    PluginDetailedInfo:
+      title: PluginDetailedInfo
+      x-stoplight:
+        id: ggn3lgk0pl7jx
+      type: object
+      properties:
+        pluginDetails:
+          $ref: '#/components/schemas/PluginInfo'
+          x-stoplight:
+            id: zfeuzsbo3e90v
+        description:
+          type: string
+          x-stoplight:
+            id: ql3oqpkls4fft
+        category:
+          type: string
+          x-stoplight:
+            id: ql3oqpkls4fft
+          enum:
+            - Monitoring
+            - CI/CD
+        source:
+          type: string
+          x-stoplight:
+            id: 4arnqctb1wfyl
+        config:
+          type: string
+          x-stoplight:
+            id: 4arnqctb1wfyl
     ManualImportEntityRequest:
       title: ManualImportEntityRequest
       x-stoplight:
@@ -997,6 +1101,12 @@ components:
       schema:
         type: string
       description: Layout Identifier
+    PluginId:
+      name: pluginId
+      in: path
+      required: true
+      schema:
+        type: string
     PluginName:
       name: PluginId
       in: query
@@ -1171,6 +1281,37 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ImportEntitiesResponse'
+    PluginInfoResponseList:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/PluginInfoResponse'
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/PluginInfoResponse'
+    PluginInfoResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PluginInfoResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/PluginInfoResponse'
+    PluginDetailedInfoResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PluginDetailedInfoResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/PluginDetailedInfoResponse'
     AppConfigResponse:
       description: Example response
       content:
