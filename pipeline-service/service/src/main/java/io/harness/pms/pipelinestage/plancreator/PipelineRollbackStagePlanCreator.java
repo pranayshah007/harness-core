@@ -20,6 +20,7 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
+import io.harness.pms.sdk.core.steps.io.EmptyStepParameters;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.StepSpecTypeConstants;
 
@@ -49,6 +50,7 @@ public class PipelineRollbackStagePlanCreator implements PartialPlanCreator<Pipe
             .identifier(stageNode.getIdentifier())
             .group(StepCategory.STAGE.name())
             .stepType(PipelineRollbackStageStep.STEP_TYPE)
+            .stepParameters(new EmptyStepParameters())
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
