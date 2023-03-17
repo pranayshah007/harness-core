@@ -65,6 +65,7 @@ import io.harness.metrics.service.api.MetricService;
 import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.beans.NGMigrationConfiguration;
+import io.harness.ng.OasSpecFirstYamlResource;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
@@ -209,6 +210,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     registerMigrations(injector);
     registerIterators(injector);
     registerOasResource(appConfig, environment, injector);
+    registerOasSpecFirstResource(environment);
 
     if (BooleanUtils.isTrue(appConfig.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
@@ -259,6 +261,10 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
     openApiResource.setOpenApiConfiguration(configuration.getOasConfig());
     environment.jersey().register(openApiResource);
+  }
+
+  private void registerOasSpecFirstResource(Environment environment) {
+    environment.jersey().register(new OasSpecFirstYamlResource());
   }
 
   private void registerCorsFilter(AccessControlConfiguration appConfig, Environment environment) {
