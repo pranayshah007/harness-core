@@ -1,0 +1,5 @@
+proxy:
+  '/harness':
+    target: 'https://app.harness.io/'
+    headers:
+      'x-api-key': token ${HARNESS_TOKEN}

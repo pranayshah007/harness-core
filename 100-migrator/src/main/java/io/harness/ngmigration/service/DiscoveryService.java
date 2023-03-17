@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_FILE_NAME;
 import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_TEMP_DIR_PREFIX;
 
+import static software.wings.ngmigration.NGMigrationEntityType.DUMMY_HEAD;
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 
@@ -393,6 +394,7 @@ public class DiscoveryService {
     // We'll first load the environment because infra depends on Environment
     entities.keySet()
         .stream()
+        .filter(id -> !DUMMY_HEAD.equals(id.getType()))
         .sorted(Comparator.comparing(id -> !ENVIRONMENT.equals(id.getType())))
         .forEach(cgEntityId -> {
           NGYamlFile yamlFile = migrationFactory.getMethod(cgEntityId.getType())

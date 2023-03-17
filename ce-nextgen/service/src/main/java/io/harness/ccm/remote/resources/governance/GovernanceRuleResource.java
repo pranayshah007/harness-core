@@ -220,7 +220,7 @@ public class GovernanceRuleResource {
     GovernanceRuleFilter governancePolicyFilter = GovernanceRuleFilter.builder().build();
     RuleList ruleList = governanceRuleService.list(governancePolicyFilter);
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
-    if (ruleList.getRule().size() >= governanceConfig.getPolicyPerAccountLimit()) {
+    if (ruleList.getRules().size() >= governanceConfig.getPolicyPerAccountLimit()) {
       throw new InvalidRequestException("You have exceeded the limit for rules creation");
     }
     // TO DO: Handle this for custom rules and git connectors

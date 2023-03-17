@@ -1329,7 +1329,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
             currentSharedCostsPerTimestamp.put(timestamp,
                 currentSharedCostsPerTimestamp.get(timestamp)
                     + viewBusinessMappingResponseHelper.calculateSharedCostForTimestamp(sharedCosts, timestamp,
-                        sharedCostBusinessMapping, entityCosts.get(costTarget), numberOfEntities, totalCost));
+                        sharedCostBusinessMapping, costTarget, entityCosts.get(costTarget), numberOfEntities,
+                        totalCost));
           }
           entitySharedCostsPerTimestamp.put(sharedCostEntryName, currentSharedCostsPerTimestamp);
         }

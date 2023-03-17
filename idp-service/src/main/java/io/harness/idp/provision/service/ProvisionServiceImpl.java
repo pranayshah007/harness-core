@@ -59,7 +59,7 @@ public class ProvisionServiceImpl implements ProvisionService {
   public void createDefaultPermissions(String accountIdentifier) {
     try {
       BackstagePermissions backstagePermissions = new BackstagePermissions();
-      backstagePermissions.setUserGroup("");
+      backstagePermissions.setUserGroup(" ");
       backstagePermissions.setPermissions(permissions);
       backstagePermissionsService.createPermissions(backstagePermissions, accountIdentifier);
     } catch (DuplicateKeyException e) {

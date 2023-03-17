@@ -20,6 +20,7 @@ import io.harness.idp.annotations.IdpServiceAuth;
 import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
 import io.harness.idp.events.consumers.EntityCrudStreamConsumer;
 import io.harness.idp.events.consumers.IdpEventConsumerController;
+import io.harness.idp.secret.jobs.EnvironmentSecretsSyncJob;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.persistence.HPersistence;
@@ -124,9 +125,14 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerHealthChecksManager(environment, injector);
     registerQueueListeners(injector);
     registerAuthFilters(configuration, environment, injector);
+    registerManagedJobs(environment, injector);
     //    initMetrics(injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
+  }
+
+  private void registerManagedJobs(Environment environment, Injector injector) {
+    environment.lifecycle().manage(injector.getInstance(EnvironmentSecretsSyncJob.class));
   }
 
   private void registerQueueListeners(Injector injector) {

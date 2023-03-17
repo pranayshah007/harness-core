@@ -55,18 +55,22 @@ import io.harness.pms.expression.ExpressionResolverUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
+import io.harness.steps.container.execution.plugin.PluginExecutionConfigHelper;
 import io.harness.steps.container.utils.ConnectorUtils;
 import io.harness.steps.container.utils.ContainerParamsProvider;
 import io.harness.steps.container.utils.ContainerStepImageUtils;
 import io.harness.steps.container.utils.ContainerStepResolverUtils;
 import io.harness.steps.container.utils.K8sPodInitUtils;
+import io.harness.steps.container.utils.PluginUtils;
 import io.harness.steps.container.utils.SecretUtils;
 import io.harness.steps.plugin.ContainerStepInfo;
 import io.harness.steps.plugin.ContainerStepSpec;
+import io.harness.steps.plugin.PluginStep;
 import io.harness.steps.plugin.infrastructure.ContainerCleanupDetails;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.yaml.core.variables.SecretNGVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -92,6 +96,7 @@ public class ContainerStepInitHelper {
   @Inject private ContainerParamsProvider internalContainerParamsProvider;
   @Inject K8sPodInitUtils k8sPodInitUtils;
   @Inject SecretUtils secretUtils;
+  @Inject PluginExecutionConfigHelper pluginExecutionConfigHelper;
 
   public CIK8InitializeTaskParams getK8InitializeTaskParams(
       ContainerStepSpec containerStepInfo, Ambiance ambiance, String logPrefix) {
@@ -380,9 +385,44 @@ public class ContainerStepInitHelper {
     switch (containerStepInfo.getType()) {
       case RUN_CONTAINER:
         return createStepContainerDefinition((ContainerStepInfo) containerStepInfo, portFinder, accountId, os);
+      case CD_SSCA_ORCHESTRATION:
+        return createPluginStepContainerDefinition((PluginStep) containerStepInfo, portFinder, accountId, os);
       default:
         throw new ContainerStepExecutionException("Container step initialization not handled");
     }
+  }
+
+  private ContainerDefinitionInfo createPluginStepContainerDefinition(
+      PluginStep pluginStep, PortFinder portFinder, String accountId, OSType os) {
+    Integer port = portFinder.getNextPort();
+
+    String identifier = pluginStep.getIdentifier().replace("_", "");
+    String containerName = format("%s%s", STEP_PREFIX, identifier).toLowerCase();
+
+    Map<String, String> envMap = new HashMap<>(PluginUtils.getPluginCompatibleEnvVariables(pluginStep, identifier));
+    Map<String, SecretNGVariable> secretNGVariableMap =
+        new HashMap<>(PluginUtils.getPluginCompatibleSecretVars(pluginStep));
+
+    return ContainerDefinitionInfo.builder()
+        .name(containerName)
+        .commands(StepContainerUtils.getCommand(os))
+        .args(StepContainerUtils.getArguments(port))
+        .envVars(envMap)
+        .secretVariables(new ArrayList<>(secretNGVariableMap.values()))
+        .containerImageDetails(ContainerImageDetails.builder()
+                                   .imageDetails(k8sPodInitUtils.getImageInfo(
+                                       pluginExecutionConfigHelper.getPluginImage(pluginStep).getImage()))
+                                   .build())
+        .isHarnessManagedImage(true)
+        .containerResourceParams(getStepContainerResource(pluginStep, accountId))
+        .ports(Arrays.asList(port))
+        .containerType(CIContainerType.PLUGIN)
+        .stepIdentifier(identifier)
+        .stepName(pluginStep.getName())
+        .imagePullPolicy(null)
+        .privileged(null)
+        .runAsUser(null)
+        .build();
   }
 
   private ContainerDefinitionInfo createStepContainerDefinition(
@@ -429,7 +469,7 @@ public class ContainerStepInitHelper {
         .build();
   }
 
-  private ContainerResourceParams getStepContainerResource(ContainerStepInfo resource, String accountId) {
+  private ContainerResourceParams getStepContainerResource(ContainerStepSpec resource, String accountId) {
     Integer cpuLimit;
     Integer memoryLimit;
     Pair<Integer, Integer> stepRequest = k8sPodInitUtils.getStepRequest(resource, accountId);

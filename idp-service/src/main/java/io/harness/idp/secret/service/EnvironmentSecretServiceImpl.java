@@ -146,6 +146,9 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
 
   @Override
   public void syncK8sSecret(List<EnvironmentSecret> environmentSecrets, String accountIdentifier) {
+    if (environmentSecrets.isEmpty()) {
+      return;
+    }
     Map<String, byte[]> secretData = new HashMap<>();
     for (EnvironmentSecret environmentSecret : environmentSecrets) {
       String envName = environmentSecret.getEnvName();

@@ -8,15 +8,21 @@ package io.harness.repositories.planExecutionJson;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.PlanExecutionExpansion;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
+import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -53,5 +59,15 @@ public class PlanExecutionExpansionRepositoryCustomImpl implements PlanExecution
   @Override
   public PlanExecutionExpansion find(Query query) {
     return mongoTemplate.findOne(query, PlanExecutionExpansion.class);
+  }
+
+  @Override
+  public void deleteAllExpansions(Set<String> planExecutionIds) {
+    Criteria criteria = where("planExecutionId").in(planExecutionIds);
+    Query query = new Query(criteria);
+    RetryPolicy<Object> retryPolicy =
+        PersistenceUtils.getRetryPolicy("[Retrying]: Failed deleting PlanExecutionExpansion entity; attempt: {}",
+            "[Failed]: Failed deleting PlanExecutionExpansion entity; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, PlanExecutionExpansion.class));
   }
 }

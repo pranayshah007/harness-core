@@ -557,6 +557,7 @@ permits {"name": "expireAt_1", "background": true, "expireAfterSeconds": 0} {"ex
 permits {"name": "key_1", "unique": true} {"key": 1}
 perpetualTask {"name": "assignIterator", "background": true} {"state": 1, "assignAfterMs": 1, "assignIteration": 1}
 perpetualTask {"name": "assigned_delegate", "background": true} {"accountId": 1, "state": 1, "delegateId": 1}
+perpetualTask {"name": "clientContext_clientParams_infrastructureMappingId", "background": true, "sparse": true} {"clientContext.clientParams.infrastructureMappingId": 1}
 perpetualTask {"name": "delegateId_1", "background": true} {"delegateId": 1}
 perpetualTask {"name": "rebalanceIterator", "background": true} {"state": 1, "rebalanceIteration": 1}
 perpetualTask {"name": "state_assignIteration_assignAfterMs", "background": true} {"state": 1, "assignIteration": 1, "assignAfterMs": 1}

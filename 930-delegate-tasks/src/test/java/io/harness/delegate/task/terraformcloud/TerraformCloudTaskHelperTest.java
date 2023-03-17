@@ -270,7 +270,7 @@ public class TerraformCloudTaskHelperTest {
 
     assertThat(runData.getId()).isEqualTo("run-123");
     verify(terraformCloudClient, times(1)).createRun(any(), any(), any());
-    verify(terraformCloudClient, times(1)).getPlan(any(), any(), any());
+    verify(terraformCloudClient, times(2)).getPlan(any(), any(), any());
     verify(terraformCloudClient, times(1)).getRun(any(), any(), any());
   }
 
@@ -288,7 +288,7 @@ public class TerraformCloudTaskHelperTest {
 
     assertThat(runData.getId()).isEqualTo("run-123");
     verify(terraformCloudClient, times(1)).createRun(any(), any(), any());
-    verify(terraformCloudClient, times(1)).getPlan(any(), any(), any());
+    verify(terraformCloudClient, times(2)).getPlan(any(), any(), any());
     verify(terraformCloudClient, times(1)).getRun(any(), any(), any());
   }
 
@@ -306,7 +306,7 @@ public class TerraformCloudTaskHelperTest {
 
     assertThat(runData.getId()).isEqualTo("run-123");
     verify(terraformCloudClient, times(1)).createRun(any(), any(), any());
-    verify(terraformCloudClient, times(1)).getPlan(any(), any(), any());
+    verify(terraformCloudClient, times(2)).getPlan(any(), any(), any());
     verify(terraformCloudClient, times(2)).getRun(any(), any(), any());
     verify(terraformCloudClient, times(1)).forceExecuteRun(any(), any(), any());
   }

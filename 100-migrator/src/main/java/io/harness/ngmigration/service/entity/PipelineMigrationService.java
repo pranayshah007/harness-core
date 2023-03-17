@@ -440,7 +440,6 @@ public class PipelineMigrationService extends NgMigrationService {
   private StageElementWrapperConfig buildWorkflowStage(
       MigrationContext migrationContext, String accountId, PipelineStageElement stageElement, CaseFormat caseFormat) {
     Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
-    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     // TODO: Handle Skip condition
     String workflowId = stageElement.getProperties().get("workflowId").toString();
@@ -551,12 +550,15 @@ public class PipelineMigrationService extends NgMigrationService {
         service.put("serviceRef", stageServiceRef);
         if (serviceInputs == null) {
           service.remove("serviceInputs");
+        } else {
+          service.set("serviceInputs", serviceInputs);
         }
       }
       String envRef = templateInputs.at("/spec/environment/environmentRef").asText();
       if (RUNTIME_INPUT.equals(envRef)) {
-        ObjectNode service = (ObjectNode) templateInputs.get("spec").get("environment");
-        service.put("environmentRef", stageEnvRef);
+        ObjectNode environment = (ObjectNode) templateInputs.get("spec").get("environment");
+        environment.put("environmentRef", stageEnvRef);
+        environment.remove("environmentInputs");
       }
     }
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
