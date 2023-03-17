@@ -15,9 +15,11 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.interrupts.InterruptService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.interrupts.Interrupt;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -46,6 +48,7 @@ import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +68,7 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
 
   @Inject private PMSExecutionService pmsExecutionService;
   @Inject private NodeExecutionService nodeExecutionService;
+  @Inject InterruptService interruptService;
 
   @Override
   public Class<PipelineStageStepParameters> getStepParametersClass() {
@@ -74,11 +78,15 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
   @Override
   public void handleAbort(
       Ambiance ambiance, PipelineStageStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    // This is required
     setSourcePrincipal(ambiance);
-    if (executableResponse != null && isNotEmpty(executableResponse.getCallbackIdsList())) {
-      pmsExecutionService.registerInterrupt(
-          PlanExecutionInterruptType.ABORTALL, executableResponse.getCallbackIds(0), null);
+    // Setting interrupt config of parent pipeline while registering interrupt for child pipeline
+    List<Interrupt> interrupts = interruptService.fetchAbortAllPlanLevelInterrupt(ambiance.getPlanExecutionId());
+    if (isNotEmpty(interrupts)) {
+      Interrupt interrupt = interrupts.get(0);
+      if (executableResponse != null && isNotEmpty(executableResponse.getCallbackIdsList())) {
+        pmsExecutionService.registerInterrupt(PlanExecutionInterruptType.ABORTALL, executableResponse.getCallbackIds(0),
+            null, interrupt.getInterruptConfig());
+      }
     }
   }
 
