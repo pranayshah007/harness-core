@@ -176,6 +176,7 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     registerAuthFilters(appConfig, environment, godInjector);
     registerRequestContextFilter(environment);
     registerOasResource(appConfig, environment, godInjector.get(PLATFORM_SERVICE));
+    registerOasSpecFirstResource(environment);
 
     new NotificationServiceSetup().setup(
         appConfig.getNotificationServiceConfig(), environment, godInjector.get(NOTIFICATION_SERVICE));
@@ -200,6 +201,10 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
     openApiResource.setOpenApiConfiguration(appConfig.getOasConfig());
     environment.jersey().register(openApiResource);
+  }
+
+  private void registerOasSpecFirstResource(Environment environment) {
+    environment.jersey().register(new OasSpecFirstYamlResource());
   }
 
   private void blockingMigrations(Injector injector) {
