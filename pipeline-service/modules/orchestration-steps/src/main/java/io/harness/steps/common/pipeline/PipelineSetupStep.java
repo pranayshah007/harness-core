@@ -21,18 +21,12 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
-import io.harness.pms.contracts.interrupts.IssuedBy;
-import io.harness.pms.contracts.interrupts.ManualIssuer;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.executables.ChildExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.pms.security.PmsSecurityContextGuardUtils;
-import io.harness.security.PrincipalHelper;
-import io.harness.security.dto.Principal;
-import io.harness.serializer.ProtoUtils;
 import io.harness.tasks.ResponseData;
 
 import java.util.Collections;
@@ -64,28 +58,14 @@ public class PipelineSetupStep implements ChildExecutable<PipelineSetupStepParam
     if (pipelineStageInfo.getHasParentPipeline()) {
       List<Interrupt> interrupts = interruptService.fetchAbortAllPlanLevelInterrupt(pipelineStageInfo.getExecutionId());
       if (isNotEmpty(interrupts)) {
-        handleAbort(ambiance);
+        handleAbort(ambiance, interrupts.get(0).getInterruptConfig());
       }
     }
     final String stagesNodeId = stepParameters.getChildNodeID();
     return ChildExecutableResponse.newBuilder().setChildNodeId(stagesNodeId).build();
   }
 
-  private void handleAbort(Ambiance ambiance) {
-    final Principal principal = PmsSecurityContextGuardUtils.getPrincipalFromAmbiance(ambiance);
-    InterruptConfig interruptConfig =
-        InterruptConfig.newBuilder()
-            .setIssuedBy(IssuedBy.newBuilder()
-                             .setManualIssuer(ManualIssuer.newBuilder()
-                                                  .setType(principal.getType().toString())
-                                                  .setIdentifier(principal.getName())
-                                                  .setEmailId(PrincipalHelper.getEmail(principal))
-                                                  .setUserId(PrincipalHelper.getUsername(principal))
-                                                  .build())
-                             .setIssueTime(ProtoUtils.unixMillisToTimestamp(System.currentTimeMillis()))
-                             .build())
-            .build();
-
+  private void handleAbort(Ambiance ambiance, InterruptConfig interruptConfig) {
     InterruptPackage interruptPackage = InterruptPackage.builder()
                                             .interruptType(InterruptType.ABORT_ALL)
                                             .planExecutionId(ambiance.getPlanExecutionId())
