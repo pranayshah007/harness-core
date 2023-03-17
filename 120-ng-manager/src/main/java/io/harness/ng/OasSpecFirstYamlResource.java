@@ -20,8 +20,7 @@ import javax.ws.rs.core.Response;
 
 @Path("/spec-first")
 public class OasSpecFirstYamlResource {
-  public static final String NG_MANAGER_PATH =
-      "/Users/singhmankrit/Documents/harness-core/120-ng-manager/contracts/openapi/v1/openapi.yaml";
+  public static final String NG_MANAGER_PATH = "harness-core/120-ng-manager/contracts/openapi/v1/openapi.yaml";
   public static final String CONNECTORS_PATH = "440-connector-nextgen/contracts/openapi/v1/openapi.yaml";
   public static final String COMMONS_PATH = "970-ng-commons/contracts/openapi/v1/openapi.yaml";
 
@@ -43,7 +42,7 @@ public class OasSpecFirstYamlResource {
   @Path("/connectors/openapi.yaml")
   @Operation(hidden = true)
   public Response getOpenApiYamlConnectors() throws IOException {
-    File file = new File(NG_MANAGER_PATH);
+    File file = new File(CONNECTORS_PATH);
     if (!file.exists()) {
       throw new FileNotFoundException("OpenAPI spec file not found at path: " + CONNECTORS_PATH);
     }
@@ -56,10 +55,11 @@ public class OasSpecFirstYamlResource {
   @Path("/commons/openapi.yaml")
   @Operation(hidden = true)
   public Response getOpenApiYamlCommons() throws IOException {
-    File file = new File(NG_MANAGER_PATH);
+    File file = new File(COMMONS_PATH);
     if (!file.exists()) {
       throw new FileNotFoundException("OpenAPI spec file not found at path: " + COMMONS_PATH);
     }
     String yaml = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
     return Response.ok().entity(yaml).header("Content-Disposition", "inline; filename=openapi.yaml").build();
   }
+}
