@@ -188,6 +188,7 @@ public class IdentityNodeExecutionStrategy
                                                 .status(nodeExecution.getStatus())
                                                 .nodeExecutionId(level.getRuntimeId())
                                                 .adviserResponse(nodeExecution.getAdviserResponse())
+                                                .nodeExecutionEndTs(nodeExecution.getEndTs())
                                                 .build();
       waitNotifyEngine.doneWith(nodeExecution.getNotifyId(), responseData);
     } else {
