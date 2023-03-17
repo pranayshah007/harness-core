@@ -37,6 +37,7 @@ import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.pms.contracts.interrupts.InterruptEvent;
@@ -76,6 +77,7 @@ public class PipelineEntityCRUDStreamListenerTest extends CategoryTest {
   @Mock private GraphGenerationService graphGenerationService;
   @Mock private NodeExecutionService nodeExecutionService;
   @Mock private PlanExecutionService planExecutionService;
+  @Mock private PlanExpansionService planExpansionService;
   @InjectMocks PipelineEntityCRUDStreamListener pipelineEntityCRUDStreamListener;
 
   @Before
