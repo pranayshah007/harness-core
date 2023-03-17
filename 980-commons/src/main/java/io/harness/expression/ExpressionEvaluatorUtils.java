@@ -139,8 +139,7 @@ public class ExpressionEvaluatorUtils {
               Thread.currentThread().interrupt();
             } catch (ExecutionException e) {
               log.error("Encountered error while extracting secret value from future ", e.getCause());
-              throw new RuntimeException(
-                  String.format("Encountered error while resolving secrets expression %s", expression), e.getCause());
+              throw new RuntimeException("Encountered error while resolving secret", e.getCause());
             }
           } else {
             // Cast the value from context to string.
