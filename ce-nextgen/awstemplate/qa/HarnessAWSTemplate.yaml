@@ -46,6 +46,10 @@ Parameters:
     Default: false
     Type: String
     AllowedValues: [ true, false ]
+  ClusterOrchestratorEnabled:
+    Default: false
+    Type: String
+    AllowedValues: [ true, false ]
 Conditions:
   CreatingHarnessBillingMonitoringPolicy: !Equals 
     - !Ref BillingEnabled
@@ -61,6 +65,9 @@ Conditions:
     - true
   CreateHarnessCommitmentOrchestratorPolicy: !Equals
     - !Ref CommitmentOrchestratorEnabled
+    - true
+  CreateHarnessClusterOrchestratorPolicy: !Equals
+    - !Ref ClusterOrchestratorEnabled
     - true
 Resources:
   HarnessCloudFormationRole:
@@ -331,6 +338,32 @@ Resources:
               - 'ce:GetDimensionValues'
               - 'ce:GetReservationUtilization'
               - 'ce:GetSavingsPlansUtilizationDetails'
+            Resource: '*'
+      Roles:
+        - !Ref HarnessCloudFormationRole
+  HarnessClusterOrchestratorPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Condition: CreateHarnessClusterOrchestratorPolicy
+    Properties:
+      Description: Policy granting Harness Access to Enable Cluster Orchestrator
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'eks:ListNodegroups'
+              - 'eks:DescribeFargateProfile'
+              - 'eks:UntagResource'
+              - 'eks:ListTagsForResource'
+              - 'eks:ListFargateProfiles'
+              - 'eks:DescribeNodegroup'
+              - 'eks:DescribeIdentityProviderConfig'
+              - 'eks:TagResource'
+              - 'eks:AccessKubernetesApi'
+              - 'eks:DescribeCluster'
+              - 'eks:ListClusters'
+              - 'eks:ListIdentityProviderConfigs'
+              - 'eks:AssociateIdentityProviderConfig'
             Resource: '*'
       Roles:
         - !Ref HarnessCloudFormationRole

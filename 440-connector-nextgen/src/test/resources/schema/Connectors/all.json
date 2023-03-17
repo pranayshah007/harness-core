@@ -1948,7 +1948,8 @@
                   "OPTIMIZATION",
                   "VISIBILITY",
                   "GOVERNANCE",
-                  "COMMITMENT_ORCHESTRATOR"
+                  "COMMITMENT_ORCHESTRATOR",
+                  "CLUSTER_ORCHESTRATOR"
                 ]
               },
               "minLength": 1
@@ -1985,7 +1986,8 @@
                   "OPTIMIZATION",
                   "VISIBILITY",
                   "GOVERNANCE",
-                  "COMMITMENT_ORCHESTRATOR"
+                  "COMMITMENT_ORCHESTRATOR",
+                  "CLUSTER_ORCHESTRATOR"
                 ]
               },
               "minLength": 1
@@ -2024,7 +2026,8 @@
                   "OPTIMIZATION",
                   "VISIBILITY",
                   "GOVERNANCE",
-                  "COMMITMENT_ORCHESTRATOR"
+                  "COMMITMENT_ORCHESTRATOR",
+                  "CLUSTER_ORCHESTRATOR"
                 ]
               },
               "minLength": 1
@@ -3315,7 +3318,8 @@
                   "OPTIMIZATION",
                   "VISIBILITY",
                   "GOVERNANCE",
-                  "COMMITMENT_ORCHESTRATOR"
+                  "COMMITMENT_ORCHESTRATOR",
+                  "CLUSTER_ORCHESTRATOR"
                 ]
               },
               "minLength": 1
