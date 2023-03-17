@@ -15,9 +15,12 @@ import io.harness.repositories.ExecutionQueueLimitRepository;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.Optional;
 
 @NextGenManagerAuth
+@Slf4j
 public class ExecutionQueueLimitResourceImpl implements ExecutionQueueLimitResource {
   @Inject ExecutionQueueLimitRepository executionQueueLimitRepository;
 
@@ -51,6 +54,17 @@ public class ExecutionQueueLimitResourceImpl implements ExecutionQueueLimitResou
     } else {
       throw new EntityNotFoundException(
           String.format("no execution config found for accountId: %s", accountIdentifier));
+    }
+  }
+
+  @Override
+  public ResponseDTO<Boolean> resetExecutionLimits(String accountIdentifier) {
+    try {
+      executionQueueLimitRepository.deleteByAccountIdentifier(accountIdentifier);
+      return ResponseDTO.newResponse(true);
+    } catch (Exception ex) {
+      log.info("no execution config found for accountId: {}", accountIdentifier);
+      return ResponseDTO.newResponse(false);
     }
   }
 }

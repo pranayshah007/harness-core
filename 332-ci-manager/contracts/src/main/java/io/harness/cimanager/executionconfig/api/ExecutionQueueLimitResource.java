@@ -89,4 +89,14 @@ public interface ExecutionQueueLimitResource {
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
   ResponseDTO<ExecutionQueueLimitDTO>
   getExecutionLimits(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+
+    @POST
+    @Path("/reset-count")
+    @ApiOperation(value = "Reset execution queue count", nickname = "resetExecutionCount")
+    @io.swagger.v3.oas.annotations.
+            Operation(operationId = "updateExecutionQueueLimits", summary = "Update execution queue limits for CI builds",
+            responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "True or False") })
+    @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
+    ResponseDTO<Boolean>
+    resetExecutionLimits(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifierw);
 }
