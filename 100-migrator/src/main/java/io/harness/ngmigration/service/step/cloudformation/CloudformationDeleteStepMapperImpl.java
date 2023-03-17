@@ -15,6 +15,7 @@ import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepInf
 import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepNode;
 import io.harness.cdng.provision.cloudformation.InlineCloudformationDeleteStackStepConfiguration;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -49,7 +50,8 @@ public class CloudformationDeleteStepMapperImpl extends BaseCloudformationProvis
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     CloudFormationDeleteStackState state = (CloudFormationDeleteStackState) getState(graphNode);
 
     CloudformationDeleteStackStepNode cloudformationDeleteStackStepNode = new CloudformationDeleteStackStepNode();

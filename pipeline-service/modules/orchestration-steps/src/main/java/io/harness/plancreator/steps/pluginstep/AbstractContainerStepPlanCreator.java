@@ -9,6 +9,7 @@ package io.harness.plancreator.steps.pluginstep;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
@@ -68,9 +69,17 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
     ByteString advisorParametersInitStep = ByteString.copyFrom(
         kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(stepNodeId).build()));
 
-    PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForField(
-        initStepNodeId, getStepParameters(config, ctx), advisorParametersInitStep);
-    PlanNode stepPlanNode = createPlanForStep(stepNodeId, getStepParameters(config, ctx));
+    StepParameters stepParameters = getStepParameters(config, ctx);
+    if (stepParameters instanceof StepElementParameters) {
+      StepElementParameters stepElementParameters = (StepElementParameters) stepParameters;
+      if (stepElementParameters.getSpec() instanceof ContainerStepSpec) {
+        ((ContainerStepSpec) stepElementParameters.getSpec()).setName(config.getName());
+        ((ContainerStepSpec) stepElementParameters.getSpec()).setIdentifier(config.getIdentifier());
+      }
+    }
+    PlanNode initPlanNode =
+        InitContainerStepPlanCreater.createPlanForField(initStepNodeId, stepParameters, advisorParametersInitStep);
+    PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters);
 
     planCreationResponseMap.put(
         initPlanNode.getUuid(), PlanCreationResponse.builder().node(initPlanNode.getUuid(), initPlanNode).build());
@@ -160,14 +169,5 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
                   NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
               .build());
     }
-  }
-
-  @Override
-  public PlanCreationResponse createPlanForField(PlanCreationContext ctx, T field) {
-    if (field.getStepSpecType() instanceof ContainerStepSpec) {
-      ((ContainerStepSpec) field.getStepSpecType()).setName(field.getName());
-      ((ContainerStepSpec) field.getStepSpecType()).setIdentifier(field.getIdentifier());
-    }
-    return super.createPlanForField(ctx, field);
   }
 }

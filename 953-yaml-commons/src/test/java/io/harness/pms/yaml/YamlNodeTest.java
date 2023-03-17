@@ -18,6 +18,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.YamlException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -213,5 +214,41 @@ public class YamlNodeTest extends CategoryTest {
         + "    socketTimeoutMillis: 1000\n"
         + "    method: \"GET\"\n"
         + "    url: \"https://google.com\"\n");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testReplacePathForAddingArrayElements() throws IOException {
+    String pipelineYaml = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"s1\"\n"
+        + "  - stage:\n"
+        + "      identifier: \"s2\"\n"
+        + "  - stage:\n"
+        + "      identifier: \"s3\"\n";
+    YamlNode pipelineNode = YamlUtils.readTree(pipelineYaml).getNode();
+    String newStage = "stage:\n"
+        + "  identifier: \"s4\"\n";
+    YamlNode newStageNode = YamlUtils.readTree(newStage).getNode();
+    pipelineNode.replacePath("pipeline/stages/[3]", newStageNode.getCurrJsonNode());
+    assertThat(pipelineNode.getField("pipeline").getNode().getField("stages").getNode().asArray()).hasSize(4);
+    assertThat(pipelineNode.toString())
+        .isEqualTo(
+            "{\"pipeline\":{\"stages\":[{\"stage\":{\"identifier\":\"s1\"}},{\"stage\":{\"identifier\":\"s2\"}},{\"stage\":{\"identifier\":\"s3\"}},{\"stage\":{\"identifier\":\"s4\"}}]}}");
+
+    assertThatThrownBy(() -> pipelineNode.replacePath("pipeline/stages/[5]", newStageNode.getCurrJsonNode()))
+        .isInstanceOf(YamlException.class)
+        .hasMessage("Incorrect index path ([5]) on array node");
+
+    String replacementStage = "stage:\n"
+        + "  identifier: \"s1.1\"\n";
+    YamlNode replacementStageNode = YamlUtils.readTree(replacementStage).getNode();
+    pipelineNode.replacePath("pipeline/stages/[1]", replacementStageNode.getCurrJsonNode());
+    assertThat(pipelineNode.getField("pipeline").getNode().getField("stages").getNode().asArray()).hasSize(4);
+    assertThat(pipelineNode.toString())
+        .isEqualTo(
+            "{\"pipeline\":{\"stages\":[{\"stage\":{\"identifier\":\"s1\"}},{\"stage\":{\"identifier\":\"s1.1\"}},{\"stage\":{\"identifier\":\"s3\"}},{\"stage\":{\"identifier\":\"s4\"}}]}}");
   }
 }

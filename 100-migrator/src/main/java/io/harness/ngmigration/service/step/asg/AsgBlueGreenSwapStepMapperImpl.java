@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step.asg;
 import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepInfo;
 import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -37,7 +38,8 @@ public class AsgBlueGreenSwapStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     AwsAmiSwitchRoutesState state = (AwsAmiSwitchRoutesState) getState(graphNode);
 
     AsgBlueGreenSwapServiceStepNode node = new AsgBlueGreenSwapServiceStepNode();

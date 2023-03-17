@@ -18,6 +18,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.task.jira.mappers.JiraRequestResponseMapper;
 import io.harness.exception.InvalidRequestException;
@@ -109,20 +110,23 @@ public class CCMJiraHelperImpl implements CCMJiraHelper {
   private JiraConnectorDTO decryptJiraConnectorDTO(
       JiraConnectorDTO dto, List<EncryptedDataDetail> encryptionDetails, String accountIdentifier) {
     if (!isNull(dto.getAuth()) && !isNull(dto.getAuth().getCredentials())) {
-      NGRestUtils.getResponse(
+      JiraAuthCredentialsDTO decryptedEntity = (JiraAuthCredentialsDTO) NGRestUtils.getResponse(
           secretManagerClient.decryptEncryptedDetails(DecryptableEntityWithEncryptionConsumers.builder()
                                                           .decryptableEntity(dto.getAuth().getCredentials())
                                                           .encryptedDataDetailList(encryptionDetails)
                                                           .build(),
               accountIdentifier));
+      dto.getAuth().setCredentials(decryptedEntity);
       return dto;
     } else {
-      return (JiraConnectorDTO) NGRestUtils.getResponse(
+      JiraAuthCredentialsDTO decryptedEntity = (JiraAuthCredentialsDTO) NGRestUtils.getResponse(
           secretManagerClient.decryptEncryptedDetails(DecryptableEntityWithEncryptionConsumers.builder()
                                                           .decryptableEntity(dto)
                                                           .encryptedDataDetailList(encryptionDetails)
                                                           .build(),
               accountIdentifier));
+      dto.getAuth().setCredentials(decryptedEntity);
+      return dto;
     }
   }
 

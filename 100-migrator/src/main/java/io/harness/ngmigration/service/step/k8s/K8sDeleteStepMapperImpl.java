@@ -15,6 +15,7 @@ import io.harness.cdng.k8s.DeleteResourcesWrapper;
 import io.harness.cdng.k8s.K8sDeleteStepInfo;
 import io.harness.cdng.k8s.K8sDeleteStepNode;
 import io.harness.delegate.task.k8s.DeleteResourcesType;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -51,7 +52,8 @@ public class K8sDeleteStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     K8sDelete state = (K8sDelete) getState(graphNode);
     K8sDeleteStepNode k8sDeleteStepNode = new K8sDeleteStepNode();
     baseSetup(graphNode, k8sDeleteStepNode, context.getIdentifierCaseFormat());

@@ -32,6 +32,7 @@ import io.harness.ngmigration.service.importer.SecretsImportService;
 import io.harness.ngmigration.service.importer.ServiceImportService;
 import io.harness.ngmigration.service.importer.TemplateImportService;
 import io.harness.ngmigration.service.importer.TriggerImportService;
+import io.harness.ngmigration.service.importer.UsergroupImportService;
 import io.harness.ngmigration.service.importer.WorkflowImportService;
 import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
 import io.harness.persistence.HPersistence;
@@ -39,6 +40,7 @@ import io.harness.persistence.HPersistence;
 import software.wings.beans.Workflow;
 import software.wings.beans.Workflow.WorkflowKeys;
 import software.wings.ngmigration.DiscoveryResult;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.WorkflowService;
 
 import com.google.common.base.Stopwatch;
@@ -70,11 +72,15 @@ public class MigrationResourceService {
   @Inject private WorkflowService workflowService;
   @Inject HPersistence hPersistence;
   @Inject WorkflowHandlerFactory workflowHandlerFactory;
+  @Inject UsergroupImportService usergroupImportService;
 
   private DiscoveryResult discover(String authToken, ImportDTO importDTO) {
     // Migrate referenced entities as well.
     importDTO.setMigrateReferencedEntities(true);
     Filter filter = importDTO.getFilter();
+    if (importDTO.getEntityType().equals(NGMigrationEntityType.USER_GROUP)) {
+      return usergroupImportService.discover(authToken, importDTO);
+    }
     if (filter instanceof ConnectorFilter) {
       return connectorImportService.discover(authToken, importDTO);
     }

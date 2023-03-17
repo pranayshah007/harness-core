@@ -20,12 +20,14 @@ import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.artifactstream.ArtifactStreamFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.beans.LambdaSpecification;
 import software.wings.beans.Service;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.ngmigration.CgEntityId;
@@ -45,10 +47,14 @@ public interface ServiceV2Mapper {
     return true;
   }
 
-  ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
+  ServiceDefinition getServiceDefinition(MigrationContext migrationContext, Service service,
       List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
       List<StartupScriptConfiguration> startupScriptConfigurations);
+
+  default List<NGYamlFile> getChildYamlFiles(
+      MigrationContext migrationContext, Service service, LambdaSpecification lambdaSpecification) {
+    return new ArrayList<>();
+  }
 
   default List<ArtifactStream> getArtifactStream(
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, Service service) {
