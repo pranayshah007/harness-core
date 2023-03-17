@@ -9,23 +9,31 @@ package io.harness.pms.pipelinestage.step;
 
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.interrupts.InterruptService;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecution;
+import io.harness.interrupts.Interrupt;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.interrupts.InterruptConfig;
+import io.harness.pms.contracts.interrupts.InterruptType;
+import io.harness.pms.contracts.interrupts.IssuedBy;
+import io.harness.pms.contracts.interrupts.ManualIssuer;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -44,10 +52,13 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.ServicePrincipal;
 import io.harness.tasks.ResponseData;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.Rule;
@@ -67,6 +78,7 @@ public class PipelineStageStepTest extends CategoryTest {
   @Mock PipelineExecutor pipelineExecutor;
   @Mock ExecutionSweepingOutputService sweepingOutputService;
   @Mock NodeExecutionService nodeExecutionService;
+  @Mock InterruptService interruptService;
   @InjectMocks PipelineStageStep pipelineStageStep;
 
   String planExecutionId = "planExecutionId";
@@ -79,12 +91,29 @@ public class PipelineStageStepTest extends CategoryTest {
   public void testAbort() {
     String firstCallBackId = "callBack1";
     String secondCallBackId = "callBack2";
-    Ambiance ambiance = Ambiance.newBuilder().build();
+    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("planExecutionId").build();
+    InterruptConfig interruptConfig =
+        InterruptConfig.newBuilder()
+            .setIssuedBy(
+                IssuedBy.newBuilder()
+                    .setManualIssuer(
+                        ManualIssuer.newBuilder().setEmailId("email").setIdentifier("id").setUserId("user1").build())
+                    .build())
+            .build();
+    when(interruptService.fetchAbortAllPlanLevelInterrupt("planExecutionId"))
+        .thenReturn(List.of(Interrupt.builder()
+                                .type(InterruptType.ABORT)
+                                .planExecutionId("planExecutionId")
+                                .interruptConfig(interruptConfig)
+                                .build()));
 
     pipelineStageStep.handleAbort(ambiance, PipelineStageStepParameters.builder().build(),
         AsyncExecutableResponse.newBuilder().addCallbackIds(firstCallBackId).addCallbackIds(secondCallBackId).build());
-    verify(pmsExecutionService, times(1)).registerInterrupt(PlanExecutionInterruptType.ABORTALL, firstCallBackId, null);
-    assertThat(SecurityContextBuilder.getPrincipal()).isNotNull();
+    verify(pmsExecutionService, times(1))
+        .registerInterrupt(PlanExecutionInterruptType.ABORTALL, firstCallBackId, null, interruptConfig);
+    Principal principal = SecurityContextBuilder.getPrincipal();
+    assertThat(principal).isNotNull();
+    assertEquals(principal, new ServicePrincipal("PipelineService"));
   }
 
   @Test
