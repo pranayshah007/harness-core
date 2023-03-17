@@ -7,7 +7,6 @@
 
 package io.harness.idp.events;
 
-import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 
 import io.harness.annotations.dev.HarnessTeam;
