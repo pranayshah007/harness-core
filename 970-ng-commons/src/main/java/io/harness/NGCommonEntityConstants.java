@@ -25,6 +25,11 @@ public class NGCommonEntityConstants {
   public static final String PROJECT_KEY = "projectIdentifier";
 
   public static final String UUID = "uuid";
+  public static final String SEARCH_KEY = "searchKey";
+  public static final String SORT_TYPE = "sortType";
+  public static final String SORT_ORDER = "sortOrder";
+  public static final String LIMIT = "limit";
+  public static final String OFFSET = "offset";
 
   public static final String FORCE_DELETE = "forceDelete";
   public static final String VERSION_LABEL_KEY = "versionLabel";
