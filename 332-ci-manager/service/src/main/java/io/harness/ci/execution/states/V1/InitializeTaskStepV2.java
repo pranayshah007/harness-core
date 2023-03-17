@@ -69,12 +69,15 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.CITaskExecutionResponse;
 import io.harness.delegate.beans.ci.k8s.CIContainerStatus;
+import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.CiK8sTaskResponse;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.task.HDelegateTask;
 import io.harness.encryption.Scope;
 import io.harness.eraro.Level;
@@ -288,6 +291,16 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       taskSelectors.add(taskSelector);
       // TODO: start emitting & processing event for Docker as well
       // emitEvent = true;
+    } else if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
+      ConnectorConfigDTO connectorConfig =
+          ((CIK8InitializeTaskParams) buildSetupTaskParams).getK8sConnector().getConnectorConfig();
+      Set<String> delegateSelectors = ((KubernetesClusterConfigDTO) connectorConfig).getDelegateSelectors();
+      if (delegateSelectors != null) {
+        List<TaskSelector> selectorList = delegateSelectors.stream()
+                                              .map(ds -> TaskSelector.newBuilder().setSelector(ds).build())
+                                              .collect(Collectors.toList());
+        taskSelectors.addAll(selectorList);
+      }
     }
 
     TaskData taskData = getTaskData(stepParameters, buildSetupTaskParams);
