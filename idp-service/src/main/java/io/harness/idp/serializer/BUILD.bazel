@@ -17,6 +17,7 @@ java_binary(
         "//idp-service/src/main/java/io/harness/idp/configmanager:module",
         "//idp-service/src/main/java/io/harness/idp/namespace:module",
         "//idp-service/src/main/java/io/harness/idp/onboarding:module",
+        "//idp-service/src/main/java/io/harness/idp/plugin:module",
         "//idp-service/src/main/java/io/harness/idp/secret:module",
         "//idp-service/src/main/java/io/harness/idp/settings:module",
         "//idp-service/src/main/java/io/harness/idp/status:module",
