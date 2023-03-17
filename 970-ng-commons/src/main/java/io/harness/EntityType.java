@@ -559,7 +559,9 @@ public enum EntityType {
   CD_SSCA_ORCHESTRATION(ModuleType.CD, EntityTypeConstants.CD_SSCA_ORCHESTRATION, IdentifierRef.class),
   @JsonProperty(EntityTypeConstants.TAS_ROUTE_MAPPING)
   TAS_ROUTE_MAPPING(
-      ModuleType.CD, EntityTypeConstants.TAS_ROUTE_MAPPING, IdentifierRef.class, EntityYamlRootNames.TAS_ROUTE_MAPPING);
+      ModuleType.CD, EntityTypeConstants.TAS_ROUTE_MAPPING, IdentifierRef.class, EntityYamlRootNames.TAS_ROUTE_MAPPING),
+  @JsonProperty(EntityTypeConstants.ENVIRONMENT_SECRET)
+  ENVIRONMENT_SECRET(ModuleType.IDP, EntityTypeConstants.ENVIRONMENT_SECRET, IdentifierRef.class);
 
   private final ModuleType moduleType;
   String yamlName;

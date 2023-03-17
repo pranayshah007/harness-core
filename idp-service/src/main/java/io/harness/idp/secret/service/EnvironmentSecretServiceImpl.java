@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.secret.beans.entity.EnvironmentSecretEntity;
@@ -47,6 +48,7 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
   private K8sClient k8sClient;
   @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
   private NamespaceService namespaceService;
+  private SetupUsageProducer setupUsageProducer;
 
   @Override
   public Optional<EnvironmentSecret> findByIdAndAccountIdentifier(String identifier, String accountIdentifier) {
@@ -60,7 +62,10 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
     syncK8sSecret(Collections.singletonList(environmentSecret), accountIdentifier);
     EnvironmentSecretEntity environmentSecretEntity =
         EnvironmentSecretMapper.fromDTO(environmentSecret, accountIdentifier);
-    return EnvironmentSecretMapper.toDTO(environmentSecretRepository.save(environmentSecretEntity));
+    EnvironmentSecret responseSecret =
+        EnvironmentSecretMapper.toDTO(environmentSecretRepository.save(environmentSecretEntity));
+    setupUsageProducer.publishSecretSetupUsage(Collections.singletonList(environmentSecret), accountIdentifier);
+    return responseSecret;
   }
 
   @Override
@@ -74,6 +79,7 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
     List<EnvironmentSecret> responseSecrets = new ArrayList<>();
     environmentSecretRepository.saveAll(entities).forEach(
         responseSecret -> responseSecrets.add(EnvironmentSecretMapper.toDTO(responseSecret)));
+    setupUsageProducer.publishSecretSetupUsage(responseSecrets, accountIdentifier);
     return responseSecrets;
   }
 
@@ -83,7 +89,10 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
     EnvironmentSecretEntity environmentSecretEntity =
         EnvironmentSecretMapper.fromDTO(environmentSecret, accountIdentifier);
     environmentSecretEntity.setAccountIdentifier(accountIdentifier);
-    return EnvironmentSecretMapper.toDTO(environmentSecretRepository.update(environmentSecretEntity));
+    EnvironmentSecret responseSecret =
+        EnvironmentSecretMapper.toDTO(environmentSecretRepository.update(environmentSecretEntity));
+    setupUsageProducer.publishSecretSetupUsage(Collections.singletonList(responseSecret), accountIdentifier);
+    return responseSecret;
   }
 
   @Override
@@ -97,6 +106,7 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
     List<EnvironmentSecret> responseSecrets = new ArrayList<>();
     entities.forEach(
         entity -> responseSecrets.add(EnvironmentSecretMapper.toDTO(environmentSecretRepository.update(entity))));
+    setupUsageProducer.publishSecretSetupUsage(responseSecrets, accountIdentifier);
     return responseSecrets;
   }
 
@@ -119,15 +129,20 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
     k8sClient.removeSecretData(getNamespaceForAccount(accountIdentifier), BACKSTAGE_SECRET,
         Collections.singletonList(envSecretOpt.get().getEnvName()));
     environmentSecretRepository.delete(envSecretOpt.get());
+    setupUsageProducer.deleteSecretSetupUsage(
+        Collections.singletonList(EnvironmentSecretMapper.toDTO(envSecretOpt.get())), accountIdentifier);
   }
 
   @Override
   public void deleteMulti(List<String> secretIdentifiers, String accountIdentifier) {
-    Iterable<EnvironmentSecretEntity> secrets = environmentSecretRepository.findAllById(secretIdentifiers);
+    Iterable<EnvironmentSecretEntity> secretEntities = environmentSecretRepository.findAllById(secretIdentifiers);
     List<String> envNames =
-        Streams.stream(secrets).map(EnvironmentSecretEntity::getEnvName).collect(Collectors.toList());
+        Streams.stream(secretEntities).map(EnvironmentSecretEntity::getEnvName).collect(Collectors.toList());
     k8sClient.removeSecretData(getNamespaceForAccount(accountIdentifier), BACKSTAGE_SECRET, envNames);
     environmentSecretRepository.deleteAllById(secretIdentifiers);
+    List<EnvironmentSecret> secrets = new ArrayList<>();
+    secretEntities.forEach(secret -> secrets.add(EnvironmentSecretMapper.toDTO(secret)));
+    setupUsageProducer.deleteSecretSetupUsage(secrets, accountIdentifier);
   }
 
   @Override

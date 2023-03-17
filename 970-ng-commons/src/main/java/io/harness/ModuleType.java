@@ -42,7 +42,8 @@ public enum ModuleType {
   @JsonProperty("TEMPLATESERVICE") TEMPLATESERVICE("TemplateService", INTERNAL, ONBOARDED),
 
   // Internal modules which have not been onboarded yet
-  @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", INTERNAL, ONBOARDING_IN_PROGRESS);
+  @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", INTERNAL, ONBOARDING_IN_PROGRESS),
+  @JsonProperty("IDP") IDP("Internal Developer Portal", INTERNAL, ONBOARDING_IN_PROGRESS);
   String displayName;
   ModuleVisibility visibility;
 
