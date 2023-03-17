@@ -7,7 +7,9 @@
 
 package io.harness.ng.core.environment.dto;
 
+import io.harness.beans.IdentifierRef;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -38,4 +40,11 @@ public class EnvironmentResponseDTO {
   Map<String, String> tags;
   @JsonIgnore Long version;
   String yaml;
+
+  @JsonIgnore
+  public String getFullyQualifiedIdentifier() {
+    IdentifierRef envIdentifierRef = FullyQualifiedIdentifierHelper.getIdentifierRefWithScope(
+        accountId, orgIdentifier, projectIdentifier, identifier);
+    return envIdentifierRef.buildScopedIdentifier();
+  }
 }
