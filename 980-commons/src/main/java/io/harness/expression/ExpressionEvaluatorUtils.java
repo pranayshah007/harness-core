@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -134,8 +135,12 @@ public class ExpressionEvaluatorUtils {
             // Let's extract the value from end result of this future object.
             try {
               value = String.valueOf(((Future<?>) ctxValue).get());
-            } catch (Exception e) {
-              log.error("Encountered error while extracting secret value from future ", e);
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+            } catch (ExecutionException e) {
+              log.error("Encountered error while extracting secret value from future ", e.getCause());
+              throw new RuntimeException(
+                  String.format("Encountered error while resolving secrets expression %s", expression), e.getCause());
             }
           } else {
             // Cast the value from context to string.
