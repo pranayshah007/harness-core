@@ -18,8 +18,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import io.dropwizard.lifecycle.Managed;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -58,15 +56,15 @@ public class EnvironmentSecretsSyncJob implements Managed {
 
   public void run() {
     log.info("Environment secrets sync job started");
-    try {
-      List<String> accountIds = namespaceService.getAccountIds();
-      accountIds.forEach(account -> {
+    List<String> accountIds = namespaceService.getAccountIds();
+    accountIds.forEach(account -> {
+      try {
         List<EnvironmentSecret> secrets = environmentSecretService.findByAccountIdentifier(account);
         environmentSecretService.syncK8sSecret(secrets, account);
-      });
-      log.info("Environment secrets sync job completed");
-    } catch (Exception e) {
-      log.error("Could not sync all environment secrets", e);
-    }
+      } catch (Exception e) {
+        log.error("Could not sync environment secrets for account {}", account, e);
+      }
+    });
+    log.info("Environment secrets sync job completed");
   }
 }
