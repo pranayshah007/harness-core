@@ -41,6 +41,7 @@ import io.harness.steps.container.execution.ContainerStepRbacHelper;
 import io.harness.steps.executable.TaskExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepInfo;
 import io.harness.steps.plugin.ContainerStepSpec;
+import io.harness.steps.plugin.ContainerStepType;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.yaml.core.timeout.Timeout;
 
@@ -68,8 +69,10 @@ public class InitContainerStep implements TaskExecutableWithRbac<StepElementPara
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    ContainerStepInfo stepParameter = (ContainerStepInfo) stepParameters.getSpec();
-    containerStepRbacHelper.validateResources(stepParameter, ambiance);
+    ContainerStepSpec stepParameter = (ContainerStepSpec) stepParameters.getSpec();
+    if (stepParameter.getType() == ContainerStepType.RUN_CONTAINER) {
+      containerStepRbacHelper.validateResources((ContainerStepInfo) stepParameter, ambiance);
+    }
   }
 
   @Override

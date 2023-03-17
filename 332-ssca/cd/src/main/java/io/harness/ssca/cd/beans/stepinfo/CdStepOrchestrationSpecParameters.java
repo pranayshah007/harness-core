@@ -15,6 +15,7 @@ import io.harness.ssca.beans.source.SbomSource;
 import io.harness.ssca.beans.tools.SbomOrchestrationTool;
 import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.steps.plugin.ContainerStepType;
+import io.harness.steps.plugin.PluginStep;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 
 import lombok.AllArgsConstructor;
@@ -29,7 +30,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.SSCA)
 public class CdStepOrchestrationSpecParameters
-    extends CdSscaOrchestrationBaseStepInfo implements SpecParameters, ContainerStepSpec {
+    extends CdSscaOrchestrationBaseStepInfo implements SpecParameters, PluginStep {
   private String identifier;
   private String name;
 
