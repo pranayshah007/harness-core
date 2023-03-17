@@ -22,16 +22,28 @@ import org.redisson.api.RLock;
 public class RedisAcquiredLock implements AcquiredLock<RLock> {
   RLock lock;
   boolean isLeaseInfinite;
+  boolean isSentinelMode;
 
   @Override
   public void release() {
-    if (lock != null && (lock.isHeldByCurrentThread() || isLeaseInfinite)) {
-      lock.forceUnlock();
+    if (isSentinelMode) {
+      releaseInSentinelMode();
+    } else if (lock != null && (lock.isLocked() || isLeaseInfinite)) {
+      lock.unlock();
     }
   }
 
   @Override
   public void close() {
     release();
+  }
+
+  /**
+   * This is implemented only as workaround for handling race condition in sentinel mode.
+   */
+  private void releaseInSentinelMode() {
+    if (lock != null && (lock.isHeldByCurrentThread() || isLeaseInfinite)) {
+      lock.forceUnlock();
+    }
   }
 }
