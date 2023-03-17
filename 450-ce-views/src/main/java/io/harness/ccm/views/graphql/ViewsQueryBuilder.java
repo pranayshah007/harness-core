@@ -49,6 +49,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.entities.CostTarget;
 import io.harness.ccm.views.businessMapping.entities.SharedCost;
+import io.harness.ccm.views.businessMapping.entities.SharedCostSplit;
 import io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.dao.ViewCustomFieldDao;
@@ -375,13 +376,23 @@ public class ViewsQueryBuilder {
     switch (sharedCost.getStrategy()) {
       case PROPORTIONAL:
         decorateSharedCostQueryWithAggregations(selectQuery, aggregateFunction, tableIdentifier,
-            entityCosts.getOrDefault(costTarget.getName(), 0.0), totalCost);
+            entityCosts.getOrDefault(costTarget.getName(), 0.0D), totalCost);
         break;
       case EQUAL:
         decorateSharedCostQueryWithAggregations(
             selectQuery, aggregateFunction, tableIdentifier, 1, businessMapping.getCostTargets().size());
         break;
+      case FIXED:
+        for (final SharedCostSplit sharedCostSplit : sharedCost.getSplits()) {
+          if (costTarget.getName().equals(sharedCostSplit.getCostTargetName())) {
+            decorateSharedCostQueryWithAggregations(
+                selectQuery, aggregateFunction, tableIdentifier, sharedCostSplit.getPercentageContribution(), 100.0D);
+            break;
+          }
+        }
+        break;
       default:
+        log.error("Invalid shared cost strategy for business mapping: {}", businessMapping);
         break;
     }
     return selectQuery;

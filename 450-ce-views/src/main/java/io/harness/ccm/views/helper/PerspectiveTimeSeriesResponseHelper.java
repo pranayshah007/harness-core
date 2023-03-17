@@ -16,6 +16,7 @@ import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.views.businessMapping.entities.CostTarget;
 import io.harness.ccm.views.businessMapping.entities.SharedCost;
 import io.harness.ccm.views.businessMapping.entities.SharedCostParameters;
+import io.harness.ccm.views.businessMapping.entities.SharedCostSplit;
 import io.harness.ccm.views.dto.DataPoint;
 import io.harness.ccm.views.dto.DataPoint.DataPointBuilder;
 import io.harness.ccm.views.dto.Reference;
@@ -207,9 +208,9 @@ public class PerspectiveTimeSeriesResponseHelper {
       double sharedCostForEntity = 0.0;
 
       if (costTargets.contains(name)) {
-        sharedCostForEntity =
-            calculateSharedCost(sharedCostParameters, timestamp, sharedCostParameters.getCostPerEntity().get(name),
-                sharedCostBucketsFromGroupBy, sharedCostParameters.getSharedCostFromGroupBy());
+        sharedCostForEntity = calculateSharedCost(sharedCostParameters, timestamp, name,
+            sharedCostParameters.getCostPerEntity().get(name), sharedCostBucketsFromGroupBy,
+            sharedCostParameters.getSharedCostFromGroupBy());
       }
 
       updatedDataPoints.add(DataPoint.builder()
@@ -223,9 +224,9 @@ public class PerspectiveTimeSeriesResponseHelper {
         entityDataPointAdded.put(entity, true);
         double sharedCostForEntity = 0.0;
         if (costTargets.contains(entity)) {
-          sharedCostForEntity =
-              calculateSharedCost(sharedCostParameters, timestamp, sharedCostParameters.getCostPerEntity().get(entity),
-                  sharedCostBucketsFromGroupBy, sharedCostParameters.getSharedCostFromGroupBy());
+          sharedCostForEntity = calculateSharedCost(sharedCostParameters, timestamp, entity,
+              sharedCostParameters.getCostPerEntity().get(entity), sharedCostBucketsFromGroupBy,
+              sharedCostParameters.getSharedCostFromGroupBy());
         }
         updatedDataPoints.add(DataPoint.builder()
                                   .value(getRoundedDoubleValue(sharedCostForEntity))
@@ -237,8 +238,8 @@ public class PerspectiveTimeSeriesResponseHelper {
     return updatedDataPoints;
   }
 
-  private double calculateSharedCost(SharedCostParameters sharedCostParameters, Timestamp timestamp, Double entityCost,
-      List<SharedCost> sharedCostBuckets, Map<String, Map<Timestamp, Double>> sharedCosts) {
+  private double calculateSharedCost(SharedCostParameters sharedCostParameters, Timestamp timestamp, String entity,
+      Double entityCost, List<SharedCost> sharedCostBuckets, Map<String, Map<Timestamp, Double>> sharedCosts) {
     double sharedCost = 0.0;
     for (SharedCost sharedCostBucket : sharedCostBuckets) {
       Map<Timestamp, Double> sharedCostsPerTimestamp =
@@ -250,8 +251,18 @@ public class PerspectiveTimeSeriesResponseHelper {
             sharedCost += sharedCostForGivenTimestamp * (entityCost / sharedCostParameters.getTotalCost());
             break;
           case EQUAL:
-          default:
             sharedCost += sharedCostForGivenTimestamp * (1.0 / sharedCostParameters.getNumberOfEntities());
+            break;
+          case FIXED:
+            for (final SharedCostSplit sharedCostSplit : sharedCostBucket.getSplits()) {
+              if (entity.equals(sharedCostSplit.getCostTargetName())) {
+                sharedCost += sharedCostForGivenTimestamp * (sharedCostSplit.getPercentageContribution() / 100.0D);
+                break;
+              }
+            }
+            break;
+          default:
+            log.error("Invalid shared cost strategy for shared cost bucket: {}", sharedCostBucket);
             break;
         }
       }

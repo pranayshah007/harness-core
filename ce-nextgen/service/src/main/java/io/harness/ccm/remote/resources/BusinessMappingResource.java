@@ -16,14 +16,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.audittrails.events.CostCategoryCreateEvent;
 import io.harness.ccm.audittrails.events.CostCategoryDeleteEvent;
 import io.harness.ccm.audittrails.events.CostCategoryUpdateEvent;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessMapping.entities.BusinessMappingListDTO;
+import io.harness.ccm.views.businessMapping.entities.CostCategorySortType;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.dto.CostCategoryDeleteDTO;
 import io.harness.ccm.views.dto.CostCategoryDeleteDTO.CostCategoryDeleteDTOBuilder;
 import io.harness.ccm.views.dto.LinkedPerspectives;
 import io.harness.ccm.views.service.CEViewService;
-import io.harness.exception.InvalidRequestException;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -85,12 +87,6 @@ public class BusinessMappingResource {
   public RestResponse<BusinessMapping> save(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, BusinessMapping businessMapping) {
     rbacHelper.checkCostCategoryEditPermission(accountId, null, null);
-    if (!businessMappingService.isNamePresent(businessMapping.getName(), businessMapping.getAccountId())) {
-      throw new InvalidRequestException("Cost category name already exists.");
-    }
-    if (businessMappingService.isInvalidBusinessMappingUnallocatedCostLabel(businessMapping)) {
-      throw new InvalidRequestException("Unallocated cost bucket label does not allow Others or Unallocated");
-    }
     BusinessMapping costCategory = businessMappingService.save(businessMapping);
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(new CostCategoryCreateEvent(accountId, costCategory.toDTO()));
@@ -103,9 +99,14 @@ public class BusinessMappingResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "Get List Of Business Mappings", nickname = "getBusinessMappingList")
-  public RestResponse<List<BusinessMapping>> list(@QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
+  public RestResponse<BusinessMappingListDTO> list(@QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.SEARCH_KEY) String searchKey,
+      @QueryParam(NGCommonEntityConstants.SORT_TYPE) CostCategorySortType sortType,
+      @QueryParam(NGCommonEntityConstants.SORT_ORDER) CCMSortOrder sortOrder,
+      @QueryParam(NGCommonEntityConstants.LIMIT) Integer limit,
+      @QueryParam(NGCommonEntityConstants.OFFSET) Integer offset) {
     rbacHelper.checkCostCategoryViewPermission(accountId, null, null);
-    return new RestResponse<>(businessMappingService.list(accountId));
+    return new RestResponse<>(businessMappingService.list(accountId, searchKey, sortType, sortOrder, limit, offset));
   }
 
   @GET
@@ -127,15 +128,7 @@ public class BusinessMappingResource {
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, BusinessMapping businessMapping) {
     rbacHelper.checkCostCategoryEditPermission(accountId, null, null);
     BusinessMapping oldCostCategory = businessMappingService.get(businessMapping.getUuid(), accountId);
-    if (!oldCostCategory.getName().equals(businessMapping.getName())) {
-      if (!businessMappingService.isNamePresent(businessMapping.getName(), businessMapping.getAccountId())) {
-        throw new InvalidRequestException("Cost category name already exists.");
-      }
-    }
-    if (businessMappingService.isInvalidBusinessMappingUnallocatedCostLabel(businessMapping)) {
-      throw new InvalidRequestException("Unallocated cost bucket label does not allow Others or Unallocated");
-    }
-    BusinessMapping newCostCategory = businessMappingService.update(businessMapping);
+    BusinessMapping newCostCategory = businessMappingService.update(businessMapping, oldCostCategory);
     if (!oldCostCategory.getName().equals(newCostCategory.getName())) {
       ceViewService.updateBusinessMappingName(accountId, newCostCategory.getUuid(), newCostCategory.getName());
     }
