@@ -58,7 +58,11 @@ public class PipelineSetupStep implements ChildExecutable<PipelineSetupStepParam
     if (pipelineStageInfo.getHasParentPipeline()) {
       List<Interrupt> interrupts = interruptService.fetchAbortAllPlanLevelInterrupt(pipelineStageInfo.getExecutionId());
       if (isNotEmpty(interrupts)) {
-        handleAbort(ambiance, interrupts.get(0).getInterruptConfig());
+        try {
+          handleAbort(ambiance, interrupts.get(0).getInterruptConfig());
+        } catch (Exception e) {
+          log.error("Error during interrupt registration ", e);
+        }
       }
     }
     final String stagesNodeId = stepParameters.getChildNodeID();
