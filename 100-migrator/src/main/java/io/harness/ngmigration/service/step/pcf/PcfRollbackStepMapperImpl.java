@@ -12,6 +12,7 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasRollbackStepInfo;
 import io.harness.cdng.tas.TasRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -48,7 +49,8 @@ public class PcfRollbackStepMapperImpl extends PcfAbstractStepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     PcfRollbackState state = (PcfRollbackState) getState(graphNode);
     Workflow workflow = context.getWorkflow();
     if (workflow.getOrchestrationWorkflow().getOrchestrationWorkflowType() != OrchestrationWorkflowType.BLUE_GREEN) {
@@ -62,6 +64,7 @@ public class PcfRollbackStepMapperImpl extends PcfAbstractStepMapper {
       return null;
     }
   }
+
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     return false;

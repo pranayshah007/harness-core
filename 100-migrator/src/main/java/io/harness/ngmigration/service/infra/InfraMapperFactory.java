@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.infra;
 
 import static software.wings.api.DeploymentType.AMI;
+import static software.wings.api.DeploymentType.AWS_LAMBDA;
 import static software.wings.api.DeploymentType.AZURE_WEBAPP;
 import static software.wings.api.DeploymentType.CUSTOM;
 import static software.wings.api.DeploymentType.ECS;
@@ -37,6 +38,7 @@ public class InfraMapperFactory {
   private static final InfraDefMapper customDeploymentInfraDefMapper = new CustomDeploymentInfraDefMapper();
   private static final InfraDefMapper pcfInfraDefMapper = new PcfInfraDefMapper();
   private static final InfraDefMapper azureWebappInfraDefMapper = new AzureWebappInfraDefMapper();
+  private static final InfraDefMapper awsLambdaInfraDefMapper = new AwsLambdaInfraDefMapper();
   public static final Map<DeploymentType, InfraDefMapper> INFRA_DEF_MAPPER_MAP =
       ImmutableMap.<DeploymentType, InfraDefMapper>builder()
           .put(KUBERNETES, k8sInfraDefMapper)
@@ -48,6 +50,7 @@ public class InfraMapperFactory {
           .put(WINRM, sshWinRmInfraDefMapper)
           .put(PCF, pcfInfraDefMapper)
           .put(AZURE_WEBAPP, azureWebappInfraDefMapper)
+          .put(AWS_LAMBDA, awsLambdaInfraDefMapper)
           .build();
 
   public static InfraDefMapper getInfraDefMapper(InfrastructureDefinition infraDef) {

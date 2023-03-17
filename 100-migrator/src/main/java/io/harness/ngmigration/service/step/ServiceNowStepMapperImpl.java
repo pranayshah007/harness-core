@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step;
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -78,7 +79,8 @@ public class ServiceNowStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     ServiceNowCreateUpdateState state = (ServiceNowCreateUpdateState) getState(graphNode);
     ServiceNowCreateUpdateParams params = state.getServiceNowCreateUpdateParams();
     switch (params.getAction()) {

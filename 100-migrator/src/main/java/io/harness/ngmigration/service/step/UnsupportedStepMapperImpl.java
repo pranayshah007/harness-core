@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.step;
 
 import io.harness.exception.InvalidRequestException;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -28,7 +29,8 @@ public class UnsupportedStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     throw new InvalidRequestException(
         String.format("Unsupported step - %s of type %s", graphNode.getName(), graphNode.getType()));
   }

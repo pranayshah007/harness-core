@@ -18,6 +18,7 @@ import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
 import io.harness.cdng.tas.TasCanaryAppSetupStepNode;
 import io.harness.cdng.tas.TasInstanceCountType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -62,7 +63,8 @@ public class PcfSetupStepMapperImpl extends PcfAbstractStepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     PcfSetupState state = (PcfSetupState) getState(graphNode);
     if (null == state.getOlderActiveVersionCountToKeep()) {
       state.setOlderActiveVersionCountToKeep(3);
@@ -116,6 +118,7 @@ public class PcfSetupStepMapperImpl extends PcfAbstractStepMapper {
       return TasInstanceCountType.FROM_MANIFEST;
     }
   }
+
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     return false;

@@ -14,6 +14,7 @@ import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepNode;
 import io.harness.cdng.provision.terragrunt.TerragruntStepConfiguration;
 import io.harness.cdng.provision.terragrunt.TerragruntStepConfigurationType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -47,7 +48,8 @@ public class TerragruntDestroyStepMapperImpl extends BaseTerragruntProvisionerMa
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     TerragruntDestroyState state = (TerragruntDestroyState) getState(graphNode);
     TerragruntDestroyStepNode terragruntDestroyStepNode = new TerragruntDestroyStepNode();
     baseSetup(graphNode, terragruntDestroyStepNode, context.getIdentifierCaseFormat());

@@ -13,6 +13,7 @@ import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepConfig
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -46,7 +47,8 @@ public class CloudformationRollbackStepMapperImpl extends BaseCloudformationProv
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     CloudformationRollbackStepInfo cloudformationRollbackStepInfo =
         CloudformationRollbackStepInfo.infoBuilder()
             .cloudformationStepConfiguration(CloudformationRollbackStepConfiguration.builder()

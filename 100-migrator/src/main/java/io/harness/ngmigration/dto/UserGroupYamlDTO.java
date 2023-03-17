@@ -5,15 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.config.service;
+package io.harness.ngmigration.dto;
 
-import io.harness.idp.config.repositories.AppConfigRepository;
+import io.harness.gitsync.beans.YamlDTO;
+import io.harness.ng.core.dto.UserGroupDTO;
 
-import com.google.inject.Inject;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
-public class AppConfigServiceImpl implements AppConfigService {
-  private AppConfigRepository appConfigRepository;
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserGroupYamlDTO implements YamlDTO {
+  UserGroupDTO userGroupDTO;
 }

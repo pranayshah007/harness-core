@@ -200,32 +200,20 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
 
   @Override
   public void checkRecommendationsViewPermission(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(PERSPECTIVE, null), COST_OVERVIEW_VIEW,
-        String.format(DESCRIPTIVE_PERMISSION_MISSING_MESSAGE, RECOMMENDATIONS, RECOMMENDATIONS, COST_OVERVIEW_VIEW,
-            ALL_RESOURCES));
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
+    checkPerspectiveViewPermission(accountIdentifier, orgIdentifier, projectIdentifier, folderId);
   }
 
   @Override
   public void checkAnomalyViewPermission(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(FOLDER, folderId), PERSPECTIVE_VIEW,
-        String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_PERSPECTIVE));
+    checkPerspectiveViewPermission(accountIdentifier, orgIdentifier, projectIdentifier, folderId);
   }
 
   @Override
   public boolean hasCostOverviewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(PERSPECTIVE, null), COST_OVERVIEW_VIEW);
-  }
-
-  public void checkPerspectiveOnlyViewPermission(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(PERSPECTIVE, null), PERSPECTIVE_VIEW,
-        String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_PERSPECTIVE));
   }
 
   @Override

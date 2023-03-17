@@ -9,6 +9,7 @@ package io.harness.cvng.core.services.impl;
 
 import static io.harness.cvng.beans.CVNGPerpetualTaskState.TASK_UNASSIGNED;
 import static io.harness.cvng.beans.DataCollectionExecutionStatus.ABORTED;
+import static io.harness.cvng.beans.DataCollectionExecutionStatus.FAILED;
 import static io.harness.cvng.beans.DataCollectionExecutionStatus.QUEUED;
 import static io.harness.cvng.beans.DataCollectionExecutionStatus.RUNNING;
 import static io.harness.cvng.beans.DataCollectionExecutionStatus.SUCCESS;
@@ -168,6 +169,9 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     cvConfig = cvConfigService.save(createCVConfig());
     cvConfigId = cvConfig.getUuid();
     verificationTaskId = verificationTaskService.getServiceGuardVerificationTaskId(accountId, cvConfigId);
+    serviceLevelIndicator = createSLI();
+    sliVerificationTaskId =
+        verificationTaskService.getSLIVerificationTaskId(accountId, serviceLevelIndicator.getUuid());
     dataCollectionTaskService = spy(dataCollectionTaskService);
     FieldUtils.writeField(dataCollectionTaskService, "clock", clock, true);
     FieldUtils.writeField(verificationJobInstanceService, "clock", clock, true);
@@ -447,6 +451,28 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetNextTask_withExceededRetryCountSLI() {
+    DataCollectionTask dataCollectionTask = create(QUEUED, Type.SLI);
+    dataCollectionTask.setRetryCount(SLIDataCollectionTask.MAX_RETRY_COUNT + 1);
+    hPersistence.save(dataCollectionTask);
+    Optional<DataCollectionTask> nextTask = dataCollectionTaskService.getNextTask(accountId, dataCollectionWorkerId);
+    assertThat(nextTask.isPresent()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetNextTask_forSLI() {
+    DataCollectionTask dataCollectionTask = create(QUEUED, Type.SLI);
+    dataCollectionTask.setRetryCount(SLIDataCollectionTask.MAX_RETRY_COUNT);
+    hPersistence.save(dataCollectionTask);
+    Optional<DataCollectionTask> nextTask = dataCollectionTaskService.getNextTask(accountId, dataCollectionWorkerId);
+    assertThat(nextTask.isPresent()).isTrue();
+  }
+
+  @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testGetNextTask_withExceededRetryCountServiceGuard() {
@@ -716,6 +742,36 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdateTaskStatus_sliDataCollectionDontRetryIfRetryCountExceeds() {
+    Exception exception = new RuntimeException("exception msg");
+    VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
+    DataCollectionTask dataCollectionTask = createAndSave(RUNNING, Type.SLI);
+    DataCollectionTaskResult result = DataCollectionTaskDTO.DataCollectionTaskResult.builder()
+                                          .status(DataCollectionExecutionStatus.FAILED)
+                                          .stacktrace(ExceptionUtils.getStackTrace(exception))
+                                          .dataCollectionTaskId(dataCollectionTask.getUuid())
+                                          .exception(exception.getMessage())
+                                          .build();
+    int maxRetry = SLIDataCollectionTask.MAX_RETRY_COUNT + 1;
+    IntStream.range(0, maxRetry).forEach(index -> {
+      dataCollectionTaskService.updateTaskStatus(result);
+      DataCollectionTask updated = dataCollectionTaskService.getDataCollectionTask(dataCollectionTask.getUuid());
+      assertThat(updated.getStatus()).isEqualTo(QUEUED);
+      assertThat(updated.getRetryCount()).isEqualTo(index + 1);
+      assertThat(updated.getException()).isEqualTo(exception.getMessage());
+      assertThat(updated.getStacktrace()).isEqualTo(ExceptionUtils.getStackTrace(exception));
+      markRunning(updated.getUuid());
+    });
+    dataCollectionTaskService.updateTaskStatus(result);
+    DataCollectionTask updated = dataCollectionTaskService.getDataCollectionTask(dataCollectionTask.getUuid());
+    assertThat(updated.getStatus()).isEqualTo(FAILED);
+    assertThat(updated.getRetryCount()).isEqualTo(11);
+    assertThat(updated.getException()).isEqualTo(exception.getMessage());
+    assertThat(updated.getStacktrace()).isEqualTo(ExceptionUtils.getStackTrace(exception));
+  }
+  @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testUpdateTaskStatus_deploymentSuccessful() {
@@ -788,9 +844,6 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testUpdateTaskStatus_sliCreateNewTaskIfRetryTaskIsTooOld() throws IllegalAccessException {
-    serviceLevelIndicator = createSLI();
-    sliVerificationTaskId =
-        verificationTaskService.getSLIVerificationTaskId(accountId, serviceLevelIndicator.getUuid());
     ServiceLevelIndicatorService serviceLevelIndicatorServiceMock = mock(ServiceLevelIndicatorServiceImpl.class);
     Exception exception = new RuntimeException("exception msg");
     DataCollectionTask dataCollectionTask = createAndSave(RUNNING, Type.SLI);

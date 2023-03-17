@@ -43,4 +43,14 @@ public class WorkflowMigrationContext {
         .identifierCaseFormat(caseFormat)
         .build();
   }
+
+  public static WorkflowMigrationContext newInstance(MigrationContext migrationContext, Workflow workflow) {
+    return WorkflowMigrationContext.builder()
+        .workflow(workflow)
+        .entities(migrationContext.getEntities())
+        .migratedEntities(migrationContext.getMigratedEntities())
+        .stepExpressionFunctors(new ArrayList<>())
+        .identifierCaseFormat(migrationContext.getInputDTO().getIdentifierCaseFormat())
+        .build();
+  }
 }

@@ -358,32 +358,6 @@ public class ViewBillingServiceHelper {
   }
 
   // ----------------------------------------------------------------------------------------------------------------
-  // Query for Cost summary
-  // ----------------------------------------------------------------------------------------------------------------
-  public SelectQuery getTrendStatsQuery(List<QLCEViewFilterWrapper> filters, List<QLCEViewFilter> idFilters,
-      List<QLCEViewTimeFilter> timeFilters, List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction,
-      List<ViewRule> viewRuleList, String cloudProviderTableName, ViewQueryParams queryParams,
-      List<BusinessMapping> sharedCostBusinessMappings) {
-    Optional<QLCEViewFilterWrapper> viewMetadataFilter = viewParametersHelper.getViewMetadataFilter(filters);
-    if (viewMetadataFilter.isPresent()) {
-      final String viewId = viewMetadataFilter.get().getViewMetadataFilter().getViewId();
-      CEView ceView = viewService.get(viewId);
-      viewRuleList = ceView.getViewRules();
-    }
-    // account id is not passed in current gen queries
-    if (queryParams.getAccountId() != null) {
-      if (viewParametersHelper.isClusterPerspective(filters, groupBy)) {
-        // Changes column name for cost to billingamount
-        aggregateFunction = viewParametersHelper.getModifiedAggregations(aggregateFunction);
-      }
-      cloudProviderTableName = getUpdatedCloudProviderTableName(
-          filters, null, aggregateFunction, "", cloudProviderTableName, queryParams.isClusterQuery());
-    }
-    return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters, groupBy, aggregateFunction,
-        Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMappings);
-  }
-
-  // ----------------------------------------------------------------------------------------------------------------
   // Methods related to cost overview and forecast cost
   // ----------------------------------------------------------------------------------------------------------------
   public Double getForecastCost(ViewCostData costData, Instant endInstant) {

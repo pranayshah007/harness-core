@@ -67,13 +67,27 @@ public class InterruptConfigDTOMapper {
       return null;
     }
 
-    return IssuedBy.builder()
-        .issueTime(TimeUnit.SECONDS.toMillis(issuedBy.getIssueTime().getSeconds()))
-        .adviserIssuer(getAdviserIssue(issuedBy.getAdviserIssuer()))
-        .manualIssuer(getManualIssuer(issuedBy.getManualIssuer()))
-        .timeoutIssuer(getTimeoutIssuer(issuedBy.getTimeoutIssuer()))
-        .triggerIssuer(getTriggerIssuer(issuedBy.getTriggerIssuer()))
-        .build();
+    if (issuedBy.hasManualIssuer()) {
+      return IssuedBy.builder()
+          .issueTime(TimeUnit.SECONDS.toMillis(issuedBy.getIssueTime().getSeconds()))
+          .manualIssuer(getManualIssuer(issuedBy.getManualIssuer()))
+          .build();
+    } else if (issuedBy.hasAdviserIssuer()) {
+      return IssuedBy.builder()
+          .issueTime(TimeUnit.SECONDS.toMillis(issuedBy.getIssueTime().getSeconds()))
+          .adviserIssuer(getAdviserIssue(issuedBy.getAdviserIssuer()))
+          .build();
+    } else if (issuedBy.hasTimeoutIssuer()) {
+      return IssuedBy.builder()
+          .issueTime(TimeUnit.SECONDS.toMillis(issuedBy.getIssueTime().getSeconds()))
+          .timeoutIssuer(getTimeoutIssuer(issuedBy.getTimeoutIssuer()))
+          .build();
+    } else {
+      return IssuedBy.builder()
+          .issueTime(TimeUnit.SECONDS.toMillis(issuedBy.getIssueTime().getSeconds()))
+          .triggerIssuer(getTriggerIssuer(issuedBy.getTriggerIssuer()))
+          .build();
+    }
   }
 
   private static TriggerIssuer getTriggerIssuer(io.harness.pms.contracts.interrupts.TriggerIssuer triggerIssuer) {
