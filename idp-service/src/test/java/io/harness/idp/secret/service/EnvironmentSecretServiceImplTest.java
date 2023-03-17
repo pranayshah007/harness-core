@@ -195,9 +195,7 @@ public class EnvironmentSecretServiceImplTest extends CategoryTest {
   public void testDelete() {
     mockAccountNamespaceMapping();
     EnvironmentSecretEntity environmentSecretEntity = EnvironmentSecretEntity.builder().build();
-    when(environmentSecretRepository.findByAccountIdentifierAndSecretIdentifier(
-             TEST_SECRET_IDENTIFIER, TEST_ACCOUNT_IDENTIFIER))
-        .thenReturn(Optional.of(environmentSecretEntity));
+    when(environmentSecretRepository.findById(TEST_SECRET_IDENTIFIER)).thenReturn(Optional.of(environmentSecretEntity));
     environmentSecretServiceImpl.delete(TEST_SECRET_IDENTIFIER, TEST_ACCOUNT_IDENTIFIER);
     verify(k8sClient).removeSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyList());
     verify(environmentSecretRepository).delete(environmentSecretEntity);
