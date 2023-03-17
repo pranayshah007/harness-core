@@ -193,12 +193,12 @@ public class ECSRecommendationDAO {
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
-  public void upsertCeRecommendation(@NonNull String uuid, @NonNull String accountId, String awsAccountId,
+  public void upsertCeRecommendation(@NonNull String uuid, @NonNull String accountId, String namespace,
       @NonNull String clusterName, @NonNull String serviceName, @Nullable Double monthlyCost,
       @Nullable Double monthlySaving, boolean shouldShowRecommendation, @NonNull Instant lastReceivedUntilAt) {
     dslContext.insertInto(CE_RECOMMENDATIONS)
         .set(CE_RECOMMENDATIONS.ACCOUNTID, accountId)
-        .set(CE_RECOMMENDATIONS.NAMESPACE, awsAccountId)
+        .set(CE_RECOMMENDATIONS.NAMESPACE, namespace)
         .set(CE_RECOMMENDATIONS.ID, uuid)
         .set(CE_RECOMMENDATIONS.CLUSTERNAME, clusterName)
         .set(CE_RECOMMENDATIONS.NAME, serviceName)
@@ -210,7 +210,7 @@ public class ECSRecommendationDAO {
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .onConflictOnConstraint(CE_RECOMMENDATIONS.getPrimaryKey())
         .doUpdate()
-        .set(CE_RECOMMENDATIONS.NAMESPACE, awsAccountId)
+        .set(CE_RECOMMENDATIONS.NAMESPACE, namespace)
         .set(CE_RECOMMENDATIONS.MONTHLYCOST, monthlyCost)
         .set(CE_RECOMMENDATIONS.MONTHLYSAVING, monthlySaving)
         .set(CE_RECOMMENDATIONS.ISVALID, shouldShowRecommendation)
