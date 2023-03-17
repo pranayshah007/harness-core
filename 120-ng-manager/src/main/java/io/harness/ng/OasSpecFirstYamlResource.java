@@ -7,29 +7,25 @@
 
 package io.harness.ng;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import javax.servlet.ServletContext;
+import java.io.File;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 @Path("/spec-first")
 public class OasSpecFirstYamlResource {
-  @Context ServletContext servletContext;
-  public static final String NG_MANAGER_PATH = "/120-ng-manager/contracts/openapi/v1/openapi.yaml";
-  public static final String CONNECTORS_PATH = "/440-connector-nextgen/contracts/openapi/v1/openapi.yaml";
-  public static final String COMMONS_PATH = "/970-ng-commons/contracts/openapi/v1/openapi.yaml";
+  public static final String NG_MANAGER_PATH = "120-ng-manager/contracts/openapi/v1/openapi.yaml";
+  public static final String CONNECTORS_PATH = "440-connector-nextgen/contracts/openapi/v1/openapi.yaml";
+  public static final String COMMONS_PATH = "970-ng-commons/contracts/openapi/v1/openapi.yaml";
 
   @GET
   @Produces("application/yaml")
   @Path("/ng-manager/openapi.yaml")
   public Response getOpenApiYamlNGManager() {
     try {
-      byte[] bytes = Files.readAllBytes(Paths.get(servletContext.getRealPath(NG_MANAGER_PATH)));
-      return Response.ok(bytes, "application/yaml")
+      String yaml = String.valueOf(new File(NG_MANAGER_PATH));
+      return Response.ok(yaml, "application/yaml")
           .header("Content-Disposition", "attachment; filename=\"openapi.yaml\"")
           .build();
     } catch (Exception e) {
@@ -42,8 +38,8 @@ public class OasSpecFirstYamlResource {
   @Path("/connectors/openapi.yaml")
   public Response getOpenApiYamlConnectors() {
     try {
-      byte[] bytes = Files.readAllBytes(Paths.get(servletContext.getRealPath(CONNECTORS_PATH)));
-      return Response.ok(bytes, "application/yaml")
+      String yaml = String.valueOf(new File(CONNECTORS_PATH));
+      return Response.ok(yaml, "application/yaml")
           .header("Content-Disposition", "attachment; filename=\"openapi.yaml\"")
           .build();
     } catch (Exception e) {
@@ -56,8 +52,8 @@ public class OasSpecFirstYamlResource {
   @Path("/commons/openapi.yaml")
   public Response getOpenApiYamlCommons() {
     try {
-      byte[] bytes = Files.readAllBytes(Paths.get(servletContext.getRealPath(COMMONS_PATH)));
-      return Response.ok(bytes, "application/yaml")
+      String yaml = String.valueOf(new File(COMMONS_PATH));
+      return Response.ok(yaml, "application/yaml")
           .header("Content-Disposition", "attachment; filename=\"openapi.yaml\"")
           .build();
     } catch (Exception e) {
