@@ -74,6 +74,7 @@ import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
+import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
@@ -565,6 +566,10 @@ public class ExecutionHelper {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()), PipelineRbacPermissions.PIPELINE_VIEW);
 
+    if (executionSummaryEntity.getRollbackModeExecutionId() != null) {
+      return buildExecutionDetailDTOWithRollbackInfo(
+          accountId, orgId, projectId, executionSummaryEntity, entityGitDetails);
+    }
     // Checking if the stage is of type Pipeline Stage, then return the child graph along with top graph of parent
     // pipeline
     if (pipelineStageHelper.validateChildGraphToGenerate(executionSummaryEntity.getLayoutNodeMap(), stageNodeId)) {
@@ -599,5 +604,26 @@ public class ExecutionHelper {
       log.info("NodeExecution is null for plan node: {} ", stageNodeId);
     }
     return null;
+  }
+
+  public PipelineExecutionDetailDTO buildExecutionDetailDTOWithRollbackInfo(String accountId, String orgId,
+      String projectId, PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails) {
+    String childExecutionId = executionSummaryEntity.getRollbackModeExecutionId();
+    PipelineExecutionSummaryEntity executionSummaryEntityForChild =
+        pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, childExecutionId, false);
+
+    return PipelineExecutionDetailDTO.builder()
+        .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
+        .rollbackGraph(getRollbackGraph(executionSummaryEntityForChild, entityGitDetails))
+        .build();
+  }
+
+  private ChildExecutionDetailDTO getRollbackGraph(
+      PipelineExecutionSummaryEntity executionSummaryEntityForChild, EntityGitDetails entityGitDetailsForChild) {
+    // todo: add child stage node id for stages in rollback execution
+    return ChildExecutionDetailDTO.builder()
+        .pipelineExecutionSummary(
+            PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntityForChild, entityGitDetailsForChild))
+        .build();
   }
 }
