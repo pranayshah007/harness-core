@@ -48,9 +48,9 @@ public class PipelineSetupStep implements ChildExecutable<PipelineSetupStepParam
                                                .setType(OrchestrationStepTypes.PIPELINE_SECTION)
                                                .setStepCategory(StepCategory.PIPELINE)
                                                .build();
-  @Inject InterruptService interruptService;
+  @Inject private InterruptService interruptService;
 
-  @Inject OrchestrationService orchestrationService;
+  @Inject private OrchestrationService orchestrationService;
 
   @Override
   public ChildExecutableResponse obtainChild(
