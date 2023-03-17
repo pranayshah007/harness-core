@@ -7,6 +7,7 @@
 
 package io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket;
 
+import static io.harness.gitsync.common.scmerrorhandling.handlers.ScmErrorMessageHelper.DEFAULT_ERROR_MESSAGE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 
@@ -113,6 +114,19 @@ public class BitbucketCreateBranchScmApiErrorHandlerTest extends GitSyncTestBase
       WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage()).isEqualTo(errorMessage);
+    }
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testHandleErrorWhenErrorMessageIsEmpty() {
+    try {
+      bitbucketCreateBranchScmApiErrorHandler.handleError(429, "", ErrorMetadata.builder().build());
+    } catch (Exception ex) {
+      WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
+      assertThat(exception).isNotNull();
+      assertThat(exception.getMessage()).isEqualTo(DEFAULT_ERROR_MESSAGE);
     }
   }
 }

@@ -18,6 +18,7 @@ import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.ScmErrorMessageHelper;
 import io.harness.gitsync.common.scmerrorhandling.util.ErrorMessageFormatter;
 
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class BitbucketListRepoScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String LIST_REPO_FAILED_MESSAGE = "Listing repositories from Github failed. ";
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
+    errorMessage = ScmErrorMessageHelper.validateErrorMessage(errorMessage);
     switch (statusCode) {
       case 401:
       case 403:
