@@ -123,6 +123,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     modules.add(new IdpModule(configuration));
     Injector injector = Guice.createInjector(modules);
     registerResources(environment, injector);
+    registerOasSpecFirstResource(environment);
     registerHealthChecksManager(environment, injector);
     registerQueueListeners(injector);
     registerAuthFilters(configuration, environment, injector);
@@ -158,6 +159,10 @@ public class IdpApplication extends Application<IdpConfiguration> {
       environment.jersey().register(injector.getInstance(resource));
     }
     environment.jersey().property(ServerProperties.RESOURCE_VALIDATION_DISABLE, true);
+  }
+
+  private void registerOasSpecFirstResource(Environment environment) {
+    environment.jersey().register(new OasSpecFirstYamlResource());
   }
 
   private void registerAuthFilters(IdpConfiguration config, Environment environment, Injector injector) {
