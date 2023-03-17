@@ -17,6 +17,7 @@ import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.health.HealthService;
+import io.harness.idp.OasSpecFirstYamlResource;
 import io.harness.idp.annotations.IdpServiceAuth;
 import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
 import io.harness.idp.events.consumers.EntityCrudStreamConsumer;
