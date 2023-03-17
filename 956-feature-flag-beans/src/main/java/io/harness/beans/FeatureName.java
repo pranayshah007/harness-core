@@ -647,7 +647,8 @@ public enum FeatureName {
       "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS),
   PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", HarnessTeam.PLG),
   CDS_K8S_SOCKET_CAPABILITY_CHECK_NG(
-      "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP);
+      "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP),
+  FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE);
 
   @Deprecated
   FeatureName() {
