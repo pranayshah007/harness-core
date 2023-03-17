@@ -20,9 +20,12 @@ import javax.ws.rs.core.Response;
 
 @Path("/spec-first")
 public class OasSpecFirstYamlResource {
-  public static final String NG_MANAGER_PATH = "harness-core/120-ng-manager/contracts/openapi/v1/openapi.yaml";
-  public static final String CONNECTORS_PATH = "440-connector-nextgen/contracts/openapi/v1/openapi.yaml";
-  public static final String COMMONS_PATH = "970-ng-commons/contracts/openapi/v1/openapi.yaml";
+  public static final String NG_MANAGER_PATH =
+      "/Users/singhmankrit/Documents/harness-core/120-ng-manager/contracts/openapi/v1/openapi.yaml";
+  public static final String CONNECTORS_PATH =
+      "/Users/singhmankrit/Documents/harness-core/440-connector-nextgen/contracts/openapi/v1/openapi.yaml";
+  public static final String COMMONS_PATH =
+      "/Users/singhmankrit/Documents/harness-core/970-ng-commons/contracts/openapi/v1/openapi.yaml";
 
   @GET
   @Produces("text/yaml")
