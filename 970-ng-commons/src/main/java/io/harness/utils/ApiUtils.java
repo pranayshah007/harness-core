@@ -14,10 +14,16 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.common.beans.NGTag;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.collections.CollectionUtils;
@@ -72,5 +78,14 @@ public class ApiUtils {
       sortOrders = Collections.singletonList(sortOrder);
     }
     return PageRequest.builder().pageIndex(page).pageSize(limit).sortOrders(sortOrders).build();
+  }
+
+  public static Response getHostedSpecFile(String specLocation) throws IOException {
+    File file = new File(specLocation);
+    if (!file.exists()) {
+      throw new FileNotFoundException("OpenAPI spec file not found at path: " + specLocation);
+    }
+    String yaml = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+    return Response.ok().entity(yaml).header("Content-Disposition", "inline; filename=openapi.yaml").build();
   }
 }
