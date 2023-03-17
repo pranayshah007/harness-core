@@ -546,9 +546,6 @@ public enum FeatureName {
   CDC_SEND_NOTIFICATION_FOR_FREEZE("Send notifications for deployment freeze", HarnessTeam.CDC),
   DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION(
       "Used to disable Schema validation for Service Env for new service env redesign", HarnessTeam.CDC),
-  DO_NOT_LOAD_SUPPORT_ACCOUNTS_UNLESS_REQUIRED(
-      "Avoid loading unnecessary support accounts unnecessarily. Enabling it will reduce memory pressure",
-      HarnessTeam.PL),
   PL_SIMPLIFY_ACL_CHECK("Evaluate access using role assignments instead of ACL's.", HarnessTeam.PL),
   CDS_ASG_NG("Supports Amazon ASG in NG", HarnessTeam.CDP),
   CDP_UPDATE_INSTANCE_DETAILS_WITH_IMAGE_SUFFIX("Update instance details if image suffix matches", HarnessTeam.CDP),
