@@ -59,6 +59,7 @@ import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.template.GenerateOpenApiSpecCommand;
 import io.harness.template.InspectCommand;
+import io.harness.template.OasSpecFirstYamlResource;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.event.TemplateEventConsumerService;
@@ -221,6 +222,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
     registerResources(environment, injector);
     registerJerseyProviders(environment, injector);
     registerOasResource(templateServiceConfiguration, environment, injector);
+    registerOasSpecFirstResource(environment);
     registerManagedBeans(environment, injector);
     registerHealthCheck(environment, injector);
     registerRequestContextFilter(environment);
@@ -247,6 +249,10 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
     OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
     openApiResource.setOpenApiConfiguration(templateServiceConfiguration.getOasConfig());
     environment.jersey().register(openApiResource);
+  }
+
+  private void registerOasSpecFirstResource(Environment environment) {
+    environment.jersey().register(new OasSpecFirstYamlResource());
   }
 
   private void registerManagedBeans(Environment environment, Injector injector) {
