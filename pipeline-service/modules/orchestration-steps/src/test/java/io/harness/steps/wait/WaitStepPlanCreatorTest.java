@@ -19,6 +19,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -78,10 +80,13 @@ public class WaitStepPlanCreatorTest extends OrchestrationStepsTestBase {
     HashMap<String, ByteString> metadataDependency = new HashMap<>();
     metadataDependency.put(
         YAMLFieldNameConstants.CHILD_NODE_OF_SPEC, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(childNodeUuid)));
-    PlanCreationContext ctx = PlanCreationContext.builder()
-                                  .currentField(yamlField)
-                                  .dependency(Dependency.newBuilder().putAllMetadata(metadataDependency).build())
-                                  .build();
+    PlanCreationContext ctx =
+        PlanCreationContext.builder()
+            .currentField(yamlField)
+            .dependency(Dependency.newBuilder().putAllMetadata(metadataDependency).build())
+            .globalContext("metadata",
+                PlanCreationContextValue.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build())
+            .build();
     WaitStepNode waitStepNode = new WaitStepNode();
     WaitStepInfo waitStepInfo =
         WaitStepInfo.infoBuilder()

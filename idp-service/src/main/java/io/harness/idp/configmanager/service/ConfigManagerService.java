@@ -6,11 +6,13 @@
  */
 package io.harness.idp.configmanager.service;
 
-import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
 
+import java.util.Map;
+
 public interface ConfigManagerService {
+  Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier);
   public AppConfig getPluginConfig(String accountIdentifier, String pluginId);
 
   public AppConfig savePluginConfig(AppConfigRequest appConfigRequest, String accountIdentifier);

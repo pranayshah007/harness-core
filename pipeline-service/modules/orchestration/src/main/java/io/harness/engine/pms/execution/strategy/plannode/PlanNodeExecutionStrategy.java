@@ -315,6 +315,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
                                                 .nodeExecutionId(level.getRuntimeId())
                                                 .status(nodeExecution.getStatus())
                                                 .adviserResponse(nodeExecution.getAdviserResponse())
+                                                .nodeExecutionEndTs(nodeExecution.getEndTs())
                                                 .build();
       waitNotifyEngine.doneWith(nodeExecution.getNotifyId(), responseData);
     } else {

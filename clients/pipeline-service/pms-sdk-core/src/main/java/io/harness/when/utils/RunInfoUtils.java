@@ -66,18 +66,6 @@ public class RunInfoUtils {
         getGivenRunCondition(stepWhenCondition.getValue().getCondition()));
   }
 
-  public String getRunConditionForRollback(ParameterField<StepWhenCondition> stepWhenCondition) {
-    if (ParameterField.isNull(stepWhenCondition) || stepWhenCondition.getValue() == null) {
-      return getStatusExpression(STAGE_FAILURE);
-    }
-    if (stepWhenCondition.getValue().getStageStatus() == null) {
-      throw new InvalidRequestException("Stage Status in step when condition cannot be empty.");
-    }
-
-    return combineExpressions(getStatusExpression(stepWhenCondition.getValue().getStageStatus(), false),
-        getGivenRunCondition(stepWhenCondition.getValue().getCondition()));
-  }
-
   public String getRunConditionForRollback(
       ParameterField<StepWhenCondition> stepWhenCondition, ExecutionMode executionMode) {
     if (ParameterField.isNull(stepWhenCondition) || stepWhenCondition.getValue() == null) {
