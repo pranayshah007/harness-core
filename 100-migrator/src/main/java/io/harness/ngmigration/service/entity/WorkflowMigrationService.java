@@ -25,6 +25,7 @@ import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateResponseDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -212,8 +213,11 @@ public class WorkflowMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
+
     if (isNotEmpty(inputDTO.getDefaults()) && inputDTO.getDefaults().containsKey(WORKFLOW)
         && inputDTO.getDefaults().get(WORKFLOW).isSkipMigration()) {
       return null;
@@ -268,7 +272,7 @@ public class WorkflowMigrationService extends NgMigrationService {
     if (templateType == TemplateEntityType.PIPELINE_TEMPLATE) {
       List<StageElementWrapperConfig> stages;
       try {
-        stages = workflowHandler.asStages(entities, migratedEntities, workflow, inputDTO.getIdentifierCaseFormat());
+        stages = workflowHandler.asStages(migrationContext, workflow);
       } catch (Exception e) {
         return YamlGenerationDetails.builder()
             .yamlFileList(files)
@@ -295,8 +299,7 @@ public class WorkflowMigrationService extends NgMigrationService {
     } else {
       JsonNode templateSpec;
       try {
-        templateSpec =
-            workflowHandler.getTemplateSpec(entities, migratedEntities, workflow, inputDTO.getIdentifierCaseFormat());
+        templateSpec = workflowHandler.getTemplateSpec(migrationContext, workflow, inputDTO.getIdentifierCaseFormat());
       } catch (Exception e) {
         log.error("Exception during migrating workflow ", e);
         return YamlGenerationDetails.builder()

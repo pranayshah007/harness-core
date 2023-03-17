@@ -13,6 +13,7 @@ import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStepInfo;
 import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStepNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -52,7 +53,8 @@ public class EcsListenerUpdateStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     EcsBGUpdateListnerState state = (EcsBGUpdateListnerState) getState(graphNode);
     EcsBlueGreenSwapTargetGroupsStepNode stepNode = new EcsBlueGreenSwapTargetGroupsStepNode();
     baseSetup(state, stepNode, context.getIdentifierCaseFormat());

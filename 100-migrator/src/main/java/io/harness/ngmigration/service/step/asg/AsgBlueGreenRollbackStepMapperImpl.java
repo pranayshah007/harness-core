@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step.asg;
 import io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepInfo;
 import io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -36,7 +37,8 @@ public class AsgBlueGreenRollbackStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     AwsAmiRollbackSwitchRoutesState state = (AwsAmiRollbackSwitchRoutesState) getState(graphNode);
     AsgBlueGreenRollbackStepNode node = new AsgBlueGreenRollbackStepNode();
     baseSetup(state, node, context.getIdentifierCaseFormat());

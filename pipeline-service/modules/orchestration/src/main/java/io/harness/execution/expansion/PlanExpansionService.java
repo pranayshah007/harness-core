@@ -13,6 +13,7 @@ import io.harness.pms.data.stepparameters.PmsStepParameters;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface PlanExpansionService {
   /**
@@ -44,4 +45,6 @@ public interface PlanExpansionService {
    * @param status
    */
   void updateStatus(Ambiance ambiance, Status status);
+
+  void deleteAllExpansions(Set<String> planExecutionIds);
 }

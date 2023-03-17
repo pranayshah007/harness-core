@@ -18,6 +18,7 @@ import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec.NativeHelmServiceSpecBuilder;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -34,14 +35,16 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.CDC)
 public class NativeHelmServiceV2Mapper implements ServiceV2Mapper {
   @Override
-  public ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
+  public ServiceDefinition getServiceDefinition(MigrationContext migrationContext, Service service,
       List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
       List<StartupScriptConfiguration> startupScriptConfigurations) {
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    Map<CgEntityId, Set<CgEntityId>> graph = migrationContext.getGraph();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     PrimaryArtifact primaryArtifact = getPrimaryArtifactStream(inputDTO, entities, graph, service, migratedEntities);
     NativeHelmServiceSpecBuilder helmServiceSpecBuilder = NativeHelmServiceSpec.builder();
-    List<NGVariable> variables = MigratorUtility.getVariables(
-        service.getServiceVariables(), migratedEntities, inputDTO.getIdentifierCaseFormat());
+    List<NGVariable> variables = MigratorUtility.getServiceVariables(migrationContext, service.getServiceVariables());
     if (primaryArtifact != null) {
       helmServiceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }

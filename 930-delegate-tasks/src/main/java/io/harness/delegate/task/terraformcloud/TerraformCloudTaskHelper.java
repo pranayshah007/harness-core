@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.terraformcloud;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateFile.Builder.aDelegateFile;
 import static io.harness.delegate.task.terraformcloud.Relationship.APPLY;
@@ -31,6 +32,7 @@ import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionCon
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.ERROR_PLAN;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.RELATIONSHIP_DATA_EMPTY;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_PLAN;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_PLAN_STATUS;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_POLICY;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_RUN;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_TFC_CONFIG;
@@ -82,6 +84,7 @@ import io.harness.terraformcloud.model.ApplyData;
 import io.harness.terraformcloud.model.Data;
 import io.harness.terraformcloud.model.OrganizationData;
 import io.harness.terraformcloud.model.PlanData;
+import io.harness.terraformcloud.model.PlanData.Attributes.Status;
 import io.harness.terraformcloud.model.PolicyCheckData;
 import io.harness.terraformcloud.model.RunActionRequest;
 import io.harness.terraformcloud.model.RunData;
@@ -96,7 +99,6 @@ import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.jsonwebtoken.lang.Collections;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -257,24 +259,8 @@ public class TerraformCloudTaskHelper {
             CommandExecutionStatus.RUNNING);
       }
     }
-    String planId = getRelationshipId(runData, PLAN);
-    try {
-      PlanData plan = terraformCloudClient.getPlan(url, token, planId).getData();
-      // stream plan logs
-      streamLogs(logCallback, plan.getAttributes().getLogReadUrl());
-    } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runId),
-          format(COULD_NOT_GET_PLAN, planId), new TerraformCloudException(ERROR_STREAMING_PLAN_LOGS, e));
-    }
-
-    runData = getRun(url, token, runId);
-    if (runData.getAttributes().getStatus() == RunStatus.ERRORED) {
-      logCallback.saveExecutionLog(FAILED_TO_PLAN, ERROR, CommandExecutionStatus.FAILURE);
-      throw NestedExceptionUtils.hintWithExplanationException(
-          format(PLEASE_CHECK_RUN, runId), ERROR_PLAN, new TerraformCloudException(FAILED_TO_PLAN));
-    }
-    logCallback.saveExecutionLog("Plan finished", INFO, CommandExecutionStatus.SUCCESS);
-    return runData;
+    streamPlanLogs(url, token, getRelationshipId(runData, PLAN), logCallback);
+    return getRun(url, token, runId);
   }
 
   public void streamApplyLogs(String url, String token, RunData runData, LogCallback logCallback) {
@@ -488,7 +474,7 @@ public class TerraformCloudTaskHelper {
   public String getLastAppliedRunId(String url, String token, String workspace) {
     try {
       List<RunData> appliedRuns = terraformCloudClient.getAppliedRuns(url, token, workspace).getData();
-      return Collections.isEmpty(appliedRuns) ? null : appliedRuns.get(0).getId();
+      return isEmpty(appliedRuns) ? null : appliedRuns.get(0).getId();
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException(PLEASE_CHECK_TFC_CONFIG,
           format(COULD_NOT_GET_LAST_APPLIED, workspace),
@@ -523,5 +509,35 @@ public class TerraformCloudTaskHelper {
         }
       }
     }
+  }
+
+  private void streamPlanLogs(String url, String token, String planId, LogCallback logCallback) {
+    Status status;
+    try {
+      PlanData plan = terraformCloudClient.getPlan(url, token, planId).getData();
+      status = plan.getAttributes().getStatus();
+      while (status == Status.PENDING || status == Status.AGENT_QUEUED || status == Status.MANAGED_QUEUED
+          || status == Status.QUEUED) {
+        logCallback.saveExecutionLog(format("Plan not started yet... Currently in status: [%s]", status.name()), INFO,
+            CommandExecutionStatus.RUNNING);
+        sleep(ofSeconds(2));
+        plan = terraformCloudClient.getPlan(url, token, planId).getData();
+        status = plan.getAttributes().getStatus();
+      }
+      // stream plan logs
+      streamLogs(logCallback, plan.getAttributes().getLogReadUrl());
+      // check status after logs are streamed
+      status = terraformCloudClient.getPlan(url, token, planId).getData().getAttributes().getStatus();
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_PLAN_STATUS, planId),
+          format(COULD_NOT_GET_PLAN, planId), new TerraformCloudException(ERROR_STREAMING_PLAN_LOGS, e));
+    }
+    if (status != null && status != Status.FINISHED) {
+      logCallback.saveExecutionLog(
+          format("%s. Plan is in status: [%s]", FAILED_TO_PLAN, status.name()), ERROR, CommandExecutionStatus.FAILURE);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          format(PLEASE_CHECK_PLAN_STATUS, planId), ERROR_PLAN, new TerraformCloudException(FAILED_TO_PLAN));
+    }
+    logCallback.saveExecutionLog("Plan finished", INFO, CommandExecutionStatus.SUCCESS);
   }
 }

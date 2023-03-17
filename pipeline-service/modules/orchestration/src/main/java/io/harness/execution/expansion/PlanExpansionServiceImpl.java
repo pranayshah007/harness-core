@@ -26,6 +26,7 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.ejb.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ClassUtils;
@@ -133,5 +134,10 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
 
   private boolean shouldUseExpandedJsonFunctor(Ambiance ambiance) {
     return pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_ENGINE_V2);
+  }
+
+  @Override
+  public void deleteAllExpansions(Set<String> planExecutionIds) {
+    planExecutionExpansionRepository.deleteAllExpansions(planExecutionIds);
   }
 }

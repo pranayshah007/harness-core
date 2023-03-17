@@ -8,6 +8,7 @@
 package io.harness.ngmigration.expressions;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Scope;
 import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -19,17 +20,22 @@ public class SecretMigratorFunctor implements ExpressionFunctor {
   private Map<String, String> nameToIdentifier;
   private CaseFormat caseFormat;
 
-  public SecretMigratorFunctor(Map<String, String> nameToIdentifier, CaseFormat caseFormat) {
+  private Scope scope;
+
+  public SecretMigratorFunctor(Map<String, String> nameToIdentifier, CaseFormat caseFormat, Scope scope) {
     this.caseFormat = caseFormat;
-    if (EmptyPredicate.isEmpty(nameToIdentifier)) {
-      this.nameToIdentifier = new HashMap<>();
-    } else {
+    this.scope = Scope.PROJECT;
+    this.nameToIdentifier = new HashMap<>();
+    if (scope != null) {
+      this.scope = scope;
+    }
+    if (EmptyPredicate.isNotEmpty(nameToIdentifier)) {
       this.nameToIdentifier = nameToIdentifier;
     }
   }
 
   public Object getValue(String secretName) {
-    String secretIdentifier = MigratorUtility.generateIdentifier(secretName, this.caseFormat);
+    String secretIdentifier = MigratorUtility.getIdentifierWithScope(this.scope, secretName, caseFormat);
     if (nameToIdentifier.containsKey(secretName)) {
       secretIdentifier = nameToIdentifier.get(secretName);
     }

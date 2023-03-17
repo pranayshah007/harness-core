@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.step.verification;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.plancreator.steps.AbstractStepNode;
 
@@ -29,7 +30,8 @@ public class PrometheusStepMapperImpl extends VerificationBaseService {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     return getVerifySpec(graphNode, context.getIdentifierCaseFormat());
   }
 

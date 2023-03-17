@@ -453,7 +453,7 @@ public enum TaskType {
   AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Deploy"),
   AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Rollback"),
   SCM_BATCH_GET_FILE_TASK(TaskGroup.GIT, "SCM Batch Get File Task"),
-  TERRAFORM_CLOUD_TASK_NG(TaskGroup.TERRAFORM_CLOUD, "Terraform Cloud Task NG", true),
+  TERRAFORM_CLOUD_TASK_NG(TaskGroup.TERRAFORM_CLOUD, "Terraform Cloud Task NG"),
   GIT_TASK_NG(TaskGroup.GIT_NG, "Git Fetch Files Task"),
   GOOGLE_CLOUD_STORAGE_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Google Cloud Storage Artifact Task"),
   GOOGLE_FUNCTION_COMMAND_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Task"),
@@ -477,7 +477,7 @@ public enum TaskType {
   TERRAFORM_TASK_NG_V3(TaskGroup.TERRAFORM_NG, "Terraform Task NG V3"),
   BAMBOO_TRIGGER_JOB(TaskGroup.BAMBOO),
   TERRAFORM_TASK_NG_V4(TaskGroup.TERRAFORM_NG, "Terraform Task NG V4"),
-  TERRAFORM_CLOUD_CLEANUP_TASK_NG(TaskGroup.TERRAFORM_CLOUD, "Terraform Cloud Cleanup Task", true),
+  TERRAFORM_CLOUD_CLEANUP_TASK_NG(TaskGroup.TERRAFORM_CLOUD, "Terraform Cloud Cleanup Task"),
   OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG(TaskGroup.HELM, "Task to query OCI Helm Docker API List Tags"),
   TAS_ROUTE_MAPPING(TaskGroup.TAS, "Tas Route Mapping task");
 

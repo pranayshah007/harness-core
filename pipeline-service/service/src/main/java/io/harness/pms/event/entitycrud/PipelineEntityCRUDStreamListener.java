@@ -24,6 +24,7 @@ import io.harness.eventsframework.EntityChangeLogContext;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
@@ -63,6 +64,8 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
   private final NGTriggerEventsService ngTriggerEventsService;
   private final PlanExecutionService planExecutionService;
 
+  private final PlanExpansionService planExpansionService;
+
   @Inject
   public PipelineEntityCRUDStreamListener(NGTriggerService ngTriggerService,
       PipelineMetadataService pipelineMetadataService, PmsExecutionSummaryService pmsExecutionSummaryService,
@@ -70,7 +73,7 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
       PmsSweepingOutputService pmsSweepingOutputService, PmsOutcomeService pmsOutcomeService,
       InterruptService interruptService, GraphGenerationService graphGenerationService,
       NodeExecutionService nodeExecutionService, NGTriggerEventsService ngTriggerEventsService,
-      PlanExecutionService planExecutionService) {
+      PlanExecutionService planExecutionService, PlanExpansionService planExpansionService) {
     this.ngTriggerService = ngTriggerService;
     this.pipelineMetadataService = pipelineMetadataService;
     this.pmsExecutionSummaryService = pmsExecutionSummaryService;
@@ -83,6 +86,7 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
     this.nodeExecutionService = nodeExecutionService;
     this.planExecutionService = planExecutionService;
     this.ngTriggerEventsService = ngTriggerEventsService;
+    this.planExpansionService = planExpansionService;
   }
 
   @Override
@@ -201,6 +205,7 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
     }
     // Delete all planExecutions and its metadata
     planExecutionService.deleteAllPlanExecutionAndMetadata(planExecutionsToDelete);
+    planExpansionService.deleteAllExpansions(planExecutionsToDelete);
   }
 
   private boolean checkIfAnyRequiredFieldIsNotEmpty(EntityChangeDTO entityChangeDTO) {
