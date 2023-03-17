@@ -7,11 +7,15 @@
 
 package io.harness.steps.container.execution.plugin;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
+@OwnedBy(HarnessTeam.SSCA)
 public class PluginConfig {
   StepImageConfig sscaOrchestrationConfig;
 }

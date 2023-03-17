@@ -56,7 +56,7 @@ public class CdSscaOrchestrationStepInfo extends CdSscaOrchestrationBaseStepInfo
 
   @Override
   public SpecParameters getSpecParameters() {
-    return CdStepOrchestrationSpecParameters.builder()
+    return CdSscaOrchestrationSpecParameters.builder()
         .tool(this.tool)
         .source(this.source)
         .attestation(this.attestation)
