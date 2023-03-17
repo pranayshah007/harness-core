@@ -648,7 +648,13 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   @Override
   public ScmGetFileResponseDTO getFileByCommitId(ScmGetFileByCommitIdRequestDTO scmGetFileByCommitIdRequestDTO) {
+
     Scope scope = scmGetFileByCommitIdRequestDTO.getScope();
+
+    if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.USE_GET_FILE_BY_COMMIT_V2_GIT_CALL)) {
+      log.info("Using V2 GET FILE BY COMMIT Call for account id : {}", scope.getAccountIdentifier());
+      return getFileByCommitIdV2(scmGetFileByCommitIdRequestDTO);
+    }
 
     ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGetFileByCommitIdRequestDTO.getConnectorRef(),
@@ -676,6 +682,40 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         .blobId(fileContent.getBlobId())
         .commitId(fileContent.getCommitId())
         .build();
+  }
+
+  @Override
+  public ScmGetFileResponseDTO getFileByCommitIdV2(ScmGetFileByCommitIdRequestDTO scmGetFileByCommitIdRequestDTO) {
+    Scope scope = scmGetFileByCommitIdRequestDTO.getScope();
+    ScmConnector scmConnector = scmGetFileByCommitIdRequestDTO.getScmConnector() != null
+            ? scmGetFileByCommitIdRequestDTO.getScmConnector()
+            : gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
+            scope.getProjectIdentifier(), scmGetFileByCommitIdRequestDTO.getConnectorRef(),
+            scmGetFileByCommitIdRequestDTO.getRepoName());
+
+    // for caching?
+//    Optional<ScmGetFileResponseDTO> getFileResponseDTOOptional =
+//            getFileCacheResponseIfApplicable(scmGetFileByCommitIdRequestDTO, scmConnector);
+//    if (getFileResponseDTOOptional.isPresent()) {
+//      return getFileResponseDTOOptional.get();
+//    }
+
+    GitFileResponse gitFileResponse =
+            scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
+                            -> scmClientFacilitatorService.getFile(scope, scmConnector,
+                            GitFileRequest.builder()
+                                    .branch(null)
+                                    .commitId(scmGetFileByCommitIdRequestDTO.getCommitId())
+                                    .filepath(scmGetFileByCommitIdRequestDTO.getFilePath())
+                                    .getOnlyFileContent(false)
+                                    .build()),
+                    scmConnector);
+
+    processGetFileOperationResponse(scope, gitFileResponse, scmConnector,
+            scmGetFileByCommitIdRequestDTO.getConnectorRef(), scmGetFileByCommitIdRequestDTO.getRepoName(),
+            scmGetFileByCommitIdRequestDTO.getFilePath(), scmGetFileByCommitIdRequestDTO.getCommitId(), false);
+
+    return getScmGetFileResponseDTO(gitFileResponse);
   }
 
   @Override

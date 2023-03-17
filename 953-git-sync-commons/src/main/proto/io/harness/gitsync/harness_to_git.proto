@@ -130,9 +130,7 @@ message GetFileByCommitIdRequest {
   ScopeIdentifiers scopeIdentifiers = 6;
   map<string, string> contextMap = 7;
   io.harness.security.Principal principal = 8;
-  CacheRequestParams cacheRequestParams = 9;
-  EntityType entityType = 10;
-  bool getOnlyFileContent = 11;
+  EntityType entityType = 9;
 }
 
 message GetFileResponse {

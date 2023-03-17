@@ -657,7 +657,10 @@ public enum FeatureName {
   CDS_USE_OLD_SERVICE_V1("Feature flag to use service v1. NG_SVC_ENV_REDESIGN will be deprecated", HarnessTeam.CDC),
   CDS_PROPAGATE_STAGE_TEMPLATE("Allow user to propagate service in a templatized stage in pipeline", HarnessTeam.CDC),
   CDS_K8S_SOCKET_CAPABILITY_CHECK_NG(
-      "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP);
+      "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP),
+  USE_GET_FILE_BY_COMMIT_V2_GIT_CALL(
+          "FF for customers on updated delegate to use GetFileByCommitV2 call which is more performance efficient",
+          HarnessTeam.PIPELINE);
 
   @Deprecated
   FeatureName() {

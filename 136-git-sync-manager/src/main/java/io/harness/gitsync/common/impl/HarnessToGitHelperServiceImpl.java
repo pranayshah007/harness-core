@@ -387,10 +387,10 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     try {
       gitFilePathHelper.validateFilePath(getFileByCommitIdRequest.getFilePath());
       ScmGetFileResponseDTO scmGetFileResponseDTO =
-              scmFacilitatorService.getFileByCommitId(getGetFileByCommitIdRequestDTO(getFileByCommitIdRequest));
+              scmFacilitatorService.getFileByCommitIdV2(getGetFileByCommitIdRequestDTO(getFileByCommitIdRequest));
       return prepareGetFileResponse(getFileByCommitIdRequest.getScopeIdentifiers(), getFileByCommitIdRequest.getRepoName(),
               getFileByCommitIdRequest.getFilePath(), getFileByCommitIdRequest.getConnectorRef(), scmGetFileResponseDTO,
-              getFileByCommitIdRequest.getGetOnlyFileContent());
+              false);
     } catch (WingsException ex) {
       ScmException scmException = ScmExceptionUtils.getScmException(ex);
       GitMetaData gitMetaData = getGitMetadata(ScmExceptionUtils.getGitErrorMetadata(ex));

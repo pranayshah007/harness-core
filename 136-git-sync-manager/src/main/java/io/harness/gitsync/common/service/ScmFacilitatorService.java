@@ -62,6 +62,8 @@ public interface ScmFacilitatorService {
   GitBranchesResponseDTO listBranchesV2(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String connectorRef, String repoName, PageRequest pageRequest, String searchTerm);
 
+  ScmGetFileResponseDTO getFileByCommitIdV2(ScmGetFileByCommitIdRequestDTO scmGetFileByCommitIdRequestDTO);
+
   String getDefaultBranch(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName);
 
