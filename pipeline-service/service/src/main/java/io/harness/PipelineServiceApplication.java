@@ -85,6 +85,7 @@ import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.ng.DbAliases;
+import io.harness.ng.OasSpecFirstYamlResource;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
@@ -389,6 +390,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     registerObservers(appConfig, injector);
     registerRequestContextFilter(environment);
     registerOasResource(appConfig, environment, injector);
+    registerOasSpecFirstResource(environment);
     intializeSdkInstanceCacheSync(injector);
     initializeEnforcementSdk(injector);
 
@@ -462,6 +464,10 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
     openApiResource.setOpenApiConfiguration(appConfig.getOasConfig());
     environment.jersey().register(openApiResource);
+  }
+
+  private void registerOasSpecFirstResource(Environment environment) {
+    environment.jersey().register(new OasSpecFirstYamlResource());
   }
 
   private void registerStores(PipelineServiceConfiguration configuration, Injector injector) {
