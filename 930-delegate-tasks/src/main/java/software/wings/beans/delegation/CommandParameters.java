@@ -31,8 +31,8 @@ import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.command.ContainerResizeParams;
 import software.wings.beans.command.ContainerSetupParams;
 import software.wings.beans.dto.Command;
+import software.wings.beans.dto.Host;
 import software.wings.beans.dto.SettingAttribute;
-import software.wings.beans.infrastructure.Host;
 
 import java.util.List;
 import java.util.Map;

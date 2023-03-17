@@ -121,7 +121,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
           .artifactFiles(Lists.newArrayList(anArtifactFile().withName("artifact.war").withFileUuid(FILE_ID).build()))
           .serviceVariables(ImmutableMap.of("PORT", "8080", "PASSWORD", "aSecret"))
           .safeDisplayServiceVariables(ImmutableMap.of("PORT", "8080", "PASSWORD", "*****"))
-          .host(builder.build())
+          .host(builder.build().toDto())
           .accountId(ACCOUNT_ID);
 
   @Before

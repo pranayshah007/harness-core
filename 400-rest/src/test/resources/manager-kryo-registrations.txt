@@ -336,7 +336,7 @@
 5064:software.wings.beans.AppContainer
 5065:io.harness.delegate.beans.ChecksumType
 5066:software.wings.beans.artifact.ArtifactFile
-5067:software.wings.beans.infrastructure.Host
+5067:software.wings.beans.dto.Host
 5070:software.wings.beans.HostConnectionAttributes
 5071:software.wings.beans.HostConnectionAttributes.ConnectionType
 5072:io.harness.shell.AccessType

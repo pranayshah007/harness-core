@@ -55,7 +55,7 @@ public class CommandExecutionContextTest extends WingsBaseTest {
           .envId(ENV_ID)
           .accountId(ACCOUNT_ID)
           .activityId(ACTIVITY_ID)
-          .host(aHost().withPublicDns(WingsTestConstants.PUBLIC_DNS).build())
+          .host(aHost().withPublicDns(WingsTestConstants.PUBLIC_DNS).build().toDto())
           .winRmConnectionAttributes(WinRmConnectionAttributes.builder()
                                          .accountId(ACCOUNT_ID)
                                          .username(USER_NAME)
@@ -229,7 +229,7 @@ public class CommandExecutionContextTest extends WingsBaseTest {
   public void shouldNotSetEnvVariablesWithFF() {
     CommandExecutionContext context;
     context = aCommandExecutionContext()
-                  .host(aHost().build())
+                  .host(aHost().build().toDto())
                   .winRmConnectionAttributes(WinRmConnectionAttributes.builder().useKeyTab(true).build())
                   .envVariables(ImmutableMap.of("k1", "v1"))
                   .build();
@@ -237,7 +237,7 @@ public class CommandExecutionContextTest extends WingsBaseTest {
 
     context = aCommandExecutionContext()
                   .envVariables(ImmutableMap.of("k1", "v1"))
-                  .host(aHost().build())
+                  .host(aHost().build().toDto())
                   .winRmConnectionAttributes(WinRmConnectionAttributes.builder().useKeyTab(true).build())
                   .disableWinRMEnvVariables(true)
                   .build();

@@ -14,7 +14,6 @@ import static software.wings.beans.SSHExecutionCredential.Builder.aSSHExecutionC
 import static software.wings.beans.artifact.ArtifactFile.Builder.anArtifactFile;
 import static software.wings.beans.command.CommandExecutionContext.Builder.aCommandExecutionContext;
 import static software.wings.beans.command.CommandType.ENABLE;
-import static software.wings.beans.infrastructure.Host.Builder.aHost;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -38,7 +37,8 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.dto.Command;
-import software.wings.beans.infrastructure.Host;
+import software.wings.beans.dto.Host;
+import software.wings.beans.dto.Host.HostBuilder;
 import software.wings.service.intfc.ServiceCommandExecutorService;
 import software.wings.service.intfc.security.SSHVaultService;
 
@@ -62,7 +62,7 @@ public class CommandTaskTest extends WingsBaseTest {
 
   @InjectMocks CommandTask commandTask = new CommandTask(delegateTaskPackage, null, null, null);
 
-  private Host.Builder builder = aHost().withAppId(APP_ID).withHostName(HOST_NAME).withPublicDns(PUBLIC_DNS);
+  private HostBuilder builder = Host.builder().appId(APP_ID).hostName(HOST_NAME).publicDns(PUBLIC_DNS);
   private CommandExecutionContext commandExecutionContextBuider =
       aCommandExecutionContext()
           .appId(APP_ID)

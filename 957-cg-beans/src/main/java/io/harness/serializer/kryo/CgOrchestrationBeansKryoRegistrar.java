@@ -58,7 +58,6 @@ import software.wings.beans.container.KubernetesPortProtocol;
 import software.wings.beans.container.KubernetesServiceSpecification;
 import software.wings.beans.container.KubernetesServiceType;
 import software.wings.beans.container.Label;
-import software.wings.beans.infrastructure.Host;
 import software.wings.beans.trigger.WebhookSource;
 import software.wings.helpers.ext.gcb.models.BuildStep;
 import software.wings.helpers.ext.gcb.models.GcbBuildDetails;
@@ -97,7 +96,6 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(ExecutionDataValue.class, 5368);
     kryo.register(CountsByStatuses.class, 4008);
     kryo.register(AppContainer.class, 5064);
-    kryo.register(Host.class, 5067);
     kryo.register(ContainerFamily.class, 5118);
     kryo.register(FileType.class, 5119);
     kryo.register(KubernetesPortProtocol.class, 5152);

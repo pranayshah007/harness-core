@@ -340,7 +340,7 @@ public class ScpCommandUnitTest extends WingsBaseTest {
                                            .metadata(mockMetadata(ArtifactStreamType.JENKINS))
                                            .appId(APP_ID)
                                            .activityId(ACTIVITY_ID)
-                                           .host(Host.Builder.aHost().withHostName(HOST_NAME).build())
+                                           .host(Host.Builder.aHost().withHostName(HOST_NAME).build().toDto())
                                            .build());
 
   public ScpCommandUnitTest() throws URISyntaxException {}
@@ -357,7 +357,7 @@ public class ScpCommandUnitTest extends WingsBaseTest {
       aCommandExecutionContext()
           .artifactStreamAttributes(artifactStreamAttributesForNexusWithEmptyArtifactFileMetadata)
           .metadata(mockMetadata(ArtifactStreamType.NEXUS))
-          .host(host)
+          .host(host.toDto())
           .build());
 
   /**

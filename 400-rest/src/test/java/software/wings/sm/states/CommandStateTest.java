@@ -1084,7 +1084,7 @@ public class CommandStateTest extends WingsBaseTest {
             .executionCredential(null)
             .activityId(ACTIVITY_ID)
             .envId(ENV_ID)
-            .host(HOST)
+            .host(HOST.toDto())
             .serviceTemplateId(TEMPLATE_ID)
             .serviceVariables(emptyMap())
             .hostConnectionAttributes(

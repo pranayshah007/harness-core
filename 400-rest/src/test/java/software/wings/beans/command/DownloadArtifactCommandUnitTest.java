@@ -325,7 +325,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
                                            .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
-                                           .host(host)
+                                           .host(host.toDto())
                                            .build());
 
   @InjectMocks
@@ -336,7 +336,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
                                            .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
-                                           .host(host)
+                                           .host(host.toDto())
                                            .build());
 
   @InjectMocks
@@ -347,7 +347,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
                                            .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
-                                           .host(host)
+                                           .host(host.toDto())
                                            .build());
 
   @InjectMocks
@@ -358,7 +358,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
                                            .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
-                                           .host(host)
+                                           .host(host.toDto())
                                            .build());
 
   @InjectMocks
@@ -369,7 +369,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
                                            .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
-                                           .host(host)
+                                           .host(host.toDto())
                                            .build());
 
   @InjectMocks
@@ -380,7 +380,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
                                            .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
-                                           .host(host)
+                                           .host(host.toDto())
                                            .build());
 
   @InjectMocks
@@ -391,7 +391,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
           .hostConnectionAttributes(hostConnectionAttributes.toDTO())
           .appId(WingsTestConstants.APP_ID)
           .activityId(ACTIVITY_ID)
-          .host(host)
+          .host(host.toDto())
           .build());
 
   @InjectMocks
@@ -402,7 +402,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
                                            .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
-                                           .host(host)
+                                           .host(host.toDto())
                                            .build());
 
   @InjectMocks
@@ -413,7 +413,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
                                            .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
-                                           .host(host)
+                                           .host(host.toDto())
                                            .build());
 
   @InjectMocks
@@ -424,7 +424,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
                                            .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
-                                           .host(host)
+                                           .host(host.toDto())
                                            .build());
 
   @Test

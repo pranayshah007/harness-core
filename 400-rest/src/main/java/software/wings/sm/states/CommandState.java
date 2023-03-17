@@ -524,7 +524,7 @@ public class CommandState extends State {
               .serviceTemplateId(serviceTemplate != null ? serviceTemplate.getUuid() : null)
               .appContainer(
                   (service != null && service.getAppContainer() != null) ? service.getAppContainer().toDTO() : null)
-              .host(host)
+              .host(host == null ? null : host.toDto())
               .accountId(accountId)
               .timeout(getTimeoutMillis())
               .executeOnDelegate(executeOnDelegate)

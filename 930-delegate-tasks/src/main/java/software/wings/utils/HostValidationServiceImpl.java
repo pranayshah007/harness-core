@@ -39,8 +39,8 @@ import software.wings.beans.HostValidationResponse;
 import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.command.CommandExecutionContext;
+import software.wings.beans.dto.Host;
 import software.wings.beans.dto.SettingAttribute;
-import software.wings.beans.infrastructure.Host;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.security.SecretManagementDelegateService;
 import software.wings.settings.SettingValue;
@@ -156,7 +156,7 @@ public class HostValidationServiceImpl implements HostValidationService {
         aCommandExecutionContext()
             .hostConnectionAttributes(connectionSetting)
             .executionCredential(executionCredential)
-            .host(Host.Builder.aHost().withHostName(hostName).withPublicDns(hostName).build())
+            .host(Host.builder().hostName(hostName).publicDns(hostName).build())
             .build();
     SshSessionConfig sshSessionConfig = createSshSessionConfig("HOST_CONNECTION_TEST", commandExecutionContext);
 

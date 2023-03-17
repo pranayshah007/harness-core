@@ -61,7 +61,7 @@ public class CopyConfigCommandUnitTest extends WingsBaseTest {
                                            .envId(WingsTestConstants.ENV_ID)
                                            .serviceTemplateId(WingsTestConstants.SERVICE_TEMPLATE_ID)
                                            .activityId(ACTIVITY_ID)
-                                           .host(host)
+                                           .host(host.toDto())
                                            .build());
 
   @Test

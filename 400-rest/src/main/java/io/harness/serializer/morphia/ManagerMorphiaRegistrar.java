@@ -268,6 +268,7 @@ import software.wings.beans.datatretention.LongerDataRetentionState;
 import software.wings.beans.entityinterface.TagAware;
 import software.wings.beans.governance.GovernanceConfig;
 import software.wings.beans.infrastructure.CloudFormationRollbackConfig;
+import software.wings.beans.infrastructure.Host;
 import software.wings.beans.infrastructure.TerraformConfig;
 import software.wings.beans.infrastructure.instance.ContainerDeploymentInfo;
 import software.wings.beans.infrastructure.instance.Instance;
@@ -885,6 +886,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(InstanceSyncPTInfoBackup.class);
     set.add(HelmChart.class);
     set.add(NewRelicMetricDataRecord.class);
+    set.add(Host.class);
   }
 
   @Override

@@ -23,7 +23,6 @@ java_library(
         "//957-cg-beans/src/main/java/software/wings/beans/appmanifest:module",
         "//957-cg-beans/src/main/java/software/wings/beans/container:module",
         "//957-cg-beans/src/main/java/software/wings/beans/entityinterface:module",
-        "//957-cg-beans/src/main/java/software/wings/beans/infrastructure:module",
         "//957-cg-beans/src/main/java/software/wings/beans/trigger:module",
         "//957-cg-beans/src/main/java/software/wings/common:module",
         "//957-cg-beans/src/main/java/software/wings/helpers/ext/k8s/request:module",

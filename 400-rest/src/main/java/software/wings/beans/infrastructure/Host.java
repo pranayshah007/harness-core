@@ -90,6 +90,27 @@ public class Host implements PersistentEntity, UuidAware, CreatedAtAware, Update
   private Map<String, Object> properties;
   private Instance ec2Instance;
 
+  public software.wings.beans.dto.Host toDto() {
+    return software.wings.beans.dto.Host.builder()
+        .uuid(getUuid())
+        .appId(getAppId())
+        .createdAt(getCreatedAt())
+        .lastUpdatedAt(getLastUpdatedAt())
+        .envId(getEnvId())
+        .serviceTemplateId(getServiceTemplateId())
+        .infraMappingId(getInfraMappingId())
+        .infraDefinitionId(getInfraDefinitionId())
+        .computeProviderId(getComputeProviderId())
+        .hostName(getHostName())
+        .publicDns(getPublicDns())
+        .hostConnAttr(getHostConnAttr())
+        .bastionConnAttr(getBastionConnAttr())
+        .winrmConnAttr(getWinrmConnAttr())
+        .properties(getProperties())
+        .ec2Instance(getEc2Instance())
+        .build();
+  }
+
   // Pulled out of Base
   public String getUuid() {
     return this.uuid;

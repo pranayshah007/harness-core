@@ -179,6 +179,7 @@ import software.wings.beans.dto.EcsContainerTask;
 import software.wings.beans.dto.EcsServiceSpecification;
 import software.wings.beans.dto.HelmChart;
 import software.wings.beans.dto.HelmChartSpecification;
+import software.wings.beans.dto.Host;
 import software.wings.beans.dto.KubernetesContainerTask;
 import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.dto.Log;
@@ -526,6 +527,7 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(SetupEnvCommandUnit.class, 5056);
     kryo.register(SshCommandUnit.class, 5058);
     kryo.register(TailFilePatternEntry.class, 5059);
+    kryo.register(Host.class, 5067);
     kryo.register(HostConnectionAttributes.class, 5070);
     kryo.register(HostConnectionAttributes.ConnectionType.class, 5071);
     kryo.register(BastionConnectionAttributes.class, 5073);
