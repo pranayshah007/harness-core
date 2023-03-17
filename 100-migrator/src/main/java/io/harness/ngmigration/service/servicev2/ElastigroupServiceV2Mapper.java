@@ -20,6 +20,7 @@ import io.harness.cdng.service.beans.ElastigroupServiceSpec;
 import io.harness.cdng.service.beans.ElastigroupServiceSpec.ElastigroupServiceSpecBuilder;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -35,10 +36,13 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.CDC)
 public class ElastigroupServiceV2Mapper implements ServiceV2Mapper {
   @Override
-  public ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
+  public ServiceDefinition getServiceDefinition(MigrationContext migrationContext, Service service,
       List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
       List<StartupScriptConfiguration> startupScriptConfigurations) {
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    Map<CgEntityId, Set<CgEntityId>> graph = migrationContext.getGraph();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     PrimaryArtifact primaryArtifact = getPrimaryArtifactStream(inputDTO, entities, graph, service, migratedEntities);
     ElastigroupServiceSpecBuilder elastigroupServiceSpecBuilder = ElastigroupServiceSpec.builder();
     if (primaryArtifact != null) {
@@ -47,8 +51,8 @@ public class ElastigroupServiceV2Mapper implements ServiceV2Mapper {
     if (isNotEmpty(manifests)) {
       elastigroupServiceSpecBuilder.manifests(manifests);
     }
-    elastigroupServiceSpecBuilder.variables(MigratorUtility.getVariables(
-        service.getServiceVariables(), migratedEntities, inputDTO.getIdentifierCaseFormat()));
+    elastigroupServiceSpecBuilder.variables(
+        MigratorUtility.getServiceVariables(migrationContext, service.getServiceVariables()));
     elastigroupServiceSpecBuilder.configFiles(configFiles);
     if (isNotEmpty(startupScriptConfigurations)) {
       elastigroupServiceSpecBuilder.startupScript(startupScriptConfigurations.get(0));

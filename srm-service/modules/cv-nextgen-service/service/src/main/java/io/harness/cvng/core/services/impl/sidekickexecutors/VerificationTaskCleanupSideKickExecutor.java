@@ -18,7 +18,6 @@ import io.harness.cvng.analysis.entities.TimeSeriesAnomalousPatterns;
 import io.harness.cvng.analysis.entities.TimeSeriesCumulativeSums;
 import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary;
 import io.harness.cvng.analysis.entities.TimeSeriesShortTermHistory;
-import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.core.beans.sidekick.VerificationTaskCleanupSideKickData;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
@@ -37,17 +36,20 @@ import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.UuidAware;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 import java.time.Clock;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -55,6 +57,7 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 @Slf4j
 public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor<VerificationTaskCleanupSideKickData> {
+  @VisibleForTesting protected static final int RECORDS_TO_BE_DELETED_IN_SINGLE_BATCH = 100;
   @VisibleForTesting
   static final Collection<? extends Class<? extends PersistentEntity>> ENTITIES_DELETE_BLACKLIST_BY_VERIFICATION_ID =
       Arrays.asList(DeploymentLogAnalysis.class, DeploymentTimeSeriesAnalysis.class);
@@ -77,7 +80,6 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
     String verificationTaskId = sideKickInfo.getVerificationTaskId();
     if (StringUtils.isNotBlank(verificationTaskId)) {
       log.info("Triggering cleanup for VerificationTask {}", verificationTaskId);
-      VerificationTask task = verificationTaskService.get(verificationTaskId);
 
       CVConfig cvConfig = sideKickInfo.getCvConfig();
       // delete perp tasks first. We do not want new data to come in when we're deleting old data.
@@ -94,33 +96,45 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
                      cvConfigInDB -> cvConfigInDB.getConnectorIdentifier().equals(cvConfig.getConnectorIdentifier()))) {
         deleteMonitoringSourcePerpetualTasks(cvConfig);
       }
-      // we want to add 6 hours to the end time since we anticipate some in-progress analyses that might come in while
-      // we're deleting.
-      cleanUpData(
-          verificationTaskId, Instant.ofEpochMilli(task.getCreatedAt()), clock.instant().plus(6, ChronoUnit.HOURS));
+      cleanUpData(verificationTaskId);
       verificationTaskService.deleteVerificationTask(verificationTaskId);
       log.info("Cleanup complete for VerificationTask {}", verificationTaskId);
     }
   }
 
-  // clean up data 2 days at a time
-  private void cleanUpData(String verificationTaskId, Instant startTime, Instant endTime) {
-    for (Instant curStartTime = startTime; endTime.isAfter(curStartTime);) {
-      Instant currEndTime = curStartTime.plus(2, ChronoUnit.DAYS);
-      if (currEndTime.isAfter(endTime)) {
-        currEndTime = endTime;
-      }
-      for (Class<? extends PersistentEntity> clazz : ENTITIES_TO_DELETE_BY_VERIFICATION_ID) {
-        hPersistence.delete(hPersistence.createQuery(clazz)
-                                .filter(VerificationTask.VERIFICATION_TASK_ID_KEY, verificationTaskId)
-                                .field(VerificationTaskBaseKeys.createdAt)
-                                .greaterThanOrEq(curStartTime.toEpochMilli())
-                                .field(VerificationTaskBaseKeys.createdAt)
-                                .lessThanOrEq(currEndTime.toEpochMilli()));
-        log.info("Deleted all the records for {} from {} until {}", verificationTaskId, curStartTime, currEndTime);
-      }
-      curStartTime = currEndTime.plusMillis(1);
+  private void cleanUpData(String verificationTaskId) {
+    for (Class<? extends PersistentEntity> clazz : ENTITIES_TO_DELETE_BY_VERIFICATION_ID) {
+      cleanUpDataForSingleEntity(verificationTaskId, clazz);
     }
+  }
+
+  private void cleanUpDataForSingleEntity(String verificationTaskId, Class<? extends PersistentEntity> entity) {
+    int numberOfRecordsDeleted;
+    Query<? extends PersistentEntity> query = hPersistence.createQuery(entity)
+                                                  .filter(VerificationTask.VERIFICATION_TASK_ID_KEY, verificationTaskId)
+                                                  .project(UuidAware.UUID_KEY, true);
+    FindOptions findOptions = new FindOptions().limit(RECORDS_TO_BE_DELETED_IN_SINGLE_BATCH);
+    do {
+      numberOfRecordsDeleted = deleteSingleBatch(entity, query, findOptions);
+      log.info("Deleted {} records of entity {} for the verificationTaskId {}", numberOfRecordsDeleted,
+          entity.getSimpleName(), verificationTaskId);
+    } while (numberOfRecordsDeleted > 0);
+  }
+
+  private int deleteSingleBatch(
+      Class<? extends PersistentEntity> entity, Query<? extends PersistentEntity> query, FindOptions findOptions) {
+    List<? extends PersistentEntity> recordsToBeDeleted = query.find(findOptions).toList();
+    int numberOfRecordsDeleted = recordsToBeDeleted.size();
+
+    if (numberOfRecordsDeleted > 0) {
+      Set<String> recordIdsTobeDeleted = recordsToBeDeleted.stream()
+                                             .map(recordToBeDeleted -> ((UuidAware) recordToBeDeleted).getUuid())
+                                             .collect(Collectors.toSet());
+      Query<? extends PersistentEntity> queryToFindRecordsToBeDeleted =
+          hPersistence.createQuery(entity).field(UuidAware.UUID_KEY).in(recordIdsTobeDeleted);
+      hPersistence.delete(queryToFindRecordsToBeDeleted);
+    }
+    return numberOfRecordsDeleted;
   }
 
   @Override

@@ -178,6 +178,8 @@ public class PipelineServiceConfiguration extends Configuration {
   private boolean shouldDeployWithGitSync;
   private GitSdkConfiguration gitSdkConfiguration;
   private DelegatePollingConfig delegatePollingConfig;
+  private ThreadPoolConfig
+      pipelineAsyncValidationPoolConfig; // to be used for defining thread config for async validations of Pipelines
 
   public PipelineServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();

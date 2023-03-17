@@ -14,6 +14,7 @@ import static io.harness.ngmigration.utils.NGMigrationConstants.UNKNOWN_SERVICE;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -77,7 +78,8 @@ public class CommandStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
+  public TemplateStepNode getTemplateSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
     String templateId = graphNode.getTemplateUuid();
     if (isEmpty(templateId)) {
       WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(context.getWorkflow());
@@ -89,14 +91,15 @@ public class CommandStepMapperImpl extends StepMapper {
                                                 .id(serviceId + SERVICE_COMMAND_TEMPLATE_SEPARATOR + commandName)
                                                 .type(NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE)
                                                 .build());
-      return getTemplateStepNode(context, phase, graphNode, template);
+      return getTemplateStepNode(migrationContext, context, phase, graphNode, template);
     } else {
-      return defaultTemplateSpecMapper(context, phase, graphNode);
+      return defaultTemplateSpecMapper(migrationContext, context, phase, graphNode);
     }
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     throw new InvalidRequestException("Should not reach here");
   }
 

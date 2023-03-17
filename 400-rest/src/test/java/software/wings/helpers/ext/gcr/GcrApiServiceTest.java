@@ -40,6 +40,8 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.Lists;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.Before;
@@ -104,6 +106,8 @@ public class GcrApiServiceTest extends WingsBaseTest {
                              .willReturn(aResponse().withStatus(418).withBody("I'm a teapot")));
 
     when(gcrService.getUrl(anyString())).thenReturn("http://" + url);
+    // Remove retry back-off for faster testing.
+    gcrService.retry = Retry.of("GCRRegistryTest", RetryConfig.custom().maxAttempts(GcrApiServiceImpl.RETRIES).build());
   }
 
   @Test
@@ -167,7 +171,7 @@ public class GcrApiServiceTest extends WingsBaseTest {
     try {
       gcrService.fetchImage(restClient, "authHeader", "realm-value", "tag");
     } catch (Exception e) {
-      verify(restClient, times(5)).getImageManifest("authHeader", "realm-value", "tag");
+      verify(restClient, times(10)).getImageManifest("authHeader", "realm-value", "tag");
     }
   }
 
@@ -180,7 +184,7 @@ public class GcrApiServiceTest extends WingsBaseTest {
     try {
       gcrService.listImageTag(restClient, "authHeader", "realm-value");
     } catch (Exception e) {
-      verify(restClient, times(5)).listImageTags("authHeader", "realm-value");
+      verify(restClient, times(10)).listImageTags("authHeader", "realm-value");
     }
   }
 }

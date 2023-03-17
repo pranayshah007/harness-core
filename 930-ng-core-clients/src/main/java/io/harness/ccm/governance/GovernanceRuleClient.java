@@ -21,7 +21,7 @@ import retrofit2.http.Query;
 
 @OwnedBy(CE)
 public interface GovernanceRuleClient {
-  @POST("governance/rule")
-  Call<ResponseDTO<List<RuleDTO>>> getRule(
+  @POST("governance/rule/list")
+  Call<ResponseDTO<List<RuleDTO>>> listRule(
       @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
 }

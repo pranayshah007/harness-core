@@ -9,8 +9,8 @@ package software.wings.service.intfc.stackdriver;
 
 import software.wings.beans.GcpConfig;
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateTaskType;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;
 import software.wings.service.impl.stackdriver.StackDriverLogDataCollectionInfo;
 import software.wings.service.impl.stackdriver.StackDriverNameSpace;

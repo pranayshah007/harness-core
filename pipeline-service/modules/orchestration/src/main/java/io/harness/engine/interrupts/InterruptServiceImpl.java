@@ -257,4 +257,9 @@ public class InterruptServiceImpl implements InterruptService {
       planExecutionService.updateStatus(planExecutionId, planStatus);
     }
   }
+
+  public List<Interrupt> fetchAbortAllPlanLevelInterrupt(String planExecutionId) {
+    return interruptRepository.findByPlanExecutionIdAndTypeIn(
+        planExecutionId, EnumSet.of(InterruptType.ABORT_ALL, InterruptType.ABORT));
+  }
 }

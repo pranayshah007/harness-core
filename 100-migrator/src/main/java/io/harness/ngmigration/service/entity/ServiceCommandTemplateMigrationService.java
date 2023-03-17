@@ -205,9 +205,10 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    MigrationContext context = MigrationContext.newInstance(inputDTO, entities, graph, migratedEntities);
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     ServiceCommand template = (ServiceCommand) entities.get(entityId).getEntity();
 
     String identifierSource = template.getName();
@@ -224,8 +225,7 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     String description = "";
-    MigratorExpressionUtils.render(
-        entities, migratedEntities, template, inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
+    MigratorExpressionUtils.render(migrationContext, template, inputDTO.getCustomExpressions());
 
     // Converting service commands to Template object
     List<CommandUnit> commandUnits = template.getCommand().getCommandUnits();
@@ -248,7 +248,8 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
                               .build();
 
     NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(CGTemplate);
-    JsonNode spec = ngTemplateService.getNgTemplateConfigSpec(context, CGTemplate, orgIdentifier, projectIdentifier);
+    JsonNode spec =
+        ngTemplateService.getNgTemplateConfigSpec(migrationContext, CGTemplate, orgIdentifier, projectIdentifier);
 
     if (ngTemplateService.isMigrationSupported() && spec != null) {
       List<NGYamlFile> files = new ArrayList<>();

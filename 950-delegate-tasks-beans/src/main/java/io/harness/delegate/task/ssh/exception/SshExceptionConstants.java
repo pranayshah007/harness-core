@@ -107,4 +107,7 @@ public class SshExceptionConstants {
       "Download Artifact is not supported for %s artifacts";
   public final String DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_ARTIFACT_EXPLANATION =
       "Download Artifact is not supported for %s artifacts defined in service";
+
+  public final String SSH_INVALID_CREDENTIALS_HINT = "Please provide correct %s credentials.";
+  public final String SSH_INVALID_CREDENTIALS_EXPLANATION = "Provided %s credentials are not authorized.";
 }

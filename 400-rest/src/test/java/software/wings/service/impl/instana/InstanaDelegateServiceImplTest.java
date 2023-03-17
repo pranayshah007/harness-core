@@ -23,9 +23,9 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.InstanaConfig;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.delegatetasks.cv.RequestExecutor;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.intfc.instana.InstanaDelegateService;
 import software.wings.service.intfc.security.EncryptionService;
 

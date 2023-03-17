@@ -11,6 +11,7 @@ import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -48,7 +49,8 @@ public class AzureSlotSetupMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     AzureWebAppSlotSetup state = (AzureWebAppSlotSetup) getState(graphNode);
     AzureWebAppSlotDeploymentStepNode stepNode = new AzureWebAppSlotDeploymentStepNode();
     baseSetup(state, stepNode, context.getIdentifierCaseFormat());

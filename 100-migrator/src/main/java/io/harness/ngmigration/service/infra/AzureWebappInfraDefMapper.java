@@ -20,7 +20,7 @@ import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.InfrastructureType;
-import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -30,7 +30,6 @@ import software.wings.infra.AzureWebAppInfra;
 import software.wings.infra.AzureWebAppInfra.AzureWebAppInfraKeys;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 
 import java.util.List;
 import java.util.Map;
@@ -41,15 +40,16 @@ public class AzureWebappInfraDefMapper implements InfraDefMapper {
   public ServiceDefinitionType getServiceDefinition(InfrastructureDefinition infrastructureDefinition) {
     return ServiceDefinitionType.AZURE_WEBAPP;
   }
+
   @Override
   public InfrastructureType getInfrastructureType(InfrastructureDefinition infrastructureDefinition) {
     return InfrastructureType.AZURE_WEB_APP;
   }
 
   @Override
-  public Infrastructure getSpec(MigrationInputDTO inputDTO, InfrastructureDefinition infrastructureDefinition,
-      Map<CgEntityId, NGYamlFile> migratedEntities, Map<CgEntityId, CgEntityNode> entities,
+  public Infrastructure getSpec(MigrationContext migrationContext, InfrastructureDefinition infrastructureDefinition,
       List<ElastigroupConfiguration> elastigroupConfigurations) {
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     NgEntityDetail connectorDetail;
 
     if (infrastructureDefinition.getCloudProviderType() == AZURE) {

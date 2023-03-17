@@ -27,6 +27,7 @@ public class ServiceV2Factory {
   private static final ServiceV2Mapper elastigroupServiceV2Mapper = new ElastigroupServiceV2Mapper();
   private static final ServiceV2Mapper pcfServiceV2Mapper = new PcfServiceV2Mapper();
   private static final ServiceV2Mapper customDeploymentServiceV2Mapper = new CustomDeploymentServiceV2Mapper();
+  private static final ServiceV2Mapper awsLambdaServiceV2Mapper = new AwsLambdaServiceV2Mapper();
   private static final ServiceV2Mapper unsupportedServiceV2Mapper = new UnsupportedServiceV2Mapper();
 
   public static ServiceV2Mapper getService2Mapper(Service service, boolean ecsTask) {
@@ -65,6 +66,9 @@ public class ServiceV2Factory {
     if (DeploymentType.CUSTOM.equals(deploymentType)) {
       return customDeploymentServiceV2Mapper;
     }
+    if (DeploymentType.AWS_LAMBDA.equals(deploymentType)) {
+      return awsLambdaServiceV2Mapper;
+    }
     if (null == deploymentType && null != artifactType) {
       switch (artifactType) {
         case AMI:
@@ -91,8 +95,9 @@ public class ServiceV2Factory {
           }
         case AZURE_WEBAPP:
           return azureWebappServiceV2Mapper;
-        case AWS_CODEDEPLOY:
         case AWS_LAMBDA:
+          return awsLambdaServiceV2Mapper;
+        case AWS_CODEDEPLOY:
         case AZURE_MACHINE_IMAGE:
           return unsupportedServiceV2Mapper;
         default:

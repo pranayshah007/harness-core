@@ -22,6 +22,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.SupportStatus;
@@ -74,7 +75,8 @@ public class EcsRunTaskStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     EcsRunTaskDeploy state = (EcsRunTaskDeploy) getState(graphNode);
     EcsRunTaskStepNode stepNode = new EcsRunTaskStepNode();
     baseSetup(state, stepNode, context.getIdentifierCaseFormat());
