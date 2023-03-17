@@ -10,6 +10,7 @@ package io.harness.cdng.manifest.yaml.kinds;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kustomize.KustomizeCommand;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -19,5 +20,14 @@ public enum KustomizeCommandFlagType {
   Manager side class to store Kustomize commands;
   currently we have: BUILD
    */
-  @JsonProperty("Build") BUILD;
+
+  @JsonProperty("Build") BUILD(KustomizeCommand.BUILD);
+
+  private final KustomizeCommand kustomizeCommand;
+  KustomizeCommandFlagType(KustomizeCommand kustomizeCommand) {
+    this.kustomizeCommand = kustomizeCommand;
+  }
+  public String toKustomizeCommandName() {
+    return kustomizeCommand.name();
+  }
 }
