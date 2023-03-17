@@ -153,6 +153,8 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
         environmentSecretRepository.findByAccountIdentifierAndSecretIdentifier(accountIdentifier, secretIdentifier);
     if (envSecretOpt.isPresent()) {
       syncK8sSecret(Collections.singletonList(EnvironmentSecretMapper.toDTO(envSecretOpt.get())), accountIdentifier);
+      setupUsageProducer.publishSecretSetupUsage(
+          Collections.singletonList(EnvironmentSecretMapper.toDTO(envSecretOpt.get())), accountIdentifier);
     } else {
       // TODO: There might be too many secrets overall. We might have to consider removing this log line in future
       log.info("Secret {} is not tracker by IDP, hence not processing it", secretIdentifier);
