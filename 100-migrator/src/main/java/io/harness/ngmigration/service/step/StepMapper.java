@@ -19,6 +19,7 @@ import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.MigrationTemplateUtils;
+import io.harness.ngmigration.service.workflow.WorkflowHandler;
 import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -28,7 +29,9 @@ import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.template.yaml.TemplateLinkConfig;
+import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.timeout.Timeout;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
@@ -39,6 +42,7 @@ import software.wings.sm.State;
 import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -89,13 +94,13 @@ public abstract class StepMapper {
     return MigratorExpressionUtils.getExpressions(properties);
   }
 
-  public TemplateStepNode getTemplateSpec(
-      MigrationContext migrationContext, WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
+  public TemplateStepNode getTemplateSpec(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode, String skipCondition) {
     return null;
   }
 
-  public TemplateStepNode defaultTemplateSpecMapper(
-      MigrationContext migrationContext, WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
+  public TemplateStepNode defaultTemplateSpecMapper(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode, String skipCondition) {
     String templateId = graphNode.getTemplateUuid();
     NGYamlFile template;
     if (StringUtils.isBlank(templateId)) {
@@ -104,12 +109,12 @@ public abstract class StepMapper {
       template = context.getMigratedEntities().get(
           CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
     }
-    return getTemplateStepNode(migrationContext, context, phase, graphNode, template);
+    return getTemplateStepNode(migrationContext, context, phase, phaseStep, graphNode, template, skipCondition);
   }
 
   @NotNull
   TemplateStepNode getTemplateStepNode(MigrationContext migrationContext, WorkflowMigrationContext context,
-      WorkflowPhase phase, GraphNode graphNode, NGYamlFile template) {
+      WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode, NGYamlFile template, String skipCondition) {
     if (template == null) {
       log.warn("Found a step with template ID but not found in migrated context. Workflow ID - {} & Step - {}",
           context.getWorkflow().getUuid(), graphNode.getName());
@@ -120,6 +125,7 @@ public abstract class StepMapper {
     JsonNode templateInputs =
         migrationTemplateUtils.getTemplateInputs(template.getNgEntityDetail(), context.getWorkflow().getAccountId());
     if (templateInputs != null) {
+      baseOverrideTemplateInputs(phaseStep, graphNode, templateInputs, skipCondition);
       overrideTemplateInputs(migrationContext, context, phase, graphNode, template, templateInputs);
     }
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
@@ -133,6 +139,20 @@ public abstract class StepMapper {
     templateStepNode.setDescription(getDescription(graphNode));
     templateStepNode.setTemplate(templateLinkConfig);
     return templateStepNode;
+  }
+
+  void baseOverrideTemplateInputs(PhaseStep phaseStep, GraphNode step, JsonNode templateInputs, String skipCondition) {
+    String newSkip = StringUtils.isBlank(skipCondition) ? "true" : skipCondition;
+    JsonNode failureStrategies = templateInputs.get("failureStrategies");
+    if (failureStrategies != null) {
+      List<FailureStrategyConfig> strategies =
+          ListUtils.emptyIfNull(WorkflowHandler.getFailureStrategies(phaseStep, step));
+      ((ObjectNode) templateInputs).set("failureStrategies", JsonPipelineUtils.asTree(strategies));
+    }
+    JsonNode condition = templateInputs.get("when");
+    if (condition != null) {
+      ((ObjectNode) condition).put("condition", newSkip);
+    }
   }
 
   public void overrideTemplateInputs(MigrationContext migrationContext, WorkflowMigrationContext context,
