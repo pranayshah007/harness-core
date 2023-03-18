@@ -28,7 +28,6 @@ import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.pms.execution.strategy.AbstractNodeExecutionStrategy;
-import io.harness.engine.pms.execution.strategy.EndNodeExecutionHelper;
 import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.IdentityNodeExecutionMetadata;
 import io.harness.execution.NodeExecution;
@@ -72,7 +71,6 @@ public class IdentityNodeExecutionStrategy
   @Inject private IdentityNodeResumeHelper identityNodeResumeHelper;
   @Inject private TransactionHelper transactionHelper;
   @Inject private IdentityNodeExecutionStrategyHelper identityNodeExecutionStrategyHelper;
-  @Inject private EndNodeExecutionHelper endNodeExecutionHelper;
   @Inject private NodeAdviseHelper nodeAdviseHelper;
   private final String SERVICE_NAME_IDENTITY = ModuleType.PMS.name().toLowerCase();
 
