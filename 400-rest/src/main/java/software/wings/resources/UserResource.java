@@ -533,9 +533,6 @@ public class UserResource {
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
   public RestResponse<User> get() {
-    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
-      return new RestResponse<>(UserThreadLocal.get().getPublicUser(true));
-    }
     return new RestResponse<>(UserThreadLocal.get().getPublicUser(false));
   }
 
@@ -592,10 +589,6 @@ public class UserResource {
   @Timed
   @ExceptionMetered
   public RestResponse<AccountRole> getAccountRole(@PathParam("accountId") String accountId) {
-    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
-      return new RestResponse<>(
-          userService.getUserAccountRole(UserThreadLocal.get().getPublicUser(true).getUuid(), accountId));
-    }
     return new RestResponse<>(
         userService.getUserAccountRole(UserThreadLocal.get().getPublicUser(false).getUuid(), accountId));
   }
@@ -606,10 +599,6 @@ public class UserResource {
   @Timed
   @ExceptionMetered
   public RestResponse<UserPermissionInfo> getUserPermissionInfo(@PathParam("accountId") String accountId) {
-    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
-      return new RestResponse<>(
-          authService.getUserPermissionInfo(accountId, UserThreadLocal.get().getPublicUser(true), false));
-    }
     return new RestResponse<>(
         authService.getUserPermissionInfo(accountId, UserThreadLocal.get().getPublicUser(false), false));
   }
@@ -642,10 +631,6 @@ public class UserResource {
   @Timed
   @ExceptionMetered
   public RestResponse<ApplicationRole> getApplicationRole(@PathParam("appId") String appId) {
-    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
-      return new RestResponse<>(
-          userService.getUserApplicationRole(UserThreadLocal.get().getPublicUser(true).getUuid(), appId));
-    }
     return new RestResponse<>(
         userService.getUserApplicationRole(UserThreadLocal.get().getPublicUser(false).getUuid(), appId));
   }

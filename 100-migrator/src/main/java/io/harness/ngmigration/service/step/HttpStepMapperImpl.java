@@ -62,9 +62,9 @@ public class HttpStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public TemplateStepNode getTemplateSpec(
-      MigrationContext migrationContext, WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
-    return defaultTemplateSpecMapper(migrationContext, context, phase, graphNode);
+  public TemplateStepNode getTemplateSpec(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode, String skipCondition) {
+    return defaultTemplateSpecMapper(migrationContext, context, phase, phaseStep, graphNode, skipCondition);
   }
 
   @Override

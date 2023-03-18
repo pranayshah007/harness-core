@@ -34,6 +34,7 @@ import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.infra.AwsAmiInfrastructure;
@@ -51,6 +52,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,6 +63,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class ElastigroupConfigurationMigrationService extends NgMigrationService {
   @Inject InfrastructureDefinitionService infrastructureDefinitionService;
+  @Inject private SecretRefUtils secretRefUtils;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -84,7 +87,10 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
                                     .id(infrastructureDefinition.getUuid())
                                     .type(NGMigrationEntityType.ELASTIGROUP_CONFIGURATION)
                                     .build();
-    return DiscoveryNode.builder().entityNode(cgEntityNode).build();
+    Set<CgEntityId> children = new HashSet<>();
+    children.addAll(secretRefUtils.getSecretRefFromExpressions(
+        infrastructureDefinition.getAccountId(), MigratorExpressionUtils.getExpressions(infrastructureDefinition)));
+    return DiscoveryNode.builder().entityNode(cgEntityNode).children(children).build();
   }
 
   @Override
