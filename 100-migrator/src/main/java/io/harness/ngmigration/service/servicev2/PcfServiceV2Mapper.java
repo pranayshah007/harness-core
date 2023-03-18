@@ -50,7 +50,7 @@ public class PcfServiceV2Mapper implements ServiceV2Mapper {
       serviceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
     if (EmptyPredicate.isNotEmpty(manifests)) {
-      serviceSpecBuilder.manifests(manifests);
+      serviceSpecBuilder.manifests(changeIdentifier(manifests, "pcf_"));
     }
 
     serviceSpecBuilder.variables(MigratorUtility.getServiceVariables(migrationContext, service.getServiceVariables()));

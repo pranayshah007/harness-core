@@ -9,18 +9,16 @@ package io.harness.ccm.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
-import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.dto.ResponseDTO;
 
-import org.hibernate.validator.constraints.NotEmpty;
-import retrofit2.Call;
-import retrofit2.http.POST;
-import retrofit2.http.Query;
+import java.util.List;
+import lombok.Builder;
+import lombok.Data;
 
+@Data
+@Builder
 @OwnedBy(CE)
-public interface GovernanceRuleClient {
-  @POST("governance/rule/list")
-  Call<ResponseDTO<RuleListDTO>> listRule(
-      @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+public class RuleListDTO {
+  int totalItems;
+  List<RuleDTO> rules;
 }

@@ -48,7 +48,7 @@ public class K8sServiceV2Mapper implements ServiceV2Mapper {
     if (primaryArtifact != null) {
       kubernetesServiceSpec.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
-    kubernetesServiceSpec.manifests(manifests);
+    kubernetesServiceSpec.manifests(changeIdentifier(manifests, "k8s_"));
     kubernetesServiceSpec.configFiles(configFiles);
     kubernetesServiceSpec.variables(variables);
     return ServiceDefinition.builder()

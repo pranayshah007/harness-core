@@ -207,7 +207,7 @@ public abstract class WorkflowHandler {
         .collect(Collectors.toList());
   }
 
-  static ParameterField<String> getVariable(Variable variable) {
+  public static ParameterField<String> getVariable(Variable variable) {
     if (variable.isFixed()) {
       return ParameterField.createValueField(variable.getValue());
     }
@@ -217,12 +217,7 @@ public abstract class WorkflowHandler {
       validator = new InputSetValidator(InputSetValidatorType.ALLOWED_VALUES, variable.getAllowedValues());
     }
 
-    if (StringUtils.isBlank(variable.getValue())) {
-      return ParameterField.createExpressionField(true, INPUT_EXPRESSION, validator, true);
-    }
-
-    return ParameterField.createFieldWithDefaultValue(
-        true, false, INPUT_EXPRESSION, variable.getValue(), validator, true);
+    return ParameterField.createExpressionField(true, INPUT_EXPRESSION, validator, true);
   }
 
   public List<StageElementWrapperConfig> asStages(MigrationContext migrationContext, Workflow workflow) {
@@ -435,7 +430,8 @@ public abstract class WorkflowHandler {
     if (isNotEmpty(expressionFunctors)) {
       context.getStepExpressionFunctors().addAll(expressionFunctors);
     }
-    TemplateStepNode templateStepNode = stepMapper.getTemplateSpec(migrationContext, context, phase, step);
+    TemplateStepNode templateStepNode =
+        stepMapper.getTemplateSpec(migrationContext, context, phase, phaseStep, step, skipCondition);
     if (templateStepNode != null) {
       return JsonPipelineUtils.asTree(templateStepNode);
     }
@@ -463,20 +459,7 @@ public abstract class WorkflowHandler {
     if (EmptyPredicate.isEmpty(phaseStep.getFailureStrategies())) {
       return;
     }
-    List<FailureStrategy> cgFailureStrategies =
-        phaseStep.getFailureStrategies()
-            .stream()
-            .filter(failureStrategy -> EmptyPredicate.isNotEmpty(failureStrategy.getSpecificSteps()))
-            .filter(failureStrategy -> failureStrategy.getSpecificSteps().contains(step.getName()))
-            .collect(Collectors.toList());
-    if (EmptyPredicate.isEmpty(cgFailureStrategies)) {
-      return;
-    }
-
-    List<FailureStrategyConfig> failureStrategyConfigs = cgFailureStrategies.stream()
-                                                             .map(FailureStrategyHelper::toFailureStrategyConfig)
-                                                             .filter(Objects::nonNull)
-                                                             .collect(Collectors.toList());
+    List<FailureStrategyConfig> failureStrategyConfigs = getFailureStrategies(phaseStep, step);
 
     if (EmptyPredicate.isEmpty(failureStrategyConfigs)) {
       return;
@@ -487,6 +470,23 @@ public abstract class WorkflowHandler {
     if (stepNode instanceof CdAbstractStepNode) {
       ((CdAbstractStepNode) stepNode).setFailureStrategies(ParameterField.createValueField(failureStrategyConfigs));
     }
+  }
+
+  public static List<FailureStrategyConfig> getFailureStrategies(PhaseStep phaseStep, GraphNode step) {
+    List<FailureStrategy> cgFailureStrategies =
+        phaseStep.getFailureStrategies()
+            .stream()
+            .filter(failureStrategy -> EmptyPredicate.isNotEmpty(failureStrategy.getSpecificSteps()))
+            .filter(failureStrategy -> failureStrategy.getSpecificSteps().contains(step.getName()))
+            .collect(Collectors.toList());
+    if (EmptyPredicate.isEmpty(cgFailureStrategies)) {
+      return new ArrayList<>();
+    }
+
+    return cgFailureStrategies.stream()
+        .map(FailureStrategyHelper::toFailureStrategyConfig)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
   }
 
   private Map<String, Object> getExpressions(

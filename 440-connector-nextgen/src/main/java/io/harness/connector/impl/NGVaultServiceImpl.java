@@ -201,10 +201,11 @@ public class NGVaultServiceImpl implements NGVaultService {
       log.error("Listing secret engines failed for account Id {}", baseVaultConfig.getAccountId());
       throw wingsException;
     } catch (DelegateServiceDriverException ex) {
-      if (ex.getCause() != null) {
-        throw new WingsException(ex.getCause().getMessage(), ex);
+      if (ex.getMessage() != null) {
+        throw new WingsException(ex.getMessage(), ex);
       } else {
-        throw new WingsException(ex);
+        throw new WingsException(String.format(
+            "Listing secret engines failed. Please check if active delegates are available in the account"));
       }
     } catch (Exception e) {
       log.error("Listing vault engines failed for account Id {}", baseVaultConfig.getAccountId(), e);
@@ -732,7 +733,17 @@ public class NGVaultServiceImpl implements NGVaultService {
                 .accountId(accountId)
                 .taskSetupAbstractions(ngManagerEncryptorHelper.buildAbstractions(azureVaultConfig))
                 .build();
-        DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
+        DelegateResponseData delegateResponseData;
+        try {
+          delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
+        } catch (DelegateServiceDriverException ex) {
+          if (ex.getMessage() != null) {
+            throw new WingsException(ex.getMessage(), ex);
+          } else {
+            throw new WingsException(String.format(
+                "Listing secret engines failed. Please check if active delegates are available in the account"));
+          }
+        }
         DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
         if (!(delegateResponseData instanceof NGAzureKeyVaultFetchEngineResponse)) {
           throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, UNKNOWN_RESPONSE, USER);

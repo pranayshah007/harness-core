@@ -48,7 +48,7 @@ public class EcsServiceV2Mapper implements ServiceV2Mapper {
       ecsServiceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
     if (EmptyPredicate.isNotEmpty(manifests)) {
-      ecsServiceSpecBuilder.manifests(manifests);
+      ecsServiceSpecBuilder.manifests(changeIdentifier(manifests, "ecs_"));
     }
     ecsServiceSpecBuilder.variables(
         MigratorUtility.getServiceVariables(migrationContext, service.getServiceVariables()));
