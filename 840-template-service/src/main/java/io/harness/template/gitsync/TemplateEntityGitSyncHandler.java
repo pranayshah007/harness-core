@@ -85,7 +85,7 @@ public class TemplateEntityGitSyncHandler extends AbstractGitSdkEntityHandler<Te
   @Override
   public NGTemplateConfig save(String accountIdentifier, String yaml) {
     TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(accountIdentifier, yaml);
-    TemplateEntity createdTemplate = templateService.create(templateEntity, false, "");
+    TemplateEntity createdTemplate = templateService.create(templateEntity, false, "", false);
     return NGTemplateDtoMapper.toDTO(createdTemplate);
   }
 

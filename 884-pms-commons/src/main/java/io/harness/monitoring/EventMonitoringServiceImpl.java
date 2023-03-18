@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class EventMonitoringServiceImpl implements EventMonitoringService {
-  private static final Long SAMPLE_SIZE = 10L;
+  private static final Long SAMPLE_SIZE = 20L;
   private static final Map<String, Long> countMap = new ConcurrentHashMap<>();
 
   @Inject MetricService metricService;
@@ -33,7 +33,8 @@ public class EventMonitoringServiceImpl implements EventMonitoringService {
       String metricValue = String.format(metricName, monitoringInfo.getMetricPrefix());
       long newCount = countMap.compute(metricValue, (k, v) -> v == null ? 1 : ((v + 1) % SAMPLE_SIZE));
       if (newCount == 1 || (currentTimeMillis - monitoringInfo.getCreatedAt() > 5000)) {
-        log.info(String.format("Sampled the metric [%s]", String.format(metricName, monitoringInfo.getMetricPrefix())));
+        log.debug(
+            String.format("Sampled the metric [%s]", String.format(metricName, monitoringInfo.getMetricPrefix())));
         metricService.recordMetric(metricValue, System.currentTimeMillis() - monitoringInfo.getCreatedAt());
       }
     } catch (Exception ex) {

@@ -73,6 +73,7 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.TriggeredBy;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
@@ -198,6 +199,7 @@ public class CloudFormationStateTest extends WingsBaseTest {
   @Mock private SweepingOutputService sweepingOutputService;
   @Mock private SubdomainUrlHelperIntfc subdomainUrlHelper;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks
   private CloudFormationCreateStackState cloudFormationCreateStackState = new CloudFormationCreateStackState("name");

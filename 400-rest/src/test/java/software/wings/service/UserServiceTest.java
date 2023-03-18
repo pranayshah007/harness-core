@@ -21,6 +21,7 @@ import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NANDAN;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.UJJAWAL;
@@ -77,6 +78,7 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anySetOf;
@@ -1483,6 +1485,38 @@ public class UserServiceTest extends WingsBaseTest {
     verify(wingsPersistence).update(eq(userBuilder.uuid(USER_ID).build()), any(UpdateOperations.class));
     verify(updateOperations).set(eq("passwordHash"), anyString());
     verify(updateOperations).set(eq("passwordChangedAt"), anyLong());
+  }
+
+  /**
+   * Should update password and clear lockout info
+   *
+   */
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void shouldUpdatePasswordAndClearLockoutInfo() throws UnsupportedEncodingException {
+    when(query.get()).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(configuration.getPortal().getJwtPasswordSecret()).thenReturn("SECRET");
+    Algorithm algorithm = Algorithm.HMAC256("SECRET");
+    String token = JWT.create()
+                       .withIssuer("Harness Inc")
+                       .withIssuedAt(new Date())
+                       .withExpiresAt(new Date(System.currentTimeMillis() + 4 * 60 * 60 * 1000)) // 4 hrs
+                       .withClaim("email", USER_EMAIL)
+                       .sign(algorithm);
+
+    userService.updatePassword(token, USER_PASSWORD);
+    when(loginSettingsService.verifyPasswordStrength(Mockito.any(Account.class), Mockito.any(char[].class)))
+        .thenReturn(true);
+
+    verify(query, times(1)).filter("email", USER_EMAIL);
+    verify(emailDataNotificationService).send(any());
+    verify(authService).invalidateAllTokensForUser(USER_ID);
+    verify(wingsPersistence).update(eq(userBuilder.uuid(USER_ID).build()), any(UpdateOperations.class));
+    verify(updateOperations).set(eq("passwordHash"), anyString());
+    verify(updateOperations).set(eq("passwordExpired"), anyBoolean());
+    verify(updateOperations).set(eq("passwordChangedAt"), anyLong());
+    verify(loginSettingsService, times(1)).updateUserLockoutInfo(any(), any(), anyInt());
   }
 
   /**

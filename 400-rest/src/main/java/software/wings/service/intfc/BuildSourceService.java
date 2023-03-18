@@ -529,4 +529,13 @@ public interface BuildSourceService {
   default List<AzureResourceGroup> listResourceGroups(String cloudProviderId, String subscriptionId) {
     throw new UnsupportedOperationException();
   }
+
+  /**
+   * Gets list of build artifacts by artifact stream id and filter path.
+   *
+   * @param artifacts the list af artifacts
+   * @param artifactStream the artifact stream source
+   * @return the list of builds artifacts
+   */
+  List<BuildDetails> listArtifactByArtifactStreamAndFilterPath(List<Artifact> artifacts, ArtifactStream artifactStream);
 }

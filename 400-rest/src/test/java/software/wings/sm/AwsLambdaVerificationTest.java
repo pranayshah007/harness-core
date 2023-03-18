@@ -34,6 +34,7 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -67,6 +68,8 @@ public class AwsLambdaVerificationTest extends WingsBaseTest {
   @Mock private SecretManager secretManager;
   @Mock private DelegateService delegateService;
   @Mock private StateExecutionService stateExecutionService;
+
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks private AwsLambdaVerification awsLambdaVerification;

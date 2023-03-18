@@ -31,6 +31,7 @@ import lombok.Value;
 public class GitOpsFetchAppTaskParams implements TaskParameters, ExecutionCapabilityDemander {
   GitFetchFilesConfig gitFetchFilesConfig;
   String accountId;
+  private boolean isCloseLogStream;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

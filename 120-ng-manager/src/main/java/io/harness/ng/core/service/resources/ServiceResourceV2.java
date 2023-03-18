@@ -45,6 +45,7 @@ import io.harness.beans.Scope;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
 import io.harness.cdng.artifact.utils.ArtifactSourceTemplateHelper;
+import io.harness.cdng.hooks.ServiceHookAction;
 import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
@@ -52,9 +53,11 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConne
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.artifact.ArtifactSourceYamlRequestDTO;
+import io.harness.ng.core.beans.DocumentationConstants;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
 import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
@@ -63,6 +66,7 @@ import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
@@ -82,6 +86,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
@@ -89,6 +94,7 @@ import io.harness.utils.PageUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -98,6 +104,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -111,7 +118,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -179,7 +188,11 @@ public class ServiceResourceV2 {
 
   private final NGFeatureFlagHelperService featureFlagService;
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
-  public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE = "List of Service Identifiers for the entities";
+  public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE =
+      "List of Service Identifiers for the entities, maximum size of list is 1000.";
+  private static final int MAX_LIMIT = 1000;
+  private static final Set<String> allowedServiceSpecs =
+      ImmutableSet.of(ServiceSpecType.NATIVE_HELM, ServiceSpecType.KUBERNETES);
 
   @GET
   @Path("{serviceIdentifier}")
@@ -238,7 +251,10 @@ public class ServiceResourceV2 {
   public ResponseDTO<ServiceResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Service to be created") @Valid ServiceRequestDTO serviceRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Service to be created", content = {
+        @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service create payload",
+                     value = DocumentationConstants.serviceRequestDTO, description = "Sample Service payload"))
+      }) @Valid ServiceRequestDTO serviceRequestDTO) {
     throwExceptionForNoRequestDTO(serviceRequestDTO);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
@@ -268,8 +284,8 @@ public class ServiceResourceV2 {
   public ResponseDTO<PageResponse<ServiceResponse>>
   createServices(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                      NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(
-          description = "Details of the Services to be created") @Valid List<ServiceRequestDTO> serviceRequestDTOs) {
+      @Parameter(description = "Details of the Services to be created, maximum 1000 services can be created.") @Valid
+      @Size(max = MAX_LIMIT) List<ServiceRequestDTO> serviceRequestDTOs) {
     throwExceptionForNoRequestDTO(serviceRequestDTOs);
     for (ServiceRequestDTO serviceRequestDTO : serviceRequestDTOs) {
       accessControlClient.checkForAccessOrThrow(
@@ -326,7 +342,10 @@ public class ServiceResourceV2 {
   update(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Service to be updated") @Valid ServiceRequestDTO serviceRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Service to be updated", content = {
+        @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service update payload",
+                     value = DocumentationConstants.serviceRequestDTO, description = "Sample Service payload"))
+      }) @Valid ServiceRequestDTO serviceRequestDTO) {
     throwExceptionForNoRequestDTO(serviceRequestDTO);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
@@ -351,7 +370,10 @@ public class ServiceResourceV2 {
   upsert(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Service to be updated") @Valid ServiceRequestDTO serviceRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Service to be upserted", content = {
+        @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service upsert payload",
+                     value = DocumentationConstants.serviceRequestDTO, description = "Sample Service payload"))
+      }) @Valid ServiceRequestDTO serviceRequestDTO) {
     throwExceptionForNoRequestDTO(serviceRequestDTO);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
@@ -380,7 +402,7 @@ public class ServiceResourceV2 {
   listServices(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                    NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.SIZE) @DefaultValue("100") int size,
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -401,7 +423,9 @@ public class ServiceResourceV2 {
           description = "The version label of deployment template if infrastructure is of type custom deployment")
       @QueryParam("versionLabel") String versionLabel,
       @Parameter(description = "Specify true if all accessible Services are to be included") @QueryParam(
-          "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope) {
+          "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope,
+      @Parameter(description = "Specify true if services' version info need to be included", hidden = true) @QueryParam(
+          "includeVersionInfo") @DefaultValue("false") boolean includeVersionInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
 
@@ -411,6 +435,7 @@ public class ServiceResourceV2 {
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
     }
+
     if (isEmpty(sort)) {
       pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ServiceKeys.createdAt));
     } else {
@@ -428,7 +453,133 @@ public class ServiceResourceV2 {
         serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
       }
     });
+    return ResponseDTO.newResponse(getNGPageResponse(
+        serviceEntities.map(entity -> ServiceElementMapper.toResponseWrapper(entity, includeVersionInfo))));
+  }
+
+  @GET
+  @Hidden
+  @Path("/list/all-services")
+  @ApiOperation(value = "Get all services list", nickname = "getAllServicesList")
+  @Operation(operationId = "getAllServicesList",
+      summary = "Get all services list across organizations and projects within account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of all Services across organizations and projects within account")
+      },
+      hidden = true)
+  @InternalApi
+  @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_view")
+  public ResponseDTO<PageResponse<ServiceResponse>>
+  getAllServicesList(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
+      @Parameter(description = NGResourceFilterConstants.SEARCH_TERM) @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") @Max(1000) int size,
+      @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SORT) List<String> sort) {
+    Criteria criteria = ServiceFilterHelper.createCriteriaForListingAllServices(
+        accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, false);
+
+    Pageable pageRequest = isEmpty(sort)
+        ? PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ServiceEntityKeys.createdAt))
+        : PageUtils.getPageRequest(page, size, sort);
+    Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
     return ResponseDTO.newResponse(getNGPageResponse(serviceEntities.map(ServiceElementMapper::toResponseWrapper)));
+  }
+
+  @GET
+  @Path("/list/scoped")
+  @Hidden
+  @ApiOperation(value = "Gets Service list filtered by service refs", nickname = "getServiceListFiltered")
+  @Operation(operationId = "getServiceList", summary = "Gets Service list",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of Services filtered by scoped service refs")
+      })
+  public ResponseDTO<PageResponse<ServiceResponse>>
+  getServicesFilteredByRefs(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+                                NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") int size,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
+      @Parameter(description = "List of ServicesIds") @QueryParam(
+          "serviceIdentifiers") List<String> serviceIdentifiers) {
+    checkAccessForListingAtScope(accountId, orgIdentifier, projectIdentifier, serviceIdentifiers);
+
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
+        accountId, orgIdentifier, projectIdentifier, serviceIdentifiers, false, null, null, null, false);
+
+    Pageable pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ServiceKeys.createdAt));
+
+    Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
+
+    serviceEntities.forEach(serviceEntity -> {
+      if (EmptyPredicate.isEmpty(serviceEntity.getYaml())) {
+        NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
+        serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
+      }
+    });
+    return ResponseDTO.newResponse(
+        getNGPageResponse(serviceEntities.map(entity -> ServiceElementMapper.toResponseWrapper(entity, false))));
+  }
+
+  private void checkAccessForListingAtScope(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers) {
+    if (isEmpty(serviceIdentifiers)) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
+    }
+
+    boolean checkProjectLevelList = false;
+    boolean checkOrgLevelList = false;
+    boolean checkAccountLevelList = false;
+
+    if (isNotEmpty(serviceIdentifiers)) {
+      for (String serviceRef : serviceIdentifiers) {
+        if (isNotEmpty(serviceRef) && !EngineExpressionEvaluator.hasExpressions(serviceRef)) {
+          IdentifierRef serviceIdentifierRef =
+              IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgIdentifier, projectIdentifier);
+          if (io.harness.encryption.Scope.PROJECT.equals(serviceIdentifierRef.getScope())) {
+            checkProjectLevelList = true;
+          } else if (io.harness.encryption.Scope.ORG.equals(serviceIdentifierRef.getScope())) {
+            checkOrgLevelList = true;
+          } else if (io.harness.encryption.Scope.ACCOUNT.equals(serviceIdentifierRef.getScope())) {
+            checkAccountLevelList = true;
+          }
+        }
+      }
+    }
+
+    // listing without scoped refs
+    if (checkProjectLevelList) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
+    }
+
+    if (checkOrgLevelList) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, null),
+          Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
+    }
+
+    if (checkAccountLevelList) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, null, null),
+          Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
+    }
   }
 
   @GET
@@ -453,7 +604,8 @@ public class ServiceResourceV2 {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @Parameter(description = "List of ServicesIds") @QueryParam("serviceIdentifiers") List<String> serviceIdentifiers,
+      @Parameter(description = "List of ServicesIds") @QueryParam("serviceIdentifiers") @Size(
+          max = MAX_LIMIT) List<String> serviceIdentifiers,
       @Parameter(
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
@@ -710,6 +862,24 @@ public class ServiceResourceV2 {
       }
     }
     return ResponseDTO.newResponse(k8sCmdFlags);
+  }
+
+  @GET
+  @Path("/hooks/actions")
+  @ApiOperation(value = "Get Available Service Hook Actions", nickname = "hookActions")
+  @Operation(operationId = "hookActions", summary = "Retrieving the list of actions available for service hooks",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of actions available for service hooks")
+      })
+  public ResponseDTO<Set<ServiceHookAction>>
+  getServiceHookActions(@QueryParam("serviceSpecType") @NotNull String serviceSpecType) {
+    if (allowedServiceSpecs.contains(serviceSpecType)) {
+      return ResponseDTO.newResponse(Set.of(ServiceHookAction.values()));
+    }
+    throw new InvalidRequestException(
+        format("Service with type: [%s] does not support service hooks", serviceSpecType));
   }
 
   @Hidden

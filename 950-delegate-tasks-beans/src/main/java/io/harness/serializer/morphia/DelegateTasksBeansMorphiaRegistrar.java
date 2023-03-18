@@ -42,6 +42,7 @@ import io.harness.delegate.task.artifacts.ami.AMIFilter;
 import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
@@ -154,6 +155,7 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
     h.put("waiter.ErrorNotifyResponseData", ErrorNotifyResponseData.class);
     h.put("delegate.task.artifacts.docker.DockerArtifactDelegateResponse", DockerArtifactDelegateResponse.class);
     h.put("delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse", JenkinsArtifactDelegateResponse.class);
+    h.put("delegate.task.artifacts.jenkins.BambooArtifactDelegateResponse", BambooArtifactDelegateResponse.class);
     h.put("delegate.task.artifacts.response.ArtifactTaskResponse", ArtifactTaskResponse.class);
     h.put("delegate.task.artifacts.request.ArtifactTaskParameters", ArtifactTaskParameters.class);
     h.put("delegate.task.artifacts.docker.DockerArtifactDelegateRequest", DockerArtifactDelegateRequest.class);

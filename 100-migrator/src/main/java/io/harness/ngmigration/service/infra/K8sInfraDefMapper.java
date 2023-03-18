@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.infra;
 
+import static io.harness.ngmigration.service.infra.InfraDefMapperUtils.getExpression;
+
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,7 +20,7 @@ import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.InfrastructureType;
-import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -26,10 +28,11 @@ import io.harness.pms.yaml.ParameterField;
 
 import software.wings.infra.AzureKubernetesService;
 import software.wings.infra.DirectKubernetesInfrastructure;
+import software.wings.infra.DirectKubernetesInfrastructure.DirectKubernetesInfrastructureKeys;
 import software.wings.infra.GoogleKubernetesEngine;
+import software.wings.infra.GoogleKubernetesEngine.GoogleKubernetesEngineKeys;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 
 import java.util.List;
 import java.util.Map;
@@ -56,9 +59,9 @@ public class K8sInfraDefMapper implements InfraDefMapper {
   }
 
   @Override
-  public Infrastructure getSpec(MigrationInputDTO inputDTO, InfrastructureDefinition infrastructureDefinition,
-      Map<CgEntityId, NGYamlFile> migratedEntities, Map<CgEntityId, CgEntityNode> entities,
+  public Infrastructure getSpec(MigrationContext migrationContext, InfrastructureDefinition infrastructureDefinition,
       List<ElastigroupConfiguration> elastigroupConfiguration) {
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     NgEntityDetail connectorDetail;
     CgEntityId cgEntityId;
     switch (infrastructureDefinition.getCloudProviderType()) {
@@ -71,8 +74,10 @@ public class K8sInfraDefMapper implements InfraDefMapper {
         }
         connectorDetail = migratedEntities.get(cgEntityId).getNgEntityDetail();
         return K8SDirectInfrastructure.builder()
-            .namespace(ParameterField.createValueField(k8s.getNamespace()))
-            .releaseName(ParameterField.createValueField(k8s.getReleaseName()))
+            .namespace(getExpression(k8s.getExpressions(), DirectKubernetesInfrastructureKeys.namespace,
+                k8s.getNamespace(), infrastructureDefinition.getProvisionerId()))
+            .releaseName(getExpression(k8s.getExpressions(), DirectKubernetesInfrastructureKeys.releaseName,
+                k8s.getReleaseName(), infrastructureDefinition.getProvisionerId()))
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
             .build();
       case GCP:
@@ -84,10 +89,15 @@ public class K8sInfraDefMapper implements InfraDefMapper {
         connectorDetail = migratedEntities.get(cgEntityId).getNgEntityDetail();
         return K8sGcpInfrastructure.builder()
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
-            .namespace(ParameterField.createValueField(gcpK8s.getNamespace()))
-            .releaseName(ParameterField.createValueField(gcpK8s.getReleaseName()))
+            .cluster(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.clusterName,
+                gcpK8s.getClusterName(), infrastructureDefinition.getProvisionerId()))
+            .namespace(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.namespace,
+                gcpK8s.getNamespace(), infrastructureDefinition.getProvisionerId()))
+            .releaseName(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.releaseName,
+                gcpK8s.getReleaseName(), infrastructureDefinition.getProvisionerId()))
             .build();
       case AZURE:
+        // No dynamic provisioning
         AzureKubernetesService aks = (AzureKubernetesService) infrastructureDefinition.getInfrastructure();
         cgEntityId = CgEntityId.builder().type(CONNECTOR).id(aks.getCloudProviderId()).build();
         if (!migratedEntities.containsKey(cgEntityId)) {

@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.utils;
 
+import io.harness.pms.yaml.ParameterField;
+
 public interface NGMigrationConstants {
   String DISCOVERY_IMAGE_PATH = "/tmp/viz-output/viz.png";
   String DEFAULT_ZIP_DIRECTORY = "/tmp/zip-output";
@@ -14,6 +16,8 @@ public interface NGMigrationConstants {
   String VIZ_TEMP_DIR_PREFIX = "viz-output";
   String VIZ_FILE_NAME = "/viz.png";
   String PLEASE_FIX_ME = "__PLEASE_FIX_ME__";
+  String RUNTIME_INPUT = "<+input>";
+  ParameterField<String> RUNTIME_FIELD = ParameterField.createValueField(RUNTIME_INPUT);
   String SERVICE_COMMAND_TEMPLATE_SEPARATOR = "::";
   String UNKNOWN_SERVICE = "UNKNOWN_S";
   String SECRET_FORMAT = "<+secrets.getValue(\"%s\")>";

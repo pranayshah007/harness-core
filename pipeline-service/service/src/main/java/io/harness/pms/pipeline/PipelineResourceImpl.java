@@ -37,8 +37,6 @@ import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
-import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.annotations.PipelineServiceAuth;
@@ -46,6 +44,7 @@ import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;
+import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.mappers.NodeExecutionToExecutioNodeMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -60,7 +59,6 @@ import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationS
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
-import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
@@ -77,7 +75,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -205,7 +202,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     try {
       PipelineGetResult pipelineGetResult = pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId,
           pipelineId, false, false, Boolean.TRUE.equals(loadFromFallbackBranch),
-          PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), validateAsync);
+          GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache), validateAsync);
       pipelineEntity = pipelineGetResult.getPipelineEntity();
       validationUUID = pipelineGetResult.getAsyncValidationUUID();
     } catch (PolicyEvaluationFailureException pe) {
@@ -223,15 +220,6 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
               .entityValidityDetails(EntityValidityDetails.builder().valid(false).invalidYaml(e.getYaml()).build())
               .gitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata())
               .yamlSchemaErrorWrapper((YamlSchemaErrorWrapperDTO) e.getMetadata())
-              .build());
-    } catch (NGTemplateResolveExceptionV2 ne) {
-      return ResponseDTO.newResponse(
-          PMSPipelineResponseDTO.builder()
-              .yamlPipeline(ne.getReferredByYaml())
-              .entityValidityDetails(
-                  EntityValidityDetails.builder().valid(false).invalidYaml(ne.getReferredByYaml()).build())
-              .gitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata())
-              .validateTemplateInputsResponse((ValidateTemplateInputsResponseDTO) ne.getMetadata())
               .build());
     }
 
@@ -437,7 +425,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<Boolean> refreshFFCache(@NotNull @AccountIdentifier String accountId) {
     try {
       return ResponseDTO.newResponse(pmsFeatureFlagHelper.refreshCacheForGivenAccountId(accountId));
-    } catch (ExecutionException e) {
+    } catch (InvalidRequestException e) {
       log.error("Execution exception occurred while updating cache: " + e.getMessage());
     }
     return ResponseDTO.newResponse(false);
@@ -478,7 +466,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
             pipelineId, projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
 
     if (pipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(
@@ -530,16 +518,17 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   }
 
   @Override
-  public ResponseDTO<PipelineValidationUUIDResponseBody> startPipelineValidationEvent(
-      String accountId, String orgId, String projectId, String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo) {
+  public ResponseDTO<PipelineValidationUUIDResponseBody> startPipelineValidationEvent(String accountId, String orgId,
+      String projectId, String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCacheHeader) {
     Optional<PipelineEntity> pipelineEntity =
         pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     if (pipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(
           String.format("Pipeline with the given ID: %s does not exist or has been deleted.", pipelineId));
     }
-    PipelineValidationEvent pipelineValidationEvent =
-        pipelineAsyncValidationService.startEvent(pipelineEntity.get(), gitEntityBasicInfo.getBranch(), Action.CRUD);
+    boolean loadFromCache = GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCacheHeader);
+    PipelineValidationEvent pipelineValidationEvent = pipelineAsyncValidationService.startEvent(
+        pipelineEntity.get(), gitEntityBasicInfo.getBranch(), Action.CRUD, loadFromCache);
     PipelineValidationUUIDResponseBody pipelineValidationUUIDResponseBody =
         PipelinesApiUtils.buildPipelineValidationUUIDResponseBody(pipelineValidationEvent);
     return ResponseDTO.newResponse(pipelineValidationUUIDResponseBody);

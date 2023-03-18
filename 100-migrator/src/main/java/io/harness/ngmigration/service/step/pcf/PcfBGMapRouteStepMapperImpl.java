@@ -7,14 +7,15 @@
 
 package io.harness.ngmigration.service.step.pcf;
 
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasSwapRollbackStepInfo;
 import io.harness.cdng.tas.TasSwapRollbackStepNode;
 import io.harness.cdng.tas.TasSwapRoutesStepInfo;
 import io.harness.cdng.tas.TasSwapRoutesStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
@@ -24,7 +25,7 @@ import software.wings.sm.states.pcf.PcfSwitchBlueGreenRoutes;
 
 import java.util.Map;
 
-public class PcfBGMapRouteStepMapperImpl extends StepMapper {
+public class PcfBGMapRouteStepMapperImpl extends PcfAbstractStepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;
@@ -41,6 +42,11 @@ public class PcfBGMapRouteStepMapperImpl extends StepMapper {
   }
 
   @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.TAS;
+  }
+
+  @Override
   public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);
     PcfSwitchBlueGreenRoutes state = new PcfSwitchBlueGreenRoutes(stepYaml.getName());
@@ -49,12 +55,13 @@ public class PcfBGMapRouteStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     PcfSwitchBlueGreenRoutes state = (PcfSwitchBlueGreenRoutes) getState(graphNode);
 
     if (graphNode.isRollback()) {
       TasSwapRollbackStepNode tasSwapRollbackStepNode = new TasSwapRollbackStepNode();
-      baseSetup(state, tasSwapRollbackStepNode);
+      baseSetup(state, tasSwapRollbackStepNode, context.getIdentifierCaseFormat());
       TasSwapRollbackStepInfo tasSwapRollbackStepInfo =
           TasSwapRollbackStepInfo.infoBuilder()
               .upsizeInActiveApp(ParameterField.createValueField(state.isUpSizeInActiveApp()))
@@ -63,7 +70,7 @@ public class PcfBGMapRouteStepMapperImpl extends StepMapper {
       return tasSwapRollbackStepNode;
     } else {
       TasSwapRoutesStepNode tasSwapRoutesStepNode = new TasSwapRoutesStepNode();
-      baseSetup(state, tasSwapRoutesStepNode);
+      baseSetup(state, tasSwapRoutesStepNode, context.getIdentifierCaseFormat());
       TasSwapRoutesStepInfo tasSwapRoutesStepInfo =
           TasSwapRoutesStepInfo.infoBuilder()
               .downSizeOldApplication(ParameterField.createValueField(state.isDownsizeOldApps()))

@@ -178,7 +178,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testCreateTemplate() {
-    doReturn(entityWithMongoVersion).when(templateService).create(entity, false, "");
+    doReturn(entityWithMongoVersion).when(templateService).create(entity, false, "", false);
     TemplateResponse templateResponse = new TemplateResponse();
     templateResponse.setAccount(entity.getAccountId());
     templateResponse.setOrg(entity.getOrgIdentifier());

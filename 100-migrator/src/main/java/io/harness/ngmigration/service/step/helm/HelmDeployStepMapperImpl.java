@@ -11,7 +11,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.HelmDeployStepNode;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -38,6 +40,11 @@ public class HelmDeployStepMapperImpl extends StepMapper {
   }
 
   @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.NATIVE_HELM;
+  }
+
+  @Override
   public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);
     HelmDeployState state = new HelmDeployState(stepYaml.getName());
@@ -46,10 +53,11 @@ public class HelmDeployStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     HelmDeployState state = (HelmDeployState) getState(graphNode);
     HelmDeployStepNode stepNode = new HelmDeployStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
     HelmDeployStepInfo stepInfo = HelmDeployStepInfo.infoBuilder()
                                       .helmDeployFqn(state.getHelmReleaseNamePrefix())
                                       .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))

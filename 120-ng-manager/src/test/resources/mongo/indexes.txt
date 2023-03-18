@@ -49,6 +49,8 @@ environmentsNG {"name": "unique_accountId_organizationIdentifier_projectIdentifi
 filters {"name": "unique_accountId_orgId_projectId_name_type_Index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "name": 1, "filterType": 1}
 filters {"name": "unique_accountId_organizationId_projectId_type", "unique": true} {"fullyQualifiedIdentifier": 1, "filterType": 1}
 freezeConfigNG {"name": "createdAt_1", "background": true} {"createdAt": 1}
+frozenExecution {"name": "unique_accountId_orgId_projectId_planExecutionId_stageExecutionId_stepExecutionId_idx", "unique": true} {"accountId": 1, "orgId": 1, "projectId": 1, "planExecutionId": 1, "stageExecutionId": 1, "stepExecutionId": 1}
+frozenExecution {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 genericEvent {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 genericEvent {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 gitBranches {"name": "unique_accountIdentifier_repoURL_branchName_idx", "unique": true} {"accountIdentifier": 1, "repoURL": 1, "branchName": 1}
@@ -132,8 +134,8 @@ progressUpdate {"name": "createdAt_1", "background": true} {"createdAt": 1}
 progressUpdate {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 projects {"name": "accountDeletedLastModifiedAtIdx", "background": true} {"accountIdentifier": 1, "deleted": 1, "lastModifiedAt": -1}
 projects {"name": "accountDeletedModulesLastModifiedAtIdx", "background": true} {"accountIdentifier": 1, "deleted": 1, "modules": 1, "lastModifiedAt": -1}
-projects {"name": "accountDeletedOrgIdentifierLastModifiedAtIdx", "background": true} {"accountIdentifier": 1, "deleted": 1, "orgIdentifier": 1, "identifier": 1, "lastModifiedAt": 1}
-projects {"name": "accountOrgIdentifierDeletedLastModifiedAtCreatedAtIdx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "identifier": 1, "deleted": 1, "lastModifiedAt": 1, "createdAt": 1}
+projects {"name": "accountDeletedOrgIdentifierSortLastModifiedAtIdx", "background": true} {"accountIdentifier": 1, "deleted": 1, "orgIdentifier": 1, "identifier": 1, "lastModifiedAt": -1}
+projects {"name": "accountOrgIdentifierDeletedCreatedAtLastModifiedAtIdx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "identifier": 1, "deleted": 1, "createdAt": 1, "lastModifiedAt": 1}
 projects {"name": "unique_accountIdentifier_organizationIdentifier_projectIdentifier", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "identifier": 1}
 secrets {"name": "migratedFromManager_1", "background": true} {"migratedFromManager": 1}
 secrets {"name": "unique_identification", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
@@ -153,6 +155,8 @@ sourceCodeManagers {"name": "uniqueIndex", "unique": true} {"userIdentifier": 1,
 stageExecutionInfo {"name": "sorted_stage_execution_info_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "stageExecutionId": 1, "createdAt": -1}
 stageExecutionInfo {"name": "unique_stage_execution_info_deployment_identifier_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "deploymentIdentifier": 1, "stageExecutionId": 1}
 stageExecutionInfo {"name": "unique_stage_execution_info_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "stageExecutionId": 1}
+terraformCloudConfig {"name": "accountId_orgId_projectId_entityId_createdAt", "background": true} {"accountId": 1, "orgId": 1, "projectId": 1, "provisionerIdentifier": 1, "createdAt": -1}
+terraformCloudPlanExecutionDetails {"name": "accountId_organizationId_projectId_pipelineExecutionId_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineExecutionId": 1}
 terraformConfig {"name": "accountId_orgId_projectId_entityId_createdAt", "background": true} {"accountId": 1, "orgId": 1, "projectId": 1, "entityId": 1, "createdAt": -1}
 terraformPlanExecutionDetails {"name": "accountId_organizationId_projectId_pipelineExecutionId_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineExecutionId": 1}
 terragruntConfig {"name": "accountId_orgId_projectId_entityId_createdAt", "background": true} {"accountId": 1, "orgId": 1, "projectId": 1, "entityId": 1, "createdAt": -1}

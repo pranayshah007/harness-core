@@ -74,7 +74,6 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
   private String workflowExecutionId;
   private int expressionFunctorToken;
   private final ExecutorService expressionEvaluatorExecutor;
-  private final boolean evaluateSync;
 
   @Default private Map<String, String> evaluatedSecrets = new ConcurrentHashMap<>();
   @Default private Map<String, String> evaluatedDelegateSecrets = new ConcurrentHashMap<>();
@@ -89,13 +88,11 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
       throw new FunctorException("Inappropriate usage of internal functor");
     }
     try {
-      if (!evaluateSync) {
-        if (expressionEvaluatorExecutor != null) {
-          // Offload expression evaluation of secrets to another threadpool.
-          return expressionEvaluatorExecutor.submit(() -> obtainInternal(secretName));
-        }
+      if (expressionEvaluatorExecutor != null) {
+        // Offload expression evaluation of secrets to another threadpool.
+        return expressionEvaluatorExecutor.submit(() -> obtainInternal(secretName));
       }
-      log.debug("Expression evaluation is being processed synchronously");
+      log.warn("Error while performing evaluating secrets async !! trying in sync");
       return obtainInternal(secretName);
     } catch (Exception ex) {
       throw new FunctorException("Error occurred while evaluating the secret [" + secretName + "]", ex);

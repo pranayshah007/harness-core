@@ -82,7 +82,7 @@ public class PmsGitSyncHelperTest extends PmsCommonsTestBase {
   @Category(UnitTests.class)
   public void testGetGitSyncBranchContextBytesThreadLocalWithEntity() {
     ByteString gitSyncBranchContextBytesThreadLocal =
-        pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(new DummyGitSyncableEntity(), null, null);
+        pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(new DummyGitSyncableEntity(), null, null, null);
     assertThat(gitSyncBranchContextBytesThreadLocal).isNotEmpty();
     GitSyncBranchContext newGitSyncBranchContext =
         pmsGitSyncHelper.deserializeGitSyncBranchContext(gitSyncBranchContextBytesThreadLocal);
@@ -98,7 +98,7 @@ public class PmsGitSyncHelperTest extends PmsCommonsTestBase {
         GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().branch(pipelineBranch).build()).build();
     context.setGlobalContextRecord(gitSyncBranchContext);
     ByteString gitSyncBranchContextBytesThreadLocal = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
-        new DummyGitSyncableEntityButGitAware(), StoreType.REMOTE, "repoName");
+        new DummyGitSyncableEntityButGitAware(), StoreType.REMOTE, "repoName", null);
     assertThat(gitSyncBranchContextBytesThreadLocal).isNotEmpty();
     GitSyncBranchContext newGitSyncBranchContext =
         pmsGitSyncHelper.deserializeGitSyncBranchContext(gitSyncBranchContextBytesThreadLocal);

@@ -26,6 +26,7 @@ public class UserMetadataMapper {
         .externallyManaged(user.isExternallyManaged())
         .disabled(user.isDisabled())
         .locked(user.isLocked())
+        .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
         .build();
   }
 
@@ -37,6 +38,7 @@ public class UserMetadataMapper {
         .disabled(user.isDisabled())
         .externallyManaged(user.isExternallyManaged())
         .locked(Boolean.TRUE.equals(user.isLocked()))
+        .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
         .build();
   }
 }

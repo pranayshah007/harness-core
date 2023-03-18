@@ -97,6 +97,7 @@ mongo:
   aliasDBName: ng-harness
   traceMode: DISABLED
   maxOperationTimeInMillis: 300000
+  maxDocumentsToBeFetched: 2147483647
 
 accountConfig:
   deploymentClusterName: ""
@@ -407,7 +408,7 @@ enableDashboardTimescale: false
 
 timescaledb:
   timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
-  timescaledbUsername: "postgres"
+  timescaledbUsername: ""
   timescaledbPassword: ""
   connectTimeout: 10
   socketTimeout: 30
@@ -481,7 +482,13 @@ debeziumConsumersConfigs:
     topic: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary}
     threads: ${DEBEZIUM_CONSUMER_THREADS:-2}
     batchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
+  moduleLicensesStreaming:
+    topic: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_ngMongo.ng-harness.moduleLicenses}
+    threads: ${DEBEZIUM_CONSUMER_THREADS:-2}
+    batchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
 
 cdTsDbRetentionPeriodMonths: 7
 
 enableOpentelemetry: false
+
+disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-false}

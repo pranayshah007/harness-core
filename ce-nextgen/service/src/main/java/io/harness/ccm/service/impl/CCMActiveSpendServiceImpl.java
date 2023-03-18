@@ -49,7 +49,7 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
   public static final String TABLE_NAME = "costAggregated";
   public static final String QUERY_TEMPLATE =
       "SELECT SUM(cost) AS cost, TIMESTAMP_TRUNC(day, month) AS month, cloudProvider FROM `%s` "
-      + "WHERE day >= TIMESTAMP_MILLIS(%s) AND day <= TIMESTAMP_MILLIS(%s) AND accountId = '%s' GROUP BY month, cloudProvider";
+      + "WHERE day >= TIMESTAMP_MILLIS(@start_time) AND day <= TIMESTAMP_MILLIS(@end_time) AND accountId = @account_id GROUP BY month, cloudProvider";
   public static final String QUERY_TEMPLATE_CLICKHOUSE =
       "SELECT SUM(cost) AS cost, date_trunc('month',day) AS month, cloudProvider FROM %s "
       + "WHERE day >= toDateTime(%s) AND day <= toDateTime(%s) GROUP BY month, cloudProvider";

@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PL)
@@ -43,7 +44,7 @@ public interface NGSecretServiceV2 {
 
   long count(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-  Page<Secret> list(Criteria criteria);
+  Page<Secret> list(Criteria criteria, Pageable pageable);
 
   List<Secret> getPermitted(Collection<Secret> secrets);
 

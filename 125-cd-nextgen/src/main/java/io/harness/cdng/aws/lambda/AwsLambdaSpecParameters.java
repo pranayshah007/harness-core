@@ -9,7 +9,7 @@ package io.harness.cdng.aws.lambda;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.aws.lambda.AwsLambdaCommandUnitConstants;
+import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
@@ -26,6 +26,7 @@ public interface AwsLambdaSpecParameters extends SpecParameters {
   @Nonnull
   @JsonIgnore
   default List<String> getCommandUnits() {
-    return Arrays.asList(AwsLambdaCommandUnitConstants.deploy.toString());
+    return Arrays.asList(AwsLambdaCommandUnitConstants.fetchManifests.toString(),
+        AwsLambdaCommandUnitConstants.prepareRollbackData.toString(), AwsLambdaCommandUnitConstants.deploy.toString());
   }
 }

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 
 import software.wings.beans.User;
+import software.wings.beans.User.UserKeys;
 import software.wings.graphql.datafetcher.DataFetcherUtils;
 import software.wings.graphql.schema.type.aggregation.QLIdFilter;
 import software.wings.graphql.schema.type.aggregation.user.QLUserFilter;
@@ -47,5 +48,17 @@ public class UserQueryHelper {
 
   public void setAccountFilter(Query<User> query, final String accountId) {
     query.or(query.criteria("accounts").equal(accountId), query.criteria("pendingAccounts").equal(accountId));
+  }
+
+  public void setShowDisabledFilter(List<QLUserFilter> filters, Query<User> query) {
+    if (isEmpty(filters)) {
+      query.criteria(UserKeys.disabled).notEqual(true);
+      return;
+    }
+    filters.forEach(filter -> {
+      if (filter.getIncludeDisabled() != null && !filter.getIncludeDisabled()) {
+        query.criteria(UserKeys.disabled).notEqual(true);
+      }
+    });
   }
 }

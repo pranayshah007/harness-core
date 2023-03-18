@@ -28,6 +28,9 @@ import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStep;
 import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStep;
+import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStep;
+import io.harness.cdng.aws.sam.AwsSamDeployStep;
+import io.harness.cdng.aws.sam.AwsSamRollbackStep;
 import io.harness.cdng.azure.webapp.ApplicationSettingsStep;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
@@ -36,6 +39,7 @@ import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStep;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStep;
 import io.harness.cdng.azure.webapp.ConnectionStringsStep;
 import io.harness.cdng.azure.webapp.StartupCommandStep;
+import io.harness.cdng.bamboo.BambooBuildStep;
 import io.harness.cdng.chaos.ChaosStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
@@ -60,6 +64,7 @@ import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
 import io.harness.cdng.gitops.steps.FetchLinkedAppsStep;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
+import io.harness.cdng.gitops.syncstep.SyncStep;
 import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStep;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStep;
 import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStep;
@@ -101,6 +106,7 @@ import io.harness.cdng.provision.terraform.TerraformApplyStep;
 import io.harness.cdng.provision.terraform.TerraformDestroyStep;
 import io.harness.cdng.provision.terraform.TerraformPlanStep;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStep;
+import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRollbackStep;
 import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRunStep;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStep;
 import io.harness.cdng.provision.terragrunt.TerragruntDestroyStep;
@@ -130,6 +136,7 @@ import io.harness.cdng.tas.TasCommandStep;
 import io.harness.cdng.tas.TasRollbackStep;
 import io.harness.cdng.tas.TasRollingDeployStep;
 import io.harness.cdng.tas.TasRollingRollbackStep;
+import io.harness.cdng.tas.TasRouteMappingStep;
 import io.harness.cdng.tas.TasSwapRollbackStep;
 import io.harness.cdng.tas.TasSwapRoutesStep;
 import io.harness.pms.contracts.steps.StepType;
@@ -151,6 +158,7 @@ public class NgStepRegistrar {
     engineSteps.put(MergePRStep.STEP_TYPE, MergePRStep.class);
     engineSteps.put(UpdateReleaseRepoStep.STEP_TYPE, UpdateReleaseRepoStep.class);
     engineSteps.put(FetchLinkedAppsStep.STEP_TYPE, FetchLinkedAppsStep.class);
+    engineSteps.put(SyncStep.STEP_TYPE, SyncStep.class);
     engineSteps.put(RollbackOptionalChildChainStep.STEP_TYPE, RollbackOptionalChildChainStep.class);
     engineSteps.put(RollbackOptionalChildrenStep.STEP_TYPE, RollbackOptionalChildrenStep.class);
     engineSteps.put(NGSectionStep.STEP_TYPE, NGSectionStep.class);
@@ -265,15 +273,23 @@ public class NgStepRegistrar {
     engineSteps.put(TasRollbackStep.STEP_TYPE, TasRollbackStep.class);
     engineSteps.put(TasRollingDeployStep.STEP_TYPE, TasRollingDeployStep.class);
     engineSteps.put(TasRollingRollbackStep.STEP_TYPE, TasRollingRollbackStep.class);
+    engineSteps.put(TasRouteMappingStep.STEP_TYPE, TasRouteMappingStep.class);
 
     engineSteps.put(GoogleFunctionsDeployStep.STEP_TYPE, GoogleFunctionsDeployStep.class);
     engineSteps.put(GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE, GoogleFunctionsDeployWithoutTrafficStep.class);
     engineSteps.put(GoogleFunctionsTrafficShiftStep.STEP_TYPE, GoogleFunctionsTrafficShiftStep.class);
     engineSteps.put(GoogleFunctionsRollbackStep.STEP_TYPE, GoogleFunctionsRollbackStep.class);
     engineSteps.put(TerraformCloudRunStep.STEP_TYPE, TerraformCloudRunStep.class);
+    engineSteps.put(BambooBuildStep.STEP_TYPE, BambooBuildStep.class);
+    engineSteps.put(TerraformCloudRollbackStep.STEP_TYPE, TerraformCloudRollbackStep.class);
 
     // AWS Lambda
     engineSteps.put(AwsLambdaDeployStep.STEP_TYPE, AwsLambdaDeployStep.class);
+    engineSteps.put(AwsLambdaRollbackStep.STEP_TYPE, AwsLambdaRollbackStep.class);
+
+    // AWS SAM
+    engineSteps.put(AwsSamDeployStep.STEP_TYPE, AwsSamDeployStep.class);
+    engineSteps.put(AwsSamRollbackStep.STEP_TYPE, AwsSamRollbackStep.class);
 
     return engineSteps;
   }

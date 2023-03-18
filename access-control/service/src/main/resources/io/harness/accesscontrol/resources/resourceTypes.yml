@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 25
+version: 27
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -124,3 +124,7 @@ resourceTypes:
     permissionKey: stack
   - identifier: STREAMING_DESTINATION
     permissionKey: streamingDestination
+  - identifier: DOWNTIME
+    permissionKey: downtime
+  - identifier: IDP_SETTINGS
+    permissionKey: idpsettings

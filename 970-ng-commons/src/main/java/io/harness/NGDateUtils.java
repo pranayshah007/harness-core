@@ -9,8 +9,15 @@ package io.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
-import io.harness.annotations.dev.OwnedBy;
+import static java.lang.String.format;
 
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidArgumentsException;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Locale;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(DX)
@@ -21,6 +28,7 @@ public class NGDateUtils {
   public static final long MIN_DAYS_IN_YEAR = 365;
   public static final long MIN_DAYS_IN_6MONTHS = 182;
   public static final long MIN_DAYS_IN_MONTH = 28;
+  public static final String YEAR_MONTH_DAY_DATE_PATTERN = "yyyy-MM-dd";
 
   public static long getStartTimeOfTheDayAsEpoch(long epoch) {
     return epoch - epoch % DAY_IN_MS;
@@ -53,6 +61,15 @@ public class NGDateUtils {
     }
 
     return getStartTimeOfNextDay(epochInMs);
+  }
+
+  public static LocalDate getLocalDateOrThrow(final String datePattern, final String date) {
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(datePattern, Locale.ENGLISH);
+    try {
+      return LocalDate.parse(date, formatter);
+    } catch (DateTimeParseException e) {
+      throw new InvalidArgumentsException(format("Invalid date format, pattern: %s, date: %s", datePattern, date));
+    }
   }
 
   // ----------------------- PRIVATE METHODS ---------------------------

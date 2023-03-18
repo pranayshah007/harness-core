@@ -8,7 +8,6 @@
 package io.harness.cdng.artifact.resources.ami;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
-import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.beans.DelegateTaskRequest;
@@ -34,13 +33,9 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
-import io.harness.exception.DelegateNotAvailableException;
-import io.harness.exception.DelegateServiceDriverException;
-import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -137,13 +132,8 @@ public class AMIResourceServiceImpl implements AMIResourceService {
       AMIArtifactDelegateRequest request, BaseNGAccess baseNGAccess, ArtifactTaskType taskType, String errorMessage) {
     try {
       return executeSyncTask(request, taskType, baseNGAccess, errorMessage);
-    } catch (DelegateServiceDriverException ex) {
-      throw new HintException(
-          String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
-          new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
-
-    } catch (ExplanationException e) {
-      throw new HintException(HintException.HINT_AMI_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
+    } catch (Exception ex) {
+      throw new HintException(String.format(ex.getMessage()));
     }
   }
 

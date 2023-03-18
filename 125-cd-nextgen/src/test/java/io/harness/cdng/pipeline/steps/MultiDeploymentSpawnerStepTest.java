@@ -48,7 +48,9 @@ import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.PrincipalType;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.rbac.NGResourceType;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -75,6 +77,7 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
   @Mock private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @Mock private EnvironmentGroupService environmentGroupService;
   @Mock private AccessControlClient accessControlClient;
+  @Mock SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @InjectMocks private final MultiDeploymentSpawnerStep multiDeploymentSpawnerStep = new MultiDeploymentSpawnerStep();
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -88,6 +91,22 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
             .handleChildrenResponseInternal(prepareAmbience(), null, Maps.newHashMap("a", stepResponseNotifyData))
             .getStatus())
         .isEqualTo(Status.SUCCEEDED);
+
+    stepResponseNotifyData = StepResponseNotifyData.builder().status(Status.SKIPPED).build();
+    StepResponseNotifyData stepResponseNotifyData1 = StepResponseNotifyData.builder().status(Status.SKIPPED).build();
+    assertThat(multiDeploymentSpawnerStep
+                   .handleChildrenResponseInternal(
+                       prepareAmbience(), null, Map.of("a", stepResponseNotifyData, "b", stepResponseNotifyData1))
+                   .getStatus())
+        .isEqualTo(Status.SKIPPED);
+
+    stepResponseNotifyData = StepResponseNotifyData.builder().status(Status.SUCCEEDED).build();
+    stepResponseNotifyData1 = StepResponseNotifyData.builder().status(Status.FAILED).build();
+    assertThat(multiDeploymentSpawnerStep
+                   .handleChildrenResponseInternal(
+                       prepareAmbience(), null, Map.of("a", stepResponseNotifyData, "b", stepResponseNotifyData1))
+                   .getStatus())
+        .isEqualTo(Status.FAILED);
   }
 
   @Test
@@ -178,6 +197,11 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                                                .build())
                         .build()))
                 .build());
+    MultiDeploymentSpawnerStepDetailsInfo multiDeploymentSpawnerStepDetailsInfo =
+        MultiDeploymentSpawnerStepDetailsInfo.builder().svcCount(1).envCount(1).build();
+    verify(sdkGraphVisualizationDataService, times(1))
+        .publishStepDetailInformation(
+            prepareAmbience(), multiDeploymentSpawnerStepDetailsInfo, "svcEnvCount", StepCategory.STRATEGY);
   }
 
   @Test
@@ -218,6 +242,11 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                                                 .build())
                                         .build())
                        .build());
+    MultiDeploymentSpawnerStepDetailsInfo multiDeploymentSpawnerStepDetailsInfo =
+        MultiDeploymentSpawnerStepDetailsInfo.builder().svcCount(1).envCount(1).build();
+    verify(sdkGraphVisualizationDataService, times(1))
+        .publishStepDetailInformation(
+            prepareAmbience(), multiDeploymentSpawnerStepDetailsInfo, "svcEnvCount", StepCategory.STRATEGY);
   }
 
   @Test
@@ -287,6 +316,11 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                         .build()))
                 .setMaxConcurrency(2)
                 .build());
+    MultiDeploymentSpawnerStepDetailsInfo multiDeploymentSpawnerStepDetailsInfo =
+        MultiDeploymentSpawnerStepDetailsInfo.builder().svcCount(2).envCount(1).build();
+    verify(sdkGraphVisualizationDataService, times(1))
+        .publishStepDetailInformation(
+            prepareAmbience(), multiDeploymentSpawnerStepDetailsInfo, "svcEnvCount", StepCategory.STRATEGY);
   }
 
   @Test
@@ -356,6 +390,11 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                         .build()))
                 .setMaxConcurrency(1)
                 .build());
+    MultiDeploymentSpawnerStepDetailsInfo multiDeploymentSpawnerStepDetailsInfo =
+        MultiDeploymentSpawnerStepDetailsInfo.builder().svcCount(2).envCount(1).build();
+    verify(sdkGraphVisualizationDataService, times(1))
+        .publishStepDetailInformation(
+            prepareAmbience(), multiDeploymentSpawnerStepDetailsInfo, "svcEnvCount", StepCategory.STRATEGY);
   }
 
   @Test
@@ -427,6 +466,11 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                         .build()))
                 .setMaxConcurrency(1)
                 .build());
+    MultiDeploymentSpawnerStepDetailsInfo multiDeploymentSpawnerStepDetailsInfo =
+        MultiDeploymentSpawnerStepDetailsInfo.builder().svcCount(1).envCount(1).build();
+    verify(sdkGraphVisualizationDataService, times(1))
+        .publishStepDetailInformation(
+            prepareAmbience(), multiDeploymentSpawnerStepDetailsInfo, "svcEnvCount", StepCategory.STRATEGY);
   }
 
   @Test

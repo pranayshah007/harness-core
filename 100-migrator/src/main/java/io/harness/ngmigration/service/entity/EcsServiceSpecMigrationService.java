@@ -23,6 +23,7 @@ import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ngmigration.beans.FileYamlDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -31,8 +32,10 @@ import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.Service;
@@ -49,6 +52,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,6 +62,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class EcsServiceSpecMigrationService extends NgMigrationService {
+  @Inject private SecretRefUtils secretRefUtils;
   @Inject ServiceResourceService serviceResourceService;
 
   @Override
@@ -80,7 +85,10 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
                                     .id(serviceSpecification.getUuid())
                                     .type(NGMigrationEntityType.ECS_SERVICE_SPEC)
                                     .build();
-    return DiscoveryNode.builder().entityNode(cgEntityNode).build();
+    Set<CgEntityId> children = new HashSet<>();
+    children.addAll(secretRefUtils.getSecretRefFromExpressions(serviceSpecification.getAccountId(),
+        MigratorExpressionUtils.extractAll(serviceSpecification.getServiceSpecJson())));
+    return DiscoveryNode.builder().entityNode(cgEntityNode).children(children).build();
   }
 
   @Override
@@ -95,21 +103,23 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     EcsServiceSpecification serviceSpecification = (EcsServiceSpecification) entities.get(entityId).getEntity();
-    NGYamlFile yamlFile = getYamlFile(serviceSpecification, inputDTO, entities);
+    NGYamlFile yamlFile = getYamlFile(migrationContext, serviceSpecification);
     if (yamlFile == null) {
       return null;
     }
     return YamlGenerationDetails.builder().yamlFileList(Collections.singletonList(yamlFile)).build();
   }
 
-  private NGYamlFile getYamlFile(EcsServiceSpecification serviceSpecification, MigrationInputDTO inputDTO,
-      Map<CgEntityId, CgEntityNode> entities) {
+  private NGYamlFile getYamlFile(MigrationContext migrationContext, EcsServiceSpecification serviceSpecification) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     if (StringUtils.isBlank(serviceSpecification.getServiceSpecJson())) {
       return null;
     }
+    MigratorExpressionUtils.render(migrationContext, serviceSpecification, inputDTO.getCustomExpressions());
     byte[] fileContent = serviceSpecification.getServiceSpecJson().getBytes(StandardCharsets.UTF_8);
     CgEntityNode serviceNode = entities.get(
         CgEntityId.builder().type(NGMigrationEntityType.SERVICE).id(serviceSpecification.getServiceId()).build());
@@ -126,7 +136,8 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
     String fileUsage = FileUsage.MANIFEST_FILE.name();
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
-    String identifier = MigratorUtility.generateManifestIdentifier(prefix + "EcsServiceSpec");
+    String identifier =
+        MigratorUtility.generateManifestIdentifier(prefix + "EcsServiceSpec", inputDTO.getIdentifierCaseFormat());
     String name = identifier + ".json";
     return NGYamlFile.builder()
         .type(NGMigrationEntityType.ECS_SERVICE_SPEC)
@@ -159,8 +170,8 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
     return true;
   }
 
-  public List<ManifestConfigWrapper> getServiceSpec(
-      Set<CgEntityId> serviceSpecIds, MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities) {
+  public List<ManifestConfigWrapper> getServiceSpec(MigrationContext migrationContext, Set<CgEntityId> serviceSpecIds) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     if (isEmpty(serviceSpecIds)) {
       return new ArrayList<>();
     }
@@ -169,7 +180,7 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
       CgEntityNode configNode = entities.get(configEntityId);
       if (configNode != null) {
         EcsServiceSpecification specification = (EcsServiceSpecification) configNode.getEntity();
-        NGYamlFile file = getYamlFile(specification, inputDTO, entities);
+        NGYamlFile file = getYamlFile(migrationContext, specification);
         if (file != null) {
           manifestConfigWrappers.add(getConfigFileWrapper(specification, file));
         }

@@ -69,6 +69,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileMetadata;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.provision.TfVarScriptRepositorySource;
@@ -153,6 +154,7 @@ public class TerragruntProvisionStateTest extends WingsBaseTest {
   @Mock private StateExecutionService stateExecutionService;
   @Mock private ManagerExecutionLogCallback managerExecutionLogCallback;
   @Mock private TerragruntStateHelper terragruntStateHelper;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @InjectMocks private TerragruntProvisionState state = new TerragruntApplyState("tg");
   @InjectMocks private TerragruntProvisionState destroyProvisionState = new TerragruntDestroyState("tg");
 

@@ -31,6 +31,10 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.STAGE_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STAGE_RUNTIME_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_VOLUME;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_CACHE_DIR;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_CACHE_ENV_NAME;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_DIR;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_ENV_NAME;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_ENDPOINT_VARIABLE;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_TOKEN_VARIABLE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -196,6 +200,13 @@ public class VmInitializeUtils {
     envVars.put(HARNESS_BUILD_ID_VARIABLE, String.valueOf(buildNumber));
     envVars.put(HARNESS_STAGE_ID_VARIABLE, stageID);
     envVars.put(HARNESS_EXECUTION_ID_VARIABLE, executionID);
+    return envVars;
+  }
+
+  public Map<String, String> getCacheEnvironmentVariable() {
+    Map<String, String> envVars = new HashMap<>();
+    envVars.put(GOLANG_CACHE_ENV_NAME, GOLANG_CACHE_DIR);
+    envVars.put(GRADLE_CACHE_ENV_NAME, GRADLE_CACHE_DIR);
     return envVars;
   }
 

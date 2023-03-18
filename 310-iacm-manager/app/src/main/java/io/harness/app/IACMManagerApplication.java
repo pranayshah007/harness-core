@@ -190,6 +190,7 @@ public class IACMManagerApplication extends Application<IACMManagerConfiguration
         return ImmutableSet.<Class<? extends KryoRegistrar>>builder()
             .addAll(YamlBeansModuleRegistrars.kryoRegistrars)
             .addAll(ConnectorNextGenRegistrars.kryoRegistrars)
+            .addAll(IACMBeansRegistrars.kryoRegistrars)
             .build();
       }
 

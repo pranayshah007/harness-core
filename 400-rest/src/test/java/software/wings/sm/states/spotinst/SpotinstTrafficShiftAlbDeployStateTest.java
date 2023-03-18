@@ -40,6 +40,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.task.spotinst.response.SpotInstTaskExecutionResponse;
 import io.harness.delegate.task.spotinst.response.SpotinstTrafficShiftAlbDeployResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.spotinst.model.ElastiGroup;
@@ -77,6 +78,8 @@ public class SpotinstTrafficShiftAlbDeployStateTest extends WingsBaseTest {
     on(state).set("awsStateHelper", mockAwsStateHelper);
     DelegateService mockDelegateService = mock(DelegateService.class);
     on(state).set("delegateService", mockDelegateService);
+    DelegateTaskMigrationHelper mockDelegateTaskMigrationHelper = mock(DelegateTaskMigrationHelper.class);
+    on(state).set("delegateTaskMigrationHelper", mockDelegateTaskMigrationHelper);
     ActivityService mockActivityService = mock(ActivityService.class);
     on(state).set("activityService", mockActivityService);
     SpotInstStateHelper mockSpotinstStateHelper = mock(SpotInstStateHelper.class);

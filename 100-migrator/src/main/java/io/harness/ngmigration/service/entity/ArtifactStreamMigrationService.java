@@ -15,7 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
-import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.beans.YamlGenerationDetails;
@@ -95,8 +95,7 @@ public class ArtifactStreamMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
     return null;
   }
 

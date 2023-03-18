@@ -12,6 +12,7 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import io.harness.beans.ExecutionStatus;
 import io.harness.persistence.HIterator;
 
+import software.wings.beans.dto.CVActivityLog.LogLevel;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.AnalysisContext.AnalysisContextKeys;
@@ -20,7 +21,6 @@ import software.wings.service.intfc.verification.CVActivityLogService;
 import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.verification.CVActivityLog;
 import software.wings.verification.CVActivityLog.CVActivityLogKeys;
-import software.wings.verification.CVActivityLog.LogLevel;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;

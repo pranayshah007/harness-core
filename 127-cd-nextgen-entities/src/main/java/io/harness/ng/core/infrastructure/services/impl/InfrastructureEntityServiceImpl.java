@@ -31,6 +31,7 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.infrastructure.InfrastructureType;
@@ -799,8 +800,11 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
   public List<InfrastructureYamlMetadata> createInfrastructureYamlMetadata(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, List<String> infraIds) {
-    List<InfrastructureEntity> infrastructureEntities =
-        getAllInfrastructureFromIdentifierList(accountId, orgIdentifier, projectIdentifier, environmentRef, infraIds);
+    List<InfrastructureEntity> infrastructureEntities = new ArrayList<>();
+    if (!EngineExpressionEvaluator.hasExpressions(environmentRef)) {
+      infrastructureEntities =
+          getAllInfrastructureFromIdentifierList(accountId, orgIdentifier, projectIdentifier, environmentRef, infraIds);
+    }
     List<InfrastructureYamlMetadata> infrastructureYamlMetadataList = new ArrayList<>();
     infrastructureEntities.forEach(infrastructureEntity
         -> infrastructureYamlMetadataList.add(createInfrastructureYamlMetadataInternal(infrastructureEntity)));

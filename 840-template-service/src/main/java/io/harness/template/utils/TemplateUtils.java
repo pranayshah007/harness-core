@@ -8,11 +8,13 @@
 package io.harness.template.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
+import io.harness.context.GlobalContext;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
 import io.harness.exception.ngexception.NGTemplateException;
@@ -21,12 +23,15 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitx.USER_FLOW;
+import io.harness.manage.GlobalContextManager;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.ThreadOperationContextHelper;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import java.io.IOException;
@@ -68,14 +73,14 @@ public class TemplateUtils {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     if (null != gitEntityInfo) {
       // Set Parent's Repo
-      if (EmptyPredicate.isNotEmpty(repoFromTemplate)) {
+      if (isNotEmpty(repoFromTemplate)) {
         gitEntityInfo.setParentEntityRepoName(repoFromTemplate);
       } else if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getRepoName())) {
         gitEntityInfo.setParentEntityRepoName(gitEntityInfo.getRepoName());
       }
 
       // Set Parent's ConnectorRef
-      if (EmptyPredicate.isNotEmpty(connectorFromTemplate)) {
+      if (isNotEmpty(connectorFromTemplate)) {
         gitEntityInfo.setParentEntityConnectorRef(connectorFromTemplate);
       } else if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getConnectorRef())) {
         gitEntityInfo.setParentEntityConnectorRef(gitEntityInfo.getConnectorRef());
@@ -128,6 +133,20 @@ public class TemplateUtils {
     return new InvalidYamlException(errorMessage, errorWrapperDTO, pipelineYaml);
   }
 
+  public static YamlNode validateAndGetYamlNode(String yaml, String templateIdentifier) {
+    if (isEmpty(yaml)) {
+      throw new NGTemplateException(String.format("Template with path %s not found.", templateIdentifier));
+    }
+    YamlNode yamlNode;
+    try {
+      yamlNode = YamlUtils.readTree(yaml).getNode();
+    } catch (IOException e) {
+      throw new NGTemplateException(
+          String.format("Could not convert %s template yaml to JsonNode: ", templateIdentifier) + e.getMessage());
+    }
+    return yamlNode;
+  }
+
   public static YamlNode validateAndGetYamlNode(String yaml) {
     if (isEmpty(yaml)) {
       throw new NGTemplateException("Yaml to applyTemplates cannot be empty.");
@@ -145,5 +164,21 @@ public class TemplateUtils {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     return IdentifierRefHelper.getIdentifierRefOrThrowException(
         identifier, accountIdentifier, orgIdentifier, projectIdentifier, TEMPLATE_FIELD_NAME);
+  }
+
+  public boolean isExecutionFlow() {
+    USER_FLOW user_flow = ThreadOperationContextHelper.getThreadOperationContextUserFlow();
+    if (user_flow != null) {
+      return user_flow.equals(USER_FLOW.EXECUTION);
+    }
+    return false;
+  }
+
+  public void setUserFlowContext(USER_FLOW userFlow) {
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
+    GlobalContextManager.upsertGlobalContextRecord(
+        ThreadOperationContextHelper.getOrInitThreadOperationContext().withUserFlow(userFlow));
   }
 }

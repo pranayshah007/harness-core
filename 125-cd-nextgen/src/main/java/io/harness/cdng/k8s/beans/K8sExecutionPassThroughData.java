@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.k8s.K8sGitFetchInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -31,4 +32,5 @@ public class K8sExecutionPassThroughData implements PassThroughData {
   UnitProgressData lastActiveUnitProgressData;
   String zippedManifestId;
   List<ManifestFiles> manifestFiles;
+  K8sGitFetchInfo k8sGitFetchInfo;
 }

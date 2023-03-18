@@ -27,4 +27,5 @@ import org.springframework.data.annotation.TypeAlias;
 public class K8sDryRunManifestOutcome implements Outcome, ExecutionSweepingOutput {
   public static final String OUTPUT_NAME = "k8s";
   String manifestDryRun;
+  K8sGitFetchInfo manifest;
 }

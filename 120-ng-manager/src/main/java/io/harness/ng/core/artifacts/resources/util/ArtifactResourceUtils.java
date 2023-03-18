@@ -93,8 +93,11 @@ import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.NotFoundException;
+import lombok.Builder;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
@@ -119,6 +122,11 @@ public class ArtifactResourceUtils {
     if (isEmpty(pipelineIdentifier)) {
       return runtimeInputYaml;
     }
+
+    if (gitEntityBasicInfo == null) {
+      gitEntityBasicInfo = new GitEntityFindInfoDTO();
+    }
+
     MergeInputSetResponseDTOPMS response =
         NGRestUtils.getResponse(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(accountId, orgIdentifier,
             projectIdentifier, pipelineIdentifier, gitEntityBasicInfo.getBranch(),
@@ -140,7 +148,7 @@ public class ArtifactResourceUtils {
     TemplateMergeResponseDTO response = NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYaml(
         accountId, orgIdentifier, projectIdentifier, gitEntityBasicInfo.getBranch(),
         gitEntityBasicInfo.getYamlGitConfigId(), gitEntityBasicInfo.getDefaultFromOtherRepo(), BOOLEAN_FALSE_VALUE,
-        TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build()));
+        TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build(), false));
     return response.getMergedPipelineYaml();
   }
 
@@ -169,12 +177,15 @@ public class ArtifactResourceUtils {
       YamlConfig yamlConfig = new YamlConfig(mergedCompleteYaml);
       Map<FQN, Object> fqnObjectMap = yamlConfig.getFqnToValueMap();
 
+      EntityRefAndFQN serviceRefAndFQN = getEntityRefAndFQN(fqnObjectMap, stageIdentifier, YamlTypes.SERVICE_REF);
       if (isEmpty(serviceId)) {
         // pipelines with inline service definitions
-        serviceId = getServiceRef(fqnObjectMap, stageIdentifier);
+        serviceId = serviceRefAndFQN.getEntityRef();
       }
+      serviceId = resolveEntityIdIfExpression(serviceId, mergedCompleteYaml, serviceRefAndFQN);
+
       // get environment ref
-      String environmentId = getEnvironmentRef(fqnObjectMap, stageIdentifier);
+      String environmentId = getResolvedEnvironmentId(mergedCompleteYaml, stageIdentifier, fqnObjectMap);
       List<YamlField> aliasYamlField =
           getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
       CDYamlExpressionEvaluator CDYamlExpressionEvaluator =
@@ -182,6 +193,24 @@ public class ArtifactResourceUtils {
       imagePath = CDYamlExpressionEvaluator.renderExpression(imagePath);
     }
     return imagePath;
+  }
+
+  @Nullable
+  private String resolveEntityIdIfExpression(
+      String entityId, String mergedCompleteYaml, EntityRefAndFQN entityRefAndFQN) {
+    if (isNotEmpty(entityId) && EngineExpressionEvaluator.hasExpressions(entityId)) {
+      CDYamlExpressionEvaluator CDYamlExpressionEvaluator =
+          new CDYamlExpressionEvaluator(mergedCompleteYaml, entityRefAndFQN.getEntityFQN(), new ArrayList<>());
+      return CDYamlExpressionEvaluator.renderExpression(entityRefAndFQN.getEntityRef());
+    }
+    return entityId;
+  }
+
+  @Nullable
+  private String getResolvedEnvironmentId(
+      String mergedCompleteYaml, String stageIdentifier, Map<FQN, Object> fqnObjectMap) {
+    EntityRefAndFQN environmentRefAndFQN = getEntityRefAndFQN(fqnObjectMap, stageIdentifier, YamlTypes.ENVIRONMENT_REF);
+    return resolveEntityIdIfExpression(environmentRefAndFQN.getEntityRef(), mergedCompleteYaml, environmentRefAndFQN);
   }
 
   public void resolveParameterFieldValues(String accountId, String orgIdentifier, String projectIdentifier,
@@ -208,12 +237,14 @@ public class ArtifactResourceUtils {
     YamlConfig yamlConfig = new YamlConfig(mergedCompleteYaml);
     Map<FQN, Object> fqnObjectMap = yamlConfig.getFqnToValueMap();
 
+    EntityRefAndFQN serviceRefAndFQN = getEntityRefAndFQN(fqnObjectMap, stageIdentifier, YamlTypes.SERVICE_REF);
     if (isEmpty(serviceId)) {
       // pipelines with inline service definitions
-      serviceId = getServiceRef(fqnObjectMap, stageIdentifier);
+      serviceId = serviceRefAndFQN.getEntityRef();
     }
+    serviceId = resolveEntityIdIfExpression(serviceId, mergedCompleteYaml, serviceRefAndFQN);
     // get environment ref
-    String environmentId = getEnvironmentRef(fqnObjectMap, stageIdentifier);
+    String environmentId = getResolvedEnvironmentId(mergedCompleteYaml, stageIdentifier, fqnObjectMap);
     List<YamlField> aliasYamlField =
         getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
     CDYamlExpressionEvaluator CDYamlExpressionEvaluator =
@@ -244,13 +275,14 @@ public class ArtifactResourceUtils {
       String stageIdentifier = split[2];
       YamlConfig yamlConfig = new YamlConfig(mergedCompleteYaml);
       Map<FQN, Object> fqnObjectMap = yamlConfig.getFqnToValueMap();
-
+      EntityRefAndFQN serviceRefAndFQN = getEntityRefAndFQN(fqnObjectMap, stageIdentifier, YamlTypes.SERVICE_REF);
       if (isEmpty(serviceId)) {
         // pipelines with inline service definitions
-        serviceId = getServiceRef(fqnObjectMap, stageIdentifier);
+        serviceId = serviceRefAndFQN.getEntityRef();
       }
+      serviceId = resolveEntityIdIfExpression(serviceId, mergedCompleteYaml, serviceRefAndFQN);
       // get environment ref
-      String environmentId = getEnvironmentRef(fqnObjectMap, stageIdentifier);
+      String environmentId = getResolvedEnvironmentId(mergedCompleteYaml, stageIdentifier, fqnObjectMap);
       List<YamlField> aliasYamlField =
           getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
       CDExpressionEvaluator CDExpressionEvaluator =
@@ -278,6 +310,22 @@ public class ArtifactResourceUtils {
       }
     }
     return null;
+  }
+
+  private EntityRefAndFQN getEntityRefAndFQN(
+      Map<FQN, Object> fqnToObjectMap, String stageIdentifier, String yamlTypes) {
+    for (Map.Entry<FQN, Object> mapEntry : fqnToObjectMap.entrySet()) {
+      String nodeStageIdentifier = mapEntry.getKey().getStageIdentifier();
+      String fieldName = mapEntry.getKey().getFieldName();
+      if (stageIdentifier.equals(nodeStageIdentifier) && yamlTypes.equals(fieldName)
+          && mapEntry.getValue() instanceof TextNode) {
+        return EntityRefAndFQN.builder()
+            .entityRef(((TextNode) mapEntry.getValue()).asText())
+            .entityFQN(mapEntry.getKey().getExpressionFqn())
+            .build();
+      }
+    }
+    return EntityRefAndFQN.builder().build();
   }
 
   /**
@@ -804,5 +852,12 @@ public class ArtifactResourceUtils {
     return customResourceService.getBuilds(script, versionPath, arrayPath,
         NGVariablesUtils.getStringMapVariables(inputs, 0L), accountId, orgIdentifier, projectIdentifier, secretFunctor,
         delegateSelector);
+  }
+
+  @Data
+  @Builder
+  private static class EntityRefAndFQN {
+    String entityRef;
+    String entityFQN;
   }
 }

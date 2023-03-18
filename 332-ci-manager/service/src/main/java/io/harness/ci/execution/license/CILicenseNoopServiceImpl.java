@@ -7,6 +7,7 @@
 
 package io.harness.ci.license;
 
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.CILicenseSummaryDTO;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;

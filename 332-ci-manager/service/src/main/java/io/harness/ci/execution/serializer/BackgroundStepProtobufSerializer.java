@@ -8,7 +8,7 @@
 package io.harness.ci.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.util.Collections.emptyList;
@@ -58,7 +58,7 @@ public class BackgroundStepProtobufSerializer implements ProtobufStepSerializer<
 
     runStepBuilder.setContainerPort(port);
     Map<String, String> envVars =
-        resolveMapParameter("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
     if (!isEmpty(envVars)) {
       runStepBuilder.putAllEnvironment(envVars);
     }

@@ -19,6 +19,9 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PL)
 @UtilityClass
 public class PrincipalHelper {
+  // If an author has no public email listed in their GitLab profile, the email attribute in the webhook payload
+  // displays a value of [REDACTED].
+  private static String GITLAB_EMAIL_RESPONSE_KEYWORD = "[REDACTED]";
   public String getUuid(Principal principal) {
     return principal == null ? null : principal.getName();
   }
@@ -31,14 +34,22 @@ public class PrincipalHelper {
     if (principal == null) {
       return null;
     }
+    String email;
     switch (principal.getType()) {
       case USER:
-        return ((UserPrincipal) principal).getEmail();
+        email = ((UserPrincipal) principal).getEmail();
+        break;
       case SERVICE_ACCOUNT:
-        return ((ServiceAccountPrincipal) principal).getEmail();
+        email = ((ServiceAccountPrincipal) principal).getEmail();
+        break;
       default:
-        return null;
+        email = null;
     }
+
+    if (email == null || email.equals(GITLAB_EMAIL_RESPONSE_KEYWORD)) {
+      return null;
+    }
+    return email;
   }
 
   public String getUsername(Principal principal) {

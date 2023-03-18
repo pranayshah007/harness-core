@@ -7,17 +7,24 @@
 
 package io.harness.subscription.services.impl;
 
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_ENTERPRISE_PAID;
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_ENTERPRISE_TRIAL;
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_FREE;
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_TEAM_PAID;
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_TEAM_TRIAL;
 import static io.harness.subscription.entities.SubscriptionDetail.INCOMPLETE;
 
 import io.harness.ModuleType;
+import io.harness.account.services.AccountService;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.licensing.Edition;
-import io.harness.licensing.LicenseType;
+import io.harness.licensing.checks.ModuleLicenseState;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.licensing.helpers.ModuleLicenseHelper;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.repositories.StripeCustomerRepository;
 import io.harness.repositories.SubscriptionDetailRepository;
@@ -70,6 +77,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   private final SubscriptionDetailRepository subscriptionDetailRepository;
   private final NGFeatureFlagHelperService nGFeatureFlagHelperService;
   private final TelemetryReporter telemetryReporter;
+  private final AccountService accountService;
 
   private final Map<String, StripeEventHandler> eventHandlers;
 
@@ -89,13 +97,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   public SubscriptionServiceImpl(StripeHelper stripeHelper, ModuleLicenseRepository licenseRepository,
       StripeCustomerRepository stripeCustomerRepository, SubscriptionDetailRepository subscriptionDetailRepository,
       NGFeatureFlagHelperService nGFeatureFlagHelperService, TelemetryReporter telemetryReporter,
-      Map<String, StripeEventHandler> eventHandlers) {
+      AccountService accountService, Map<String, StripeEventHandler> eventHandlers) {
     this.stripeHelper = stripeHelper;
     this.licenseRepository = licenseRepository;
     this.stripeCustomerRepository = stripeCustomerRepository;
     this.subscriptionDetailRepository = subscriptionDetailRepository;
     this.nGFeatureFlagHelperService = nGFeatureFlagHelperService;
     this.telemetryReporter = telemetryReporter;
+    this.accountService = accountService;
     this.eventHandlers = eventHandlers;
   }
 
@@ -109,23 +118,21 @@ public class SubscriptionServiceImpl implements SubscriptionService {
           String.format("Cannot provide recommendation. No active license detected for module %s.", ModuleType.CF));
     }
 
-    ModuleLicense latestLicense = ModuleLicenseHelper.getLatestLicense(currentLicenses);
-
-    CFModuleLicense cfLicense = (CFModuleLicense) latestLicense;
+    CFModuleLicense cfLicense = (CFModuleLicense) ModuleLicenseHelper.getLatestLicense(currentLicenses);
+    ModuleLicenseState latestLicenseState = ModuleLicenseHelper.getCurrentModuleState(currentLicenses);
 
     EnumMap<UsageKey, Long> recommendedValues = new EnumMap<>(UsageKey.class);
 
-    LicenseType licenseType = latestLicense.getLicenseType();
-    Edition edition = latestLicense.getEdition();
-    if (licenseType.equals(LicenseType.TRIAL)) {
+    if (ACTIVE_ENTERPRISE_PAID.equals(latestLicenseState) || ACTIVE_TEAM_PAID.equals(latestLicenseState)
+        || ACTIVE_FREE.equals(latestLicenseState)) {
       double recommendedUsers = Math.max(cfLicense.getNumberOfUsers(), numberOfUsers) * RECOMMENDATION_MULTIPLIER;
       double recommendedMAUs = Math.max(cfLicense.getNumberOfClientMAUs(), numberOfMAUs) * RECOMMENDATION_MULTIPLIER;
 
       recommendedValues.put(UsageKey.NUMBER_OF_USERS, (long) recommendedUsers);
       recommendedValues.put(UsageKey.NUMBER_OF_MAUS, (long) recommendedMAUs);
-    } else if (licenseType.equals(LicenseType.PAID) || edition.equals(Edition.FREE)) {
-      double recommendedUsers = Math.max(cfLicense.getNumberOfUsers(), numberOfUsers);
-      double recommendedMAUs = Math.max(cfLicense.getNumberOfClientMAUs(), numberOfMAUs);
+    } else if (ACTIVE_ENTERPRISE_TRIAL.equals(latestLicenseState) || ACTIVE_TEAM_TRIAL.equals(latestLicenseState)) {
+      double recommendedUsers = numberOfUsers * RECOMMENDATION_MULTIPLIER;
+      double recommendedMAUs = numberOfMAUs * RECOMMENDATION_MULTIPLIER;
 
       recommendedValues.put(UsageKey.NUMBER_OF_USERS, (long) recommendedUsers);
       recommendedValues.put(UsageKey.NUMBER_OF_MAUS, (long) recommendedMAUs);
@@ -232,7 +239,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     isSelfServiceEnable();
 
-    // TODO: transaction control in case any race condition
+    AccountDTO account = accountService.getAccount(accountIdentifier);
+    if (!account.isProductLed()) {
+      throw new InvalidRequestException(String.format(
+          "This account %s does not seem to be Product-Led and creating subscriptions for Sales-Led account is not supported at the moment. Please try again with the right account.",
+          accountIdentifier));
+    }
 
     StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {

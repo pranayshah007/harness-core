@@ -37,6 +37,7 @@ public class PageResponse<T> {
   List<T> content;
   long pageIndex;
   boolean empty;
+  String pageToken;
 
   public <U> PageResponse<U> map(Function<? super T, ? extends U> converter) {
     List<U> convertedContent = this.content.stream().map(converter).collect(Collectors.toList());
@@ -47,6 +48,7 @@ public class PageResponse<T> {
         .pageSize(this.pageSize)
         .content(convertedContent)
         .pageIndex(this.pageIndex)
+        .pageToken(this.pageToken)
         .empty(this.empty)
         .build();
   }
@@ -59,6 +61,7 @@ public class PageResponse<T> {
         .pageSize(this.getPageSize())
         .content(this.content != null ? List.copyOf(this.getContent()) : null)
         .pageIndex(this.getPageIndex())
+        .pageToken(this.pageToken)
         .empty(this.isEmpty());
   }
 
@@ -78,6 +81,7 @@ public class PageResponse<T> {
         .pageSize(Objects.nonNull(pageRequest) ? pageRequest.getPageSize() : 0)
         .content(Collections.emptyList())
         .pageIndex(Objects.nonNull(pageRequest) ? pageRequest.getPageIndex() : 0)
+        .pageToken(Objects.nonNull(pageRequest) ? pageRequest.getPageToken() : "")
         .empty(true)
         .build();
   }

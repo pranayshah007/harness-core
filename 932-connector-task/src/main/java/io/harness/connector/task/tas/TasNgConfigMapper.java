@@ -6,7 +6,7 @@
  */
 package io.harness.connector.task.tas;
 
-import static io.harness.utils.FieldWithPlainTextOrSecretValueHelper.getValueFromPlainTextOrSecretRef;
+import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getValueFromPlainTextOrSecretRef;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

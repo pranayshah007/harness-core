@@ -114,6 +114,7 @@ java_library(
         ":module",
         "//:lombok",
         "//930-ng-core-clients:module",
+        "//940-feature-flag:module",
         "//945-account-mgmt:module",
         "//950-telemetry:module",
         "//955-outbox-sdk:module",

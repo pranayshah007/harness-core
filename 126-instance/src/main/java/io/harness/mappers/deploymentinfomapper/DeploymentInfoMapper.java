@@ -10,6 +10,7 @@ package io.harness.mappers.deploymentinfomapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.deploymentinfo.AsgDeploymentInfoDTO;
+import io.harness.dtos.deploymentinfo.AwsLambdaDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.AwsSshWinrmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.AzureSshWinrmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.AzureWebAppDeploymentInfoDTO;
@@ -25,6 +26,7 @@ import io.harness.dtos.deploymentinfo.ServerlessAwsLambdaDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.SpotDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.TasDeploymentInfoDTO;
 import io.harness.entities.deploymentinfo.AsgDeploymentInfo;
+import io.harness.entities.deploymentinfo.AwsLambdaDeploymentInfo;
 import io.harness.entities.deploymentinfo.AwsSshWinrmDeploymentInfo;
 import io.harness.entities.deploymentinfo.AzureSshWinrmDeploymentInfo;
 import io.harness.entities.deploymentinfo.AzureWebAppNGDeploymentInfo;
@@ -75,6 +77,8 @@ public class DeploymentInfoMapper {
       return AsgDeploymentInfoMapper.toDTO((AsgDeploymentInfo) deploymentInfo);
     } else if (deploymentInfo instanceof GoogleFunctionDeploymentInfo) {
       return GoogleFunctionDeploymentInfoMapper.toDTO((GoogleFunctionDeploymentInfo) deploymentInfo);
+    } else if (deploymentInfo instanceof AwsLambdaDeploymentInfo) {
+      return AwsLambdaDeploymentInfoMapper.toDTO((AwsLambdaDeploymentInfo) deploymentInfo);
     }
     throw new InvalidRequestException("No DeploymentInfoMapper toDTO found for deploymentInfo : {}" + deploymentInfo);
   }
@@ -108,6 +112,8 @@ public class DeploymentInfoMapper {
       return AsgDeploymentInfoMapper.toEntity((AsgDeploymentInfoDTO) deploymentInfoDTO);
     } else if (deploymentInfoDTO instanceof GoogleFunctionDeploymentInfoDTO) {
       return GoogleFunctionDeploymentInfoMapper.toEntity((GoogleFunctionDeploymentInfoDTO) deploymentInfoDTO);
+    } else if (deploymentInfoDTO instanceof AwsLambdaDeploymentInfoDTO) {
+      return AwsLambdaDeploymentInfoMapper.toEntity((AwsLambdaDeploymentInfoDTO) deploymentInfoDTO);
     }
     throw new InvalidRequestException(
         "No DeploymentInfoMapper toEntity found for deploymentInfo : {}" + deploymentInfoDTO);

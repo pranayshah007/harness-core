@@ -61,6 +61,7 @@ import io.harness.delegate.beans.connector.helm.OciHelmAuthType;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmUsernamePasswordDTO;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
@@ -68,6 +69,7 @@ import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.chartmuseum.NgChartmuseumClientFactory;
 import io.harness.delegate.exception.ManifestCollectionException;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
+import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HelmClientException;
 import io.harness.exception.HelmClientRuntimeException;
@@ -84,7 +86,6 @@ import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.utils.ObjectYamlUtils;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
 import software.wings.beans.settings.helm.GCSHelmRepoConfig;
@@ -141,6 +142,7 @@ public class HelmTaskHelperBase {
   public static final String REGISTRY_URL = "${REGISTRY_URL}";
   private static final String CHMOD = "chmod go-r ";
   private static final int DEFAULT_PORT = 443;
+  private static final String PROCESS_RESULT_OUTPUT_FORMAT = "Output: [%s]";
 
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
   @Inject private NgChartmuseumClientFactory ngChartmuseumClientFactory;
@@ -217,10 +219,13 @@ public class HelmTaskHelperBase {
 
       ProcessResult processResult = executeCommand(Collections.emptyMap(), helmInitCommand, workingDirectory,
           "Initing helm Command " + helmInitCommand, timeoutInMillis, HelmCliCommandType.INIT);
-      if (processResult.getExitValue() != 0) {
-        throw new HelmClientException(
-            "Failed to init helm. Executed command " + helmInitCommand + ". " + processResult.getOutput().getUTF8(),
-            USER, HelmCliCommandType.INIT);
+      int exitCode = processResult.getExitValue();
+      if (exitCode != 0) {
+        String processOutput =
+            processResult.hasOutput() ? format(PROCESS_RESULT_OUTPUT_FORMAT, processResult.outputUTF8()) : EMPTY;
+        String exceptionMessage = format("Failed to init helm. Exit Code = [%s]. Executed command = [%s]. %s", exitCode,
+            helmInitCommand, processOutput);
+        throw new HelmClientException(exceptionMessage, USER, HelmCliCommandType.INIT);
       }
     }
   }
@@ -303,10 +308,14 @@ public class HelmTaskHelperBase {
     ProcessResult processResult = executeCommand(environment, registryLoginCmd, destinationDirectory,
         "Attempt Login to OCI Registry. Command Executed: " + registryLoginCmdForLogging, timeoutInMillis,
         HelmCliCommandType.OCI_REGISTRY_LOGIN);
-    if (processResult.getExitValue() != 0) {
-      throw new HelmClientException("Failed to login to the helm OCI Registry repo. Executed command "
-              + registryLoginCmdForLogging + " " + processResult.getOutput().getUTF8(),
-          USER, HelmCliCommandType.OCI_REGISTRY_LOGIN);
+    int exitCode = processResult.getExitValue();
+    if (exitCode != 0) {
+      String processOutput =
+          processResult.hasOutput() ? format(PROCESS_RESULT_OUTPUT_FORMAT, processResult.outputUTF8()) : EMPTY;
+      String exceptionMessage =
+          format("Failed to login to the helm OCI Registry repo. Exit Code = [%s]. Executed command = [%s]. %s",
+              exitCode, registryLoginCmdForLogging, processOutput);
+      throw new HelmClientException(exceptionMessage, USER, HelmCliCommandType.OCI_REGISTRY_LOGIN);
     }
   }
 
@@ -329,10 +338,13 @@ public class HelmTaskHelperBase {
 
     ProcessResult processResult = executeAddRepo(
         repoAddCommand, environment, chartDirectory, timeoutInMillis, repoAddCommandForLogging, helmVersion);
-    if (processResult.getExitValue() != 0) {
-      throw new HelmClientException("Failed to add helm repo. Executed command " + repoAddCommandForLogging + ". "
-              + processResult.getOutput().getUTF8(),
-          USER, HelmCliCommandType.REPO_ADD);
+    int exitCode = processResult.getExitValue();
+    if (exitCode != 0) {
+      String processOutput =
+          processResult.hasOutput() ? format(PROCESS_RESULT_OUTPUT_FORMAT, processResult.outputUTF8()) : EMPTY;
+      String exceptionMessage = format("Failed to add helm repo. Exit Code = [%s]. Executed command = [%s]. %s",
+          exitCode, repoAddCommandForLogging, processOutput);
+      throw new HelmClientException(exceptionMessage, USER, HelmCliCommandType.REPO_ADD);
     }
   }
 
@@ -584,12 +596,13 @@ public class HelmTaskHelperBase {
     ProcessResult processResult = executeCommand(environment, helmFetchCommand, chartDirectory,
         format("fetch chart %s", chartName), timeoutInMillis, HelmCliCommandType.FETCH);
 
-    if (processResult.getExitValue() != 0) {
+    int exitCode = processResult.getExitValue();
+    if (exitCode != 0) {
       StringBuilder builder = new StringBuilder().append("Failed to fetch chart \"").append(chartName).append("\" ");
       if (isNotBlank(repoDisplayName)) {
         builder.append(" from repo \"").append(repoDisplayName).append("\". ");
       }
-      builder.append("Please check if the chart is present in the repo.");
+      builder.append(format("Exit code: [%s]. ", exitCode)).append("Please check if the chart is present in the repo.");
       if (processResult.hasOutput()) {
         builder.append(" Details: ").append(processResult.outputUTF8());
       }
@@ -609,13 +622,14 @@ public class HelmTaskHelperBase {
 
     ProcessResult processResult = executeCommand(Collections.emptyMap(), helmFetchCommand, chartDirectory,
         format("fetch chart %s", chartName), timeoutInMillis, HelmCliCommandType.FETCH);
-    if (processResult.getExitValue() != 0) {
+    int exitCode = processResult.getExitValue();
+    if (exitCode != 0) {
       StringBuilder builder = new StringBuilder().append("Failed to fetch chart \"").append(chartName).append("\" ");
 
       if (isNotBlank(repoDisplayName)) {
         builder.append(" from repo \"").append(repoDisplayName).append("\". ");
       }
-      builder.append("Please check if the chart is present in the repo.");
+      builder.append(format("Exit code: [%s]. ", exitCode)).append("Please check if the chart is present in the repo.");
       if (processResult.hasOutput()) {
         builder.append(" Details: ").append(processResult.outputUTF8());
       }
@@ -823,10 +837,13 @@ public class HelmTaskHelperBase {
     ProcessResult processResult =
         executeAddRepo(repoAddCommand, environment, chartDirectory, timeoutInMillis, repoAddCommand, helmVersion);
 
-    if (processResult.getExitValue() != 0) {
-      throw new HelmClientException(
-          "Failed to add helm repo. Executed command " + repoAddCommand + ". " + processResult.getOutput().getUTF8(),
-          USER, HelmCliCommandType.REPO_ADD);
+    int exitCode = processResult.getExitValue();
+    if (exitCode != 0) {
+      String processOutput =
+          processResult.hasOutput() ? format(PROCESS_RESULT_OUTPUT_FORMAT, processResult.outputUTF8()) : EMPTY;
+      String exceptionMessage = format("Failed to add helm repo. Exit Code = [%s]. Executed command = [%s]. %s",
+          exitCode, repoAddCommand, processOutput);
+      throw new HelmClientException(exceptionMessage, USER, HelmCliCommandType.REPO_ADD);
     }
 
     if (isEmpty(cacheDir)) {
@@ -1073,6 +1090,9 @@ public class HelmTaskHelperBase {
         } catch (Exception ex) {
           String errorMsg = format("Failed to fetch yaml file from %s manifest", helmFetchFileConfig.getIdentifier());
           logCallback.saveExecutionLog(errorMsg + ExceptionUtils.getMessage(ex), WARN);
+          if (ex instanceof NoSuchFileException && helmFetchFileConfig.isSucceedIfFileNotFound()) {
+            continue;
+          }
           throw ex;
         }
       }
@@ -1575,5 +1595,22 @@ public class HelmTaskHelperBase {
     } else {
       throw new InvalidArgumentsException("Invalid oci base path cannot be empty");
     }
+  }
+
+  public String getChartName(HelmChartManifestDelegateConfig manifestDelegateConfig) {
+    if (isNotEmpty(manifestDelegateConfig.getChartName())) {
+      return manifestDelegateConfig.getChartName();
+    }
+
+    if (manifestDelegateConfig.getStoreDelegateConfig() instanceof GitStoreDelegateConfig) {
+      String folderPath = ((GitStoreDelegateConfig) manifestDelegateConfig.getStoreDelegateConfig()).getPaths().get(0);
+      String modifiedPath = (folderPath.lastIndexOf('/') == folderPath.length() - 1)
+          ? folderPath.substring(0, folderPath.length() - 1)
+          : folderPath;
+      return modifiedPath.substring(modifiedPath.lastIndexOf('/') + 1);
+    }
+
+    log.warn("Chart name not found");
+    return "";
   }
 }

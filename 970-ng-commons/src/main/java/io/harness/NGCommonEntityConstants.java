@@ -25,6 +25,11 @@ public class NGCommonEntityConstants {
   public static final String PROJECT_KEY = "projectIdentifier";
 
   public static final String UUID = "uuid";
+  public static final String SEARCH_KEY = "searchKey";
+  public static final String SORT_TYPE = "sortType";
+  public static final String SORT_ORDER = "sortOrder";
+  public static final String LIMIT = "limit";
+  public static final String OFFSET = "offset";
 
   public static final String FORCE_DELETE = "forceDelete";
   public static final String VERSION_LABEL_KEY = "versionLabel";
@@ -86,6 +91,7 @@ public class NGCommonEntityConstants {
   public static final String EXPIRY_TIME = "expiryTime";
   public static final String SORT = "sort";
   public static final String FILE_PATH_KEY = "path";
+  public static final String LICENSE_TYPE_KEY = "licenseType";
 
   // TODO(UTSAV): Move to ce-nextgen
   public static final String IS_EVENTS_ENABLED = "eventsEnabled";
@@ -126,6 +132,8 @@ public class NGCommonEntityConstants {
 
   public static final String PAGE_PARAM_MESSAGE = "Page Index of the results to fetch."
       + "Default Value: 0";
+  public static final String PAGE_TOKEN_PARAM_MESSAGE = "Page Token of the next results to fetch."
+      + "Default Value: ''";
   public static final String SIZE_PARAM_MESSAGE = "Results per page";
   public static final String SORT_PARAM_MESSAGE = "Sort criteria for the elements.";
   public static final String BAD_REQUEST_PARAM_MESSAGE = "Bad Request";
@@ -137,6 +145,7 @@ public class NGCommonEntityConstants {
   public static final String OPERATOR_PARAM_MESSAGE = "Operator Criteria for Criterias ";
   public static final String RESOURCE = "Resource it targets (For icons)";
   public static final String POLICY = "Get YAML of the policy";
+  public static final String LICENSE_TYPE_PARAM_MESSAGE = "CD License type";
 
   // Environment Group
   public static final String ENVIRONMENT_GROUP_KEY = "envGroupIdentifier";
@@ -179,4 +188,6 @@ public class NGCommonEntityConstants {
   public static final String FUNCTOR_STRING_METHOD_NAME = "getAsString";
   public static final String FUNCTOR_BASE64_METHOD_NAME = "getAsBase64";
   public static final String FILE_STORE_FUNCTOR = "fileStore";
+  public static final String PLAN_NAME = "planName";
+  public static final String TARGET_IDENTIFIER_KEY = "targetIdentifier";
 }

@@ -179,12 +179,9 @@ public class AwsApiHelperService {
     try {
       tracker.trackECRCall("List Repositories");
       return getAmazonEcrClient(awsConfig, region).describeRepositories(describeRepositoriesRequest);
-    } catch (AmazonServiceException amazonServiceException) {
-      handleAmazonServiceException(amazonServiceException);
-    } catch (AmazonClientException amazonClientException) {
-      handleAmazonClientException(amazonClientException);
+    } catch (Exception e) {
+      throw new InvalidRequestException("Please input a valid AWS Connector and corresponding region.");
     }
-    return new DescribeRepositoriesResult();
   }
 
   public ListObjectsV2Result listObjectsInS3(
@@ -306,7 +303,7 @@ public class AwsApiHelperService {
 
       } while (result.isTruncated());
 
-      sortAscending(objectSummaryListFinal);
+      sortDescending(objectSummaryListFinal);
 
       List<BuildDetails> pageBuildDetails =
           getObjectSummariesNG(pattern, objectSummaryListFinal, awsInternalConfig, versioningEnabledForBucket, region);

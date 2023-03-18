@@ -22,6 +22,7 @@ import io.harness.Microservice;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.SCMGrpcClientModule;
+import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.migration.CIManagerMigrationProvider;
 import io.harness.authorization.AuthorizationServiceHeader;
@@ -65,6 +66,11 @@ import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
+import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
+import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
+import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
+import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
+import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
@@ -135,6 +141,8 @@ import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
+import io.dropwizard.jersey.errors.EarlyEofExceptionMapper;
+import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
@@ -297,6 +305,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     registerManagedBeans(environment, injector, configuration);
     registerHealthCheck(environment, injector);
     registerAuthFilters(configuration, environment, injector);
+    registerExceptionMappers(environment);
     registerCorrelationFilter(environment, injector);
     registerStores(configuration, injector);
     registerYamlSdk(injector);
@@ -311,7 +320,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     }
 
     log.info("CIManagerApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
-    initializeCiManagerMonitoring(injector);
+    initializeCiManagerMonitoring(configuration, injector);
 
     initializePluginPublisher(injector);
     registerOasResource(configuration, environment, injector);
@@ -511,6 +520,16 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
           injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
     }
   }
+  private void registerExceptionMappers(Environment environment) {
+    environment.jersey().register(JerseyViolationExceptionMapperV2.class);
+    environment.jersey().register(GenericExceptionMapperV2.class);
+    environment.jersey().register(new JsonProcessingExceptionMapper(true));
+    environment.jersey().register(EarlyEofExceptionMapper.class);
+    environment.jersey().register(NGAccessDeniedExceptionMapper.class);
+    environment.jersey().register(WingsExceptionMapperV2.class);
+    environment.jersey().register(NotFoundExceptionMapper.class);
+    environment.jersey().register(NotAllowedExceptionMapper.class);
+  }
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
@@ -568,9 +587,11 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
         .initialize(restrictionUsageRegisterConfiguration, customConfig);
   }
 
-  private void initializeCiManagerMonitoring(Injector injector) {
-    log.info("Initializing CI Manager Monitoring");
-    injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
+  private void initializeCiManagerMonitoring(CIManagerConfiguration config, Injector injector) {
+    if (BooleanUtils.isTrue(config.getEnableTelemetry())) {
+      log.info("Initializing CI Manager Monitoring");
+      injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
+    }
   }
 
   private void initializePluginPublisher(Injector injector) {

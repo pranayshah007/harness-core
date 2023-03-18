@@ -131,6 +131,20 @@ datadogConfig:
 
 distributedLockImplementation: REDIS
 
+redisDelegateConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
+
+
 redisLockConfig:
   sentinel: false
   masterName: "test"
@@ -289,7 +303,7 @@ dmsSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9O
 
 mongo:
   uri: mongodb://localhost:27017/harness
-  #uri: mongodb://mongo1:30001,mongo2:30002,mongo3:30003/harness
+  #uri: mongodb://mongo1:30001,mongo2:30002,mongo3:30003
   #locksUri: mongodb://localhost:27017/impermanent
   connectTimeout: 30000
   serverSelectionTimeout: 90000
@@ -319,7 +333,7 @@ events-mongo:
   aliasDBName: events
 
 dms-mongo:
-  uri: mongodb://localhost:27017/harness
+  uri: mongodb://localhost:27017/dms-harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
   socketTimeout: 360000
@@ -346,7 +360,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: c1ce9f00
+scmVersion: ef2d02fb
 
 ngAuthUIEnabled: false
 
@@ -733,6 +747,8 @@ dataReconciliation:
   duration: 900
 
 disableDelegateMgmtInManager: false
+
+enableRedisForDelegateService: ${ENABLE_REDIS_DELEGATE_SERVICE:-false}
 
 secretsConfiguration:
   secretResolutionEnabled: false

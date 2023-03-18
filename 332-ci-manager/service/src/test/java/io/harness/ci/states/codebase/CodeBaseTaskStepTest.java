@@ -8,8 +8,12 @@
 package io.harness.ci.states.codebase;
 
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,6 +26,7 @@ import io.harness.beans.execution.WebhookBaseAttributes;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.category.element.UnitTests;
+import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
@@ -29,6 +34,12 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.task.scm.GitRefType;
 import io.harness.delegate.task.scm.ScmGitRefTaskParams;
 import io.harness.delegate.task.scm.ScmGitRefTaskResponseData;
+import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.io.StepInputPackage;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.FindPRResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
@@ -46,14 +57,26 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.CI)
 public class CodeBaseTaskStepTest extends CategoryTest {
+  @Mock private ConnectorUtils connectorUtils;
+  @Mock private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @InjectMocks CodeBaseTaskStep codeBaseTaskStep;
+  private Ambiance ambiance;
+  private StepInputPackage stepInputPackage;
+
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
+    ambiance = Ambiance.newBuilder()
+                   .putSetupAbstractions(SetupAbstractionKeys.accountId, "accountId")
+                   .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgIdentifier")
+                   .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projectIdentifier")
+                   .build();
+    stepInputPackage = StepInputPackage.builder().build();
   }
 
   @After
@@ -285,5 +308,29 @@ public class CodeBaseTaskStepTest extends CategoryTest {
     assertThat(codebaseSweepingOutput.getGitUserEmail()).isEqualTo("first.last@email.com");
     assertThat(codebaseSweepingOutput.getGitUserAvatar()).isEqualTo("http://...");
     assertThat(codebaseSweepingOutput.getGitUserId()).isEqualTo("firstLast");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldFailPRBuildWhenAPIAccessDisabled() {
+    ManualExecutionSource executionSource = ManualExecutionSource.builder().prNumber("12").build();
+    ConnectorDetails connectorDetails = ConnectorDetails.builder()
+                                            .connectorType(ConnectorType.GITHUB)
+                                            .connectorConfig(GithubConnectorDTO.builder()
+                                                                 .url("http://github.com/octocat/")
+                                                                 .connectionType(GitConnectionType.ACCOUNT)
+                                                                 .build())
+                                            .build();
+    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
+    when(connectorUtils.hasApiAccess(connectorDetails)).thenReturn(false);
+    CodeBaseTaskStepParameters codeBaseTaskStepParameters =
+        CodeBaseTaskStepParameters.builder()
+            .connectorRef(ParameterField.createValueField("connectorRef"))
+            .repoName(ParameterField.createValueField("repoName"))
+            .executionSource(executionSource)
+            .build();
+    assertThatThrownBy(() -> codeBaseTaskStep.executeSync(ambiance, codeBaseTaskStepParameters, stepInputPackage, null))
+        .isInstanceOf(CIStageExecutionException.class);
   }
 }

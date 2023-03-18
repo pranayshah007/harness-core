@@ -56,6 +56,7 @@ import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.kinds.KustomizeManifestCommandFlag;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.CollectionUtils;
@@ -183,20 +184,8 @@ public class K8sHelmCommonStepHelper {
     orderedValuesManifests.addFirst(valuesManifestOutcome);
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
         mapValuesManifestToGitFetchFileConfig(aggregatedValuesManifests, ambiance);
-    List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
     ManifestOutcome k8sManifestOutcome = k8sStepPassThroughData.getManifestOutcome();
 
-    if (!isEmpty(stepOverrides)) {
-      for (ManifestOutcome manifestOutcome : stepOverrides) {
-        if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
-          gitFetchFilesConfigs.add(getGitFetchFilesConfig(
-              ambiance, manifestOutcome.getStore(), manifestOutcome.getIdentifier(), manifestOutcome));
-          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
-        } else if (ManifestStoreType.INLINE.equals(manifestOutcome.getStore().getKind())) {
-          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
-        }
-      }
-    }
     if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
       gitFetchFilesConfigs.addAll(
           mapK8sOrHelmValuesManifestToGitFetchFileConfig(valuesManifestOutcome, ambiance, k8sManifestOutcome));
@@ -615,6 +604,7 @@ public class K8sHelmCommonStepHelper {
                           getParameterFieldValue(kustomizeManifestOutcome.getOverlayConfiguration())
                               .getKustomizeYamlFolderPath())
                       : null)
+              .commandFlags(getKustomizeCmdFlags(kustomizeManifestOutcome.getCommandFlags()))
               .build();
         } else if (!ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
           throw new UnsupportedOperationException(
@@ -630,6 +620,7 @@ public class K8sHelmCommonStepHelper {
                     : null)
             .pluginPath(getParameterFieldValue(kustomizeManifestOutcome.getPluginPath()))
             .kustomizeDirPath(getParameterFieldValue(gitStoreConfig.getFolderPath()))
+            .commandFlags(getKustomizeCmdFlags(kustomizeManifestOutcome.getCommandFlags()))
             .build();
 
       case ManifestType.OpenshiftTemplate:
@@ -1296,5 +1287,17 @@ public class K8sHelmCommonStepHelper {
     for (String scopedFilePath : scopedFilePathList) {
       logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
     }
+  }
+
+  private Map<String, String> getKustomizeCmdFlags(List<KustomizeManifestCommandFlag> kustomizeManifestCommandFlags) {
+    if (kustomizeManifestCommandFlags != null) {
+      Map<String, String> commandFlags = new HashMap<>();
+      for (KustomizeManifestCommandFlag kustomizeManifestCommandFlag : kustomizeManifestCommandFlags) {
+        commandFlags.put(kustomizeManifestCommandFlag.getKustomizeCommandFlagType().toKustomizeCommandName(),
+            getParameterFieldValue(kustomizeManifestCommandFlag.getFlag()));
+      }
+      return commandFlags;
+    }
+    return null;
   }
 }

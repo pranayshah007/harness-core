@@ -7,6 +7,7 @@
 
 package io.harness.delegate.k8s.openshift;
 
+import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,7 +17,9 @@ import io.harness.CategoryTest;
 import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.cli.CliResponse;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
+import io.harness.exception.OpenShiftClientException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.openshift.OpenShiftClient;
@@ -48,16 +51,9 @@ public class OpenShiftDelegateServiceTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = VAIBHAV_SI)
+  @Owner(developers = {MLUKIC, VAIBHAV_SI})
   @Category(UnitTests.class)
-  public void testProcessTemplatization() throws IOException {
-    shouldGiveK8SReadyYaml();
-    shouldThrowExceptionWhenOcProcessFails();
-    shouldThrowExceptionWhenProcessResultEmpty();
-    shouldThrowExceptionWhenItemsEmpty();
-  }
-
-  private void shouldThrowExceptionWhenItemsEmpty() throws IOException {
+  public void shouldThrowExceptionWhenItemsEmpty() throws IOException {
     String OC_BINARY_PATH = "OC_BINARY_PATH";
     String TEMPLATE_FILE_PATH = "TEMPLATE_FILE_PATH";
     String MANIFEST_DIRECTORY_PATH = ".";
@@ -70,62 +66,93 @@ public class OpenShiftDelegateServiceTest extends CategoryTest {
                                   .output(readFileAsString(ocResultYamlFile))
                                   .build();
 
-    Mockito.doReturn(cliResponse)
+    String command = "oc command";
+
+    Mockito.doReturn(command)
         .when(openShiftClient)
-        .process(OC_BINARY_PATH, TEMPLATE_FILE_PATH, paramFilePaths, MANIFEST_DIRECTORY_PATH, logCallback);
+        .generateOcCommand(OC_BINARY_PATH, TEMPLATE_FILE_PATH, paramFilePaths);
+
+    Mockito.doReturn(cliResponse).when(openShiftClient).process(command, MANIFEST_DIRECTORY_PATH, logCallback);
 
     assertThatThrownBy(()
                            -> openShiftDelegateService.processTemplatization(MANIFEST_DIRECTORY_PATH, OC_BINARY_PATH,
                                TEMPLATE_FILE_PATH, logCallback, paramFileContent))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(HintException.class)
+        .getCause()
+        .isInstanceOf(ExplanationException.class)
+        .getCause()
+        .isInstanceOf(OpenShiftClientException.class)
         .hasMessageContaining("Items list can't be empty");
   }
 
-  private void shouldThrowExceptionWhenProcessResultEmpty() {
+  @Test
+  @Owner(developers = {MLUKIC, VAIBHAV_SI})
+  @Category(UnitTests.class)
+  public void shouldThrowExceptionWhenProcessResultEmpty() {
     String OC_BINARY_PATH = "OC_BINARY_PATH";
     String TEMPLATE_FILE_PATH = "TEMPLATE_FILE_PATH";
     String MANIFEST_DIRECTORY_PATH = ".";
     List<String> paramFileContent = Arrays.asList("a:b", "c:d");
     List<String> paramFilePaths = Arrays.asList("params-0", "params-1");
+
+    String command = "oc command";
+
+    Mockito.doReturn(command)
+        .when(openShiftClient)
+        .generateOcCommand(OC_BINARY_PATH, TEMPLATE_FILE_PATH, paramFilePaths);
 
     CliResponse cliResponse =
         CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).output("").build();
 
-    Mockito.doReturn(cliResponse)
-        .when(openShiftClient)
-        .process(OC_BINARY_PATH, TEMPLATE_FILE_PATH, paramFilePaths, MANIFEST_DIRECTORY_PATH, logCallback);
+    Mockito.doReturn(cliResponse).when(openShiftClient).process(command, MANIFEST_DIRECTORY_PATH, logCallback);
 
     assertThatThrownBy(()
                            -> openShiftDelegateService.processTemplatization(MANIFEST_DIRECTORY_PATH, OC_BINARY_PATH,
                                TEMPLATE_FILE_PATH, logCallback, paramFileContent))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Oc process result can't be empty");
+        .isInstanceOf(HintException.class)
+        .getCause()
+        .isInstanceOf(ExplanationException.class)
+        .getCause()
+        .isInstanceOf(OpenShiftClientException.class)
+        .hasMessageContaining("Executing command [oc command] produced empty result");
   }
 
-  private void shouldThrowExceptionWhenOcProcessFails() throws IOException {
+  @Test
+  @Owner(developers = {MLUKIC, VAIBHAV_SI})
+  @Category(UnitTests.class)
+  public void shouldThrowExceptionWhenOcProcessFails() throws IOException {
     String OC_BINARY_PATH = "OC_BINARY_PATH";
     String TEMPLATE_FILE_PATH = "TEMPLATE_FILE_PATH";
     String MANIFEST_DIRECTORY_PATH = ".";
     List<String> paramFileContent = Arrays.asList("a:b", "c:d");
     List<String> paramFilePaths = Arrays.asList("params-0", "params-1");
 
-    CliResponse cliResponse = CliResponse.builder()
-                                  .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-                                  .output("Invalid parameter")
-                                  .build();
+    String command = "oc command";
 
-    Mockito.doReturn(cliResponse)
+    Mockito.doReturn(command)
         .when(openShiftClient)
-        .process(OC_BINARY_PATH, TEMPLATE_FILE_PATH, paramFilePaths, MANIFEST_DIRECTORY_PATH, logCallback);
+        .generateOcCommand(OC_BINARY_PATH, TEMPLATE_FILE_PATH, paramFilePaths);
+
+    CliResponse cliResponse =
+        CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).error("Invalid parameter").build();
+
+    Mockito.doReturn(cliResponse).when(openShiftClient).process(command, MANIFEST_DIRECTORY_PATH, logCallback);
 
     assertThatThrownBy(()
                            -> openShiftDelegateService.processTemplatization(MANIFEST_DIRECTORY_PATH, OC_BINARY_PATH,
                                TEMPLATE_FILE_PATH, logCallback, paramFileContent))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Oc process command failed. Invalid parameter");
+        .isInstanceOf(HintException.class)
+        .getCause()
+        .isInstanceOf(ExplanationException.class)
+        .getCause()
+        .isInstanceOf(OpenShiftClientException.class)
+        .hasMessageContaining("Invalid parameter");
   }
 
-  private void shouldGiveK8SReadyYaml() throws IOException {
+  @Test
+  @Owner(developers = {MLUKIC, VAIBHAV_SI})
+  @Category(UnitTests.class)
+  public void shouldGiveK8SReadyYaml() throws IOException {
     String OC_BINARY_PATH = "OC_BINARY_PATH";
     String TEMPLATE_FILE_PATH = "TEMPLATE_FILE_PATH";
     String MANIFEST_DIRECTORY_PATH = ".";
@@ -140,9 +167,13 @@ public class OpenShiftDelegateServiceTest extends CategoryTest {
                                   .output(readFileAsString(ocResultYamlFile))
                                   .build();
 
-    Mockito.doReturn(cliResponse)
+    String command = "oc command";
+
+    Mockito.doReturn(command)
         .when(openShiftClient)
-        .process(OC_BINARY_PATH, TEMPLATE_FILE_PATH, paramFilePaths, MANIFEST_DIRECTORY_PATH, logCallback);
+        .generateOcCommand(OC_BINARY_PATH, TEMPLATE_FILE_PATH, paramFilePaths);
+
+    Mockito.doReturn(cliResponse).when(openShiftClient).process(command, MANIFEST_DIRECTORY_PATH, logCallback);
 
     List<FileData> manifestFiles = openShiftDelegateService.processTemplatization(
         MANIFEST_DIRECTORY_PATH, OC_BINARY_PATH, TEMPLATE_FILE_PATH, logCallback, paramFileContent);

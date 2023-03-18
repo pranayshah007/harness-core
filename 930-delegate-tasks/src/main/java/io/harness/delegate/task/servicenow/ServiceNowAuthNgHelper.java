@@ -28,6 +28,7 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsD
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
+import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.AdfsAuthException;
 import io.harness.exception.GeneralException;
@@ -37,7 +38,6 @@ import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.network.Http;
 import io.harness.security.ADFSAuthHelper;
-import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
 import software.wings.delegatetasks.utils.UrlUtility;
 

@@ -69,6 +69,7 @@ public class ScmBatchGetFileTask extends AbstractDelegateRunnableTask {
                 .repo(gitFileLocationDetails.getRepo())
                 .commitId(gitFileLocationDetails.getCommitId())
                 .filepath(gitFileLocationDetails.getFilepath())
+                .getOnlyFileContent(gitFileLocationDetails.isGetOnlyFileContent())
                 .scmConnector(scmConnector)
                 .build());
       });

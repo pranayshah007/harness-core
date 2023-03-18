@@ -16,7 +16,6 @@ import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 
@@ -37,9 +36,6 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 public class SLODebugResponse {
   ProjectParams projectParams;
-
-  ServiceLevelObjective serviceLevelObjective;
-
   SimpleServiceLevelObjective simpleServiceLevelObjective;
 
   List<ServiceLevelIndicator> serviceLevelIndicatorList;

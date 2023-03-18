@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.artifactstream;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
@@ -16,13 +18,20 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngtriggers.beans.source.artifact.AcrSpec;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.artifact.AcrArtifactStream;
 import software.wings.beans.artifact.ArtifactStream;
+import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,6 +54,38 @@ public class ACRArtifactStreamMapper implements ArtifactStreamMapper {
                   .subscriptionId(ParameterField.createValueField(acrArtifactStream.getSubscriptionId()))
                   .tag(ParameterField.createValueField("<+input>"))
                   .build())
+        .build();
+  }
+
+  @Override
+  public ArtifactType getArtifactType(Map<CgEntityId, NGYamlFile> migratedEntities, ArtifactStream artifactStream) {
+    return ArtifactType.ACR;
+  }
+
+  @Override
+  public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
+      Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
+    String connectorRef = getConnectorRef(migratedEntities, artifactStream);
+    List<TriggerEventDataCondition> eventConditions = Collections.emptyList();
+    String registry = PLEASE_FIX_ME;
+    String repository = PLEASE_FIX_ME;
+    String subscriptionId = PLEASE_FIX_ME;
+    String tag = PLEASE_FIX_ME;
+
+    if (artifactStream != null) {
+      AcrArtifactStream acrArtifactStream = (AcrArtifactStream) artifactStream;
+      registry = acrArtifactStream.getRegistryName();
+      repository = acrArtifactStream.getRepositoryName();
+      subscriptionId = acrArtifactStream.getSubscriptionId();
+    }
+
+    return AcrSpec.builder()
+        .subscriptionId(subscriptionId)
+        .tag(tag)
+        .registry(registry)
+        .repository(repository)
+        .eventConditions(eventConditions)
+        .connectorRef(connectorRef)
         .build();
   }
 }

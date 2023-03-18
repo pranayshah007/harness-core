@@ -95,6 +95,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileMetadata;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.provision.TfVarScriptRepositorySource;
@@ -200,6 +201,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
   @Mock private StateExecutionService stateExecutionService;
   @Mock private TemplateExpressionProcessor templateExpressionProcessor;
   @Mock private SettingsService settingsService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @InjectMocks private TerraformProvisionState state = new ApplyTerraformProvisionState("tf");
   @InjectMocks private TerraformProvisionState destroyProvisionState = new DestroyTerraformProvisionState("tf");
 

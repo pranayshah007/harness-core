@@ -27,5 +27,5 @@ public interface UserGroupRepository extends PagingAndSortingRepository<UserGrou
 
   Page<UserGroupDBO> findByScopeIdentifier(String scopeIdentifier, Pageable pageable);
 
-  List<UserGroupDBO> deleteByIdentifierAndScopeIdentifier(String identifier, String scopeIdentifier);
+  Optional<UserGroupDBO> deleteByIdentifierAndScopeIdentifier(String identifier, String scopeIdentifier);
 }

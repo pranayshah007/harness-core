@@ -17,12 +17,14 @@ import static io.harness.text.resolver.ExpressionResolver.nullStringValue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
@@ -43,6 +45,7 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -74,10 +77,12 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
   private static final String SECTION_SETUP_ID = generateUuid();
   @Mock private PlanExecutionService planExecutionService;
   @Inject private InputSetValidatorFactory inputSetValidatorFactory;
+  @Mock private PmsFeatureFlagService pmsFeatureFlagService;
 
   @Before
   public void setup() {
     when(planExecutionService.getPlanExecutionMetadata(anyString())).thenReturn(null);
+    when(pmsFeatureFlagService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(false);
   }
 
   @Test
@@ -480,6 +485,8 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
     SampleEngineExpressionEvaluator evaluator = new SampleEngineExpressionEvaluator();
     on(evaluator).set("planExecutionService", planExecutionService);
     on(evaluator).set("inputSetValidatorFactory", inputSetValidatorFactory);
+    on(evaluator).set("pmsFeatureFlagService", pmsFeatureFlagService);
+
     if (EmptyPredicate.isEmpty(contextMap)) {
       return evaluator;
     }

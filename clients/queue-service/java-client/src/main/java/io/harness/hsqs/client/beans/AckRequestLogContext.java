@@ -27,7 +27,7 @@ public class AckRequestLogContext extends AutoLogContext {
     contextMap.put("consumerName", ackRequest.getConsumerName());
     contextMap.put("topic", ackRequest.getTopic());
     contextMap.put("subTopic", ackRequest.getSubTopic());
-    contextMap.put("itemId", ackRequest.getItemID());
+    contextMap.put("itemId", ackRequest.getItemId());
     return contextMap;
   }
 }

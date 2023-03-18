@@ -34,5 +34,5 @@ public interface HsqsClient {
 
   @POST(V1_ENDPOINT + "ack") Call<AckResponse> ack(@Body AckRequest ackRequest);
 
-  @POST(V1_ENDPOINT + "nack") Call<UnAckResponse> unack(@Body UnAckRequest unAckRequest);
+  @POST(V1_ENDPOINT + "unack") Call<UnAckResponse> unack(@Body UnAckRequest unAckRequest);
 }

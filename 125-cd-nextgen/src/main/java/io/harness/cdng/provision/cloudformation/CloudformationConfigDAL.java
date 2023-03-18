@@ -7,6 +7,8 @@
 
 package io.harness.cdng.provision.cloudformation;
 
+import static java.util.Objects.requireNonNull;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
@@ -27,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class CloudformationConfigDAL {
+  private static final String NOT_NULL_MESSAGE = "%s must not be null";
+
   @Inject private HPersistence persistence;
 
   public void saveCloudformationConfig(@NonNull CloudformationConfig config) {
@@ -57,5 +61,32 @@ public class CloudformationConfigDAL {
             .filter(CloudformationConfigKeys.stageExecutionId, ambiance.getStageExecutionId());
 
     persistence.delete(query);
+  }
+
+  public void deleteForAccount(String accountId) {
+    requireNonNull(accountId, String.format(NOT_NULL_MESSAGE, accountId));
+
+    persistence.delete(
+        persistence.createQuery(CloudformationConfig.class).filter(CloudformationConfigKeys.accountId, accountId));
+  }
+
+  public void deleteForOrganization(String accountId, String orgId) {
+    requireNonNull(accountId, String.format(NOT_NULL_MESSAGE, accountId));
+    requireNonNull(orgId, String.format(NOT_NULL_MESSAGE, orgId));
+
+    persistence.delete(persistence.createQuery(CloudformationConfig.class)
+                           .filter(CloudformationConfigKeys.accountId, accountId)
+                           .filter(CloudformationConfigKeys.orgId, orgId));
+  }
+
+  public void deleteForProject(String accountId, String orgId, String projectId) {
+    requireNonNull(accountId, String.format(NOT_NULL_MESSAGE, accountId));
+    requireNonNull(orgId, String.format(NOT_NULL_MESSAGE, orgId));
+    requireNonNull(projectId, String.format(NOT_NULL_MESSAGE, projectId));
+
+    persistence.delete(persistence.createQuery(CloudformationConfig.class)
+                           .filter(CloudformationConfigKeys.accountId, accountId)
+                           .filter(CloudformationConfigKeys.orgId, orgId)
+                           .filter(CloudformationConfigKeys.projectId, projectId));
   }
 }

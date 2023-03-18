@@ -254,7 +254,7 @@ public class SettingsServiceImpl implements SettingsService {
         throw new InvalidRequestException(
             String.format("Invalid scope- %s present in the settings.yml", scopeLevel.toString()));
     }
-    settingRepository.delete(criteria);
+    settingRepository.deleteAll(criteria);
   }
 
   @Override

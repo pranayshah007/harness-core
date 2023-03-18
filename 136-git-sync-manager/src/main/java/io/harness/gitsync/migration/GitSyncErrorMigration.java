@@ -24,7 +24,7 @@ public class GitSyncErrorMigration implements NGMigration {
   @Override
   public void migrate() {
     try {
-      mongoTemplate.findAllAndRemove(new Query(), GitSyncError.class);
+      mongoTemplate.remove(new Query(), GitSyncError.class);
     } catch (Exception exception) {
       log.error("Error occurred while cleaning gitSyncErrorNG collection, dropping it");
       mongoTemplate.dropCollection(GitSyncError.class);

@@ -342,11 +342,11 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
   public PageResponse<ResourceLookup> listResourceLookupRecordsWithTags(
       String accountId, String filter, String limit, String offset) {
     return listResourceLookupRecordsWithTagsInternal(
-        accountId, filter, limit, offset, supportedTagEntityTypes.toArray());
+        accountId, filter, limit, offset, supportedTagEntityTypes.toArray(), false);
   }
 
   private PageResponse<ResourceLookup> listResourceLookupRecordsWithTagsInternal(
-      String accountId, String filter, String limit, String offset, Object[] entityTypes) {
+      String accountId, String filter, String limit, String offset, Object[] entityTypes, boolean hitSecondary) {
     PageRequest<ResourceLookup> pageRequest = new PageRequest<>();
 
     pageRequest.addFilter(ResourceLookupKeys.accountId, EQ, accountId);
@@ -355,8 +355,12 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
     pageRequest.addFilter(ResourceLookupKeys.resourceType, IN, entityTypes);
     pageRequest.addOrder(ResourceLookupKeys.resourceName, ASC);
     resourceLookupFilterHelper.addResourceLookupFiltersToPageRequest(pageRequest, filter);
-
-    PageResponse<ResourceLookup> pageResponse = wingsPersistence.query(ResourceLookup.class, pageRequest);
+    PageResponse<ResourceLookup> pageResponse;
+    if (featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId) && hitSecondary) {
+      pageResponse = wingsPersistence.querySecondary(ResourceLookup.class, pageRequest);
+    } else {
+      pageResponse = wingsPersistence.query(ResourceLookup.class, pageRequest);
+    }
     List<ResourceLookup> filteredResourceLookups = applyAuthFilters(pageResponse.getResponse());
 
     List<ResourceLookup> response;
@@ -407,13 +411,13 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
 
   @Override
   public <T> PageResponse<T> listWithTagFilters(
-      PageRequest<T> request, String filter, EntityType entityType, boolean withTags) {
+      PageRequest<T> request, String filter, EntityType entityType, boolean withTags, boolean hitSecondary) {
     if (isNotBlank(filter)) {
       String accountId = getAccountIdFromPageRequest(request);
 
       if (isNotBlank(accountId)) {
         PageResponse<ResourceLookup> resourceLookupPageResponse = listResourceLookupRecordsWithTagsInternal(
-            accountId, filter, String.valueOf(Integer.MAX_VALUE), "0", new Object[] {entityType});
+            accountId, filter, String.valueOf(Integer.MAX_VALUE), "0", new Object[] {entityType}, hitSecondary);
 
         List<ResourceLookup> response = resourceLookupPageResponse.getResponse();
         if (isEmpty(response)) {

@@ -16,6 +16,7 @@ import io.harness.gitsync.common.helper.GitSyncLogContextHelper;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
 import io.harness.gitsync.core.beans.GitFileFetchRunnableParams;
 import io.harness.logging.MdcContextSetter;
+import io.harness.logging.ResponseTimeRecorder;
 import io.harness.manage.GlobalContextManager;
 
 import java.util.Map;
@@ -38,16 +39,18 @@ public class GitFileFetchRunnable implements Runnable {
         gitFileFetchRunnableParams.getRepoName(), gitFileFetchRunnableParams.getBranchName(),
         gitFileFetchRunnableParams.getFilePath(), GitOperation.BG_THREAD_GET_FILE, null);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
-         MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
+         MdcContextSetter ignore1 = new MdcContextSetter(contextMap);
+         ResponseTimeRecorder ignore2 = new ResponseTimeRecorder("GitFileFetchRunnable BG Task");) {
       try {
         log.info("Fetching file content from GIT in BG THREAD");
-        scmFacilitatorService.getFileByBranch(ScmGetFileByBranchRequestDTO.builder()
-                                                  .filePath(gitFileFetchRunnableParams.getFilePath())
-                                                  .branchName(gitFileFetchRunnableParams.getBranchName())
-                                                  .connectorRef(gitFileFetchRunnableParams.getConnectorRef())
-                                                  .repoName(gitFileFetchRunnableParams.getRepoName())
-                                                  .scope(gitFileFetchRunnableParams.getScope())
-                                                  .build());
+        scmFacilitatorService.getFileByBranchV2(ScmGetFileByBranchRequestDTO.builder()
+                                                    .filePath(gitFileFetchRunnableParams.getFilePath())
+                                                    .branchName(gitFileFetchRunnableParams.getBranchName())
+                                                    .connectorRef(gitFileFetchRunnableParams.getConnectorRef())
+                                                    .repoName(gitFileFetchRunnableParams.getRepoName())
+                                                    .scope(gitFileFetchRunnableParams.getScope())
+                                                    .scmConnector(gitFileFetchRunnableParams.getScmConnector())
+                                                    .build());
         log.info("Successfully fetched file from GIT in BG THREAD");
       } catch (WingsException wingsException) {
         log.warn("Error while fetching file from GIT in BG THREAD : ", wingsException);

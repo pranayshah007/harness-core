@@ -34,15 +34,17 @@ public class UserMetadataDTO {
   @NotEmpty boolean locked;
   @NotEmpty boolean disabled;
   @NotEmpty boolean externallyManaged;
+  boolean twoFactorAuthenticationEnabled;
 
   @Builder
-  public UserMetadataDTO(
-      String name, String email, String uuid, boolean locked, boolean disabled, boolean externallyManaged) {
+  public UserMetadataDTO(String name, String email, String uuid, boolean locked, boolean disabled,
+      boolean externallyManaged, boolean twoFactorAuthenticationEnabled) {
     this.name = name;
     this.email = email;
     this.uuid = uuid;
     this.locked = locked;
     this.disabled = disabled;
     this.externallyManaged = externallyManaged;
+    this.twoFactorAuthenticationEnabled = twoFactorAuthenticationEnabled;
   }
 }

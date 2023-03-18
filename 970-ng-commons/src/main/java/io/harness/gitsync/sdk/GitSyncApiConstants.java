@@ -68,4 +68,6 @@ public class GitSyncApiConstants {
       "Tells weather the entity has to be moved from inline to remote or remote to inline";
 
   public static final String MOVE_CONFIG_KEY = "moveConfigType";
+
+  public static final String GIT_CACHING_METADATA = "Gives us the Git caching metadata information.";
 }

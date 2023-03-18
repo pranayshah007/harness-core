@@ -35,6 +35,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
 import io.harness.beans.execution.CIInitTaskArgs;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
@@ -56,7 +57,6 @@ import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.K8InitializeServiceUtils;
 import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.states.CIDelegateTaskExecutor;
 import io.harness.ci.utils.CIStagePlanCreationUtils;
 import io.harness.ci.validation.CIAccountValidationService;
@@ -69,12 +69,15 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.CITaskExecutionResponse;
 import io.harness.delegate.beans.ci.k8s.CIContainerStatus;
+import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.CiK8sTaskResponse;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.task.HDelegateTask;
 import io.harness.encryption.Scope;
 import io.harness.eraro.Level;
@@ -122,6 +125,7 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
 import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.steps.matrix.StrategyHelper;
+import io.harness.tasks.FailureResponseData;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.timeout.Timeout;
@@ -219,11 +223,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     } else {
       taskId = executeBuild(ambiance, stepParameters);
     }
-    InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
-        InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
 
-    sdkGraphVisualizationDataService.publishStepDetailInformation(
-        ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
     AsyncExecutableResponse.Builder responseBuilder =
         AsyncExecutableResponse.newBuilder().addCallbackIds(taskId).addAllLogKeys(
             CollectionUtils.emptyIfNull(singletonList(logKey)));
@@ -231,6 +231,12 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     // Sending the status if feature flag is enabled
     if (queueConcurrencyEnabled) {
       return responseBuilder.setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED).build();
+    } else {
+      InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
+          InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
+
+      sdkGraphVisualizationDataService.publishStepDetailInformation(
+          ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
     }
 
     return responseBuilder.build();
@@ -285,6 +291,16 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       taskSelectors.add(taskSelector);
       // TODO: start emitting & processing event for Docker as well
       // emitEvent = true;
+    } else if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
+      ConnectorConfigDTO connectorConfig =
+          ((CIK8InitializeTaskParams) buildSetupTaskParams).getK8sConnector().getConnectorConfig();
+      Set<String> delegateSelectors = ((KubernetesClusterConfigDTO) connectorConfig).getDelegateSelectors();
+      if (delegateSelectors != null) {
+        List<TaskSelector> selectorList = delegateSelectors.stream()
+                                              .map(ds -> TaskSelector.newBuilder().setSelector(ds).build())
+                                              .collect(Collectors.toList());
+        taskSelectors.addAll(selectorList);
+      }
     }
 
     TaskData taskData = getTaskData(stepParameters, buildSetupTaskParams);
@@ -312,24 +328,36 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     ResponseData responseData = responseDataMap.entrySet().iterator().next().getValue();
     responseData = serializedResponseDataHelper.deserialize(responseData);
-    if (responseData instanceof ErrorNotifyResponseData) {
-      FailureData failureData =
-          FailureData.newBuilder()
-              .addFailureTypes(FailureType.APPLICATION_FAILURE)
-              .setLevel(Level.ERROR.name())
-              .setCode(GENERAL_ERROR.name())
-              .setMessage(emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
-                  new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage())))))
-              .build();
+    if (responseData instanceof ErrorNotifyResponseData || responseData instanceof FailureResponseData) {
+      String message;
+      if (responseData instanceof ErrorNotifyResponseData) {
+        if (((InitializeStepInfo) stepParameters.getSpec()).getInfrastructure().getType()
+            == Infrastructure.Type.KUBERNETES_DIRECT) {
+          message = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
+              new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage()))));
+        } else {
+          message = emptyIfNull(((ErrorNotifyResponseData) responseData).getErrorMessage());
+        }
+      } else if (responseData instanceof FailureResponseData) {
+        message = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
+            new CIStageExecutionException(((FailureResponseData) responseData).getErrorMessage()))));
+      } else {
+        throw new CIStageExecutionException("Unexpected response received while process CI execution");
+      }
+
+      FailureData failureData = FailureData.newBuilder()
+                                    .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                    .setLevel(Level.ERROR.name())
+                                    .setCode(GENERAL_ERROR.name())
+                                    .setMessage(message)
+                                    .build();
 
       return StepResponse.builder()
           .status(Status.FAILED)
-          .failureInfo(FailureInfo.newBuilder()
-                           .setErrorMessage("Delegate is not able to connect to created build farm")
-                           .addFailureData(failureData)
-                           .build())
+          .failureInfo(FailureInfo.newBuilder().addFailureData(failureData).build())
           .build();
     }
+
     CITaskExecutionResponse ciTaskExecutionResponse = (CITaskExecutionResponse) responseData;
     CITaskExecutionResponse.Type type = ciTaskExecutionResponse.getType();
     if (type == CITaskExecutionResponse.Type.K8) {

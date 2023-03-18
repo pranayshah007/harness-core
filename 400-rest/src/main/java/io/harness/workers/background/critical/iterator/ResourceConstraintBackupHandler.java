@@ -18,7 +18,7 @@ import io.harness.distribution.constraint.Consumer.State;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ResourceConstraintBackupHandler
-    extends IteratorPumpModeHandler implements Handler<ResourceConstraintInstance> {
+    extends IteratorPumpAndRedisModeHandler implements Handler<ResourceConstraintInstance> {
   private static final String handlerName = "ResourceConstraint-Backup";
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(30);
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(30);

@@ -42,6 +42,7 @@ import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStoreType;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
@@ -96,6 +97,7 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -133,6 +135,7 @@ public class ExecutionHelper {
   AccessControlClient accessControlClient;
   PipelineStageHelper pipelineStageHelper;
   NodeExecutionService nodeExecutionService;
+  RollbackModeExecutionHelper rollbackModeExecutionHelper;
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier) {
@@ -247,14 +250,7 @@ public class ExecutionHelper {
      */
       // We don't have schema validation for V1 yaml as of now.
       if (PipelineVersion.V0.equals(version)) {
-        String yamlForValidatingSchema;
-        try {
-          yamlForValidatingSchema =
-              YamlUtils.getYamlWithoutInputs(new YamlConfig(stagesExecutionInfo.getPipelineYamlToRun()));
-        } catch (Exception ex) {
-          log.error("Exception occurred while removing inputs from pipeline yaml", ex);
-          yamlForValidatingSchema = getPipelineYamlWithUnResolvedTemplates(mergedRuntimeInputYaml, pipelineEntity);
-        }
+        String yamlForValidatingSchema = getPipelineYamlWithUnResolvedTemplates(mergedRuntimeInputYaml, pipelineEntity);
         pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
             pipelineEntity.getProjectIdentifier(), yamlForValidatingSchema);
       }
@@ -307,9 +303,10 @@ public class ExecutionHelper {
             .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
             .setIsNotificationConfigured(isNotEmpty(notificationRules))
             .setHarnessVersion(pipelineEntity.getHarnessVersion())
-            .setIsDebug(isDebug);
+            .setIsDebug(isDebug)
+            .setExecutionMode(ExecutionMode.NORMAL);
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
-        pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo());
+        pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo(), pipelineEntity.getConnectorRef());
     if (gitSyncBranchContext != null) {
       builder.setGitSyncBranchContext(gitSyncBranchContext);
     }
@@ -325,7 +322,6 @@ public class ExecutionHelper {
 
   public String getPipelineYamlWithUnResolvedTemplates(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
     YamlConfig pipelineYamlConfigForSchemaValidations;
-    ;
     if (isEmpty(mergedRuntimeInputYaml)) {
       pipelineYamlConfigForSchemaValidations = new YamlConfig(pipelineEntity.getYaml());
     } else {
@@ -370,7 +366,7 @@ public class ExecutionHelper {
     String pipelineYamlWithTemplateRef = pipelineYaml;
     if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineYamlConfig))) {
       TemplateMergeResponseDTO templateMergeResponseDTO =
-          pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(),
+          pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, true,
               featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE),
               BOOLEAN_FALSE_VALUE);
@@ -485,13 +481,24 @@ public class ExecutionHelper {
                                                       .build();
       long endTs = System.currentTimeMillis();
       log.info("[PMS_PLAN] Time taken to complete plan: {}ms ", endTs - startTs);
-      if (isRetry) {
-        Plan newPlan = retryExecutionHelper.transformPlan(
-            plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
-        return orchestrationService.startExecution(newPlan, abstractions, executionMetadata, planExecutionMetadata);
-      }
+      ExecutionMode executionMode = executionMetadata.getExecutionMode();
+      plan = transformPlan(
+          resp, plan, isRetry, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier, executionMode);
       return orchestrationService.startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
     }
+  }
+
+  Plan transformPlan(PlanCreationBlobResponse resp, Plan plan, boolean isRetry, List<String> identifierOfSkipStages,
+      String previousExecutionId, List<String> retryStagesIdentifier, ExecutionMode executionMode) {
+    if (isRetry) {
+      return retryExecutionHelper.transformPlan(
+          plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
+    }
+    if (executionMode.equals(ExecutionMode.POST_EXECUTION_ROLLBACK)) {
+      return rollbackModeExecutionHelper.transformPlanForRollbackMode(
+          plan, previousExecutionId, Collections.emptyList(), executionMode);
+    }
+    return plan;
   }
 
   public PlanExecution startExecutionV2(String accountId, String orgIdentifier, String projectIdentifier,

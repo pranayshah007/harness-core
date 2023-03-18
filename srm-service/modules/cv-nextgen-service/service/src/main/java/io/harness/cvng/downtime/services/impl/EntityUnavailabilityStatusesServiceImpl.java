@@ -95,6 +95,11 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
   }
 
   @Override
+  public EntityUnavailabilityStatuses getInstanceById(String uuid) {
+    return hPersistence.get(EntityUnavailabilityStatuses.class, uuid);
+  }
+
+  @Override
   public List<EntityUnavailabilityStatusesDTO> getAllInstances(ProjectParams projectParams) {
     List<EntityUnavailabilityStatuses> allInstances = getAllInstancesQuery(projectParams).asList();
     return allInstances.stream()
@@ -125,11 +130,27 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
             .lessThanOrEq(endTime)
             .field(EntityUnavailabilityStatusesKeys.endTime)
             .greaterThanOrEq(startTime)
-            .order(Sort.descending(EntityUnavailabilityStatusesKeys.endTime))
+            .order(Sort.ascending(EntityUnavailabilityStatusesKeys.startTime))
             .asList();
     return allInstances.stream()
         .map(status -> statusesEntityAndDTOTransformer.getDto(status))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<EntityUnavailabilityStatuses> getAllUnavailabilityInstances(
+      ProjectParams projectParams, long startTime, long endTime) {
+    return hPersistence.createQuery(EntityUnavailabilityStatuses.class)
+        .disableValidation()
+        .filter(EntityUnavailabilityStatusesKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .field(EntityUnavailabilityStatusesKeys.startTime)
+        .lessThanOrEq(endTime)
+        .field(EntityUnavailabilityStatusesKeys.endTime)
+        .greaterThanOrEq(startTime)
+        .order(Sort.ascending(EntityUnavailabilityStatusesKeys.startTime))
+        .asList();
   }
 
   @Override

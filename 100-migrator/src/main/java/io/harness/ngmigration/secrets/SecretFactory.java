@@ -41,6 +41,7 @@ import software.wings.beans.VaultConfig;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.common.collect.Sets;
@@ -57,6 +58,7 @@ public class SecretFactory {
   @Inject private AzureVaultSecretMigrator azureVaultSecretMigrator;
   @Inject private AwsKmsSecretMigrator awsKmsSecretMigrator;
   @Inject private GcpKmsSecretMigrator gcpKmsSecretMigrator;
+  @Inject private CustomSecretMigrator customSecretMigrator;
 
   public static ConnectorType getConnectorType(SecretManagerConfig secretManagerConfig) {
     if (secretManagerConfig instanceof AzureVaultConfig) {
@@ -79,6 +81,9 @@ public class SecretFactory {
     }
     if (secretManagerConfig instanceof KmsConfig) {
       return ConnectorType.AWS_KMS;
+    }
+    if (secretManagerConfig instanceof CustomSecretsManagerConfig) {
+      return ConnectorType.CUSTOM_SECRET_MANAGER;
     }
     throw new InvalidRequestException("Unsupported secret manager");
   }
@@ -111,6 +116,9 @@ public class SecretFactory {
     }
     if (secretManagerConfig instanceof GcpKmsConfig) {
       return gcpKmsSecretMigrator;
+    }
+    if (secretManagerConfig instanceof CustomSecretsManagerConfig) {
+      return customSecretMigrator;
     }
     throw new InvalidRequestException("Unsupported secret manager");
   }

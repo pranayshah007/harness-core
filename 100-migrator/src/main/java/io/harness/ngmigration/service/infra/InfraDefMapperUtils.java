@@ -7,6 +7,10 @@
 
 package io.harness.ngmigration.service.infra;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.utils.MigratorUtility.containsExpressions;
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -15,6 +19,8 @@ import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.infra.AzureKubernetesService;
+
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDP)
 public class InfraDefMapperUtils {
@@ -28,5 +34,28 @@ public class InfraDefMapperUtils {
         .namespace(ParameterField.createValueField(aks.getNamespace()))
         .releaseName(ParameterField.createValueField(aks.getReleaseName()))
         .build();
+  }
+
+  public static ParameterField<String> getExpression(
+      Map<String, String> expressions, String field, String defaultValue, String provisionerId) {
+    String value = getValueFromExpression(expressions, field, defaultValue, provisionerId);
+
+    return ParameterField.createValueField(value);
+  }
+
+  public static String getValueFromExpression(
+      Map<String, String> expressions, String field, String defaultValue, String provisionerId) {
+    String value = RUNTIME_INPUT;
+
+    if (isNotEmpty(provisionerId) && isNotEmpty(field) && isNotEmpty(expressions) && expressions.containsKey(field)) {
+      value = expressions.get(field);
+    } else if (isNotEmpty(defaultValue)) {
+      value = defaultValue;
+    }
+
+    if (containsExpressions(value)) {
+      value = RUNTIME_INPUT;
+    }
+    return value;
   }
 }

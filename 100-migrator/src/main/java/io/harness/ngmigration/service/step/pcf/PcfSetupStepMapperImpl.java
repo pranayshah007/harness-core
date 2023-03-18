@@ -11,15 +11,16 @@ import static io.harness.delegate.beans.pcf.ResizeStrategy.DOWNSIZE_OLD_FIRST;
 import static io.harness.delegate.beans.pcf.TasResizeStrategyType.DOWNSCALE_OLD_FIRST;
 import static io.harness.delegate.beans.pcf.TasResizeStrategyType.UPSCALE_NEW_FIRST;
 
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasBGAppSetupStepInfo;
 import io.harness.cdng.tas.TasBGAppSetupStepNode;
 import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
 import io.harness.cdng.tas.TasCanaryAppSetupStepNode;
 import io.harness.cdng.tas.TasInstanceCountType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -32,7 +33,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class PcfSetupStepMapperImpl extends StepMapper {
+public class PcfSetupStepMapperImpl extends PcfAbstractStepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;
@@ -49,6 +50,11 @@ public class PcfSetupStepMapperImpl extends StepMapper {
   }
 
   @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.TAS;
+  }
+
+  @Override
   public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);
     PcfSetupState state = new PcfSetupState(stepYaml.getName());
@@ -57,7 +63,8 @@ public class PcfSetupStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     PcfSetupState state = (PcfSetupState) getState(graphNode);
     if (null == state.getOlderActiveVersionCountToKeep()) {
       state.setOlderActiveVersionCountToKeep(3);
@@ -65,7 +72,7 @@ public class PcfSetupStepMapperImpl extends StepMapper {
 
     if (state.isBlueGreen()) {
       TasBGAppSetupStepNode tasBGAppSetupStepNode = new TasBGAppSetupStepNode();
-      baseSetup(state, tasBGAppSetupStepNode);
+      baseSetup(state, tasBGAppSetupStepNode, context.getIdentifierCaseFormat());
 
       TasBGAppSetupStepInfo tasBGAppSetupStepInfo =
           TasBGAppSetupStepInfo.infoBuilder()
@@ -85,11 +92,12 @@ public class PcfSetupStepMapperImpl extends StepMapper {
       return tasBGAppSetupStepNode;
     } else {
       TasCanaryAppSetupStepNode tasCanaryAppSetupStepNode = new TasCanaryAppSetupStepNode();
-      baseSetup(state, tasCanaryAppSetupStepNode);
+      baseSetup(state, tasCanaryAppSetupStepNode, context.getIdentifierCaseFormat());
 
       TasCanaryAppSetupStepInfo tasCanaryAppSetupStepInfo =
           TasCanaryAppSetupStepInfo.infoBuilder()
-              .resizeStrategy(state.getResizeStrategy() == DOWNSIZE_OLD_FIRST ? DOWNSCALE_OLD_FIRST : UPSCALE_NEW_FIRST)
+              .resizeStrategy(ParameterField.createValueField(
+                  state.getResizeStrategy() == DOWNSIZE_OLD_FIRST ? DOWNSCALE_OLD_FIRST : UPSCALE_NEW_FIRST))
               .instanceCountType(getInstanceCountType(state.isUseCurrentRunningCount()))
               .additionalRoutes(
                   ParameterField.createValueField(Arrays.stream(state.getFinalRouteMap()).collect(Collectors.toList())))
@@ -110,6 +118,7 @@ public class PcfSetupStepMapperImpl extends StepMapper {
       return TasInstanceCountType.FROM_MANIFEST;
     }
   }
+
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     return false;

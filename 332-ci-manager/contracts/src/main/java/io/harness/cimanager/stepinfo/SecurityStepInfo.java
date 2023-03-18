@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -105,7 +106,7 @@ public class SecurityStepInfo implements PluginCompatibleStep {
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   protected ParameterField<Integer> runAsUser;
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.ImagePullPolicy")
   protected ParameterField<ImagePullPolicy> imagePullPolicy;
 

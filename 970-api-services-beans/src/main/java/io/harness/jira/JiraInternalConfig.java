@@ -15,13 +15,18 @@ import lombok.Builder;
 import lombok.ToString;
 import lombok.Value;
 
+/*
+ * Contains the jiraUrl and authToken (generated from the credentials provided in connector DTO)
+ *
+ * */
 @OwnedBy(CDC)
 @Value
 @Builder
 public class JiraInternalConfig {
   String jiraUrl;
-  String username;
-  @ToString.Exclude String password;
+  @Deprecated String username;
+  @ToString.Exclude @Deprecated String password;
+  String authToken;
 
   public String getJiraUrl() {
     return jiraUrl.endsWith("/") ? jiraUrl : jiraUrl.concat("/");

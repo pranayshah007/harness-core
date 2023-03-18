@@ -57,8 +57,8 @@ public class ContainerStepExecutionResponseHelper {
     for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
       entry.setValue(serializedResponseDataHelper.deserialize(entry.getValue()));
       if (entry.getValue() instanceof BinaryResponseData) {
-        entry.setValue(((ResponseData) referenceFalseKryoSerializer.asInflatedObject(
-            ((BinaryResponseData) entry.getValue()).getData())));
+        entry.setValue((ResponseData) referenceFalseKryoSerializer.asInflatedObject(
+            ((BinaryResponseData) entry.getValue()).getData()));
       }
     }
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);

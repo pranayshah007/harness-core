@@ -124,6 +124,33 @@ public interface PlanExecutionResource {
           }) String inputSetPipelineYaml);
 
   @POST
+  @Path("postExecutionRollback/{planExecutionId}")
+  @ApiOperation(value = "Rollback a previous Execution", nickname = "postExecutionRollback")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  @Operation(operationId = "postExecutionRollback", description = "Rollback a previous Execution",
+      summary = "Rollback a previous Execution",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns pipeline execution details")
+      })
+  @Hidden
+  ResponseDTO<PlanExecutionResponseDto>
+  runPostExecutionRollback(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
+          description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @AccountIdentifier String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @Parameter(
+          description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
+          description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) @Parameter(
+          description = PlanExecutionResourceConstants.PIPELINE_IDENTIFIER_PARAM_MESSAGE) @ResourceIdentifier
+      @NotNull String pipelineIdentifier,
+      @PathParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
+          description = PlanExecutionResourceConstants.PLAN_EXECUTION_ID_PARAM_MESSAGE) @ResourceIdentifier
+      @NotNull String planExecutionId);
+
+  @POST
   @Path("/{identifier}/v2")
   @ApiOperation(
       value = "Execute a pipeline with inputSet pipeline YAML V2", nickname = "postPipelineExecuteWithInputSetYamlv2")

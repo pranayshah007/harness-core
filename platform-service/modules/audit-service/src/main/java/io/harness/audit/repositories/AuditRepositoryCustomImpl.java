@@ -47,7 +47,7 @@ public class AuditRepositoryCustomImpl implements AuditRepositoryCustom {
   @Override
   public void delete(Criteria criteria) {
     Query query = new Query(criteria);
-    mongoTemplate.findAllAndRemove(query, AuditEvent.class);
+    mongoTemplate.remove(query, AuditEvent.class);
   }
 
   @Override

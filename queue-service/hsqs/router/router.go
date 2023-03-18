@@ -37,16 +37,20 @@ func New(config *config.Config) *echo.Echo {
 
 	e.Logger.SetLevel(lvl)
 	e.Pre(middleware.RemoveTrailingSlash())
-	e.Use(middleware.Logger())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		AllowMethods: []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE},
 	}))
 
+	if envConfig.EnableHttpLogging {
+		e.Use(middleware.Logger())
+	}
+
 	if envConfig.AppDynamicsConfig.Enabled {
 		e.Use(AppDynamics())
 	}
+
 	// Disable auth when flag enabled
 	if !envConfig.DisableAuth {
 		e.Use(middleware.JWTWithConfig(jwtConfig))
@@ -94,6 +98,8 @@ func skipperFunc(c echo.Context) bool {
 	} else if strings.Contains(c.Request().URL.Path, "pprof") {
 		return true
 	} else if strings.Contains(c.Request().URL.Path, "graph") {
+		return true
+	} else if strings.Contains(c.Request().URL.Path, "version") {
 		return true
 	}
 	return false

@@ -402,7 +402,8 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
       ScmGetFileResponseDTO scmGetFileResponseDTO =
           scmFacilitatorService.getFileByBranch(getGetFileByBranchRequestDTO(getFileRequest));
       return prepareGetFileResponse(getFileRequest.getScopeIdentifiers(), getFileRequest.getRepoName(),
-          getFileRequest.getFilePath(), getFileRequest.getConnectorRef(), scmGetFileResponseDTO);
+          getFileRequest.getFilePath(), getFileRequest.getConnectorRef(), scmGetFileResponseDTO,
+          getFileRequest.getGetOnlyFileContent());
     } catch (WingsException ex) {
       ScmException scmException = ScmExceptionUtils.getScmException(ex);
       GitMetaData gitMetaData = getGitMetadata(ScmExceptionUtils.getGitErrorMetadata(ex));
@@ -677,24 +678,24 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   }
 
   private GetFileResponse prepareGetFileResponse(ScopeIdentifiers scopeIdentifiers, String repoName, String filepath,
-      String connectorRef, ScmGetFileResponseDTO scmGetFileResponseDTO) {
+      String connectorRef, ScmGetFileResponseDTO scmGetFileResponseDTO, boolean getOnlyFileContent) {
     Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(scopeIdentifiers);
     GitRepositoryDTO gitRepositoryDTO = GitRepositoryDTO.builder().name(repoName).build();
     GetFileResponse.Builder getFileResponseOrBuilder =
-        GetFileResponse.newBuilder()
-            .setStatusCode(HTTP_200)
-            .setFileContent(scmGetFileResponseDTO.getFileContent())
-            .setGitMetaData(
-                GitMetaData.newBuilder()
-                    .setRepoName(repoName)
-                    .setBranchName(scmGetFileResponseDTO.getBranchName())
-                    .setCommitId(scmGetFileResponseDTO.getCommitId())
-                    .setBlobId(scmGetFileResponseDTO.getBlobId())
-                    .setFilePath(filepath)
-                    .setFileUrl(getFileUrl(scmGetFileResponseDTO, scope, gitRepositoryDTO, filepath, connectorRef))
-                    .build());
+        GetFileResponse.newBuilder().setStatusCode(HTTP_200).setFileContent(scmGetFileResponseDTO.getFileContent());
     if (scmGetFileResponseDTO.getCacheDetails() != null) {
       getFileResponseOrBuilder.setCacheResponse(getCacheResponse(scmGetFileResponseDTO.getCacheDetails()));
+    }
+    if (!getOnlyFileContent) {
+      getFileResponseOrBuilder.setGitMetaData(
+          GitMetaData.newBuilder()
+              .setRepoName(repoName)
+              .setBranchName(scmGetFileResponseDTO.getBranchName())
+              .setCommitId(scmGetFileResponseDTO.getCommitId())
+              .setBlobId(scmGetFileResponseDTO.getBlobId())
+              .setFilePath(filepath)
+              .setFileUrl(getFileUrl(scmGetFileResponseDTO, scope, gitRepositoryDTO, filepath, connectorRef))
+              .build());
     }
     return getFileResponseOrBuilder.build();
   }
@@ -818,6 +819,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
         .repoName(getFileRequest.getRepoName())
         .scope(scope)
         .useCache(getFileRequest.getCacheRequestParams().getUseCache())
+        .getOnlyFileContent(getFileRequest.getGetOnlyFileContent())
         .build();
   }
 
@@ -845,7 +847,8 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
       GetFileResponse getFileResponse;
       if (!fileResponse.isErrorResponse()) {
         getFileResponse = prepareGetFileResponse(fileRequest.getScopeIdentifiers(), fileRequest.getRepoName(),
-            fileRequest.getFilePath(), fileRequest.getConnectorRef(), fileResponse);
+            fileRequest.getFilePath(), fileRequest.getConnectorRef(), fileResponse,
+            fileRequest.getGetOnlyFileContent());
       } else {
         getFileResponse = GetFileResponse.newBuilder()
                               .setStatusCode(fileResponse.getScmErrorDetails().getStatusCode())

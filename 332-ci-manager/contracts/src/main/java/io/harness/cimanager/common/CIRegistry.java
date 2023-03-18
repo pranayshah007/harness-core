@@ -15,8 +15,8 @@ import lombok.Builder;
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor
 public class CIRegistry {
   @NotNull String connectorIdentifier;
   @NotNull ConnectorType connectorType;

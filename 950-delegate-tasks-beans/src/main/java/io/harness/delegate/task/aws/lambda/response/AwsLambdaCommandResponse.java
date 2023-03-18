@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.aws.lambda.AwsLambda;
 import io.harness.logging.CommandExecutionStatus;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -19,4 +20,5 @@ public interface AwsLambdaCommandResponse extends DelegateTaskNotifyResponseData
   String getErrorMessage();
   UnitProgressData getUnitProgressData();
   void setCommandUnitsProgress(UnitProgressData unitProgressData);
+  AwsLambda getAwsLambda();
 }

@@ -9,7 +9,6 @@ package io.harness.cvng.core.entities;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
-import io.harness.cvng.core.entities.LogFeedbackEntity;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;

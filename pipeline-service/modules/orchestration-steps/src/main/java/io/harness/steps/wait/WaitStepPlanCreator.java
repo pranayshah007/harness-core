@@ -18,6 +18,8 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExecutionMode;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -66,6 +68,8 @@ public class WaitStepPlanCreator extends AbstractStepPlanCreator<WaitStepNode> {
 
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
     addStrategyFieldDependencyIfPresent(ctx, stepElement, dependenciesNodeMap, metadataMap);
+    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
+    ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
     PlanNode stepPlanNode =
         PlanNode.builder()
             .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stepElement.getUuid()))
@@ -81,8 +85,9 @@ public class WaitStepPlanCreator extends AbstractStepPlanCreator<WaitStepNode> {
                                        .build())
             .adviserObtainments(adviserObtainmentFromMetaData)
             .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
-            .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
-                                                : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
+            .whenCondition(isStepInsideRollback
+                    ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen(), executionMode)
+                    : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
             .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
             .build();
 

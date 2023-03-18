@@ -10,7 +10,6 @@ package io.harness.repositories;
 import io.harness.annotation.HarnessRepo;
 import io.harness.signup.entities.SignupVerificationToken;
 
-import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,5 +20,5 @@ public interface SignupVerificationTokenRepository extends CrudRepository<Signup
   Optional<SignupVerificationToken> findByToken(String token);
   Optional<SignupVerificationToken> findByUserId(String userId);
   Optional<SignupVerificationToken> findByEmail(String email);
-  List<SignupVerificationToken> findAllByAccountIdentifier(String accountIdentifier);
+  long deleteAllByAccountIdentifier(String accountIdentifier);
 }

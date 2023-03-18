@@ -89,6 +89,7 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
     String asgName = asgBlueGreenDeployRequest.getAsgName();
     String amiImageId = asgBlueGreenDeployRequest.getAmiImageId();
     boolean isFirstDeployment = asgBlueGreenDeployRequest.isFirstDeployment();
+    boolean useAlreadyRunningInstances = asgBlueGreenDeployRequest.isUseAlreadyRunningInstances();
 
     List<String> targetGroupArnsList =
         isFirstDeployment ? lbConfig.getProdTargetGroupArnsList() : lbConfig.getStageTargetGroupArnsList();
@@ -111,7 +112,7 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
 
       AutoScalingGroupContainer stageAutoScalingGroupContainer =
           executeBGDeploy(asgSdkManager, asgStoreManifestsContent, asgName, amiImageId, targetGroupArnsList,
-              isFirstDeployment, awsInternalConfig, region);
+              isFirstDeployment, awsInternalConfig, region, useAlreadyRunningInstances);
 
       String asgNameWithoutSuffix = asgName.substring(0, asgName.length() - 3);
       String asgNameSuffix = asgName.substring(asgName.length() - 1);
@@ -148,7 +149,8 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
 
   private AutoScalingGroupContainer executeBGDeploy(AsgSdkManager asgSdkManager,
       Map<String, List<String>> asgStoreManifestsContent, String asgName, String amiImageId,
-      List<String> targetGroupArnList, boolean isFirstDeployment, AwsInternalConfig awsInternalConfig, String region) {
+      List<String> targetGroupArnList, boolean isFirstDeployment, AwsInternalConfig awsInternalConfig, String region,
+      boolean useAlreadyRunningInstances) {
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }
@@ -186,6 +188,7 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
                     .overrideProperties(asgConfigurationOverrideProperties)
                     .awsInternalConfig(awsInternalConfig)
                     .region(region)
+                    .useAlreadyRunningInstances(useAlreadyRunningInstances)
                     .build())
             .addHandler(
                 AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContent).build())

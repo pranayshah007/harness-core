@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_FILE_NAME;
 import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_TEMP_DIR_PREFIX;
 
+import static software.wings.ngmigration.NGMigrationEntityType.DUMMY_HEAD;
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 
@@ -21,7 +22,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -174,8 +174,8 @@ public class DiscoveryService {
         ngMigrationService = migrationFactory.getMethod(entityType);
         DiscoveryNode node = ngMigrationService.discover(accountId, appId, entityId);
         if (node == null) {
-          throw new InvalidRequestException(
-              String.format("Entity not found! - Type: %s & ID: %s", child.getType(), entityId));
+          log.warn(String.format("Entity not found! - Type: %s & ID: %s", child.getType(), entityId));
+          continue;
         }
         // We add the node the dummy head's children & to the graph
         head.getChildren().add(node.getEntityNode().getEntityId());
@@ -321,6 +321,7 @@ public class DiscoveryService {
         summaryDTO.getErrors().add(ImportError.builder().message(e.getMessage()).entity(file.getCgBasicInfo()).build());
       }
     }
+    summaryDTO.setNgYamlFiles(ngYamlFiles);
     return summaryDTO;
   }
 
@@ -393,6 +394,7 @@ public class DiscoveryService {
     // We'll first load the environment because infra depends on Environment
     entities.keySet()
         .stream()
+        .filter(id -> !DUMMY_HEAD.equals(id.getType()))
         .sorted(Comparator.comparing(id -> !ENVIRONMENT.equals(id.getType())))
         .forEach(cgEntityId -> {
           NGYamlFile yamlFile = migrationFactory.getMethod(cgEntityId.getType())

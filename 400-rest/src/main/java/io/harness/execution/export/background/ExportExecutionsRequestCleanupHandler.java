@@ -19,7 +19,7 @@ import io.harness.execution.export.request.ExportExecutionsRequest;
 import io.harness.execution.export.request.ExportExecutionsRequest.ExportExecutionsRequestKeys;
 import io.harness.execution.export.request.ExportExecutionsRequest.Status;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.logging.AccountLogContext;
@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDC)
 @Slf4j
 public class ExportExecutionsRequestCleanupHandler
-    extends IteratorPumpModeHandler implements Handler<ExportExecutionsRequest> {
+    extends IteratorPumpAndRedisModeHandler implements Handler<ExportExecutionsRequest> {
   private static final Duration ACCEPTABLE_DELAY_MINUTES = ofMinutes(45);
 
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;

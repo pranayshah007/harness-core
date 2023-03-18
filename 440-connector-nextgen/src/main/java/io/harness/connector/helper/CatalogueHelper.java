@@ -33,10 +33,10 @@ public class CatalogueHelper {
   public List<ConnectorCatalogueItem> getConnectorTypeToCategoryMapping(String accountIdentifier) {
     final Map<ConnectorCategory, List<ConnectorType>> connectorCategoryListMap =
         Arrays.stream(ConnectorType.values())
-            .filter(enumFilter.filter(accountIdentifier, FeatureName.SSH_NG))
             .filter(enumFilter.filter(accountIdentifier, FeatureName.AZURE_ARTIFACTS_NG))
             .filter(enumFilter.filter(accountIdentifier, FeatureName.CDS_TAS_NG))
-            .filter(enumFilter.filter(accountIdentifier, FeatureName.TERRAFORM_CLOUD))
+            .filter(enumFilter.filter(accountIdentifier, FeatureName.CDS_TERRAFORM_CLOUD))
+            .filter(enumFilter.filter(accountIdentifier, FeatureName.BAMBOO_ARTIFACT_NG))
             .collect(Collectors.groupingBy(ConnectorRegistryFactory::getConnectorCategory));
     return connectorCategoryListMap.entrySet()
         .stream()

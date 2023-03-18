@@ -7,24 +7,22 @@
 
 package io.harness.delegate.service.core;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
-import io.harness.delegate.DelegateAgentCommonVariables;
-import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
-import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
-import io.harness.delegate.beans.DelegateTaskPackage;
-import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.core.beans.ExecutionMode;
+import io.harness.delegate.core.beans.ExecutionPriority;
+import io.harness.delegate.core.beans.TaskDescriptor;
 import io.harness.delegate.service.common.SimpleDelegateAgent;
 import io.harness.delegate.service.core.k8s.K8STaskRunner;
 
 import software.wings.beans.TaskType;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.kubernetes.client.openapi.ApiException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,37 +33,40 @@ public class CoreDelegateService extends SimpleDelegateAgent {
   private final K8STaskRunner taskRunner;
 
   @Override
-  protected void abortTask(final DelegateTaskAbortEvent taskEvent) {}
+  protected void abortTask(final DelegateTaskAbortEvent taskEvent) {
+    throw new UnsupportedOperationException("Operation Not supported yet");
+  }
 
   @Override
-  protected void executeTask(final @NonNull DelegateTaskPackage taskPackage) {
+  protected void executeTask(final @NonNull TaskDescriptor task) {
     try {
-      taskRunner.launchTask(taskPackage);
+      validatePluginData(task);
+      taskRunner.launchTask(task);
     } catch (IOException e) {
-      log.error("Failed to create the task {}", taskPackage.getDelegateTaskId(), e);
+      log.error("Failed to create the task {}", task.getId(), e);
     } catch (ApiException e) {
       log.error("APIException: {}, {}, {}, {}, {}", e.getCode(), e.getResponseBody(), e.getMessage(),
           e.getResponseHeaders(), e.getCause());
-      log.error("Failed to create the task {}", taskPackage.getDelegateTaskId(), e);
+      log.error("Failed to create the task {}", task.getId(), e);
+    }
+  }
+
+  private void validatePluginData(final @NonNull TaskDescriptor task) {
+    if (task.getPriority() == ExecutionPriority.PRIORITY_UNKNOWN) {
+      throw new IllegalArgumentException("Task Priority must be specified");
+    }
+    if (task.getMode() == ExecutionMode.MODE_UNKNOWN) {
+      throw new IllegalArgumentException("Task Mode must be specified");
     }
   }
 
   @Override
-  protected ImmutableList<String> getCurrentlyExecutingTaskIds() {
-    return ImmutableList.of("");
+  protected List<String> getCurrentlyExecutingTaskIds() {
+    return List.of("");
   }
 
   @Override
-  protected ImmutableList<TaskType> getSupportedTasks() {
-    return Arrays.stream(TaskType.values()).collect(toImmutableList());
-  }
-
-  @Override
-  protected void onPreResponseSent(final DelegateTaskResponse response) {
-    final DelegateMetaInfo responseMetadata =
-        DelegateMetaInfo.builder().hostName(HOST_NAME).id(DelegateAgentCommonVariables.getDelegateId()).build();
-    if (response.getResponse() instanceof DelegateTaskNotifyResponseData) {
-      ((DelegateTaskNotifyResponseData) response.getResponse()).setDelegateMetaInfo(responseMetadata);
-    }
+  protected List<TaskType> getSupportedTasks() {
+    return Arrays.stream(TaskType.values()).collect(toUnmodifiableList());
   }
 }

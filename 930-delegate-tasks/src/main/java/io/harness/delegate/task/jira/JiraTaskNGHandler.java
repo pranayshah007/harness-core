@@ -59,7 +59,7 @@ public class JiraTaskNGHandler {
       log.error(errorMessage, ex);
       throw NestedExceptionUtils.hintWithExplanationException(
           "Check if the Jira URL & Jira credentials are correct. Jira URLs are different for different credentials",
-          "The Jira URL or username or password for the connector is incorrect",
+          "The Jira URL or credentials for the connector is incorrect",
           new InvalidArtifactServerException("Invalid Jira connector details", USER));
     }
   }
@@ -187,6 +187,6 @@ public class JiraTaskNGHandler {
   }
 
   private JiraClient getJiraClient(JiraTaskNGParameters parameters) {
-    return new JiraClient(JiraRequestResponseMapper.toJiraInternalConfig(parameters));
+    return new JiraClient(JiraRequestResponseMapper.toJiraInternalConfig(parameters.getJiraConnectorDTO()));
   }
 }

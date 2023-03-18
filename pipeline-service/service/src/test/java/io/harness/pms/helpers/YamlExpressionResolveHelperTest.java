@@ -24,6 +24,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.ImmutableList;
@@ -42,6 +43,7 @@ import org.mockito.MockitoAnnotations;
 public class YamlExpressionResolveHelperTest extends CategoryTest {
   @Mock private PlanExecutionService planExecutionService;
   @Inject private InputSetValidatorFactory inputSetValidatorFactory;
+  @Mock private PmsFeatureFlagService pmsFeatureFlagService;
 
   @InjectMocks YamlExpressionResolveHelper yamlExpressionResolveHelper;
 
@@ -82,6 +84,8 @@ public class YamlExpressionResolveHelperTest extends CategoryTest {
     SampleEngineExpressionEvaluator evaluator = new SampleEngineExpressionEvaluator();
     on(evaluator).set("planExecutionService", planExecutionService);
     on(evaluator).set("inputSetValidatorFactory", inputSetValidatorFactory);
+    on(evaluator).set("pmsFeatureFlagService", pmsFeatureFlagService);
+
     if (EmptyPredicate.isEmpty(contextMap)) {
       return evaluator;
     }

@@ -62,7 +62,7 @@ public class DockerBuildServiceImpl implements DockerBuildService {
     encryptionService.decrypt(dockerConfig, encryptionDetails, false);
     List<BuildDetailsInternal> builds =
         dockerRegistryService.getBuilds(DockerConfigToInternalMapper.toDockerInternalConfig(dockerConfig),
-            artifactStreamAttributes.getImageName(), 250);
+            artifactStreamAttributes.getImageName(), 250, null);
     return wrapNewBuildsWithLabels(
         builds.stream().map(ArtifactConfigMapper::toBuildDetails).collect(Collectors.toList()),
         artifactStreamAttributes, dockerConfig);

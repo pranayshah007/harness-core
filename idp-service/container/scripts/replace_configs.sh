@@ -121,6 +121,46 @@ else
   yq -i 'del(.logging.appenders.[] | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
+if [[ "" != "$NG_MANAGER_SERVICE_SECRET" ]]; then
+  export NG_MANAGER_SERVICE_SECRET; yq -i '.ngManagerServiceSecret=env(NG_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_SERVICE_SECRET" ]]; then
+  export MANAGER_SERVICE_SECRET; yq -i '.managerServiceSecret=env(MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
+  export NG_MANAGER_BASE_URL; yq -i '.ngManagerServiceHttpClientConfig.baseUrl=env(NG_MANAGER_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_CLIENT_BASE_URL" ]]; then
+  export MANAGER_CLIENT_BASE_URL; yq -i '.managerClientConfig.baseUrl=env(MANAGER_CLIENT_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$ACCESS_CONTROL_BASE_URL" ]]; then
+  export ACCESS_CONTROL_BASE_URL; yq -i '.accessControlClient.accessControlServiceConfig.baseUrl=env(ACCESS_CONTROL_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$ACCESS_CONTROL_SECRET" ]]; then
+  export ACCESS_CONTROL_SECRET; yq -i '.accessControlClient.accessControlServiceSecret=env(ACCESS_CONTROL_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$ACCESS_CONTROL_ENABLED" ]]; then
+  export ACCESS_CONTROL_ENABLED; yq -i '.accessControlClient.enableAccessControl=env(ACCESS_CONTROL_ENABLED)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BACKSTAGE_BASE_URL" ]]; then
+  export BACKSTAGE_BASE_URL; yq -i '.backstageHttpClientConfig.baseUrl=env(BACKSTAGE_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BACKSTAGE_SERVICE_SECRET" ]]; then
+  export BACKSTAGE_SERVICE_SECRET; yq -i '.backstageServiceSecret=env(BACKSTAGE_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$IDP_SERVICE_SECRET" ]]; then
+  export IDP_SERVICE_SECRET; yq -i '.idpServiceSecret=env(IDP_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
 replace_key_value eventsFramework.redis.redisUrl $EVENTS_FRAMEWORK_REDIS_URL
@@ -131,3 +171,16 @@ replace_key_value eventsFramework.redis.nettyThreads $EVENTS_FRAMEWORK_NETTY_THR
 replace_key_value eventsFramework.redis.sslConfig.enabled $EVENTS_FRAMEWORK_REDIS_SSL_ENABLED
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
+replace_key_value backstageSaToken "$BACKSTAGE_SA_TOKEN"
+replace_key_value backstageSaCaCrt "$BACKSTAGE_SA_CA_CRT"
+replace_key_value backstageMasterUrl "$BACKSTAGE_MASTER_URL"
+replace_key_value idpServiceSecret "$IDP_SERVICE_SECRET"
+replace_key_value jwtAuthSecret "$JWT_AUTH_SECRET"
+replace_key_value jwtIdentityServiceSecret "$JWT_IDENTITY_SERVICE_SECRET"
+replace_key_value provisionModuleConfig.triggerPipelineUrl "$TRIGGER_PIPELINE_URL"
+replace_key_value accessControlClient.enableAccessControl $ACCESS_CONTROL_ENABLED
+replace_key_value accessControlClient.accessControlServiceConfig.baseUrl "$ACCESS_CONTROL_BASE_URL"
+replace_key_value accessControlClient.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
+replace_key_value backstageHttpClientConfig.baseUrl "$BACKSTAGE_BASE_URL"
+replace_key_value backstageServiceSecret "$BACKSTAGE_SERVICE_SECRET"
+replace_key_value onboardingModuleConfig.harnessCiCdAnnotation.projectUrl "$ONBOARDING_MODULE_CONFIG_HARNESS_CI_CD_ANNOTATION_PROJECT_URL"

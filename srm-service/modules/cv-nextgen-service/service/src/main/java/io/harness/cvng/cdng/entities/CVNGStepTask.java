@@ -52,6 +52,12 @@ public class CVNGStepTask
                  .field(CVNGStepTaskKeys.status)
                  .field(CVNGStepTaskKeys.asyncTaskIteration)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("account_org_project_idx")
+                 .field(CVNGStepTaskKeys.accountId)
+                 .field(CVNGStepTaskKeys.orgIdentifier)
+                 .field(CVNGStepTaskKeys.projectIdentifier)
+                 .build())
         .build();
   }
   @Id private String uuid;

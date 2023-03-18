@@ -8,7 +8,6 @@
 package io.harness.core.ci.services;
 
 import io.harness.cache.CICacheManagementService;
-import io.harness.enforcement.beans.metadata.RateLimitRestrictionMetadataDTO;
 import io.harness.enforcement.beans.metadata.StaticLimitRestrictionMetadataDTO;
 import io.harness.enforcement.client.usage.RestrictionUsageInterface;
 

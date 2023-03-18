@@ -7,6 +7,9 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.ngmigration.beans.SupportStatus.UNSUPPORTED;
+import static io.harness.ngmigration.connector.ConnectorFactory.CONNECTOR_FACTORY_MAP;
+
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 
@@ -28,6 +31,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ngmigration.beans.CustomSecretRequestWrapper;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -110,15 +114,14 @@ public class ConnectorMigrationService extends NgMigrationService {
                                           .collect(groupingBy(entity -> entity.getValue().getType(), counting()));
 
     Map<String, TypeSummary> summaryMap = new HashMap<>();
-    summaryByType.forEach(
-        (key, value)
-            -> summaryMap.put(key,
-                TypeSummary.builder()
-                    .count(value)
-                    .status(ConnectorFactory.CONNECTOR_FACTORY_MAP.containsKey(SettingVariableTypes.valueOf(key))
-                            ? SupportStatus.SUPPORTED
-                            : SupportStatus.UNSUPPORTED)
-                    .build()));
+    summaryByType.forEach((key, value) -> {
+      SupportStatus status = UNSUPPORTED;
+      if (CONNECTOR_FACTORY_MAP.containsKey(SettingVariableTypes.valueOf(key))) {
+        BaseConnector baseConnector = CONNECTOR_FACTORY_MAP.get(SettingVariableTypes.valueOf(key));
+        status = baseConnector.getSupportStatus();
+      }
+      summaryMap.put(key, TypeSummary.builder().count(value).status(status).build());
+    });
 
     return ConnectorSummary.builder()
         .count(entities.size())
@@ -182,11 +185,15 @@ public class ConnectorMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     SettingAttribute settingAttribute = (SettingAttribute) entities.get(entityId).getEntity();
+    Map<CgEntityId, Set<CgEntityId>> graph = migrationContext.getGraph();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, settingAttribute.getName());
-    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String identifier = MigratorUtility.generateIdentifierDefaultName(
+        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
     Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);

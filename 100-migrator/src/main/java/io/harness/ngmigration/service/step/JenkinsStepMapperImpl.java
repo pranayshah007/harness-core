@@ -13,6 +13,7 @@ import io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterField;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterFieldType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -30,9 +31,11 @@ import software.wings.sm.states.JenkinsState;
 
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 public class JenkinsStepMapperImpl extends StepMapper {
   @Override
@@ -54,10 +57,11 @@ public class JenkinsStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     JenkinsState state = (JenkinsState) getState(graphNode);
     JenkinsBuildStepNode stepNode = new JenkinsBuildStepNode();
-    baseSetup(graphNode, stepNode);
+    baseSetup(graphNode, stepNode, context.getIdentifierCaseFormat());
 
     List<JenkinsParameterField> jobParams = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(state.getJobParameters())) {
@@ -96,14 +100,19 @@ public class JenkinsStepMapperImpl extends StepMapper {
   public List<StepExpressionFunctor> getExpressionFunctor(
       WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
     String sweepingOutputName = getSweepingOutputName(graphNode);
-
+    if (StringUtils.isEmpty(sweepingOutputName)) {
+      return Collections.emptyList();
+    }
     return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
         .stream()
         .map(exp
             -> StepOutput.builder()
-                   .stageIdentifier(MigratorUtility.generateIdentifier(phase.getName()))
-                   .stepIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()))
-                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
         .map(JenkinsStepFunctor::new)

@@ -275,7 +275,7 @@ public class AppServiceImpl implements AppService {
   public PageResponse<Application> list(
       PageRequest<Application> req, boolean details, boolean withTags, String tagFilter) {
     PageResponse<Application> response =
-        resourceLookupService.listWithTagFilters(req, tagFilter, EntityType.APPLICATION, withTags);
+        resourceLookupService.listWithTagFilters(req, tagFilter, EntityType.APPLICATION, withTags, false);
 
     List<Application> applicationList = response.getResponse();
     if (isEmpty(applicationList)) {
@@ -309,8 +309,8 @@ public class AppServiceImpl implements AppService {
       if (details) {
         PageRequest<Environment> envPageRequest =
             PageRequestBuilder.aPageRequest().addFilter("appId", Operator.IN, appIdArray).build();
-        List<Environment> envList =
-            wingsPersistence.getAllEntities(envPageRequest, () -> environmentService.list(envPageRequest, false, null));
+        List<Environment> envList = wingsPersistence.getAllEntities(
+            envPageRequest, () -> environmentService.list(envPageRequest, false, null, false));
         appIdEnvMap = envList.stream().collect(groupingBy(Environment::getAppId));
 
         PageRequest<Service> servicePageRequest =

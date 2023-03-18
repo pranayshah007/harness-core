@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.nio.charset.Charset.defaultCharset;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -36,6 +35,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -57,6 +57,9 @@ public class InfraDownloadServiceImpl implements InfraDownloadService {
   private static final String ON_PREM_ENV_STRING = "on-prem";
   private static final String ENV_ENV_VAR = "ENV";
   private static final String LOGGING_SERVICE_ACCOUNT_ENV_VAR = "LOGGING_SERVICE_ACC";
+  private static final List<String> gCloudLoggingScopes =
+      List.of(LoggingScopes.LOGGING_WRITE, LoggingScopes.LOGGING_READ);
+
   static final String DEFAULT_ERROR_STRING = "ERROR_GETTING_DATA";
   static final String LOCAL_DELEGATE = "file:///local-storage/wingsdelegates/delegate/delegate.jar";
   static final String LOCAL_WATCHER = "file:///local-storage/wingswatchers/watcher/watcher.jar";
@@ -84,7 +87,7 @@ public class InfraDownloadServiceImpl implements InfraDownloadService {
               try {
                 GoogleCredential credential =
                     GoogleCredential.fromStream(IOUtils.toInputStream(serviceAccountJson, defaultCharset()))
-                        .createScoped(singletonList(LoggingScopes.LOGGING_WRITE));
+                        .createScoped(gCloudLoggingScopes);
 
                 if (!credential.refreshToken()) {
                   throw new InvalidInfraException("Failed to refresh token");

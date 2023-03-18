@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.artifactstream;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
@@ -16,13 +18,20 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
+import io.harness.ngtriggers.beans.source.artifact.DockerRegistrySpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.DockerArtifactStream;
+import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,6 +51,29 @@ public class DockerArtifactStreamMapper implements ArtifactStreamMapper {
                   .imagePath(ParameterField.createValueField(dockerArtifactStream.getImageName()))
                   .tag(ParameterField.createValueField("<+input>"))
                   .build())
+        .build();
+  }
+
+  @Override
+  public ArtifactType getArtifactType(Map<CgEntityId, NGYamlFile> migratedEntities, ArtifactStream artifactStream) {
+    return ArtifactType.DOCKER_REGISTRY;
+  }
+
+  @Override
+  public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
+      Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
+    String connectorRef = getConnectorRef(migratedEntities, artifactStream);
+    List<TriggerEventDataCondition> eventConditions = Collections.emptyList();
+    String imagePath = PLEASE_FIX_ME;
+    if (artifactStream != null) {
+      DockerArtifactStream dockerArtifactStream = (DockerArtifactStream) artifactStream;
+      imagePath = dockerArtifactStream.getImageName();
+    }
+    return DockerRegistrySpec.builder()
+        .connectorRef(connectorRef)
+        .eventConditions(eventConditions)
+        .imagePath(imagePath)
+        .tag(PLEASE_FIX_ME)
         .build();
   }
 }

@@ -45,7 +45,6 @@ public class ModulesResourceNG {
 
   private Map<ModuleType, FeatureName> getModuleTypeFeatureNameMap() {
     Map<ModuleType, FeatureName> modules = new HashMap<>();
-    modules.put(ModuleType.CD, FeatureName.CDNG_ENABLED);
     modules.put(ModuleType.CE, FeatureName.CENG_ENABLED);
     modules.put(ModuleType.CF, FeatureName.CFNG_ENABLED);
     modules.put(ModuleType.CI, FeatureName.CING_ENABLED);

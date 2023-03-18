@@ -130,9 +130,8 @@ public class ResourceGroupDaoImpl implements ResourceGroupDao {
 
   @Override
   public Optional<ResourceGroup> delete(String identifier, String scopeIdentifier) {
-    return resourceGroupRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier)
-        .stream()
-        .findFirst()
-        .flatMap(r -> Optional.of(fromDBO(r)));
+    Optional<ResourceGroupDBO> optionalResourceGroupDBO =
+        resourceGroupRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier);
+    return optionalResourceGroupDBO.map(ResourceGroupDBOMapper::fromDBO);
   }
 }

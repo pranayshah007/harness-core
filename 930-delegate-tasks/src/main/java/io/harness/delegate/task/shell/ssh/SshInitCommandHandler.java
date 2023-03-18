@@ -22,8 +22,10 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.SshInitCommandTemplates;
+import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.ssh.NgCommandUnit;
+import io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit;
 import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.exception.CommandExecutionException;
@@ -33,6 +35,7 @@ import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
 import io.harness.shell.ExecuteCommandResponse;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -41,6 +44,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import org.apache.commons.lang3.StringUtils;
@@ -146,6 +150,7 @@ public class SshInitCommandHandler implements CommandHandler {
           properties.entrySet().stream().collect(toMap(o -> o.getKey().toString(), o -> o.getValue().toString()));
       context.addEnvVariables(mapOfEnvVariablesFromHost);
       context.addEnvVariables(taskParameters.getEnvironmentVariables());
+      evaluateCommandUnitsVariables(context, taskParameters.getCommandUnits());
       taskContext.put(RESOLVED_ENV_VARIABLES_KEY, context.getEnvironmentVariables());
 
     } catch (IOException e) {
@@ -186,5 +191,27 @@ public class SshInitCommandHandler implements CommandHandler {
       SshInitCommandTemplates.getTemplate(TAILWRAPPERV2_SH_FTL).process(templateParams, stringWriter);
       return stringWriter.toString();
     }
+  }
+
+  @VisibleForTesting
+  void evaluateCommandUnitsVariables(SshExecutorFactoryContext context, List<NgCommandUnit> ngCommandUnits) {
+    ngCommandUnits.forEach(commandUnit -> {
+      String commandUnitType = commandUnit.getCommandUnitType();
+      if (NGCommandUnitType.SCRIPT.equals(commandUnitType)) {
+        ScriptCommandUnit scriptCommandUnit = (ScriptCommandUnit) commandUnit;
+        scriptCommandUnit.setWorkingDirectory(context.evaluateVariable(scriptCommandUnit.getWorkingDirectory()));
+      }
+
+      if (NGCommandUnitType.COPY.equals(commandUnitType)) {
+        CopyCommandUnit copyCommandUnit = (CopyCommandUnit) commandUnit;
+        copyCommandUnit.setDestinationPath(context.evaluateVariable(copyCommandUnit.getDestinationPath()));
+      }
+
+      if (NGCommandUnitType.DOWNLOAD_ARTIFACT.equals(commandUnitType)) {
+        NgDownloadArtifactCommandUnit downloadArtifactCommandUnit = (NgDownloadArtifactCommandUnit) commandUnit;
+        downloadArtifactCommandUnit.setDestinationPath(
+            context.evaluateVariable(downloadArtifactCommandUnit.getDestinationPath()));
+      }
+    });
   }
 }

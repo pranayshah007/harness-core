@@ -41,6 +41,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateTaskDetails;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ServiceNowException;
 import io.harness.ff.FeatureFlagService;
@@ -88,6 +89,7 @@ public class ServiceNowCreateUpdateStateTest extends CategoryTest {
   @Mock SweepingOutputService sweepingOutputService;
   @Mock StateExecutionService stateExecutionService;
   @Mock FeatureFlagService featureFlagService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @InjectMocks ServiceNowCreateUpdateState serviceNowCreateUpdateState = new ServiceNowCreateUpdateState(STATE_NAME);
 
   @Before

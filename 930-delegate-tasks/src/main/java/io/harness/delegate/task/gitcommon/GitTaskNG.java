@@ -94,8 +94,8 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
       if (CollectionUtils.isNotEmpty(gitTaskNGRequest.getGitRequestFileConfigs())) {
         for (GitRequestFileConfig gitRequestFileConfig : gitTaskNGRequest.getGitRequestFileConfigs()) {
           try {
-            FetchFilesResult fetchFilesResult =
-                fetchManifestFile(gitRequestFileConfig, executionLogCallback, gitTaskNGRequest.getAccountId());
+            FetchFilesResult fetchFilesResult = fetchManifestFile(gitRequestFileConfig, executionLogCallback,
+                gitTaskNGRequest.getAccountId(), gitTaskNGRequest.isCloseLogStream());
             GitFetchFilesResult gitFetchFilesResult =
                 GitFetchFilesResult.builder()
                     .files(fetchFilesResult.getFiles() != null ? fetchFilesResult.getFiles() : Lists.newArrayList())
@@ -139,8 +139,8 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
     }
   }
 
-  private FetchFilesResult fetchManifestFile(
-      GitRequestFileConfig gitRequestFileConfig, LogCallback executionLogCallback, String accountId) throws Exception {
+  private FetchFilesResult fetchManifestFile(GitRequestFileConfig gitRequestFileConfig,
+      LogCallback executionLogCallback, String accountId, boolean closeLogStream) throws Exception {
     executionLogCallback.saveExecutionLog(
         color(format("Fetching %s config file with identifier : %s", gitRequestFileConfig.getManifestType(),
                   gitRequestFileConfig.getIdentifier()),
@@ -168,7 +168,7 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
     List<String> filePaths = null;
     if (isNotEmpty(gitStoreDelegateConfig.getPaths())) {
       filePaths = gitRequestFileConfig.getGitStoreDelegateConfig().getPaths();
-      gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, false);
+      gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, closeLogStream);
     }
     filesResult = gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
     if (!gitRequestFileConfig.isSucceedIfFileNotFound()) {

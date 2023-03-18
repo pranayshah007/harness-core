@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.entity;
 
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
+import static software.wings.ngmigration.NGMigrationEntityType.SECRET_MANAGER_TEMPLATE;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -24,6 +25,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -51,6 +53,7 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 import software.wings.service.intfc.security.SecretManager;
 
 import com.google.inject.Inject;
@@ -119,6 +122,10 @@ public class SecretManagerMigrationService extends NgMigrationService {
                                          .entity(managerConfig)
                                          .build();
     Set<CgEntityId> children = new HashSet<>();
+    if (managerConfig instanceof CustomSecretsManagerConfig) {
+      CustomSecretsManagerConfig sm = (CustomSecretsManagerConfig) managerConfig;
+      children.add(CgEntityId.builder().id(sm.getTemplateId()).type(SECRET_MANAGER_TEMPLATE).build());
+    }
     return DiscoveryNode.builder().children(children).entityNode(secretManagerNode).build();
   }
 
@@ -149,8 +156,10 @@ public class SecretManagerMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     SecretManagerConfig secretManagerConfig = (SecretManagerConfig) entities.get(entityId).getEntity();
     String name = secretManagerConfig.getName().trim();
     String identifier;
@@ -159,7 +168,8 @@ public class SecretManagerMigrationService extends NgMigrationService {
       identifier = "harnessSecretManager";
     } else {
       name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, secretManagerConfig.getName());
-      identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+      identifier = MigratorUtility.generateIdentifierDefaultName(
+          inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
     }
     Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);

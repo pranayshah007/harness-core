@@ -71,6 +71,10 @@ if [[ "" != "$ECR_PUSH_IMAGE" ]]; then
   export ECR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushECRConfig.image=env(ECR_PUSH_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$ACR_PUSH_IMAGE" ]]; then
+  export ACR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushACRConfig.image=env(ACR_PUSH_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$GCR_PUSH_IMAGE" ]]; then
   export GCR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushGCRConfig.image=env(GCR_PUSH_IMAGE)' $CONFIG_FILE
 fi
@@ -145,6 +149,15 @@ fi
 
 if [[ "" != "$HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL" ]]; then
   export HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitWindowsAmd64Pool=env(HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$HOSTED_VM_INTERNAL_ACCOUNTS" ]]; then
+  IFS=',' read -ra INTERNAL_ACCOUNTS <<< "$HOSTED_VM_INTERNAL_ACCOUNTS"
+  INDEX=0
+  for HOSTED_VM_INTERNAL_URL in "${INTERNAL_ACCOUNTS[@]}"; do
+    export HOSTED_VM_INTERNAL_URL; export INDEX; yq -i '.ciExecutionServiceConfig.hostedVmConfig.internalAccounts.[env(INDEX)]=env(HOSTED_VM_INTERNAL_URL)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
 fi
 
 if [[ "" != "$VM_ARTIFACTORY_UPLOAD_IMAGE" ]]; then
@@ -467,3 +480,6 @@ replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
 replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
 
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
+
+replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
+replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"

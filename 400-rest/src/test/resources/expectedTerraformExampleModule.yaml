@@ -10,11 +10,6 @@ module "delegate" {
   delegate_image = "delegate:latest"
   replicas = 1
   upgrader_enabled = false
-
-  # Additional optional values to pass to the helm chart
-  values = yamlencode({
-    javaOpts: "-Xms64M"
-  })
 }
 
 provider "helm" {

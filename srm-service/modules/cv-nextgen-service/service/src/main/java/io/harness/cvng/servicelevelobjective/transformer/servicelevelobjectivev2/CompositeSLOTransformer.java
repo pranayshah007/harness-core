@@ -12,12 +12,10 @@ import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.ng.core.mapper.TagMapper;
@@ -68,11 +66,6 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
   }
 
   @Override
-  public CompositeServiceLevelObjective getSLOV2(ServiceLevelObjective serviceLevelObjective) {
-    throw new RuntimeException("Can't convert SLO into composite SLO");
-  }
-
-  @Override
   public ServiceLevelObjectiveV2DTO getSLOV2DTO(CompositeServiceLevelObjective serviceLevelObjective) {
     return ServiceLevelObjectiveV2DTO.builder()
         .type(ServiceLevelObjectiveType.COMPOSITE)
@@ -101,9 +94,5 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
         .tags(TagMapper.convertToMap(serviceLevelObjective.getTags()))
         .userJourneyRefs(serviceLevelObjective.getUserJourneyIdentifiers())
         .build();
-  }
-
-  public ServiceLevelObjectiveV2DTO getSLOV2DTO(ServiceLevelObjectiveDTO serviceLevelObjectiveDTO) {
-    throw new RuntimeException("Can't convert SLODTO into composite SLODTO");
   }
 }

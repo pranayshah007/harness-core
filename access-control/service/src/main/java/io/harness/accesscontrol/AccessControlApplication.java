@@ -17,6 +17,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.authorization.AuthorizationServiceHeader.DELEGATE_SERVICE;
 import static io.harness.authorization.AuthorizationServiceHeader.IDENTITY_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.authorization.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
@@ -375,6 +376,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     serviceToSecretMapping.put(ACCESS_CONTROL_SERVICE.getServiceId(), configuration.getDefaultServiceSecret());
     serviceToSecretMapping.put(CODE.getServiceId(), configuration.getDefaultServiceSecret());
     serviceToSecretMapping.put(IDENTITY_SERVICE.getServiceId(), configuration.getIdentityServiceSecret());
+    serviceToSecretMapping.put(IDP_SERVICE.getServiceId(), configuration.getDefaultServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
   }

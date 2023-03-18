@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 46
+version: 50
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -446,6 +446,14 @@ permissions:
       - account
       - organization
       - project
+  - identifier: core_serviceaccount_list
+    name: List Service Accounts
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: core_serviceaccount_edit
     name: Create or Edit ServiceAccount
     status: ACTIVE
@@ -739,6 +747,30 @@ permissions:
       - project
   - identifier: chi_slo_delete
     name: Delete a SLO
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chi_downtime_view
+    name: View Downtime
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chi_downtime_edit
+    name: Create or Edit a Downtime
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chi_downtime_delete
+    name: Delete a Downtime
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
@@ -1105,6 +1137,14 @@ permissions:
       - account
       - organization
       - project
+  - identifier: chaos_chaosexperiment_execute
+    name: Execute a Chaos Experiment
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: chaos_chaosgameday_view
     name: View a Chaos GameDay
     status: ACTIVE
@@ -1314,6 +1354,12 @@ permissions:
     includedInAllRoles: false
     allowedScopeLevels:
       - account
+  - identifier: ccm_cloudAssetGovernanceRule_execute
+    name: Enforce a CCM Governance  Rule
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
   - identifier: ccm_cloudAssetGovernanceRuleSet_edit
     name: Edit a CCM Governance  Rule Set
     status: ACTIVE
@@ -1384,5 +1430,11 @@ permissions:
   - identifier: core_streamingDestination_delete
     name: Delete Streaming Destination
     status: ACTIVE
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpsettings_manage
+    name: Manage Policies in settings UI
+    status: ACTIVE
+    includedInAllRoles: false
     allowedScopeLevels:
       - account

@@ -32,5 +32,5 @@ public interface YamlChangeSetRepository
 
   List<YamlChangeSet> findByAccountIdAndQueueKeyAndStatus(String accountId, String queueKey, String status);
 
-  List<YamlChangeSet> findAllByAccountId(String accountId);
+  long deleteAllByAccountId(String accountId);
 }

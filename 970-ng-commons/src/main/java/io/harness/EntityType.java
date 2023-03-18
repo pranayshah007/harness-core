@@ -522,6 +522,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.TERRAFORM_CLOUD_RUN)
   TERRAFORM_CLOUD_RUN(ModuleType.CD, EntityTypeConstants.TERRAFORM_CLOUD_RUN, IdentifierRef.class,
       EntityYamlRootNames.TERRAFORM_CLOUD_RUN),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_CLOUD_ROLLBACK)
+  TERRAFORM_CLOUD_ROLLBACK(ModuleType.CD, EntityTypeConstants.TERRAFORM_CLOUD_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.TERRAFORM_CLOUD_ROLLBACK),
   @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
   GOOGLE_CLOUD_FUNCTIONS_DEPLOY(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY, IdentifierRef.class,
       EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_DEPLOY),
@@ -537,7 +540,26 @@ public enum EntityType {
       IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK),
   @JsonProperty(EntityTypeConstants.AWS_LAMBDA_DEPLOY)
   AWS_LAMBDA_DEPLOY(
-      ModuleType.CD, EntityTypeConstants.AWS_LAMBDA_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_LAMBDA_DEPLOY);
+      ModuleType.CD, EntityTypeConstants.AWS_LAMBDA_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_LAMBDA_DEPLOY),
+  @JsonProperty(EntityTypeConstants.AWS_SAM_DEPLOY)
+  AWS_SAM_DEPLOY(
+      ModuleType.CD, EntityTypeConstants.AWS_SAM_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_DEPLOY),
+  @JsonProperty(EntityTypeConstants.AWS_SAM_ROLLBACK)
+  AWS_SAM_ROLLBACK(
+      ModuleType.CD, EntityTypeConstants.AWS_SAM_ROLLBACK, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.SSCA_ORCHESTRATION)
+  SSCA_ORCHESTRATION(ModuleType.CI, EntityTypeConstants.SSCA_ORCHESTRATION, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.AWS_LAMBDA_ROLLBACK)
+  AWS_LAMBDA_ROLLBACK(ModuleType.CD, EntityTypeConstants.AWS_LAMBDA_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.AWS_LAMBDA_ROLLBACK),
+  GITOPS_SYNC(ModuleType.CD, EntityTypeConstants.GITOPS_SYNC, IdentifierRef.class, EntityYamlRootNames.GITOPS_SYNC),
+  @JsonProperty(EntityTypeConstants.BAMBOO_BUILD)
+  BAMBOO_BUILD(ModuleType.CD, EntityTypeConstants.BAMBOO_BUILD, IdentifierRef.class, EntityYamlRootNames.BAMBOO_BUILD),
+  @JsonProperty(EntityTypeConstants.CD_SSCA_ORCHESTRATION)
+  CD_SSCA_ORCHESTRATION(ModuleType.CD, EntityTypeConstants.CD_SSCA_ORCHESTRATION, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.TAS_ROUTE_MAPPING)
+  TAS_ROUTE_MAPPING(
+      ModuleType.CD, EntityTypeConstants.TAS_ROUTE_MAPPING, IdentifierRef.class, EntityYamlRootNames.TAS_ROUTE_MAPPING);
 
   private final ModuleType moduleType;
   String yamlName;

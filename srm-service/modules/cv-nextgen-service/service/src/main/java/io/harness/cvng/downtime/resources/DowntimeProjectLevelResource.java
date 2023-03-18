@@ -8,7 +8,6 @@ package io.harness.cvng.downtime.resources;
 
 import static io.harness.cvng.core.beans.params.ProjectParams.fromProjectPathParams;
 import static io.harness.cvng.core.beans.params.ProjectParams.fromResourcePathParams;
-import static io.harness.cvng.core.resources.MonitoredServiceResource.TOGGLE_PERMISSION;
 import static io.harness.cvng.core.services.CVNextGenConstants.DOWNTIME_PROJECT_PATH;
 import static io.harness.cvng.core.services.CVNextGenConstants.RESOURCE_IDENTIFIER_PATH;
 
@@ -202,7 +201,7 @@ public class DowntimeProjectLevelResource {
   /*  @Operation(operationId = "enableDisableDowntime", summary = "Enables or Disables Downtime",
         responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Enables or Disables Downtime")
      })*/
-  @NGAccessControlCheck(resourceType = DOWNTIME, permission = TOGGLE_PERMISSION)
+  @NGAccessControlCheck(resourceType = DOWNTIME, permission = EDIT_PERMISSION)
   public RestResponse<DowntimeResponse> updateDowntimeEnabled(
       @Valid @BeanParam ResourcePathParams resourcePathParams, @NotNull @QueryParam("enable") Boolean enable) {
     ProjectParams projectParams = fromResourcePathParams(resourcePathParams);

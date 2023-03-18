@@ -8,6 +8,7 @@
 package io.harness.batch.processing.dao.impl;
 
 import static io.harness.ccm.commons.beans.InstanceType.K8S_PV;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HPersistence.upsertReturnOldOptions;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.persistence.HQuery.excludeAuthorityCount;
@@ -151,7 +152,7 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
   public List<InstanceData> fetchActivePVList(
       String accountId, Set<String> clusterIds, Instant startTime, Instant endTime) {
     Query<InstanceData> query;
-    if (clusterIds == null || clusterIds.isEmpty()) {
+    if (isEmpty(clusterIds)) {
       query = getActiveInstanceQuery(accountId, startTime, endTime, singletonList(K8S_PV));
       return query.asList();
     } else {

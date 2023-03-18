@@ -22,7 +22,7 @@ import lombok.With;
 @Value
 @Builder
 public class UnAckRequest {
-  String itemID;
+  String itemId;
 
   Integer retryTimeAfterDuration;
 

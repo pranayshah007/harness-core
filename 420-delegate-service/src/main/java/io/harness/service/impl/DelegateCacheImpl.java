@@ -9,6 +9,9 @@ package io.harness.service.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME_FIVE_MINS;
+import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATES_FROM_GROUP_CACHE;
+import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATE_CACHE;
+import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATE_GROUP_CACHE;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -23,8 +26,10 @@ import io.harness.delegate.beans.DelegateGroup.DelegateGroupKeys;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfile.DelegateProfileKeys;
 import io.harness.delegate.beans.DelegateTaskRank;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.persistence.HPersistence;
+import io.harness.redis.intfc.DelegateRedissonCacheManager;
 import io.harness.service.intfc.DelegateCache;
 
 import com.google.common.cache.CacheBuilder;
@@ -34,6 +39,7 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +52,7 @@ import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.redisson.api.RLocalCachedMap;
 
 @Singleton
 @ValidateOnExecution
@@ -55,6 +62,15 @@ public class DelegateCacheImpl implements DelegateCache {
   private static final int MAX_DELEGATE_META_INFO_ENTRIES = 10000;
 
   @Inject private HPersistence persistence;
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
+
+  @Inject @Named(DELEGATE_CACHE) RLocalCachedMap<String, Delegate> delegateRedisCache;
+  @Inject @Named(DELEGATE_GROUP_CACHE) RLocalCachedMap<String, DelegateGroup> delegateGroupRedisCache;
+  @Inject @Named(DELEGATES_FROM_GROUP_CACHE) RLocalCachedMap<String, List<Delegate>> delegatesFromGroupRedisCache;
+
+  @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
+
+  @Inject DelegateRedissonCacheManager delegateRedissonCacheManager;
 
   private LoadingCache<String, Optional<Delegate>> delegateCache =
       CacheBuilder.newBuilder()
@@ -129,10 +145,7 @@ public class DelegateCacheImpl implements DelegateCache {
           .build(new CacheLoader<String, Long>() {
             @Override
             public Long load(@NotNull String accountId) {
-              return persistence.createQuery(DelegateTask.class)
-                  .filter(DelegateTaskKeys.accountId, accountId)
-                  .filter(DelegateTaskKeys.rank, DelegateTaskRank.OPTIONAL)
-                  .count();
+              return populateDelegateTaskCount(accountId, DelegateTaskRank.OPTIONAL);
             }
           });
 
@@ -143,16 +156,17 @@ public class DelegateCacheImpl implements DelegateCache {
           .build(new CacheLoader<String, Long>() {
             @Override
             public Long load(@NotNull String accountId) {
-              return persistence.createQuery(DelegateTask.class)
-                  .filter(DelegateTaskKeys.accountId, accountId)
-                  .filter(DelegateTaskKeys.rank, DelegateTaskRank.IMPORTANT)
-                  .count();
+              return populateDelegateTaskCount(accountId, DelegateTaskRank.IMPORTANT);
             }
           });
 
   @Override
   public Delegate get(String accountId, String delegateId, boolean forceRefresh) {
     try {
+      if (enableRedisForDelegateService) {
+        return getDelegateFromRedisCache(delegateId, forceRefresh);
+      }
+
       if (forceRefresh) {
         delegateCache.refresh(delegateId);
       }
@@ -179,6 +193,9 @@ public class DelegateCacheImpl implements DelegateCache {
     }
 
     try {
+      if (enableRedisForDelegateService) {
+        return getDelegateGroupRedisCache(accountId, delegateGroupId);
+      }
       return delegateGroupCache.get(ImmutablePair.of(accountId, delegateGroupId));
     } catch (ExecutionException | CacheLoader.InvalidCacheLoadException e) {
       return null;
@@ -209,6 +226,9 @@ public class DelegateCacheImpl implements DelegateCache {
       return null;
     }
     try {
+      if (enableRedisForDelegateService) {
+        return getDelegatesForGroupRedisCache(accountId, delegateGroupId);
+      }
       return delegatesFromGroupCache.get(ImmutablePair.of(accountId, delegateGroupId));
     } catch (ExecutionException | CacheLoader.InvalidCacheLoadException e) {
       log.warn("Unable to getDelegates from cache based on group id");
@@ -272,5 +292,52 @@ public class DelegateCacheImpl implements DelegateCache {
         .project(DelegateKeys.accountId, true)
         .project(DelegateKeys.supportedTaskTypes, true)
         .asList();
+  }
+
+  private Long populateDelegateTaskCount(String accountId, DelegateTaskRank rank) {
+    long count = getDelegateTaskCount(accountId, rank, false);
+
+    if (delegateTaskMigrationHelper.isDelegateTaskMigrationEnabled()) {
+      count += getDelegateTaskCount(accountId, rank, true);
+    }
+    return count;
+  }
+
+  private long getDelegateTaskCount(String accountId, DelegateTaskRank rank, boolean isDelegateTaskMigrationEnabled) {
+    return persistence.createQuery(DelegateTask.class, isDelegateTaskMigrationEnabled)
+        .filter(DelegateTaskKeys.accountId, accountId)
+        .filter(DelegateTaskKeys.rank, rank)
+        .count();
+  }
+
+  private Delegate getDelegateFromRedisCache(String delegateId, boolean forceRefresh) {
+    if (delegateRedisCache.get(delegateId) == null || forceRefresh) {
+      Delegate delegate = persistence.createQuery(Delegate.class).filter(DelegateKeys.uuid, delegateId).get();
+      delegateRedisCache.put(delegateId, delegate);
+    }
+    return delegateRedisCache.get(delegateId);
+  }
+
+  private DelegateGroup getDelegateGroupRedisCache(String accountId, String delegateGroupId) {
+    if (delegateGroupRedisCache.get(delegateGroupId) == null) {
+      DelegateGroup delegateGroup = persistence.createQuery(DelegateGroup.class)
+                                        .filter(DelegateGroupKeys.accountId, accountId)
+                                        .filter(DelegateGroupKeys.uuid, delegateGroupId)
+                                        .get();
+      delegateGroupRedisCache.put(delegateGroupId, delegateGroup);
+    }
+    return delegateGroupRedisCache.get(delegateGroupId);
+  }
+
+  private List<Delegate> getDelegatesForGroupRedisCache(String accountId, String delegateGroupId) {
+    if (delegatesFromGroupRedisCache.get(delegateGroupId) == null) {
+      List<Delegate> delegateList = persistence.createQuery(Delegate.class)
+                                        .filter(DelegateKeys.accountId, accountId)
+                                        .filter(DelegateKeys.ng, true)
+                                        .filter(DelegateKeys.delegateGroupId, delegateGroupId)
+                                        .asList();
+      delegatesFromGroupRedisCache.put(delegateGroupId, delegateList);
+    }
+    return delegatesFromGroupRedisCache.get(delegateGroupId);
   }
 }

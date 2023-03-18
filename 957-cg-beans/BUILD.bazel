@@ -36,7 +36,6 @@ java_library(
         "//957-cg-beans/src/main/java/software/wings/service/intfc/customdeployment:module",
         "//957-cg-beans/src/main/java/software/wings/service/intfc/ownership:module",
         "//957-cg-beans/src/main/java/software/wings/stencils:module",
-        "//957-cg-beans/src/main/java/software/wings/verification:module",
         "//959-common-entities:module",
         "//959-file-service-commons:module",
         "//960-ng-license-beans:module",

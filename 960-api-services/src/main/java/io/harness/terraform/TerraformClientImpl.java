@@ -88,11 +88,21 @@ public class TerraformClientImpl implements TerraformClient {
   public CliResponse destroy(TerraformDestroyCommandRequest terraformDestroyCommandRequest, long timeoutInMillis,
       Map<String, String> envVariables, String scriptDirectory, @Nonnull LogCallback executionLogCallback)
       throws InterruptedException, TimeoutException, IOException {
-    String command = format("terraform destroy %s %s %s",
-        TerraformHelperUtils.getAutoApproveArgument(version(timeoutInMillis, scriptDirectory)),
-        TerraformHelperUtils.generateCommandFlagsString(terraformDestroyCommandRequest.getTargets(), TARGET_PARAM),
-        TerraformHelperUtils.generateCommandFlagsString(
-            terraformDestroyCommandRequest.getVarFilePaths(), VAR_FILE_PARAM));
+    String command;
+
+    if (terraformDestroyCommandRequest.isTerraformCloudCli()) {
+      // terraform Cloud var files are located in script directory having this suffix .auto.tfvars, so we don't pass
+      // them as arguments -var-file
+      command = format("echo yes | terraform destroy %s %s",
+          TerraformHelperUtils.getAutoApproveArgument(version(timeoutInMillis, scriptDirectory)),
+          TerraformHelperUtils.generateCommandFlagsString(terraformDestroyCommandRequest.getTargets(), TARGET_PARAM));
+    } else {
+      command = format("terraform destroy %s %s %s",
+          TerraformHelperUtils.getAutoApproveArgument(version(timeoutInMillis, scriptDirectory)),
+          TerraformHelperUtils.generateCommandFlagsString(terraformDestroyCommandRequest.getTargets(), TARGET_PARAM),
+          TerraformHelperUtils.generateCommandFlagsString(
+              terraformDestroyCommandRequest.getVarFilePaths(), VAR_FILE_PARAM));
+    }
     return executeTerraformCLICommand(command, timeoutInMillis, envVariables, scriptDirectory, executionLogCallback,
         command, new LogCallbackOutputStream(executionLogCallback));
   }
@@ -104,15 +114,27 @@ public class TerraformClientImpl implements TerraformClient {
       throws InterruptedException, TimeoutException, IOException {
     String command;
     if (terraformPlanCommandRequest.isDestroySet()) {
-      command = format("terraform plan -input=false -detailed-exitcode -destroy -out=tfdestroyplan %s %s",
-          TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM),
-          TerraformHelperUtils.generateCommandFlagsString(
-              terraformPlanCommandRequest.getVarFilePaths(), VAR_FILE_PARAM));
+      if (terraformPlanCommandRequest.isTerraformCloudCli()) {
+        // terraform Cloud var files are located in script directory having this suffix .auto.tfvars, so we don't pass
+        // them as arguments -var-file
+        command = format("terraform plan -input=false -detailed-exitcode -destroy %s",
+            TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM));
+      } else {
+        command = format("terraform plan -input=false -detailed-exitcode -destroy -out=tfdestroyplan %s %s",
+            TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM),
+            TerraformHelperUtils.generateCommandFlagsString(
+                terraformPlanCommandRequest.getVarFilePaths(), VAR_FILE_PARAM));
+      }
     } else {
-      command = format("terraform plan -input=false -detailed-exitcode -out=tfplan %s %s",
-          TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM),
-          TerraformHelperUtils.generateCommandFlagsString(
-              terraformPlanCommandRequest.getVarFilePaths(), VAR_FILE_PARAM));
+      if (terraformPlanCommandRequest.isTerraformCloudCli()) {
+        command = format("terraform plan -input=false -detailed-exitcode %s",
+            TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM));
+      } else {
+        command = format("terraform plan -input=false -detailed-exitcode -out=tfplan %s %s",
+            TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM),
+            TerraformHelperUtils.generateCommandFlagsString(
+                terraformPlanCommandRequest.getVarFilePaths(), VAR_FILE_PARAM));
+      }
     }
 
     if (isNotEmpty(terraformPlanCommandRequest.getVarParams())) {
@@ -153,7 +175,15 @@ public class TerraformClientImpl implements TerraformClient {
   public CliResponse apply(TerraformApplyCommandRequest terraformApplyCommandRequest, long timeoutInMillis,
       Map<String, String> envVariables, String scriptDirectory, @Nonnull LogCallback executionLogCallback)
       throws InterruptedException, TimeoutException, IOException {
-    String command = "terraform apply -input=false " + terraformApplyCommandRequest.getPlanName();
+    String command;
+    if (terraformApplyCommandRequest.isTerraformCloudCli()) {
+      // terraform Cloud var files are located in script directory having this suffix .auto.tfvars, so we don't pass
+      // them as arguments -var-file
+      command = format("echo yes | terraform apply %s",
+          TerraformHelperUtils.generateCommandFlagsString(terraformApplyCommandRequest.getTargets(), TARGET_PARAM));
+    } else {
+      command = "terraform apply -input=false " + terraformApplyCommandRequest.getPlanName();
+    }
     return executeTerraformCLICommand(command, timeoutInMillis, envVariables, scriptDirectory, executionLogCallback,
         command, new LogCallbackOutputStream(executionLogCallback));
   }

@@ -37,7 +37,6 @@ import io.harness.connector.entities.embedded.gcpkmsconnector.GcpKmsConnector.Gc
 import io.harness.connector.services.ConnectorFilterService;
 import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.dto.FilterPropertiesDTO;
@@ -45,6 +44,7 @@ import io.harness.filter.service.FilterService;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.utils.URLDecoderUtility;
+import io.harness.scope.ScopeHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

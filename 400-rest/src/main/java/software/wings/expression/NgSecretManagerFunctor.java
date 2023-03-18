@@ -82,7 +82,6 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
   SecretManagerClientService ngSecretService;
   SecretManagerMode mode;
   private final ExecutorService expressionEvaluatorExecutor;
-  private final boolean evaluateSync;
 
   @Builder.Default Map<String, String> evaluatedSecrets = new ConcurrentHashMap<>();
   @Builder.Default Map<String, String> evaluatedDelegateSecrets = new ConcurrentHashMap<>();
@@ -97,14 +96,11 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
       throw new FunctorException(MISMATCHING_INTERNAL_FUNCTOR_ERROR_MSG);
     }
     try {
-      if (!evaluateSync) {
-        if (expressionEvaluatorExecutor != null) {
-          // Offload expression evaluation of secrets to another threadpool.
-          return expressionEvaluatorExecutor.submit(
-              () -> obtainInternal(secretIdentifier, SecretVariableDTO.Type.TEXT));
-        }
+      if (expressionEvaluatorExecutor != null) {
+        // Offload expression evaluation of secrets to another threadpool.
+        return expressionEvaluatorExecutor.submit(() -> obtainInternal(secretIdentifier, SecretVariableDTO.Type.TEXT));
       }
-      log.warn("Expression evaluation is being processed synchronously");
+      log.warn("Error while performing evaluating secrets async !! trying in sync");
       return obtainInternal(secretIdentifier, SecretVariableDTO.Type.TEXT);
     } catch (Exception ex) {
       throw new FunctorException("Error occurred while evaluating the secret [" + secretIdentifier + "]", ex);

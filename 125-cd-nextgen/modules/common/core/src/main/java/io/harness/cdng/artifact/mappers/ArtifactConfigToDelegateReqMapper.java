@@ -31,6 +31,7 @@ import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
@@ -45,6 +46,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConne
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
@@ -57,6 +59,7 @@ import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
@@ -218,6 +221,16 @@ public class ArtifactConfigToDelegateReqMapper {
     return ArtifactDelegateRequestUtils.getJenkinsDelegateArtifactRequest(connectorRef, connectorDTO,
         encryptedDataDetails, ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath),
         buildNumber);
+  }
+
+  public BambooArtifactDelegateRequest getBambooDelegateRequest(BambooArtifactConfig artifactConfig,
+      BambooConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    List<String> artifactPath = artifactConfig.getArtifactPaths() != null ? artifactConfig.getArtifactPaths().getValue()
+                                                                          : Collections.emptyList();
+    String planKey = artifactConfig.getPlanKey() != null ? artifactConfig.getPlanKey().getValue() : "";
+    String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
+    return ArtifactDelegateRequestUtils.getBambooDelegateArtifactRequest(connectorRef, connectorDTO,
+        encryptedDataDetails, ArtifactSourceType.BAMBOO, planKey, artifactPath, buildNumber);
   }
   public CustomArtifactDelegateRequest getCustomDelegateRequest(
       CustomArtifactConfig artifactConfig, Ambiance ambiance) {

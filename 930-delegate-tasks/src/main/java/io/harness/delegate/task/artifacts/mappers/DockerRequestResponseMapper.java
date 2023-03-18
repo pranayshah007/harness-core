@@ -15,7 +15,7 @@ import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
-import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
+import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 
 import java.util.List;
 import java.util.Map;

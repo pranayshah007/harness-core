@@ -45,9 +45,7 @@ public class EcsStepHelperImpl implements EcsStepHelper {
             .filter(ecsManifest -> ManifestType.EcsTaskDefinition.equals(ecsManifest.getType()))
             .collect(Collectors.toList());
 
-    if (isEmpty(ecsTaskDefinitions)) {
-      throw new InvalidRequestException("ECS Task Definition manifest is mandatory, but not found.", USER);
-    } else if (ecsTaskDefinitions.size() > 1) {
+    if (ecsTaskDefinitions.size() > 1) {
       throw new InvalidRequestException(
           format("Only one ECS Task Definition manifest is expected. Found %s.", ecsTaskDefinitions.size()), USER);
     }
@@ -71,10 +69,11 @@ public class EcsStepHelperImpl implements EcsStepHelper {
 
   @Override
   public ManifestOutcome getEcsTaskDefinitionManifestOutcome(Collection<ManifestOutcome> manifestOutcomes) {
-    return manifestOutcomes.stream()
-        .filter(manifestOutcome -> ManifestType.EcsTaskDefinition.equals(manifestOutcome.getType()))
-        .collect(Collectors.toList())
-        .get(0);
+    List<ManifestOutcome> manifestOutcomeList =
+        manifestOutcomes.stream()
+            .filter(manifestOutcome -> ManifestType.EcsTaskDefinition.equals(manifestOutcome.getType()))
+            .collect(Collectors.toList());
+    return manifestOutcomeList.isEmpty() ? null : manifestOutcomeList.get(0);
   }
 
   @Override

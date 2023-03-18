@@ -159,12 +159,12 @@ public class InputSetEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Inp
       final InputSetYamlInfoDTO inputSetInfo = inputSetYamlDTO.getInputSetInfo();
       inputSetEntity = pmsInputSetService.getWithoutValidations(accountIdentifier, inputSetInfo.getOrgIdentifier(),
           inputSetInfo.getProjectIdentifier(), inputSetInfo.getPipelineInfoConfig().getIdentifier(),
-          inputSetInfo.getIdentifier(), false, false);
+          inputSetInfo.getIdentifier(), false, false, false);
     } else {
       final OverlayInputSetYamlInfoDTO overlayInputSetInfo = inputSetYamlDTO.getOverlayInputSetInfo();
       inputSetEntity = pmsInputSetService.getWithoutValidations(accountIdentifier,
           overlayInputSetInfo.getOrgIdentifier(), overlayInputSetInfo.getProjectIdentifier(),
-          overlayInputSetInfo.getPipelineIdentifier(), overlayInputSetInfo.getIdentifier(), false, false);
+          overlayInputSetInfo.getPipelineIdentifier(), overlayInputSetInfo.getIdentifier(), false, false, false);
     }
     return inputSetEntity.map(EntityGitDetailsMapper::mapEntityGitDetails);
   }
@@ -182,7 +182,7 @@ public class InputSetEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Inp
         StringValueUtils.getStringFromStringValue(inputSetRef.getOrgIdentifier()),
         StringValueUtils.getStringFromStringValue(inputSetRef.getProjectIdentifier()),
         StringValueUtils.getStringFromStringValue(inputSetRef.getPipelineIdentifier()),
-        StringValueUtils.getStringFromStringValue(inputSetRef.getIdentifier()), false, false);
+        StringValueUtils.getStringFromStringValue(inputSetRef.getIdentifier()), false, false, false);
     if (!inputSetEntity.isPresent()) {
       throw new InvalidRequestException(
           format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] doesn't exist.",

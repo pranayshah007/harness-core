@@ -284,7 +284,7 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
-  public void testShouldCopyArtifactWithCustomArtifactDelegateConfig() {
+  public void testCopyArtifactWithCustomArtifactDelegateConfig_Fails() {
     doReturn(fileBasedSshScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
     when(fileBasedSshScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.SUCCESS);
 

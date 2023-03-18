@@ -9,10 +9,13 @@ package io.harness.engine.expressions;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.expressions.functors.ExecutionSweepingOutputFunctor;
+import io.harness.engine.expressions.functors.ExpandedJsonFunctor;
+import io.harness.engine.expressions.functors.ExpandedJsonFunctorUtils;
 import io.harness.engine.expressions.functors.NodeExecutionAncestorFunctor;
 import io.harness.engine.expressions.functors.NodeExecutionChildFunctor;
 import io.harness.engine.expressions.functors.NodeExecutionEntityType;
@@ -24,7 +27,9 @@ import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.exception.EngineExpressionEvaluationException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.EngineJexlContext;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.RegexFunctor;
 import io.harness.expression.ResolveObjectResponse;
@@ -33,12 +38,14 @@ import io.harness.expression.XmlFunctor;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.expression.functors.NGJsonFunctor;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.ProcessorResult;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterDocumentField;
 import io.harness.pms.yaml.ParameterDocumentFieldMapper;
 import io.harness.pms.yaml.ParameterFieldProcessor;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -50,6 +57,7 @@ import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
 /**
@@ -66,6 +74,7 @@ import org.hibernate.validator.constraints.NotEmpty;
  */
 @OwnedBy(HarnessTeam.PIPELINE)
 @Getter
+@Slf4j
 public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   @Inject private PmsOutcomeService pmsOutcomeService;
   @Inject private PmsSweepingOutputService pmsSweepingOutputService;
@@ -73,6 +82,10 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   @Inject private PlanExecutionService planExecutionService;
   @Inject private PlanService planService;
   @Inject private InputSetValidatorFactory inputSetValidatorFactory;
+
+  @Inject private PlanExpansionService planExpansionService;
+
+  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
 
   protected final Ambiance ambiance;
   private final Set<NodeExecutionEntityType> entityTypes;
@@ -228,5 +241,37 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
         throw new EngineExpressionEvaluationException(processorResult.getMessage(), processorResult.getExpression());
       }
     }
+  }
+
+  @Override
+  protected Object evaluatePrefixCombinations(
+      String expressionBlock, EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
+    try {
+      if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_ENGINE_V2)) {
+        String normalizedExpression = applyStaticAliases(expressionBlock);
+        // Apply all the prefixes and return first one that evaluates successfully.
+        List<String> finalExpressions =
+            ExpandedJsonFunctorUtils.getExpressions(ambiance, groupAliases, normalizedExpression);
+        Object obj = ExpandedJsonFunctor.builder()
+                         .planExpansionService(planExpansionService)
+                         .ambiance(ambiance)
+                         .groupAliases(groupAliases)
+                         .build()
+                         .asJson(finalExpressions);
+        if (obj != null) {
+          ctx.addToContext(Map.of("expandedJson", obj));
+        }
+        Object object = evaluateCombinations(normalizedExpression, finalExpressions, ctx, depth, expressionMode);
+
+        if (object != null) {
+          return object;
+        }
+        log.warn(String.format("Could not resolve via V2 expression engine: %s. Falling back to V1", expressionBlock));
+      }
+    } catch (Exception ex) {
+      log.error(
+          String.format("Could not resolve via V2 expression engine: %s. Falling back to V1", expressionBlock), ex);
+    }
+    return super.evaluatePrefixCombinations(expressionBlock, ctx, depth, expressionMode);
   }
 }

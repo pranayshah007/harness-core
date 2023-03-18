@@ -33,15 +33,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class PmsBaseEventHandler<T extends Message> implements PmsCommonsBaseEventHandler<T> {
-  public static String LISTENER_END_METRIC = "%s_service_time";
-  public static String LISTENER_START_METRIC = "%s_time_in_queue";
+  public static String QUEUE_EVENT_TIME = "%s_queue_time";
 
   @Inject private PmsGitSyncHelper pmsGitSyncHelper;
   @Inject private EventMonitoringService eventMonitoringService;
 
   protected PmsGitSyncBranchContextGuard gitSyncContext(T event) {
     return pmsGitSyncHelper.createGitSyncBranchContextGuard(extractAmbiance(event), true);
-  };
+  }
 
   @NonNull protected abstract Map<String, String> extraLogProperties(T event);
 
@@ -71,10 +70,8 @@ public abstract class PmsBaseEventHandler<T extends Message> implements PmsCommo
                                           .metricContext(metricContext)
                                           .accountId(AmbianceUtils.getAccountId(extractAmbiance(event)))
                                           .build();
-      eventMonitoringService.sendMetric(LISTENER_START_METRIC, monitoringInfo, metadataMap);
-      monitoringInfo.setCreatedAt(System.currentTimeMillis());
+      eventMonitoringService.sendMetric(QUEUE_EVENT_TIME, monitoringInfo, metadataMap);
       handleEventWithContext(event);
-      eventMonitoringService.sendMetric(LISTENER_END_METRIC, monitoringInfo, metadataMap);
     } catch (Exception ex) {
       try (AutoLogContext autoLogContext = autoLogContext(event)) {
         log.error("Exception occurred while handling {}", event.getClass().getSimpleName(), ex);

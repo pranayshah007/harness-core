@@ -9,6 +9,7 @@ package io.harness.template.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.utils.NGUtils.validate;
 
 import static java.lang.Double.compare;
@@ -47,6 +48,7 @@ import java.io.IOException;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 
 @OwnedBy(CDC)
 @UtilityClass
@@ -240,16 +242,23 @@ public class NGTemplateDtoMapper {
 
   public TemplateFilterProperties toTemplateFilterProperties(TemplateFilterPropertiesDTO filterProperties) {
     if (filterProperties == null) {
-      return TemplateFilterProperties.builder().build();
+      return null;
     } else {
-      return TemplateFilterProperties.builder()
-          .templateNames(filterProperties.getTemplateNames())
-          .templateIdentifiers(filterProperties.getTemplateIdentifiers())
-          .templateEntityTypes(filterProperties.getTemplateEntityTypes())
-          .childTypes(filterProperties.getChildTypes())
-          .description(filterProperties.getDescription())
-          .repoName(filterProperties.getRepoName())
-          .build();
+      ModelMapper modelMapper = new ModelMapper();
+      TemplateFilterProperties filterPropertiesWithTags =
+          modelMapper.map(TemplateFilterProperties.builder()
+                              .templateNames(filterProperties.getTemplateNames())
+                              .templateIdentifiers(filterProperties.getTemplateIdentifiers())
+                              .templateEntityTypes(filterProperties.getTemplateEntityTypes())
+                              .childTypes(filterProperties.getChildTypes())
+                              .description(filterProperties.getDescription())
+                              .repoName(filterProperties.getRepoName())
+                              .build(),
+              TemplateFilterProperties.class);
+      if (isNotEmpty(filterProperties.getTags())) {
+        filterPropertiesWithTags.setTags(TagMapper.convertToList(filterProperties.getTags()));
+      }
+      return filterPropertiesWithTags;
     }
   }
 

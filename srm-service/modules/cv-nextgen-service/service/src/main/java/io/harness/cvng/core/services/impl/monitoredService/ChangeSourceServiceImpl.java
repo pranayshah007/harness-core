@@ -219,6 +219,13 @@ public class ChangeSourceServiceImpl implements ChangeSourceService {
       throw new InvalidRequestException(
           String.format("Multiple Change Sources exists with the same identifier %s", noUniqueIdentifier.get()));
     }
+
+    for (ChangeSourceDTO changeSourceDTO : changeSourceDTOs) {
+      if (!changeSourceDTO.getSpec().getType().equals(changeSourceDTO.getType())) {
+        throw new InvalidRequestException(String.format(
+            "Invalid Change Category for change source with identifier %s", changeSourceDTO.getIdentifier()));
+      }
+    }
   }
 
   private Query<ChangeSource> createQuery(MonitoredServiceParams monitoredServiceParams) {

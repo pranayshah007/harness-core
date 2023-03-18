@@ -187,6 +187,7 @@ public class ExpansionRequestsExtractorTest extends CategoryTest {
         case CE:
           assertThat(expansionRequest.getFqn()).isEqualTo("pipeline/stages/[1]/stage/spec/execution");
           break;
+        default:
       }
     }
   }

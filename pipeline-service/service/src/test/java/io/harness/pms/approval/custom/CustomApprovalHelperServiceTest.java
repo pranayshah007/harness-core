@@ -33,7 +33,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalType;

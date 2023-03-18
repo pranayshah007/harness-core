@@ -15,6 +15,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.TaskGroup;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.persistence.HPersistence;
 import io.harness.queueservice.infc.DelegateResourceCriteria;
 import io.harness.service.intfc.DelegateCache;
@@ -38,6 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourceCriteria {
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
+
   final Comparator<Map.Entry<String, Integer>> valueComparator = Map.Entry.comparingByValue(Comparator.naturalOrder());
 
   @Inject
@@ -83,13 +86,12 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
 
   public List<DelegateTask> getTotalNumberOfTaskAssignedInDelegate(
       String accountId, TaskType taskType, String delegateId) {
-    List<DelegateTask> delegateTaskList = persistence.createQuery(DelegateTask.class)
-                                              .filter(DelegateTaskKeys.accountId, accountId)
-                                              .filter(DelegateTaskKeys.status, STARTED)
-                                              .filter(DelegateTaskKeys.delegateId, delegateId)
-                                              .project(DelegateTaskKeys.delegateId, true)
-                                              .project(DelegateTaskKeys.stageId, true)
-                                              .asList();
+    List<DelegateTask> delegateTaskList = getTasksAssignedInDelegate(accountId, delegateId, false);
+
+    if (delegateTaskMigrationHelper.isDelegateTaskMigrationEnabled()) {
+      delegateTaskList.addAll(getTasksAssignedInDelegate(accountId, delegateId, true));
+    }
+
     if (taskType.getTaskGroup().equals(TaskGroup.CI)) {
       return delegateTaskList.stream()
           .filter(delegateTask -> !isEmpty(delegateTask.getStageId()))
@@ -97,6 +99,17 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
           .collect(Collectors.toList());
     }
     return delegateTaskList;
+  }
+
+  private List<DelegateTask> getTasksAssignedInDelegate(
+      String accountId, String delegateId, boolean isDelegateTaskMigrationEnabled) {
+    return persistence.createQuery(DelegateTask.class, isDelegateTaskMigrationEnabled)
+        .filter(DelegateTaskKeys.accountId, accountId)
+        .filter(DelegateTaskKeys.status, STARTED)
+        .filter(DelegateTaskKeys.delegateId, delegateId)
+        .project(DelegateTaskKeys.delegateId, true)
+        .project(DelegateTaskKeys.stageId, true)
+        .asList();
   }
 
   private Map<String, Integer> listOfDelegatesSortedByNumberOfTaskAssignedFromRedisCache(String accountId) {

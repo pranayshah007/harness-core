@@ -425,8 +425,10 @@ public class ServerlessAwsCommandTaskHelper {
         executionLogCallback.saveExecutionLog(format("skipping configure credentials command..%n%n"), LogLevel.INFO);
       }
     } catch (Exception ex) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
       executionLogCallback.saveExecutionLog(
-          color(format("%n configure credential failed with error: %s", ex.getMessage()), LogColor.Red, LogWeight.Bold),
+          color(format("%n configure credential failed with error: %s", ExceptionUtils.getMessage(sanitizedException)),
+              LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR);
       throw ex;
     }

@@ -11,7 +11,6 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
-import io.harness.beans.Scope.ScopeBuilder;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -66,13 +65,14 @@ public class GitAwareEntityHelper {
     String connectorRef = gitContextRequestParams.getConnectorRef();
     boolean loadFromCache = gitContextRequestParams.isLoadFromCache();
     EntityType entityType = gitContextRequestParams.getEntityType();
+    boolean getFileContentOnly = gitContextRequestParams.isGetOnlyFileContent();
     ScmGetFileResponse scmGetFileResponse =
         scmGitSyncHelper.getFileByBranch(Scope.builder()
                                              .accountIdentifier(scope.getAccountIdentifier())
                                              .orgIdentifier(scope.getOrgIdentifier())
                                              .projectIdentifier(scope.getProjectIdentifier())
                                              .build(),
-            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap);
+            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap, getFileContentOnly);
     entity.setData(scmGetFileResponse.getFileContent());
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return entity;
@@ -116,7 +116,7 @@ public class GitAwareEntityHelper {
                                              .orgIdentifier(scope.getOrgIdentifier())
                                              .projectIdentifier(scope.getProjectIdentifier())
                                              .build(),
-            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap);
+            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap, false);
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return scmGetFileResponse.getFileContent();
   }
@@ -250,7 +250,7 @@ public class GitAwareEntityHelper {
       String connectorRef = getFileGitContextRequestParams.getConnectorRef();
       boolean loadFromCache = getFileGitContextRequestParams.isLoadFromCache();
       EntityType entityType = getFileGitContextRequestParams.getEntityType();
-
+      boolean getOnlyFileContent = getFileGitContextRequestParams.isGetOnlyFileContent();
       contextMap = GitSyncLogContextHelper.setContextMap(
           scope, repoName, branchName, filePath, GitOperation.GET_FILE, contextMap);
 
@@ -263,6 +263,7 @@ public class GitAwareEntityHelper {
                                                 .loadFromCache(loadFromCache)
                                                 .entityType(entityType)
                                                 .contextMap(contextMap)
+                                                .getOnlyFileContent(getOnlyFileContent)
                                                 .build();
 
       scmGetBatchFilesRequestMap.put(remoteTemplateRequestEntry.getKey(), scmGetFileRequest);
@@ -305,57 +306,15 @@ public class GitAwareEntityHelper {
     }
   }
 
-  public String getWorkingBranch(String entityRepoURL) {
+  public String getWorkingBranch(String repoName) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    Scope scope = buildScope(gitEntityInfo);
     String branchName = gitEntityInfo.getBranch();
-    if (isParentReferenceEntityNotPresent(gitEntityInfo)) {
-      return branchName;
-    }
-    String parentEntityRepoUrl = getRepoUrl(scope);
     if (gitEntityInfo.isNewBranch()) {
       branchName = gitEntityInfo.getBaseBranch();
     }
-    if (null != parentEntityRepoUrl && !parentEntityRepoUrl.equals(entityRepoURL)) {
-      branchName = "";
+    if (isNullOrDefault(gitEntityInfo.getParentEntityRepoName())) {
+      return branchName;
     }
-    return branchName;
-  }
-
-  private String getRepoUrl(Scope scope) {
-    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    if (!isNullOrDefault(gitEntityInfo.getParentEntityRepoUrl())) {
-      return gitEntityInfo.getParentEntityRepoUrl();
-    }
-    String parentEntityRepoUrl = scmGitSyncHelper
-                                     .getRepoUrl(scope, gitEntityInfo.getParentEntityRepoName(),
-                                         gitEntityInfo.getParentEntityConnectorRef(), Collections.emptyMap())
-                                     .getRepoUrl();
-
-    gitEntityInfo.setParentEntityRepoUrl(parentEntityRepoUrl);
-    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-
-    return parentEntityRepoUrl;
-  }
-
-  private Scope buildScope(GitEntityInfo gitEntityInfo) {
-    ScopeBuilder scope = Scope.builder();
-    if (gitEntityInfo != null) {
-      if (!isNullOrDefault(gitEntityInfo.getParentEntityAccountIdentifier())) {
-        scope.accountIdentifier(gitEntityInfo.getParentEntityAccountIdentifier());
-      }
-      if (!isNullOrDefault(gitEntityInfo.getParentEntityOrgIdentifier())) {
-        scope.orgIdentifier(gitEntityInfo.getParentEntityOrgIdentifier());
-      }
-      if (!isNullOrDefault(gitEntityInfo.getParentEntityProjectIdentifier())) {
-        scope.projectIdentifier(gitEntityInfo.getParentEntityProjectIdentifier());
-      }
-    }
-    return scope.build();
-  }
-
-  private boolean isParentReferenceEntityNotPresent(GitEntityInfo gitEntityInfo) {
-    return isNullOrDefault(gitEntityInfo.getParentEntityRepoName())
-        && isNullOrDefault(gitEntityInfo.getParentEntityConnectorRef());
+    return gitEntityInfo.getParentEntityRepoName().equals(repoName) ? branchName : "";
   }
 }

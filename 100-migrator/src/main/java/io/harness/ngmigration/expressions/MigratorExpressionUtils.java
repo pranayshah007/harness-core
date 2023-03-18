@@ -9,9 +9,13 @@ package io.harness.ngmigration.expressions;
 
 import io.harness.beans.EncryptedData;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Scope;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.NotExpression;
+import io.harness.ngmigration.beans.InputDefaults;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.ngmigration.CgEntityId;
@@ -40,8 +44,9 @@ import org.jetbrains.annotations.NotNull;
 public class MigratorExpressionUtils {
   private static final int MAX_DEPTH = 8;
 
-  public static Object render(Map<CgEntityId, CgEntityNode> cgEntities, Map<CgEntityId, NGYamlFile> migratedEntities,
-      Object object, Map<String, Object> customExpressions) {
+  public static Object render(MigrationContext context, Object object, Map<String, Object> customExpressions) {
+    Map<CgEntityId, CgEntityNode> cgEntities = context.getEntities();
+    Map<CgEntityId, NGYamlFile> migratedEntities = context.getMigratedEntities();
     // Generate the secret map
     Map<String, String> secretRefMap = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(cgEntities) && EmptyPredicate.isNotEmpty(migratedEntities)) {
@@ -60,19 +65,26 @@ public class MigratorExpressionUtils {
       }
     }
 
-    Map<String, Object> context = prepareContextMap(secretRefMap, customExpressions);
-    return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(context));
+    Map<String, Object> ctx = prepareContextMap(context, secretRefMap, customExpressions);
+    return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(ctx));
   }
 
   @NotNull
   static Map<String, Object> prepareContextMap(
-      Map<String, String> secretRefMap, Map<String, Object> customExpressions) {
+      MigrationContext migrationContext, Map<String, String> secretRefMap, Map<String, Object> customExpressions) {
+    CaseFormat identifierCaseFormat = getCaseFormat(migrationContext);
     Map<String, Object> context = new HashMap<>();
+
+    context.put("deploymentTriggeredBy", "<+pipeline.triggeredBy.name>");
+    context.put("currentStep.name", "<+step.name>");
+    context.put("deploymentUrl", "<+pipeline.execution.url>");
+
     // Infra Expressions
     context.put("infra.kubernetes.namespace", "<+infra.namespace>");
     context.put("infra.kubernetes.infraId", "<+INFRA_KEY>");
     context.put("infra.helm.releaseName", "<+infra.releaseName>");
     context.put("infra.name", "<+infra.name>");
+    context.put("infra.cloudProvider.name", "<+infra.connectorRef>");
 
     // Env Expressions
     context.put("env.name", "<+env.name>");
@@ -92,7 +104,7 @@ public class MigratorExpressionUtils {
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.image", "<+ARTIFACT_PLACEHOLDER.image>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.tag", "<+ARTIFACT_PLACEHOLDER.tag>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.source.dockerconfig", "<+ARTIFACT_PLACEHOLDER.imagePullSecret>");
-    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.fileName", "<+ARTIFACT_PLACEHOLDER.fileName>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.fileName", "<+ARTIFACT_PLACEHOLDER.metadata.fileName>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.format", "<+ARTIFACT_PLACEHOLDER.repositoryFormat>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.getSHA()", "<+ARTIFACT_PLACEHOLDER.metadata.SHA>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.groupId", "<+ARTIFACT_PLACEHOLDER.groupId>");
@@ -108,11 +120,15 @@ public class MigratorExpressionUtils {
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.displayName", "<+ARTIFACT_PLACEHOLDER.displayName>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.artifactId", "<+ARTIFACT_PLACEHOLDER.metadata.artifactId>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.version", "<+ARTIFACT_PLACEHOLDER.metadata.version>");
-    artifactExpressions.put("ARTIFACT_PLACEHOLDER.revision", "<+ARTIFACT_PLACEHOLDER.buildNo>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.revision", "<+ARTIFACT_PLACEHOLDER.tag>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.buildNo", "<+ARTIFACT_PLACEHOLDER.tag>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.source.registryUrl", "<+ARTIFACT_PLACEHOLDER.registryUrl>");
-    artifactExpressions.put("ARTIFACT_PLACEHOLDER.URL", "<+ARTIFACT_PLACEHOLDER.URL>");
-    artifactExpressions.put("ARTIFACT_PLACEHOLDER.url", "<+ARTIFACT_PLACEHOLDER.URL>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.URL", "<+ARTIFACT_PLACEHOLDER.url>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.url", "<+ARTIFACT_PLACEHOLDER.url>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.artifactPath", "<+ARTIFACT_PLACEHOLDER.artifactPath>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.fileName", "<+ARTIFACT_PLACEHOLDER.metadata.fileName>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.key", "<+artifact.metadata.key>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.bucketName", "<+ARTIFACT_PLACEHOLDER.metadata.bucketName>");
 
     artifactExpressions.forEach((k, v) -> {
       // Artifact Expressions
@@ -137,12 +153,14 @@ public class MigratorExpressionUtils {
     context.put("servicevariable", new ServiceVariablesMigratorFunctor());
     context.put("environmentVariable", new EnvVariablesMigratorFunctor());
     context.put("environmentVariables", new EnvVariablesMigratorFunctor());
+    context.put("configFile", new ConfigFileMigratorFunctor());
 
     // Secrets
-    context.put("secrets", new SecretMigratorFunctor(secretRefMap));
+    context.put(
+        "secrets", new SecretMigratorFunctor(secretRefMap, identifierCaseFormat, getSecretScope(migrationContext)));
 
     // App
-    context.put("app.defaults", new AppVariablesMigratorFunctor());
+    context.put("app.defaults", new AppVariablesMigratorFunctor(identifierCaseFormat));
 
     // Http Step
     context.put("httpResponseCode", "<+httpResponseCode>");
@@ -170,7 +188,7 @@ public class MigratorExpressionUtils {
   }
 
   private static Set<String> extractAll(String source, Pattern compiled) {
-    if (source == null) {
+    if (StringUtils.isBlank(source)) {
       return Collections.emptySet();
     }
     Set<String> matches = new HashSet<>();
@@ -254,5 +272,25 @@ public class MigratorExpressionUtils {
       c = c.getSuperclass();
     }
     return all;
+  }
+
+  private static Scope getSecretScope(MigrationContext context) {
+    Scope scope = Scope.PROJECT;
+    if (context == null || context.getInputDTO() == null
+        || EmptyPredicate.isEmpty(context.getInputDTO().getDefaults())) {
+      return scope;
+    }
+    InputDefaults inputDefaults = context.getInputDTO().getDefaults().getOrDefault(NGMigrationEntityType.SECRET, null);
+    if (inputDefaults == null) {
+      return scope;
+    }
+    return inputDefaults.getScope() == null ? scope : inputDefaults.getScope();
+  }
+
+  private static CaseFormat getCaseFormat(MigrationContext context) {
+    if (context == null || context.getInputDTO() == null || context.getInputDTO().getIdentifierCaseFormat() == null) {
+      return CaseFormat.CAMEL_CASE;
+    }
+    return context.getInputDTO().getIdentifierCaseFormat();
   }
 }

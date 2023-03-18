@@ -34,6 +34,7 @@ import io.harness.exception.TerraformSecretCleanupFailureException;
 import io.harness.helpers.ext.vault.SSHVaultAuthResult;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
+import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
 import io.harness.perpetualtask.internal.AssignmentTaskResponse;
 import io.harness.serializer.KryoRegistrar;
@@ -124,7 +125,6 @@ import software.wings.beans.SmbConfig;
 import software.wings.beans.SplunkConfig;
 import software.wings.beans.SumoConfig;
 import software.wings.beans.TerraformInputVariablesTaskResponse;
-import software.wings.beans.WinRmCommandParameter;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.approval.ConditionalOperator;
@@ -184,6 +184,7 @@ import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.dto.Log;
 import software.wings.beans.dto.ManifestFile;
 import software.wings.beans.dto.NewRelicMetricDataRecord;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.beans.jira.JiraTaskParameters;
 import software.wings.beans.servicenow.ServiceNowFieldType;
 import software.wings.beans.servicenow.ServiceNowMetaDTO;
@@ -995,5 +996,8 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(TerraformSecretCleanupFailureException.class, 40118);
     kryo.register(TerraformSecretCleanupFailureDetails.class, 40119);
     kryo.register(RateLimitExceededException.class, 50027);
+    kryo.register(ThirdPartyApiCallLog.class, 5377);
+    kryo.register(ThirdPartyApiCallLog.ThirdPartyApiCallField.class, 71100);
+    kryo.register(ThirdPartyApiCallLog.FieldType.class, 71101);
   }
 }

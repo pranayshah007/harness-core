@@ -46,7 +46,7 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
       StrategyConfig strategyConfig, JsonNode jsonNode, Optional<Integer> maxExpansionLimit) {
     Integer parallelism = 0;
     if (!ParameterField.isBlank(strategyConfig.getParallelism())) {
-      parallelism = strategyConfig.getParallelism().getValue();
+      parallelism = Double.valueOf(String.valueOf(strategyConfig.getParallelism().getValue())).intValue();
       if (maxExpansionLimit.isPresent()) {
         if (parallelism > maxExpansionLimit.get()) {
           throw new InvalidYamlException(

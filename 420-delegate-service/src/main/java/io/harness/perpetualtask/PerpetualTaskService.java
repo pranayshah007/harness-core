@@ -37,7 +37,7 @@ public interface PerpetualTaskService {
 
   String getPerpetualTaskType(String taskId);
 
-  PerpetualTaskExecutionContext perpetualTaskContext(String taskId, boolean referenceFalseKryoSerializer);
+  PerpetualTaskExecutionContext perpetualTaskContext(String taskId);
 
   boolean triggerCallback(String taskId, long heartbeatMillis, PerpetualTaskResponse perpetualTaskResponse);
 
@@ -48,7 +48,7 @@ public interface PerpetualTaskService {
   void updateTaskUnassignedReason(String taskId, PerpetualTaskUnassignedReason reason, int assignTryCount);
 
   void markStateAndNonAssignedReason_OnAssignTryCount(PerpetualTaskRecord perpetualTaskRecord,
-      PerpetualTaskUnassignedReason reason, PerpetualTaskState perpetualTaskState);
+      PerpetualTaskUnassignedReason reason, PerpetualTaskState perpetualTaskState, String exception);
 
   void setTaskUnassigned(String taskId);
 

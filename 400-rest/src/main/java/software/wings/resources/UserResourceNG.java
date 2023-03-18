@@ -270,7 +270,7 @@ public class UserResourceNG {
     Integer pageSize = pageRequest.getPageSize();
 
     List<User> userList =
-        userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false);
+        userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false, false);
 
     PageResponse<UserInfo> pageResponse = aPageResponse()
                                               .withOffset(offset.toString())
@@ -505,13 +505,18 @@ public class UserResourceNG {
     return UserInfo.builder()
         .email(user.getEmail())
         .name(user.getName())
+        .familyName(user.getFamilyName())
+        .givenName(user.getGivenName())
         .uuid(user.getUuid())
         .locked(user.isUserLocked())
         .disabled(user.isDisabled())
         .externallyManaged(user.isImported())
         .defaultAccountId(user.getDefaultAccountId())
         .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
+        .createdAt(user.getCreatedAt())
+        .lastUpdatedAt(user.getLastUpdatedAt())
         .emailVerified(user.isEmailVerified())
+        .externalId(user.getExternalUserId())
         .accounts(user.getAccounts()
                       .stream()
                       .map(account -> AccountMapper.toGatewayAccountRequest(account))

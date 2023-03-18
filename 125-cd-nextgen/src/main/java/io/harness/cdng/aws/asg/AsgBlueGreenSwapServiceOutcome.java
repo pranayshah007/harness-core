@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
@@ -27,4 +28,6 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceOutcome")
 public class AsgBlueGreenSwapServiceOutcome implements Outcome, ExecutionSweepingOutput {
   boolean trafficShifted;
+  AutoScalingGroupContainer stageAsg;
+  AutoScalingGroupContainer prodAsg;
 }

@@ -38,7 +38,7 @@ public class EmptyDirYaml implements CIVolume {
   @Builder.Default @NotNull private CIVolume.Type type = Type.EMPTY_DIR;
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> mountPath;
   @NotNull private EmptyDirYamlSpec spec;
-
+  @ApiModelProperty(hidden = true) String uuid;
   @Data
   @Builder
   @NoArgsConstructor
@@ -48,5 +48,6 @@ public class EmptyDirYaml implements CIVolume {
     @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
     @Pattern(regexp = ResourceValidatorConstants.STORAGE_PATTERN)
     private ParameterField<String> size;
+    @ApiModelProperty(hidden = true) String uuid;
   }
 }

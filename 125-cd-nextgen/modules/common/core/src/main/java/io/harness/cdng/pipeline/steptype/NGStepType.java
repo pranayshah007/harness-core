@@ -35,6 +35,10 @@ public enum NGStepType {
   GITOPS_MERGE_PR(
       "Merge PR", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.GITOPS_MERGE_PR),
 
+  @JsonProperty(StepSpecTypeConstants.GITOPS_SYNC)
+  GITOPS_SYNC(
+      "GitOps Sync", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.GITOPS_SYNC),
+
   // k8s steps
   @JsonProperty("APPLY")
   APPLY("Apply", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.PLACEHOLDER),
@@ -98,6 +102,9 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.TERRAFORM_CLOUD_RUN)
   TERRAFORM_CLOUD_RUN("Terraform Cloud Run", Arrays.asList(ServiceDefinitionType.values()),
       "Infrastructure Provisioners/Terraform Cloud", StepSpecTypeConstants.TERRAFORM_CLOUD_RUN),
+  @JsonProperty(StepSpecTypeConstants.TERRAFORM_CLOUD_ROLLBACK)
+  TERRAFORM_CLOUD_ROLLBACK("Terraform Cloud Rollback", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/Terraform Cloud", StepSpecTypeConstants.TERRAFORM_CLOUD_ROLLBACK),
   // Issue Tracking
   @JsonProperty("JIRA")
   JIRA("Jira", Arrays.asList(ServiceDefinitionType.values()), "Issue Tracking", StepSpecTypeConstants.PLACEHOLDER),
@@ -269,7 +276,22 @@ public enum NGStepType {
       StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK),
   @JsonProperty(StepSpecTypeConstants.AWS_LAMBDA_DEPLOY)
   AWS_LAMBDA_DEPLOY("AWS Lambda Deploy", Arrays.asList(ServiceDefinitionType.AWS_LAMBDA), "AWS Lambda",
-      StepSpecTypeConstants.AWS_LAMBDA_DEPLOY);
+      StepSpecTypeConstants.AWS_LAMBDA_DEPLOY),
+  @JsonProperty(StepSpecTypeConstants.AWS_SAM_DEPLOY)
+  AWS_SAM_DEPLOY(
+      "AWS SAM Deploy", Arrays.asList(ServiceDefinitionType.AWS_SAM), "AWS SAM", StepSpecTypeConstants.AWS_SAM_DEPLOY),
+  @JsonProperty(StepSpecTypeConstants.AWS_SAM_ROLLBACK)
+  AWS_SAM_ROLLBACK("AWS SAM Rollback", Arrays.asList(ServiceDefinitionType.AWS_SAM), "AWS SAM",
+      StepSpecTypeConstants.AWS_SAM_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK)
+  AWS_LAMBDA_ROLLBACK("AWS Lambda Rollback", Arrays.asList(ServiceDefinitionType.AWS_LAMBDA), "AWS Lambda",
+      StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.BAMBOO_BUILD)
+  BAMBOO_BUILD(
+      "Bamboo Build", Arrays.asList(ServiceDefinitionType.values()), "Builds", StepSpecTypeConstants.BAMBOO_BUILD),
+  @JsonProperty(StepSpecTypeConstants.TAS_ROUTE_MAPPING)
+  TAS_ROUTE_MAPPING(
+      "Route Mapping", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_ROUTE_MAPPING);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

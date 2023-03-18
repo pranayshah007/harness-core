@@ -38,6 +38,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
@@ -78,6 +79,7 @@ public class AwsAmiSwitchRoutesStateTest extends WingsBaseTest {
   @Mock protected transient AwsAmiServiceStateHelper awsAmiServiceHelper;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService mockFeatureFlagService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks private AwsAmiSwitchRoutesState state = new AwsAmiSwitchRoutesState("stateName");
 

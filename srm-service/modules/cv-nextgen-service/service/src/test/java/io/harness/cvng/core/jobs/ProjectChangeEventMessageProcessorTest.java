@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.VUK;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -32,8 +33,8 @@ import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.persistence.PersistentEntity;
 import io.harness.reflection.HarnessReflections;
@@ -56,7 +57,7 @@ public class ProjectChangeEventMessageProcessorTest extends CvNextGenTestBase {
   @Inject private CVConfigService cvConfigService;
   @Inject private MetricPackService metricPackService;
   @Inject private MonitoredServiceService monitoredServiceService;
-  @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   private BuilderFactory builderFactory;
 
   @Before
@@ -154,7 +155,7 @@ public class ProjectChangeEventMessageProcessorTest extends CvNextGenTestBase {
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
   public void testProcessDeleteAction_serviceLevelObjective() {
-    ServiceLevelObjectiveDTO sloDTO = builderFactory.getServiceLevelObjectiveDTOBuilder().build();
+    ServiceLevelObjectiveV2DTO sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
     MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
     monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
     String accountId = builderFactory.getContext().getAccountId();
@@ -166,14 +167,14 @@ public class ProjectChangeEventMessageProcessorTest extends CvNextGenTestBase {
                                       .projectIdentifier(projectIdentifier)
                                       .build();
     monitoredServiceService.create(accountId, monitoredServiceDTO);
-    serviceLevelObjectiveService.create(projectParams, sloDTO);
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
 
     projectChangeEventMessageProcessor.processDeleteAction(ProjectEntityChangeDTO.newBuilder()
                                                                .setAccountIdentifier(accountId)
                                                                .setOrgIdentifier(orgIdentifier)
                                                                .setIdentifier(projectIdentifier)
                                                                .build());
-    assertThat(serviceLevelObjectiveService.getByMonitoredServiceIdentifier(
+    assertThat(serviceLevelObjectiveV2Service.getByMonitoredServiceIdentifier(
                    projectParams, monitoredServiceDTO.getIdentifier()))
         .isEmpty();
     MonitoredServiceParams monitoredServiceParams = MonitoredServiceParams.builder()
@@ -212,6 +213,7 @@ public class ProjectChangeEventMessageProcessorTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testProcessDeleteAction_entitiesList() {
     Set<Class<? extends PersistentEntity>> entitiesWithVerificationTaskId = new HashSet<>();
     entitiesWithVerificationTaskId.addAll(ProjectChangeEventMessageProcessor.ENTITIES_MAP.keySet());

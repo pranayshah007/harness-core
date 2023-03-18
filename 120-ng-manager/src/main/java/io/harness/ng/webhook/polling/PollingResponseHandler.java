@@ -223,6 +223,10 @@ public class PollingResponseHandler {
     // If polled response is null, it means it was first time collecting output from perpetual task
     // There is no need to publish collected new keys in this case.
     if (savedResponse == null) {
+      log.info("This is a first time collecting output from perpetual task {} and accountId {}. "
+              + "Polled keys are not published",
+          pollingDocument.getPerpetualTaskId(), accountId);
+
       pollingService.updatePolledResponse(accountId, pollDocId,
           GitPollingPolledResponse.builder().allPolledKeys(new HashSet<>(unpublishedWebhookDeliveryIds)).build());
       return;

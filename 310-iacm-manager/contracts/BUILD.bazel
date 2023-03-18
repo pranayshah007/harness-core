@@ -14,6 +14,7 @@ java_library(
     deps = [
         "//:lombok",
         "//332-ci-manager/contracts:module",
+        "//332-iacm-common:module",
         "//878-ng-common-utilities:module",
         "//960-ng-license-usage-beans:module",
         "//999-annotations:module",

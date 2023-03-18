@@ -532,3 +532,18 @@ features:
       COMMUNITY:
         restrictionType: AVAILABILITY
         enabled: true
+  - name: TERRAFORM_CLOUD_ROLLBACK
+    description: The restriction on terraform cloud rollback step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true

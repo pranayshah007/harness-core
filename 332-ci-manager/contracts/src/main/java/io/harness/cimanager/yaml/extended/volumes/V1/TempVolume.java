@@ -30,6 +30,7 @@ import lombok.Value;
 public class TempVolume implements Volume {
   @Builder.Default @NotNull Volume.Type type = Type.TEMP;
   @NotNull TempVolumeSpec spec;
+  @ApiModelProperty(hidden = true) String uuid;
 
   @Value
   @Builder

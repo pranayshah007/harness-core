@@ -8,12 +8,13 @@
 package io.harness.ngmigration.service.step.pcf;
 
 import io.harness.beans.OrchestrationWorkflowType;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasRollbackStepInfo;
 import io.harness.cdng.tas.TasRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 
 import software.wings.beans.GraphNode;
@@ -23,7 +24,7 @@ import software.wings.sm.states.pcf.PcfRollbackState;
 
 import java.util.Map;
 
-public class PcfRollbackStepMapperImpl extends StepMapper {
+public class PcfRollbackStepMapperImpl extends PcfAbstractStepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;
@@ -35,6 +36,11 @@ public class PcfRollbackStepMapperImpl extends StepMapper {
   }
 
   @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.TAS;
+  }
+
+  @Override
   public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);
     PcfRollbackState state = new PcfRollbackState(stepYaml.getName());
@@ -43,12 +49,13 @@ public class PcfRollbackStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     PcfRollbackState state = (PcfRollbackState) getState(graphNode);
     Workflow workflow = context.getWorkflow();
     if (workflow.getOrchestrationWorkflow().getOrchestrationWorkflowType() != OrchestrationWorkflowType.BLUE_GREEN) {
       TasRollbackStepNode tasRollbackStepNode = new TasRollbackStepNode();
-      baseSetup(state, tasRollbackStepNode);
+      baseSetup(state, tasRollbackStepNode, context.getIdentifierCaseFormat());
 
       TasRollbackStepInfo tasRollbackStepInfo = TasRollbackStepInfo.infoBuilder().build();
       tasRollbackStepNode.setTasRollbackStepInfo(tasRollbackStepInfo);
@@ -57,6 +64,7 @@ public class PcfRollbackStepMapperImpl extends StepMapper {
       return null;
     }
   }
+
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     return false;

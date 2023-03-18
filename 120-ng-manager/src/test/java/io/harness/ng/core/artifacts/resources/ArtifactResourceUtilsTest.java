@@ -284,7 +284,8 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                                                                  .build())));
 
     Call<ResponseDTO<TemplateMergeResponseDTO>> mergeTemplateToYamlCall = mock(Call.class);
-    when(templateResourceClient.applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any()))
+    when(
+        templateResourceClient.applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(mergeTemplateToYamlCall);
     when(mergeTemplateToYamlCall.execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(
@@ -297,7 +298,8 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     assertThat(imagePath).isEqualTo("library/nginx");
     verify(pipelineServiceClient)
         .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
-    verify(templateResourceClient).applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any());
+    verify(templateResourceClient)
+        .applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -315,7 +317,8 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                                                                  .build())));
 
     Call<ResponseDTO<TemplateMergeResponseDTO>> mergeTemplateToYamlCall = mock(Call.class);
-    when(templateResourceClient.applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any()))
+    when(
+        templateResourceClient.applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(mergeTemplateToYamlCall);
     when(mergeTemplateToYamlCall.execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(
@@ -333,7 +336,8 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     assertThat(paramWithoutExpression.getValue()).isEqualTo("value");
     verify(pipelineServiceClient)
         .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
-    verify(templateResourceClient).applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any());
+    verify(templateResourceClient)
+        .applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test

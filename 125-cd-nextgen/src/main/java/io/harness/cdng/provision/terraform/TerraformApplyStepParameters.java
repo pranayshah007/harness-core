@@ -30,12 +30,12 @@ import lombok.NonNull;
 @OwnedBy(CDP)
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformApplyStepParameters")
 public class TerraformApplyStepParameters extends TerraformApplyBaseStepInfo implements SpecParameters {
-  @NonNull TerraformStepConfigurationParameters configuration;
+  @NonNull TerraformStepConfigurationInterface configuration;
 
   @Builder(builderMethodName = "infoBuilder")
   public TerraformApplyStepParameters(ParameterField<String> provisionerIdentifier,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      @NonNull TerraformStepConfigurationParameters configuration) {
+      @NonNull TerraformStepConfigurationInterface configuration) {
     super(provisionerIdentifier, delegateSelectors);
     this.configuration = configuration;
   }

@@ -21,7 +21,7 @@ import static java.time.Duration.ofMinutes;
 
 import io.harness.exception.WingsException;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -54,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
-public class GitSyncEntitiesExpiryHandler extends IteratorPumpModeHandler implements Handler<Account> {
+public class GitSyncEntitiesExpiryHandler extends IteratorPumpAndRedisModeHandler implements Handler<Account> {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private AccountService accountService;
   @Inject private GitSyncService gitSyncService;

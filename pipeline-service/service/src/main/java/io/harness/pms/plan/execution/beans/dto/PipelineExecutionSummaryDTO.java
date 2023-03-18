@@ -10,6 +10,7 @@ package io.harness.pms.plan.execution.beans.dto;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.AbortedBy;
 import io.harness.data.validator.Trimmed;
 import io.harness.dto.FailureInfoDTO;
 import io.harness.gitsync.beans.StoreType;
@@ -60,7 +61,6 @@ public class PipelineExecutionSummaryDTO {
 
   Map<String, LinkedHashMap<String, Object>> moduleInfo;
   Map<String, GraphLayoutNodeDTO> layoutNodeMap;
-  String firstRollbackStageGraphId;
   List<String> modules;
   String startingNodeId;
 
@@ -86,4 +86,5 @@ public class PipelineExecutionSummaryDTO {
   List<String> stagesExecuted;
   Map<String, String> stagesExecutedNames;
   boolean allowStageExecutions;
+  AbortedBy abortedBy;
 }

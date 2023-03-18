@@ -52,6 +52,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -120,6 +121,7 @@ public class AwsAmiServiceRollbackTest extends WingsBaseTest {
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks private AwsAmiServiceRollback state = new AwsAmiServiceRollback("stepName");
 

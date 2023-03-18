@@ -176,7 +176,7 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
         DockerInternalConfig.builder().dockerRegistryUrl("URL").username("username").build();
     doReturn(Lists.newArrayList(buildDetailsInternal))
         .when(dockerRegistryService)
-        .getBuilds(dockerInternalConfig, "imagePath", MAX_NO_OF_TAGS_PER_IMAGE);
+        .getBuilds(dockerInternalConfig, "imagePath", MAX_NO_OF_TAGS_PER_IMAGE, "tagRegex");
     DockerArtifactDelegateRequest sourceAttributes =
         DockerArtifactDelegateRequest.builder()
             .imagePath("imagePath")

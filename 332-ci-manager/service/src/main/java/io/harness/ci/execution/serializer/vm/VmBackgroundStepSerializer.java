@@ -7,7 +7,7 @@
 
 package io.harness.ci.serializer.vm;
 
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -71,7 +71,7 @@ public class VmBackgroundStepSerializer {
     }
 
     Map<String, String> envVars =
-        resolveMapParameter("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
 
     if (!isEmpty(command)) {
       String earlyExitCommand = SerializerUtils.getEarlyExitCommand(backgroundStepInfo.getShell());

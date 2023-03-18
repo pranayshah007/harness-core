@@ -42,7 +42,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Schema
 @JsonDeserialize(using = HealthSourceDeserializer.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-@FieldNameConstants
+@FieldNameConstants(innerTypeName = "HealthSourceKeys")
 public class HealthSource {
   @NotEmpty String name;
   @NotEmpty @EntityIdentifier String identifier;

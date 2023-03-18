@@ -107,7 +107,6 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
       }
     }
     ExpandedValue value = SLOPolicyExpandedValue.builder().sloPolicyDTO(sloPolicyDTO).build();
-
     return ExpansionResponse.builder()
         .success(true)
         .key(value.getKey())

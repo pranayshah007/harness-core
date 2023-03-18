@@ -7,6 +7,8 @@
 
 package io.harness.cdng.usage;
 
+import static io.harness.cd.CDLicenseType.SERVICES;
+import static io.harness.cd.CDLicenseType.SERVICE_INSTANCES;
 import static io.harness.cdng.usage.pojos.ActiveService.ActiveServiceField.name;
 import static io.harness.cdng.usage.pojos.ActiveService.ActiveServiceField.orgName;
 import static io.harness.cdng.usage.pojos.ActiveService.ActiveServiceField.projectName;
@@ -24,17 +26,21 @@ import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.SERVIC
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.SERVICE_INSTANCES_SORT_PROPERTY;
 
 import static java.lang.String.format;
+import static java.sql.Date.valueOf;
 import static org.apache.commons.lang3.StringUtils.SPACE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cd.CDLicenseType;
 import io.harness.cdlicense.exception.CgLicenseUsageException;
 import io.harness.cdng.usage.impl.AggregateServiceUsageInfo;
 import io.harness.cdng.usage.pojos.ActiveService;
 import io.harness.cdng.usage.pojos.ActiveServiceBase;
 import io.harness.cdng.usage.pojos.ActiveServiceFetchData;
 import io.harness.cdng.usage.pojos.ActiveServiceResponse;
+import io.harness.cdng.usage.pojos.LicenseDateUsageFetchData;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.licensing.usage.params.filter.LicenseDateUsageReportType;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -42,13 +48,17 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 import lombok.extern.slf4j.Slf4j;
@@ -59,11 +69,10 @@ import org.springframework.data.domain.Sort;
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class CDLicenseUsageDAL {
-  @Inject TimeScaleDBService timeScaleDBService;
-
-  public static final double INSTANCE_COUNT_PERCENTILE_DISC = 0.95;
-  public static final int MAX_RETRY = 3;
-  public static final String QUERY_FETCH_SERVICE_INSTANCE_USAGE = ""
+  private static final double INSTANCE_COUNT_PERCENTILE_DISC = 0.95;
+  private static final int MAX_RETRY = 3;
+  private static final String MAX_RETRY_MSG = format("%s retries", MAX_RETRY);
+  private static final String QUERY_FETCH_SERVICE_INSTANCE_USAGE = ""
       + "select percentile_disc(?) within group (order by instanceCountsPerReportedAt.instancecount) as percentileInstanceCount\n"
       + "from (\n"
       + "    select  date_trunc('minute', reportedat) as reportedat, accountid, sum(instancecount) as instancecount\n"
@@ -73,7 +82,7 @@ public class CDLicenseUsageDAL {
       + "        and reportedat > now() - INTERVAL '30 day' \n"
       + "    group by accountid, date_trunc('minute', reportedat)\n"
       + ") as instanceCountsPerReportedAt";
-  public static final String QUERY_FETCH_INSTANCES_PER_SERVICE = ""
+  private static final String QUERY_FETCH_INSTANCES_PER_SERVICE = ""
       + "select percentile_disc(?) within group (order by instancesPerServicePerReportedat.instancecount) as instanceCount,\n"
       + "    orgid, projectid, serviceid\n"
       + "from (\n"
@@ -86,8 +95,7 @@ public class CDLicenseUsageDAL {
       + "    order by reportedat desc\n"
       + ") instancesPerServicePerReportedat\n"
       + "group by orgid, projectid, serviceid";
-
-  public static final String FETCH_ACTIVE_SERVICES_WITH_INSTANCES_COUNT_QUERY = ""
+  private static final String FETCH_ACTIVE_SERVICES_WITH_INSTANCES_COUNT_QUERY = ""
       + "SELECT activeServices.orgIdentifier,\n"
       + "       activeServices.projectIdentifier,\n"
       + "       activeServices.serviceIdentifier AS identifier,\n"
@@ -135,8 +143,7 @@ public class CDLicenseUsageDAL {
       + "ORDER BY :sortCriteria\n"
       + "LIMIT ?\n"
       + "OFFSET (? * ?)";
-
-  public static final String FETCH_ACTIVE_SERVICES_NAME_ORG_AND_PROJECT_NAME_QUERY = ""
+  private static final String FETCH_ACTIVE_SERVICES_NAME_ORG_AND_PROJECT_NAME_QUERY = ""
       + "SELECT DISTINCT\n"
       + "    t.orgIdentifier, t.projectIdentifier, t.serviceIdentifier AS identifier, t.lastDeployed, t.instanceCount,\n"
       + "    COALESCE(organizations.name, 'Deleted') AS orgName,\n"
@@ -160,6 +167,8 @@ public class CDLicenseUsageDAL {
       + "    organizations.account_identifier = ?\n"
       + "    AND t.orgidentifier = organizations.identifier\n"
       + "ORDER BY :sortCriteria";
+
+  @Inject TimeScaleDBService timeScaleDBService;
 
   public long fetchServiceInstancesOver30Days(String accountId) {
     if (isEmpty(accountId)) {
@@ -186,7 +195,7 @@ public class CDLicenseUsageDAL {
         successfulOperation = true;
       } catch (SQLException exception) {
         if (retry >= MAX_RETRY) {
-          String errorLog = "MAX RETRY FAILURE: Failed to fetch service instance usage after " + MAX_RETRY + " retries";
+          String errorLog = "MAX RETRY FAILURE: Failed to fetch service instance usage after " + MAX_RETRY_MSG;
           throw new CgLicenseUsageException(errorLog, exception);
         }
         log.error(
@@ -218,7 +227,7 @@ public class CDLicenseUsageDAL {
         successfulOperation = true;
       } catch (SQLException exception) {
         if (retry >= MAX_RETRY) {
-          String errorLog = "MAX RETRY FAILURE: Failed to fetch service instance usage after " + MAX_RETRY + " retries";
+          String errorLog = "MAX RETRY FAILURE: Failed to fetch service instance usage after " + MAX_RETRY_MSG;
           throw new CgLicenseUsageException(errorLog, exception);
         }
         log.error(
@@ -269,7 +278,7 @@ public class CDLicenseUsageDAL {
         successfulOperation = true;
       } catch (SQLException exception) {
         if (retry >= MAX_RETRY) {
-          String errorLog = "MAX RETRY FAILURE: Failed to fetch active services after " + MAX_RETRY + " retries";
+          String errorLog = "MAX RETRY FAILURE: Failed to fetch active services after " + MAX_RETRY_MSG;
           throw new CgLicenseUsageException(errorLog, exception);
         }
         log.error("Failed to fetch active services, accountIdentifier : [{}] , retry : [{}]", accountIdentifier, retry,
@@ -312,8 +321,8 @@ public class CDLicenseUsageDAL {
         successfulOperation = true;
       } catch (SQLException exception) {
         if (retry >= MAX_RETRY) {
-          String errorLog = "MAX RETRY FAILURE: Failed to fetch active services names, org and project names after "
-              + MAX_RETRY + " retries";
+          String errorLog =
+              "MAX RETRY FAILURE: Failed to fetch active services names, org and project names after " + MAX_RETRY_MSG;
           throw new CgLicenseUsageException(errorLog, exception);
         }
         log.error(
@@ -324,6 +333,57 @@ public class CDLicenseUsageDAL {
     }
 
     return activeServices;
+  }
+
+  /**
+   * Fetch license usage by dates.
+   *
+   * @param licenseUsageFetchDate license usage fetch data needed for creating request to DB
+   * @return license usage per dates
+   */
+  public Map<String, Integer> fetchLicenseDateUsage(LicenseDateUsageFetchData licenseUsageFetchDate) {
+    Map<String, Integer> licenseUsage = new LinkedHashMap<>();
+    String accountIdentifier = licenseUsageFetchDate.getAccountIdentifier();
+    CDLicenseType licenseType = licenseUsageFetchDate.getLicenseType();
+    if (isEmpty(accountIdentifier)) {
+      throw new InvalidArgumentsException("AccountIdentifier cannot be null or empty for fetching license date usage");
+    }
+    if (licenseType == null) {
+      throw new InvalidArgumentsException("CD license type cannot be null for fetching license date usage");
+    }
+
+    int retry = 0;
+    boolean successfulOperation = false;
+    while (!successfulOperation && retry <= MAX_RETRY) {
+      try (Connection dbConnection = timeScaleDBService.getDBConnection();
+           CallableStatement callableStatement = getLicenseDataUsageCallableStatement(licenseType, dbConnection)) {
+        callableStatement.setString(1, accountIdentifier);
+        callableStatement.setDate(2, valueOf(licenseUsageFetchDate.getFromDate()));
+        callableStatement.setDate(3, valueOf(licenseUsageFetchDate.getToDate()));
+        callableStatement.setBoolean(4, isMonthlyLicenseUsageReportType(licenseUsageFetchDate));
+        callableStatement.setBoolean(5, false);
+
+        callableStatement.execute();
+        ResultSet results = callableStatement.getResultSet();
+        while (results.next()) {
+          Date usageDate = results.getDate(1);
+          Integer licenseCount = results.getInt(2);
+          licenseUsage.put(String.valueOf(usageDate), licenseCount);
+        }
+
+        successfulOperation = true;
+      } catch (SQLException exception) {
+        if (retry >= MAX_RETRY) {
+          String errorLog = "MAX RETRY FAILURE: Failed to fetch license date usage after " + MAX_RETRY_MSG;
+          throw new CgLicenseUsageException(errorLog, exception);
+        }
+        log.error("Failed to fetch license date usage, accountIdentifier : [{}] , retry : [{}]", accountIdentifier,
+            retry, exception);
+        retry++;
+      }
+    }
+
+    return licenseUsage;
   }
 
   private List<AggregateServiceUsageInfo> processResultSet(ResultSet resultSet) throws SQLException {
@@ -474,5 +534,19 @@ public class CDLicenseUsageDAL {
     }
 
     return activeServices;
+  }
+
+  private CallableStatement getLicenseDataUsageCallableStatement(CDLicenseType licenseType, Connection dbConnection)
+      throws SQLException {
+    if (licenseType != SERVICE_INSTANCES && licenseType != SERVICES) {
+      throw new InvalidArgumentsException("Not supported CD license type for fetching license date usage");
+    }
+    return SERVICE_INSTANCES == licenseType
+        ? dbConnection.prepareCall("{ call get_service_instances_by_date(?,?,?,?,?)}")
+        : dbConnection.prepareCall("{ call get_active_services_by_date(?,?,?,?,?)}");
+  }
+
+  private boolean isMonthlyLicenseUsageReportType(LicenseDateUsageFetchData fetchData) {
+    return LicenseDateUsageReportType.MONTHLY == fetchData.getReportType();
   }
 }

@@ -34,6 +34,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ng.core.infrastructure.dto.InfrastructureResponse;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -86,7 +87,6 @@ import retrofit2.Response;
 public class InfraMigrationService extends NgMigrationService {
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private ElastigroupConfigurationMigrationService elastigroupConfigurationMigrationService;
-  @Inject MigratorMappingService migratorMappingService;
   @Inject InfrastructureResourceClient infrastructureResourceClient;
 
   @Override
@@ -147,11 +147,16 @@ public class InfraMigrationService extends NgMigrationService {
     children.add(CgEntityId.builder().id(infra.getInfrastructure().getCloudProviderId()).type(CONNECTOR).build());
 
     List<String> connectorIds = InfraMapperFactory.getInfraDefMapper(infra).getConnectorIds(infra);
-    if (EmptyPredicate.isNotEmpty(connectorIds)) {
+    if (isNotEmpty(connectorIds)) {
       children.addAll(connectorIds.stream()
                           .filter(StringUtils::isNotBlank)
                           .map(connectorId -> CgEntityId.builder().id(connectorId).type(CONNECTOR).build())
                           .collect(Collectors.toList()));
+    }
+
+    if (isNotEmpty(infra.getProvisionerId())) {
+      children.add(
+          CgEntityId.builder().id(infra.getProvisionerId()).type(NGMigrationEntityType.INFRA_PROVISIONER).build());
     }
 
     if (infra.getCloudProviderType() == AWS) {
@@ -210,26 +215,29 @@ public class InfraMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     InfrastructureDefinition infra = (InfrastructureDefinition) entities.get(entityId).getEntity();
-    MigratorExpressionUtils.render(entities, migratedEntities, infra, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(migrationContext, infra, inputDTO.getCustomExpressions());
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, infra.getName());
-    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String identifier = MigratorUtility.generateIdentifierDefaultName(
+        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
     InfraDefMapper infraDefMapper = InfraMapperFactory.getInfraDefMapper(infra);
     NGYamlFile envNgYamlFile =
         migratedEntities.get(CgEntityId.builder().id(infra.getEnvId()).type(ENVIRONMENT).build());
-    Set<CgEntityId> infraSpecIds = graph.get(entityId)
+    Set<CgEntityId> infraSpecIds = migrationContext.getGraph()
+                                       .get(entityId)
                                        .stream()
                                        .filter(cgEntityId -> cgEntityId.getType() == ELASTIGROUP_CONFIGURATION)
                                        .collect(Collectors.toSet());
     List<ElastigroupConfiguration> elastigroupConfigurations =
-        elastigroupConfigurationMigrationService.getElastigroupConfigurations(infraSpecIds, inputDTO, entities);
+        elastigroupConfigurationMigrationService.getElastigroupConfigurations(migrationContext, infraSpecIds);
 
-    Infrastructure infraSpec =
-        infraDefMapper.getSpec(inputDTO, infra, migratedEntities, entities, elastigroupConfigurations);
+    Infrastructure infraSpec = infraDefMapper.getSpec(migrationContext, infra, elastigroupConfigurations);
     if (infraSpec == null) {
       log.error(String.format("We could not migrate the infra %s", infra.getUuid()));
       return YamlGenerationDetails.builder()

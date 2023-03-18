@@ -18,6 +18,10 @@ public interface PipelineValidationService {
   PipelineValidationResponse validateYamlAndGetGovernanceMetadata(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String yamlWithTemplatesResolved, String resolvedYamlWithTemplateRefs,
       PipelineEntity pipelineEntity);
+
   boolean validateYaml(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String yamlWithTemplatesResolved, String pipelineYaml, String harnessVersion);
+
+  void validateYamlWithUnresolvedTemplates(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineYaml, String harnessVersion);
 }

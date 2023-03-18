@@ -11,6 +11,6 @@ import io.harness.cvng.core.beans.CustomChangeWebhookPayload;
 import io.harness.cvng.core.beans.params.ProjectParams;
 
 public interface CustomChangeEventPublisherService {
-  public void registerCustomChangeEvent(ProjectParams projectParams, String monitoredServiceIdentifier,
+  void registerCustomChangeEvent(ProjectParams projectParams, String monitoredServiceIdentifier,
       String changeSourceIdentifier, CustomChangeWebhookPayload customChangeWebhookPayload);
 }

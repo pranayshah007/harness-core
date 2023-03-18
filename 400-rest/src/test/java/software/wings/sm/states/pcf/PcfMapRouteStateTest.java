@@ -287,7 +287,7 @@ public class PcfMapRouteStateTest extends WingsBaseTest {
 
   @Before
   public void setup() throws IllegalAccessException {
-    when(delegateService.queueTask(any())).thenReturn("ID");
+    when(delegateService.queueTaskV2(any())).thenReturn("ID");
     when(appService.get(APP_ID)).thenReturn(app);
     when(appService.getApplicationWithDefaults(APP_ID)).thenReturn(app);
     when(serviceResourceService.getWithDetails(APP_ID, SERVICE_ID)).thenReturn(service);
@@ -411,7 +411,7 @@ public class PcfMapRouteStateTest extends WingsBaseTest {
     assertThat(routes.contains("R2")).isTrue();
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     cfCommandRouteUpdateRequest = (CfCommandRouteUpdateRequest) delegateTask.getData().getParameters()[0];
@@ -476,7 +476,7 @@ public class PcfMapRouteStateTest extends WingsBaseTest {
     assertThat(routes.contains("R3")).isTrue();
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     assertThat(cfCommandRouteUpdateRequest.getPcfRouteUpdateConfigData()).isNotNull();
@@ -522,7 +522,7 @@ public class PcfMapRouteStateTest extends WingsBaseTest {
     assertThat(routes.contains("R2")).isTrue();
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     assertThat(cfCommandRouteUpdateRequest.getPcfRouteUpdateConfigData()).isNotNull();
@@ -568,7 +568,7 @@ public class PcfMapRouteStateTest extends WingsBaseTest {
     assertThat(routes.contains("R3")).isTrue();
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     assertThat(cfCommandRouteUpdateRequest.getPcfRouteUpdateConfigData()).isNotNull();
@@ -620,7 +620,7 @@ public class PcfMapRouteStateTest extends WingsBaseTest {
     assertThat(routes.contains("R3")).isTrue();
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     cfCommandRouteUpdateRequest = (CfCommandRouteUpdateRequest) delegateTask.getData().getParameters()[0];

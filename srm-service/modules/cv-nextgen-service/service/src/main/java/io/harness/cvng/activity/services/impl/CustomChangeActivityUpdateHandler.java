@@ -8,7 +8,6 @@
 package io.harness.cvng.activity.services.impl;
 
 import io.harness.cvng.activity.entities.CustomChangeActivity;
-import io.harness.cvng.activity.entities.InternalChangeActivity;
 import io.harness.cvng.activity.services.api.ActivityUpdateHandler;
 
 public class CustomChangeActivityUpdateHandler extends ActivityUpdateHandler<CustomChangeActivity> {

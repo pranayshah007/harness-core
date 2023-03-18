@@ -15,7 +15,7 @@ import static java.time.Duration.ofMinutes;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
@@ -35,7 +35,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(DX)
 public class GitSyncPollingIterator
-    extends IteratorPumpModeHandler implements MongoPersistenceIterator.Handler<YamlGitConfig> {
+    extends IteratorPumpAndRedisModeHandler implements MongoPersistenceIterator.Handler<YamlGitConfig> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(1);
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofMinutes(1);
 

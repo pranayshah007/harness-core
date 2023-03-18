@@ -64,9 +64,9 @@ public class DockerArtifactTaskHandler extends DelegateArtifactTaskHandler<Docke
 
   @Override
   public ArtifactTaskExecutionResponse getBuilds(DockerArtifactDelegateRequest attributesRequest) {
-    List<BuildDetailsInternal> builds =
-        dockerRegistryService.getBuilds(DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest),
-            attributesRequest.getImagePath(), DockerRegistryService.MAX_NO_OF_TAGS_PER_IMAGE);
+    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(
+        DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest), attributesRequest.getImagePath(),
+        DockerRegistryService.MAX_NO_OF_TAGS_PER_IMAGE, attributesRequest.getTagRegex());
     List<DockerArtifactDelegateResponse> dockerArtifactDelegateResponseList =
         builds.stream()
             .sorted(new BuildDetailsInternalComparatorDescending())

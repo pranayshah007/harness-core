@@ -92,21 +92,18 @@ public class DelegateInstallationCommandServiceTest {
   @Test
   @Owner(developers = XINGCHI_JIN)
   @Category(UnitTests.class)
-  public void testTerraformCommand() {
+  public void testKubernetesInstructions() {
     String defaultTokenName = delegateNgTokenService.getDefaultTokenName(null);
     when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, defaultTokenName, true)).thenReturn(TOKEN_DETAIL);
     when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(IMAGE);
-    final String result = String.format("terraform apply \\\n"
-            + "-var delegate_name=terraform-delegate \\\n"
-            + "-var account_id=%s \\\n"
-            + "-var delegate_token=%s \\\n"
-            + "-var manager_endpoint=%s \\\n"
-            + "-var delegate_image=%s \\\n"
-            + "-var replicas=1 \\\n"
-            + "-var upgrader_enabled=false",
-        ACCOUNT_ID, ENCODED_TOKEN_VALUE, MANAGER_URL, IMAGE);
+    final String result = String.format("\"PUT_YOUR_DELEGATE_NAME\" with kubernetes-delegate\n"
+            + "\"PUT_YOUR_ACCOUNT_ID\" with %s\n"
+            + "\"PUT_YOUR_MANAGER_ENDPOINT\" with %s\n"
+            + "\"PUT_YOUR_DELEGATE_TOKEN\" with %s\n"
+            + "\"PUT_YOUR_DELEGATE_IMAGE\" with %s",
+        ACCOUNT_ID, MANAGER_URL, ENCODED_TOKEN_VALUE, IMAGE);
 
-    assertThat(delegateInstallationCommandService.getCommand("TERRAFORM", MANAGER_URL, ACCOUNT_ID, null))
+    assertThat(delegateInstallationCommandService.getCommand("KUBERNETES", MANAGER_URL, ACCOUNT_ID, null))
         .isEqualTo(result);
   }
 

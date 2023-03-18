@@ -28,6 +28,8 @@ import com.google.api.services.iam.v1.model.CreateServiceAccountRequest;
 import com.google.api.services.iam.v1.model.Policy;
 import com.google.api.services.iam.v1.model.ServiceAccount;
 import com.google.api.services.iam.v1.model.SetIamPolicyRequest;
+import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -55,17 +57,28 @@ public class GcpServiceAccountServiceImpl implements GcpServiceAccountService {
     if (iamService != null) {
       return;
     }
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv("USE_WORKLOAD_IDENTITY"));
     try {
-      ServiceAccountCredentials serviceAccountCredentials = getCredentials(CE_GCP_CREDENTIALS_PATH);
-      if (serviceAccountCredentials == null) {
-        return;
+      if (!usingWorkloadIdentity) {
+        ServiceAccountCredentials serviceAccountCredentials = getCredentials(CE_GCP_CREDENTIALS_PATH);
+        if (serviceAccountCredentials == null) {
+          return;
+        }
+        log.info("WI: Initializing iam service with JSON key file");
+        iamService = new Iam
+                         .Builder(GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance(),
+                             toGoogleCredential(serviceAccountCredentials))
+                         .setApplicationName("service-accounts")
+                         .build();
+      } else {
+        log.info("WI: Initializing iam service with Google ADC");
+        iamService = new Iam
+                         .Builder(GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance(),
+                             new HttpCredentialsAdapter(GoogleCredentials.getApplicationDefault()))
+                         .setApplicationName("service-accounts")
+                         .build();
       }
-      GoogleCredential googleCredential = toGoogleCredential(serviceAccountCredentials);
-      iamService = new Iam
-                       .Builder(GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance(),
-                           googleCredential)
-                       .setApplicationName("service-accounts")
-                       .build();
+
     } catch (IOException | GeneralSecurityException e) {
       log.error("Unable to initialize service.", e);
     }
@@ -89,21 +102,21 @@ public class GcpServiceAccountServiceImpl implements GcpServiceAccountService {
 
   @Override
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION_MS)
-  public void setIamPolicies(String serviceAccountEmail) throws IOException {
+  public void setIamPolicies(String serviceAccountEmail, String serviceAccountEmailSource) throws IOException {
     initService();
     String resource = format("projects/-/serviceAccounts/%s", serviceAccountEmail);
 
     SetIamPolicyRequest requestBody = new SetIamPolicyRequest();
     Policy policy = new Policy();
     policy.setEtag("ACAB");
-    ServiceAccountCredentials serviceAccountCredentials = getCredentials(CE_GCP_CREDENTIALS_PATH);
-    String member = serviceAccountCredentials.getClientEmail();
+    // ServiceAccountCredentials serviceAccountCredentials = getCredentials(CE_GCP_CREDENTIALS_PATH);
+    // String member = serviceAccountCredentials.getClientEmail();
     Binding binding1 = new Binding();
     binding1.setRole("roles/iam.serviceAccountUser");
-    binding1.setMembers(singletonList(format("serviceAccount:%s", member)));
+    binding1.setMembers(singletonList(format("serviceAccount:%s", serviceAccountEmailSource)));
     Binding binding2 = new Binding();
     binding2.setRole("roles/iam.serviceAccountTokenCreator");
-    binding2.setMembers(singletonList(format("serviceAccount:%s", member)));
+    binding2.setMembers(singletonList(format("serviceAccount:%s", serviceAccountEmailSource)));
     policy.setBindings(Arrays.asList(binding1, binding2));
     requestBody.setPolicy(policy);
 

@@ -19,6 +19,7 @@ java_library(
     ],
     deps = [
         "//:lombok",
+        "//332-ssca/cd:module",
         "//878-ng-common-utilities:module",
         "//880-pipeline-cd-commons:module",
         "//950-telemetry:module",

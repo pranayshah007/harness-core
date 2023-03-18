@@ -23,7 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("AwsLambdaInfrastructureMapping")
 @JsonTypeName("AwsLambdaInfrastructureMapping")
 @RecasterAlias("io.harness.cdng.infra.beans.AwsLambdaInfrastructureMapping")
-public class AwsLambdaInfrastructureMapping {
+public class AwsLambdaInfrastructureMapping implements InfraMapping {
   @Id private String uuid;
   private String accountId;
   private String awsConnector;

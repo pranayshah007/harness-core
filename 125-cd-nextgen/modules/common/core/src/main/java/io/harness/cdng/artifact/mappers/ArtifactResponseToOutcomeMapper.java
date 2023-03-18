@@ -29,6 +29,7 @@ import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
@@ -37,6 +38,7 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
+import io.harness.cdng.artifact.outcome.BambooArtifactOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
@@ -57,6 +59,7 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegat
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
@@ -170,6 +173,11 @@ public class ArtifactResponseToOutcomeMapper {
         JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
             (JenkinsArtifactDelegateResponse) artifactDelegateResponse;
         return getJenkinsArtifactOutcome(jenkinsArtifactConfig, jenkinsArtifactDelegateResponse, useDelegateResponse);
+      case BAMBOO:
+        BambooArtifactConfig bambooArtifactConfig = (BambooArtifactConfig) artifactConfig;
+        BambooArtifactDelegateResponse bambooArtifactDelegateResponse =
+            (BambooArtifactDelegateResponse) artifactDelegateResponse;
+        return getBambooArtifactOutcome(bambooArtifactConfig, bambooArtifactDelegateResponse, useDelegateResponse);
       case GITHUB_PACKAGES:
         GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
         GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse =
@@ -593,6 +601,20 @@ public class ArtifactResponseToOutcomeMapper {
         .build();
   }
 
+  private static BambooArtifactOutcome getBambooArtifactOutcome(BambooArtifactConfig bambooArtifactConfig,
+      BambooArtifactDelegateResponse bambooArtifactDelegateResponse, boolean useDelegateResponse) {
+    return BambooArtifactOutcome.builder()
+        .planKey(bambooArtifactConfig.getPlanKey().getValue())
+        .build(getBambooBuild(useDelegateResponse, bambooArtifactDelegateResponse, bambooArtifactConfig))
+        .artifactPath(bambooArtifactConfig.getArtifactPaths().getValue())
+        .connectorRef(bambooArtifactConfig.getConnectorRef().getValue())
+        .type(ArtifactSourceType.BAMBOO.getDisplayName())
+        .identifier(bambooArtifactConfig.getIdentifier())
+        .primaryArtifact(bambooArtifactConfig.isPrimaryArtifact())
+        .metadata(useDelegateResponse ? bambooArtifactDelegateResponse.getBuildDetails().getMetadata() : Map.of())
+        .build();
+  }
+
   public GoogleCloudStorageArtifactOutcome getGoogleCloudStorageArtifactOutcome(
       GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig,
       GoogleCloudStorageArtifactDelegateResponse googleCloudStorageArtifactDelegateResponse,
@@ -620,6 +642,13 @@ public class ArtifactResponseToOutcomeMapper {
     return useDelegateResponse
         ? jenkinsArtifactDelegateResponse.getBuild()
         : (jenkinsArtifactConfig.getBuild() != null ? jenkinsArtifactConfig.getBuild().getValue() : null);
+  }
+
+  private String getBambooBuild(boolean useDelegateResponse,
+      BambooArtifactDelegateResponse bambooArtifactDelegateResponse, BambooArtifactConfig bambooArtifactConfig) {
+    return useDelegateResponse
+        ? bambooArtifactDelegateResponse.getBuild()
+        : (bambooArtifactConfig.getBuild() != null ? bambooArtifactConfig.getBuild().getValue() : null);
   }
 
   private String getImageValue(ArtifactDelegateResponse artifactDelegateResponse) {

@@ -10,6 +10,7 @@ package io.harness.cvng.core.beans.monitoredService.healthSouceSpec;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
+import io.harness.cvng.core.beans.monitoredService.HealthSource.HealthSourceKeys;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -48,18 +49,17 @@ public class HealthSourceDeserializer extends JsonDeserializer<HealthSource> {
       throws IOException {
     JsonNode tree = jsonParser.readValueAsTree();
     MonitoredServiceDataSourceType type =
-        JsonUtils.treeToValue(tree.get(HealthSource.Fields.type), MonitoredServiceDataSourceType.class);
-    String name = tree.has(HealthSource.Fields.name) ? tree.get(HealthSource.Fields.name).asText() : null;
-    String identifier =
-        tree.has(HealthSource.Fields.identifier) ? tree.get(HealthSource.Fields.identifier).asText() : null;
+        JsonUtils.treeToValue(tree.get(HealthSourceKeys.type), MonitoredServiceDataSourceType.class);
+    String name = tree.has(HealthSourceKeys.name) ? tree.get(HealthSourceKeys.name).asText() : null;
+    String identifier = tree.has(HealthSourceKeys.identifier) ? tree.get(HealthSourceKeys.identifier).asText() : null;
     HealthSource healthSource = HealthSource.builder().name(name).identifier(identifier).type(type).build();
-    JsonNode spec = tree.get(HealthSource.Fields.spec);
+    JsonNode spec = tree.get(HealthSourceKeys.spec);
     if (spec == null) {
       throw new BadRequestException("Spec is not serializable.");
     }
-    if (tree.has(HealthSource.Fields.version)) {
+    if (tree.has(HealthSourceKeys.version)) {
       HealthSourceVersion healthSourceVersion =
-          JsonUtils.treeToValue(tree.get(HealthSource.Fields.version), HealthSourceVersion.class);
+          JsonUtils.treeToValue(tree.get(HealthSourceKeys.version), HealthSourceVersion.class);
       if (healthSourceVersion == HealthSourceVersion.V2) {
         NextGenHealthSourceSpec nextGenHealthSourceSpec = JsonUtils.treeToValue(spec, NextGenHealthSourceSpec.class);
         DataSourceType dataSourceType = MonitoredServiceDataSourceType.getDataSourceType(type);

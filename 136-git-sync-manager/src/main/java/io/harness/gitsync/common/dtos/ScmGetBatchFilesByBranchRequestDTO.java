@@ -8,6 +8,7 @@
 package io.harness.gitsync.common.dtos;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -48,8 +49,18 @@ public class ScmGetBatchFilesByBranchRequestDTO {
     Set<String> organizations = new HashSet<>();
     Set<String> projects = new HashSet<>();
     scmGetFileByBranchRequestDTOMap.forEach((requestIdentifier, scmGetFileByBranchRequestDTO) -> {
-      organizations.add(scmGetFileByBranchRequestDTO.getScope().getOrgIdentifier());
-      projects.add(scmGetFileByBranchRequestDTO.getScope().getProjectIdentifier());
+      String orgIdentifier = scmGetFileByBranchRequestDTO.getScope().getOrgIdentifier();
+      String projectIdentifier = scmGetFileByBranchRequestDTO.getScope().getProjectIdentifier();
+      if (isNotEmpty(orgIdentifier)) {
+        organizations.add(orgIdentifier);
+      }
+      if (isNotEmpty(projectIdentifier)) {
+        if (isEmpty(orgIdentifier)) {
+          String errorMessage = "Org Identifier cannot be empty for a project scoped [%s] file request";
+          throw new InvalidRequestException(String.format(errorMessage, projectIdentifier));
+        }
+        projects.add(projectIdentifier);
+      }
       if (organizations.size() > 1) {
         String errorMessage = "Multiple org [%s] file requests are not allowed as single batch file request";
         throw new InvalidRequestException(String.format(errorMessage, String.join(",", organizations)));

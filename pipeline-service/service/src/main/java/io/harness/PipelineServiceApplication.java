@@ -25,6 +25,9 @@ import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
+import io.harness.cf.AbstractCfModule;
+import io.harness.cf.CfClientConfig;
+import io.harness.cf.CfMigrationConfig;
 import io.harness.configuration.DeployVariant;
 import io.harness.consumers.GraphUpdateRedisConsumer;
 import io.harness.controller.PrimaryVersionChangeScheduler;
@@ -51,10 +54,12 @@ import io.harness.event.OrchestrationEndGraphHandler;
 import io.harness.event.OrchestrationLogPublisher;
 import io.harness.event.OrchestrationStartEventHandler;
 import io.harness.event.PipelineExecutionSummaryDeleteObserver;
+import io.harness.event.PipelineResourceRestraintInstanceDeleteObserver;
 import io.harness.event.PlanExecutionMetadataDeleteObserver;
 import io.harness.exception.GeneralException;
 import io.harness.execution.consumers.InitiateNodeEventRedisConsumer;
 import io.harness.execution.consumers.SdkResponseEventRedisConsumer;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.gitsync.AbstractGitSyncSdkModule;
 import io.harness.gitsync.GitSdkConfiguration;
 import io.harness.gitsync.GitSyncEntitiesConfiguration;
@@ -114,6 +119,7 @@ import io.harness.pms.instrumentaion.InstrumentationPipelineEndEventHandler;
 import io.harness.pms.migration.PipelineCoreMigrationProvider;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.observers.InputSetPipelineObserver;
+import io.harness.pms.notification.orchestration.handlers.NodeExecutionOutboxHandler;
 import io.harness.pms.notification.orchestration.handlers.NotificationInformHandler;
 import io.harness.pms.notification.orchestration.handlers.StageStartNotificationHandler;
 import io.harness.pms.notification.orchestration.handlers.StageStatusUpdateNotificationEventHandler;
@@ -317,6 +323,22 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         return appConfig.getDbAliases();
       }
     });
+    modules.add(new AbstractCfModule() {
+      @Override
+      public CfClientConfig cfClientConfig() {
+        return appConfig.getCfClientConfig();
+      }
+
+      @Override
+      public CfMigrationConfig cfMigrationConfig() {
+        return CfMigrationConfig.builder().build();
+      }
+
+      @Override
+      public FeatureFlagConfig featureFlagConfig() {
+        return appConfig.getFeatureFlagConfig();
+      }
+    });
     modules.add(new NotificationClientModule(appConfig.getNotificationClientConfiguration()));
     modules.add(PipelineServiceModule.getInstance(appConfig));
     modules.add(new MetricRegistryModule(metricRegistry));
@@ -396,7 +418,10 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     }
 
     registerCorrelationFilter(environment, injector);
-    registerNotificationTemplates(injector);
+
+    if (!appConfig.isDisableFreezeNotificationTemplate()) {
+      registerNotificationTemplates(injector);
+    }
     registerPmsSdkEvents(appConfig.getPipelineServiceConsumersConfig(), injector);
 
     initializeGrpcServer(injector);
@@ -483,11 +508,12 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         injector.getInstance(Key.get(NodeExecutionStatusUpdateEventHandler.class)));
     nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(ResourceRestraintObserver.class)));
-
     nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(TimeoutInstanceRemover.class)));
     nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(PipelineExecutionSummaryFailureInfoUpdateHandler.class)));
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
+        injector.getInstance(Key.get(NodeExecutionOutboxHandler.class)));
 
     // NodeExecutionDeleteObserver
     nodeExecutionService.getNodeDeleteObserverSubject().register(
@@ -496,6 +522,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     // NodeExecutionStartObserver
     nodeStartHelper.getNodeExecutionStartSubject().register(
         injector.getInstance(Key.get(StageStartNotificationHandler.class)));
+    nodeStartHelper.getNodeExecutionStartSubject().register(
+        injector.getInstance(Key.get(NodeExecutionOutboxHandler.class)));
 
     PlanStatusEventEmitterHandler planStatusEventEmitterHandler =
         injector.getInstance(Key.get(PlanStatusEventEmitterHandler.class));
@@ -518,6 +546,9 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     // Register PlanExecutionDeleteObserver
     planExecutionService.getPlanExecutionDeleteObserverSubject().register(
         injector.getInstance(Key.get(PipelineExecutionSummaryDeleteObserver.class)));
+    // Register ResourceRestraintInstanceDeleteObserver
+    planExecutionService.getPlanExecutionDeleteObserverSubject().register(
+        injector.getInstance(Key.get(PipelineResourceRestraintInstanceDeleteObserver.class)));
 
     PlanExecutionStrategy planExecutionStrategy = injector.getInstance(Key.get(PlanExecutionStrategy.class));
     // StartObservers

@@ -54,7 +54,6 @@ import com.google.inject.Inject;
 import com.mongodb.AggregationOptions;
 import dev.morphia.annotations.Id;
 import dev.morphia.query.Criteria;
-import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import java.time.Duration;

@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step;
 import io.harness.beans.KeyValuePair;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.http.HttpHeaderConfig;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -61,8 +62,9 @@ public class HttpStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
-    return defaultTemplateSpecMapper(context, graphNode);
+  public TemplateStepNode getTemplateSpec(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode, String skipCondition) {
+    return defaultTemplateSpecMapper(migrationContext, context, phase, phaseStep, graphNode, skipCondition);
   }
 
   @Override
@@ -79,10 +81,11 @@ public class HttpStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     HttpState state = (HttpState) getState(graphNode);
     HttpStepNode httpStepNode = new HttpStepNode();
-    baseSetup(graphNode, httpStepNode);
+    baseSetup(graphNode, httpStepNode, context.getIdentifierCaseFormat());
 
     if (StringUtils.isNotBlank(graphNode.getTemplateUuid())) {
       log.error(String.format("Trying to link a step which is not a step template - %s", graphNode.getTemplateUuid()));
@@ -177,14 +180,19 @@ public class HttpStepMapperImpl extends StepMapper {
   public List<StepExpressionFunctor> getExpressionFunctor(
       WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
     String sweepingOutputName = getSweepingOutputName(graphNode);
-
+    if (StringUtils.isEmpty(sweepingOutputName)) {
+      return Collections.emptyList();
+    }
     return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
         .stream()
         .map(exp
             -> StepOutput.builder()
-                   .stageIdentifier(MigratorUtility.generateIdentifier(phase.getName()))
-                   .stepIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()))
-                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
         .map(HttpStepFunctor::new)

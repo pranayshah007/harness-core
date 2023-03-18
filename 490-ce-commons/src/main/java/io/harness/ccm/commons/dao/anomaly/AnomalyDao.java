@@ -25,6 +25,7 @@ import com.google.inject.Singleton;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import javax.annotation.Nullable;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +55,21 @@ public class AnomalyDao {
             .orderBy(orderFields)
             .offset(offset)
             .limit(limit);
+    log.info("Anomaly Query: {}", finalStep.getQuery());
+    return finalStep.fetchInto(Anomalies.class);
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public List<Anomalies> fetchAnomalies(@NonNull String accountId, @Nullable Condition condition,
+      @NonNull List<OrderField<?>> orderFields, @NonNull Integer offset, @NonNull Integer limit,
+      Set<String> allowedAnomaliesIds) {
+    SelectFinalStep<AnomaliesRecord> finalStep = dslContext.selectFrom(ANOMALIES)
+                                                     .where(ANOMALIES.ACCOUNTID.eq(accountId)
+                                                                .and(firstNonNull(condition, DSL.noCondition()))
+                                                                .and(ANOMALIES.ID.in(allowedAnomaliesIds)))
+                                                     .orderBy(orderFields)
+                                                     .offset(offset)
+                                                     .limit(limit);
     log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(Anomalies.class);
   }
@@ -98,13 +114,16 @@ public class AnomalyDao {
 
   @Nullable
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
-  public List<AnomalySummary> fetchAnomaliesTotalCost(@NonNull String accountId, @Nullable Condition condition) {
+  public List<AnomalySummary> fetchAnomaliesTotalCost(
+      @NonNull String accountId, @Nullable Condition condition, Set<String> allowedAnomaliesIds) {
     SelectConditionStep<Record3<Integer, BigDecimal, BigDecimal>> finalStep =
         dslContext
             .select(DSL.count().as("count"), sum(ANOMALIES.ACTUALCOST).as("actualCost"),
                 sum(ANOMALIES.EXPECTEDCOST).as("expectedCost"))
             .from(ANOMALIES)
-            .where(ANOMALIES.ACCOUNTID.eq(accountId).and(firstNonNull(condition, DSL.noCondition())));
+            .where(ANOMALIES.ACCOUNTID.eq(accountId)
+                       .and(firstNonNull(condition, DSL.noCondition()))
+                       .and(ANOMALIES.ID.in(allowedAnomaliesIds)));
     log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(AnomalySummary.class);
   }

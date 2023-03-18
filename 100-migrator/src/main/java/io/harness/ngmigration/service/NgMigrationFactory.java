@@ -25,12 +25,14 @@ import io.harness.ngmigration.service.entity.InfraProvisionerMigrationService;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
 import io.harness.ngmigration.service.entity.PipelineMigrationService;
 import io.harness.ngmigration.service.entity.SecretManagerMigrationService;
+import io.harness.ngmigration.service.entity.SecretManagerTemplateMigrationService;
 import io.harness.ngmigration.service.entity.SecretMigrationService;
 import io.harness.ngmigration.service.entity.ServiceCommandTemplateMigrationService;
 import io.harness.ngmigration.service.entity.ServiceMigrationService;
 import io.harness.ngmigration.service.entity.ServiceVariableMigrationService;
 import io.harness.ngmigration.service.entity.TemplateMigrationService;
 import io.harness.ngmigration.service.entity.TriggerMigrationService;
+import io.harness.ngmigration.service.entity.UserGroupMigrationService;
 import io.harness.ngmigration.service.entity.WorkflowMigrationService;
 
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -62,6 +64,8 @@ public class NgMigrationFactory {
   @Inject ServiceCommandTemplateMigrationService serviceCommandTemplateMigrationService;
   @Inject InfraProvisionerMigrationService infraProvisionerMigrationService;
   @Inject TriggerMigrationService triggerMigrationService;
+  @Inject SecretManagerTemplateMigrationService secretManagerTemplateMigrationService;
+  @Inject UserGroupMigrationService userGroupMigrationService;
 
   public NgMigrationService getMethod(NGMigrationEntityType type) {
     switch (type) {
@@ -111,6 +115,10 @@ public class NgMigrationFactory {
         return infraProvisionerMigrationService;
       case TRIGGER:
         return triggerMigrationService;
+      case SECRET_MANAGER_TEMPLATE:
+        return secretManagerTemplateMigrationService;
+      case USER_GROUP:
+        return userGroupMigrationService;
       default:
         throw new IllegalStateException();
     }

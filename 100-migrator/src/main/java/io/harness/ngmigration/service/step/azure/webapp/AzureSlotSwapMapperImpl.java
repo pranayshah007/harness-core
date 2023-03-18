@@ -11,7 +11,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepNode;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -40,6 +42,11 @@ public class AzureSlotSwapMapperImpl extends StepMapper {
   }
 
   @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.AZURE_WEBAPP;
+  }
+
+  @Override
   public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);
     AzureWebAppSlotSwap state = new AzureWebAppSlotSwap(stepYaml.getName());
@@ -48,10 +55,11 @@ public class AzureSlotSwapMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     AzureWebAppSlotSwap state = (AzureWebAppSlotSwap) getState(graphNode);
     AzureWebAppSwapSlotStepNode stepNode = new AzureWebAppSwapSlotStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
     AzureWebAppSwapSlotStepInfo stepInfo =
         AzureWebAppSwapSlotStepInfo.infoBuilder().targetSlot(getTargetSlot(context.getWorkflow(), graphNode)).build();
 

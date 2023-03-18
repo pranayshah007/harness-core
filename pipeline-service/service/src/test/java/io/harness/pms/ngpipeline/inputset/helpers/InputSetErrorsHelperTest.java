@@ -158,6 +158,23 @@ public class InputSetErrorsHelperTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  public void testGetUuidToErrorResponseMapWithNoTemplate() {
+    String baseYaml = "pipeline:\n"
+        + "  field1: notRuntime\n"
+        + "  field2:\n"
+        + "    child1: fixed\n";
+    String runtime = "pipeline:\n"
+        + "  field1: notRuntime\n"
+        + "  field2:\n"
+        + "    child1: a\n";
+    Map<String, InputSetErrorResponseDTOPMS> noErrors =
+        InputSetErrorsHelper.getUuidToErrorResponseMap(baseYaml, runtime);
+    assertThat(noErrors).isNull();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
   public void testGetInvalidInputSetReferences() {
     String pipelineYaml = "pipeline:\n"
         + "  runtime: <+input>";

@@ -8,8 +8,6 @@
 package io.harness.repositories.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
 import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
 
 import io.harness.EntityType;
@@ -17,7 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
-import io.harness.exception.ScmException;
 import io.harness.exception.WingsException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.dto.GitContextRequestParams;
@@ -213,14 +210,14 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       return Optional.of(savedEntity);
     }
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
-      // fetch yaml from git
-      GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+      String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
+
       if (loadFromFallbackBranch) {
         savedEntity = fetchRemoteEntityWithFallBackBranch(
-            accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch(), loadFromCache);
+            accountId, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
       } else {
-        savedEntity = fetchRemoteEntity(
-            accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch(), loadFromCache);
+        savedEntity =
+            fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
       }
     }
     return Optional.of(savedEntity);
@@ -282,14 +279,9 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
             .repoName(savedEntity.getRepo())
             .loadFromCache(loadFromCache)
             .entityType(EntityType.PIPELINES)
+            .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
             .build(),
         Collections.emptyMap());
-  }
-
-  @VisibleForTesting
-  boolean shouldRetryWithFallBackBranch(ScmException scmException, String branchTried, String pipelineFallBackBranch) {
-    return scmException != null && SCM_BAD_REQUEST.equals(scmException.getCode())
-        && (isNotEmpty(pipelineFallBackBranch) && !branchTried.equals(pipelineFallBackBranch));
   }
 
   @Override

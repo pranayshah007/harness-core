@@ -100,14 +100,14 @@ public class CIExecutionPoller implements Managed {
     try {
       if (processMessageResponse.getSuccess()) {
         hsqsClientService.ack(AckRequest.builder()
-                                  .itemID(message.getItemId())
+                                  .itemId(message.getItemId())
                                   .topic(moduleName)
                                   .subTopic(processMessageResponse.getAccountId())
                                   .consumerName(moduleName)
                                   .build());
       } else {
         UnAckRequest unAckRequest = UnAckRequest.builder()
-                                        .itemID(message.getItemId())
+                                        .itemId(message.getItemId())
                                         .topic(moduleName)
                                         .subTopic(processMessageResponse.getAccountId())
                                         .build();

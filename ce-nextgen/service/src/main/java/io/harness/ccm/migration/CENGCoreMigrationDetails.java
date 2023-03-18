@@ -44,6 +44,7 @@ public class CENGCoreMigrationDetails implements MigrationDetails {
         .add(Pair.of(10, BusinessMappingUnallocatedLabelMigration.class))
         .add(Pair.of(11, BudgetAddBreakdownMigration.class))
         .add(Pair.of(12, BusinessMappingSharingStrategyMigration.class))
+        .add(Pair.of(13, BusinessMappingHistoryMigration.class))
         .build();
   }
 }

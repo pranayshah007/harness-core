@@ -9,6 +9,7 @@ package io.harness.cvng.core.beans.monitoredService.changeSourceSpec;
 
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
+import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO.ChangeSourceDTOKeys;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -37,15 +38,14 @@ public class ChangeSourceDTODeserializer extends JsonDeserializer<ChangeSourceDT
   public ChangeSourceDTO deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
       throws IOException {
     JsonNode tree = jsonParser.readValueAsTree();
-    ChangeSourceType type = JsonUtils.treeToValue(tree.get(ChangeSourceDTO.Fields.type), ChangeSourceType.class);
-    String name = tree.has(ChangeSourceDTO.Fields.name) ? tree.get(ChangeSourceDTO.Fields.name).asText() : null;
+    ChangeSourceType type = JsonUtils.treeToValue(tree.get(ChangeSourceDTOKeys.type), ChangeSourceType.class);
+    String name = tree.has(ChangeSourceDTOKeys.name) ? tree.get(ChangeSourceDTOKeys.name).asText() : null;
     String identifier =
-        tree.has(ChangeSourceDTO.Fields.identifier) ? tree.get(ChangeSourceDTO.Fields.identifier).asText() : null;
-    boolean enabled =
-        tree.has(ChangeSourceDTO.Fields.enabled) ? tree.get(ChangeSourceDTO.Fields.enabled).asBoolean() : false;
+        tree.has(ChangeSourceDTOKeys.identifier) ? tree.get(ChangeSourceDTOKeys.identifier).asText() : null;
+    boolean enabled = tree.has(ChangeSourceDTOKeys.enabled) && tree.get(ChangeSourceDTOKeys.enabled).asBoolean();
     ChangeSourceDTO changeSourceDTO =
         ChangeSourceDTO.builder().name(name).identifier(identifier).type(type).enabled(enabled).build();
-    JsonNode spec = tree.get(ChangeSourceDTO.Fields.spec);
+    JsonNode spec = tree.get(ChangeSourceDTOKeys.spec);
     if (spec == null) {
       throw new BadRequestException("Spec is not serializable");
     }

@@ -27,6 +27,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("toleration")
 @RecasterAlias("io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration")
 public class Toleration {
+  @ApiModelProperty(hidden = true) String uuid;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> effect;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> key;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> operator;

@@ -8,9 +8,9 @@
 package io.harness.cvng.utils;
 
 import io.harness.cvng.beans.CloudWatchMetricDataCollectionInfo.CloudWatchMetricInfoDTO;
+import io.harness.cvng.utils.AwsUtils.AwsAccessKeys;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 
-import com.amazonaws.auth.AWSCredentials;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -64,12 +64,13 @@ public class CloudWatchUtils {
 
   private static Map<String, Object> populateCommonDslEnvVariables(
       String region, String group, String service, AwsConnectorDTO connectorDTO, boolean collectHostData) {
-    AWSCredentials awsCredentials = AwsUtils.getAwsCredentials(connectorDTO);
+    AwsAccessKeys awsCredentials = AwsUtils.getAwsCredentials(connectorDTO);
     Map<String, Object> dslEnvVariables = new HashMap<>();
     dslEnvVariables.put("region", region);
     dslEnvVariables.put("groupName", group);
-    dslEnvVariables.put("awsSecretKey", awsCredentials.getAWSSecretKey());
-    dslEnvVariables.put("awsAccessKey", awsCredentials.getAWSAccessKeyId());
+    dslEnvVariables.put("awsSecretKey", awsCredentials.getSecretAccessKey());
+    dslEnvVariables.put("awsAccessKey", awsCredentials.getAccessKeyId());
+    dslEnvVariables.put("awsSecurityToken", awsCredentials.getSessionToken());
     dslEnvVariables.put("serviceName", service);
     dslEnvVariables.put("url", getBaseUrl(region, service));
     dslEnvVariables.put("awsTarget", CLOUDWATCH_GET_METRIC_DATA_API_TARGET);

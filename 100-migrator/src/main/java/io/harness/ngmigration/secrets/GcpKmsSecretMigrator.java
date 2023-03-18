@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.secrets;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -47,7 +48,7 @@ public class GcpKmsSecretMigrator implements SecretMigrator {
         .type(SecretText)
         .spec(SecretTextSpecDTO.builder()
                   .valueType(ValueType.Inline)
-                  .value("__PLEASE_FIX_ME__")
+                  .value(PLEASE_FIX_ME)
                   .secretManagerIdentifier(secretManagerIdentifier)
                   .build());
   }
@@ -63,8 +64,8 @@ public class GcpKmsSecretMigrator implements SecretMigrator {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
 
-    String gcpSecretFileIdentifier =
-        String.format("migratedGcpKms_%s", MigratorUtility.generateIdentifier(gcpKmsConfig.getName()));
+    String gcpSecretFileIdentifier = String.format("migratedGcpKms_%s",
+        MigratorUtility.generateIdentifier(gcpKmsConfig.getName(), inputDTO.getIdentifierCaseFormat()));
 
     NgEntityDetail gcpEntityDetail = NgEntityDetail.builder()
                                          .identifier(gcpSecretFileIdentifier)

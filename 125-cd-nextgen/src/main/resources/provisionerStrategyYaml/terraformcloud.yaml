@@ -1,0 +1,42 @@
+provisioner:
+  steps:
+    - step:
+        type: TerraformCloudRun
+        name: TerraformCloudRunPlan
+        identifier: TerraformCloudRunPlan
+        spec:
+          runType: Plan
+          spec:
+            variables: []
+            discardPendingRuns: false
+            targets: []
+            planType: Apply
+        timeout: 10m
+    - step:
+        type: HarnessApproval
+        name: HarnessApproval
+        identifier: HarnessApproval
+        spec:
+          approvalMessage: Please review the following information and approve the pipeline progression
+          includePipelineExecutionHistory: true
+          approvers:
+            userGroups: []
+            minimumCount: 1
+            disallowPipelineExecutor: false
+          approverInputs: []
+        timeout: 1d
+    - step:
+        type: TerraformCloudRun
+        name: TerraformCloudRunApply
+        identifier: TerraformCloudRunApply
+        spec:
+          runType: Apply
+          spec: {}
+        timeout: 10m
+  rollbackSteps:
+    - step:
+        name: TerraformCloudRollback
+        identifier: TerraformCloudRollback
+        type: TerraformCloudRollback
+        timeout: 10m
+        spec: {}

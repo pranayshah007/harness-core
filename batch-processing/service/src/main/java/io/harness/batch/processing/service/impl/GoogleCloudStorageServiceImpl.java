@@ -12,7 +12,7 @@ import static io.harness.ccm.billing.GcpServiceAccountServiceImpl.getCredentials
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.config.BillingDataPipelineConfig;
 
-import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
@@ -37,13 +37,20 @@ public class GoogleCloudStorageServiceImpl {
 
   public void uploadObject(String objectName, String filePath) throws IOException {
     BillingDataPipelineConfig dataPipelineConfig = config.getBillingDataPipelineConfig();
-    ServiceAccountCredentials credentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
-
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv("USE_WORKLOAD_IDENTITY"));
+    GoogleCredentials sourceCredentials;
+    if (!usingWorkloadIdentity) {
+      log.info("WI: In uploadObject. using older way");
+      sourceCredentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
+    } else {
+      log.info("WI: In uploadObject. using Google ADC");
+      sourceCredentials = GoogleCredentials.getApplicationDefault();
+    }
     String projectId = dataPipelineConfig.getGcpProjectId();
     String bucketName = dataPipelineConfig.getClusterDataGcsBucketName();
     String backupBucketName = dataPipelineConfig.getClusterDataGcsBackupBucketName();
     Storage storage =
-        StorageOptions.newBuilder().setProjectId(projectId).setCredentials(credentials).build().getService();
+        StorageOptions.newBuilder().setProjectId(projectId).setCredentials(sourceCredentials).build().getService();
     for (String bucket : new String[] {bucketName, backupBucketName}) {
       BlobId blobId = BlobId.of(bucket, objectName);
       BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();

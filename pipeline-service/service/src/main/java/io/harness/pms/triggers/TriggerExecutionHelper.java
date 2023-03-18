@@ -73,7 +73,6 @@ import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
-import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -167,6 +166,7 @@ public class TriggerExecutionHelper {
       String targetIdentifier = ngTriggerEntity.getTargetIdentifier();
 
       ByteString gitSyncBranchContextByteString;
+      String branch = null;
       if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
           && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
         pipelineEntityToExecute = pmsPipelineService.getPipeline(ngTriggerEntity.getAccountId(),
@@ -178,6 +178,7 @@ public class TriggerExecutionHelper {
                   + ", For Trigger: " + ngTriggerEntity.getIdentifier() + " does not exist.",
               USER);
         }
+        branch = pipelineEntityToExecute.get().getBranch();
         final GitEntityInfo branchInfo = GitEntityInfo.builder()
                                              .branch(pipelineEntityToExecute.get().getBranch())
                                              .yamlGitConfigId(pipelineEntityToExecute.get().getYamlGitConfigRef())
@@ -190,7 +191,6 @@ public class TriggerExecutionHelper {
             new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
         SourcePrincipalContextBuilder.setSourcePrincipal(
             new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
-        String branch = null;
         if (isNotEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
           if (isBranchExpr(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
             branch = resolveBranchExpression(
@@ -297,9 +297,11 @@ public class TriggerExecutionHelper {
                pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(gitSyncBranchContextByteString, false)) {
         String pipelineYamlWithTemplateRef = pipelineYaml;
         if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
+          log.info("Principal is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
           TemplateMergeResponseDTO templateMergeResponseDTO =
-              pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(),
-                  pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, false,
+              pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(
+                  pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+                  pipelineEntity.getProjectIdentifier(), pipelineYaml, false,
                   featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE),
                   BOOLEAN_FALSE_VALUE);
           pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
@@ -333,9 +335,8 @@ public class TriggerExecutionHelper {
 
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
 
-        String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
-            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef,
-            true);
+        String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
+            pipelineEntity, pipelineYamlWithTemplateRef, true, branch);
 
         planExecutionMetadataBuilder.yaml(pipelineYaml);
         planExecutionMetadataBuilder.processedYaml(processedYaml);
@@ -347,14 +348,8 @@ public class TriggerExecutionHelper {
         SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
         switch (pipelineEntity.getHarnessVersion()) {
           case PipelineVersion.V0:
-            String yamlForValidatingSchema;
-            try {
-              yamlForValidatingSchema = YamlUtils.getYamlWithoutInputs(new YamlConfig(pipelineYaml));
-            } catch (Exception ex) {
-              log.error("Exception occurred while removing inputs from pipeline yaml", ex);
-              yamlForValidatingSchema =
-                  executionHelper.getPipelineYamlWithUnResolvedTemplates(runtimeInputYaml, pipelineEntity);
-            }
+            String yamlForValidatingSchema =
+                executionHelper.getPipelineYamlWithUnResolvedTemplates(runtimeInputYaml, pipelineEntity);
             pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
                 pipelineEntity.getProjectIdentifier(), yamlForValidatingSchema);
             break;

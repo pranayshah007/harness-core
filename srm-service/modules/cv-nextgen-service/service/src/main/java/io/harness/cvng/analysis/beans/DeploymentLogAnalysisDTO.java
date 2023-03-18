@@ -21,9 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.Value;
 import org.apache.commons.collections4.CollectionUtils;
 @Value
@@ -103,9 +101,14 @@ public class DeploymentLogAnalysisDTO {
   public static class ClusterSummary {
     int label;
     ClusterType clusterType;
+    ClusterType previousClusterType;
     int risk;
+    int previousRisk;
     public Risk getRiskLevel() {
       return Risk.valueOfRiskForDeploymentLogAnalysis(risk);
+    }
+    public Risk getPreviousRiskLevel() {
+      return Risk.valueOfRiskForDeploymentLogAnalysis(previousRisk);
     }
     double score;
     int count;

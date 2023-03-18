@@ -18,4 +18,17 @@ public class NestedExceptionUtils {
     return new HintException(
         hintMessage, new ExplanationException(explanationMessage, new ExplanationException(commandExecuted, cause)));
   }
+  public static WingsException hintWithExplanationsException(
+      String hintMessage, Throwable cause, String... explanations) {
+    int numberOfExplanations = explanations.length;
+    if (numberOfExplanations == 0) {
+      return new HintException(hintMessage, cause);
+    }
+    ExplanationException explanationException = new ExplanationException(explanations[numberOfExplanations - 1], cause);
+    for (int i = numberOfExplanations - 2; i >= 0; i--) {
+      ExplanationException parentException = new ExplanationException(explanations[i], explanationException);
+      explanationException = parentException;
+    }
+    return new HintException(hintMessage, explanationException);
+  }
 }

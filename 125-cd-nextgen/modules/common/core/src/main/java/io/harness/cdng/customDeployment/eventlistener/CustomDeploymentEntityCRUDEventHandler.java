@@ -22,6 +22,8 @@ import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
+import io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage;
+import io.harness.ng.core.entitysetupusage.mappers.EntitySetupUsageEntityToDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
@@ -36,11 +38,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 public class CustomDeploymentEntityCRUDEventHandler {
   @Inject EntitySetupUsageService entitySetupUsageService;
   @Inject InfrastructureEntityService infrastructureEntityService;
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
+  @Inject EntitySetupUsageEntityToDTO setupUsageEntityToDTO;
 
   public boolean updateInfraAsObsolete(
       String accountRef, String orgRef, String projectRef, String identifier, String versionLabel) {
@@ -51,36 +55,39 @@ public class CustomDeploymentEntityCRUDEventHandler {
       versionLabel = STABLE_VERSION;
     }
     entityFQN = entityFQN + versionLabel + "/";
-    List<EntitySetupUsageDTO> entitySetupUsages = entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(
-        scope, entityFQN, EntityType.TEMPLATE, EntityType.INFRASTRUCTURE, null, null);
-    if (entitySetupUsages.isEmpty()) {
-      log.info("No infra Update for  Deployment Template with id :{}, for AccountId : {}", identifier, accountRef);
-      return true;
-    }
     Map<String, List<String>> envToOrgProjectIdMap = new HashMap<>();
     Map<String, List<String>> envToInfraMap = new HashMap<>();
 
     String templateYaml =
         customDeploymentInfrastructureHelper.getTemplateYaml(accountRef, orgRef, projectRef, identifier, versionLabel);
-    for (EntitySetupUsageDTO entitySetupUsage : entitySetupUsages) {
-      if (!isNull(entitySetupUsage) && !isNull(entitySetupUsage.getReferredByEntity())) {
-        String infraId = entitySetupUsage.getReferredByEntity().getEntityRef().getIdentifier();
-        String environment = getEnvironment(entitySetupUsage);
-        if (isEmpty(environment)) {
-          continue;
-        }
-        String orgIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getOrgIdentifier();
-        String projectIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getProjectIdentifier();
-        String infraYaml = getInfraYaml(entitySetupUsage, accountRef);
-        boolean updateRequired =
-            customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(infraYaml, templateYaml, accountRef);
-        if (updateRequired) {
-          envToOrgProjectIdMap.put(environment, Arrays.asList(orgIdentifierEnv, projectIdentifierEnv));
-          envToInfraMap.computeIfAbsent(environment, k -> new ArrayList<>()).add(infraId);
+    try (CloseableIterator<EntitySetupUsage> iterator =
+             entitySetupUsageService.streamAllEntityUsagePerReferredEntityScope(
+                 scope, entityFQN, EntityType.TEMPLATE, EntityType.INFRASTRUCTURE, null)) {
+      while (iterator.hasNext()) {
+        EntitySetupUsageDTO entitySetupUsage = setupUsageEntityToDTO.createEntityReferenceDTO(iterator.next());
+        if (!isNull(entitySetupUsage) && !isNull(entitySetupUsage.getReferredByEntity())) {
+          String infraId = entitySetupUsage.getReferredByEntity().getEntityRef().getIdentifier();
+          String environment = getEnvironment(entitySetupUsage);
+          if (isEmpty(environment)) {
+            continue;
+          }
+          String orgIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getOrgIdentifier();
+          String projectIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getProjectIdentifier();
+          String infraYaml = getInfraYaml(entitySetupUsage, accountRef);
+          boolean updateRequired =
+              customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(infraYaml, templateYaml, accountRef);
+          if (updateRequired) {
+            envToOrgProjectIdMap.put(environment, Arrays.asList(orgIdentifierEnv, projectIdentifierEnv));
+            envToInfraMap.computeIfAbsent(environment, k -> new ArrayList<>()).add(infraId);
+          }
         }
       }
     }
-    updateInfrasAsObsolete(envToInfraMap, accountRef, envToOrgProjectIdMap);
+    if (isEmpty(envToInfraMap)) {
+      log.info("No infra Update for  Deployment Template with id :{}, for AccountId : {}", identifier, accountRef);
+    } else {
+      updateInfrasAsObsolete(envToInfraMap, accountRef, envToOrgProjectIdMap);
+    }
     return true;
   }
 

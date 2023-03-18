@@ -65,6 +65,7 @@ public final class PersistenceIteratorFactory {
     private String name;
     private int poolSize;
     private int batchSize;
+    private int lockTimeout;
     private Duration interval;
   }
 
@@ -145,25 +146,31 @@ public final class PersistenceIteratorFactory {
     }
 
     String iteratorName = "Iterator-" + options.name;
+
+    // Create the worker thread pool that will process the docs.
     ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(
         options.poolSize, new ThreadFactoryBuilder().setNameFormat(iteratorName).build());
     log.info(getWorkerEnabledLog(cls.getName()));
 
+    // Create the main executor thread that carries out the Redis
+    // lock acquisition and fetching / updating docs with Mongo.
+    ExecutorService mainExecutor =
+        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(iteratorName + "-Main").build());
+
     MongoPersistenceIterator<T, F> iterator =
         builder.mode(REDIS_BATCH)
-            .threadPoolExecutor(executor)
+            .executorService(mainExecutor)
+            .workerThreadPoolExecutor(executor)
             .semaphore(new Semaphore(options.poolSize))
             .iteratorName(options.name)
             .threadPoolIntervalInSeconds(options.interval)
             .redisModeBatchSize(options.getBatchSize())
+            .redisLockTimeout(options.getLockTimeout())
             .persistentLocker(injector.getInstance(Key.get(PersistentLocker.class)))
             .build();
     injector.injectMembers(iterator);
 
-    // Start the main executor thread that carries out the Redis
-    // lock acquisition and fetching / updating docs with Mongo.
-    ExecutorService mainExecutor =
-        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(iteratorName + "-Main").build());
+    // Start the main executor
     mainExecutor.submit(() -> iterator.redisBatchProcess());
 
     return iterator;

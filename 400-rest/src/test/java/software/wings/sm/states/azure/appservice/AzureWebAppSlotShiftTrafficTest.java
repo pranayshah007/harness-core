@@ -33,6 +33,7 @@ import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotShiftTrafficResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
@@ -77,6 +78,7 @@ public class AzureWebAppSlotShiftTrafficTest extends WingsBaseTest {
   @Mock protected ActivityService activityService;
   @Mock AzureSweepingOutputServiceHelper azureSweepingOutputServiceHelper;
   @Mock protected StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Spy @InjectMocks private ServiceTemplateHelper serviceTemplateHelper;
   @Spy @InjectMocks AzureWebAppSlotShiftTraffic state = new AzureWebAppSlotShiftTraffic("Slot Traffic shift state");
 

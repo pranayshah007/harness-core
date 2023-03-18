@@ -65,6 +65,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.command.CommandExecutionResult;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
@@ -148,6 +149,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
   @Mock private FeatureFlagService featureFlagService;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private SSHVaultService sshVaultService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @InjectMocks private ShellScriptState shellScriptState = new ShellScriptState("ShellScript");
 

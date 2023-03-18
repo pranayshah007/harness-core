@@ -238,7 +238,7 @@ public interface ArtifactService extends OwnedByArtifactStream {
   boolean deleteArtifactsByUniqueKey(ArtifactStream artifactStream, ArtifactStreamAttributes artifactStreamAttributes,
       Collection<String> artifactKeys);
 
-  Query<Artifact> prepareArtifactWithMetadataQuery(ArtifactStream artifactStream);
+  Query<Artifact> prepareArtifactWithMetadataQuery(ArtifactStream artifactStream, boolean hitSecondary);
 
   Query<Artifact> prepareCleanupQuery(ArtifactStream artifactStream);
 

@@ -25,5 +25,6 @@ public class GitFetchResponse implements DelegateTaskNotifyResponseData {
   TaskStatus taskStatus;
   String errorMessage;
   UnitProgressData unitProgressData;
+  Map<String, String> fetchedCommitIdsMap;
   @NonFinal @Setter DelegateMetaInfo delegateMetaInfo;
 }

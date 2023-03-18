@@ -13,6 +13,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.ng.core.remote.ProjectMapper.toProject;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.TEJAS;
@@ -27,6 +28,7 @@ import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -78,6 +80,7 @@ import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -104,6 +107,7 @@ import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -244,6 +248,84 @@ public class ProjectServiceImplTest extends CategoryTest {
     }
   }
 
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testUpdateProject_exitingCreatedAtAsNull() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    long lastModifiedTime = 1234567890;
+
+    ProjectDTO projectDTO = createProjectDTO(orgIdentifier, identifier);
+    Project newProject = toProject(projectDTO);
+    Project exitingProject = newProject;
+    exitingProject.setAccountIdentifier(accountIdentifier);
+    exitingProject.setOrgIdentifier(orgIdentifier);
+    exitingProject.setIdentifier(identifier);
+    exitingProject.setId(exitingProject.getId());
+    exitingProject.setCreatedAt(null);
+    exitingProject.setLastModifiedAt(lastModifiedTime);
+    exitingProject.setDescription("description");
+    setContextData(accountIdentifier);
+
+    when(projectRepository.save(any())).thenReturn(newProject);
+    when(organizationService.get(accountIdentifier, orgIdentifier)).thenReturn(Optional.of(random(Organization.class)));
+    when(projectService.get(accountIdentifier, orgIdentifier, identifier)).thenReturn(Optional.of(exitingProject));
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    ArgumentCaptor<Project> updatedProjectCapture = ArgumentCaptor.forClass(Project.class);
+
+    projectService.update(accountIdentifier, orgIdentifier, identifier, projectDTO);
+
+    verify(projectRepository, times(1)).save(updatedProjectCapture.capture());
+
+    Project updatedProject = updatedProjectCapture.getValue();
+    assertThat(updatedProject.getCreatedAt()).isNotNull();
+    assertThat(updatedProject.getCreatedAt()).isEqualTo(lastModifiedTime);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testUpdateProject_withValidExistingCreatedAt() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    long lastModifiedTime = 23456789;
+    long createdAtTime = 1234567890;
+
+    ProjectDTO projectDTO = createProjectDTO(orgIdentifier, identifier);
+    Project newProject = toProject(projectDTO);
+    Project exitingProject = newProject;
+    exitingProject.setAccountIdentifier(accountIdentifier);
+    exitingProject.setOrgIdentifier(orgIdentifier);
+    exitingProject.setIdentifier(identifier);
+    exitingProject.setId(exitingProject.getId());
+    exitingProject.setCreatedAt(createdAtTime);
+    exitingProject.setLastModifiedAt(lastModifiedTime);
+    exitingProject.setDescription("description");
+    setContextData(accountIdentifier);
+
+    when(projectRepository.save(any())).thenReturn(newProject);
+    when(organizationService.get(accountIdentifier, orgIdentifier)).thenReturn(Optional.of(random(Organization.class)));
+    when(projectService.get(accountIdentifier, orgIdentifier, identifier)).thenReturn(Optional.of(exitingProject));
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    ArgumentCaptor<Project> updatedProjectCapture = ArgumentCaptor.forClass(Project.class);
+
+    projectService.update(accountIdentifier, orgIdentifier, identifier, projectDTO);
+
+    verify(projectRepository, times(1)).save(updatedProjectCapture.capture());
+
+    Project updatedProject = updatedProjectCapture.getValue();
+    assertThat(updatedProject.getCreatedAt()).isNotNull();
+    assertThat(updatedProject.getCreatedAt()).isEqualTo(createdAtTime);
+  }
   @Test(expected = JerseyViolationException.class)
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
@@ -362,9 +444,9 @@ public class ProjectServiceImplTest extends CategoryTest {
             .userId(user)
             .scope(Scope.builder().accountIdentifier("accId1").orgIdentifier("orgId2").projectIdentifier("id2").build())
             .build();
-    doReturn(new PageImpl<>(Arrays.asList(userMembership1, userMembership2)))
+    doReturn(createCloseableIterator(Arrays.asList(userMembership1, userMembership2).iterator()))
         .when(ngUserService)
-        .listUserMemberships(any(), any());
+        .streamUserMemberships(any());
     doReturn(projects).when(projectService).list(any());
     doReturn(new PageImpl<>(projects, Pageable.unpaged(), 100)).when(projectRepository).findAll(any(), any());
     PageResponse<ProjectDTO> projectsResponse =
@@ -398,9 +480,9 @@ public class ProjectServiceImplTest extends CategoryTest {
             .userId(user)
             .scope(Scope.builder().accountIdentifier("accId1").orgIdentifier("orgId2").projectIdentifier("id2").build())
             .build();
-    doReturn(new PageImpl<>(Arrays.asList(userMembership1, userMembership2)))
+    doReturn(createCloseableIterator(Arrays.asList(userMembership1, userMembership2).iterator()))
         .when(ngUserService)
-        .listUserMemberships(any(), any());
+        .streamUserMemberships(any());
     doReturn(projects).when(projectService).list(any());
     doReturn(projects).when(projectRepository).findAll((Criteria) any());
     List<ProjectDTO> projectsResponse = projectService.listProjectsForUser(user, "account");
@@ -467,5 +549,22 @@ public class ProjectServiceImplTest extends CategoryTest {
     verify(projectRepository, times(1))
         .findByAccountIdentifierAndOrgIdentifierAndIdentifierIgnoreCaseAndDeletedNot(
             accountIdentifier, orgIdentifier, projectIdentifier, true);
+  }
+
+  private static <T> CloseableIterator<T> createCloseableIterator(Iterator<T> iterator) {
+    return new CloseableIterator<T>() {
+      @Override
+      public void close() {}
+
+      @Override
+      public boolean hasNext() {
+        return iterator.hasNext();
+      }
+
+      @Override
+      public T next() {
+        return iterator.next();
+      }
+    };
   }
 }

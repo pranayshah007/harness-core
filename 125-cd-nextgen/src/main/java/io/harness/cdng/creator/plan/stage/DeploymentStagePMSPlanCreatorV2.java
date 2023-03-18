@@ -15,13 +15,13 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
-import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.service.ServiceAllInOnePlanCreatorUtils;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterUtils;
+import io.harness.cdng.environment.helper.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.environment.helper.EnvironmentsPlanCreatorHelper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
@@ -178,7 +178,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, DeploymentStageNode stageNode, List<String> childrenNodeIds) {
     if (stageNode.getStrategy() != null && MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
-      throw new InvalidRequestException("Both strategy and multi-deployment is not supported. Please use any one");
+      throw new InvalidRequestException(
+          "Looping Strategy and Multi Service/Environment configurations are not supported together in a single stage. Please use any one of these");
     }
     stageNode.setIdentifier(getIdentifierWithExpression(ctx, stageNode, stageNode.getIdentifier()));
     stageNode.setName(getIdentifierWithExpression(ctx, stageNode, stageNode.getName()));
@@ -352,8 +353,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         && ParameterField.isNotNull(deploymentStageConfig.getService().getServiceRef());
     boolean serviceV2UseFromStage = deploymentStageConfig.getService() != null
         && deploymentStageConfig.getService().getUseFromStage() != null
-        && deploymentStageConfig.getService().getUseFromStage().getValue() != null
-        && EmptyPredicate.isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getValue().getStage());
+        && EmptyPredicate.isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getStage());
     boolean isServices = deploymentStageConfig.getServices() != null;
     return isServices || isServiceV2 || serviceV2UseFromStage;
   }
@@ -725,17 +725,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   protected void failIfProjectIsFrozen(PlanCreationContext ctx) {
     List<FreezeSummaryResponseDTO> projectFreezeConfigs = null;
     try {
-      if (!EmptyPredicate.isEmpty(ctx.getAccountIdentifier())
-          && featureFlagHelperService.isEnabled(ctx.getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE)) {
-        String accountId = ctx.getAccountIdentifier();
-        String orgId = ctx.getOrgIdentifier();
-        String projectId = ctx.getProjectIdentifier();
-        if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
-                featureFlagHelperService, accountId, orgId, projectId, accessControlClient)) {
-          return;
-        }
-        projectFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId);
+      String accountId = ctx.getAccountIdentifier();
+      String orgId = ctx.getOrgIdentifier();
+      String projectId = ctx.getProjectIdentifier();
+      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
+              featureFlagHelperService, accountId, orgId, projectId, accessControlClient)) {
+        return;
       }
+      projectFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId);
     } catch (Exception e) {
       log.error(
           "NG Freeze: Failure occurred when evaluating execution should fail due to freeze at the time of plan creation");

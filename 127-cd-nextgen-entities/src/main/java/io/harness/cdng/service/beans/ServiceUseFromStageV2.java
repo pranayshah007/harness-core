@@ -12,12 +12,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.visitor.helpers.service.ServiceUseFromStageV2VisitorHelper;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -39,7 +41,10 @@ public class ServiceUseFromStageV2 implements Visitable {
   String uuid;
 
   // Stage identifier of the stage to select from.
-  @ApiModelProperty(required = true) @NotNull String stage;
+  @ApiModelProperty(required = true)
+  @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN)
+  @NotNull
+  String stage;
 
   // For Visitor Framework Impl
   String metadata;

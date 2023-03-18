@@ -50,6 +50,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MergeHelper {
   public final Set<String> acceptAllChildrenKeys = new HashSet<>(
       Arrays.asList("service", "environment", "template", "services", "environments", "environmentGroup"));
+  public static final String PATH_SEP = "/";
 
   public String mergeInputSetFormatYamlToOriginYaml(String originYaml, String inputSetFormatYaml) {
     return mergeRuntimeInputValuesIntoOriginalYaml(originYaml, inputSetFormatYaml, false);
@@ -307,6 +308,11 @@ public class MergeHelper {
   }
 
   public String mergeUpdatesIntoJson(String pipelineJson, Map<String, String> fqnToJsonMap) {
+    return mergeUpdatesIntoJsonParametrisedOnPathSeparator(pipelineJson, fqnToJsonMap, PATH_SEP);
+  }
+
+  public String mergeUpdatesIntoJsonParametrisedOnPathSeparator(
+      String pipelineJson, Map<String, String> fqnToJsonMap, String pathSeparator) {
     YamlNode pipelineNode;
     try {
       pipelineNode = YamlUtils.readTree(pipelineJson).getNode();
@@ -322,7 +328,8 @@ public class MergeHelper {
       String content = fqnToJsonMap.get(fqn);
       content = removeNonASCII(content);
       try {
-        pipelineNode.replacePath(fqn, YamlUtils.readTree(content).getNode().getCurrJsonNode());
+        pipelineNode.replacePathParametrisedOnPathSeparator(
+            fqn, YamlUtils.readTree(content).getNode().getCurrJsonNode(), pathSeparator);
       } catch (IOException e) {
         log.error("Could not read json provided for the fqn: " + fqn + ". Json:\n" + content, e);
         throw new YamlException("Could not read json provided for the fqn: " + fqn);

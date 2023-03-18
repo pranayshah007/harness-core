@@ -89,14 +89,14 @@ public class DockerResourceServiceImpl implements DockerResourceService {
   }
 
   @Override
-  public DockerResponseDTO getBuildDetails(
-      IdentifierRef dockerConnectorRef, String imagePath, String orgIdentifier, String projectIdentifier) {
+  public DockerResponseDTO getBuildDetails(IdentifierRef dockerConnectorRef, String imagePath, String orgIdentifier,
+      String projectIdentifier, String tagRegex) {
     DockerConnectorDTO connector = getConnector(dockerConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(dockerConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     DockerArtifactDelegateRequest dockerRequest = ArtifactDelegateRequestUtils.getDockerDelegateRequest(
-        imagePath, null, null, null, null, connector, encryptionDetails, ArtifactSourceType.DOCKER_REGISTRY, false);
+        imagePath, null, tagRegex, null, null, connector, encryptionDetails, ArtifactSourceType.DOCKER_REGISTRY, false);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(
           dockerRequest, ArtifactTaskType.GET_BUILDS, baseNGAccess, "Docker Get Builds task failure due to error");
@@ -106,6 +106,10 @@ public class DockerResourceServiceImpl implements DockerResourceService {
           String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
           new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
     } catch (ExplanationException e) {
+      if (e.getMessage().contains("no metadata was returned")) {
+        throw new HintException(
+            HintException.HINT_DOCKER_HUB_INVALID_IMAGE_PATH, new InvalidRequestException(e.getMessage(), USER));
+      }
       throw new HintException(
           HintException.HINT_DOCKER_HUB_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
     }

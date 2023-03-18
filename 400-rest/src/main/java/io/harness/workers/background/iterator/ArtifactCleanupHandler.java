@@ -17,7 +17,7 @@ import static java.time.Duration.ofMinutes;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -44,7 +44,7 @@ import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ArtifactCleanupHandler extends IteratorPumpModeHandler implements Handler<ArtifactStream> {
+public class ArtifactCleanupHandler extends IteratorPumpAndRedisModeHandler implements Handler<ArtifactStream> {
   public static final String GROUP = "ARTIFACT_STREAM_CRON_GROUP";
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(15);
 

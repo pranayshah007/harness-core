@@ -9,10 +9,10 @@ package io.harness.cdng.pipeline.steps;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
+import io.harness.cdng.environment.helper.EnvironmentStepsUtils;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
@@ -24,9 +24,11 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.JsonUtils;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
-import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 public class MultiDeploymentSpawnerUtils {
@@ -79,8 +81,8 @@ public class MultiDeploymentSpawnerUtils {
   Map<String, String> getMapFromEnvironmentYaml(EnvironmentYamlV2 environmentYamlV2,
       InfraStructureDefinitionYaml infraStructureDefinitionYaml, Scope envGroupScope) {
     Map<String, String> matrixMetadataMap = new HashMap<>();
-    matrixMetadataMap.put(
-        ENVIRONMENT_REF, getEnvironmentRef(environmentYamlV2.getEnvironmentRef().getValue(), envGroupScope));
+    matrixMetadataMap.put(ENVIRONMENT_REF,
+        EnvironmentStepsUtils.getEnvironmentRef(environmentYamlV2.getEnvironmentRef().getValue(), envGroupScope));
     if (!ParameterField.isBlank(environmentYamlV2.getEnvironmentInputs())
         && EmptyPredicate.isNotEmpty(environmentYamlV2.getEnvironmentInputs().getValue())) {
       matrixMetadataMap.put(ENVIRONMENT_INPUTS, JsonUtils.asJson(environmentYamlV2.getEnvironmentInputs().getValue()));
@@ -92,26 +94,17 @@ public class MultiDeploymentSpawnerUtils {
     if (!ParameterField.isBlank(environmentYamlV2.getGitOpsClusters())) {
       matrixMetadataMap.put(GIT_OPS_CLUSTERS, JsonUtils.asJson(environmentYamlV2.getGitOpsClusters().getValue()));
     } else {
+      if (infraStructureDefinitionYaml == null || infraStructureDefinitionYaml.getIdentifier() == null) {
+        throw new InvalidRequestException(String.format(
+            "Infrastructure Definition is not provided for environment %s, Please provide infrastructure definition and try again",
+            environmentYamlV2.getEnvironmentRef().getValue()));
+      }
       matrixMetadataMap.put(INFRA_IDENTIFIER, infraStructureDefinitionYaml.getIdentifier().getValue());
     }
     if (!ParameterField.isBlank(infraStructureDefinitionYaml.getInputs())) {
       matrixMetadataMap.put(INFRA_INPUTS, JsonUtils.asJson(infraStructureDefinitionYaml.getInputs().getValue()));
     }
     return matrixMetadataMap;
-  }
-
-  private static String getEnvironmentRef(String environmentRef, Scope envGroupScope) {
-    // project level env groups not modified
-    if (envGroupScope == null || Scope.PROJECT.equals(envGroupScope) || Scope.UNKNOWN.equals(envGroupScope)) {
-      return environmentRef;
-    }
-
-    String[] envRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-    if (envRefSplit == null || envRefSplit.length == 1) {
-      return envGroupScope.getYamlRepresentation() + "." + environmentRef;
-    } else {
-      return environmentRef;
-    }
   }
 
   public void addServiceOverridesToMap(Map<String, String> environmentsMap, Map<String, Object> serviceOverrideInputs) {
@@ -224,5 +217,16 @@ public class MultiDeploymentSpawnerUtils {
         .gitOpsClusters(ParameterField.createExpressionField(true, GIT_OPS_CLUSTERS_EXPRESSION, null, false))
         .infrastructureDefinition(ParameterField.createValueField(infraStructureDefinitionYaml))
         .build();
+  }
+
+  public int getEnvCount(List<EnvironmentMapResponse> environmentMapList) {
+    Set<String> envs = new HashSet<>();
+    for (EnvironmentMapResponse environmentMapResponse : environmentMapList) {
+      Map<String, String> envMap = environmentMapResponse.getEnvironmentsMapList();
+      if (envMap.containsKey(ENVIRONMENT_REF)) {
+        envs.add(envMap.get(ENVIRONMENT_REF));
+      }
+    }
+    return envs.size();
   }
 }

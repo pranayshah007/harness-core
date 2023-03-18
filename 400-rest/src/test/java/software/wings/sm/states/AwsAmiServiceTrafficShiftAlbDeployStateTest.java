@@ -48,6 +48,7 @@ import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceBuilder;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.task.aws.LbDetailsForAlbTrafficShift;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
@@ -101,6 +102,7 @@ public class AwsAmiServiceTrafficShiftAlbDeployStateTest extends WingsBaseTest {
   @Mock private SpotInstStateHelper spotinstStateHelper;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks
   private final AwsAmiServiceTrafficShiftAlbDeployState state =

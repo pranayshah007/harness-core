@@ -20,6 +20,8 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.filter.creation.FilterCreationResponse;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -93,15 +95,27 @@ public class PipelineStageFilterCreatorTest extends CategoryTest {
     YamlField pipelineStageYamlField = YamlUtils.injectUuidInYamlField(yamlField);
     FilterCreationContext filterCreationContext =
         FilterCreationContext.builder()
-            .setupMetadata(SetupMetadata.newBuilder().setAccountId("acc").setOrgId("org").setProjectId("org").build())
+            .setupMetadata(
+                SetupMetadata.newBuilder().setAccountId("acc").setOrgId("org").setProjectId("project").build())
             .currentField(pipelineStageYamlField)
             .build();
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(yamlField).build()))
         .when(pmsPipelineService)
         .getPipeline("acc", "org", "project", "childPipeline", false, false);
+
+    GitEntityInfo gitRequestParamsInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    assertThat(gitRequestParamsInfo.getParentEntityAccountIdentifier()).isNull();
+    assertThat(gitRequestParamsInfo.getParentEntityOrgIdentifier()).isNull();
+    assertThat(gitRequestParamsInfo.getParentEntityProjectIdentifier()).isNull();
+
     FilterCreationResponse filterCreationResponse = pipelineStageFilterCreator.handleNode(
         filterCreationContext, YamlUtils.read(yamlField, PipelineStageNode.class));
+
+    gitRequestParamsInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    assertThat(gitRequestParamsInfo.getParentEntityAccountIdentifier()).isEqualTo("acc");
+    assertThat(gitRequestParamsInfo.getParentEntityOrgIdentifier()).isEqualTo("org");
+    assertThat(gitRequestParamsInfo.getParentEntityProjectIdentifier()).isEqualTo("project");
 
     assertThat(filterCreationResponse.getReferredEntities().size()).isEqualTo(1);
     EntityDetailProtoDTO entityDetailProtoDTO = filterCreationResponse.getReferredEntities().get(0);

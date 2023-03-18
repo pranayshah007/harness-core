@@ -155,6 +155,10 @@ awsAccountTagsCollectionJobConfig:
 gcpConfig:
   gcpProjectId: "ccm-play"
   gcpAwsConnectorCrudPubSubTopic: "ce-aws-connector-crud"
+  bigQueryUpdatePubSubTopic:
+    enabled: true
+    topicName: ccm-bigquery-batch-update
+    subscriptionName: batch-processing-ccm-bigquery-batch-update-subscriber
 
 notificationClient:
   messageBroker:

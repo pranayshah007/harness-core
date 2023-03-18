@@ -138,7 +138,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
     inputSetResourcePMSImpl = new InputSetResourcePMSImpl(pmsInputSetService, pipelineService, gitSyncSdkService,
-        validateAndMergeHelper, inputSetsApiUtils, executionService);
+        validateAndMergeHelper, inputSetsApiUtils, executionService, false);
 
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml = readFile(inputSetFilename);
@@ -202,10 +202,28 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(Optional.of(inputSetEntity))
         .when(pmsInputSetService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false,
-            false);
+            false, false);
 
-    ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getInputSet(
-        INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null);
+    ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getInputSet(INPUT_SET_ID, ACCOUNT_ID,
+        ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null, "false");
+
+    assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
+    assertThat(responseDTO.getData().getInputSetYaml()).isEqualTo(inputSetYaml);
+    getCallAssertions(responseDTO.getData().getName(), INPUT_SET_ID, responseDTO.getData().getIdentifier(),
+        responseDTO.getData().getPipelineIdentifier(), responseDTO.getData().getProjectIdentifier(),
+        responseDTO.getData().getOrgIdentifier(), responseDTO.getData().getAccountId());
+  }
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetInputSetWithCaching() {
+    doReturn(Optional.of(inputSetEntity))
+        .when(pmsInputSetService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false,
+            false, true);
+
+    ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getInputSet(INPUT_SET_ID, ACCOUNT_ID,
+        ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null, "true");
 
     assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
     assertThat(responseDTO.getData().getInputSetYaml()).isEqualTo(inputSetYaml);
@@ -222,10 +240,10 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(Optional.of(inlineInputSetEntity))
         .when(pmsInputSetService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false,
-            false);
+            false, false);
 
-    ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getInputSet(
-        INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null);
+    ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getInputSet(INPUT_SET_ID, ACCOUNT_ID,
+        ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null, "false");
 
     InputSetResponseDTOPMS data = responseDTO.getData();
     assertThat(data.getVersion()).isEqualTo(1L);
@@ -244,10 +262,10 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(Optional.of(remoteInputSetEntity))
         .when(pmsInputSetService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false,
-            false);
+            false, false);
 
-    responseDTO = inputSetResourcePMSImpl.getInputSet(
-        INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null);
+    responseDTO = inputSetResourcePMSImpl.getInputSet(INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+        PIPELINE_IDENTIFIER, null, null, false, null, "false");
 
     data = responseDTO.getData();
     assertThat(data.getVersion()).isEqualTo(1L);
@@ -269,11 +287,11 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(Optional.empty())
         .when(pmsInputSetService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INVALID_INPUT_SET_ID, false, null, null,
-            false, false);
+            false, false, false);
 
     assertThatThrownBy(()
                            -> inputSetResourcePMSImpl.getInputSet(INVALID_INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER,
-                               PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null))
+                               PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null, "false"))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             String.format("InputSet with the given ID: %s does not exist or has been deleted", INVALID_INPUT_SET_ID));
@@ -286,11 +304,11 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(Optional.of(overlayInputSetEntity))
         .when(pmsInputSetService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, OVERLAY_INPUT_SET_ID, false, null, null,
-            false, false);
+            false, false, false);
 
     ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO =
         inputSetResourcePMSImpl.getOverlayInputSet(OVERLAY_INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-            PIPELINE_IDENTIFIER, null, null, false, null);
+            PIPELINE_IDENTIFIER, null, null, false, null, "false");
 
     assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
     assertThat(responseDTO.getData().getOverlayInputSetYaml()).isEqualTo(overlayInputSetYaml);
@@ -307,10 +325,10 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(Optional.of(inlineInputSetEntity))
         .when(pmsInputSetService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false,
-            false);
+            false, false);
 
-    ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getOverlayInputSet(
-        INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null);
+    ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getOverlayInputSet(INPUT_SET_ID,
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null, "false");
 
     OverlayInputSetResponseDTOPMS data = responseDTO.getData();
     assertThat(data.getVersion()).isEqualTo(1L);
@@ -329,10 +347,10 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(Optional.of(remoteInputSetEntity))
         .when(pmsInputSetService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false,
-            false);
+            false, false);
 
-    responseDTO = inputSetResourcePMSImpl.getOverlayInputSet(
-        INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null);
+    responseDTO = inputSetResourcePMSImpl.getOverlayInputSet(INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+        PIPELINE_IDENTIFIER, null, null, false, null, "false");
 
     data = responseDTO.getData();
     assertThat(data.getVersion()).isEqualTo(1L);
@@ -364,11 +382,11 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(Optional.empty())
         .when(pmsInputSetService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INVALID_OVERLAY_INPUT_SET_ID, false,
-            null, null, false, false);
+            null, null, false, false, false);
 
     assertThatThrownBy(()
                            -> inputSetResourcePMSImpl.getOverlayInputSet(INVALID_OVERLAY_INPUT_SET_ID, ACCOUNT_ID,
-                               ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null))
+                               ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null, "false"))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
             "InputSet with the given ID: %s does not exist or has been deleted", INVALID_OVERLAY_INPUT_SET_ID));
@@ -470,23 +488,25 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(InputSetTemplateResponseDTOPMS.builder().inputSetTemplateYaml(inputSetYaml).build())
         .when(validateAndMergeHelper)
         .getInputSetTemplateResponseDTO(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList());
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), false);
     ResponseDTO<InputSetTemplateResponseDTOPMS> inputSetTemplateResponseDTO =
         inputSetResourcePMSImpl.getTemplateFromPipeline(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null);
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, "false");
     assertEquals(inputSetTemplateResponseDTO.getStatus(), Status.SUCCESS);
     assertEquals(inputSetTemplateResponseDTO.getData().getInputSetTemplateYaml(), inputSetYaml);
 
     doReturn(InputSetTemplateResponseDTOPMS.builder().inputSetTemplateYaml(inputSetYaml).build())
         .when(validateAndMergeHelper)
-        .getInputSetTemplateResponseDTO(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, stages);
+        .getInputSetTemplateResponseDTO(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, stages, false);
     inputSetTemplateResponseDTO =
         inputSetResourcePMSImpl.getTemplateFromPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-            PIPELINE_IDENTIFIER, null, InputSetTemplateRequestDTO.builder().stageIdentifiers(stages).build());
+            PIPELINE_IDENTIFIER, null, InputSetTemplateRequestDTO.builder().stageIdentifiers(stages).build(), "false");
     assertEquals(inputSetTemplateResponseDTO.getStatus(), Status.SUCCESS);
     assertEquals(inputSetTemplateResponseDTO.getData().getInputSetTemplateYaml(), inputSetYaml);
     verify(validateAndMergeHelper, times(1))
-        .getInputSetTemplateResponseDTO(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, stages);
+        .getInputSetTemplateResponseDTO(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, stages, false);
   }
 
   @Test
@@ -495,40 +515,41 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void testGetMergeInputSetFromPipelineTemplate() {
     doReturn(pipelineYaml)
         .when(validateAndMergeHelper)
-        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-            PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, null, null);
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, null, null, false);
     doReturn(pipelineYaml)
         .when(validateAndMergeHelper)
         .mergeInputSetIntoPipeline(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, pipelineYaml, null, null, null);
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, pipelineYaml, null, null, null, false);
     MergeInputSetRequestDTOPMS inputSetRequestDTOPMS = MergeInputSetRequestDTOPMS.builder()
                                                            .withMergedPipelineYaml(true)
                                                            .inputSetReferences(Collections.emptyList())
                                                            .build();
     ResponseDTO<MergeInputSetResponseDTOPMS> mergeInputSetResponseDTOPMSResponseDTO =
-        inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetRequestDTOPMS);
+        inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, null, null, null, inputSetRequestDTOPMS, "false");
     assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getStatus(), Status.SUCCESS);
     assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getData().getCompletePipelineYaml(), pipelineYaml);
     assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getData().getPipelineYaml(), pipelineYaml);
 
     doReturn(pipelineYaml)
         .when(validateAndMergeHelper)
-        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-            PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, stages, null);
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, stages, null, false);
 
     MergeInputSetRequestDTOPMS inputSetRequestDTOPMSWithStages = MergeInputSetRequestDTOPMS.builder()
                                                                      .withMergedPipelineYaml(false)
                                                                      .inputSetReferences(Collections.emptyList())
                                                                      .stageIdentifiers(stages)
                                                                      .build();
-    mergeInputSetResponseDTOPMSResponseDTO = inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(ACCOUNT_ID,
-        ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetRequestDTOPMSWithStages);
+    mergeInputSetResponseDTOPMSResponseDTO =
+        inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, null, null, null, inputSetRequestDTOPMSWithStages, "false");
     assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getStatus(), Status.SUCCESS);
     assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getData().getPipelineYaml(), pipelineYaml);
     verify(validateAndMergeHelper, times(1))
-        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-            PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, stages, null);
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, stages, null, false);
   }
 
   @Test
@@ -540,14 +561,15 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
         InputSetErrorWrapperDTOPMS.builder().uuidToErrorResponseMap(Collections.singletonMap("fqn", null)).build();
     doThrow(new InvalidInputSetException("merging error", dummyErrorResponse))
         .when(validateAndMergeHelper)
-        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-            PIPELINE_IDENTIFIER, inputSetReferences, null, null, null, null);
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, inputSetReferences, null, null, null, null, false);
     MergeInputSetRequestDTOPMS inputSetRequestDTO = MergeInputSetRequestDTOPMS.builder()
                                                         .withMergedPipelineYaml(true)
                                                         .inputSetReferences(inputSetReferences)
                                                         .build();
-    ResponseDTO<MergeInputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetRequestDTO);
+    ResponseDTO<MergeInputSetResponseDTOPMS> responseDTO =
+        inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, null, null, null, inputSetRequestDTO, "false");
     MergeInputSetResponseDTOPMS data = responseDTO.getData();
     assertThat(data.isErrorResponse()).isTrue();
     assertThat(data.getInputSetErrorWrapper()).isEqualTo(dummyErrorResponse);
@@ -560,7 +582,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
     when(InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, pmsInputSetService, pipelineService,
              validateAndMergeHelper, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID,
-             "branch", "repo"))
+             "branch", "repo", false))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
     ResponseDTO<InputSetYamlDiffDTO> inputSetYAMLDiff = inputSetResourcePMSImpl.getInputSetYAMLDiff(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, "branch", "repo", null);
@@ -590,10 +612,10 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(Optional.of(inputSetEntityV1))
         .when(pmsInputSetService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false,
-            false);
+            false, false);
 
-    ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getInputSet(
-        INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null);
+    ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getInputSet(INPUT_SET_ID, ACCOUNT_ID,
+        ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, null, "false");
 
     assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
     assertThat(responseDTO.getData().getInputSetYaml()).isEqualTo(inputSetYamlV1);

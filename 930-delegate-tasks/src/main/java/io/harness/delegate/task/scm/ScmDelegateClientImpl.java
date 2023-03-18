@@ -17,6 +17,7 @@ import io.harness.exception.ConnectException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmInternalServerErrorException;
 import io.harness.exception.UnexpectedException;
+import io.harness.exception.runtime.SCMRuntimeException;
 
 import com.google.inject.Singleton;
 import io.grpc.Channel;
@@ -63,6 +64,11 @@ public class ScmDelegateClientImpl implements ScmDelegateClient {
           log.error("Connectivity Error while communicating with the scm service. Retry count is {}", retryCount, ex);
           if (++retryCount > 20) {
             throw new UnexpectedException("Faced Internal Server Error. Please contact Harness Support Team", ex);
+          }
+          Thread.sleep(100);
+        } catch (SCMRuntimeException ex) {
+          if (++retryCount > 0) {
+            throw ex;
           }
           Thread.sleep(100);
         }

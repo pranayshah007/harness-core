@@ -19,8 +19,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.beans.dto.CITaskDetails;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.outcomes.VmDetailsOutcome;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.delegate.TaskSelector;
@@ -116,7 +116,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
             if (ciExecutionMetadata != null && StringUtils.isNotBlank(ciExecutionMetadata.getQueueId())) {
               // ack the request so that its not processed again.
               AckRequest ackRequest = AckRequest.builder()
-                                          .itemID(ciExecutionMetadata.getQueueId())
+                                          .itemId(ciExecutionMetadata.getQueueId())
                                           .consumerName(SERVICE_NAME_CI)
                                           .topic(SERVICE_NAME_CI)
                                           .subTopic(accountId)

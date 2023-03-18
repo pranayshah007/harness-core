@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
 import io.harness.springdata.PersistenceUtils;

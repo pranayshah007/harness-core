@@ -58,6 +58,7 @@ import static software.wings.beans.EntityType.SERVICE;
 import static software.wings.beans.EntityType.WORKFLOW;
 import static software.wings.beans.NotificationRule.NotificationRuleBuilder.aNotificationRule;
 import static software.wings.beans.PhaseStep.PhaseStepBuilder.aPhaseStep;
+import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_WORKFLOWID;
 import static software.wings.common.InfrastructureConstants.INFRA_ID_EXPRESSION;
 import static software.wings.common.ProvisionerConstants.GENERIC_ROLLBACK_NAME_FORMAT;
 import static software.wings.common.WorkflowConstants.WORKFLOW_INFRAMAPPING_VALIDATION_MESSAGE;
@@ -676,7 +677,7 @@ public class WorkflowServiceImpl implements WorkflowService {
   public PageResponse<Workflow> listWorkflows(
       PageRequest<Workflow> pageRequest, Integer previousExecutionsCount, boolean withTags, String tagFilter) {
     PageResponse<Workflow> workflows =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.WORKFLOW, withTags);
+        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.WORKFLOW, withTags, false);
 
     if (workflows != null && workflows.getResponse() != null) {
       for (Workflow workflow : workflows.getResponse()) {
@@ -693,10 +694,13 @@ public class WorkflowServiceImpl implements WorkflowService {
           List<WorkflowExecution> workflowExecutions;
 
           FindOptions findOptions = new FindOptions();
+          findOptions.hint(
+              BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_WORKFLOWID));
           findOptions.limit(previousExecutionsCount);
           workflowExecutions = wingsPersistence.createAnalyticsQuery(WorkflowExecution.class)
                                    .filter(WorkflowExecutionKeys.workflowId, workflow.getUuid())
                                    .filter(WorkflowExecutionKeys.appId, workflow.getAppId())
+                                   .filter(WorkflowExecutionKeys.accountId, workflow.getAccountId())
                                    .order(Sort.descending(WorkflowExecutionKeys.createdAt))
                                    .project(WorkflowExecutionKeys.stateMachine, false)
                                    .project(WorkflowExecutionKeys.serviceExecutionSummaries, false)

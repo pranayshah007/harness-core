@@ -9,7 +9,9 @@ package io.harness.ngmigration.service.step.azure.webapp;
 
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepNode;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -34,6 +36,11 @@ public class AzureSlotShiftTrafficMapperImpl extends StepMapper {
   }
 
   @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.AZURE_WEBAPP;
+  }
+
+  @Override
   public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);
     AzureWebAppSlotShiftTraffic state = new AzureWebAppSlotShiftTraffic(stepYaml.getName());
@@ -42,10 +49,11 @@ public class AzureSlotShiftTrafficMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     AzureWebAppSlotShiftTraffic state = (AzureWebAppSlotShiftTraffic) getState(graphNode);
     AzureWebAppTrafficShiftStepNode stepNode = new AzureWebAppTrafficShiftStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
     AzureWebAppTrafficShiftStepInfo stepInfo =
         AzureWebAppTrafficShiftStepInfo.infoBuilder()
             .traffic(ParameterField.createValueField(state.getTrafficWeightExpr()))

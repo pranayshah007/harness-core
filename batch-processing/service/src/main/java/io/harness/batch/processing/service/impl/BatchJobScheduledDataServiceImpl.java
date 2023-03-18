@@ -51,12 +51,18 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
               .contains(batchJobType.getBatchJobBucket())) {
         Instant connectorCreationTime =
             Instant.ofEpochMilli(Instant.now().toEpochMilli()).truncatedTo(ChronoUnit.DAYS).minus(1, ChronoUnit.DAYS);
+
         if (ImmutableSet
                 .of(BatchJobType.AWS_ECS_CLUSTER_SYNC, BatchJobType.AWS_EC2_SERVICE_RECOMMENDATION,
                     BatchJobType.AWS_ECS_SERVICE_RECOMMENDATION)
                 .contains(batchJobType)) {
           Instant startInstant = Instant.now().minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
           connectorCreationTime = startInstant.isAfter(connectorCreationTime) ? startInstant : connectorCreationTime;
+        } else if (BatchJobType.ANOMALY_DETECTION_CLOUD == batchJobType) {
+          Instant startInstant =
+              Instant.ofEpochMilli(Instant.now().toEpochMilli()).truncatedTo(ChronoUnit.DAYS).minus(2, ChronoUnit.DAYS);
+          connectorCreationTime = startInstant.isBefore(connectorCreationTime) ? startInstant : connectorCreationTime;
+          log.info("Getting startTime for ANOMALY_DETECTION_CLOUD: {}", connectorCreationTime);
         } else {
           Instant startInstant = Instant.now().minus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
           connectorCreationTime = startInstant.isAfter(connectorCreationTime) ? startInstant : connectorCreationTime;

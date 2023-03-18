@@ -659,6 +659,12 @@ public class CfCommandTaskHelperNG {
       return;
     }
 
+    if (cfDeployCommandRequestNG.isStandardBlueGreen() && cfDeployCommandRequestNG.getDownSizeCount() == 0) {
+      executionLogCallback.saveExecutionLog(
+          color("# Skipping Downsizing of Old Instances as there will be a downtime if downsized to 0", White, Bold));
+      return;
+    }
+
     cfRequestConfig.setApplicationName(downsizeAppDetail.getApplicationName());
     ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
     executionLogCallback.saveExecutionLog(CFLogCallbackFormatter.formatAppInstancesState(

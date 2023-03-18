@@ -90,7 +90,7 @@ type AckRequest struct {
 
 // AckResponse Response object for Acknowledging a message
 type AckResponse struct {
-	ItemID string
+	ItemID string `json:"itemId"`
 }
 
 // AckErrorResponse Error Response object for Acknowledging a message
@@ -117,20 +117,20 @@ func (u UnAckType) String() string {
 // UnAckRequest Request object for UnAck a message
 // swagger:model UnAckRequest
 type UnAckRequest struct {
-	ItemID   string
-	Topic    string
-	SubTopic string
+	ItemID   string `json:"itemId"`
+	Topic    string `json:"topic" validate:"required"`
+	SubTopic string `json:"subTopic" validate:"required"`
 	// Retry topic + subtopic after RetryAfterTimeDuration nanoseconds
 	RetryAfterTimeDuration time.Duration `json:"retryTimeAfterDuration"`
-	Type                   UnAckType
+	Type                   UnAckType     `json:"type"`
 }
 
 // UnAckResponse Response object for UnAck a message
 type UnAckResponse struct {
-	ItemID   string
-	Topic    string
-	SubTopic string
-	Type     UnAckType
+	ItemID   string    `json:"itemId"`
+	Topic    string    `json:"topic"`
+	SubTopic string    `json:"subTopic"`
+	Type     UnAckType `json:"type"`
 }
 
 // UnAckErrorResponse Response object for UnAck a message
@@ -198,6 +198,20 @@ func ValidateAckRequest(request *AckRequest) error {
 	if len(request.ItemID) == 0 {
 		return fmt.Errorf("AckRequest ItemID is missing")
 	}
+	return nil
+
+}
+
+// ValidateAckRequest helper method to Validate Enqueue Request
+func ValidateUnAckRequest(request *UnAckRequest) error {
+	if len(request.Topic) == 0 {
+		return fmt.Errorf("UnAckRequest Topic is missing")
+	}
+
+	if len(request.SubTopic) == 0 {
+		return fmt.Errorf("UnAckRequest SubTopic is missing")
+	}
+
 	return nil
 
 }

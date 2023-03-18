@@ -28,6 +28,7 @@ public interface IteratorExecutionHandler {
     int throttleIntervalInSeconds;
     String iteratorMode;
     int redisBatchSize;
+    int redisLockTimeout;
   }
 
   /**

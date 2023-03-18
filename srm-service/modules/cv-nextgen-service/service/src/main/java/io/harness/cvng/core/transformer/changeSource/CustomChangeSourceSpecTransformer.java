@@ -21,7 +21,7 @@ public class CustomChangeSourceSpecTransformer
     extends ChangeSourceSpecTransformer<CustomChangeSource, CustomChangeSourceSpec> {
   @Inject WebhookConfigService webhookConfigService;
 
-  private final static String webhookSamplePayload =
+  private static final String webhookSamplePayload =
       "{ \"eventIdentifier\": \"<string>\" (optional), \"user\": \"user@harness.io\", \"startTime\": timeInMs, \"endTime\": timeInMs, \"eventDetail\": { \"description\": \"<String>\", \"changeEventDetailsLink\": \"urlString\" (optional), \"externalLinkToEntity\": \"urlString\" (optional), \"name\": \"changeEventName\" } }";
 
   @Override

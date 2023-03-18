@@ -35,6 +35,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -277,7 +278,7 @@ public class ViewsQueryHelper {
 
   public ViewQueryParams buildQueryParams(String accountId, boolean isTimeTruncGroupByRequired,
       boolean isUsedByTimeSeriesStats, boolean isClusterQuery, boolean isTotalCountQuery, int timeOffsetInDays,
-      boolean skipDefaultGroupBy) {
+      boolean skipDefaultGroupBy, boolean skipGroupBy) {
     return ViewQueryParams.builder()
         .accountId(accountId)
         .isClusterQuery(isClusterQuery)
@@ -286,19 +287,20 @@ public class ViewsQueryHelper {
         .isTotalCountQuery(isTotalCountQuery)
         .timeOffsetInDays(timeOffsetInDays)
         .skipDefaultGroupBy(skipDefaultGroupBy)
+        .skipGroupBy(skipGroupBy)
         .build();
   }
 
   public ViewQueryParams buildQueryParams(String accountId, boolean isTimeTruncGroupByRequired,
       boolean isUsedByTimeSeriesStats, boolean isClusterQuery, boolean isTotalCountQuery) {
-    return buildQueryParams(
-        accountId, isTimeTruncGroupByRequired, isUsedByTimeSeriesStats, isClusterQuery, isTotalCountQuery, 0, false);
+    return buildQueryParams(accountId, isTimeTruncGroupByRequired, isUsedByTimeSeriesStats, isClusterQuery,
+        isTotalCountQuery, 0, false, false);
   }
 
   public ViewQueryParams buildQueryParams(String accountId, boolean isTimeTruncGroupByRequired,
       boolean isUsedByTimeSeriesStats, boolean isClusterQuery, boolean isTotalCountQuery, boolean skipDefaultGroupBy) {
     return buildQueryParams(accountId, isTimeTruncGroupByRequired, isUsedByTimeSeriesStats, isClusterQuery,
-        isTotalCountQuery, 0, skipDefaultGroupBy);
+        isTotalCountQuery, 0, skipDefaultGroupBy, false);
   }
 
   public ViewQueryParams buildQueryParams(String accountId, boolean isClusterQuery) {
@@ -314,6 +316,20 @@ public class ViewsQueryHelper {
         .isTimeTruncGroupByRequired(false)
         .isTotalCountQuery(false)
         .timeOffsetInDays(0)
+        .skipGroupBy(false)
+        .build();
+  }
+
+  public ViewQueryParams buildQueryParamsWithSkipGroupBy(ViewQueryParams queryParams, boolean skipGroupBy) {
+    return ViewQueryParams.builder()
+        .accountId(queryParams.getAccountId())
+        .isClusterQuery(queryParams.isClusterQuery())
+        .isUsedByTimeSeriesStats(queryParams.isUsedByTimeSeriesStats())
+        .isTimeTruncGroupByRequired(queryParams.isTimeTruncGroupByRequired())
+        .isTotalCountQuery(queryParams.isTotalCountQuery())
+        .timeOffsetInDays(queryParams.getTimeOffsetInDays())
+        .skipDefaultGroupBy(queryParams.isSkipDefaultGroupBy())
+        .skipGroupBy(skipGroupBy)
         .build();
   }
 
@@ -397,7 +413,7 @@ public class ViewsQueryHelper {
     return filters.stream()
         .filter(filter
             -> filter.getTimeFilter() != null || filter.getViewMetadataFilter() != null
-                || filter.getRuleFilter() != null
+                || filter.getRuleFilter() != null || filter.getInExpressionFilter() != null
                 || (filter.getIdFilter() != null
                     && filter.getIdFilter().getField().getIdentifier() != ViewFieldIdentifier.BUSINESS_MAPPING))
         .collect(Collectors.toList());
@@ -412,7 +428,7 @@ public class ViewsQueryHelper {
     return filters.stream()
         .filter(filter
             -> filter.getTimeFilter() != null || filter.getViewMetadataFilter() != null
-                || filter.getRuleFilter() != null
+                || filter.getRuleFilter() != null || filter.getInExpressionFilter() != null
                 || (filter.getIdFilter() != null
                     && !filter.getIdFilter().getField().getFieldId().equals(businessMappingId)))
         .collect(Collectors.toList());
@@ -456,6 +472,24 @@ public class ViewsQueryHelper {
       }
     }
     return businessMappingIds;
+  }
+
+  public List<String> getSelectedCostTargetsFromFilters(final List<QLCEViewFilterWrapper> filters,
+      final List<ViewRule> viewRules, final BusinessMapping sharedCostBusinessMapping) {
+    final List<QLCEViewFilterWrapper> businessMappingFilters =
+        getBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid());
+    List<String> selectedCostTargets = new ArrayList<>();
+    for (final QLCEViewFilterWrapper businessMappingFilter : businessMappingFilters) {
+      if (!selectedCostTargets.isEmpty()) {
+        selectedCostTargets =
+            intersection(selectedCostTargets, Arrays.asList(businessMappingFilter.getIdFilter().getValues()));
+      } else {
+        selectedCostTargets.addAll(Arrays.asList(businessMappingFilter.getIdFilter().getValues()));
+      }
+    }
+    selectedCostTargets = intersection(
+        selectedCostTargets, getSelectedCostTargetsFromViewRules(viewRules, sharedCostBusinessMapping.getUuid()));
+    return selectedCostTargets;
   }
 
   public List<String> getSelectedCostTargetsFromViewRules(List<ViewRule> viewRules, String businessMappingId) {

@@ -106,6 +106,7 @@ import io.harness.context.ContextElementType;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.deployment.InstanceDetails;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -266,6 +267,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
   @Mock private GitConfigHelperService gitConfigHelperService;
   @Mock private AwsCommandHelper awsCommandHelper;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks private AbstractK8sState abstractK8SState = mock(AbstractK8sState.class, CALLS_REAL_METHODS);
   @InjectMocks K8sCanaryDeploy k8sCanaryDeploy = spy(new K8sCanaryDeploy(K8S_CANARY_DEPLOY.name()));

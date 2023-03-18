@@ -73,9 +73,8 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
     checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
     checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
     try {
-      infrastructureMappingRepository.deleteAll(
-          infrastructureMappingRepository.findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
-              accountIdentifier, orgIdentifier, projectIdentifier));
+      infrastructureMappingRepository.deleteAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
+          accountIdentifier, orgIdentifier, projectIdentifier);
     } catch (Exception e) {
       log.error("Error while deleting infrastructure mappings present in a project {}, org {}, account {}",
           projectIdentifier, orgIdentifier, accountIdentifier);

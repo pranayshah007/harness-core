@@ -44,6 +44,7 @@ import io.harness.marketplace.gcp.GcpMarketPlaceApiHandler;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.rest.RestResponse;
 import io.harness.scheduler.PersistentScheduler;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.LearningEngineAuth;
 import io.harness.security.annotations.PublicApi;
 import io.harness.seeddata.SampleDataProviderService;
@@ -200,10 +201,6 @@ public class AccountResource {
   @ExceptionMetered
   public RestResponse<PageResponse<CVEnabledService>> getAllServicesFor24x7(@QueryParam("accountId") String accountId,
       @QueryParam("serviceId") String serviceId, @BeanParam PageRequest<String> request) {
-    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
-      return new RestResponse<>(
-          accountService.getServices(accountId, UserThreadLocal.get().getPublicUser(true), request, serviceId));
-    }
     return new RestResponse<>(
         accountService.getServices(accountId, UserThreadLocal.get().getPublicUser(false), request, serviceId));
   }
@@ -213,10 +210,6 @@ public class AccountResource {
   @Timed
   @ExceptionMetered
   public RestResponse<List<Service>> getAllServicesFor24x7(@QueryParam("accountId") String accountId) {
-    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
-      return new RestResponse<>(
-          accountService.getServicesBreadCrumb(accountId, UserThreadLocal.get().getPublicUser(true)));
-    }
     return new RestResponse<>(
         accountService.getServicesBreadCrumb(accountId, UserThreadLocal.get().getPublicUser(false)));
   }
@@ -365,6 +358,19 @@ public class AccountResource {
   public RestResponse<Void> updateDefaultExperience(
       @PathParam("accountId") @NotEmpty String accountId, Account account) {
     return new RestResponse<>(accountService.setDefaultExperience(accountId, account.getDefaultExperience()));
+  }
+
+  @PUT
+  @Hidden
+  @Path("{accountId}/cross-generation-access")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
+  @InternalApi
+  public RestResponse<Account> updateCrossGenerationAccessEnabled(@PathParam("accountId") @NotEmpty String accountId,
+      @QueryParam("crossGenerationAccessEnabled") @DefaultValue("false") boolean isCrossGenerationAccessEnabled) {
+    return new RestResponse<>(
+        accountService.updateCrossGenerationAccessEnabled(accountId, isCrossGenerationAccessEnabled, false));
   }
 
   @POST

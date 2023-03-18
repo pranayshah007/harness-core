@@ -196,33 +196,40 @@ func GetAdditionalCertsDir() string {
 }
 
 // GetTiHTTPClient returns a client to talk to the TI service
-func GetTiHTTPClient() (ticlient.Client, error) {
-	l, ok := os.LookupEnv(tiSvcEp)
-	if !ok {
-		return nil, fmt.Errorf("ti service endpoint variable not set %s", tiSvcEp)
-	}
-	account, err := GetAccountId()
-	if err != nil {
-		return nil, err
-	}
-	token, ok := os.LookupEnv(tiSvcToken)
-	if !ok {
-		return nil, fmt.Errorf("TI service token not set %s", tiSvcToken)
-	}
-	return ticlient.NewHTTPClient(l, account, token, false, GetAdditionalCertsDir()), nil
+func GetTiHTTPClient(repo, sha, commitLink string, skipVerify bool) ticlient.Client {
+	endpoint, _ := GetTiSvcEp()
+	token, _ := GetTiSvcToken()
+	accountID, _ := GetAccountId()
+	orgID, _ := GetOrgId()
+	projectID, _ := GetProjectId()
+	pipelineID, _ := GetPipelineId()
+	buildID, _ := GetBuildId()
+	stageID, _ := GetStageId()
+	certsDir := GetAdditionalCertsDir()
+	return ticlient.NewHTTPClient(endpoint, token, accountID, orgID, projectID, pipelineID, buildID, stageID, repo, sha,
+		commitLink, skipVerify, certsDir)
 }
 
 // GetTiHTTPClientWithToken returns a client to talk to the TI service
-func GetTiHTTPClientWithToken(token string) (ticlient.Client, error) {
-	l, ok := os.LookupEnv(tiSvcEp)
+func GetTiHTTPClientWithToken(repo, sha, commitLink string, skipVerify bool, token string) ticlient.Client {
+	endpoint, _ := GetTiSvcEp()
+	accountID, _ := GetAccountId()
+	orgID, _ := GetOrgId()
+	projectID, _ := GetProjectId()
+	pipelineID, _ := GetPipelineId()
+	buildID, _ := GetBuildId()
+	stageID, _ := GetStageId()
+	certsDir := GetAdditionalCertsDir()
+	return ticlient.NewHTTPClient(endpoint, token, accountID, orgID, projectID, pipelineID, buildID, stageID, repo, sha,
+		commitLink, skipVerify, certsDir)
+}
+
+func GetTiSvcEp() (string, error) {
+	endpoint, ok := os.LookupEnv(tiSvcEp)
 	if !ok {
-		return nil, fmt.Errorf("ti service endpoint variable not set %s", tiSvcEp)
+		return "", fmt.Errorf("TI service endpoint environment variable not set %s", tiSvcEp)
 	}
-	account, err := GetAccountId()
-	if err != nil {
-		return nil, err
-	}
-	return ticlient.NewHTTPClient(l, account, token, false, GetAdditionalCertsDir()), nil
+	return endpoint, nil
 }
 
 func GetAccountId() (string, error) {

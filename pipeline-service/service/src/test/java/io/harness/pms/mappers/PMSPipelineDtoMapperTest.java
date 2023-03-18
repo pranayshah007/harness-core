@@ -11,11 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static java.time.LocalDate.now;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -36,6 +36,7 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.EntityDetail;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.execution.ExecutionStatus;
@@ -67,6 +68,7 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(PIPELINE)
 public class PMSPipelineDtoMapperTest extends CategoryTest {
   String yaml = "yaml";
+  String identifier = "identifier";
 
   @Test
   @Owner(developers = NAMAN)
@@ -324,7 +326,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
   public void testPreparePipelineSummary() {
     PipelineEntity oldNonGitSync = PipelineEntity.builder()
                                        .name("name")
-                                       .identifier("identifier")
+                                       .identifier(identifier)
                                        .description("desc")
                                        .stageCount(23)
                                        .filters(Collections.singletonMap("cd", null))
@@ -335,7 +337,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(true).build());
     assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
-    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo(identifier);
     assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
     assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
     assertThat(pipelineSummaryResponse.getStoreType()).isNull();
@@ -343,7 +345,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
 
     PipelineEntity oldGitSyncValid = PipelineEntity.builder()
                                          .name("name")
-                                         .identifier("identifier")
+                                         .identifier(identifier)
                                          .description("desc")
                                          .stageCount(23)
                                          .filters(Collections.singletonMap("cd", null))
@@ -356,7 +358,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(true).build());
     assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
-    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo(identifier);
     assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
     assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
     assertThat(pipelineSummaryResponse.getStoreType()).isNull();
@@ -364,7 +366,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
 
     PipelineEntity oldGitSyncInvalid = PipelineEntity.builder()
                                            .name("name")
-                                           .identifier("identifier")
+                                           .identifier(identifier)
                                            .description("desc")
                                            .yaml(yaml)
                                            .stageCount(23)
@@ -379,7 +381,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(false).invalidYaml(yaml).build());
     assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
-    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo(identifier);
     assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
     assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
     assertThat(pipelineSummaryResponse.getStoreType()).isNull();
@@ -387,7 +389,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
 
     PipelineEntity inline = PipelineEntity.builder()
                                 .name("name")
-                                .identifier("identifier")
+                                .identifier(identifier)
                                 .description("desc")
                                 .stageCount(23)
                                 .filters(Collections.singletonMap("cd", null))
@@ -398,7 +400,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(true).build());
     assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
-    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo(identifier);
     assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
     assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
     assertThat(pipelineSummaryResponse.getStoreType()).isEqualTo(StoreType.INLINE);
@@ -407,7 +409,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
         ScmGitMetaData.builder().branchName("brName").repoName("repoName").build());
     PipelineEntity remote = PipelineEntity.builder()
                                 .name("name")
-                                .identifier("identifier")
+                                .identifier(identifier)
                                 .description("desc")
                                 .stageCount(23)
                                 .filters(Collections.singletonMap("cd", null))
@@ -421,7 +423,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(true).build());
     assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
-    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo(identifier);
     assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
     assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
     assertThat(pipelineSummaryResponse.getStoreType()).isEqualTo(StoreType.REMOTE);
@@ -434,7 +436,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
   public void testPreparePipelineSummaryForListView() {
     PipelineEntity oldNonGitSync = PipelineEntity.builder()
                                        .name("name")
-                                       .identifier("identifier")
+                                       .identifier(identifier)
                                        .description("desc")
                                        .stageCount(23)
                                        .filters(Collections.singletonMap("cd", null))
@@ -445,7 +447,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(true).build());
     assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
-    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo(identifier);
     assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
     assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
     assertThat(pipelineSummaryResponse.getStoreType()).isNull();
@@ -453,7 +455,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
 
     PipelineEntity oldGitSyncValid = PipelineEntity.builder()
                                          .name("name")
-                                         .identifier("identifier")
+                                         .identifier(identifier)
                                          .description("desc")
                                          .stageCount(23)
                                          .filters(Collections.singletonMap("cd", null))
@@ -467,7 +469,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(true).build());
     assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
-    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo(identifier);
     assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
     assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
     assertThat(pipelineSummaryResponse.getStoreType()).isNull();
@@ -475,7 +477,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
 
     PipelineEntity oldGitSyncInvalid = PipelineEntity.builder()
                                            .name("name")
-                                           .identifier("identifier")
+                                           .identifier(identifier)
                                            .description("desc")
                                            .yaml(yaml)
                                            .stageCount(23)
@@ -491,7 +493,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(false).invalidYaml(yaml).build());
     assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
-    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo(identifier);
     assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
     assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
     assertThat(pipelineSummaryResponse.getStoreType()).isNull();
@@ -499,7 +501,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
 
     PipelineEntity inline = PipelineEntity.builder()
                                 .name("name")
-                                .identifier("identifier")
+                                .identifier(identifier)
                                 .description("desc")
                                 .stageCount(23)
                                 .filters(Collections.singletonMap("cd", null))
@@ -510,14 +512,14 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(true).build());
     assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
-    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo(identifier);
     assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
     assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
     assertThat(pipelineSummaryResponse.getStoreType()).isEqualTo(StoreType.INLINE);
 
     PipelineEntity remote = PipelineEntity.builder()
                                 .name("name")
-                                .identifier("identifier")
+                                .identifier(identifier)
                                 .description("desc")
                                 .stageCount(23)
                                 .filters(Collections.singletonMap("cd", null))
@@ -531,7 +533,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(true).build());
     assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
-    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo(identifier);
     assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
     assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
     assertThat(pipelineSummaryResponse.getStoreType()).isEqualTo(StoreType.REMOTE);
@@ -615,7 +617,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
   public void testPreparePipelineSummaryForDraft() {
     PipelineEntity inline = PipelineEntity.builder()
                                 .name("name")
-                                .identifier("identifier")
+                                .identifier(identifier)
                                 .filters(Collections.singletonMap("cd", null))
                                 .storeType(StoreType.INLINE)
                                 .build();
@@ -624,7 +626,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(true).build());
     assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
-    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo(identifier);
     assertThat(pipelineSummaryResponse.getIsDraft()).isEqualTo(false);
     assertThat(pipelineSummaryResponse.getStoreType()).isEqualTo(StoreType.INLINE);
   }
@@ -648,22 +650,6 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
-  public void testParseLoadFromCacheHeaderParam() {
-    //    when null is passed for string loadFromCache
-    assertFalse(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(null));
-    //    when empty is passed for string loadFromCache
-    assertFalse(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(""));
-    //    when true is passed for string loadFromCache
-    assertTrue(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam("true"));
-    //    when false is passed for string loadFromCache
-    assertFalse(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam("false"));
-    //    when junk value is passed for string loadFromCache
-    assertFalse(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam("abcs"));
-  }
-
-  @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testBuildPipelineValidationResponseDTO() {
@@ -683,10 +669,37 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                             .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
                             .build())
                 .startTs(1L)
-                .endTs(2L)
+                .endTs(null)
                 .build();
     responseBody = PMSPipelineDtoMapper.buildPipelineValidationResponseDTO(event);
     assertThat(responseBody.getStatus()).isEqualTo("IN_PROGRESS");
     assertThat(responseBody.getPolicyEval().getDeny()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testPrepareRecentExecutionInfo() {
+    PipelineStageInfo parentStageInfo = PipelineStageInfo.newBuilder()
+                                            .setRunSequence(12)
+                                            .setStageNodeId("stageId")
+                                            .setExecutionId("execId")
+                                            .setIdentifier(identifier)
+                                            .setProjectId("project1")
+                                            .setOrgId("org1")
+                                            .setHasParentPipeline(true)
+                                            .build();
+    RecentExecutionInfo recentExecutionInfo =
+        RecentExecutionInfo.builder()
+            .executionTriggerInfo(
+                ExecutionTriggerInfo.newBuilder()
+                    .setTriggeredBy(TriggeredBy.newBuilder().setUuid("uuid").setIdentifier("id1").build())
+                    .setTriggerType(TriggerType.SCHEDULER_CRON)
+                    .build())
+            .parentStageInfo(parentStageInfo)
+            .build();
+    RecentExecutionInfoDTO recentExecutionInfoDTO =
+        PMSPipelineDtoMapper.prepareRecentExecutionInfo(recentExecutionInfo);
+    assertEquals(recentExecutionInfoDTO.getParentStageInfo(), parentStageInfo);
   }
 }

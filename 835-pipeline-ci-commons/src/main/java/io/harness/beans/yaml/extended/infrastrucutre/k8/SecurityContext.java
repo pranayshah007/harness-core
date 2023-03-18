@@ -29,6 +29,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("securityContext")
 @RecasterAlias("io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext")
 public class SecurityContext {
+  @ApiModelProperty(hidden = true) String uuid;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   private ParameterField<Boolean> allowPrivilegeEscalation;

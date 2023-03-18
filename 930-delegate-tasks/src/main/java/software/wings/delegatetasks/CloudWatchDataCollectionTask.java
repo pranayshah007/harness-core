@@ -26,8 +26,8 @@ import io.harness.time.Timestamp;
 
 import software.wings.beans.TaskType;
 import software.wings.beans.dto.NewRelicMetricDataRecord;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.service.impl.AwsHelperService;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.DataCollectionTaskResult;
 import software.wings.service.impl.analysis.DataCollectionTaskResult.DataCollectionTaskStatus;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;

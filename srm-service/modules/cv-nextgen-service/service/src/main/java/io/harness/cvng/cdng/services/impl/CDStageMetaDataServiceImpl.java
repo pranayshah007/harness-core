@@ -74,9 +74,9 @@ public class CDStageMetaDataServiceImpl implements CDStageMetaDataService {
   }
 
   private static boolean isInvalidResponse(ResponseDTO<CDStageMetaDataDTO> responseDTO) {
-    return Objects.isNull(responseDTO) || Objects.isNull(responseDTO.getData())
-        || Objects.isNull(responseDTO.getData().getServiceRef())
-        || Objects.isNull(responseDTO.getData().getEnvironmentRef());
+    return CollectionUtils.isEmpty(responseDTO.getData().getServiceEnvRefList())
+        && (Objects.isNull(responseDTO.getData().getServiceRef())
+            || Objects.isNull(responseDTO.getData().getEnvironmentRef()));
   }
 
   private YamlNode getPipelineYamlNode(YamlNode yamlNode) {

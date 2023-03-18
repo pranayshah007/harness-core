@@ -11,6 +11,7 @@ import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import io.swagger.annotations.ApiModelProperty;
 
 public enum ReportType {
   @JsonProperty("junit")
@@ -22,7 +23,7 @@ public enum ReportType {
   };
 
   private final String yamlName;
-
+  @ApiModelProperty(hidden = true) String uuid;
   ReportType(String yamlName) {
     this.yamlName = yamlName;
   }

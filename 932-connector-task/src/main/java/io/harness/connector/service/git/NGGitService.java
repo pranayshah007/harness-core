@@ -31,6 +31,9 @@ public interface NGGitService {
   FetchFilesResult fetchFilesByPath(GitStoreDelegateConfig gitStoreDelegateConfig, String accountId,
       SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException;
 
+  FetchFilesResult fetchFilesByPath(String identifier, GitStoreDelegateConfig gitStoreDelegateConfig, String accountId,
+      SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException;
+
   void downloadFiles(GitStoreDelegateConfig gitStoreDelegateConfig, String manifestFilesDirectory, String accountId,
       SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException;
 

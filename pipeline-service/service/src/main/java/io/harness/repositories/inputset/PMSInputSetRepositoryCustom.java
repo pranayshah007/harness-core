@@ -42,7 +42,7 @@ public interface PMSInputSetRepositoryCustom {
 
   Optional<InputSetEntity> find(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean notDeleted, boolean getMetadataOnly,
-      boolean loadFromFallbackBranch);
+      boolean loadFromFallbackBranch, boolean loadFromCache);
 
   InputSetEntity updateForOldGitSync(InputSetEntity entityToUpdate, InputSetYamlDTO yamlDTO, ChangeType changeType);
 

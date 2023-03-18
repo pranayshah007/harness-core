@@ -14,6 +14,8 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.SCMExceptionExplanations;
+import io.harness.exception.SCMExceptionHints;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.exception.runtime.SCMRuntimeException;
@@ -30,21 +32,27 @@ public class SCMExceptionHandler implements ExceptionHandler {
     SCMRuntimeException scmException = (SCMRuntimeException) exception;
     ErrorCode errorCode = scmException.getErrorCode();
 
-    if (errorCode == ErrorCode.SCM_UNAUTHORIZED) {
-      return NestedExceptionUtils.hintWithExplanationException(HintException.HINT_INVALID_GIT_API_AUTHORIZATION,
-          ExplanationException.INVALID_GIT_API_AUTHORIZATION,
-          new InvalidRequestException(exception.getMessage(), USER));
-    } else if (errorCode == ErrorCode.INVALID_REQUEST) {
-      return NestedExceptionUtils.hintWithExplanationException(HintException.HINT_SCM_INVALID_REQUEST,
-          ExplanationException.EXPLANATION_SCM_INVALID_REQUEST,
-          new InvalidRequestException("SCM service running with delegate has error", USER));
-    } else if (errorCode == ErrorCode.GIT_CONNECTION_ERROR) {
-      return NestedExceptionUtils.hintWithExplanationException(HintException.HINT_INVALID_GIT_REPO,
-          ExplanationException.INVALID_GIT_REPO, new InvalidRequestException(exception.getMessage(), USER));
-    } else if (errorCode == ErrorCode.CONNECTION_TIMEOUT) {
-      return NestedExceptionUtils.hintWithExplanationException(HintException.HINT_GIT_CONNECTIVITY,
-          ExplanationException.GIT_TIME_OUT, new InvalidRequestException(exception.getMessage(), USER));
+    switch (errorCode) {
+      case SCM_UNAUTHORIZED:
+        return NestedExceptionUtils.hintWithExplanationException(HintException.HINT_INVALID_GIT_API_AUTHORIZATION,
+            ExplanationException.INVALID_GIT_API_AUTHORIZATION,
+            new InvalidRequestException(exception.getMessage(), USER));
+      case INVALID_REQUEST:
+        return NestedExceptionUtils.hintWithExplanationException(HintException.HINT_SCM_INVALID_REQUEST,
+            ExplanationException.EXPLANATION_SCM_INVALID_REQUEST,
+            new InvalidRequestException("SCM service running with delegate has error", USER));
+      case GIT_CONNECTION_ERROR:
+        return NestedExceptionUtils.hintWithExplanationException(HintException.HINT_INVALID_GIT_REPO,
+            ExplanationException.INVALID_GIT_REPO, new InvalidRequestException(exception.getMessage(), USER));
+      case CONNECTION_TIMEOUT:
+        return NestedExceptionUtils.hintWithExplanationException(HintException.HINT_GIT_CONNECTIVITY,
+            ExplanationException.GIT_TIME_OUT, new InvalidRequestException(exception.getMessage(), USER));
+      case SCM_API_ERROR:
+        return NestedExceptionUtils.hintWithExplanationException(SCMExceptionHints.SCM_GIT_PROVIDER_ERROR,
+            SCMExceptionExplanations.EXCEPTION_MESSAGE_INVALID_CONTENT,
+            new InvalidRequestException(scmException.getMessage(), scmException, USER));
+      default:
+        return new InvalidRequestException(exception.getMessage(), USER);
     }
-    return new InvalidRequestException(exception.getMessage(), USER);
   }
 }

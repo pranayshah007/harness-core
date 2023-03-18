@@ -39,7 +39,6 @@ import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.AmazonWebServiceClient;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
-import com.amazonaws.services.autoscaling.model.*;
 import com.amazonaws.services.autoscaling.model.AttachLoadBalancerTargetGroupsRequest;
 import com.amazonaws.services.autoscaling.model.AttachLoadBalancersRequest;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
@@ -49,6 +48,7 @@ import com.amazonaws.services.autoscaling.model.CreateOrUpdateTagsRequest;
 import com.amazonaws.services.autoscaling.model.DeleteAutoScalingGroupRequest;
 import com.amazonaws.services.autoscaling.model.DeleteLifecycleHookRequest;
 import com.amazonaws.services.autoscaling.model.DeletePolicyRequest;
+import com.amazonaws.services.autoscaling.model.DeleteScheduledActionRequest;
 import com.amazonaws.services.autoscaling.model.DeleteTagsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
@@ -61,6 +61,8 @@ import com.amazonaws.services.autoscaling.model.DescribeLoadBalancersRequest;
 import com.amazonaws.services.autoscaling.model.DescribeLoadBalancersResult;
 import com.amazonaws.services.autoscaling.model.DescribePoliciesRequest;
 import com.amazonaws.services.autoscaling.model.DescribePoliciesResult;
+import com.amazonaws.services.autoscaling.model.DescribeScheduledActionsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeScheduledActionsResult;
 import com.amazonaws.services.autoscaling.model.DescribeTagsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeTagsResult;
 import com.amazonaws.services.autoscaling.model.DetachLoadBalancerTargetGroupsRequest;
@@ -76,8 +78,10 @@ import com.amazonaws.services.autoscaling.model.LoadBalancerTargetGroupState;
 import com.amazonaws.services.autoscaling.model.PutLifecycleHookRequest;
 import com.amazonaws.services.autoscaling.model.PutScalingPolicyRequest;
 import com.amazonaws.services.autoscaling.model.PutScalingPolicyResult;
+import com.amazonaws.services.autoscaling.model.PutScheduledUpdateGroupActionRequest;
 import com.amazonaws.services.autoscaling.model.RefreshPreferences;
 import com.amazonaws.services.autoscaling.model.ScalingPolicy;
+import com.amazonaws.services.autoscaling.model.ScheduledUpdateGroupAction;
 import com.amazonaws.services.autoscaling.model.StartInstanceRefreshRequest;
 import com.amazonaws.services.autoscaling.model.StartInstanceRefreshResult;
 import com.amazonaws.services.autoscaling.model.Tag;
@@ -867,22 +871,28 @@ public class AsgSdkManager {
   public void info(String msg, boolean isBold, Object... params) {
     String formatted = format(msg, params);
     log.info(formatted);
-    if (isBold) {
-      logCallback.saveExecutionLog(color(formatted, White, Bold), INFO);
-    } else {
-      logCallback.saveExecutionLog(formatted);
+    if (logCallback != null) {
+      if (isBold) {
+        logCallback.saveExecutionLog(color(formatted, White, Bold), INFO);
+      } else {
+        logCallback.saveExecutionLog(formatted);
+      }
     }
   }
 
   public void warn(String msg, Object... params) {
     String formatted = format(msg, params);
     log.warn(formatted);
-    logCallback.saveExecutionLog(color(formatted, Yellow, Bold), WARN);
+    if (logCallback != null) {
+      logCallback.saveExecutionLog(color(formatted, Yellow, Bold), WARN);
+    }
   }
 
   public void error(String msg, String... params) {
     String formatted = format(msg, params);
-    logCallback.saveExecutionLog(formatted, ERROR);
+    if (logCallback != null) {
+      logCallback.saveExecutionLog(formatted, ERROR);
+    }
     log.error(formatted);
   }
 }

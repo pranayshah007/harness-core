@@ -6,11 +6,18 @@
  */
 
 package io.harness.cdng.pipeline.executions;
+
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.account.services.AccountService;
+import io.harness.beans.Scope;
 import io.harness.cdng.pipeline.helpers.CDPipelineInstrumentationHelper;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
 import io.harness.cdng.provision.terraform.executions.TFPlanExecutionDetailsKey;
+import io.harness.cdng.provision.terraform.executions.TerraformCloudPlanExecutionDetails;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
+import io.harness.cdng.provision.terraformcloud.TerraformCloudStepHelper;
+import io.harness.cdng.provision.terraformcloud.executiondetails.TerraformCloudPlanExecutionDetailsService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
@@ -29,6 +36,8 @@ public class CDPipelineEndEventHandler implements OrchestrationEventHandler {
   @Inject private TerraformStepHelper helper;
   @Inject CDPipelineInstrumentationHelper cdPipelineInstrumentationHelper;
   @Inject AccountService accountService;
+  @Inject TerraformCloudPlanExecutionDetailsService terraformCloudPlanExecutionDetailsService;
+  @Inject TerraformCloudStepHelper terraformCloudStepHelper;
 
   @Override
   public void handleEvent(OrchestrationEvent event) {
@@ -43,15 +52,32 @@ public class CDPipelineEndEventHandler implements OrchestrationEventHandler {
     String identity = ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getExtraInfoMap().get("email");
 
     try {
-      TFPlanExecutionDetailsKey fFPlanExecutionDetailsKey = helper.createTFPlanExecutionDetailsKey(ambiance);
-      List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList =
-          helper.getAllPipelineTFPlanExecutionDetails(fFPlanExecutionDetailsKey);
-      helper.cleanupTerraformVaultSecret(ambiance, terraformPlanExecutionDetailsList, planExecutionId);
-      helper.cleanupTfPlanJson(terraformPlanExecutionDetailsList);
-      helper.cleanupTfPlanHumanReadable(terraformPlanExecutionDetailsList);
-      helper.cleanupAllTerraformPlanExecutionDetails(fFPlanExecutionDetailsKey);
+      TFPlanExecutionDetailsKey tfPlanExecutionDetailsKey = helper.createTFPlanExecutionDetailsKey(ambiance);
+      List<TerraformPlanExecutionDetails> terraformPlanExecutionDetails =
+          helper.getAllPipelineTFPlanExecutionDetails(tfPlanExecutionDetailsKey);
+      if (isNotEmpty(terraformPlanExecutionDetails)) {
+        helper.cleanupTerraformVaultSecret(ambiance, terraformPlanExecutionDetails, planExecutionId);
+        helper.cleanupTfPlanJson(terraformPlanExecutionDetails);
+        helper.cleanupTfPlanHumanReadable(terraformPlanExecutionDetails);
+        helper.cleanupAllTerraformPlanExecutionDetails(tfPlanExecutionDetailsKey);
+      }
     } catch (Exception e) {
       log.error("Failure in cleaning up the TF plan Json files from the GCS Bucket: {}", e.getMessage());
+    }
+
+    try {
+      Scope scope =
+          Scope.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build();
+      List<TerraformCloudPlanExecutionDetails> terraformCloudPlanExecutionDetailsList =
+          terraformCloudPlanExecutionDetailsService.listAllPipelineTFCloudPlanExecutionDetails(scope, planExecutionId);
+      if (isNotEmpty(terraformCloudPlanExecutionDetailsList)) {
+        terraformCloudStepHelper.cleanupTfPlanJson(terraformCloudPlanExecutionDetailsList);
+        terraformCloudStepHelper.cleanupPolicyCheckJson(terraformCloudPlanExecutionDetailsList);
+        terraformCloudStepHelper.cleanupTerraformCloudRuns(terraformCloudPlanExecutionDetailsList, ambiance);
+        terraformCloudPlanExecutionDetailsService.deleteAllTerraformCloudPlanExecutionDetails(scope, planExecutionId);
+      }
+    } catch (Exception e) {
+      log.error("Failure in cleaning up for Terraform Cloud, execution: {}: {}", planExecutionId, e.getMessage());
     }
 
     cdAccountExecutionMetadataRepository.updateAccountExecutionMetadata(accountId, event.getEndTs());

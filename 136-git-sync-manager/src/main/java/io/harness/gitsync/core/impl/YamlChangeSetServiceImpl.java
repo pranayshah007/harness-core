@@ -309,8 +309,6 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
 
   @Override
   public void deleteByAccount(String accountId) {
-    Criteria criteria = new Criteria();
-    criteria.and(YamlChangeSetKeys.accountId).is(accountId);
-    yamlChangeSetRepository.deleteAll(yamlChangeSetRepository.findAllByAccountId(accountId));
+    yamlChangeSetRepository.deleteAllByAccountId(accountId);
   }
 }

@@ -105,13 +105,18 @@ public class FailureStrategiesUtils {
 
   public void validateRetryFailureAction(RetryFailureActionConfig retryAction) {
     ParameterField<Integer> retryCount = retryAction.getSpecConfig().getRetryCount();
+    if (retryAction.getSpecConfig() == null) {
+      throw new InvalidRequestException("Retry Spec cannot be null or empty");
+    }
     if (retryCount.isExpression()) {
       throw new InvalidRequestException("RetryCount fixed value is not given.");
     }
     if (retryAction.getSpecConfig().getRetryIntervals().isExpression()) {
       throw new InvalidRequestException("RetryIntervals cannot be expression/runtime input. Please give values.");
     }
-
+    if (retryAction.getSpecConfig().getOnRetryFailure() == null) {
+      throw new InvalidRequestException("Retry Action cannot be null or empty");
+    }
     FailureStrategyActionConfig actionUnderRetry = retryAction.getSpecConfig().getOnRetryFailure().getAction();
 
     if (!validateActionAfterRetryFailure(actionUnderRetry)) {

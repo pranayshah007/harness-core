@@ -100,6 +100,6 @@ public class CiTelemetryPublisher {
   private long getMemoryUse() {
     long totalMemory = Runtime.getRuntime().totalMemory();
     long freeMemory = Runtime.getRuntime().freeMemory();
-    return (totalMemory - freeMemory);
+    return totalMemory - freeMemory;
   }
 }

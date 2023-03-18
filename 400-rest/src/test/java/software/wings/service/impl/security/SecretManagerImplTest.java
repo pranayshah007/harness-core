@@ -210,7 +210,7 @@ public class SecretManagerImplTest extends WingsBaseTest {
     appIdEnvMapForAccount.put(appId3, Collections.singletonList(environment1));
 
     when(appService.getAppIdsByAccountId(account.getUuid())).thenReturn(Arrays.asList(appId1, appId2, appId3));
-    when(environmentService.getAppIdEnvMap(any())).thenReturn(appIdEnvMapForAccount);
+    when(environmentService.getAppIdEnvMap(any(), any())).thenReturn(appIdEnvMapForAccount);
 
     boolean canUseSecrets = secretManager.canUseSecretsInAppAndEnv(
         Sets.newHashSet(encryptedDataId1, encryptedDataId2, UUIDGenerator.generateUuid()), account.getUuid(), appId2,

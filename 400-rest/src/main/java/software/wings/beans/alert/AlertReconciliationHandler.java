@@ -12,7 +12,7 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static java.time.Duration.ofMinutes;
 
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -33,7 +33,7 @@ import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class AlertReconciliationHandler extends IteratorPumpModeHandler implements Handler<Alert> {
+public class AlertReconciliationHandler extends IteratorPumpAndRedisModeHandler implements Handler<Alert> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(5);
 
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;

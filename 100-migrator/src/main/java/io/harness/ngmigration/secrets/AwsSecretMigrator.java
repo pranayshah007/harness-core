@@ -82,15 +82,15 @@ public class AwsSecretMigrator implements SecretMigrator {
 
     // Handle Auth Token
     if (StringUtils.isNotBlank(awsSecretsManagerConfig.getAccessKey())) {
-      String awsAccessKey =
-          String.format("migratedAwsKey_%s", MigratorUtility.generateIdentifier(awsSecretsManagerConfig.getName()));
+      String awsAccessKey = String.format("migratedAwsKey_%s",
+          MigratorUtility.generateIdentifier(awsSecretsManagerConfig.getName(), inputDTO.getIdentifierCaseFormat()));
       NgEntityDetail awsAccessKeyEntityDetail = NgEntityDetail.builder()
                                                     .identifier(awsAccessKey)
                                                     .orgIdentifier(orgIdentifier)
                                                     .projectIdentifier(projectIdentifier)
                                                     .build();
-      String awsSecretKey =
-          String.format("migratedAwsSecret_%s", MigratorUtility.generateIdentifier(awsSecretsManagerConfig.getName()));
+      String awsSecretKey = String.format("migratedAwsSecret_%s",
+          MigratorUtility.generateIdentifier(awsSecretsManagerConfig.getName(), inputDTO.getIdentifierCaseFormat()));
       NgEntityDetail awsSecretEntityDetail = NgEntityDetail.builder()
                                                  .identifier(awsAccessKey)
                                                  .orgIdentifier(orgIdentifier)

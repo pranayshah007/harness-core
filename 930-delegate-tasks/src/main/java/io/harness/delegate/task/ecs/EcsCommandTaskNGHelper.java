@@ -36,7 +36,6 @@ import io.harness.delegate.beans.ecs.EcsMapper;
 import io.harness.delegate.beans.ecs.EcsRunTaskResult;
 import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
-import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest;
 import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
 import io.harness.exception.CommandExecutionException;
@@ -754,12 +753,11 @@ public class EcsCommandTaskNGHelper {
 
   public String createStageService(String ecsServiceDefinitionManifestContent,
       List<String> ecsScalableTargetManifestContentList, List<String> ecsScalingPolicyManifestContentList,
-      EcsInfraConfig ecsInfraConfig, LogCallback logCallback, long timeoutInMillis,
-      EcsBlueGreenCreateServiceRequest ecsBlueGreenCreateServiceRequest, String taskDefinitionArn,
-      String targetGroupArn) {
+      EcsInfraConfig ecsInfraConfig, LogCallback logCallback, long timeoutInMillis, String targetGroupArnKey,
+      String taskDefinitionArn, String targetGroupArn) {
     // render target group arn value in its expression in ecs service definition yaml
-    ecsServiceDefinitionManifestContent = updateTargetGroupArn(
-        ecsServiceDefinitionManifestContent, targetGroupArn, ecsBlueGreenCreateServiceRequest.getTargetGroupArnKey());
+    ecsServiceDefinitionManifestContent =
+        updateTargetGroupArn(ecsServiceDefinitionManifestContent, targetGroupArn, targetGroupArnKey);
 
     CreateServiceRequest createServiceRequest =
         parseYamlAsObject(ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass()).build();
@@ -1441,7 +1439,9 @@ public class EcsCommandTaskNGHelper {
 
   public void printEcsManifestsContent(String taskDefinition, String serviceDefinition, List<String> scalableTargets,
       List<String> scalingPolicy, LogCallback logCallback) {
-    logCallback.saveExecutionLog(color(format("%n ECS Task Definition Content %n"), White, Bold) + taskDefinition);
+    if (isNotEmpty(taskDefinition)) {
+      logCallback.saveExecutionLog(color(format("%n ECS Task Definition Content %n"), White, Bold) + taskDefinition);
+    }
     logCallback.saveExecutionLog(
         color(format("%n ECS Service Definition Content %n"), White, Bold) + serviceDefinition);
 

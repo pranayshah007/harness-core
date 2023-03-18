@@ -16,16 +16,14 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 
+import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Singleton
 public class BitbucketHelper {
   private static final String USERNAME_ERR = "Unable to get username information from api access for identifier %s";
   private static final String BITBUCKET_CLOUD_URL = "https://bitbucket.org/";
-
-  private BitbucketHelper() {
-    throw new IllegalStateException("Utility class");
-  }
 
   public static String fetchUserName(BitbucketConnectorDTO configDTO, String connectorIdentifier) {
     try {

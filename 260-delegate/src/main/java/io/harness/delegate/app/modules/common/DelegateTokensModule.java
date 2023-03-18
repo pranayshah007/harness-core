@@ -12,7 +12,6 @@ import io.harness.security.TokenGenerator;
 
 import com.google.inject.AbstractModule;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 
 @RequiredArgsConstructor

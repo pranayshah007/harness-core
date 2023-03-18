@@ -181,7 +181,7 @@ public class AsgCanaryDeleteStep extends CdTaskExecutable<AsgCommandResponse> {
             .commandName(ASG_CANARY_DELETE_COMMAND_NAME)
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
-            .canaryAsgName(asgCanaryDeployOutcome.getCanaryAsgName())
+            .canaryAsgName(asgCanaryDeployOutcome.getAsg().getAutoScalingGroupName())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .build();
 

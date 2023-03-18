@@ -51,13 +51,12 @@ public class ShellScriptStepParameters extends ShellScriptBaseStepInfo implement
   public SpecParameters getViewJsonObject() {
     // omit secretOutputVars since they should not be visible to users
     return ShellScriptStepParameters.infoBuilder()
-        .uuid(this.uuid)
         .executionTarget(this.executionTarget)
         .onDelegate(this.onDelegate)
         .outputVariables(this.outputVariables)
         .environmentVariables(this.environmentVariables)
         .shellType(this.shell)
-        .source(this.source)
+        .source(this.source.toBuilder().uuid(null).build())
         .delegateSelectors(this.delegateSelectors)
         .build();
   }

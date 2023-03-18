@@ -173,11 +173,15 @@ public class YamlNode implements Visitable {
   }
 
   public void replacePath(String path, JsonNode newNode) {
+    replacePathParametrisedOnPathSeparator(path, newNode, PATH_SEP);
+  }
+
+  public void replacePathParametrisedOnPathSeparator(String path, JsonNode newNode, String pathSeparator) {
     if (EmptyPredicate.isEmpty(path)) {
       return;
     }
 
-    List<String> pathList = Arrays.asList(path.split(PATH_SEP));
+    List<String> pathList = Arrays.asList(path.split(pathSeparator));
     if (EmptyPredicate.isEmpty(pathList)) {
       return;
     }
@@ -208,11 +212,13 @@ public class YamlNode implements Visitable {
       if (!curr.isArray()) {
         throw new YamlException(String.format("Trying to use index path (%s) on non-array node", lastName));
       }
-      try {
-        int idx = Integer.parseInt(lastName.substring(1, lastName.length() - 1));
-        ArrayNode arrayNode = (ArrayNode) curr;
+      int idx = Integer.parseInt(lastName.substring(1, lastName.length() - 1));
+      ArrayNode arrayNode = (ArrayNode) curr;
+      if (idx < arrayNode.size()) {
         arrayNode.set(idx, newNode);
-      } catch (Exception ex) {
+      } else if (idx == arrayNode.size()) {
+        arrayNode.add(newNode);
+      } else {
         throw new YamlException(String.format("Incorrect index path (%s) on array node", lastName));
       }
     } else {

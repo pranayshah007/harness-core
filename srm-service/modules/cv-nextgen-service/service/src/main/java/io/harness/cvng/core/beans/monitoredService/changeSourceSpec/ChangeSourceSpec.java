@@ -7,14 +7,10 @@
 
 package io.harness.cvng.core.beans.monitoredService.changeSourceSpec;
 
-import static io.harness.cvng.CVConstants.DATA_SOURCE_TYPE;
-
 import io.harness.cvng.beans.change.ChangeSourceType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModel;
 import lombok.Data;
 import lombok.NoArgsConstructor;

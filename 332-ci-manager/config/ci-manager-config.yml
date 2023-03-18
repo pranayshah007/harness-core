@@ -145,7 +145,7 @@ ciExecutionServiceConfig:
       baseUrl: http://localhost:9091/
       connectTimeOutSeconds: 15
       readTimeOutSeconds: 15
-    queueServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+    queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
     envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
   addonImageTag: releaseBuild-30
   liteEngineImageTag: releaseBuild-29
@@ -166,8 +166,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.5
-  liteEngineImage: harness/ci-lite-engine:1.16.5
+  addonImage: harness/ci-addon:1.16.6
+  liteEngineImage: harness/ci-lite-engine:1.16.6
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
@@ -177,6 +177,8 @@ ciExecutionServiceConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
     splitWindowsAmd64Pool: false
+    internalAccounts:
+      - "kmpySmUISimoRrJL6NL73w"
   stoStepConfig:
     defaultTag: ${STO_STEP_CONFIG_DEFAULT_TAG:-latest}
     defaultEntrypoint:
@@ -214,26 +216,26 @@ ciExecutionServiceConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.2.7-rootless
+      image: harness/drone-git:1.2.8-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.7.0
+      image: plugins/kaniko:1.7.1
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.7.0
+      image: plugins/kaniko-ecr:1.7.1
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.7.0
+      image: plugins/kaniko-gcr:1.7.1
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.7.0
+      image: plugins/kaniko-acr:1.7.1
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -261,20 +263,24 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.4.7
+      image: plugins/cache:1.4.9
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.4.7
+      image: plugins/cache:1.4.9
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
+    sscaOrchestrationConfig:
+      image: harness/ssca-plugin:latest
+      entrypoint:
+        - /bin/ssca-plugin
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.2.7
+      gitClone: harness/drone-git:1.2.8
       buildAndPushDockerRegistry: plugins/docker:20.13.0
       buildAndPushACR: plugins/acr:20.13.0
       buildAndPushECR: plugins/ecr:20.13.0
@@ -283,8 +289,9 @@ ciExecutionServiceConfig:
       s3Upload: plugins/s3:1.2.0
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.2.0
-      cacheGCS: plugins/cache:1.4.7
-      cacheS3: plugins/cache:1.4.7
+      cacheGCS: plugins/cache:1.4.9
+      cacheS3: plugins/cache:1.4.9
+      sscaOrchestration: harness/ssca-plugin:latest
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
@@ -374,3 +381,11 @@ pmsPlanCreatorServicePoolConfig:
   timeUnit: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 enableOpentelemetry: false
+enableTelemetry: ${ENABLE_TELEMETRY:-false}
+
+policyManagerSecret: secret
+
+opaClientConfig:
+  baseUrl: http://localhost:3000
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15

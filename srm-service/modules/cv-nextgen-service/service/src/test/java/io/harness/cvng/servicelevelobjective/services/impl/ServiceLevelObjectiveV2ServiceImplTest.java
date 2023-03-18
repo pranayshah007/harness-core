@@ -35,6 +35,7 @@ import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.TraceableType;
+import io.harness.cvng.client.FakeNotificationClient;
 import io.harness.cvng.core.beans.TimeGraphResponse;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.PageParams;
@@ -47,11 +48,16 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveCreateEvent;
 import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveDeleteEvent;
 import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveUpdateEvent;
+import io.harness.cvng.notification.beans.ErrorBudgetRemainingMinutesConditionSpec;
+import io.harness.cvng.notification.beans.NotificationRuleCondition;
+import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.entities.NotificationRule;
+import io.harness.cvng.notification.entities.SLONotificationRule;
+import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleCondition;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
@@ -63,10 +69,8 @@ import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
@@ -76,6 +80,7 @@ import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevel
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
@@ -85,11 +90,10 @@ import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjectiv
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
-import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
+import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.filter.OutboxEventFilter;
@@ -99,17 +103,18 @@ import io.harness.rule.Owner;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import io.serializer.HObjectMapper;
+import java.io.IOException;
 import java.text.ParseException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -120,7 +125,6 @@ import org.mockito.MockitoAnnotations;
 
 public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Inject MonitoredServiceService monitoredServiceService;
-  @Inject ServiceLevelObjectiveService serviceLevelObjectiveService;
   @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject SLOHealthIndicatorService sloHealthIndicatorService;
@@ -130,8 +134,10 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;
   @Mock CompositeSLOServiceImpl compositeSLOService;
   @Mock SideKickService sideKickService;
+
+  @Mock FakeNotificationClient notificationClient;
+
   @Inject private OutboxService outboxService;
-  @Inject private Map<ServiceLevelObjectiveType, SLOV2Transformer> serviceLevelObjectiveTypeSLOV2TransformerMap;
   @Inject private SLIRecordService sliRecordService;
 
   private BuilderFactory builderFactory;
@@ -250,6 +256,10 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                            .sloTargetPercentage(80.0)
                            .spec(RollingSLOTargetSpec.builder().periodLength("60d").build())
                            .build();
+    FieldUtils.writeField(serviceLevelObjectiveV2Service, "clock", clock, true);
+    FieldUtils.writeField(sliRecordService, "clock", clock, true);
+    FieldUtils.writeField(serviceLevelObjectiveV2Service, "sliRecordService", sliRecordService, true);
+    FieldUtils.writeField(serviceLevelObjectiveV2Service, "notificationClient", notificationClient, true);
   }
 
   @Test
@@ -661,55 +671,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     boolean isDeleted = serviceLevelObjectiveV2Service.delete(projectParams, compositeSLODTO.getIdentifier());
     assertThat(isDeleted).isEqualTo(true);
     isDeleted = serviceLevelObjectiveV2Service.delete(projectParams, simpleServiceLevelObjective1.getIdentifier());
-    assertThat(isDeleted).isEqualTo(true);
-  }
-
-  @Test
-  @Owner(developers = VARSHA_LALWANI)
-  @Category(UnitTests.class)
-  public void testDelete_SimpleSLO_AssociatedWith_CompositeSLO_FailureInV1() {
-    ServiceLevelObjectiveDTO serviceLevelObjectiveDTO = builderFactory.getServiceLevelObjectiveDTOBuilder().build();
-    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
-    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
-    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    serviceLevelObjectiveService.create(projectParams, serviceLevelObjectiveDTO);
-    ServiceLevelObjectiveV2DTO compositeSLODTO1 = compositeSLODTO;
-    CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
-        (CompositeServiceLevelObjectiveSpec) compositeSLODTO1.getSpec();
-    compositeServiceLevelObjectiveSpec.setServiceLevelObjectivesDetails(
-        Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
-                          .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
-                          .weightagePercentage(50.0)
-                          .accountId(simpleServiceLevelObjective1.getAccountId())
-                          .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
-                          .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
-                          .build(),
-            ServiceLevelObjectiveDetailsDTO.builder()
-                .serviceLevelObjectiveRef(serviceLevelObjectiveDTO.getIdentifier())
-                .weightagePercentage(50.0)
-                .accountId(projectParams.getAccountIdentifier())
-                .orgIdentifier(serviceLevelObjectiveDTO.getOrgIdentifier())
-                .projectIdentifier(serviceLevelObjectiveDTO.getProjectIdentifier())
-                .build()));
-    compositeSLODTO1.setSpec(compositeServiceLevelObjectiveSpec);
-    serviceLevelObjectiveV2Service.update(projectParams, compositeSLODTO1.getIdentifier(), compositeSLODTO1);
-    List<String> referencedCompositeSLOIdentifiers =
-        compositeSLOService.getReferencedCompositeSLOs(projectParams, serviceLevelObjectiveDTO.getIdentifier())
-            .stream()
-            .map(CompositeServiceLevelObjective::getIdentifier)
-            .collect(Collectors.toList());
-    assertThatThrownBy(
-        () -> serviceLevelObjectiveService.delete(projectParams, serviceLevelObjectiveDTO.getIdentifier()))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(String.format(
-            "Can't delete the SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s. This is associated with Composite SLO with identifier%s %s.",
-            serviceLevelObjectiveDTO.getIdentifier(), projectParams.getAccountIdentifier(),
-            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(),
-            referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
-            String.join(",", referencedCompositeSLOIdentifiers)));
-    boolean isDeleted = serviceLevelObjectiveV2Service.delete(projectParams, compositeSLODTO.getIdentifier());
-    assertThat(isDeleted).isEqualTo(true);
-    isDeleted = serviceLevelObjectiveService.delete(projectParams, serviceLevelObjectiveDTO.getIdentifier());
     assertThat(isDeleted).isEqualTo(true);
   }
 
@@ -1126,11 +1087,12 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
             .getUuid();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
-    RatioSLIMetricSpec ratioSLIMetricSpec = (RatioSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+    RatioSLIMetricSpec ratioSLIMetricSpec =
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     ratioSLIMetricSpec.setThresholdType(ThresholdType.LESS_THAN);
     serviceLevelIndicatorDTO1.setIdentifier(responseSLIDTO.getIdentifier());
     serviceLevelIndicatorDTO1.setName(responseSLIDTO.getName());
-    serviceLevelIndicatorDTO1.getSpec().setSpec(ratioSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(ratioSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
@@ -1197,11 +1159,12 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
             .getUuid();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
-    RatioSLIMetricSpec ratioSLIMetricSpec = (RatioSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+    RatioSLIMetricSpec ratioSLIMetricSpec =
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     ratioSLIMetricSpec.setThresholdValue(578.02);
     serviceLevelIndicatorDTO1.setIdentifier(responseSLIDTO.getIdentifier());
     serviceLevelIndicatorDTO1.setName(responseSLIDTO.getName());
-    serviceLevelIndicatorDTO1.getSpec().setSpec(ratioSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(ratioSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
@@ -1234,11 +1197,11 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
     ThresholdSLIMetricSpec thresholdSLIMetricSpec =
-        (ThresholdSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+        (ThresholdSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     thresholdSLIMetricSpec.setThresholdValue(578.02);
     serviceLevelIndicatorDTO1.setIdentifier(responseSLIDTO.getIdentifier());
     serviceLevelIndicatorDTO1.setName(responseSLIDTO.getName());
-    serviceLevelIndicatorDTO1.getSpec().setSpec(thresholdSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(thresholdSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
@@ -1271,11 +1234,11 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
     ThresholdSLIMetricSpec thresholdSLIMetricSpec =
-        (ThresholdSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+        (ThresholdSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     thresholdSLIMetricSpec.setThresholdType(ThresholdType.LESS_THAN);
     serviceLevelIndicatorDTO1.setIdentifier(responseSLIDTO.getIdentifier());
     serviceLevelIndicatorDTO1.setName(responseSLIDTO.getName());
-    serviceLevelIndicatorDTO1.getSpec().setSpec(thresholdSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(thresholdSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
@@ -1313,11 +1276,12 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
             .getUuid();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
-    RatioSLIMetricSpec ratioSLIMetricSpec = (RatioSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+    RatioSLIMetricSpec ratioSLIMetricSpec =
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     ratioSLIMetricSpec.setThresholdType(ThresholdType.LESS_THAN);
     serviceLevelIndicatorDTO1.setIdentifier(responseSLIDTO.getIdentifier());
     serviceLevelIndicatorDTO1.setName(responseSLIDTO.getName());
-    serviceLevelIndicatorDTO1.getSpec().setSpec(ratioSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(ratioSLIMetricSpec);
     sloDTO.setSloTarget(calendarSloTarget);
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO);
@@ -1387,11 +1351,12 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
             .getUuid();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
-    RatioSLIMetricSpec ratioSLIMetricSpec = (RatioSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+    RatioSLIMetricSpec ratioSLIMetricSpec =
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     ratioSLIMetricSpec.setThresholdType(ThresholdType.LESS_THAN);
     serviceLevelIndicatorDTO1.setIdentifier(responseSLIDTO.getIdentifier());
     serviceLevelIndicatorDTO1.setName(responseSLIDTO.getName());
-    serviceLevelIndicatorDTO1.getSpec().setSpec(ratioSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(ratioSLIMetricSpec);
     sloDTO.setSloTarget(calendarSloTarget);
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO);
@@ -1458,9 +1423,10 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
             .getUuid();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
-    RatioSLIMetricSpec ratioSLIMetricSpec = (RatioSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+    RatioSLIMetricSpec ratioSLIMetricSpec =
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     ratioSLIMetricSpec.setMetric1("metric7");
-    serviceLevelIndicatorDTO1.getSpec().setSpec(ratioSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(ratioSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updatedServiceLevelObjectiveResponse =
@@ -1495,9 +1461,9 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
     ThresholdSLIMetricSpec thresholdSLIMetricSpec =
-        (ThresholdSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+        (ThresholdSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     thresholdSLIMetricSpec.setMetric1("metric7");
-    serviceLevelIndicatorDTO1.getSpec().setSpec(thresholdSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(thresholdSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updatedServiceLevelObjectiveResponse =
@@ -1536,7 +1502,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                                                         .thresholdType(ThresholdType.GREATER_THAN)
                                                         .thresholdValue(200.0)
                                                         .build();
-    serviceLevelIndicatorDTO1.getSpec().setSpec(thresholdSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(thresholdSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updatedServiceLevelObjectiveResponse =
@@ -1576,8 +1542,8 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                                                     .thresholdType(ThresholdType.GREATER_THAN)
                                                     .thresholdValue(200.0)
                                                     .build();
-    serviceLevelIndicatorDTO1.getSpec().setSpec(thresholdSLIMetricSpec);
-    serviceLevelIndicatorDTO1.getSpec().setSpec(thresholdSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(thresholdSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(thresholdSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updatedServiceLevelObjectiveResponse =
@@ -2219,6 +2185,162 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThat(timeGraphResponse.getDataPoints().get(9).getValue()).isEqualTo(50.0);
   }
 
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testSendNotification() throws IllegalAccessException, IOException {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponseOne =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setName("rule2");
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleDTO.setConditions(
+        Arrays.asList(NotificationRuleCondition.builder()
+                          .type(NotificationRuleConditionType.ERROR_BUDGET_REMAINING_MINUTES)
+                          .spec(ErrorBudgetRemainingMinutesConditionSpec.builder().threshold(9000.0).build())
+                          .build()));
+    NotificationRuleResponse notificationRuleResponseTwo =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    sloDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build(),
+            NotificationRuleRefDTO.builder()
+                .notificationRuleRef(notificationRuleResponseTwo.getNotificationRule().getIdentifier())
+                .enabled(true)
+                .build()));
+    createMonitoredService();
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+
+    clock = Clock.fixed(clock.instant().plus(1, ChronoUnit.HOURS), ZoneOffset.UTC);
+    FieldUtils.writeField(serviceLevelObjectiveV2Service, "clock", clock, true);
+    when(notificationClient.sendNotificationAsync(any()))
+        .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
+
+    serviceLevelObjectiveV2Service.handleNotification(serviceLevelObjective);
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testShouldSendNotification_withErrorBudgetRemainingPercentage() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponseOne =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    sloDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    createMonitoredService();
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+
+    SLONotificationRuleCondition condition =
+        SLONotificationRule.SLOErrorBudgetRemainingPercentageCondition.builder().threshold(10.0).build();
+
+    assertThat(((ServiceLevelObjectiveV2ServiceImpl) serviceLevelObjectiveV2Service)
+                   .getNotificationData(serviceLevelObjective, condition)
+                   .shouldSendNotification())
+        .isFalse();
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testShouldSendNotification_withErrorBudgetBurnRate() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponseOne =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    sloDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    createMonitoredService();
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+    createSLIRecords(((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0));
+
+    SLONotificationRule.SLOErrorBudgetBurnRateCondition condition =
+        SLONotificationRule.SLOErrorBudgetBurnRateCondition.builder()
+            .threshold(0.04)
+            .lookBackDuration(Duration.ofMinutes(10).toMillis())
+            .build();
+
+    assertThat(((ServiceLevelObjectiveV2ServiceImpl) serviceLevelObjectiveV2Service)
+                   .getNotificationData(serviceLevelObjective, condition)
+                   .shouldSendNotification())
+        .isTrue();
+
+    condition.setThreshold(0.05);
+    assertThat(((ServiceLevelObjectiveV2ServiceImpl) serviceLevelObjectiveV2Service)
+                   .getNotificationData(serviceLevelObjective, condition)
+                   .shouldSendNotification())
+        .isFalse();
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetNotificationRules_withCoolOffLogic() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    sloDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    createMonitoredService();
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+
+    assertThat(((ServiceLevelObjectiveV2ServiceImpl) serviceLevelObjectiveV2Service)
+                   .getNotificationRules(serviceLevelObjective)
+                   .size())
+        .isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testNotGetNotificationRules_withDisabled() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    sloDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(false)
+                          .build()));
+    createMonitoredService();
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+
+    assertThat(((ServiceLevelObjectiveV2ServiceImpl) serviceLevelObjectiveV2Service)
+                   .getNotificationRules(serviceLevelObjective)
+                   .size())
+        .isEqualTo(0);
+  }
   private ServiceLevelObjectiveV2DTO createSLOBuilder() {
     return builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
   }

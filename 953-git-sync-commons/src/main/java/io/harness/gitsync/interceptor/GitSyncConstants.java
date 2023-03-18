@@ -19,5 +19,6 @@ public class GitSyncConstants {
   public static final String FOLDER_PATH = ".harness/";
   public static final String TRUE_VALUE = "true";
   public static final String GIT_CLIENT_ENABLED_SETTING = "enable_git_commands";
-  public static final String SAME_REPO_FOR_PIPELINE_AND_INPUT_SETS = "same_repo_for_pipeline_and_input_sets";
+  public static final String ALLOW_DIFFERENT_REPO_FOR_PIPELINE_AND_INPUT_SETS =
+      "allow_different_repo_for_pipeline_and_input_sets";
 }

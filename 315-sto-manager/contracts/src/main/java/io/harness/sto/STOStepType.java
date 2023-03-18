@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 import static io.harness.beans.steps.STOStepSpecTypeConstants.SECURITY;
 
 import io.harness.EntityType;
+import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.steps.nodes.security.AquaTrivyScanNode;
@@ -47,12 +48,29 @@ import io.harness.beans.steps.nodes.security.SysdigScanNode;
 import io.harness.beans.steps.nodes.security.TenableScanNode;
 import io.harness.beans.steps.nodes.security.VeracodeScanNode;
 import io.harness.beans.steps.nodes.security.ZapScanNode;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepInfo;
+import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
+import io.harness.pms.sdk.core.steps.Step;
+import io.harness.steps.executable.AsyncExecutableWithRbac;
+import io.harness.sto.plan.creator.step.STOGenericStepPlanCreator;
+import io.harness.yaml.schema.beans.YamlGroup;
+import io.harness.yaml.schema.beans.YamlSchemaMetadata;
+import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
+import com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -128,6 +146,69 @@ public enum STOStepType {
   }
   public static STOStepType lookupByName(String name) {
     return lookup.get(name);
+  }
+
+  public static StepInfo createStepInfo(STOStepType stoStepType, String stepCategory) {
+    return StepInfo.newBuilder()
+        .setName(stoStepType.getName())
+        .setType(stoStepType.getName())
+        .setFeatureFlag(stoStepType.getFeatureName().name())
+        .setStepMetaData(StepMetaData.newBuilder().addFolderPaths(stepCategory).build())
+        .build();
+  }
+
+  public static Collection<String> getSupportedSteps() {
+    return Arrays.stream(STOStepType.values()).map(e -> e.getName()).collect(Collectors.toSet());
+  }
+
+  public static List<StepInfo> getStepInfos() {
+    List<StepInfo> stepInfos = new ArrayList<>();
+    Arrays.asList(STOStepType.values())
+        .forEach(
+            e -> e.getStepCategories().forEach(category -> stepInfos.add(STOStepType.createStepInfo(e, category))));
+
+    return stepInfos;
+  }
+  public static Collection<PartialPlanCreator<?>> getPlanCreators() {
+    List<PartialPlanCreator<?>> planCreators = new LinkedList<>();
+    planCreators.addAll(
+        Arrays.asList(STOStepType.values()).stream().map(STOStepType::getPlanCreator).collect(Collectors.toList()));
+    return planCreators;
+  }
+
+  public static Map<StepType, Class<? extends Step>> addSTOEngineSteps(
+      Class<? extends AsyncExecutableWithRbac<StepElementParameters>> clazz) {
+    Map<StepType, Class<? extends Step>> stoSteps = new HashMap<>();
+
+    Arrays.asList(STOStepType.values()).forEach(e -> stoSteps.put(e.getStepType(), clazz));
+
+    return stoSteps;
+  }
+
+  public static YamlSchemaRootClass createStepYaml(STOStepType stepType) {
+    return YamlSchemaRootClass.builder()
+        .entityType(stepType.getEntityType())
+        .availableAtProjectLevel(true)
+        .availableAtOrgLevel(false)
+        .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                .modulesSupported(Collections.singletonList(ModuleType.STO))
+                                .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                .build())
+        .availableAtAccountLevel(false)
+        .clazz(stepType.getNode())
+        .build();
+  }
+
+  public static ImmutableList<YamlSchemaRootClass> createSecurityStepYamlDefinitions() {
+    ImmutableList.Builder<YamlSchemaRootClass> stepPaletteListBuilder = ImmutableList.builder();
+
+    Arrays.asList(STOStepType.values()).forEach(e -> stepPaletteListBuilder.add(createStepYaml(e)));
+
+    return stepPaletteListBuilder.build();
+  }
+
+  private static PartialPlanCreator<?> getPlanCreator(STOStepType stepType) {
+    return new STOGenericStepPlanCreator(stepType);
   }
 
   public StepType getStepType() {

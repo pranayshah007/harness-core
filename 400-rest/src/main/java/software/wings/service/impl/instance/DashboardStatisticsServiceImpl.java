@@ -419,7 +419,8 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
           .field(InstanceKeys.deletedAt)
           .greaterThanOrEq(timestamp);
       FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
-      findOptions.hint(BasicDBUtils.getIndexObject(Instance.mongoIndexes(), "instance_index7"));
+      findOptions.hint(BasicDBUtils.getIndexObject(Instance.mongoIndexes(), "accountId_deletedAt_createdAt"));
+
       instanceSet.addAll(cloneQuery.asList(findOptions));
     }
 
@@ -1294,7 +1295,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                                     .addFieldsIncluded("_id", "name")
                                                     .build();
 
-      PageResponse<Environment> pageResponse = environmentService.list(envPageRequest, false, null);
+      PageResponse<Environment> pageResponse = environmentService.list(envPageRequest, false, null, false);
 
       List<Environment> environmentList = pageResponse.getResponse();
       if (isNotEmpty(environmentList)) {

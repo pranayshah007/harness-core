@@ -10,7 +10,6 @@ package io.harness.pms.pipeline;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.pms.contracts.steps.StepInfo;

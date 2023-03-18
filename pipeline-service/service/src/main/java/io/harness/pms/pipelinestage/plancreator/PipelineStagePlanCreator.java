@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
-import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.plancreator.steps.internal.PmsStepPlanCreatorUtils;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -188,7 +187,6 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
   private void setGitContextForChildPipeline(PlanCreationContext ctx) {
     EntityGitDetails entityGitDetails = pmsGitSyncHelper.getEntityGitDetailsFromBytes(ctx.getGitSyncBranchContext());
     PipelineGitXHelper.setupEntityDetails(entityGitDetails);
-    GitAwareContextHelper.updateGitEntityContext(GitAwareContextHelper.getGitRequestParamsInfo());
   }
 
   private void addDependencyForStrategy(PlanCreationContext ctx, PipelineStageNode stageNode,

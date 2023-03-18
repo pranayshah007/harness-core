@@ -22,6 +22,7 @@ public class GitPollingInfoBuilder implements PollingInfoBuilder {
         .connectorRef(pollingPayloadData.getConnectorRef())
         .pollInterval(pollingPayloadData.getGitPollPayload().getPollInterval())
         .webhookId(pollingPayloadData.getGitPollPayload().getWebhookId())
+        .repository(pollingPayloadData.getGitPollPayload().getRepository())
         .build();
   }
 }

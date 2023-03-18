@@ -76,6 +76,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.security.annotations.InternalApi;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -186,15 +187,31 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
   }
 
   @Override
-  public ResponseDTO<PageResponse<RoleAssignmentAggregate>> getList(
-      PageRequest pageRequest, HarnessScopeParams harnessScopeParams, RoleAssignmentFilterV2 roleAssignmentFilterV2) {
-    boolean hasAccessToUserRoleAssignments = roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER);
-    if (!hasAccessToUserRoleAssignments) {
+  public ResponseDTO<PageResponse<RoleAssignmentResponseDTO>> getFilteredRoleAssignmentsWithInternalRoles(
+      PageRequest pageRequest, HarnessScopeParams harnessScopeParams, RoleAssignmentFilterDTO roleAssignmentFilter) {
+    Optional<RoleAssignmentFilter> filter =
+        buildRoleAssignmentFilterWithPermissionFilter(harnessScopeParams, roleAssignmentFilter);
+    if (!filter.isPresent()) {
       throw new UnauthorizedException("Current principal is not authorized to the view the role assignments",
           USER_NOT_AUTHORIZED, WingsException.USER);
     }
+    PageResponse<RoleAssignment> pageResponse = roleAssignmentService.list(pageRequest, filter.get(), false);
+    return ResponseDTO.newResponse(pageResponse.map(roleAssignmentDTOMapper::toResponseDTO));
+  }
+
+  @Override
+  public ResponseDTO<PageResponse<RoleAssignmentAggregate>> getList(
+      PageRequest pageRequest, HarnessScopeParams harnessScopeParams, RoleAssignmentFilterV2 roleAssignmentFilterV2) {
+    Optional<RoleAssignmentFilterV2> roleAssignmentFilterV2WithPermittedFiltersOptional =
+        sanitizeRoleAssignmentFilterV2ForPermitted(harnessScopeParams, roleAssignmentFilterV2);
+    if (roleAssignmentFilterV2WithPermittedFiltersOptional.isEmpty()) {
+      throw new UnauthorizedException("Current principal is not authorized to the view the role assignments",
+          USER_NOT_AUTHORIZED, WingsException.USER);
+    }
+    RoleAssignmentFilterV2 roleAssignmentFilterV2WithPermittedFilters =
+        roleAssignmentFilterV2WithPermittedFiltersOptional.get();
     Set<ScopeSelector> scopeFilter = new HashSet<>();
-    if (isEmpty(roleAssignmentFilterV2.getScopeFilters())) {
+    if (isEmpty(roleAssignmentFilterV2WithPermittedFilters.getScopeFilters())) {
       scopeFilter.add(ScopeSelector.builder()
                           .accountIdentifier(harnessScopeParams.getAccountIdentifier())
                           .orgIdentifier(harnessScopeParams.getOrgIdentifier())
@@ -202,18 +219,23 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
                           .filter(ScopeFilterType.EXCLUDING_CHILD_SCOPES)
                           .build());
     } else {
-      scopeFilter.addAll(roleAssignmentFilterV2.getScopeFilters());
+      scopeFilter.addAll(roleAssignmentFilterV2WithPermittedFilters.getScopeFilters());
     }
-    roleAssignmentFilterV2.setScopeFilters(scopeFilter);
+    roleAssignmentFilterV2WithPermittedFilters.setScopeFilters(scopeFilter);
 
-    PrincipalDTO principalFilter = roleAssignmentFilterV2.getPrincipalFilter();
+    PrincipalDTO principalFilter = roleAssignmentFilterV2WithPermittedFilters.getPrincipalFilter();
     RoleAssignmentFilter filter = null;
     List<UserGroup> userGroups = new ArrayList<>();
-    if (principalFilter != null && USER.equals(principalFilter.getType())) {
-      userGroups.addAll(userGroupService.list(principalFilter.getIdentifier()));
-      filter = roleAssignmentDTOMapper.fromDTO(principalFilter.getIdentifier(), userGroups, roleAssignmentFilterV2);
+    if (principalFilter != null) {
+      if (USER.equals(principalFilter.getType())) {
+        userGroups.addAll(userGroupService.list(principalFilter.getIdentifier()));
+        filter = roleAssignmentDTOMapper.fromDTO(
+            principalFilter.getIdentifier(), userGroups, roleAssignmentFilterV2WithPermittedFilters);
+      } else {
+        filter = RoleAssignmentDTOMapper.fromV2(roleAssignmentFilterV2WithPermittedFilters);
+      }
     } else {
-      filter = RoleAssignmentDTOMapper.fromV2(roleAssignmentFilterV2);
+      filter = RoleAssignmentDTOMapper.fromV2(roleAssignmentFilterV2WithPermittedFilters);
     }
 
     PageResponse<RoleAssignment> pageResponse = roleAssignmentService.list(pageRequest, filter);
@@ -239,6 +261,57 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     });
 
     return ResponseDTO.newResponse(roleAssignmentAggregateWithScope);
+  }
+
+  private Optional<RoleAssignmentFilterV2> sanitizeRoleAssignmentFilterV2ForPermitted(
+      HarnessScopeParams harnessScopeParams, RoleAssignmentFilterV2 roleAssignmentFilter) {
+    boolean hasAccessToUserRoleAssignments = roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER);
+    boolean hasAccessToUserGroupRoleAssignments =
+        roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER_GROUP);
+    boolean hasAccessToServiceAccountRoleAssignments =
+        roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, SERVICE_ACCOUNT);
+
+    if (roleAssignmentFilter.getPrincipalFilter() != null) {
+      if ((roleAssignmentFilter.getPrincipalFilter().getType().equals(USER) && !hasAccessToUserRoleAssignments)
+          || (roleAssignmentFilter.getPrincipalFilter().getType().equals(USER_GROUP)
+              && !hasAccessToUserGroupRoleAssignments)
+          || (roleAssignmentFilter.getPrincipalFilter().getType().equals(SERVICE_ACCOUNT)
+              && !hasAccessToServiceAccountRoleAssignments)) {
+        return Optional.empty();
+      }
+    } else if (isNotEmpty(roleAssignmentFilter.getPrincipalTypeFilter())) {
+      if (!hasAccessToUserRoleAssignments) {
+        roleAssignmentFilter.getPrincipalTypeFilter().remove(USER);
+      }
+      if (!hasAccessToUserGroupRoleAssignments) {
+        roleAssignmentFilter.getPrincipalTypeFilter().remove(USER_GROUP);
+      }
+      if (!hasAccessToServiceAccountRoleAssignments) {
+        roleAssignmentFilter.getPrincipalTypeFilter().remove(SERVICE_ACCOUNT);
+      }
+      if (isEmpty(roleAssignmentFilter.getPrincipalTypeFilter())) {
+        return Optional.empty();
+      }
+    } else {
+      Set<PrincipalType> principalTypes = Sets.newHashSet();
+      if (hasAccessToUserRoleAssignments) {
+        principalTypes.add(USER);
+      }
+
+      if (hasAccessToUserGroupRoleAssignments) {
+        principalTypes.add(USER_GROUP);
+      }
+
+      if (hasAccessToServiceAccountRoleAssignments) {
+        principalTypes.add(SERVICE_ACCOUNT);
+      }
+      if (principalTypes.isEmpty()) {
+        return Optional.empty();
+      } else {
+        roleAssignmentFilter.setPrincipalTypeFilter(principalTypes);
+      }
+    }
+    return Optional.of(roleAssignmentFilter);
   }
 
   @Override
@@ -434,6 +507,70 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
           response.getScope().getAccountIdentifier(), response.getRoleAssignment(), response.getScope()));
       return ResponseDTO.newResponse(response);
     }));
+  }
+
+  @Override
+  public ResponseDTO<RoleAssignmentDeleteResponseDTO> bulkDelete(
+      HarnessScopeParams harnessScopeParams, Set<String> roleAssignmentIdentifiers) {
+    List<RoleAssignmentErrorResponseDTO> roleAssignmentErrorResponseDTOS = new ArrayList<>();
+    List<RoleAssignment> roleAssignmentsThatCanBeDeleted = new ArrayList<>();
+    String scopeIdentifier = fromParams(harnessScopeParams).toString();
+    try {
+      filterRoleAssignmentThatCanBeDeleted(harnessScopeParams, roleAssignmentIdentifiers,
+          roleAssignmentErrorResponseDTOS, roleAssignmentsThatCanBeDeleted);
+      List<String> roleAssignmentIdentifiersThatCanBeDeleted =
+          roleAssignmentsThatCanBeDeleted.stream().map(RoleAssignment::getIdentifier).collect(toList());
+      Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+        roleAssignmentService.deleteMulti(scopeIdentifier, roleAssignmentIdentifiersThatCanBeDeleted);
+        for (RoleAssignment roleAssignment : roleAssignmentsThatCanBeDeleted) {
+          RoleAssignmentResponseDTO response = roleAssignmentDTOMapper.toResponseDTO(roleAssignment);
+          outboxService.save(new RoleAssignmentDeleteEvent(
+              response.getScope().getAccountIdentifier(), response.getRoleAssignment(), response.getScope()));
+        }
+        return roleAssignmentIdentifiersThatCanBeDeleted;
+      }));
+
+    } catch (Exception e) {
+      for (RoleAssignment roleAssignment : roleAssignmentsThatCanBeDeleted) {
+        roleAssignmentErrorResponseDTOS.add(RoleAssignmentErrorResponseDTO.builder()
+                                                .roleAssignmentId(roleAssignment.getIdentifier())
+                                                .errorMessage(e.getMessage())
+                                                .build());
+      }
+    }
+    return ResponseDTO.newResponse(RoleAssignmentDeleteResponseDTO.builder()
+                                       .failedToDelete(roleAssignmentErrorResponseDTOS.size())
+                                       .successfullyDeleted(roleAssignmentsThatCanBeDeleted.size())
+                                       .roleAssignmentErrorResponseDTOList(roleAssignmentErrorResponseDTOS)
+                                       .build());
+  }
+
+  @VisibleForTesting
+  protected void filterRoleAssignmentThatCanBeDeleted(HarnessScopeParams harnessScopeParams,
+      Set<String> roleAssignmentIdentifiers, List<RoleAssignmentErrorResponseDTO> roleAssignmentErrorResponseDTOS,
+      List<RoleAssignment> roleAssignmentThatCanBeDeleted) {
+    String scopeIdentifier = fromParams(harnessScopeParams).toString();
+
+    for (String roleAssignmentIdentifier : roleAssignmentIdentifiers) {
+      try {
+        RoleAssignment roleAssignment =
+            roleAssignmentService.get(roleAssignmentIdentifier, scopeIdentifier).<NotFoundException>orElseThrow(() -> {
+              throw new NotFoundException("Role Assignment not found or have been already deleted.");
+            });
+        roleAssignmentApiUtils.checkUpdatePermission(harnessScopeParams, roleAssignment);
+        ValidationResult validationResult = actionValidator.canDelete(roleAssignment);
+        if (!validationResult.isValid()) {
+          throw new InvalidRequestException(validationResult.getErrorMessage());
+        }
+        roleAssignmentThatCanBeDeleted.add(roleAssignment);
+      } catch (Exception e) {
+        RoleAssignmentErrorResponseDTO roleAssignmentErrorResponseDTO = RoleAssignmentErrorResponseDTO.builder()
+                                                                            .roleAssignmentId(roleAssignmentIdentifier)
+                                                                            .errorMessage(e.getMessage())
+                                                                            .build();
+        roleAssignmentErrorResponseDTOS.add(roleAssignmentErrorResponseDTO);
+      }
+    }
   }
 
   @Override

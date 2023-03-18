@@ -49,6 +49,9 @@ cd queue-service/hsqs
 go install appdynamics
 go build -tags=appdynamics -buildvcs=false
 
+echo BUILD_NO=$BUILD  >> build.properties
+
 cp hsqs /root/.cache/bazel/hsqs
+cp build.properties /root/.cache/bazel/build.properties
 
 cp $GOROOT/src/appdynamics/lib/libappdynamics.so /root/.cache/bazel/libappdynamics.so

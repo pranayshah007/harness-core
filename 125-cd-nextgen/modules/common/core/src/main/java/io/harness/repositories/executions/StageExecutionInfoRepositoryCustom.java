@@ -15,6 +15,7 @@ import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.utils.StageStatus;
 
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Map;
@@ -29,5 +30,5 @@ public interface StageExecutionInfoRepositoryCustom {
   List<StageExecutionInfo> listSucceededStageExecutionNotIncludeCurrent(
       ExecutionInfoKey executionInfoKey, String executionId, int limit);
 
-  List<StageExecutionInfo> deleteAll(Criteria criteria);
+  DeleteResult deleteAll(Criteria criteria);
 }

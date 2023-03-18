@@ -24,7 +24,7 @@ import lombok.With;
 public class AckRequest {
   String consumerName;
 
-  String itemID;
+  String itemId;
 
   String subTopic;
 

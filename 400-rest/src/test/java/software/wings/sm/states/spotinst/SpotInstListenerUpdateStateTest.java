@@ -37,6 +37,7 @@ import io.harness.delegate.task.spotinst.request.SpotInstSetupTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstSwapRoutesTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstTaskParameters;
 import io.harness.delegate.task.spotinst.response.SpotInstTaskExecutionResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.spotinst.model.ElastiGroup;
@@ -76,6 +77,7 @@ public class SpotInstListenerUpdateStateTest extends WingsBaseTest {
   @Mock private ActivityService mockActivityService;
   @Mock private SpotInstStateHelper mockSpotinstStateHelper;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks SpotInstListenerUpdateState state = new SpotInstListenerUpdateState("stateName");

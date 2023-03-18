@@ -13,7 +13,7 @@ import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-public class LicenseCheckHandler extends IteratorPumpModeHandler implements Handler<Account> {
+public class LicenseCheckHandler extends IteratorPumpAndRedisModeHandler implements Handler<Account> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(60);
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(15);
 

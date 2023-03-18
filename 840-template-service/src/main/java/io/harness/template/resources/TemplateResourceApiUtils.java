@@ -142,7 +142,7 @@ public class TemplateResourceApiUtils {
     TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(account, org, project, templateYaml);
     log.info(String.format("Creating Template with identifier %s with label %s in project %s, org %s, account %s",
         templateEntity.getIdentifier(), templateEntity.getVersionLabel(), project, org, account));
-    TemplateEntity createdTemplate = templateService.create(templateEntity, setDefaultTemplate, comments);
+    TemplateEntity createdTemplate = templateService.create(templateEntity, setDefaultTemplate, comments, false);
     TemplateResponseDTO templateResponseDTO = NGTemplateDtoMapper.writeTemplateResponseDto(createdTemplate);
     return Response.status(Response.Status.CREATED)
         .entity(templateResourceApiMapper.toTemplateResponse(templateResponseDTO))

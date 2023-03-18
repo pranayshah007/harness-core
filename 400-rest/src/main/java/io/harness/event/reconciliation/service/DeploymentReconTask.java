@@ -82,9 +82,7 @@ public class DeploymentReconTask implements Runnable {
           continue;
         }
         for (ExecutionEntity executionEntity : executionEntities) {
-          if (!DeploymentExecutionEntity.SOURCE_ENTITY_CLASS.equals(executionEntity.getSourceEntityClass())
-              && !featureFlagService.isEnabled(
-                  FeatureName.STAGE_AND_STEP_LEVEL_DEPLOYMENT_DETAILS, account.getUuid())) {
+          if (!DeploymentExecutionEntity.SOURCE_ENTITY_CLASS.equals(executionEntity.getSourceEntityClass())) {
             continue;
           }
 

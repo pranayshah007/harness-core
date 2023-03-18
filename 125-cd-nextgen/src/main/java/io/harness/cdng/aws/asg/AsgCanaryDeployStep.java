@@ -152,9 +152,7 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
 
     AsgCanaryDeployOutcome asgCanaryDeployOutcome =
         AsgCanaryDeployOutcome.builder()
-            .canaryAsgName(asgCanaryDeployResponse.getAsgCanaryDeployResult()
-                               .getAutoScalingGroupContainer()
-                               .getAutoScalingGroupName())
+            .asg(asgCanaryDeployResponse.getAsgCanaryDeployResult().getAutoScalingGroupContainer())
             .build();
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_CANARY_DEPLOY_OUTCOME,

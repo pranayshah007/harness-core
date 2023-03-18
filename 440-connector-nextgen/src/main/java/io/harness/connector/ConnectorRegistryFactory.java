@@ -54,6 +54,8 @@ import io.harness.connector.mappers.azuremapper.AzureDTOToEntity;
 import io.harness.connector.mappers.azuremapper.AzureEntityToDTO;
 import io.harness.connector.mappers.azurerepomapper.AzureRepoDTOToEntity;
 import io.harness.connector.mappers.azurerepomapper.AzureRepoEntityToDTO;
+import io.harness.connector.mappers.bamboo.BambooDTOToEntity;
+import io.harness.connector.mappers.bamboo.BambooEntityToDTO;
 import io.harness.connector.mappers.bitbucketconnectormapper.BitbucketDTOToEntity;
 import io.harness.connector.mappers.bitbucketconnectormapper.BitbucketEntityToDTO;
 import io.harness.connector.mappers.ceawsmapper.CEAwsDTOToEntity;
@@ -147,6 +149,8 @@ import io.harness.connector.validator.ArtifactoryConnectionValidator;
 import io.harness.connector.validator.AwsConnectorValidator;
 import io.harness.connector.validator.AzureArtifactsConnectorValidator;
 import io.harness.connector.validator.AzureConnectorValidator;
+import io.harness.connector.validator.BambooConnectionValidator;
+import io.harness.connector.validator.BambooConnectorValidationsParamsProvider;
 import io.harness.connector.validator.CCMConnectorValidator;
 import io.harness.connector.validator.CEKubernetesConnectionValidator;
 import io.harness.connector.validator.CVConnectorValidator;
@@ -345,6 +349,10 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.JENKINS,
         new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, JenkinsConnectionValidator.class,
             JenkinsConnectorValidationsParamsProvider.class, JenkinsDTOToEntity.class, JenkinsEntityToDTO.class,
+            NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.BAMBOO,
+        new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, BambooConnectionValidator.class,
+            BambooConnectorValidationsParamsProvider.class, BambooDTOToEntity.class, BambooEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.CUSTOM_SECRET_MANAGER,
         new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,

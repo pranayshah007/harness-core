@@ -23,6 +23,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
 
 import java.util.Arrays;
+import java.util.Objects;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -67,8 +68,23 @@ public class GenericPlanCreatorUtils {
     if (currentField != null && currentField.getNode() != null) {
       if (currentField.checkIfParentIsParallel(STEPS) || currentField.checkIfParentIsParallel(ROLLBACK_STEPS)) {
         // Check if step is inside StepGroup and StepGroup is inside Parallel but not the step.
-        return YamlUtils.findParentNode(currentField.getNode(), STEP_GROUP) == null
-            || currentField.checkIfParentIsParallel(STEP_GROUP);
+        YamlNode stepGroupNode = YamlUtils.findParentNode(currentField.getNode(), STEP_GROUP);
+        if (stepGroupNode == null) {
+          return true;
+        }
+        /**
+         * We need to check if parallel is in between stepGroup and step then it means that step is in parallel section
+         * otherwise parallel section might be above step group.
+         */
+        YamlNode parallelNodeParentOfStepGroupNode = YamlUtils.findParentNode(stepGroupNode, PARALLEL);
+        YamlNode parallelNodeParentOfCurrentField = YamlUtils.findParentNode(currentField.getNode(), PARALLEL);
+        if (parallelNodeParentOfCurrentField == null) {
+          return false;
+        }
+        if (parallelNodeParentOfStepGroupNode == null) {
+          return true;
+        }
+        return !Objects.equals(parallelNodeParentOfCurrentField.getUuid(), parallelNodeParentOfStepGroupNode.getUuid());
       }
     }
     return false;

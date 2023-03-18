@@ -16,7 +16,7 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.event.usagemetrics.UsageMetricsService;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -36,7 +36,7 @@ import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class UsageMetricsHandler extends IteratorPumpModeHandler implements Handler<Account> {
+public class UsageMetricsHandler extends IteratorPumpAndRedisModeHandler implements Handler<Account> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(30);
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(30);
 

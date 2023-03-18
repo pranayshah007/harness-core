@@ -28,6 +28,7 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
+import lombok.With;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.Id;
@@ -45,9 +46,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNodeExecutionMetadata {
   public static final long TTL_MONTHS = 6;
 
-  @Id @dev.morphia.annotations.Id private String uuid;
+  @With @Id @dev.morphia.annotations.Id private String uuid;
 
-  private String planExecutionId;
+  @With private String planExecutionId;
 
   // Merged input set given by the customer
   private String inputSetYaml;
@@ -56,7 +57,7 @@ public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNo
   private String yaml;
 
   // Yaml having injectedUUid which is processed by PlanCreation
-  private String processedYaml;
+  @With private String processedYaml;
 
   // Expanded pipeline (after connectors, etc) in json format.
   private String expandedPipelineJson;

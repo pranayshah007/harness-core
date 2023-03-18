@@ -8,7 +8,7 @@
 package io.harness.ci.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -82,7 +82,7 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
 
     runStepBuilder.setContainerPort(port);
     Map<String, String> envvars =
-        resolveMapParameter("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
     if (!isEmpty(envvars)) {
       runStepBuilder.putAllEnvironment(envvars);
     }

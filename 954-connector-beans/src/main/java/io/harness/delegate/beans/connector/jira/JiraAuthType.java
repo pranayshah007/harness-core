@@ -16,7 +16,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 @OwnedBy(CDC)
 public enum JiraAuthType {
-  @JsonProperty(JiraConstants.USERNAME_PASSWORD) USER_PASSWORD(JiraConstants.USERNAME_PASSWORD);
+  @JsonProperty(JiraConstants.USERNAME_PASSWORD) USER_PASSWORD(JiraConstants.USERNAME_PASSWORD),
+  @JsonProperty(JiraConstants.PAT) PAT(JiraConstants.PAT);
 
   private final String displayName;
 

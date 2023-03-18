@@ -9,15 +9,20 @@ LABEL name="harness/delegate" \
       vendor="Harness" \
       maintainer="Harness"
 
-RUN microdnf update \
+RUN microdnf update --nodocs \
   && microdnf install --nodocs \
     procps \
     hostname \
     lsof \
     findutils \
     tar \
-  && rm -rf /var/cache/yum \
+    gzip \
+    git \
+    shadow-utils \
+  && useradd -u 1001 -g 0 harness \
+  && microdnf remove shadow-utils \
   && microdnf clean all \
+  && rm -rf /var/cache/yum \
   && mkdir -p /opt/harness-delegate/
 
 COPY immutable-scripts /opt/harness-delegate/
@@ -56,13 +61,11 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/oc/v4.2.16/oc https://app.harness.io/public/shared/tools/oc/release/v4.2.16/bin/linux/$TARGETARCH/oc \
   && mkdir -m 777 -p client-tools/kustomize/v4.5.4 \
   && curl -s -L -o client-tools/kustomize/v4.5.4/kustomize https://app.harness.io/public/shared/tools/kustomize/release/v4.5.4/bin/linux/$TARGETARCH/kustomize \
-  && mkdir -m 777 -p client-tools/scm/c1ce9f00 \
-  && curl -s -L -o client-tools/scm/c1ce9f00/scm https://app.harness.io/public/shared/tools/scm/release/c1ce9f00/bin/linux/$TARGETARCH/scm
-
-RUN chmod -R 755 /opt/harness-delegate \
-    && chgrp -R 0 /opt/harness-delegate  \
-    && chmod -R g=u /opt/harness-delegate \
-    && chown -R 1001 /opt/harness-delegate
+  && mkdir -m 777 -p client-tools/scm/ef2d02fb \
+  && curl -s -L -o client-tools/scm/ef2d02fb/scm https://app.harness.io/public/shared/tools/scm/release/ef2d02fb/bin/linux/$TARGETARCH/scm \
+  && chmod -R 775 /opt/harness-delegate \
+  && chgrp -R 0 /opt/harness-delegate  \
+  && chown -R 1001 /opt/harness-delegate
 
 ENV PATH=/opt/harness-delegate/client-tools/kubectl/v1.24.3/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/go-template/v0.4.1/:$PATH

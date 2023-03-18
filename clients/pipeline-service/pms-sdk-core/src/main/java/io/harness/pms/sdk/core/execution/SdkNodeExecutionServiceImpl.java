@@ -41,7 +41,6 @@ import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.protobuf.ByteString;
 import java.util.Map;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;

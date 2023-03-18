@@ -364,8 +364,9 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
     try {
       List<RoleAssignmentResponseDTO> roleAssignments =
           NGRestUtils
-              .getResponse(accessControlAdminClient.getFilteredRoleAssignments(scope.getAccountIdentifier(),
-                  scope.getOrgIdentifier(), scope.getProjectIdentifier(), 0, 2, roleAssignmentFilterDTO))
+              .getResponse(
+                  accessControlAdminClient.getFilteredRoleAssignmentsWithInternalRoles(scope.getAccountIdentifier(),
+                      scope.getOrgIdentifier(), scope.getProjectIdentifier(), 0, 2, roleAssignmentFilterDTO))
               .getContent();
       return Optional.of(roleAssignments);
     } catch (Exception ex) {

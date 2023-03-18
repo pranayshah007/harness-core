@@ -25,6 +25,7 @@ import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
 import io.harness.exception.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.shell.AbstractScriptExecutor;
 import io.harness.shell.ExecuteCommandResponse;
@@ -37,6 +38,7 @@ import com.google.inject.Inject;
 import java.net.ConnectException;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -162,7 +164,8 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
                                                   .commandUnitName(INIT_UNIT)
                                                   .environment(taskParameters.getEnvironmentVariables())
                                                   .hostname(taskParameters.getHost())
-                                                  .timeout(SESSION_TIMEOUT);
+                                                  .timeout(SESSION_TIMEOUT)
+                                                  .commandParameters(getCommandParameters(taskParameters));
 
     WinRmSessionConfig config =
         winRmConfigAuthEnhancer.configureAuthentication((WinRmCredentialsSpecDTO) taskParameters.getSshKeySpecDTO(),
@@ -190,7 +193,8 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
                                                   .commandUnitName(COMMAND_UNIT)
                                                   .environment(taskParameters.getEnvironmentVariables())
                                                   .hostname(taskParameters.getHost())
-                                                  .timeout(SESSION_TIMEOUT);
+                                                  .timeout(SESSION_TIMEOUT)
+                                                  .commandParameters(getCommandParameters(taskParameters));
 
     WinRmSessionConfig config =
         winRmConfigAuthEnhancer.configureAuthentication((WinRmCredentialsSpecDTO) taskParameters.getSshKeySpecDTO(),
@@ -208,6 +212,13 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
         .errorMessage(getErrorMessage(getStatus(executeCommandResponse)))
         .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
         .build();
+  }
+
+  private List<WinRmCommandParameter> getCommandParameters(WinRmShellScriptTaskParametersNG taskParameters) {
+    List<WinRmCommandParameter> commandParameters = taskParameters.getSshKeySpecDTO() instanceof WinRmCredentialsSpecDTO
+        ? ((WinRmCredentialsSpecDTO) taskParameters.getSshKeySpecDTO()).getParameters()
+        : Collections.emptyList();
+    return commandParameters == null ? Collections.emptyList() : commandParameters;
   }
 
   private CommandExecutionStatus getStatus(ExecuteCommandResponse executeCommandResponse) {

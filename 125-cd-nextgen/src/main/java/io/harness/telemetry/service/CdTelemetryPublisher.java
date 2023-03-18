@@ -29,7 +29,6 @@ import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.telemetry.CdTelemetryStatusRepository;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
-import io.harness.telemetry.beans.CdTelemetrySentStatus.CdTelemetrySentStatusKeys;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -37,7 +36,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.mongodb.core.query.Criteria;
 
 @Slf4j
 @OwnedBy(CDP)
@@ -130,8 +128,6 @@ public class CdTelemetryPublisher {
   }
 
   public void deleteByAccount(String accountId) {
-    Criteria criteria = new Criteria();
-    criteria.and(CdTelemetrySentStatusKeys.accountId).is(accountId);
-    cdTelemetryStatusRepository.deleteAll(cdTelemetryStatusRepository.findAllByAccountId(accountId));
+    cdTelemetryStatusRepository.deleteAllByAccountId(accountId);
   }
 }

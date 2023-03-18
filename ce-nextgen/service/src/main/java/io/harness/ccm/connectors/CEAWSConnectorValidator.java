@@ -255,6 +255,13 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
           CEFeatures.COMMITMENT_ORCHESTRATOR, errorList, orchestratorPolicy,
           Boolean.TRUE.equals(ceAwsConnectorDTO.getIsAWSGovCloudAccount()));
     }
+
+    if (featuresEnabled.contains(CEFeatures.CLUSTER_ORCHESTRATOR)) {
+      final Policy orchestratorPolicy = getRequiredClusterOrchestratorPolicy();
+      validateIfPolicyIsCorrect(credentialsProvider, crossAccountAccessDTO.getCrossAccountRoleArn(),
+          CEFeatures.CLUSTER_ORCHESTRATOR, errorList, orchestratorPolicy,
+          Boolean.TRUE.equals(ceAwsConnectorDTO.getIsAWSGovCloudAccount()));
+    }
   }
 
   private void validateIfPolicyIsCorrect(AWSCredentialsProvider credentialsProvider, String crossAccountRoleArn,
@@ -395,7 +402,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
       log.info("Latest .csv.gz file in {}/{} latestFileName: {} latestFileLastmodifiedTime: {}", s3BucketName,
           s3PathPrefix, latestFileName, latestFileLastmodifiedTime);
       long now = Instant.now().toEpochMilli() - 24 * 60 * 60 * 1000;
-      if (!latestFileName.isEmpty() && latestFileLastmodifiedTime.getTime() < now) {
+      if (latestFileLastmodifiedTime.getTime() < now) {
         String reason = String.format("No CUR file is found in last 24 hrs at %s/%s. ", s3BucketName, s3PathPrefix);
         errorList.add(
             ErrorDetail.builder()
@@ -515,6 +522,36 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
         + "        \"ce:GetDimensionValues\","
         + "        \"ce:GetReservationUtilization\","
         + "        \"ce:GetSavingsPlansUtilizationDetails\""
+        + "      ],"
+        + "      \"Resource\": \"*\""
+        + "    }"
+        + "  ]"
+        + "}";
+
+    log.info(policyDocumentFinal);
+    return Policy.fromJson(policyDocumentFinal);
+  }
+
+  private Policy getRequiredClusterOrchestratorPolicy() {
+    final String policyDocumentFinal = "{"
+        + "  \"Version\": \"2012-10-17\","
+        + "  \"Statement\": ["
+        + "    {"
+        + "      \"Effect\": \"Allow\","
+        + "      \"Action\": ["
+        + "        \"eks:ListNodegroups\","
+        + "        \"eks:DescribeFargateProfile\","
+        + "        \"eks:UntagResource\","
+        + "        \"eks:ListTagsForResource\","
+        + "        \"eks:ListFargateProfiles\","
+        + "        \"eks:DescribeNodegroup\","
+        + "        \"eks:DescribeIdentityProviderConfig\","
+        + "        \"eks:TagResource\","
+        + "        \"eks:AccessKubernetesApi\","
+        + "        \"eks:DescribeCluster\","
+        + "        \"eks:ListClusters'\","
+        + "        \"eks:ListIdentityProviderConfigs\","
+        + "        \"eks:AssociateIdentityProviderConfig\""
         + "      ],"
         + "      \"Resource\": \"*\""
         + "    }"

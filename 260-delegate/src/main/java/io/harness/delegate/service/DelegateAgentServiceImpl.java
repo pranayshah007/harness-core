@@ -118,6 +118,7 @@ import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.core.beans.ExecutionStatusResponse;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.message.Message;
@@ -571,13 +572,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         log.info("Registering delegate with delegate profile: {}", delegateProfile);
       }
 
-      boolean isSample = "true".equals(System.getenv().get("SAMPLE_DELEGATE"));
-
       final List<String> supportedTasks = Arrays.stream(TaskType.values()).map(Enum::name).collect(toList());
 
       // Remove tasks which are in TaskTypeV2 and only specified with onlyV2 as true
       final List<String> unsupportedTasks =
-          Arrays.stream(TaskType.values()).filter(element -> element.isUnsupported()).map(Enum::name).collect(toList());
+          Arrays.stream(TaskType.values()).filter(TaskType::isUnsupported).map(Enum::name).collect(toList());
 
       if (BLOCK_SHELL_TASK) {
         log.info("Delegate is blocked from executing shell script tasks.");
@@ -1691,17 +1690,29 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       // This will Add ECS delegate specific fields if DELEGATE_TYPE = "ECS"
       updateBuilderIfEcsDelegate(builder);
-      DelegateParams delegateParams = builder.build()
-                                          .toBuilder()
-                                          .delegateId(delegateId)
-                                          .lastHeartBeat(clock.millis())
-                                          .location(Paths.get("").toAbsolutePath().toString())
-                                          .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
-                                          .delegateConnectionId(delegateConnectionId)
-                                          .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
-                                          .build();
+      DelegateParams delegateParamsECS = builder.build()
+                                             .toBuilder()
+                                             .delegateId(delegateId)
+                                             .lastHeartBeat(clock.millis())
+                                             .location(Paths.get("").toAbsolutePath().toString())
+                                             .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
+                                             .delegateConnectionId(delegateConnectionId)
+                                             .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
+                                             .build();
 
+      // Send only minimal params over web socket to record HB
+      DelegateParams delegatesParams = DelegateParams.builder()
+                                           .delegateId(delegateId)
+                                           .accountId(accountId)
+                                           .lastHeartBeat(clock.millis())
+                                           .version(getVersion())
+                                           .location(Paths.get("").toAbsolutePath().toString())
+                                           .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
+                                           .delegateConnectionId(delegateConnectionId)
+                                           .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
+                                           .build();
       try {
+        final DelegateParams delegateParams = isEcsDelegate() ? delegateParamsECS : delegatesParams;
         HTimeLimiter.callInterruptible21(
             delegateHealthTimeLimiter, Duration.ofSeconds(15), () -> socket.fire(JsonUtils.asJson(delegateParams)));
         lastHeartbeatSentAt.set(clock.millis());
@@ -2032,7 +2043,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     DelegateRunnableTask delegateRunnableTask = delegateTaskFactory.getDelegateRunnableTask(
         TaskType.valueOf(taskData.getTaskType()), delegateTaskPackage, logStreamingTaskClient,
         getPostExecutionFunction(delegateTaskPackage.getDelegateTaskId(), sanitizer.orElse(null),
-            logStreamingTaskClient, delegateExpressionEvaluator),
+            logStreamingTaskClient, delegateExpressionEvaluator, delegateTaskPackage.isShouldSkipOpenStream()),
         getPreExecutionFunction(delegateTaskPackage, sanitizer.orElse(null), logStreamingTaskClient));
     if (delegateRunnableTask instanceof AbstractDelegateRunnableTask) {
       ((AbstractDelegateRunnableTask) delegateRunnableTask).setDelegateHostname(HOST_NAME);
@@ -2083,9 +2094,15 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (!logStreamingConfigPresent && !logCallbackConfigPresent) {
       return null;
     }
-    String logBaseKey = delegateTaskPackage.getLogStreamingAbstractions() != null
-        ? LogStreamingHelper.generateLogBaseKey(delegateTaskPackage.getLogStreamingAbstractions())
-        : EMPTY;
+
+    String logBaseKey;
+    if (!StringUtils.isBlank(delegateTaskPackage.getBaseLogKey())) {
+      logBaseKey = delegateTaskPackage.getBaseLogKey();
+    } else {
+      logBaseKey = delegateTaskPackage.getLogStreamingAbstractions() != null
+          ? LogStreamingHelper.generateLogBaseKey(delegateTaskPackage.getLogStreamingAbstractions())
+          : EMPTY;
+    }
 
     LogStreamingTaskClientBuilder taskClientBuilder =
         LogStreamingTaskClient.builder()
@@ -2224,7 +2241,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       if (logStreamingTaskClient != null) {
         try {
           // Opens the log stream for task
-          logStreamingTaskClient.openStream(null);
+          if (!delegateTaskPackage.isShouldSkipOpenStream()) {
+            logStreamingTaskClient.openStream(null);
+          }
         } catch (Exception ex) {
           log.error("Unexpected error occurred while opening the log stream.");
         }
@@ -2252,12 +2271,15 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private Consumer<DelegateTaskResponse> getPostExecutionFunction(String taskId, LogSanitizer sanitizer,
-      ILogStreamingTaskClient logStreamingTaskClient, DelegateExpressionEvaluator delegateExpressionEvaluator) {
+      ILogStreamingTaskClient logStreamingTaskClient, DelegateExpressionEvaluator delegateExpressionEvaluator,
+      boolean shouldSkipCloseStream) {
     return taskResponse -> {
       if (logStreamingTaskClient != null) {
         try {
           // Closes the log stream for the task
-          logStreamingTaskClient.closeStream(null);
+          if (!shouldSkipCloseStream) {
+            logStreamingTaskClient.closeStream(null);
+          }
         } catch (Exception ex) {
           log.error("Unexpected error occurred while closing the log stream.");
         }
@@ -2624,7 +2646,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     metricRegistry.recordGaugeValue(TASKS_CURRENTLY_EXECUTING, new String[] {DELEGATE_NAME}, tasksExecutionCount);
   }
 
-  @Override
   public void sendTaskResponse(final String taskId, final DelegateTaskResponse taskResponse) {
     Response<ResponseBody> response = null;
     try {
@@ -2657,6 +2678,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         response.body().close();
       }
     }
+  }
+
+  @Override
+  public void sendTaskResponse(final String taskId, final ExecutionStatusResponse taskResponse) {
+    throw new UnsupportedOperationException("Proto task status only supported for plugin delegate");
   }
 
   private void sendErrorResponse(DelegateTaskPackage delegateTaskPackage, Exception exception) {

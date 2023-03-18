@@ -82,8 +82,7 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
             -> ServiceAllInOnePlanCreatorUtils.addServiceNode(pipeline, kryoSerializer,
                 ServiceYamlV2.builder()
                     .serviceRef(ParameterField.createValueField("my_service"))
-                    .useFromStage(
-                        ParameterField.createValueField(ServiceUseFromStageV2.builder().stage("stage1").build()))
+                    .useFromStage(ServiceUseFromStageV2.builder().stage("stage1").build())
                     .build(),
                 EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId", ServiceDefinitionType.ECS, null))
         .isInstanceOf(InvalidRequestException.class)
@@ -132,8 +131,7 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
         .isThrownBy(()
                         -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
                             ServiceYamlV2.builder()
-                                .useFromStage(ParameterField.createValueField(
-                                    ServiceUseFromStageV2.builder().stage("stage0").build()))
+                                .useFromStage(ServiceUseFromStageV2.builder().stage("stage0").build())
                                 .build(),
                             EnvironmentYamlV2.builder().build(), "serviceNodeId", "nextNodeId",
                             ServiceDefinitionType.ECS, null))
@@ -152,8 +150,7 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
         .isThrownBy(()
                         -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
                             ServiceYamlV2.builder()
-                                .useFromStage(ParameterField.createValueField(
-                                    ServiceUseFromStageV2.builder().stage("stage1").build()))
+                                .useFromStage(ServiceUseFromStageV2.builder().stage("stage1").build())
                                 .build(),
                             EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId",
                             ServiceDefinitionType.ECS, null))
@@ -172,8 +169,7 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
         .isThrownBy(()
                         -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
                             ServiceYamlV2.builder()
-                                .useFromStage(ParameterField.createValueField(
-                                    ServiceUseFromStageV2.builder().stage("stage0").build()))
+                                .useFromStage(ServiceUseFromStageV2.builder().stage("stage0").build())
                                 .build(),
                             EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId",
                             ServiceDefinitionType.ECS, null))
@@ -192,8 +188,7 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
         .isThrownBy(()
                         -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
                             ServiceYamlV2.builder()
-                                .useFromStage(ParameterField.createValueField(
-                                    ServiceUseFromStageV2.builder().stage("adhoc").build()))
+                                .useFromStage(ServiceUseFromStageV2.builder().stage("adhoc").build())
                                 .build(),
                             EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId",
                             ServiceDefinitionType.ECS, null))

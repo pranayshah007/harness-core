@@ -12,12 +12,12 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.threading.Morpheus.sleep;
 
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 import static software.wings.delegatetasks.cv.CVConstants.CV_DATA_COLLECTION_INTERVAL_IN_MINUTE;
 import static software.wings.delegatetasks.cv.CVConstants.RATE_LIMIT_STATUS;
 import static software.wings.delegatetasks.cv.CVConstants.STACKDRIVER_DEFAULT_HOST_NAME_FIELD;
 import static software.wings.delegatetasks.cv.CVConstants.STACKDRIVER_DEFAULT_LOG_MESSAGE_FIELD;
 import static software.wings.delegatetasks.cv.CVConstants.STACK_DRIVER_QUERY_SEPARATER;
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
 
 import static java.time.Duration.ofSeconds;
 
@@ -30,14 +30,14 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.GcpConfig;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog.FieldType;
+import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.delegatetasks.CustomDataCollectionUtils;
 import software.wings.delegatetasks.DelegateCVActivityLogService;
 import software.wings.delegatetasks.DelegateLogService;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.helpers.ext.gcb.GcbService;
-import software.wings.service.impl.ThirdPartyApiCallLog;
-import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;
-import software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.service.impl.analysis.LogElement;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse.VerificationLoadResponse;

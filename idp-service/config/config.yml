@@ -11,12 +11,14 @@ mongo:
   traceMode: DISABLED
   maxOperationTimeInMillis: 300000
 
-# change the ports
 server:
   applicationConnectors:
     - type: http
       port: 12003
       maxRequestHeaderSize: 100KiB
+  adminConnectors:
+    - type: http
+      port: 12004
   requestLog:
     appenders: []
   maxThreads: 1024
@@ -52,10 +54,10 @@ logging:
       threshold: TRACE
       target: STDOUT
       logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
-#    - type: gke-console
-#      threshold: TRACE
-#      target: STDOUT
-#      stackdriverLogEnabled: true
+    - type: gke-console
+      threshold: TRACE
+      target: STDOUT
+      stackdriverLogEnabled: false
 
 logStreamingServiceConfig:
   baseUrl: http://localhost:8079
@@ -65,6 +67,49 @@ ngManagerServiceHttpClientConfig:
   baseUrl: http://localhost:7457/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
-  enableHttpLogging: ${ENABLE_HTTP_LOGGING:-false}
+
+managerClientConfig:
+  baseUrl: http://localhost:3457/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+backstageHttpClientConfig:
+  baseUrl: http://localhost:7007/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
 
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+managerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+backstageServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+idpServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+jwtAuthSecret: dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq
+jwtIdentityServiceSecret: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU
+
+onboardingModuleConfig:
+  tmpPathForCatalogInfoYamlStore: /tmp
+  catalogInfoLocationDefaultPath: /.harness-idp-entities
+  backstageLocationEntityAllHarnessEntitiesName: "all-harness-entities"
+  backstageLocationEntityAllHarnessEntitiesDesc: "Collection of all harness entities - organizations, projects, services and sample entities"
+  sampleEntities:
+    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/one.yaml
+    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/two.yaml
+    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/three.yaml
+    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/four.yaml
+    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/five.yaml
+  harnessCiCdAnnotation:
+    projectUrl: https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details
+
+accessControlClient:
+  enableAccessControl: false
+  accessControlServiceConfig:
+    baseUrl: http://localhost:9006/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+backstageSaToken: ""
+backstageSaCaCrt: ""
+backstageMasterUrl: ""
+
+provisionModuleConfig:
+  triggerPipelineUrl: ""

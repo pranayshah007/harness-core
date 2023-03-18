@@ -60,12 +60,14 @@ public class WinRmConfigValidationDelegateTask extends AbstractDelegateRunnableT
     WinRmAuthDTO authDTO = winRmCredentialsSpecDTO.getAuth();
     List<EncryptedDataDetail> encryptionDetails = params.getEncryptionDetails();
 
-    WinRmSessionConfigBuilder builder = WinRmSessionConfig.builder()
-                                            .workingDirectory(HOME_DIR)
-                                            .hostname(params.getHost())
-                                            .port(winRmCredentialsSpecDTO.getPort())
-                                            .environment(Collections.EMPTY_MAP)
-                                            .timeout(1800000);
+    WinRmSessionConfigBuilder builder =
+        WinRmSessionConfig.builder()
+            .workingDirectory(HOME_DIR)
+            .hostname(params.getHost())
+            .port(winRmCredentialsSpecDTO.getPort())
+            .environment(Collections.EMPTY_MAP)
+            .commandParameters(params.getSpec() != null ? params.getSpec().getParameters() : Collections.emptyList())
+            .timeout(1800000);
 
     switch (authDTO.getAuthScheme()) {
       case NTLM:

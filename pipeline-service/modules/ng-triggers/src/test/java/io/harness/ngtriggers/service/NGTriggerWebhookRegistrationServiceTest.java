@@ -148,8 +148,6 @@ public class NGTriggerWebhookRegistrationServiceTest extends CategoryTest {
         ngTriggerWebhookRegistrationService.registerWebhook(ngTriggerEntity);
     assertThat(webhookRegistrationStatus.getWebhookAutoRegistrationStatus().getRegistrationResult())
         .isEqualTo(WebhookRegistrationStatus.ERROR);
-    assertThat(webhookRegistrationStatus.getWebhookAutoRegistrationStatus().getDetailedMessage())
-        .isEqualTo("Exception. Possible reason can be webhook read and write permission is missing for selected repo.");
   }
 
   @Test

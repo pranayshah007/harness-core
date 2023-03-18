@@ -16,9 +16,9 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.account.AccountClient;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.validation.CIAccountValidationServiceImpl;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;
@@ -59,7 +59,7 @@ public class CIAccountValidationServiceTest extends CIExecutionTestBase {
     Call<RestResponse<Integer>> accountTrustLevelCall = mock(Call.class);
 
     UserInfo userInfo = UserInfo.builder().email("test@harness.com").build();
-    ArrayList<UserInfo> userInfos = new ArrayList<UserInfo>();
+    ArrayList<UserInfo> userInfos = new ArrayList<>();
     userInfos.add(userInfo);
 
     when(userEmailsCall.execute()).thenReturn(Response.success(new RestResponse<>(userInfos)));
@@ -80,7 +80,7 @@ public class CIAccountValidationServiceTest extends CIExecutionTestBase {
     Call<RestResponse<Integer>> accountTrustLevelCall = mock(Call.class);
 
     UserInfo userInfo = UserInfo.builder().email("test@xyz.com").build();
-    ArrayList<UserInfo> userInfos = new ArrayList<UserInfo>();
+    ArrayList<UserInfo> userInfos = new ArrayList<>();
     userInfos.add(userInfo);
 
     when(accountTrustLevelCall.execute()).thenReturn(Response.success(new RestResponse<>(AccountTrustLevel.NEW_USER)));
@@ -104,7 +104,7 @@ public class CIAccountValidationServiceTest extends CIExecutionTestBase {
     Call<RestResponse<Integer>> accountTrustLevelCall = mock(Call.class);
 
     UserInfo userInfo = UserInfo.builder().email("test@xyz.com").build();
-    ArrayList<UserInfo> userInfos = new ArrayList<UserInfo>();
+    ArrayList<UserInfo> userInfos = new ArrayList<>();
     userInfos.add(userInfo);
 
     when(accountTrustLevelCall.execute()).thenReturn(Response.success(new RestResponse<>(AccountTrustLevel.NEW_USER)));

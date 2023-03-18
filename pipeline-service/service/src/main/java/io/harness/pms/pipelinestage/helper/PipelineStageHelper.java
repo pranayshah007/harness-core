@@ -154,7 +154,9 @@ public class PipelineStageHelper {
   private String getInputSetYaml(YamlField pipelineInputs) {
     String inputSetYaml = "";
     if (pipelineInputs != null) {
-      JsonNode inputJsonNode = pipelineInputs.getNode().getCurrJsonNode();
+      // Deep copy is required to prevent any concurrentException as we are reading yaml in other places. This is caught
+      // via PIE-8733
+      JsonNode inputJsonNode = pipelineInputs.getNode().getCurrJsonNode().deepCopy();
       YamlUtils.removeUuid(inputJsonNode);
       Map<String, JsonNode> map = new HashMap<>();
       map.put(YAMLFieldNameConstants.PIPELINE, inputJsonNode);

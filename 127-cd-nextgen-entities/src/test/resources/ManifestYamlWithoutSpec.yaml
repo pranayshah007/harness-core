@@ -1,0 +1,22 @@
+environment:
+    name: environment
+    identifier: environment
+    tags: {}
+    type: PreProduction
+    orgIdentifier: default
+    projectIdentifier: s
+    variables: []
+    overrides:
+        manifests:
+            - manifest:
+                  identifier: manifest
+                  type: Values
+                  spec:
+                      store:
+                          type: Git
+                          spec:
+                              connectorRef: account.GitConnectpor
+                              gitFetchType: Branch
+                              paths:
+                                  - folder
+                              branch: branch

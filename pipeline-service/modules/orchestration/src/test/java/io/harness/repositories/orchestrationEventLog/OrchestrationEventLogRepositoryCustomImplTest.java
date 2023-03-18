@@ -18,6 +18,7 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.beans.OrchestrationEventLog;
+import io.harness.beans.OrchestrationEventLog.OrchestrationEventLogKeys;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.rule.Owner;
@@ -91,7 +92,7 @@ public class OrchestrationEventLogRepositoryCustomImplTest extends Orchestration
     mongoTemplate.insertAll(eventLogs);
     orchestrationRepository.deleteAllOrchestrationLogEvents(Set.of(planExecutionID));
 
-    Criteria criteria = where(OrchestrationEventLog.OrchestrationEventLogKeys.planExecutionId).in("EXECUTION_2");
+    Criteria criteria = where(OrchestrationEventLogKeys.planExecutionId).in("EXECUTION_2");
     Query query = new Query(criteria);
     List<OrchestrationEventLog> orchestrationEventLogs = mongoTemplate.find(query, OrchestrationEventLog.class);
     assertThat(orchestrationEventLogs.size()).isEqualTo(1);

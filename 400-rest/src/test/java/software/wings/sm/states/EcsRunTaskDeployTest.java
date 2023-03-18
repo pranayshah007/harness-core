@@ -38,6 +38,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
@@ -103,6 +104,7 @@ public class EcsRunTaskDeployTest extends WingsBaseTest {
   @Mock private GitConfigHelperService mockGitConfigHelperService;
   @Mock private FeatureFlagService mockFeatureFlagService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Inject private ServiceResourceService serviceResourceService;
   @Inject private ServiceTemplateService serviceTemplateService;

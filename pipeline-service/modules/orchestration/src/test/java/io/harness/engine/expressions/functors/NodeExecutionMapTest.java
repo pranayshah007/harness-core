@@ -44,8 +44,10 @@ public class NodeExecutionMapTest extends CategoryTest {
 
     Ambiance ambiance = Ambiance.newBuilder().addAllLevels(getNormalStageLevels(stageRuntimeId, stageSetupId)).build();
 
-    NodeExecutionMap nodeExecutionMap =
-        NodeExecutionMap.builder().nodeExecution(NodeExecution.builder().build()).ambiance(ambiance).build();
+    NodeExecutionMap nodeExecutionMap = NodeExecutionMap.builder()
+                                            .nodeExecution(NodeExecution.builder().ambiance(ambiance).build())
+                                            .ambiance(ambiance)
+                                            .build();
     Optional<Object> executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
@@ -53,8 +55,10 @@ public class NodeExecutionMapTest extends CategoryTest {
 
     // Stage inside parallel block
     ambiance = Ambiance.newBuilder().addAllLevels(getStageLevelInsideParallel(stageRuntimeId, stageSetupId)).build();
-    nodeExecutionMap =
-        NodeExecutionMap.builder().nodeExecution(NodeExecution.builder().build()).ambiance(ambiance).build();
+    nodeExecutionMap = NodeExecutionMap.builder()
+                           .nodeExecution(NodeExecution.builder().ambiance(ambiance).build())
+                           .ambiance(ambiance)
+                           .build();
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
@@ -63,23 +67,27 @@ public class NodeExecutionMapTest extends CategoryTest {
     String stepRuntimeId = UUIDGenerator.generateUuid();
     Ambiance stepAmbiance =
         Ambiance.newBuilder().addAllLevels(getNormalStepLevels(stepRuntimeId, stageRuntimeId, stageSetupId)).build();
-    nodeExecutionMap =
-        NodeExecutionMap.builder().nodeExecution(NodeExecution.builder().build()).ambiance(stepAmbiance).build();
+    nodeExecutionMap = NodeExecutionMap.builder()
+                           .nodeExecution(NodeExecution.builder().ambiance(stepAmbiance).build())
+                           .ambiance(stepAmbiance)
+                           .build();
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
-        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s&step=%s'>", stageSetupId, stepRuntimeId));
+        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s\\&step=%s'>", stageSetupId, stepRuntimeId));
 
     // step inside parallel block
     stepAmbiance = Ambiance.newBuilder()
                        .addAllLevels(getStepLevelInsideParallel(stepRuntimeId, stageRuntimeId, stageSetupId))
                        .build();
-    nodeExecutionMap =
-        NodeExecutionMap.builder().nodeExecution(NodeExecution.builder().build()).ambiance(stepAmbiance).build();
+    nodeExecutionMap = NodeExecutionMap.builder()
+                           .nodeExecution(NodeExecution.builder().ambiance(stepAmbiance).build())
+                           .ambiance(stepAmbiance)
+                           .build();
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
-        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s&step=%s'>", stageSetupId, stepRuntimeId));
+        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s\\&step=%s'>", stageSetupId, stepRuntimeId));
   }
 
   @Test
@@ -96,26 +104,30 @@ public class NodeExecutionMapTest extends CategoryTest {
                             .setStageExecutionId(stageRuntimeId)
                             .build();
 
-    NodeExecutionMap nodeExecutionMap =
-        NodeExecutionMap.builder().nodeExecution(NodeExecution.builder().build()).ambiance(ambiance).build();
+    NodeExecutionMap nodeExecutionMap = NodeExecutionMap.builder()
+                                            .nodeExecution(NodeExecution.builder().ambiance(ambiance).build())
+                                            .ambiance(ambiance)
+                                            .build();
     Optional<Object> executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
         .isEqualTo(
-            String.format("<+<+pipeline.executionUrl>+'?stage=%s&stageExecId=%s'>", stageSetupId, stageRuntimeId));
+            String.format("<+<+pipeline.executionUrl>+'?stage=%s\\&stageExecId=%s'>", stageSetupId, stageRuntimeId));
 
     // Stage having strategy inside parallel block
     ambiance = Ambiance.newBuilder()
                    .addAllLevels(getStageLevelInsideStrategyInParallel(stageRuntimeId, stageSetupId))
                    .setStageExecutionId(stageRuntimeId)
                    .build();
-    nodeExecutionMap =
-        NodeExecutionMap.builder().nodeExecution(NodeExecution.builder().build()).ambiance(ambiance).build();
+    nodeExecutionMap = NodeExecutionMap.builder()
+                           .nodeExecution(NodeExecution.builder().ambiance(ambiance).build())
+                           .ambiance(ambiance)
+                           .build();
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
         .isEqualTo(
-            String.format("<+<+pipeline.executionUrl>+'?stage=%s&stageExecId=%s'>", stageSetupId, stageRuntimeId));
+            String.format("<+<+pipeline.executionUrl>+'?stage=%s\\&stageExecId=%s'>", stageSetupId, stageRuntimeId));
 
     // Only step is inside strategy
     String stepRuntimeId = UUIDGenerator.generateUuid();
@@ -123,36 +135,42 @@ public class NodeExecutionMapTest extends CategoryTest {
                                 .addAllLevels(getStepLevelInsideStrategy(stepRuntimeId, stageRuntimeId, stageSetupId))
                                 .setStageExecutionId(stageRuntimeId)
                                 .build();
-    nodeExecutionMap =
-        NodeExecutionMap.builder().nodeExecution(NodeExecution.builder().build()).ambiance(stepAmbiance).build();
+    nodeExecutionMap = NodeExecutionMap.builder()
+                           .nodeExecution(NodeExecution.builder().ambiance(stepAmbiance).build())
+                           .ambiance(stepAmbiance)
+                           .build();
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
-        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s&step=%s'>", stageSetupId, stepRuntimeId));
+        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s\\&step=%s'>", stageSetupId, stepRuntimeId));
 
     // step having strategy inside parallel block and not stage
     stepAmbiance = Ambiance.newBuilder()
                        .addAllLevels(getStepLevelInsideStrategyInParallel(stepRuntimeId, stageRuntimeId, stageSetupId))
                        .setStageExecutionId(stageRuntimeId)
                        .build();
-    nodeExecutionMap =
-        NodeExecutionMap.builder().nodeExecution(NodeExecution.builder().build()).ambiance(stepAmbiance).build();
+    nodeExecutionMap = NodeExecutionMap.builder()
+                           .nodeExecution(NodeExecution.builder().ambiance(stepAmbiance).build())
+                           .ambiance(stepAmbiance)
+                           .build();
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
-        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s&step=%s'>", stageSetupId, stepRuntimeId));
+        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s\\&step=%s'>", stageSetupId, stepRuntimeId));
 
     // step having stage strategy
     stepAmbiance = Ambiance.newBuilder()
                        .addAllLevels(getStepLevelInsideStageStrategy(stepRuntimeId, stageRuntimeId, stageSetupId))
                        .setStageExecutionId(stageRuntimeId)
                        .build();
-    nodeExecutionMap =
-        NodeExecutionMap.builder().nodeExecution(NodeExecution.builder().build()).ambiance(stepAmbiance).build();
+    nodeExecutionMap = NodeExecutionMap.builder()
+                           .nodeExecution(NodeExecution.builder().ambiance(stepAmbiance).build())
+                           .ambiance(stepAmbiance)
+                           .build();
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
-        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s&stageExecId=%s&step=%s'>", stageSetupId,
+        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s\\&stageExecId=%s\\&step=%s'>", stageSetupId,
             stageRuntimeId, stepRuntimeId));
   }
 

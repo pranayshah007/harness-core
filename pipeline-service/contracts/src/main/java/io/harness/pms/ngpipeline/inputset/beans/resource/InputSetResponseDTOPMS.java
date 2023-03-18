@@ -16,6 +16,7 @@ import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.InputSetSchemaConstants;
+import io.harness.pms.pipeline.CacheResponseMetadataDTO;
 import io.harness.pms.pipeline.PipelineResourceConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -62,4 +63,5 @@ public class InputSetResponseDTOPMS {
   @Schema(description = PipelineResourceConstants.GIT_VALIDITY_MESSAGE) EntityValidityDetails entityValidityDetails;
   @Schema(description = GitSyncApiConstants.STORE_TYPE_RESPONSE_PARAM_MESSAGE, hidden = true) StoreType storeType;
   @Schema(description = GitSyncApiConstants.GIT_CONNECTOR_REF_PARAM_MESSAGE, hidden = true) String connectorRef;
+  @Schema(description = GitSyncApiConstants.GIT_CACHING_METADATA, hidden = true) CacheResponseMetadataDTO cacheResponse;
 }

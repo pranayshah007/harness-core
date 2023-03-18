@@ -15,6 +15,8 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
+import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.delegate.beans.TaskData;
@@ -100,6 +102,24 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     try {
+      if (passThroughData instanceof GitFetchResponsePassThroughData) {
+        GitFetchResponsePassThroughData stepExceptionPassThroughData =
+            (GitFetchResponsePassThroughData) passThroughData;
+        return StepResponse.builder()
+            .status(Status.FAILED)
+            .unitProgressList(stepExceptionPassThroughData.getUnitProgressData().getUnitProgresses())
+            .failureInfo(FailureInfo.newBuilder().setErrorMessage(stepExceptionPassThroughData.getErrorMsg()).build())
+            .build();
+      }
+      if (passThroughData instanceof CustomFetchResponsePassThroughData) {
+        CustomFetchResponsePassThroughData stepExceptionPassThroughData =
+            (CustomFetchResponsePassThroughData) passThroughData;
+        return StepResponse.builder()
+            .status(Status.FAILED)
+            .unitProgressList(stepExceptionPassThroughData.getUnitProgressData().getUnitProgresses())
+            .failureInfo(FailureInfo.newBuilder().setErrorMessage(stepExceptionPassThroughData.getErrorMsg()).build())
+            .build();
+      }
       if (passThroughData instanceof StepExceptionPassThroughData) {
         StepExceptionPassThroughData stepExceptionPassThroughData = (StepExceptionPassThroughData) passThroughData;
         return StepResponse.builder()

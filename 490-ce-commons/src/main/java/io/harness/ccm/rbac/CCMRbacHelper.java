@@ -37,9 +37,11 @@ public interface CCMRbacHelper {
   void checkCostCategoryEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkCostCategoryDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-  void checkRecommendationsViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkRecommendationsViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
 
-  void checkAnomalyViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkAnomalyViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
 
   boolean hasCostOverviewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 

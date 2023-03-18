@@ -31,6 +31,7 @@ import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.repositories.pipeline.PipelineMetadataV2Repository;
 import io.harness.rule.Owner;
 
@@ -199,13 +200,13 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testDeletePipelineMetadata() {
-    Criteria metadataFindCriteria = Criteria.where(PipelineMetadataV2.PipelineMetadataV2Keys.accountIdentifier)
+    Criteria metadataFindCriteria = Criteria.where(PipelineMetadataV2Keys.accountIdentifier)
                                         .is(ACCOUNT_ID)
-                                        .and(PipelineMetadataV2.PipelineMetadataV2Keys.orgIdentifier)
+                                        .and(PipelineMetadataV2Keys.orgIdentifier)
                                         .is(ORG_IDENTIFIER)
-                                        .and(PipelineMetadataV2.PipelineMetadataV2Keys.projectIdentifier)
+                                        .and(PipelineMetadataV2Keys.projectIdentifier)
                                         .is(PROJ_IDENTIFIER)
-                                        .and(PipelineMetadataV2.PipelineMetadataV2Keys.identifier)
+                                        .and(PipelineMetadataV2Keys.identifier)
                                         .is(PIPE_IDENTIFIER);
     doReturn(true).when(pipelineMetadataRepository).delete(metadataFindCriteria);
     boolean pipelineMetadataDelete =

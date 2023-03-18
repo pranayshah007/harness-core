@@ -14,6 +14,7 @@ import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.delegate.beans.DelegateTokenStatus.REVOKED;
 import static io.harness.delegate.beans.DelegateType.CE_KUBERNETES;
 import static io.harness.delegate.beans.DelegateType.DOCKER;
 import static io.harness.delegate.beans.DelegateType.ECS;
@@ -109,6 +110,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateScripts;
 import io.harness.delegate.beans.DelegateSelector;
 import io.harness.delegate.beans.DelegateSetupDetails;
+import io.harness.delegate.beans.DelegateSize;
 import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.delegate.beans.DelegateTags;
 import io.harness.delegate.beans.DelegateTokenDetails;
@@ -117,6 +119,7 @@ import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileMetadata;
 import io.harness.delegate.beans.K8sConfigDetails;
+import io.harness.delegate.beans.K8sPermissionType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.events.DelegateDeleteEvent;
@@ -131,6 +134,7 @@ import io.harness.delegate.utilities.DelegateDeleteResponse;
 import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.delegate.utils.DelegateJreVersionHelper;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.environment.SystemEnvironment;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -266,6 +270,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -319,9 +324,6 @@ public class DelegateServiceImpl implements DelegateService {
   private static final String HARNESS_ECS_DELEGATE = "Harness-ECS-Delegate";
   private static final String DELIMITER = "_";
   private static final int MAX_RETRIES = 2;
-  private static final String NG_CLUSTER_ADMIN_YAML = "-ng-cluster-admin.yaml.ftl";
-  private static final String NG_CLUSTER_VIEWER_YAML = "-ng-cluster-viewer.yaml.ftl";
-  private static final String NG_NAMESPACE_ADMIN_YAML = "-ng-namespace-admin.yaml.ftl";
   private static final String IMMUTABLE_DELEGATE_YAML = "harness-delegate-ng-immutable.yaml.ftl";
   private static final String IMMUTABLE_CG_DELEGATE_YAML = "harness-delegate-immutable.yaml.ftl";
   public static final String HARNESS_DELEGATE_VALUES_YAML = HARNESS_DELEGATE + "-values";
@@ -402,6 +404,8 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private DelegateVersionService delegateVersionService;
   @Inject private AgentMtlsEndpointService agentMtlsEndpointService;
   @Inject private DelegateJreVersionHelper jreVersionHelper;
+
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   private final LoadingCache<String, String> delegateVersionCache =
       CacheBuilder.newBuilder()
@@ -676,6 +680,14 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public DelegateSetupDetails validateKubernetesSetupDetails(
       String accountId, DelegateSetupDetails delegateSetupDetails) {
+    validateKubernetesSetupDetailsForYamlGeneration(accountId, delegateSetupDetails);
+    checkUniquenessOfDelegateName(accountId, delegateSetupDetails.getName(), true);
+    validateDelegateToken(accountId, delegateSetupDetails);
+    return delegateSetupDetails;
+  }
+
+  private void validateKubernetesSetupDetailsForYamlGeneration(
+      String accountId, DelegateSetupDetails delegateSetupDetails) {
     if (null == delegateSetupDetails) {
       throw new InvalidRequestException("Delegate Setup Details must be provided.", USER);
     }
@@ -684,7 +696,6 @@ public class DelegateServiceImpl implements DelegateService {
     if (isBlank(delegateSetupDetails.getName())) {
       throw new InvalidRequestException("Delegate Name must be provided.", USER);
     }
-    checkUniquenessOfDelegateName(accountId, delegateSetupDetails.getName(), true);
     if (delegateSetupDetails.getSize() == null) {
       throw new InvalidRequestException("Delegate Size must be provided.", USER);
     }
@@ -700,10 +711,6 @@ public class DelegateServiceImpl implements DelegateService {
             || HELM_DELEGATE.equals(delegateSetupDetails.getDelegateType()))) {
       throw new InvalidRequestException("Delegate type must be KUBERNETES OR HELM_DELEGATE.");
     }
-
-    validateDelegateToken(accountId, delegateSetupDetails);
-
-    return delegateSetupDetails;
   }
 
   private void validateDelegateToken(String accountId, DelegateSetupDetails delegateSetupDetails) {
@@ -729,26 +736,6 @@ public class DelegateServiceImpl implements DelegateService {
       return HARNESS_DELEGATE + "-ce.yaml.ftl";
     }
     return HARNESS_DELEGATE + ".yaml.ftl";
-  }
-
-  private String obtainK8sTemplateNameFromConfig(final K8sConfigDetails k8sConfigDetails, final String accountId) {
-    if (isImmutableDelegate(accountId, KUBERNETES)) {
-      return IMMUTABLE_DELEGATE_YAML;
-    }
-
-    if (k8sConfigDetails == null || k8sConfigDetails.getK8sPermissionType() == null) {
-      return HARNESS_DELEGATE + NG_CLUSTER_ADMIN_YAML;
-    }
-
-    switch (k8sConfigDetails.getK8sPermissionType()) {
-      case CLUSTER_VIEWER:
-        return HARNESS_DELEGATE + NG_CLUSTER_VIEWER_YAML;
-      case NAMESPACE_ADMIN:
-        return HARNESS_DELEGATE + NG_NAMESPACE_ADMIN_YAML;
-      case CLUSTER_ADMIN:
-      default:
-        return HARNESS_DELEGATE + NG_CLUSTER_ADMIN_YAML;
-    }
   }
 
   @VisibleForTesting
@@ -1480,10 +1467,22 @@ public class DelegateServiceImpl implements DelegateService {
                               .replaceFirst("^0+(?!$)", "");
 
     final boolean isCiEnabled = isCiEnabled(templateParameters);
-    final String accountSecret = getAccountSecret(templateParameters, isNgDelegate);
-    final String base64Secret = Base64.getEncoder().encodeToString(accountSecret.getBytes());
+
+    String accountSecret = getAccountSecret(templateParameters, isNgDelegate);
+    String base64Secret;
+    if (StringUtils.isEmpty(accountSecret)) {
+      accountSecret = String.format(
+          "<No Delegate Token (%s) available, choose a delegate token>", templateParameters.getDelegateTokenName());
+      base64Secret = accountSecret;
+    } else {
+      base64Secret = Base64.getEncoder().encodeToString(accountSecret.getBytes());
+    }
     // Ng helm delegates always use immutable image irrespective of FF
-    final String delegateDockerImage = (isNgDelegate && HELM_DELEGATE.equals(templateParameters.getDelegateType()))
+    final String delegateDockerImage =
+        // FIXME: refactor the code about deciding immutable or not
+        (isNgDelegate
+            && (HELM_DELEGATE.equals(templateParameters.getDelegateType())
+                || KUBERNETES.equals(templateParameters.getDelegateType())))
         ? delegateVersionService.getImmutableDelegateImageTag(templateParameters.getAccountId())
         : delegateVersionService.getDelegateImageTag(templateParameters.getAccountId(), immutableDelegateEnabled);
     ImmutableMap.Builder<String, String> params =
@@ -1743,6 +1742,11 @@ public class DelegateServiceImpl implements DelegateService {
     final Account account = accountService.get(inquiry.getAccountId());
     if (isNotBlank(inquiry.getDelegateTokenName())) {
       if (isNg) {
+        var tokenDetails =
+            delegateNgTokenService.getDelegateToken(inquiry.getAccountId(), inquiry.getDelegateTokenName(), false);
+        if (Objects.isNull(tokenDetails) || tokenDetails.getStatus().equals(REVOKED)) {
+          return null;
+        }
         return delegateNgTokenService.getDelegateTokenValue(inquiry.getAccountId(), inquiry.getDelegateTokenName());
       } else {
         return delegateTokenService.getTokenValue(inquiry.getAccountId(), inquiry.getDelegateTokenName());
@@ -2600,6 +2604,16 @@ public class DelegateServiceImpl implements DelegateService {
 
     final Delegate existingDelegate = getExistingDelegate(delegateParams.getAccountId(), delegateParams.getHostName(),
         delegateParams.isNg(), delegateParams.getDelegateType(), delegateParams.getIp());
+
+    // this code is to mark all the task in running as failed if same delegate registration for immutable
+    // this should not impact any functionality wrt legacy delegate
+    if ((existingDelegate != null) && (existingDelegate.isImmutable())) {
+      try {
+        onDelegateDisconnected(delegateParams.getAccountId(), existingDelegate.getUuid());
+      } catch (Exception e) {
+        log.error("Couldn't delete the task associated with existing delegate: {}", existingDelegate.getUuid(), e);
+      }
+    }
 
     if (existingDelegate != null && existingDelegate.getStatus() == DelegateInstanceStatus.DELETED) {
       broadcasterFactory.lookup(STREAM_DELEGATE + delegateParams.getAccountId(), true)
@@ -3971,7 +3985,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public String queueTask(DelegateTask task) {
     if (task.getUuid() == null) {
-      task.setUuid(generateUuid());
+      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
     log.debug("Task id [{}] has wait Id [{}], task Object: [{}]", task.getUuid(), task.getWaitId(), task);
     return delegateTaskServiceClassic.queueTask(task);
@@ -3980,7 +3994,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public String queueTaskV2(DelegateTask task) {
     if (task.getUuid() == null) {
-      task.setUuid(generateUuid());
+      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
     copyTaskDataToTaskDataV2(task);
     log.debug("Task id [{}] has wait Id [{}], task Object: [{}]", task.getUuid(), task.getWaitId(), task);
@@ -4001,7 +4015,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public <T extends DelegateResponseData> T executeTask(DelegateTask task) throws InterruptedException {
     if (task.getUuid() == null) {
-      task.setUuid(generateUuid());
+      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
     return delegateTaskServiceClassic.executeTask(task);
   }
@@ -4009,7 +4023,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public <T extends DelegateResponseData> T executeTaskV2(DelegateTask task) throws InterruptedException {
     if (task.getUuid() == null) {
-      task.setUuid(generateUuid());
+      task.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
     copyTaskDataToTaskDataV2(task);
     return delegateTaskServiceClassic.executeTaskV2(task);
@@ -4150,7 +4164,25 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public File generateKubernetesYaml(String accountId, DelegateSetupDetails delegateSetupDetails, String managerHost,
       String verificationServiceUrl, MediaType fileFormat) throws IOException {
-    validateKubernetesSetupDetails(accountId, delegateSetupDetails);
+    // If token name is not provided, use default token
+    if (StringUtils.isBlank(delegateSetupDetails.getTokenName())) {
+      DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(
+          delegateSetupDetails.getOrgIdentifier(), delegateSetupDetails.getProjectIdentifier());
+      delegateSetupDetails.setTokenName(delegateNgTokenService.getDefaultTokenName(owner));
+    }
+    // If size if not provided, use LAPTOP
+    if (Objects.isNull(delegateSetupDetails.getSize())) {
+      delegateSetupDetails.setSize(DelegateSize.LAPTOP);
+    }
+    // If permission not provided, use CLUSTER_ADMIN
+    if (Objects.isNull(delegateSetupDetails.getK8sConfigDetails())) {
+      delegateSetupDetails.setK8sConfigDetails(K8sConfigDetails.builder()
+                                                   .k8sPermissionType(K8sPermissionType.CLUSTER_ADMIN)
+                                                   .namespace(HARNESS_NG_DELEGATE_NAMESPACE)
+                                                   .build());
+    }
+
+    validateKubernetesSetupDetailsForYamlGeneration(accountId, delegateSetupDetails);
     File kubernetesDelegateFile = File.createTempFile(KUBERNETES_DELEGATE, ".tar");
 
     try (TarArchiveOutputStream out = new TarArchiveOutputStream(new FileOutputStream(kubernetesDelegateFile))) {
@@ -4201,7 +4233,7 @@ public class DelegateServiceImpl implements DelegateService {
           true);
 
       File yaml = File.createTempFile(HARNESS_DELEGATE, YAML);
-      String templateName = obtainK8sTemplateNameFromConfig(delegateSetupDetails.getK8sConfigDetails(), accountId);
+      String templateName = IMMUTABLE_DELEGATE_YAML;
       saveProcessedTemplate(scriptParams, yaml, templateName);
       yaml = new File(yaml.getAbsolutePath());
 
@@ -4233,6 +4265,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public File generateNgHelmValuesYaml(String accountId, DelegateSetupDetails delegateSetupDetails, String managerHost,
       String verificationServiceUrl) throws IOException {
+    checkUniquenessOfDelegateName(accountId, delegateSetupDetails.getName(), true);
     validateKubernetesSetupDetails(accountId, delegateSetupDetails);
 
     String version;
@@ -4487,7 +4520,9 @@ public class DelegateServiceImpl implements DelegateService {
     if (delegateTokenGlobalContextData != null) {
       return Optional.ofNullable(delegateTokenGlobalContextData.getTokenName());
     }
-    log.warn("Delegate token name not found in Global Context Data. Please verify manually.");
+    // Global context thread is not the best way to save token name. There has been issues in past due to racing between
+    // threads
+    log.debug("Delegate token name not found in Global Context Data. Please verify manually.");
     return Optional.empty();
   }
 

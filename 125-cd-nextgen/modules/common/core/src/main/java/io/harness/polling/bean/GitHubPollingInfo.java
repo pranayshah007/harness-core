@@ -34,6 +34,7 @@ public class GitHubPollingInfo implements GitPollingInfo {
   String webhookId;
 
   int pollInterval;
+  String repository;
   @Override
   public String getType() {
     return WebhookSource.GITHUB.name();
@@ -43,6 +44,7 @@ public class GitHubPollingInfo implements GitPollingInfo {
   public GitPollingConfig toGitPollingConfig() {
     return GitHubPollingConfig.builder()
         .connectorRef(ParameterField.<String>builder().value(connectorRef).build())
+        .repository(ParameterField.<String>builder().value(repository).build())
         .webhookId(webhookId)
         .pollInterval(pollInterval)
         .build();

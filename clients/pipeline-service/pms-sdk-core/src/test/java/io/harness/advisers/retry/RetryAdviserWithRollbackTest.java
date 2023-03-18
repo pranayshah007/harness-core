@@ -184,7 +184,7 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
             .toStatus(FAILED)
             .ambiance(Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId("runtimeId").build()).build())
             .build();
-    assertTrue(retryAdviserWithRollback.canAdvise(advisingEvent));
+    assertFalse(retryAdviserWithRollback.canAdvise(advisingEvent));
 
     advisingEvent =
         AdvisingEvent.builder()

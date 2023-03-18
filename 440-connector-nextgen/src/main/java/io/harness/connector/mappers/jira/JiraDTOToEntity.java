@@ -13,10 +13,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.embedded.jira.JiraConnector;
 import io.harness.connector.entities.embedded.jira.JiraConnector.JiraConnectorBuilder;
+import io.harness.connector.entities.embedded.jira.JiraPATAuthentication;
 import io.harness.connector.entities.embedded.jira.JiraUserNamePasswordAuthentication;
 import io.harness.connector.mappers.ConnectorDTOToEntityMapper;
 import io.harness.delegate.beans.connector.jira.JiraAuthType;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraPATDTO;
 import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
@@ -47,6 +49,9 @@ public class JiraDTOToEntity implements ConnectorDTOToEntityMapper<JiraConnector
             .usernameRef(SecretRefHelper.getSecretConfigString(jiraUserNamePasswordDTO.getUsernameRef()))
             .passwordRef(SecretRefHelper.getSecretConfigString(jiraUserNamePasswordDTO.getPasswordRef()))
             .jiraAuthentication(JiraUserNamePasswordAuthentication.fromJiraAuthCredentialsDTO(jiraUserNamePasswordDTO));
+      } else if (JiraAuthType.PAT.equals(configDTO.getAuth().getAuthType())) {
+        JiraPATDTO jiraPATDTO = (JiraPATDTO) configDTO.getAuth().getCredentials();
+        jiraConnectorBuilder.jiraAuthentication(JiraPATAuthentication.fromJiraAuthCredentialsDTO(jiraPATDTO));
       } else {
         throw new InvalidRequestException(
             String.format("Unsupported jira auth type provided : %s", configDTO.getAuth().getAuthType()));

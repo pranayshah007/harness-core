@@ -11,7 +11,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.ecs.EcsRollingRollbackStepInfo;
 import io.harness.cdng.ecs.EcsRollingRollbackStepNode;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -38,6 +40,11 @@ public class EcsServiceRollbackStepMapperImpl extends StepMapper {
   }
 
   @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.ECS;
+  }
+
+  @Override
   public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);
     EcsServiceRollback state = new EcsServiceRollback(stepYaml.getName());
@@ -46,12 +53,12 @@ public class EcsServiceRollbackStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     EcsRollingRollbackStepNode stepNode = new EcsRollingRollbackStepNode();
-    baseSetup(graphNode, stepNode);
+    baseSetup(graphNode, stepNode, context.getIdentifierCaseFormat());
     EcsRollingRollbackStepInfo stepInfo =
         EcsRollingRollbackStepInfo.infoBuilder()
-            .ecsRollingRollbackFnq("<+input>")
             .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
             .build();
     stepNode.setEcsRollingRollbackStepInfo(stepInfo);
@@ -60,7 +67,6 @@ public class EcsServiceRollbackStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    // @deepak: Please re-evaluate
-    return false;
+    return true;
   }
 }

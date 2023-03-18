@@ -241,7 +241,7 @@ public class EngineExpressionEvaluator {
     return evaluateExpressionInternal(expression, prepareContext(ctx), MAX_DEPTH, expressionMode);
   }
 
-  private Object evaluateExpressionInternal(
+  protected Object evaluateExpressionInternal(
       @NotNull String expression, @NotNull EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
     checkDepth(depth, expression);
     EvaluateExpressionResolver resolver = new EvaluateExpressionResolver(this, ctx, depth, expressionMode);
@@ -425,17 +425,29 @@ public class EngineExpressionEvaluator {
     return object;
   }
 
-  private Object evaluatePrefixCombinations(
+  protected Object evaluatePrefixCombinations(
       @NotNull String expressionBlock, @NotNull EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
     // Apply all the prefixes and return first one that evaluates successfully.
     List<String> finalExpressions = preProcessExpression(expressionBlock);
-    Object object = null;
+    Object object = evaluateCombinations(expressionBlock, finalExpressions, ctx, depth, expressionMode);
+    if (object == null && expressionMode == ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) {
+      return ExpressionConstants.EXPR_START + expressionBlock + ExpressionConstants.EXPR_END;
+    }
+    return object;
+  }
+
+  protected Object evaluateCombinations(String expressionBlock, List<String> finalExpressions,
+      @NotNull EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
+    Object object;
     for (String finalExpression : finalExpressions) {
       try {
         if (hasExpressions(finalExpression)) {
           object = evaluateExpressionInternal(finalExpression, ctx, depth - 1, expressionMode);
         } else {
           object = evaluateInternal(finalExpression, ctx);
+        }
+        if (object != null) {
+          return object;
         }
       } catch (JexlException ex) {
         if (ex.getCause() instanceof EngineFunctorException) {
@@ -446,20 +458,12 @@ public class EngineExpressionEvaluator {
           throw new EngineExpressionEvaluationException(
               (FunctorException) ex.getCause(), createExpression(expressionBlock));
         }
-        log.debug(format("Failed to evaluate final expression: %s", finalExpression), ex);
       } catch (EngineFunctorException ex) {
         throw new EngineExpressionEvaluationException(ex, createExpression(expressionBlock));
       } catch (FunctorException ex) {
         // For backwards compatibility.
         throw new EngineExpressionEvaluationException(ex, createExpression(expressionBlock));
       }
-
-      if (object != null) {
-        return object;
-      }
-    }
-    if (object == null && expressionMode == ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) {
-      return ExpressionConstants.EXPR_START + expressionBlock + ExpressionConstants.EXPR_END;
     }
     return null;
   }
@@ -476,7 +480,7 @@ public class EngineExpressionEvaluator {
    * @param expression the original expression
    * @return the final expression
    */
-  private List<String> preProcessExpression(@NotNull String expression) {
+  protected List<String> preProcessExpression(@NotNull String expression) {
     String normalizedExpression = applyStaticAliases(expression);
     if (hasExpressions(normalizedExpression)) {
       return Collections.singletonList(normalizedExpression);
@@ -493,7 +497,7 @@ public class EngineExpressionEvaluator {
    * @param expression the original expression
    * @return the final expression
    */
-  private String applyStaticAliases(@NotNull String expression) {
+  protected String applyStaticAliases(@NotNull String expression) {
     for (int i = 0; i < ExpressionEvaluatorUtils.DEPTH_LIMIT; i++) {
       if (staticAliases.containsKey(expression)) {
         expression = staticAliases.get(expression);

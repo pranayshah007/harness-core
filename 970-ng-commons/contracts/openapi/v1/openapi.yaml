@@ -7,26 +7,26 @@ info:
   description: |
     The Harness Software Delivery Platform uses OpenAPI Specification v3.0. Harness constantly improves these APIs. Please be aware that some improvements could cause breaking changes.
     # Introduction 
-      
+    
       The Harness API allows you to integrate and use all the services and modules we provide on the Harness Platform. If you use client-side SDKs, Harness functionality can be integrated with your client-side automation, helping you reduce manual efforts and deploy code faster.
-      
+    
       For more information about how Harness works, read our [documentation](https://developer.harness.io/docs/getting-started) or visit the [Harness Developer Hub](https://developer.harness.io/).
-      
+    
     ## How it works
-      
+    
       The Harness API is a RESTful API that uses standard HTTP verbs. You can send requests in JSON, YAML, or form-data format. The format of the response matches the format of your request. You must send a single request at a time and ensure that you include your authentication key. For more information about this, go to [Authentication](#section/Introduction/Authentication).
     
     ## Get started
     
       Before you start integrating, get to know our API better by reading the following topics:
-      
+    
       * [Harness key concepts](https://developer.harness.io/docs/getting-started/learn-harness-key-concepts/)
       * [Authentication](#section/Introduction/Authentication)
       * [Requests and responses](#section/Introduction/Requests-and-Responses)
       * [Errors](#tag/Error-Response)
       * [Versioning](#section/Introduction/Versioning)
       * [Pagination](/#section/Introduction/Pagination)
-      
+    
       The methods you need to integrate with depend on the functionality you want to use. Work with  your Harness Solutions Engineer to determine which methods you need.
     
     ## Authentication
@@ -51,24 +51,24 @@ info:
       `x-api-key: YOUR_API_KEY_HERE`
     
     ## Requests and Responses
-      
+    
       The structure for each request and response is outlined in the API documentation. We have examples in JSON and YAML for every request and response. You can use our online editor to test the examples.
-            
+    
     ## Versioning
-      
+    
       The current version of our API is **1.0**.
-      
+    
       The version number represents the core API and does not change frequently. The version number changes only if there is a significant departure from the basic underpinnings of the existing API. For example, the version number would change with a system-wide refactoring of core concepts or resources.
       This version number is represented within the API path. For example, the v1 in `api.harness.io/v1/` is the version number.
-      
+    
     ## Pagination
-      
+    
       We use pagination to place limits on the number of responses associated with list endpoints. Pagination is achieved by the use of limit query parameters. The limit defaults to 30. Its maximum value is 100.
-      
+    
       Link headers are used, which are useful for moving between pages of the overall list.
     
     For example:
-      
+    
       ```
     Link: </v1/roles?page=2&limit=30>; rel="next", </v1/roles?page=1&limit=30>; rel="self", </v1/roles?page=0&limit=30>; rel="previous",
       ```
@@ -261,6 +261,7 @@ components:
           enum:
             - RESOURCE_NOT_FOUND
             - INVALID_ARGUMENT
+            - ENTITY_NOT_FOUND
           description: Error code
         errors:
           type: array

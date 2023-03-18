@@ -24,6 +24,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
@@ -65,6 +66,18 @@ public interface ProjectClient {
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(value = NGResourceFilterConstants.IDENTIFIERS) List<String> identifiers);
+
+  @GET(PROJECTS_API + "/list")
+  Call<ResponseDTO<PageResponse<ProjectResponse>>> listWithMultiOrg(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORGS_KEY) Set<String> orgIdentifiers,
+      @Query(value = "hasModule") boolean hasModule,
+      @Query(value = NGResourceFilterConstants.IDENTIFIERS) List<String> identifiers,
+      @Query(value = NGResourceFilterConstants.MODULE_TYPE_KEY) ModuleType moduleType,
+      @Query(value = NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Query(value = NGResourceFilterConstants.PAGE_KEY) int page,
+      @Query(value = NGResourceFilterConstants.SIZE_KEY) int size,
+      @Query(value = NGResourceFilterConstants.SORT_KEY) List<String> sort);
 
   @PUT(PROJECTS_API + "/{identifier}")
   Call<ResponseDTO<Optional<ProjectResponse>>> updateProject(

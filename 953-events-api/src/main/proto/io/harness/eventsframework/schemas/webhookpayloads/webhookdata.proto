@@ -4,7 +4,7 @@
 // https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
 
 syntax = "proto3";
-import "product/ci/scm/proto/scm.proto";
+import "product/ci/scm/proto/scm_service.proto";
 
 package io.harness.eventsframework.webhookpayloads.webhookdata;
 

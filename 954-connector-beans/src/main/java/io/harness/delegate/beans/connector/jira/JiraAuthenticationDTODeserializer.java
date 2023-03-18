@@ -47,6 +47,9 @@ public class JiraAuthenticationDTODeserializer extends StdDeserializer<JiraAuthe
     if (type == JiraAuthType.USER_PASSWORD) {
       jiraAuthCredentials = mapper.readValue(authSpec.toString(), JiraUserNamePasswordDTO.class);
     }
+    if (type == JiraAuthType.PAT) {
+      jiraAuthCredentials = mapper.readValue(authSpec.toString(), JiraPATDTO.class);
+    }
     // add condition for future types here
     return JiraAuthenticationDTO.builder().authType(type).credentials(jiraAuthCredentials).build();
   }

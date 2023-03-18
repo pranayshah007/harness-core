@@ -295,7 +295,7 @@ public class K8sDeleteTaskHandler extends K8sTaskHandler {
 
     return release.getResourceIds()
         .stream()
-        .filter(resource -> resource.getName().endsWith(K8sConstants.CANARY_WORKLOAD_SUFFIX_NAME))
+        .filter(resource -> resource.getName().endsWith(K8sConstants.CANARY_WORKLOAD_SUFFIX_NAME_WITH_SEPARATOR))
         .collect(Collectors.toList());
   }
 }

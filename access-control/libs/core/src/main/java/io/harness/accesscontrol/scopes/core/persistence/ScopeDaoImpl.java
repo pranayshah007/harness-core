@@ -51,6 +51,6 @@ public class ScopeDaoImpl implements ScopeDao {
 
   @Override
   public Optional<ScopeDBO> delete(String identifier) {
-    return scopeRepository.deleteByIdentifier(identifier).stream().findFirst();
+    return scopeRepository.deleteByIdentifier(identifier);
   }
 }

@@ -11,4 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(PL) public enum UserGroupFilterType { INCLUDE_INHERITED_GROUPS, EXCLUDE_INHERITED_GROUPS }
+@OwnedBy(PL)
+public enum UserGroupFilterType {
+  INCLUDE_INHERITED_GROUPS,
+  EXCLUDE_INHERITED_GROUPS,
+  INCLUDE_CHILD_SCOPE_GROUPS
+}

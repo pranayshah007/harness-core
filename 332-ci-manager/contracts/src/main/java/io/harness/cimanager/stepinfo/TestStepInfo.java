@@ -13,6 +13,7 @@ import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -81,8 +82,8 @@ public class TestStepInfo extends CIAbstractStepInfo {
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
-  ParameterField<Map<String, String>> envs;
-  public ParameterField<Map<String, String>> getEnvs() {
+  ParameterField<Map<String, ParameterField<String>>> envs;
+  public ParameterField<Map<String, ParameterField<String>>> getEnvs() {
     if (ParameterField.isNull(this.envs)) {
       this.envs.setValue(Collections.emptyMap());
     }
@@ -112,10 +113,12 @@ public class TestStepInfo extends CIAbstractStepInfo {
 
   @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) ParameterField<Integer> user;
   @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) ParameterField<Boolean> privileged;
-  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.Shell") Shell shell;
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.Shell")
+  ParameterField<Shell> shell;
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.PullPolicy")
-  PullPolicy pull;
+  ParameterField<PullPolicy> pull;
 
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.Splitting") Splitting splitting;
   public Splitting getSplitting() {
@@ -129,9 +132,10 @@ public class TestStepInfo extends CIAbstractStepInfo {
   @ConstructorProperties({"uuid", "image", "uses", "with", "resources", "envs", "outputs", "reports", "privileged",
       "user", "pull", "shell", "volumes", "splitting"})
   public TestStepInfo(String uuid, ParameterField<String> image, BuildTool uses, Map<String, JsonNode> with,
-      ContainerResource resources, ParameterField<Map<String, String>> envs, ParameterField<List<String>> outputs,
-      ParameterField<List<Report>> reports, ParameterField<Boolean> privileged, ParameterField<Integer> user,
-      PullPolicy pull, Shell shell, ParameterField<List<Volume>> volumes, Splitting splitting) {
+      ContainerResource resources, ParameterField<Map<String, ParameterField<String>>> envs,
+      ParameterField<List<String>> outputs, ParameterField<List<Report>> reports, ParameterField<Boolean> privileged,
+      ParameterField<Integer> user, ParameterField<PullPolicy> pull, ParameterField<Shell> shell,
+      ParameterField<List<Volume>> volumes, Splitting splitting) {
     this.uuid = uuid;
     this.image = image;
     this.uses = uses;

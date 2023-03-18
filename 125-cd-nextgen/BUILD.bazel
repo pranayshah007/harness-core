@@ -50,7 +50,6 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/configfile:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/configfile/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/creator/plan:module",
-        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/creator/plan/environment:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/creator/plan/stage:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/customDeployment:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/customDeployment/constants:module",

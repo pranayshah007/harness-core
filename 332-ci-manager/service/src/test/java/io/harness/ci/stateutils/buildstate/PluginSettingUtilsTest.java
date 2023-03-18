@@ -15,6 +15,8 @@ import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMM
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REMOTE_URL;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TAG;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DOCKER_REGISTRY_V1;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DOCKER_REGISTRY_V2;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DRONE_WORKSPACE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERIFY;
@@ -55,6 +57,8 @@ import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -88,6 +92,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   @Before
   public void setUp() {
     on(pluginSettingUtils).set("codebaseUtils", codebaseUtils);
+    on(pluginSettingUtils).set("connectorUtils", connectorUtils);
     on(codebaseUtils).set("connectorUtils", connectorUtils);
   }
 
@@ -193,7 +198,14 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
             .target(ParameterField.createValueField("target"))
             .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
             .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .baseImageConnectorRefs(ParameterField.createValueField(Collections.singletonList("docker")))
             .build();
+    String dockerUrl = "dockerUrl";
+    when(connectorUtils.getConnectorDetails(any(), eq("docker")))
+        .thenReturn(ConnectorDetails.builder()
+                        .connectorType(ConnectorType.DOCKER)
+                        .connectorConfig(DockerConnectorDTO.builder().dockerRegistryUrl(dockerUrl).build())
+                        .build());
 
     Map<String, String> expected = new HashMap<>();
     expected.put("PLUGIN_REGISTRY", "6874654867.dkr.ecr.eu-central-1.amazonaws.com");
@@ -207,11 +219,23 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_CUSTOM_LABELS", "label=label1");
     expected.put("PLUGIN_SNAPSHOT_MODE", "redo");
     expected.put("PLUGIN_ARTIFACT_FILE", "/addon/tmp/.plugin/artifact");
+    expected.put("PLUGIN_DOCKER_REGISTRY", dockerUrl);
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
         pluginSettingUtils.getPluginCompatibleEnvVariables(ecrStepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
+
+    when(connectorUtils.getConnectorDetails(any(), eq("docker")))
+        .thenReturn(ConnectorDetails.builder()
+                        .connectorType(ConnectorType.DOCKER)
+                        .connectorConfig(DockerConnectorDTO.builder().dockerRegistryUrl(DOCKER_REGISTRY_V2).build())
+                        .build());
+    actual =
+        pluginSettingUtils.getPluginCompatibleEnvVariables(ecrStepInfo, "identifier", 100, ambiance, Type.K8, false);
+    assertThat(actual).containsKey("PLUGIN_DOCKER_REGISTRY");
+    assertThat(actual.get("PLUGIN_DOCKER_REGISTRY")).isEqualTo(DOCKER_REGISTRY_V1);
   }
+
   @Test
   @Owner(developers = ALEKSANDAR)
   @Category(UnitTests.class)

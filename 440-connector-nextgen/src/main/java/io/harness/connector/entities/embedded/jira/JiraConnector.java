@@ -15,6 +15,8 @@ import io.harness.delegate.beans.connector.jira.JiraAuthType;
 import io.harness.ng.DbAliases;
 
 import dev.morphia.annotations.Entity;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -36,9 +38,12 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("io.harness.connector.entities.embedded.jira.JiraConnector")
 public class JiraConnector extends Connector {
   String jiraUrl;
-  String username;
-  String usernameRef;
-  String passwordRef;
-  JiraAuthType authType;
-  JiraAuthentication jiraAuthentication;
+  /** @deprecated */
+  @Deprecated(since = "moved to JiraConnector with authType and jiraAuthentication") String username;
+  /** @deprecated */
+  @Deprecated(since = "moved to JiraConnector with authType and jiraAuthentication") String usernameRef;
+  /** @deprecated */
+  @Deprecated(since = "moved to JiraConnector with authType and jiraAuthentication") String passwordRef;
+  @NotEmpty JiraAuthType authType;
+  @NotNull JiraAuthentication jiraAuthentication;
 }

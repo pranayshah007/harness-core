@@ -8,9 +8,11 @@
 package io.harness.cvng.servicelevelobjective.services.api;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.sli.MetricOnboardingGraph;
 import io.harness.cvng.core.beans.sli.SLIOnboardingGraphs;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
+import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 
@@ -24,6 +26,9 @@ public interface ServiceLevelIndicatorService {
   SLIOnboardingGraphs getOnboardingGraphs(ProjectParams projectParams, String monitoredServiceIdentifier,
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String tracingId);
 
+  MetricOnboardingGraph getMetricGraphs(ProjectParams projectParams, String monitoredServiceIdentifier,
+      String healthSourceRef, RatioSLIMetricEventType ratioSLIMetricEventType, List<String> metricIdentifiers,
+      String tracingId);
   List<ServiceLevelIndicatorDTO> get(ProjectParams projectParams, List<String> serviceLevelIndicators);
 
   List<ServiceLevelIndicator> getEntities(ProjectParams projectParams, List<String> serviceLevelIndicators);

@@ -43,7 +43,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = false)
-@JsonTypeName(ManifestType.AwsLambda)
+@JsonTypeName(ManifestType.AwsLambdaFunctionDefinition)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @SimpleVisitorHelper(helperClass = AwsLambdaManifestVisitorHelper.class)
 @TypeAlias("awsLambdaDefinitionManifest")
@@ -67,7 +67,7 @@ public class AwsLambdaDefinitionManifest implements ManifestAttributes, Visitabl
 
   @Override
   public String getKind() {
-    return ManifestType.AwsLambda;
+    return ManifestType.AwsLambdaFunctionDefinition;
   }
 
   @Override

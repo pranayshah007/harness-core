@@ -139,9 +139,10 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
           (ManualExecutionSource) getExecutionSource(ambiance, stepParameters.getExecutionSource());
       String prNumber = manualExecutionSource.getPrNumber();
       if (scmGitRefTaskResponseData == null && isNotEmpty(prNumber)) {
+        log.error("Failed to retrieve codebase info from returned delegate response with PR number: " + prNumber, ex);
         throw new CIStageExecutionException("Failed to retrieve PrNumber: " + prNumber + " details");
       }
-      log.error("Failed to retrieve codebase info from returned delegate response");
+      log.error("Failed to retrieve codebase info from returned delegate response", ex);
     }
 
     saveScmResponseToSweepingOutput(ambiance, stepParameters, scmGitRefTaskResponseData);
@@ -160,9 +161,9 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
     if (executionSource.getType() == MANUAL) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
+      ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
       // fetch scm details via manager
       if (connectorUtils.hasApiAccess(connectorDetails)) {
-        ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
         String branch = manualExecutionSource.getBranch();
         String prNumber = manualExecutionSource.getPrNumber();
         String tag = manualExecutionSource.getTag();
@@ -181,8 +182,12 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
               .build();
         }
       } else {
+        if (isNotEmpty(manualExecutionSource.getPrNumber())) {
+          throw new CIStageExecutionException(
+              "PR build type is not supported when api access is disabled in git connector or clone codebase is false");
+        }
         String repoUrl = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, repoName);
-        codebaseSweepingOutput = buildManualCodebaseSweepingOutput((ManualExecutionSource) executionSource, repoUrl);
+        codebaseSweepingOutput = buildManualCodebaseSweepingOutput(manualExecutionSource, repoUrl);
       }
     } else if (executionSource.getType() == WEBHOOK) {
       codebaseSweepingOutput = buildWebhookCodebaseSweepingOutput((WebhookExecutionSource) executionSource);

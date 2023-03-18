@@ -12,7 +12,9 @@ import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_SYNC_ENTITY_STREAM;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.API_KEY_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.AZURE_ARM_CONFIG_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CD_TELEMETRY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CLOUDFORMATION_CONFIG_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENVIRONMENT_GROUP_ENTITY;
@@ -35,6 +37,8 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SETUP_
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SIGNUP_TOKEN;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.STAGE_EXEC_INFO;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TEMPLATE_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TERRAFORM_CONFIG_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TERRAGRUNT_CONFIG_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_GROUP;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_SCOPE_RECONCILIATION;
@@ -81,6 +85,10 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
       @Named(USER_ENTITY + ENTITY_CRUD) MessageListener userEntityCRUDStreamListener,
       @Named(SECRET_ENTITY + ENTITY_CRUD) MessageListener secretEntityCRUDStreamListner,
       @Named(SERVICEACCOUNT_ENTITY + ENTITY_CRUD) MessageListener serviceAccountEntityCRUDStreamListener,
+      @Named(TERRAFORM_CONFIG_ENTITY + ENTITY_CRUD) MessageListener terraformConfigEntityCRUDStreamListener,
+      @Named(TERRAGRUNT_CONFIG_ENTITY + ENTITY_CRUD) MessageListener terragruntConfigEntityCRUDStreamListener,
+      @Named(CLOUDFORMATION_CONFIG_ENTITY + ENTITY_CRUD) MessageListener cloudformationConfigEntityCRUDStreamListener,
+      @Named(AZURE_ARM_CONFIG_ENTITY + ENTITY_CRUD) MessageListener azureARMConfigEntityCRUDStreamListener,
       @Named(VARIABLE_ENTITY + ENTITY_CRUD) MessageListener variableEntityCRUDStreamListener,
       @Named(USER_GROUP + ENTITY_CRUD) MessageListener userGroupEntityCRUDStreamListener,
       @Named(FILTER + ENTITY_CRUD) MessageListener filterEventListener,
@@ -113,6 +121,10 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
     messageListenersList.add(userEntityCRUDStreamListener);
     messageListenersList.add(secretEntityCRUDStreamListner);
     messageListenersList.add(serviceAccountEntityCRUDStreamListener);
+    messageListenersList.add(terraformConfigEntityCRUDStreamListener);
+    messageListenersList.add(terragruntConfigEntityCRUDStreamListener);
+    messageListenersList.add(cloudformationConfigEntityCRUDStreamListener);
+    messageListenersList.add(azureARMConfigEntityCRUDStreamListener);
     messageListenersList.add(variableEntityCRUDStreamListener);
     messageListenersList.add(userGroupEntityCRUDStreamListener);
     messageListenersList.add(filterEventListener);

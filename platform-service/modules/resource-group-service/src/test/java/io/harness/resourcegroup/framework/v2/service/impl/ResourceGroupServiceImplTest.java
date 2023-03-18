@@ -627,10 +627,8 @@ public class ResourceGroupServiceImplTest extends ResourceGroupTestBase {
         .getResourceGroupFilterCriteria(resourceGroupFilterDTOArgumentCaptor.capture());
     verify(resourceGroupV2RepositoryMock, times(1)).findAll(criteria, Pageable.unpaged());
     assertThat(result.getTotalElements()).isEqualTo(permittedResourceGroups.size());
-    assertThat(result.getContent()
-                   .stream()
-                   .map((item) -> item.getResourceGroup().getIdentifier())
-                   .collect(Collectors.toList()))
+    assertThat(
+        result.getContent().stream().map(item -> item.getResourceGroup().getIdentifier()).collect(Collectors.toList()))
         .isEqualTo(permittedResourceGroups.stream().map(ResourceGroup::getIdentifier).collect(Collectors.toList()));
   }
 

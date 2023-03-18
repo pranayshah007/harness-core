@@ -10,6 +10,8 @@ package io.harness.cvng.core.entities;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.cvng.core.beans.WebhookType;
+import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -19,8 +21,10 @@ import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -48,4 +52,15 @@ public abstract class Webhook implements PersistentEntity, UuidAware, CreatedAtA
   @NonNull private String token;
 
   public abstract WebhookType getType();
+
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("account_org_project_idx")
+                 .field(WebhookKeys.accountId)
+                 .field(WebhookKeys.orgIdentifier)
+                 .field(WebhookKeys.projectIdentifier)
+                 .build())
+        .build();
+  }
 }

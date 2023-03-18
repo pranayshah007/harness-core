@@ -10,9 +10,7 @@ package software.wings.app;
 import software.wings.search.entities.application.ApplicationTimeScaleEntity;
 import software.wings.search.entities.cloudprovider.CloudProviderTimeScaleEntity;
 import software.wings.search.entities.deployment.DeploymentExecutionEntity;
-import software.wings.search.entities.deployment.DeploymentStepExecutionEntity;
 import software.wings.search.entities.environment.EnvironmentTimeScaleEntity;
-import software.wings.search.entities.executionInterrupt.ExecutionInterruptEntity;
 import software.wings.search.entities.infradefinition.InfrastructureDefinitionTimeScaleEntity;
 import software.wings.search.entities.pipeline.PipelineTimeScaleEntity;
 import software.wings.search.entities.service.ServiceTimeScaleEntity;
@@ -53,7 +51,5 @@ public class TimescaleModule extends AbstractModule {
     Multibinder<ExecutionEntity<?>> timeScaleEntityMultibinder =
         Multibinder.newSetBinder(binder(), new TypeLiteral<ExecutionEntity<?>>() {});
     timeScaleEntityMultibinder.addBinding().to(DeploymentExecutionEntity.class);
-    timeScaleEntityMultibinder.addBinding().to(DeploymentStepExecutionEntity.class);
-    timeScaleEntityMultibinder.addBinding().to(ExecutionInterruptEntity.class);
   }
 }

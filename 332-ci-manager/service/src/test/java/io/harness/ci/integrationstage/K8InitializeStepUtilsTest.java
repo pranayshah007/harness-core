@@ -11,7 +11,6 @@ import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.DEFAULT
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.DEFAULT_LIMIT_MILLI_CPU;
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.PLUGIN_STEP_LIMIT_CPU;
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.PLUGIN_STEP_LIMIT_MEM;
-import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.getRunStepElementConfigAsJsonNode;
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.getRunStepElementConfigWithVariables;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
@@ -24,6 +23,7 @@ import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.stages.IntegrationStageNode;
+import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
@@ -41,7 +41,6 @@ import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.NumberNGVariable;
-import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.core.variables.StringNGVariable;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -183,6 +182,16 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     assertThat(map.get("step_g_run3").getResourceLimitMilliCpu()).isEqualTo(200);
     assertThat(map.get("step_g_run4").getResourceLimitMemoryMiB()).isEqualTo(100);
     assertThat(map.get("step_g_run4").getResourceLimitMilliCpu()).isEqualTo(200);
+
+    ExecutionElementConfig executionElementConfig = ExecutionElementConfig.builder().steps(steps).build();
+    IntegrationStageConfig integrationStageConfig =
+        IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
+    List<String> identifiers = IntegrationStageStepParametersPMS.getStepIdentifiers(integrationStageConfig);
+    assertThat(identifiers).isNotEmpty();
+    assertThat(identifiers.get(0)).isEqualTo("step-2");
+    assertThat(identifiers.get(1)).isEqualTo("step_g_run2");
+    assertThat(identifiers.get(2)).isEqualTo("step_g_run3");
+    assertThat(identifiers.get(3)).isEqualTo("step_g_run4");
   }
 
   @Test

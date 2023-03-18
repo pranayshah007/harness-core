@@ -13,6 +13,8 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
+import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -22,6 +24,7 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UuidAware;
 
+import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.util.List;
@@ -56,6 +59,16 @@ public final class BusinessMapping implements PersistentEntity, UuidAware, Creat
   private EmbeddedUser createdBy;
   private EmbeddedUser lastUpdatedBy;
 
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_name")
+                 .field(BusinessMappingKeys.accountId)
+                 .field(BusinessMappingKeys.name)
+                 .build())
+        .build();
+  }
+
   public BusinessMapping toDTO() {
     return BusinessMapping.builder()
         .uuid(getUuid())
@@ -64,10 +77,25 @@ public final class BusinessMapping implements PersistentEntity, UuidAware, Creat
         .costTargets(getCostTargets())
         .sharedCosts(getSharedCosts())
         .unallocatedCost(getUnallocatedCost())
+        .dataSources(getDataSources())
         .createdAt(getCreatedAt())
         .lastUpdatedAt(getLastUpdatedAt())
         .createdBy(getCreatedBy())
         .lastUpdatedBy(getLastUpdatedBy())
+        .build();
+  }
+
+  public static BusinessMapping fromHistory(BusinessMappingHistory businessMappingHistory) {
+    return BusinessMapping.builder()
+        .uuid(businessMappingHistory.getBusinessMappingId())
+        .name(businessMappingHistory.getName())
+        .accountId(businessMappingHistory.getAccountId())
+        .costTargets(businessMappingHistory.getCostTargets())
+        .sharedCosts(businessMappingHistory.getSharedCosts())
+        .unallocatedCost(businessMappingHistory.getUnallocatedCost())
+        .dataSources(businessMappingHistory.getDataSources())
+        .createdAt(businessMappingHistory.getCreatedAt())
+        .lastUpdatedAt(businessMappingHistory.getLastUpdatedAt())
         .build();
   }
 }

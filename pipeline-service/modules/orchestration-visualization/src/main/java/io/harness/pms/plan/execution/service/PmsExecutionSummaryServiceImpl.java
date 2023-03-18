@@ -23,7 +23,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
 import io.harness.pms.plan.execution.LayoutNodeGraphConstants;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -142,6 +141,9 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   private void addAndUpdateChildNodesForStrategy(String planExecutionId, Update update,
       Map<String, GraphLayoutNodeDTO> graphLayoutNode, NodeExecution nodeExecution,
       List<NodeExecution> childrenNodeExecution, String stageSetupId) {
+    if (childrenNodeExecution.isEmpty()) {
+      return;
+    }
     for (NodeExecution stageNodeExecution : childrenNodeExecution) {
       // If the child already exists in graph then ignore.
       if (!alreadyAddedAsChild(graphLayoutNode, nodeExecution.getNodeId(), stageNodeExecution.getUuid())) {
@@ -222,10 +224,10 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     boolean updateRequired = updateStrategyPlanNode(planExecutionId, nodeExecution, update);
 
     // Update identity nodes if only they are in final status.
-    if (OrchestrationUtils.isStageOrParallelStageNode(nodeExecution)
-        && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
-        && StatusUtils.isFinalStatus(nodeExecution.getStatus())) {
-      return updateIdentityStageOrStrategyNodes(planExecutionId, update) || updateRequired;
+    if ((OrchestrationUtils.isStageOrParallelStageNode(nodeExecution)
+            || nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY)
+        && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE) {
+      updateRequired = updateIdentityStageOrStrategyNodes(planExecutionId, update) || updateRequired;
     }
     return ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution) || updateRequired;
   }

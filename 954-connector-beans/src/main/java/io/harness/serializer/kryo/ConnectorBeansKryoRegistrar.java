@@ -69,6 +69,11 @@ import io.harness.delegate.beans.connector.azureconnector.AzureSecretType;
 import io.harness.delegate.beans.connector.azureconnector.AzureSystemAssignedMSIAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureUserAssignedMSIAuthDTO;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooAuthType;
+import io.harness.delegate.beans.connector.bamboo.BambooAuthenticationDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.AwsCurAttributesDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.delegate.beans.connector.ceazure.BillingExportSpecDTO;
@@ -118,6 +123,7 @@ import io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.jira.JiraAuthType;
 import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraPATDTO;
 import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthDTO;
@@ -440,6 +446,13 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(JenkinsConnectorDTO.class, 29115);
     kryo.register(JenkinsUserNamePasswordDTO.class, 29116);
     kryo.register(JenkinsBearerTokenDTO.class, 29130);
+
+    kryo.register(BambooAuthCredentialsDTO.class, 109112);
+    kryo.register(BambooAuthenticationDTO.class, 109113);
+    kryo.register(BambooAuthType.class, 109114);
+    kryo.register(BambooConnectorDTO.class, 109115);
+    kryo.register(BambooUserNamePasswordDTO.class, 109116);
+
     kryo.register(OciHelmAuthCredentialsDTO.class, 29131);
     kryo.register(OciHelmAuthenticationDTO.class, 29132);
     kryo.register(OciHelmAuthType.class, 29133);
@@ -479,5 +492,6 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(JiraAuthType.class, 10000451);
     kryo.register(JiraAuthCredentialsDTO.class, 10000452);
     kryo.register(JiraUserNamePasswordDTO.class, 10000453);
+    kryo.register(JiraPATDTO.class, 10000454);
   }
 }

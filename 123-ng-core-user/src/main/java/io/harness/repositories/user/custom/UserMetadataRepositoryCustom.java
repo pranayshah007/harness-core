@@ -17,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PL)
 public interface UserMetadataRepositoryCustom {
@@ -24,7 +25,11 @@ public interface UserMetadataRepositoryCustom {
 
   List<UserMetadata> findAll(Criteria criteria);
 
+  List<String> findAllIds(Criteria criteria);
+
   UserMetadata updateFirst(String userId, Update update);
 
   long insertAllIgnoringDuplicates(List<UserMetadata> userMetadata);
+
+  CloseableIterator<UserMetadata> stream(Criteria criteria);
 }

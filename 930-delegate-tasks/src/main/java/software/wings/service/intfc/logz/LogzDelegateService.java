@@ -11,8 +11,8 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.TaskType;
 import software.wings.beans.config.LogzConfig;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateTaskType;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.elk.ElkLogFetchRequest;
 
 import java.io.IOException;

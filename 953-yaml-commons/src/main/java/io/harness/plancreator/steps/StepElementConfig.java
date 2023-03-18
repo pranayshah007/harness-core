@@ -8,7 +8,7 @@
 package io.harness.plancreator.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
@@ -69,17 +69,20 @@ public class StepElementConfig {
   @VariableExpression(skipVariableExpression = true) PolicyConfig enforce;
   @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;
 
-  @JsonProperty("strategy") StrategyConfig strategy;
+  @ApiModelProperty(dataType = SwaggerConstants.STRATEGY_CLASSPATH)
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  @JsonProperty("strategy")
+  ParameterField<StrategyConfig> strategy;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   ParameterField<String> skipCondition;
 
   @ApiModelProperty(dataType = SwaggerConstants.STEP_WHEN_CLASSPATH)
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<StepWhenCondition> when;
 
   @NotNull String type;

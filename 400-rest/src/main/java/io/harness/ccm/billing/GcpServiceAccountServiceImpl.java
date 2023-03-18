@@ -31,6 +31,7 @@ import com.google.api.services.iam.v1.model.Policy;
 import com.google.api.services.iam.v1.model.ServiceAccount;
 import com.google.api.services.iam.v1.model.SetIamPolicyRequest;
 import com.google.auth.Credentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ImpersonatedCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.common.base.Preconditions;
@@ -147,7 +148,7 @@ public class GcpServiceAccountServiceImpl implements GcpServiceAccountService {
   }
 
   public static Credentials getImpersonatedCredentials(
-      ServiceAccountCredentials sourceCredentials, String impersonatedServiceAccount) {
+      GoogleCredentials sourceCredentials, String impersonatedServiceAccount) {
     if (impersonatedServiceAccount == null) {
       return sourceCredentials;
     } else {

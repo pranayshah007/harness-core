@@ -51,6 +51,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -103,6 +104,7 @@ public class EcsBGUpdateRoute53DNSWeightStateTest extends WingsBaseTest {
   @Mock private EcsStateHelper mockEcsStateHelper;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks private EcsBGUpdateRoute53DNSWeightState state = new EcsBGUpdateRoute53DNSWeightState("stateName");
 

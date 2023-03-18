@@ -18,7 +18,6 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.secret.SecretReference;
-import io.harness.validation.OneOfField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
@@ -49,15 +48,23 @@ import org.hibernate.validator.constraints.URL;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("JiraConnector")
-@OneOfField(fields = {"username", "usernameRef"}) // TODO: to be removed while migration
 @Schema(name = "JiraConnector", description = "JIRA Connector details.")
 public class JiraConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
   @URL @NotNull @NotBlank String jiraUrl;
-  String username;
-  @ApiModelProperty(dataType = "string") @SecretReference SecretRefData usernameRef;
-  @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData passwordRef;
+  /** @deprecated */
+  @Deprecated(since = "moved to JiraConnector with authType and jiraAuthentication") String username;
+  /** @deprecated */
+  @ApiModelProperty(dataType = "string")
+  @SecretReference
+  @Deprecated(since = "moved to JiraConnector with authType and jiraAuthentication")
+  SecretRefData usernameRef;
+  /** @deprecated */
+  @ApiModelProperty(dataType = "string")
+  @SecretReference
+  @Deprecated(since = "moved to JiraConnector with authType and jiraAuthentication")
+  SecretRefData passwordRef;
   Set<String> delegateSelectors;
-  @Valid JiraAuthenticationDTO auth;
+  @Valid @NotNull JiraAuthenticationDTO auth;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

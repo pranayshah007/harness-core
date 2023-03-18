@@ -23,6 +23,8 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.template.beans.yaml.NGTemplateConfig;
@@ -32,6 +34,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.CustomArtifactStream;
+import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -59,12 +62,12 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
               .getVersionLabel());
       return PrimaryArtifact.builder()
           .primaryArtifactRef(ParameterField.createValueField("<+input>"))
-          .sources(
-              Collections.singletonList(ArtifactSource.builder()
-                                            .name(MigratorUtility.generateName(artifactStream.getName()))
-                                            .identifier(MigratorUtility.generateIdentifier(artifactStream.getName()))
-                                            .template(templateLinkConfig)
-                                            .build()))
+          .sources(Collections.singletonList(ArtifactSource.builder()
+                                                 .name(MigratorUtility.generateName(artifactStream.getName()))
+                                                 .identifier(MigratorUtility.generateIdentifier(
+                                                     artifactStream.getName(), inputDTO.getIdentifierCaseFormat()))
+                                                 .template(templateLinkConfig)
+                                                 .build()))
           .build();
     } else {
       CustomArtifactStream.Script primaryScript = customArtifactStream.getScripts().get(0);
@@ -108,5 +111,16 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
                     .build())
           .build();
     }
+  }
+
+  @Override
+  public ArtifactType getArtifactType(Map<CgEntityId, NGYamlFile> migratedEntities, ArtifactStream artifactStream) {
+    return ArtifactType.CUSTOM_ARTIFACT;
+  }
+
+  @Override
+  public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
+      Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
+    return null;
   }
 }

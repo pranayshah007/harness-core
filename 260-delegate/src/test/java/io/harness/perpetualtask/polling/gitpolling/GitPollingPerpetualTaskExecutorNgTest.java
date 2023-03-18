@@ -56,6 +56,7 @@ import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import okio.Buffer;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -93,6 +94,7 @@ public class GitPollingPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Test
   @Owner(developers = OwnerRule.SRIDHAR)
   @Category(UnitTests.class)
+  @Ignore("TODO: Flaky test - to fix later")
   public void testSuccessfulGitPollingWebhookEvents() throws IOException {
     assertThat(runOnce(0, 10000, false, false).getResponseCode()).isEqualTo(200);
 

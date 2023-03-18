@@ -133,6 +133,10 @@ public class BudgetGroupDao {
     return query.get();
   }
 
+  public List<BudgetGroup> list(String accountId) {
+    return list(accountId, Integer.MAX_VALUE - 1, 0);
+  }
+
   public List<BudgetGroup> list(String accountId, Integer count, Integer startIndex) {
     Query<BudgetGroup> query =
         hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.accountId).equal(accountId);

@@ -54,10 +54,12 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.task.TaskFailureReason;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.iterator.ValidationFailedTaskMessageHelper;
 import io.harness.persistence.HPersistence;
 import io.harness.service.dto.RetryDelegate;
 import io.harness.service.intfc.DelegateCache;
@@ -144,6 +146,9 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private DelegateCache delegateCache;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
+  @Inject private ValidationFailedTaskMessageHelper validationFailedTaskMessageHelper;
+
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   private LoadingCache<ImmutablePair<String, String>, Optional<DelegateConnectionResult>>
       delegateConnectionResultCache =
@@ -800,6 +805,12 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
     String errorMessage = "Unknown";
 
+    if (isNotEmpty(delegateTask.getValidationCompleteDelegateIds())
+        && delegateTask.getValidationCompleteDelegateIds().containsAll(
+            delegateTask.getEligibleToExecuteDelegateIds())) {
+      errorMessage = validationFailedTaskMessageHelper.generateValidationError(delegateTask);
+      log.info("Failing task {} due to validation error, {}", delegateTask.getUuid(), errorMessage);
+    }
     List<DelegateSelectionLogParams> delegateSelectionLogs =
         delegateSelectionLogsService.fetchTaskSelectionLogs(delegateTask.getAccountId(), delegateTask.getUuid());
 
@@ -854,7 +865,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
         errorMessage = "Delegate task timed out. Delegate: "
             + (delegate != null ? delegate.getHostName() : "not found: " + delegateTask.getDelegateId());
       } else {
-        errorMessage = "Delegate task was never assigned and timed out.";
+        errorMessage = "Delegate task was never assigned or/and task timed out.";
       }
     } catch (Exception e) {
       log.error("Execution exception", e);
@@ -1172,9 +1183,11 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
     if (!remainingConnectedDelegates.isEmpty()) {
       log.info("Requeueing task");
+      boolean migrationEnabledForTask =
+          delegateTaskMigrationHelper.isMigrationEnabledForTask(retryDelegate.getDelegateTask().getUuid());
 
       persistence.update(retryDelegate.getTaskQuery(),
-          persistence.createUpdateOperations(DelegateTask.class)
+          persistence.createUpdateOperations(DelegateTask.class, migrationEnabledForTask)
               .unset(DelegateTaskKeys.delegateId)
               .unset(DelegateTaskKeys.validationStartedAt)
               .unset(DelegateTaskKeys.lastBroadcastAt)
@@ -1182,7 +1195,8 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
               .unset(DelegateTaskKeys.validationCompleteDelegateIds)
               .set(DelegateTaskKeys.broadcastCount, 1)
               .set(DelegateTaskKeys.status, QUEUED)
-              .addToSet(DelegateTaskKeys.alreadyTriedDelegates, retryDelegate.getDelegateId()));
+              .addToSet(DelegateTaskKeys.alreadyTriedDelegates, retryDelegate.getDelegateId()),
+          migrationEnabledForTask);
 
       return RetryDelegate.builder().retryPossible(true).build();
     } else {

@@ -54,14 +54,6 @@ public class ServiceNowConnectorImpl implements BaseConnector {
                                        migratedEntities, serviceNowConfig.getEncryptedPassword()))
                                    .build())
                   .build())
-        .auth(ServiceNowAuthenticationDTO.builder()
-                  .authType(ServiceNowAuthType.USER_PASSWORD)
-                  .credentials(ServiceNowUserNamePasswordDTO.builder()
-                                   .username(serviceNowConfig.getUsername())
-                                   .passwordRef(MigratorUtility.getSecretRef(
-                                       migratedEntities, serviceNowConfig.getEncryptedPassword()))
-                                   .build())
-                  .build())
         .build();
   }
 }

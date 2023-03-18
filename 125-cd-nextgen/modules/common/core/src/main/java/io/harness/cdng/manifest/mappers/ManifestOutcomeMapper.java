@@ -12,7 +12,8 @@ import static io.harness.cdng.manifest.ManifestType.AsgConfiguration;
 import static io.harness.cdng.manifest.ManifestType.AsgLaunchTemplate;
 import static io.harness.cdng.manifest.ManifestType.AsgScalingPolicy;
 import static io.harness.cdng.manifest.ManifestType.AsgScheduledUpdateGroupAction;
-import static io.harness.cdng.manifest.ManifestType.AwsLambda;
+import static io.harness.cdng.manifest.ManifestType.AwsLambdaFunctionAliasDefinition;
+import static io.harness.cdng.manifest.ManifestType.AwsLambdaFunctionDefinition;
 import static io.harness.cdng.manifest.ManifestType.DeploymentRepo;
 import static io.harness.cdng.manifest.ManifestType.EcsScalableTargetDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
@@ -40,6 +41,7 @@ import io.harness.cdng.manifest.yaml.AsgLaunchTemplateManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScalingPolicyManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScheduledUpdateGroupActionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsLambdaAliasDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.DeploymentRepoManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalableTargetDefinitionManifestOutcome;
@@ -66,6 +68,7 @@ import io.harness.cdng.manifest.yaml.kinds.AsgScalingPolicyManifest;
 import io.harness.cdng.manifest.yaml.kinds.AsgScheduledUpdateGroupActionManifest;
 import io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest;
 import io.harness.cdng.manifest.yaml.kinds.AwsLambdaDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.AwsLambdaFunctionAliasDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
@@ -149,8 +152,10 @@ public class ManifestOutcomeMapper {
         return getAsgScheduledUpdateGroupActionOutcome(manifestAttributes);
       case GoogleCloudFunctionDefinition:
         return getGoogleCloudFunctionDefinitionManifestOutcome(manifestAttributes);
-      case AwsLambda:
+      case AwsLambdaFunctionDefinition:
         return getAwsLambdaDefinitionManifestOutcome(manifestAttributes);
+      case AwsLambdaFunctionAliasDefinition:
+        return getAwsLambdaAliasDefinitionManifestOutcome(manifestAttributes);
       default:
         throw new UnsupportedOperationException(
             format("Unknown Manifest Config type: [%s]", manifestAttributes.getKind()));
@@ -253,6 +258,7 @@ public class ManifestOutcomeMapper {
         .pluginPath(kustomizeManifest.getPluginPath())
         .patchesPaths(kustomizeManifest.getPatchesPaths())
         .overlayConfiguration(kustomizeManifest.getOverlayConfiguration())
+        .commandFlags(kustomizeManifest.getCommandFlags())
         .build();
   }
 
@@ -383,6 +389,15 @@ public class ManifestOutcomeMapper {
       ManifestAttributes manifestAttributes) {
     AwsLambdaDefinitionManifest attributes = (AwsLambdaDefinitionManifest) manifestAttributes;
     return AwsLambdaDefinitionManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .build();
+  }
+
+  private AwsLambdaAliasDefinitionManifestOutcome getAwsLambdaAliasDefinitionManifestOutcome(
+      ManifestAttributes manifestAttributes) {
+    AwsLambdaFunctionAliasDefinitionManifest attributes = (AwsLambdaFunctionAliasDefinitionManifest) manifestAttributes;
+    return AwsLambdaAliasDefinitionManifestOutcome.builder()
         .identifier(attributes.getIdentifier())
         .store(attributes.getStoreConfig())
         .build();

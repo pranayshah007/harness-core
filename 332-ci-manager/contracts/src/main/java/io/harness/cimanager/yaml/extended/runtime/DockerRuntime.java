@@ -32,6 +32,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class DockerRuntime implements Runtime {
   @Builder.Default @NotNull @ApiModelProperty(allowableValues = "Docker") private Type type = Type.DOCKER;
   @NotNull private DockerRuntimeSpec spec;
+  @ApiModelProperty(hidden = true) String uuid;
 
   @Data
   @Builder

@@ -74,6 +74,7 @@ replace_key_value ceAzureSetupConfig.azureAppClientSecret "$AZURE_APP_CLIENT_SEC
 replace_key_value ceAzureSetupConfig.enableFileCheckAtSource "$AZURE_ENABLE_FILE_CHECK_AT_SOURCE"
 
 replace_key_value ceGcpSetupConfig.enableServiceAccountPermissionsCheck "$GCP_ENABLE_SERVICE_ACCOUNT_PERMISSIONS_CHECK"
+replace_key_value ceGcpSetupConfig.serviceAccountEmail "$GCP_SERVICE_ACCOUNT_EMAIL"
 
 replace_key_value deploymentClusterName "$DEPLOYMENT_CLUSTER_NAME"
 

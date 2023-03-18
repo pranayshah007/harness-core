@@ -22,8 +22,8 @@ import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
+import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 import io.harness.exception.InvalidRequestException;
-import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

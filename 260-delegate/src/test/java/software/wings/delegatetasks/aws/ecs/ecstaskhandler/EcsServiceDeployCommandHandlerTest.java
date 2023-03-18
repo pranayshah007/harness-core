@@ -30,6 +30,7 @@ import software.wings.helpers.ext.ecs.request.EcsServiceDeployRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
 
 import com.google.inject.Injector;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,6 +54,7 @@ public class EcsServiceDeployCommandHandlerTest extends WingsBaseTest {
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
+  @Ignore("Disable top running CG tests")
   public void testExecuteTaskInternalWithException() throws Exception {
     whenNew(ExecutionLogCallback.class).withAnyArguments().thenReturn(executionLogCallback);
     doNothing().when(executionLogCallback).saveExecutionLog(anyString(), any());

@@ -496,9 +496,9 @@ public class CVNGStepTest extends CvNextGenTestBase {
         .spec(CVNGStepParameter.builder()
                   .serviceIdentifier(ParameterField.createValueField(serviceIdentifier))
                   .envIdentifier(ParameterField.createValueField(envIdentifier))
-                  .verificationJobBuilder(getVerificationJobBuilder())
                   .deploymentTag(spec.getDeploymentTag())
                   .sensitivity(spec.getSensitivity())
+                  .spec(spec)
                   .build())
         .build();
   }

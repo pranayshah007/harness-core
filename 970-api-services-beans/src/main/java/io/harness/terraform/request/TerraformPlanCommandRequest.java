@@ -24,4 +24,5 @@ public class TerraformPlanCommandRequest {
   String varParams; // Needed to send inline variable values in CG
   String uiLogs; // Needed in CG to prevent printing secrets
   boolean destroySet;
+  boolean isTerraformCloudCli;
 }

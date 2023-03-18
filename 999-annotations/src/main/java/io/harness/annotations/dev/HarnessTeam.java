@@ -28,5 +28,7 @@ public enum HarnessTeam {
   PLG,
   CODE,
   IACM,
-  IDP
+  IDP,
+  SSCA,
+  CET
 }

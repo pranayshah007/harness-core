@@ -80,6 +80,7 @@ public final class TerraformConstants {
   public static final String TERRAFORM_PLAN_FILE_NAME = "terraform.tfplan";
   public static final String TERRAFORM_PLAN_JSON_FILE_NAME = "%s.json";
   public static final String TERRAFORM_VARIABLES_FILE_NAME = "terraform-%s.tfvars";
+  public static final String TERRAFORM_CLOUD_VARIABLES_FILE_NAME = "terraform-%s.auto.tfvars";
   public static final String TERRAFORM_BACKEND_CONFIGS_FILE_NAME = "backend_configs-%s";
   public static final String TERRAFORM_INTERNAL_FOLDER = ".terraform";
   public static final long RESOURCE_READY_WAIT_TIME_SECONDS = 15;

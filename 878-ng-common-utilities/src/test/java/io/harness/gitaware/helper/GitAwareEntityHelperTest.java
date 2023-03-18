@@ -34,7 +34,6 @@ import io.harness.gitsync.scm.SCMGitSyncHelper;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.gitsync.scm.beans.ScmGetBatchFilesResponse;
 import io.harness.gitsync.scm.beans.ScmGetFileResponse;
-import io.harness.gitsync.scm.beans.ScmGetRepoUrlResponse;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitResponse;
 import io.harness.manage.GlobalContextManager;
@@ -51,7 +50,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
 
 public class GitAwareEntityHelperTest extends CategoryTest {
   @InjectMocks GitAwareEntityHelper gitAwareEntityHelper;
@@ -86,8 +84,10 @@ public class GitAwareEntityHelperTest extends CategoryTest {
   private static final String ORG_IDENTIFIER = "orgIdentifier";
   private static final String PROJECT_IDENTIFIER = "projectIdentifier";
   private static final String ENTITY_REPO_URL = "https://github.com/adivishy1/testRepo";
-
   private static final String PARENT_ENTITY_REPO = "testRepo";
+
+  private static final String PARENT_ENTITY_REPO2 = "testRepo2";
+  private static final String REPO = "testRepo";
   private static final String PARENT_ENTITY_CONNECTOR_REF = "account.github_connector";
 
   @Before
@@ -129,7 +129,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
     doReturn(getFileResponse)
         .when(scmGitSyncHelper)
-        .getFileByBranch(scope, repoName, branch, yamlFilePath, connectorRef, false, entityType, null);
+        .getFileByBranch(scope, repoName, branch, yamlFilePath, connectorRef, false, entityType, null, false);
     DummyGitAware dummyGitAware = DummyGitAware.builder().build();
     GitAware gitAware = gitAwareEntityHelper.fetchEntityFromRemote(dummyGitAware, scope, gitContextRequestParams, null);
     assertThat(gitAware.getData()).isEqualTo(data);
@@ -148,7 +148,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
     doReturn(getFileResponse)
         .when(scmGitSyncHelper)
-        .getFileByBranch(scope, repoName, "", yamlFilePath, connectorRef, false, entityType, null);
+        .getFileByBranch(scope, repoName, "", yamlFilePath, connectorRef, false, entityType, null, false);
     DummyGitAware dummyGitAware = DummyGitAware.builder().build();
     GitAware gitAware =
         gitAwareEntityHelper.fetchEntityFromRemote(dummyGitAware, scope, __default__branchGitParams, null);
@@ -168,7 +168,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
     doReturn(getFileResponse)
         .when(scmGitSyncHelper)
-        .getFileByBranch(scope, repoName, branch, yamlFilePath, connectorRef, false, entityType, null);
+        .getFileByBranch(scope, repoName, branch, yamlFilePath, connectorRef, false, entityType, null, false);
     String data = gitAwareEntityHelper.fetchYAMLFromRemote(scope, gitContextRequestParams, null);
     assertThat(data).isEqualTo(data);
     ScmGitMetaData scmGitMetaDataInContext = GitAwareContextHelper.getScmGitMetaData();
@@ -186,7 +186,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
     doReturn(getFileResponse)
         .when(scmGitSyncHelper)
-        .getFileByBranch(scope, repoName, "", yamlFilePath, connectorRef, false, entityType, null);
+        .getFileByBranch(scope, repoName, "", yamlFilePath, connectorRef, false, entityType, null, false);
     String data = gitAwareEntityHelper.fetchYAMLFromRemote(scope, __default__branchGitParams, null);
     assertThat(data).isEqualTo(data);
     ScmGitMetaData scmGitMetaDataInContext = GitAwareContextHelper.getScmGitMetaData();
@@ -356,30 +356,20 @@ public class GitAwareEntityHelperTest extends CategoryTest {
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testGetWorkingBranchRemote() {
-    GitEntityInfo branchInfo = GitEntityInfo.builder()
-                                   .branch(BranchName)
-                                   .parentEntityRepoName(PARENT_ENTITY_REPO)
-                                   .parentEntityConnectorRef(PARENT_ENTITY_CONNECTOR_REF)
-                                   .parentEntityAccountIdentifier(ACCOUNT_IDENTIFIER)
-                                   .parentEntityOrgIdentifier(ORG_IDENTIFIER)
-                                   .parentEntityProjectIdentifier(PROJECT_IDENTIFIER)
-                                   .build();
+    GitEntityInfo branchInfo =
+        GitEntityInfo.builder().branch(BranchName).parentEntityRepoName(PARENT_ENTITY_REPO).build();
     setupGitContext(branchInfo);
-    PowerMockito.doReturn(ScmGetRepoUrlResponse.builder().repoUrl(ENTITY_REPO_URL).build())
-        .when(scmGitSyncHelper)
-        .getRepoUrl(any(), any(), any(), any());
-    assertThat(gitAwareEntityHelper.getWorkingBranch(ENTITY_REPO_URL)).isEqualTo(BranchName);
+    //    SAME REPO
+    assertThat(gitAwareEntityHelper.getWorkingBranch(REPO)).isEqualTo(BranchName);
 
-    branchInfo = GitEntityInfo.builder()
-                     .branch(BranchName)
-                     .parentEntityRepoName(PARENT_ENTITY_REPO)
-                     .parentEntityConnectorRef(PARENT_ENTITY_CONNECTOR_REF)
-                     .build();
+    branchInfo = GitEntityInfo.builder().branch(BranchName).parentEntityRepoName(PARENT_ENTITY_REPO2).build();
     setupGitContext(branchInfo);
-    assertThat(gitAwareEntityHelper.getWorkingBranch("random repo url")).isEqualTo("");
-    branchInfo = GitEntityInfo.builder().branch(BranchName).parentEntityRepoUrl(ENTITY_REPO_URL).build();
+    //    DIFF REPO
+    assertThat(gitAwareEntityHelper.getWorkingBranch(REPO)).isEqualTo("");
+
+    branchInfo = GitEntityInfo.builder().branch(BranchName).parentEntityRepoName(null).build();
     setupGitContext(branchInfo);
-    assertThat(gitAwareEntityHelper.getWorkingBranch(ENTITY_REPO_URL)).isEqualTo(BranchName);
+    assertThat(gitAwareEntityHelper.getWorkingBranch(REPO)).isEqualTo(BranchName);
   }
 
   @Test

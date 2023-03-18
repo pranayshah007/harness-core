@@ -38,6 +38,9 @@ import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+Note: Seems that there is no change for the v1 yaml update here
+ */
 @Slf4j
 @OwnedBy(HarnessTeam.IACM)
 public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<IACMStageNode> {
@@ -45,7 +48,7 @@ public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<
 
   @Override
   public Set<String> getSupportedStageTypes() {
-    return ImmutableSet.of(IACMStepSpecTypeConstants.IACM_STAGE);
+    return ImmutableSet.of(IACMStepSpecTypeConstants.IACM_STAGE, IACMStepSpecTypeConstants.IACM_STAGE_V1);
   }
 
   @Override

@@ -25,7 +25,6 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
@@ -41,7 +40,6 @@ import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.exception.ngexception.NGFreezeException;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
-import io.harness.freeze.beans.PermissionTypes;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.yaml.FreezeConfig;
 import io.harness.freeze.beans.yaml.FreezeInfoConfig;
@@ -199,15 +197,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                           .setProjectIdentifier("projId")
                                           .build()))
                                   .build();
-    doReturn(true)
-        .when(featureFlagHelperService)
-        .isEnabled(ctx.getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE);
-    doReturn(false)
-        .when(featureFlagHelperService)
-        .isEnabled(ctx.getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE_OVERRIDE);
-    when(accessControlClient.hasAccess(ResourceScope.of(anyString(), anyString(), anyString()),
-             Resource.of("DEPLOYMENTFREEZE", null), PermissionTypes.DEPLOYMENT_FREEZE_MANAGE_PERMISSION))
-        .thenReturn(false);
+    when(accessControlClient.hasAccess(any(ResourceScope.class), any(Resource.class), anyString())).thenReturn(false);
     assertThatThrownBy(() -> deploymentStagePMSPlanCreator.failIfProjectIsFrozen(ctx))
         .isInstanceOf(NGFreezeException.class)
         .matches(ex -> ex.getMessage().equals("Execution can't be performed because project is frozen"));
@@ -218,26 +208,12 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Test
   @Owner(developers = OwnerRule.ABHINAV_MITTAL)
   @Category(UnitTests.class)
-  public void failIfProjectIsFrozenWithFFOff() {
-    doReturn(false).when(featureFlagHelperService).isEnabled(anyString(), any());
-    PlanCreationContext ctx = PlanCreationContext.builder()
-                                  .globalContext(Map.of("metadata",
-                                      PlanCreationContextValue.newBuilder()
-                                          .setAccountIdentifier("accountId")
-                                          .setOrgIdentifier("orgId")
-                                          .setProjectIdentifier("projId")
-                                          .build()))
-                                  .build();
-    deploymentStagePMSPlanCreator.failIfProjectIsFrozen(ctx);
-
-    verify(freezeEvaluateService, times(0)).getActiveFreezeEntities(anyString(), anyString(), anyString());
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.ABHINAV_MITTAL)
-  @Category(UnitTests.class)
   public void failIfProjectIsFrozenWithOverridePermission() {
     doReturn(false).when(featureFlagHelperService).isEnabled(anyString(), any());
+    List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Lists.newArrayList(createGlobalFreezeResponse());
+    doReturn(freezeSummaryResponseDTOList)
+        .when(freezeEvaluateService)
+        .getActiveFreezeEntities(anyString(), anyString(), anyString());
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .globalContext(Map.of("metadata",
                                       PlanCreationContextValue.newBuilder()
@@ -246,9 +222,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                           .setProjectIdentifier("projId")
                                           .build()))
                                   .build();
-    when(accessControlClient.hasAccess(ResourceScope.of(anyString(), anyString(), anyString()),
-             Resource.of("DEPLOYMENTFREEZE", null), PermissionTypes.DEPLOYMENT_FREEZE_MANAGE_PERMISSION))
-        .thenReturn(true);
+    when(accessControlClient.hasAccess(any(ResourceScope.class), any(Resource.class), anyString())).thenReturn(true);
     deploymentStagePMSPlanCreator.failIfProjectIsFrozen(ctx);
 
     verify(freezeEvaluateService, times(0)).getActiveFreezeEntities(anyString(), anyString(), anyString());

@@ -1,56 +1,56 @@
 pipeline:
-  name: "s3 test"
-  identifier: "s3_test"
-  projectIdentifier: "inder_test"
-  orgIdentifier: "default"
+  name: s3 test
+  identifier: s3_test
+  projectIdentifier: inder_test
+  orgIdentifier: default
   tags: {}
   stages:
     - stage:
-        name: "serverless"
-        identifier: "serverless"
+        name: serverless
+        identifier: serverless
         description: ""
-        type: "Deployment"
+        type: Deployment
         spec:
-          deploymentType: "ServerlessAwsLambda"
+          deploymentType: ServerlessAwsLambda
           execution:
             steps:
               - step:
-                  type: "ShellScript"
-                  name: "shell"
-                  identifier: "shell"
+                  type: ShellScript
+                  name: shell
+                  identifier: shell
                   spec:
-                    shell: "Bash"
+                    shell: Bash
                     onDelegate: true
                     source:
-                      type: "Inline"
+                      type: Inline
                       spec:
-                        script: "echo \"<+artifact>\""
+                        script: echo "<+artifact>"
                     environmentVariables: []
                     outputVariables: []
-                  timeout: "10m"
+                  timeout: 10m
             rollbackSteps:
               - step:
-                  name: "Serverless Lambda Rollback"
-                  identifier: "ServerlessLambdaRollback"
-                  type: "ServerlessAwsLambdaRollback"
-                  timeout: "10m"
+                  name: Serverless Lambda Rollback
+                  identifier: ServerlessLambdaRollback
+                  type: ServerlessAwsLambdaRollback
+                  timeout: 10m
                   spec: {}
           service:
-            serviceRef: "serverless"
+            serviceRef: serverless
           environment:
-            environmentRef: "testenv"
+            environmentRef: testenv
             deployToAll: false
             infrastructureDefinitions:
-              - identifier: "IDENTIFIER"
+              - identifier: IDENTIFIER
                 inputs:
-                  identifier: "IDENTIFIER"
-                  type: "KubernetesDirect"
+                  identifier: IDENTIFIER
+                  type: KubernetesDirect
                   spec:
-                    namespace: "<+input>"
+                    namespace: <+input>
         tags: {}
         failureStrategies:
           - onFailure:
               errors:
-                - "AllErrors"
+                - AllErrors
               action:
-                type: "StageRollback"
+                type: StageRollback

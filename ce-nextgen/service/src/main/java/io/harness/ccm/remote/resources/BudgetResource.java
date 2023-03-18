@@ -227,9 +227,9 @@ public class BudgetResource {
           rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
       allowedBudgets = allBudgets.stream()
                            .filter(budget
-                               -> (BudgetUtils.isPerspectiveBudget(budget)
+                               -> BudgetUtils.isPerspectiveBudget(budget)
                                    && allowedFolderIds.contains(
-                                       perspectiveIdAndFolderIds.get(BudgetUtils.getPerspectiveIdForBudget(budget)))))
+                                       perspectiveIdAndFolderIds.get(BudgetUtils.getPerspectiveIdForBudget(budget))))
                            .collect(Collectors.toList());
     }
 
@@ -291,6 +291,7 @@ public class BudgetResource {
     rbacHelper.checkBudgetEditPermission(
         accountId, null, null, ceViewService.get(BudgetUtils.getPerspectiveIdForBudget(budget)).getFolderId());
     Budget oldBudget = budgetService.get(budgetId, accountId);
+    budget.setParentBudgetGroupId(oldBudget.getParentBudgetGroupId());
     budgetService.update(budgetId, budget);
     Budget newBudget = budgetService.get(budgetId, accountId);
     return ResponseDTO.newResponse(

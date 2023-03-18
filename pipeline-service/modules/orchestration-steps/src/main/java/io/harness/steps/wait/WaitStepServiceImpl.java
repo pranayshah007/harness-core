@@ -11,8 +11,6 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
-import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.repositories.WaitStepRepository;
 import io.harness.wait.WaitStepInstance;
 import io.harness.waiter.WaitNotifyEngine;

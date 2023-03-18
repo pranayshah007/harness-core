@@ -306,8 +306,9 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
     when(approvalInstanceRepository.deleteAllByNodeExecutionIdIn(any())).thenAnswer((Answer<Long>) invocation -> {
       Object[] args = invocation.getArguments();
       Set<String> setNodeExecutionId = (Set<String>) args[0];
-      if (setNodeExecutionId.equals(nodeExecutionIds))
+      if (setNodeExecutionId.equals(nodeExecutionIds)) {
         return 500L;
+      }
       throw new Exception();
     });
 

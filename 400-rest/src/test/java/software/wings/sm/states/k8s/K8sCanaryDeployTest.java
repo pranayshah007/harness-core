@@ -446,10 +446,40 @@ public class K8sCanaryDeployTest extends CategoryTest {
   @Test
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
+  public void testNotSaveK8sCanaryDeploy() {
+    k8sCanaryDeploy.setInheritManifests(true);
+    List<KubernetesResource> kubernetesResources = new ArrayList<>();
+    kubernetesResources.add(KubernetesResource.builder().build());
+    k8sCanaryDeploy.setExportManifests(true);
+    when(applicationManifestUtils.getApplicationManifests(context, AppManifestKind.VALUES)).thenReturn(new HashMap<>());
+    when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
+        .thenReturn(aGcpKubernetesInfrastructureMapping().build());
+    doReturn(kubernetesResources).when(k8sStateHelper).getResourcesFromSweepingOutput(any(), anyString());
+    doReturn(RELEASE_NAME).when(k8sCanaryDeploy).fetchReleaseName(any(), any());
+    doNothing().when(k8sCanaryDeploy).saveK8sCanaryDeployRun(any());
+    doReturn(K8sDelegateManifestConfig.builder().build())
+        .when(k8sCanaryDeploy)
+        .createDelegateManifestConfig(any(), any());
+    doReturn(emptyList()).when(k8sCanaryDeploy).fetchRenderedValuesFiles(any(), any());
+    doReturn(ExecutionResponse.builder().build()).when(k8sCanaryDeploy).queueK8sDelegateTask(any(), any(), any());
+    ApplicationManifest applicationManifest =
+        ApplicationManifest.builder().skipVersioningForAllK8sObjects(true).storeType(Local).build();
+    Map<K8sValuesLocation, ApplicationManifest> applicationManifestMap = new HashMap<>();
+    applicationManifestMap.put(K8sValuesLocation.Service, applicationManifest);
+    doReturn(applicationManifestMap).when(k8sCanaryDeploy).fetchApplicationManifests(any());
+    doNothing().when(k8sCanaryDeploy).saveK8sCanaryDeployRun(context);
+    k8sCanaryDeploy.executeK8sTask(context, ACTIVITY_ID);
+    verify(k8sCanaryDeploy, times(0)).saveK8sCanaryDeployRun(context);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
   public void testSaveK8sCanaryDeploy() {
     k8sCanaryDeploy.setInheritManifests(true);
     List<KubernetesResource> kubernetesResources = new ArrayList<>();
     kubernetesResources.add(KubernetesResource.builder().build());
+    k8sCanaryDeploy.setExportManifests(false);
     when(applicationManifestUtils.getApplicationManifests(context, AppManifestKind.VALUES)).thenReturn(new HashMap<>());
     when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
         .thenReturn(aGcpKubernetesInfrastructureMapping().build());

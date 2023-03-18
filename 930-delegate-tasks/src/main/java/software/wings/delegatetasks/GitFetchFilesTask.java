@@ -32,7 +32,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.git.GitFetchFilesTaskHelper;
-import io.harness.delegate.task.git.metadata.GitFetchMetadataContext;
+import io.harness.git.GitFetchMetadataContext;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.ScmServiceClient;
@@ -115,7 +115,7 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
         try {
           gitFetchFilesResult = fetchFilesFromRepo(k8ValuesLocation, gitFetchFileConfig.getGitFileConfig(),
               gitFetchFileConfig.getGitConfig(), gitFetchFileConfig.getEncryptedDataDetails(), executionLogCallback,
-              taskParams.isOptimizedFilesFetch());
+              taskParams.isOptimizedFilesFetch(), taskParams.isCloseLogStream());
         } catch (Exception ex) {
           String exceptionMsg = gitFetchFilesTaskHelper.extractErrorMessage(ex);
 
@@ -187,7 +187,7 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
 
   private GitFetchFilesResult fetchFilesFromRepo(String identifier, GitFileConfig gitFileConfig, GitConfig gitConfig,
       List<EncryptedDataDetail> encryptedDataDetails, ExecutionLogCallback executionLogCallback,
-      boolean optimizedFilesFetch) {
+      boolean optimizedFilesFetch, boolean closeLogStream) {
     executionLogCallback.saveExecutionLog("Git connector Url: " + gitConfig.getRepoUrl());
     if (gitFileConfig.isUseBranch()) {
       executionLogCallback.saveExecutionLog("Branch: " + gitFileConfig.getBranch());

@@ -25,6 +25,8 @@ import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TAG;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_CERTIFICATE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_SECRET;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DOCKER_REGISTRY_V1;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DOCKER_REGISTRY_V2;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DRONE_WORKSPACE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
@@ -78,6 +80,8 @@ import io.harness.ci.integrationstage.BuildEnvironmentUtils;
 import io.harness.ci.serializer.SerializerUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
@@ -85,6 +89,9 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
+import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
+import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
@@ -146,13 +153,15 @@ public class PluginSettingUtils {
   public static final String PLUGIN_ARTIFACT_FILE = "PLUGIN_ARTIFACT_FILE";
   public static final String PLUGIN_DAEMON_OFF = "PLUGIN_DAEMON_OFF";
   public static final String ECR_REGISTRY_PATTERN = "%s.dkr.ecr.%s.amazonaws.com";
+  public static final String PLUGIN_DOCKER_REGISTRY = "PLUGIN_DOCKER_REGISTRY";
   @Inject private CodebaseUtils codebaseUtils;
+  @Inject private ConnectorUtils connectorUtils;
 
   public Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
       long timeout, Ambiance ambiance, Type infraType, boolean isMandatory) {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case ECR:
-        return getECRStepInfoEnvVariables((ECRStepInfo) stepInfo, identifier, infraType);
+        return getECRStepInfoEnvVariables(ambiance, (ECRStepInfo) stepInfo, identifier, infraType);
       case ACR:
         return getACRStepInfoEnvVariables((ACRStepInfo) stepInfo, identifier, infraType);
       case GCR:
@@ -177,8 +186,20 @@ public class PluginSettingUtils {
         return getRestoreCacheS3StepInfoEnvVariables((RestoreCacheS3StepInfo) stepInfo, identifier, timeout);
       case GIT_CLONE:
         return getGitCloneStepInfoEnvVariables((GitCloneStepInfo) stepInfo, ambiance, identifier);
+      case SSCA_ORCHESTRATION:
+        return SscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
+            (SscaOrchestrationStepInfo) stepInfo, identifier);
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
+    }
+  }
+
+  public Map<String, SecretNGVariable> getPluginCompatibleSecretVars(PluginCompatibleStep step) {
+    switch (step.getNonYamlInfo().getStepInfoType()) {
+      case SSCA_ORCHESTRATION:
+        return SscaOrchestrationPluginUtils.getSscaOrchestrationSecretVars((SscaOrchestrationStepInfo) step);
+      default:
+        return new HashMap<>();
     }
   }
 
@@ -228,6 +249,8 @@ public class PluginSettingUtils {
         map.put(EnvVariableEnum.DOCKER_PASSWORD, PLUGIN_PASSW);
         map.put(EnvVariableEnum.DOCKER_REGISTRY, PLUGIN_REGISTRY);
         return map;
+      case SSCA_ORCHESTRATION:
+        return SscaOrchestrationPluginUtils.getConnectorSecretEnvMap();
       case UPLOAD_ARTIFACTORY:
         map.put(EnvVariableEnum.ARTIFACTORY_ENDPOINT, PLUGIN_URL);
         map.put(EnvVariableEnum.ARTIFACTORY_USERNAME, PLUGIN_USERNAME);
@@ -235,7 +258,7 @@ public class PluginSettingUtils {
         return map;
       case GIT_CLONE:
         return map;
-      case IACM_TERRAFORM_PLAN:
+      case IACM_TERRAFORM:
         map.put(EnvVariableEnum.AWS_ACCESS_KEY, PLUGIN_ACCESS_KEY);
         map.put(EnvVariableEnum.AWS_SECRET_KEY, PLUGIN_SECRET_KEY);
         map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, PLUGIN_ASSUME_ROLE);
@@ -388,8 +411,9 @@ public class PluginSettingUtils {
     setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
   }
 
-  private static Map<String, String> getECRStepInfoEnvVariables(
-      ECRStepInfo stepInfo, String identifier, Type infraType) {
+  private Map<String, String> getECRStepInfoEnvVariables(
+      Ambiance ambiance, ECRStepInfo stepInfo, String identifier, Type infraType) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     Map<String, String> map = new HashMap<>();
     String account = resolveStringParameter("account", "BuildAndPushECR", identifier, stepInfo.getAccount(), true);
     String region = resolveStringParameter("region", "BuildAndPushECR", identifier, stepInfo.getRegion(), true);
@@ -435,6 +459,22 @@ public class PluginSettingUtils {
         resolveMapParameter("labels", "BuildAndPushECR", identifier, stepInfo.getLabels(), false);
     if (isNotEmpty(labels)) {
       setOptionalEnvironmentVariable(map, PLUGIN_CUSTOM_LABELS, mapToStringSlice(labels));
+    }
+
+    List<String> baseImageConnectors = resolveListParameter(
+        "baseImageConnectors", "BuildAndPushECR", identifier, stepInfo.getBaseImageConnectorRefs(), false);
+    if (isNotEmpty(baseImageConnectors)) {
+      // only one baseImageConnector is allowed currently
+      ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, baseImageConnectors.get(0));
+      if (connectorDetails != null && connectorDetails.getConnectorType() == ConnectorType.DOCKER) {
+        String dockerConnectorUrl = ((DockerConnectorDTO) connectorDetails.getConnectorConfig()).getDockerRegistryUrl();
+        if (isNotEmpty(dockerConnectorUrl)) {
+          if (DOCKER_REGISTRY_V2.equals(dockerConnectorUrl)) {
+            dockerConnectorUrl = DOCKER_REGISTRY_V1;
+          }
+          setMandatoryEnvironmentVariable(map, PLUGIN_DOCKER_REGISTRY, dockerConnectorUrl);
+        }
+      }
     }
 
     if (infraType == Type.K8) {

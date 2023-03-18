@@ -13,6 +13,7 @@ import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIG
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 import static io.harness.pms.contracts.execution.Status.ERRORED;
+import static io.harness.pms.contracts.execution.Status.EXPIRED;
 import static io.harness.pms.contracts.execution.Status.SKIPPED;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.springdata.SpringDataMongoUtils.returnNewOptions;
@@ -39,6 +40,7 @@ import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
@@ -103,6 +105,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Inject private OrchestrationLogPublisher orchestrationLogPublisher;
   @Inject private OrchestrationLogConfiguration orchestrationLogConfiguration;
   @Inject private NodeExecutionReadHelper nodeExecutionReadHelper;
+
+  @Inject private PlanExpansionService planExpansionService;
 
   @Getter private final Subject<NodeStatusUpdateObserver> nodeStatusUpdateSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
@@ -482,11 +486,14 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
                       .addCriteria(where(NodeExecutionKeys.status).in(allowedStartStatuses));
     Update updateOps =
         ops.set(NodeExecutionKeys.status, status).set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
+    addFinalStatusOps(updateOps, status);
+
     NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
       NodeExecution updated = mongoTemplate.findAndModify(query, updateOps, returnNewOptions, NodeExecution.class);
       if (updated == null) {
         log.warn("Cannot update execution status for the node {} with {}", nodeExecutionId, status);
       } else {
+        planExpansionService.updateStatus(updated.getAmbiance(), status);
         if (updated.getStepType().getStepCategory() == StepCategory.STAGE || StatusUtils.isFinalStatus(status)) {
           emitEvent(updated, OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE);
         }
@@ -499,6 +506,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
           NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
     }
     return updatedNodeExecution;
+  }
+
+  // Add additional updateOps based on nodeStatus to be updated
+  // This is done to reduce write conflicts on same record, and send multiple updates at one go.
+  private void addFinalStatusOps(Update updateOps, Status toBeUpdatedNodeStatus) {
+    if (StatusUtils.isFinalStatus(toBeUpdatedNodeStatus)) {
+      updateOps.set(NodeExecutionKeys.endTs, System.currentTimeMillis());
+      if (toBeUpdatedNodeStatus != EXPIRED) {
+        updateOps.set(NodeExecutionKeys.timeoutInstanceIds, new ArrayList<>());
+      }
+    }
   }
 
   @Override
@@ -717,21 +735,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public boolean removeTimeoutInstances(String nodeExecutionId) {
-    Update ops = new Update();
-    ops.set(NodeExecutionKeys.timeoutInstanceIds, new ArrayList<>());
-    // Uses - id index
-    Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
-    UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
-
-    if (!updateResult.wasAcknowledged()) {
-      log.warn("TimeoutInstanceIds cannot be removed from nodeExecution {}", nodeExecutionId);
-      return false;
-    }
-    return true;
-  }
-
-  @Override
   public List<RetryStageInfo> getStageDetailFromPlanExecutionId(String planExecutionId) {
     return fetchStageDetailFromNodeExecution(fetchStageExecutions(planExecutionId));
   }
@@ -764,6 +767,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         .include(NodeExecutionKeys.parentId)
         .include(NodeExecutionKeys.oldRetry)
         .include(NodeExecutionKeys.ambiance)
+        .include(NodeExecutionKeys.resolvedParams)
         .include(NodeExecutionKeys.executableResponses);
 
     query.with(by(NodeExecutionKeys.createdAt));
@@ -896,5 +900,23 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     if (EmptyPredicate.isEmpty(fieldsToInclude)) {
       throw new InvalidRequestException("Projection fields cannot be empty in NodeExecution query.");
     }
+  }
+
+  @Override
+  public CloseableIterator<NodeExecution> fetchNodeExecutionsForGivenStageFQNs(
+      String planExecutionId, List<String> stageFQNs, Collection<String> requiredFields) {
+    Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId)
+                            .is(planExecutionId)
+                            .and(NodeExecutionKeys.stageFqn)
+                            .in(stageFQNs);
+
+    Query query = query(criteria);
+    if (EmptyPredicate.isNotEmpty(requiredFields)) {
+      for (String requiredField : requiredFields) {
+        query.fields().include(requiredField);
+      }
+    }
+
+    return nodeExecutionReadHelper.fetchNodeExecutions(query);
   }
 }

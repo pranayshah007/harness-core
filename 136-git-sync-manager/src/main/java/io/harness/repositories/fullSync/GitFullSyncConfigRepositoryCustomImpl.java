@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.core.beans.GitFullSyncConfig;
 
 import com.google.inject.Inject;
-import java.util.List;
+import com.mongodb.client.result.DeleteResult;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -33,7 +33,7 @@ public class GitFullSyncConfigRepositoryCustomImpl implements GitFullSyncConfigR
   }
 
   @Override
-  public List<GitFullSyncConfig> deleteAll(Criteria criteria) {
-    return mongoTemplate.findAllAndRemove(new Query(criteria), GitFullSyncConfig.class);
+  public DeleteResult deleteAll(Criteria criteria) {
+    return mongoTemplate.remove(new Query(criteria), GitFullSyncConfig.class);
   }
 }

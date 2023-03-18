@@ -9,6 +9,7 @@ package io.harness.steps.container.execution;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.execution.ExecutionServiceConfig;
+import io.harness.steps.container.execution.plugin.PluginConfig;
 
 import java.beans.ConstructorProperties;
 import lombok.Builder;
@@ -22,16 +23,19 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.steps.container.execution.ContainerExecutionConfig")
 public class ContainerExecutionConfig extends ExecutionServiceConfig {
   String logStreamingContainerStepBaseUrl;
+  PluginConfig pluginConfig;
+
   @Builder
   @ConstructorProperties({"addonImageTag", "liteEngineImageTag", "defaultInternalImageConnector",
       "delegateServiceEndpointVariableValue", "defaultMemoryLimit", "defaultCPULimit", "pvcDefaultStorageSize",
-      "addonImage", "liteEngineImage", "isLocal", "logStreamingContainerStepBaseUrl"})
+      "addonImage", "liteEngineImage", "isLocal", "logStreamingContainerStepBaseUrl", "pluginConfig"})
   public ContainerExecutionConfig(String addonImageTag, String liteEngineImageTag, String defaultInternalImageConnector,
       String delegateServiceEndpointVariableValue, Integer defaultMemoryLimit, Integer defaultCPULimit,
       Integer pvcDefaultStorageSize, String addonImage, String liteEngineImage, boolean isLocal,
-      String logStreamingContainerStepBaseUrl) {
+      String logStreamingContainerStepBaseUrl, PluginConfig pluginConfig) {
     super(addonImageTag, liteEngineImageTag, defaultInternalImageConnector, delegateServiceEndpointVariableValue,
         defaultMemoryLimit, defaultCPULimit, pvcDefaultStorageSize, addonImage, liteEngineImage, isLocal);
     this.logStreamingContainerStepBaseUrl = logStreamingContainerStepBaseUrl;
+    this.pluginConfig = pluginConfig;
   }
 }

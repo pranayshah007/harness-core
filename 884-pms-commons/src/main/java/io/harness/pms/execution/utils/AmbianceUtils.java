@@ -20,6 +20,7 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -117,7 +118,7 @@ public class AmbianceUtils {
   }
 
   public static Level obtainCurrentLevel(Ambiance ambiance) {
-    if (isEmpty(ambiance.getLevelsList())) {
+    if (ambiance == null || isEmpty(ambiance.getLevelsList())) {
       return null;
     }
     return ambiance.getLevelsList().get(ambiance.getLevelsList().size() - 1);
@@ -180,17 +181,17 @@ public class AmbianceUtils {
 
   public static StepType getCurrentStepType(Ambiance ambiance) {
     Level level = obtainCurrentLevel(ambiance);
-    return level == null || level.getStepType() == null ? null : level.getStepType();
+    return level == null ? null : level.getStepType();
   }
 
   public static StepType getParentStepType(Ambiance ambiance) {
     Level level = obtainParentLevel(ambiance);
-    return level == null || level.getStepType() == null ? null : level.getStepType();
+    return level == null ? null : level.getStepType();
   }
 
   public static String getCurrentGroup(Ambiance ambiance) {
     Level level = obtainCurrentLevel(ambiance);
-    return level == null || level.getGroup() == null ? null : level.getGroup();
+    return level == null ? null : level.getGroup();
   }
 
   public static long getCurrentLevelStartTs(Ambiance ambiance) {
@@ -334,5 +335,24 @@ public class AmbianceUtils {
       return PipelineVersion.V0;
     }
     return metadata.getHarnessVersion();
+  }
+
+  public String getPipelineIdentifier(Ambiance ambiance) {
+    if (ambiance.getMetadata() != null) {
+      return ambiance.getMetadata().getPipelineIdentifier();
+    }
+    return null;
+  }
+
+  public String getTriggerIdentifier(Ambiance ambiance) {
+    return ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getIdentifier();
+  }
+
+  public TriggerType getTriggerType(Ambiance ambiance) {
+    return ambiance.getMetadata().getTriggerInfo().getTriggerType();
+  }
+
+  public TriggeredBy getTriggerBy(Ambiance ambiance) {
+    return ambiance.getMetadata().getTriggerInfo().getTriggeredBy();
   }
 }

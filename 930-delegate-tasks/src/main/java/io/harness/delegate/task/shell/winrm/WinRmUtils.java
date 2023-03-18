@@ -21,10 +21,13 @@ import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptType;
 import io.harness.shell.ShellExecutorConfig;
 
+import java.util.Collections;
+import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDP)
@@ -39,7 +42,8 @@ public class WinRmUtils {
                                                   .commandUnitName(commandUnit.getName())
                                                   .environment(winRmCommandTaskParameters.getEnvironmentVariables())
                                                   .hostname(winRmCommandTaskParameters.getHost())
-                                                  .timeout(SESSION_TIMEOUT);
+                                                  .timeout(SESSION_TIMEOUT)
+                                                  .commandParameters(getCommandParameters(winRmCommandTaskParameters));
 
     final WinRmInfraDelegateConfig winRmInfraDelegateConfig = winRmCommandTaskParameters.getWinRmInfraDelegateConfig();
     if (winRmInfraDelegateConfig == null) {
@@ -49,6 +53,14 @@ public class WinRmUtils {
     return winRmConfigAuthEnhancer.configureAuthentication(winRmInfraDelegateConfig.getWinRmCredentials(),
         winRmInfraDelegateConfig.getEncryptionDataDetails(), configBuilder,
         winRmCommandTaskParameters.isUseWinRMKerberosUniqueCacheFile());
+  }
+
+  private static List<WinRmCommandParameter> getCommandParameters(WinrmTaskParameters winRmCommandTaskParameters) {
+    List<WinRmCommandParameter> commandParameters = winRmCommandTaskParameters.getWinRmInfraDelegateConfig() != null
+            && winRmCommandTaskParameters.getWinRmInfraDelegateConfig().getWinRmCredentials() != null
+        ? winRmCommandTaskParameters.getWinRmInfraDelegateConfig().getWinRmCredentials().getParameters()
+        : Collections.emptyList();
+    return commandParameters == null ? Collections.emptyList() : commandParameters;
   }
 
   public static ShellExecutorConfig getShellExecutorConfig(

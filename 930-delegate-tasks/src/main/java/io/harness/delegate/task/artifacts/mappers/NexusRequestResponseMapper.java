@@ -14,8 +14,8 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
+import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 import io.harness.nexus.NexusRequest;
-import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 

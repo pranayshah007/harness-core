@@ -7,6 +7,8 @@
 
 package io.harness.gitops.models;
 
+import io.harness.utils.FullyQualifiedIdentifierHelper;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
@@ -21,6 +23,10 @@ import lombok.NoArgsConstructor;
 public class Cluster {
   String identifier;
   String agentIdentifier;
+  String accountIdentifier;
+  String orgIdentifier;
+  String projectIdentifier;
+
   Map<String, String> tags;
 
   @JsonProperty("cluster") ClusterInternal clusterInternal;
@@ -39,5 +45,10 @@ public class Cluster {
   @JsonIgnoreProperties(ignoreUnknown = true)
   private static class ClusterInternal {
     @Getter String name;
+  }
+
+  public String fetchRef() {
+    return FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+        accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 }

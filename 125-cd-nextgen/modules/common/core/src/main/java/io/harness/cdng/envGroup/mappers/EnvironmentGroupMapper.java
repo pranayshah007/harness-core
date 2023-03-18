@@ -20,7 +20,6 @@ import io.harness.cdng.envGroup.beans.EnvironmentGroupConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.data.structure.CollectionUtils;
-import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.ng.core.EntityDetail;
@@ -30,6 +29,7 @@ import io.harness.ng.core.envGroup.dto.EnvironmentGroupResponse;
 import io.harness.ng.core.envGroup.dto.EnvironmentGroupResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.scope.ScopeHelper;
 
 import java.io.IOException;
 import java.util.List;

@@ -189,8 +189,10 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
 
     log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
     K8sExecutionPassThroughData k8sExecutionPassThroughData = (K8sExecutionPassThroughData) passThroughData;
-    K8sRollingOutcomeBuilder k8sRollingOutcomeBuilder = K8sRollingOutcome.builder().releaseName(
-        cdStepHelper.getReleaseName(ambiance, k8sExecutionPassThroughData.getInfrastructure()));
+    K8sRollingOutcomeBuilder k8sRollingOutcomeBuilder =
+        K8sRollingOutcome.builder()
+            .releaseName(cdStepHelper.getReleaseName(ambiance, k8sExecutionPassThroughData.getInfrastructure()))
+            .manifest(k8sExecutionPassThroughData.getK8sGitFetchInfo());
 
     K8sDeployResponse k8sTaskExecutionResponse;
     try {

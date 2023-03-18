@@ -27,4 +27,5 @@ public class AuditEventDataTypeConstants {
   // Deprecated
   public static final String USER_INVITE = "USER_INVITE";
   public static final String USER_MEMBERSHIP = "USER_MEMBERSHIP";
+  public static final String NODE_EXECUTION_EVENT_DATA = "NodeExecutionEventData";
 }

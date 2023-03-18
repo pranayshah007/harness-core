@@ -20,6 +20,11 @@ import java.util.Map;
 
 public class ServiceGuardLogAnalysisStateExecutor extends LogAnalysisStateExecutor<ServiceGuardLogAnalysisState> {
   @Override
+  public void handleFinalStatuses(ServiceGuardLogAnalysisState analysisState) {
+    // no - op
+  }
+
+  @Override
   protected String scheduleAnalysis(AnalysisInput analysisInput) {
     return logAnalysisService.scheduleServiceGuardLogAnalysisTask(analysisInput);
   }

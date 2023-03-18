@@ -36,6 +36,7 @@ public enum NGMigrationEntityType {
   TRIGGER,
   MANIFEST,
   AMI_STARTUP_SCRIPT,
+  SECRET_MANAGER_TEMPLATE,
   ELASTIGROUP_CONFIGURATION;
 
   private String yamlFolderName;

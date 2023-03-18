@@ -15,7 +15,7 @@ import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -32,7 +32,7 @@ import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class DeletedEntityHandler extends IteratorPumpModeHandler implements Handler<DeletedEntity> {
+public class DeletedEntityHandler extends IteratorPumpAndRedisModeHandler implements Handler<DeletedEntity> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(Integer.MAX_VALUE);
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(120);
 
