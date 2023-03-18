@@ -13,13 +13,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.prb.PipelineRollbackStageNode;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.pipelinestage.step.PipelineRollbackStageStep;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.EmptyStepParameters;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.StepSpecTypeConstants;
@@ -56,6 +59,17 @@ public class PipelineRollbackStagePlanCreator implements PartialPlanCreator<Pipe
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
                     .build())
             .build();
-    return PlanCreationResponse.builder().planNode(planNode).build();
+    Map<String, GraphLayoutNode> stageYamlFieldMap = Collections.singletonMap(stageNode.getUuid(),
+        GraphLayoutNode.newBuilder()
+            .setNodeUUID(stageNode.getUuid())
+            .setNodeType(stageNode.getType())
+            .setName(stageNode.getName())
+            .setNodeGroup(StepOutcomeGroup.STAGE.name())
+            .setNodeIdentifier(stageNode.getIdentifier())
+            .build());
+    return PlanCreationResponse.builder()
+        .graphLayoutResponse(GraphLayoutResponse.builder().layoutNodes(stageYamlFieldMap).build())
+        .planNode(planNode)
+        .build();
   }
 }
