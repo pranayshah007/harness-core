@@ -229,6 +229,11 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE) {
       updateRequired = updateIdentityStageOrStrategyNodes(planExecutionId, update) || updateRequired;
     }
+    if (OrchestrationUtils.isPipelineRollbackStage(nodeExecution)) {
+      String previousStagePlanNodeId = nodeExecutionService.get(nodeExecution.getPreviousId()).getNodeId();
+      ExecutionSummaryUpdateUtils.updateNextIdOfStageBeforePipelineRollback(
+          update, nodeExecution.getNodeId(), previousStagePlanNodeId);
+    }
     return ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution) || updateRequired;
   }
 
