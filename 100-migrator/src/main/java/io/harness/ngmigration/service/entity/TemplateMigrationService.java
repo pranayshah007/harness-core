@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
+
 import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
 import static java.util.stream.Collectors.counting;
@@ -207,8 +209,17 @@ public class TemplateMigrationService extends NgMigrationService {
     if (TemplateType.CUSTOM_DEPLOYMENT_TYPE.name().equals(template.getType())) {
       return configSpec;
     } else {
-      return JsonUtils.asTree(ImmutableMap.of("spec", configSpec, "type",
-          ngTemplateService.getNgTemplateStepName(template), "timeout", ngTemplateService.getTimeoutString(template)));
+      return JsonUtils.asTree(ImmutableMap.<String, Object>builder()
+                                  .put("spec", configSpec)
+                                  .put("type", ngTemplateService.getNgTemplateStepName(template))
+                                  .put("timeout", ngTemplateService.getTimeoutString(template))
+                                  .put("failureStrategies", RUNTIME_INPUT)
+                                  .put("when",
+                                      ImmutableMap.<String, String>builder()
+                                          .put("stageStatus", "Success")
+                                          .put("condition", RUNTIME_INPUT)
+                                          .build())
+                                  .build());
     }
   }
 

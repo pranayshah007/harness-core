@@ -188,7 +188,7 @@ public class MigratorExpressionUtils {
   }
 
   private static Set<String> extractAll(String source, Pattern compiled) {
-    if (source == null) {
+    if (StringUtils.isBlank(source)) {
       return Collections.emptySet();
     }
     Set<String> matches = new HashSet<>();
