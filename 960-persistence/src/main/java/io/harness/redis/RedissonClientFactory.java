@@ -116,6 +116,8 @@ public class RedissonClientFactory {
           config.useSentinelServers().setSubscriptionConnectionPoolSize(
               redisConfig.getSubscriptionConnectionPoolSize());
         }
+        config.useSentinelServers().setCheckSlaveStatusWithSyncing(false);
+        config.useSentinelServers().setSentinelsDiscovery(false);
 
         if (redisConfig.getConnectionPoolSize() != 0) {
           config.useSentinelServers().setSubscriptionConnectionPoolSize(redisConfig.getConnectionPoolSize());
