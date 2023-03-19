@@ -698,7 +698,7 @@ delegateQueueServiceConfig:
     enableQueueAndDequeue: true
     queueServiceClientConfig:
       httpClientConfig:
-        baseUrl: https://del.pr.harness.io/del-4508/
+        baseUrl: http://queue-service.harness-nextgen.svc.cluster.local:9091/
         connectTimeOutSeconds: 15
         readTimeOutSeconds: 15
       queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
