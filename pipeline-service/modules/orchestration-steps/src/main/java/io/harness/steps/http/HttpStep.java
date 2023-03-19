@@ -22,6 +22,7 @@ import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
 import io.harness.delegate.task.http.HttpTaskParametersNg.HttpTaskParametersNgBuilder;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.http.HttpHeaderConfig;
@@ -60,6 +61,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +77,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Inject private StepHelper stepHelper;
+
+  @Inject private PmsEngineExpressionService pmsEngineExpressionService;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -151,10 +155,11 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
 
       Map<String, Object> outputVariables =
           httpStepParameters.getOutputVariables() == null ? null : httpStepParameters.getOutputVariables().getValue();
-      Map<String, String> outputVariablesEvaluated = evaluateOutputVariables(outputVariables, httpStepResponse);
+      Map<String, String> outputVariablesEvaluated =
+          evaluateOutputVariables(outputVariables, httpStepResponse, ambiance);
 
       logCallback.saveExecutionLog("Validating the assertions...");
-      boolean assertionSuccessful = validateAssertions(httpStepResponse, httpStepParameters);
+      boolean assertionSuccessful = validateAssertions(httpStepResponse, httpStepParameters, null);
       HttpOutcome executionData = HttpOutcome.builder()
                                       .httpUrl(httpStepParameters.getUrl().getValue())
                                       .httpMethod(httpStepParameters.getMethod().getValue())
@@ -195,7 +200,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     }
   }
 
-  public static boolean validateAssertions(HttpStepResponse httpStepResponse, HttpStepParameters stepParameters) {
+  public boolean validateAssertions(
+      HttpStepResponse httpStepResponse, HttpStepParameters stepParameters, Ambiance ambiance) {
     if (ParameterField.isNull(stepParameters.getAssertion())) {
       return true;
     }
@@ -218,9 +224,15 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     }
   }
 
-  public static Map<String, String> evaluateOutputVariables(
-      Map<String, Object> outputVariables, HttpStepResponse httpStepResponse) {
+  public Map<String, String> evaluateOutputVariables(
+      Map<String, Object> outputVariables, HttpStepResponse httpStepResponse, Ambiance ambiance) {
     Map<String, String> outputVariablesEvaluated = new LinkedHashMap<>();
+    Map<String, Object> ctx = new HashMap<>();
+    ctx.put("httpResponseBody", httpStepResponse.getHttpResponseBody());
+    ctx.put("httpResponseCode", httpStepResponse.getHttpResponseCode());
+
+    HttpExpressionResolverFunctor httpExpressionResolverFunctor = new HttpExpressionResolverFunctor(ctx);
+
     if (outputVariables != null) {
       EngineExpressionEvaluator expressionEvaluator = new HttpExpressionEvaluator(httpStepResponse);
       outputVariables.keySet().forEach(name -> {
@@ -228,7 +240,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
         if (expression instanceof ParameterField) {
           ParameterField<?> expr = (ParameterField<?>) expression;
           if (expr.isExpression()) {
-            Object evaluatedValue = expressionEvaluator.evaluateExpression(expr.getExpressionValue());
+            String resolvedHttpExpressions = httpExpressionResolverFunctor.processString(expr.getExpressionValue());
+            Object evaluatedValue = pmsEngineExpressionService.evaluateExpression(ambiance, resolvedHttpExpressions);
             if (evaluatedValue != null) {
               outputVariablesEvaluated.put(name, evaluatedValue.toString());
             }

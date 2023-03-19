@@ -63,6 +63,6 @@ public class PmsEngineExpressionServiceImpl implements PmsEngineExpressionServic
   public EngineExpressionEvaluator prepareExpressionEvaluator(Ambiance ambiance) {
     EngineExpressionEvaluator engineExpressionEvaluator = expressionEvaluatorProvider.get(null, ambiance, null, false);
     injector.injectMembers(engineExpressionEvaluator);
-    return engineExpressionEvaluator;
+    engineExpressionEvaluator.partialResolve() return engineExpressionEvaluator;
   }
 }

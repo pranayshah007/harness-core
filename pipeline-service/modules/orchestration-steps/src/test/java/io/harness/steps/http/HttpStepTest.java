@@ -111,7 +111,7 @@ public class HttpStepTest extends CategoryTest {
     variables.put("name1", var1);
     variables.put("name4", var4);
 
-    Map<String, String> evaluatedVariables = HttpStep.evaluateOutputVariables(variables, response1);
+    Map<String, String> evaluatedVariables = httpStep.evaluateOutputVariables(variables, response1, null);
     assertThat(evaluatedVariables).isNotEmpty();
     assertThat(evaluatedVariables.get("name1")).isEqualTo("metadataValue");
     assertThat(evaluatedVariables.get("name4")).isEqualTo("directValue");
@@ -120,7 +120,7 @@ public class HttpStepTest extends CategoryTest {
     variables.put("name3", var3);
 
     HttpStepResponse response2 = HttpStepResponse.builder().httpResponseBody(body).build();
-    evaluatedVariables = HttpStep.evaluateOutputVariables(variables, response2);
+    evaluatedVariables = httpStep.evaluateOutputVariables(variables, response2, null);
     assertThat(evaluatedVariables).isNotEmpty();
     assertThat(evaluatedVariables.get("name2")).isNull();
     assertThat(evaluatedVariables.get("name3")).isNull();
@@ -139,93 +139,93 @@ public class HttpStepTest extends CategoryTest {
     HttpStepParameters stepParameters = HttpStepParameters.infoBuilder().build();
 
     // no assertion
-    boolean assertion = HttpStep.validateAssertions(response, stepParameters);
+    boolean assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isTrue();
 
     // not a valid assertion
     stepParameters.setAssertion(ParameterField.createValueField("<+httpResponseCode> 200"));
-    assertThatThrownBy(() -> HttpStep.validateAssertions(response, stepParameters))
+    assertThatThrownBy(() -> httpStep.validateAssertions(response, stepParameters, null))
         .hasMessage("Assertion provided is not a valid expression");
 
     // status code assertion
     stepParameters.setAssertion(ParameterField.createValueField("<+httpResponseCode> == 200"));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isTrue();
 
     stepParameters.setAssertion(ParameterField.createValueField("<+httpResponseCode> > 200"));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isFalse();
 
     // json.select() assertions
     stepParameters.setAssertion(ParameterField.createValueField(
         "<+json.select(\"support.url\", httpResponseBody)> == \"https://reqres.in/#support-heading\""));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isTrue();
 
     //    stepParameters.setAssertion(ParameterField.createValueField(
     //            "<+json.select(\"data[0].id\", httpResponseBody)> == 1"));
-    //    assertion = HttpStep.validateAssertions(response, stepParameters);
+    //    assertion = httpStep.validateAssertions()(response, stepParameters);
     //    assertThat(assertion).isTrue();
 
     stepParameters.setAssertion(ParameterField.createValueField("\"<+pipeline.name>\" == \"http\""));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isFalse();
 
     // json.object() assertions
     stepParameters.setAssertion(ParameterField.createValueField(
         "<+json.object(httpResponseBody).support.url> == \"https://reqres.in/#support-heading\""));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isTrue();
 
     stepParameters.setAssertion(ParameterField.createValueField("<+json.object(httpResponseBody).data[0].id> == 1"));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isTrue();
 
     stepParameters.setAssertion(ParameterField.createValueField("<+json.object(httpResponseBody).page> == 1"));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isTrue();
 
     // json.list() assertions
     stepParameters.setAssertion(
         ParameterField.createValueField("<+json.list(\"data\", httpResponseBody).get(1).name> == \"fuchsia rose\""));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isTrue();
 
     stepParameters.setAssertion(
         ParameterField.createValueField("<+json.list(\"data\", httpResponseBody).get(5).id> == 5"));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isFalse();
 
     // null case
     stepParameters.setAssertion(ParameterField.createValueField(null));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isTrue();
 
     // empty string case
     stepParameters.setAssertion(ParameterField.createValueField("  "));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isTrue();
 
     // non expression true case
     stepParameters.setAssertion(ParameterField.createValueField("true"));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isTrue();
 
     // non expression true case
     stepParameters.setAssertion(ParameterField.createValueField("1 == 5"));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isFalse();
 
     // boolean expression field
     stepParameters.setAssertion(
         ParameterField.createExpressionField(true, "<+json.object(httpResponseBody).page> == 1", null, false));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = httpStep.validateAssertions(response, stepParameters, null);
     assertThat(assertion).isTrue();
 
     // non boolean expression field
     stepParameters.setAssertion(
         ParameterField.createExpressionField(true, "<+json.object(httpResponseBody).page>", null, false));
-    assertThatThrownBy(() -> HttpStep.validateAssertions(response, stepParameters))
+    assertThatThrownBy(() -> httpStep.validateAssertions(response, stepParameters, null))
         .hasMessage("Assertion provided is not a valid expression");
   }
 
