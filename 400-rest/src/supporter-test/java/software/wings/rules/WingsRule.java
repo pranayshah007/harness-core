@@ -372,15 +372,15 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     configuration.setLogStreamingServiceConfig(
         LogStreamingServiceConfig.builder().baseUrl("http://localhost:8079").serviceToken("token").build());
 
-    configuration.setQueueServiceConfig(DelegateQueueServiceConfig.builder()
-                                            .queueServiceConfig(ServiceHttpClientConfig.builder()
+   /* configuration.setQueueServiceConfig(DelegateQueueServiceConfig.builder()
+            .queueServiceClientConfig(ServiceHttpClientConfig.builder()
                                                                     .baseUrl("http://localhost:9091/")
                                                                     .readTimeOutSeconds(15)
                                                                     .connectTimeOutSeconds(15)
                                                                     .build())
                                             .topic("delegate-service")
                                             .enableQueueAndDequeue(false)
-                                            .build());
+                                            .build());*/
     configuration.setAccessControlClientConfiguration(
         AccessControlClientConfiguration.builder()
             .enableAccessControl(false)
