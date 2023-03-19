@@ -13,7 +13,7 @@ server:
       maxRequestHeaderSize: 100KiB
   adminConnectors:
     - type: h2
-      port: 9091
+      port: 9092
       keyStorePath: keystore.jks
       keyStorePassword: password
       trustStorePath: ${JAVA_HOME}/lib/security/cacerts
@@ -694,12 +694,15 @@ eventListenersCountConfig:
   generalConsumerCount: ${GENERAL_CONSUMER_COUNT:-2}
 
 delegateQueueServiceConfig:
-    queueServiceConfig:
-      baseUrl:  https://del.pr.harness.io/del-4508/queue-service/
-      connectTimeOutSeconds: 15
-      readTimeOutSeconds: 15
     topic: "delegate-service"
     enableQueueAndDequeue: true
+    queueServiceClientConfig:
+      httpClientConfig:
+        baseUrl: https://del.pr.harness.io/del-4508/
+        connectTimeOutSeconds: 15
+        readTimeOutSeconds: 15
+      queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+      envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
 
 iteratorsConfig:
   resourceConstraintBackupIteratorConfig:
