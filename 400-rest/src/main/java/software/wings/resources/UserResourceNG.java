@@ -198,7 +198,9 @@ public class UserResourceNG {
   public RestResponse<Boolean> deleteUser(
       @QueryParam("accountId") String accountId, @QueryParam("userId") String userId) {
     if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)) {
-      userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+      if (userService.isUserPresent(userId) && userServiceHelper.isUserActiveInNG(userService.get(userId), accountId)) {
+        userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+      }
       if (!userService.isUserPartOfAnyUserGroupInCG(userId, accountId)) {
         log.warn("User {}, is being deleted from CG, since he is not part of any user-groups in CG",
             userService.get(userId).getEmail());

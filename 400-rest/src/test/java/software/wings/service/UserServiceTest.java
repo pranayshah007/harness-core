@@ -98,6 +98,7 @@ import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.LogoutResponse;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
@@ -112,6 +113,7 @@ import io.harness.exception.UnauthorizedException;
 import io.harness.exception.UserAlreadyPresentException;
 import io.harness.exception.UserRegistrationException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
@@ -281,6 +283,8 @@ public class UserServiceTest extends WingsBaseTest {
   @Mock private TOTPAuthHandler totpAuthHandler;
   @Mock private SSOSettingService ssoSettingService;
 
+  @Mock private FeatureFlagService featureFlagService;
+
   @Spy @InjectMocks private SignupServiceImpl signupService;
 
   /**
@@ -311,6 +315,7 @@ public class UserServiceTest extends WingsBaseTest {
    */
   @Before
   public void setupMocks() {
+    when(featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, ACCOUNT_ID)).thenReturn(true);
     when(configuration.getSupportEmail()).thenReturn(SUPPORT_EMAIL);
     doNothing()
         .when(userServiceLimitChecker)
@@ -942,7 +947,7 @@ public class UserServiceTest extends WingsBaseTest {
    * Should delete user flow V2.
    */
   @Test
-  @Owner(developers = ANUBHAW)
+  @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void shouldDeleteUserV2() {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(userBuilder.uuid(USER_ID).build());
@@ -957,7 +962,6 @@ public class UserServiceTest extends WingsBaseTest {
     verify(cache).remove(USER_ID);
     verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(eq(ACCOUNT_ID), any(User.class));
   }
-
   /**
    * Should fetch user.
    */
