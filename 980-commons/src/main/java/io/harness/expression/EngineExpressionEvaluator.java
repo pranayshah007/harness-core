@@ -644,6 +644,28 @@ public class EngineExpressionEvaluator {
         return createExpression(expression);
       }
     }
+
+    @Override
+    public String resolve(String expression) {
+      String resolvedExpression = null;
+      try {
+        resolvedExpression = resolveInternal(expression);
+      } catch (Exception ex) {
+        log.warn("Error while evaluating inner expressions", ex);
+        if (expressionMode != ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) {
+          throw ex;
+        }
+      }
+      // If ExpressionMode is ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED and expression is resolved to
+      // null value(means unresolved) or there was an exception in evaluation, simply render whatever the inner
+      // expressions can be rendered and return by creating the outer expression.
+      if (getExpressionMode() == ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED
+          && (resolvedExpression == null || resolvedExpression.equals(nullStringValue))) {
+        return createExpression(
+            engineExpressionEvaluator.renderExpressionInternal(expression, ctx, depth, expressionMode));
+      }
+      return String.valueOf(resolvedExpression);
+    }
   }
 
   private static class EvaluateExpressionResolver implements ExpressionResolver {
