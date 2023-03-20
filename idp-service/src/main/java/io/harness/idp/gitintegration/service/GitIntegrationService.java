@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.idp.gitintegration.entities.CatalogConnector;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface GitIntegrationService {
