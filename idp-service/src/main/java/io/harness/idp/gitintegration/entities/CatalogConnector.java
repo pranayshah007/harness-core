@@ -5,15 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.onboarding.entities;
+package io.harness.idp.gitintegration.entities;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
-import io.harness.idp.onboarding.beans.CatalogInfraConnectorType;
-import io.harness.idp.onboarding.beans.CatalogRepositoryDetails;
+import io.harness.idp.gitintegration.beans.CatalogInfraConnectorType;
+import io.harness.idp.gitintegration.beans.CatalogRepositoryDetails;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;

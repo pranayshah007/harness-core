@@ -20,7 +20,8 @@ import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory
 import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.util.Pair;
@@ -36,9 +37,11 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   public void createConnectorSecretsEnvVariable(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String connectorIdentifier, ConnectorType connectorType) {
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(connectorType);
-    Pair<ConnectorInfoDTO, List<EnvironmentSecret>> connectorEnvSecrets = connectorProcessor.getConnectorAndSecretsInfo(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
-    environmentSecretService.syncK8sSecret(connectorEnvSecrets.getSecond(), accountIdentifier);
+    Pair<ConnectorInfoDTO, Map<String, EnvironmentSecret>> connectorEnvSecrets =
+        connectorProcessor.getConnectorAndSecretsInfo(
+            accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+    environmentSecretService.syncK8sSecret(
+        new ArrayList<>(connectorEnvSecrets.getSecond().values()), accountIdentifier);
   }
 
   @Override

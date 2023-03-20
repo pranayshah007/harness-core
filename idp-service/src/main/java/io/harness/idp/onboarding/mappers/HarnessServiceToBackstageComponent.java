@@ -45,8 +45,11 @@ public class HarnessServiceToBackstageComponent
     BackstageCatalogComponentEntity backstageCatalogComponentEntity = new BackstageCatalogComponentEntity();
 
     BackstageCatalogEntity.Metadata metadata = new BackstageCatalogEntity.Metadata();
-    metadata.setMetadata(serviceResponseDTO.getIdentifier(), serviceResponseDTO.getName(),
-        serviceResponseDTO.getDescription(), new ArrayList<>(serviceResponseDTO.getTags().values()),
+    metadata.setMetadata(serviceResponseDTO.getIdentifier(),
+        serviceResponseDTO.getOrgIdentifier() + "-" + serviceResponseDTO.getProjectIdentifier() + "-"
+            + serviceResponseDTO.getIdentifier(),
+        serviceResponseDTO.getName(), serviceResponseDTO.getDescription(),
+        new ArrayList<>(serviceResponseDTO.getTags().values()),
         Map.of(BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL, getProjectUrlForHarnessCiCdAnnotation(serviceResponseDTO),
             BACKSTAGE_HARNESS_ANNOTATION_CD_SERVICE_ID, serviceResponseDTO.getIdentifier()));
     backstageCatalogComponentEntity.setMetadata(metadata);
@@ -56,7 +59,8 @@ public class HarnessServiceToBackstageComponent
     spec.setLifecycle(ENTITY_UNKNOWN_LIFECYCLE);
     spec.setOwner(ENTITY_UNKNOWN_OWNER);
     spec.setDomain(serviceResponseDTO.getOrgIdentifier());
-    spec.setSystem(serviceResponseDTO.getProjectIdentifier());
+    spec.setSystem(serviceResponseDTO.getOrgIdentifier() + "-" + serviceResponseDTO.getProjectIdentifier());
+    spec.setHarnessSystem(serviceResponseDTO.getProjectIdentifier());
     backstageCatalogComponentEntity.setSpec(spec);
 
     return backstageCatalogComponentEntity;
