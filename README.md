@@ -10,7 +10,7 @@ harness-core Project Dev environment setup instructions
 https://harness.atlassian.net/wiki/spaces/BT/pages/21101969665/How+to+setup+local+system+to+build+and+run+backend+code+harness-core+using+Bazel.
 ```
 
-### Prerequisities
+### Prerequisities jd
 1. Install Homebrew:
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
