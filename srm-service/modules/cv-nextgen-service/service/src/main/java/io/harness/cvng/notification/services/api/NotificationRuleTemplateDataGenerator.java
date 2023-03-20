@@ -39,7 +39,6 @@ import com.google.inject.name.Named;
 import java.net.URL;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -60,7 +59,7 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
     long startTime = currentInstant.getEpochSecond();
     long startTimeInMillis = startTime * 1000;
     String startDate = new Date(startTime * 1000).toString();
-    Long endTime = currentInstant.plus(2, ChronoUnit.HOURS).toEpochMilli();
+    Long endTime = currentInstant.toEpochMilli();
     String vanityUrl = getVanityUrl(projectParams.getAccountIdentifier());
     String baseUrl = getBaseUrl(getPortalUrl(), vanityUrl);
 
