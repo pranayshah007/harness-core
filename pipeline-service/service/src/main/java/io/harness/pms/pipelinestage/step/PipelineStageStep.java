@@ -138,6 +138,7 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
         .setIdentifier(ambiance.getMetadata().getPipelineIdentifier())
         .setProjectId(ambiance.getSetupAbstractions().get("projectIdentifier"))
         .setOrgId(ambiance.getSetupAbstractions().get("orgIdentifier"))
+        .setTriggerJsonPayload(stepParameters.getTriggerJsonPayload())
         .build();
   }
 

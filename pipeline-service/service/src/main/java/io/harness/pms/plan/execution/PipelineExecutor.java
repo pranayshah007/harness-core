@@ -304,6 +304,8 @@ public class PipelineExecutor {
 
     if (info != null) {
       execArgs.setMetadata(execArgs.getMetadata().toBuilder().setPipelineStageInfo(info).build());
+      execArgs.setPlanExecutionMetadata(
+          execArgs.getPlanExecutionMetadata().withTriggerJsonPayload(info.getTriggerJsonPayload()));
     }
     return getPlanExecutionResponseDto(accountId, orgIdentifier, projectIdentifier, useV2, pipelineEntity, execArgs);
   }

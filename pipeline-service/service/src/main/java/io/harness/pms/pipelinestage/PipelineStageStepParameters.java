@@ -38,4 +38,6 @@ public class PipelineStageStepParameters implements StepParameters {
 
   @SkipAutoEvaluation private ParameterField<Map<String, ParameterField<String>>> outputs;
   private List<String> inputSetReferences;
+
+  String triggerJsonPayload;
 }
