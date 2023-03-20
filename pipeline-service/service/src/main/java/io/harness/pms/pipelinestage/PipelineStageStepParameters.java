@@ -39,5 +39,6 @@ public class PipelineStageStepParameters implements StepParameters {
   @SkipAutoEvaluation private ParameterField<Map<String, ParameterField<String>>> outputs;
   private List<String> inputSetReferences;
 
+  // To resolve trigger expression in child pipeline, passing parent triggerJsonLoad to child
   String triggerJsonPayload;
 }

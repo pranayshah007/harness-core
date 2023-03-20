@@ -177,7 +177,7 @@ public class PipelineStageStepTest extends CategoryTest {
                             .build();
 
     PipelineStageStepParameters stepParameters =
-        PipelineStageStepParameters.builder().stageNodeId("stageNodeId").build();
+        PipelineStageStepParameters.builder().stageNodeId("stageNodeId").triggerJsonPayload("").build();
 
     PipelineStageInfo info = pipelineStageStep.prepareParentStageInfo(ambiance, stepParameters);
     doReturn(PlanExecutionResponseDto.builder().planExecution(PlanExecution.builder().uuid("uuid").build()).build())
