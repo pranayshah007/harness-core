@@ -46,10 +46,8 @@ public class IdentityNodeExecutionStrategyHelper {
       @NotNull Ambiance ambiance, @NotNull IdentityPlanNode node, String notifyId, String parentId, String previousId) {
     String uuid = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     NodeExecution originalExecution = nodeExecutionService.get(node.getOriginalNodeExecutionId());
-    AdviserResponse originalNodeAdvisorResponse = originalExecution.getAdviserResponse();
-    if (EmptyPredicate.isNotEmpty(node.getAdviserObtainments())) {
-      originalNodeAdvisorResponse = null;
-    }
+    AdviserResponse adviserResponse =
+        EmptyPredicate.isNotEmpty(node.getAdviserObtainments()) ? null : originalExecution.getAdviserResponse();
     NodeExecution execution = NodeExecution.builder()
                                   .uuid(uuid)
                                   .planNode(node)
@@ -75,7 +73,7 @@ public class IdentityNodeExecutionStrategyHelper {
                                   .skipInfo(originalExecution.getSkipInfo())
                                   .failureInfo(originalExecution.getFailureInfo())
                                   .progressData(originalExecution.getProgressData())
-                                  .adviserResponse(originalNodeAdvisorResponse)
+                                  .adviserResponse(adviserResponse)
                                   .timeoutInstanceIds(originalExecution.getTimeoutInstanceIds())
                                   .timeoutDetails(originalExecution.getTimeoutDetails())
                                   .adviserTimeoutInstanceIds(originalExecution.getAdviserTimeoutInstanceIds())

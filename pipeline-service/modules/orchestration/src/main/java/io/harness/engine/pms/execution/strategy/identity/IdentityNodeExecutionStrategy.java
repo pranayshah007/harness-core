@@ -28,7 +28,6 @@ import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.pms.execution.strategy.AbstractNodeExecutionStrategy;
-import io.harness.engine.pms.execution.strategy.EndNodeExecutionHelper;
 import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.IdentityNodeExecutionMetadata;
 import io.harness.execution.NodeExecution;
@@ -72,7 +71,6 @@ public class IdentityNodeExecutionStrategy
   @Inject private IdentityNodeResumeHelper identityNodeResumeHelper;
   @Inject private TransactionHelper transactionHelper;
   @Inject private IdentityNodeExecutionStrategyHelper identityNodeExecutionStrategyHelper;
-  @Inject private EndNodeExecutionHelper endNodeExecutionHelper;
   @Inject private NodeAdviseHelper nodeAdviseHelper;
   private final String SERVICE_NAME_IDENTITY = ModuleType.PMS.name().toLowerCase();
 
@@ -161,7 +159,10 @@ public class IdentityNodeExecutionStrategy
         return;
       }
       log.info("Starting to handle Adviser Response of type: {}", adviserResponse.getType());
-      NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
+      // Get all fields of NodeExecution as advisors may use any fields of NodeExecution.
+      // As identity nodes can potentially have actual advisors on them, we'll need to update the advisor response
+      NodeExecution nodeExecution = nodeExecutionService.update(
+          nodeExecutionId, ops -> ops.set(NodeExecutionKeys.adviserResponse, adviserResponse));
       AdviserResponseHandler adviserResponseHandler = adviseHandlerFactory.obtainHandler(adviserResponse.getType());
       if (!isFailureStrategyAdvisor(adviserResponseHandler)) {
         adviserResponseHandler.handleAdvise(nodeExecution, adviserResponse);
