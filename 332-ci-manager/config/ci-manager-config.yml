@@ -186,29 +186,43 @@ ciExecutionServiceConfig:
       - "--run-strategy"
       - single-container
     images:
+      - product: awsecr_default
+        image: harness/aws-ecr-job-runner
+      - product: awssecurityhub_default
+        image: harness/aws-security-hub-job-runner
       - product: aquatrivy_default
         image: harness/aqua-trivy-job-runner
       - product: bandit_default
         image: harness/bandit-job-runner
       - product: blackduck_default
         image: harness/blackduckhub-job-runner
+      - product: brakeman_default
+        image: harness/brakeman-job-runner
+      - product: customingest_.*
+        image: harness/sto-plugin
       - product: grype_default
         image: harness/grype-job-runner
+      - product: nmap_.*
+        image: harness/nmap-job-runner
+      - product: nikto_.*
+        image: harness/nikto-job-runner
+      - product: metasploit_.*
+        image: harness/sto-plugin
+      - product: owasp_default
+        image: harness/owasp-job-runner
       - product: snyk_default
         image: harness/snyk-job-runner
       - product: sonarqube_default
         image: harness/sonarqube-agent-job-runner
+      - product: prowler_.*
+        image: harness/prowler-job-runner
       - product: prismacloud_default
         image: harness/twistlock-job-runner
       - product: checkmarx_default
         image: harness/checkmarx-job-runner
-      - product: zap_default
-        image: harness/zap-job-runner
-      - product: zap_quick
-        image: harness/zap-job-runner
-      - product: zap_attack
-        image: harness/zap-job-runner
-      - product: zap_standard
+      - product: veracode_default
+        image: harness/veracode-agent-job-runner
+      - product: zap_.*
         image: harness/zap-job-runner
       - product: mend_default
         image: harness/whitesource-agent-job-runner

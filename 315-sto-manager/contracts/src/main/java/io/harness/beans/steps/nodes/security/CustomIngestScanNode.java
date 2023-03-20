@@ -16,7 +16,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfoType;
-import io.harness.beans.steps.stepinfo.security.ExternalStepInfo;
+import io.harness.beans.steps.stepinfo.security.CustomIngestStepInfo;
 import io.harness.yaml.core.StepSpecType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -32,20 +32,20 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName("External")
-@TypeAlias("ExternalScanNode")
+@JsonTypeName("CustomIngest")
+@TypeAlias("CustomIngestScanNode")
 @OwnedBy(STO)
-@RecasterAlias("io.harness.beans.steps.nodes.security.ExternalScanNode")
-public class ExternalScanNode extends CIAbstractStepNode {
-  @JsonProperty("type") @NotNull ExternalScanNode.StepType type = StepType.External;
+@RecasterAlias("io.harness.beans.steps.nodes.security.CustomIngestScanNode")
+public class CustomIngestScanNode extends CIAbstractStepNode {
+  @JsonProperty("type") @NotNull CustomIngestScanNode.StepType type = StepType.CustomIngest;
   @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  ExternalStepInfo stepInfo;
+  CustomIngestStepInfo stepInfo;
 
   @Override
   public String getType() {
-    return CIStepInfoType.EXTERNAL.getDisplayName();
+    return CIStepInfoType.CUSTOM_INGEST.getDisplayName();
   }
 
   @Override
@@ -54,7 +54,7 @@ public class ExternalScanNode extends CIAbstractStepNode {
   }
 
   enum StepType {
-    External(CIStepInfoType.EXTERNAL.getDisplayName());
+    CustomIngest(CIStepInfoType.CUSTOM_INGEST.getDisplayName());
     @Getter String name;
 
     StepType(String name) {

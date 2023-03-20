@@ -60,6 +60,7 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
+import io.harness.opaclient.OpaClientModule;
 import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
@@ -248,6 +249,8 @@ public class STOManagerServiceModule extends AbstractModule {
         stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId()));
     install(PersistentLockModule.getInstance());
 
+    install(new OpaClientModule(stoManagerConfiguration.getOpaClientConfig(),
+        stoManagerConfiguration.getPolicyManagerSecret(), STO_MANAGER.getServiceId()));
     install(new AbstractManagerGrpcClientModule() {
       @Override
       public ManagerGrpcClientModule.Config config() {
