@@ -16,6 +16,7 @@ import static io.harness.git.model.ChangeType.RENAME;
 import static io.harness.git.model.PushResultGit.pushResultBuilder;
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.SATHISH;
 import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -222,6 +223,34 @@ public class GitClientV2ImplTest extends CategoryTest {
         .hasMessageContaining("Unable to checkout given reference: main");
 
     request.setBranch("master");
+    request.setRepoUrl(remoteUrl);
+    gitClient.ensureRepoLocallyClonedAndUpdated(request);
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testEnsureRepoLocallyClonedAndUpdatedForUnsureOrNonExistentBranch() throws Exception {
+    String repoPathInternal = Files.createTempDirectory(UUID.randomUUID().toString()).toString();
+    createRepo(repoPathInternal, false);
+    Git gitInternal = Git.open(new File(repoPathInternal));
+
+    assertThatThrownBy(() -> gitClient.ensureRepoLocallyClonedAndUpdated(null)).isInstanceOf(GeneralException.class);
+    GitBaseRequest request = GitBaseRequest.builder()
+                                 .repoUrl(repoPathInternal)
+                                 .authRequest(new UsernamePasswordAuthRequest(USERNAME, PASSWORD.toCharArray()))
+                                 .branch("main")
+                                 .build();
+
+    doReturn(repoPathInternal).when(gitClientHelper).getRepoDirectory(request);
+    String remoteUrl = addRemote(repoPathInternal);
+    assertThat(gitInternal.getRepository().getConfig().getString("remote", "origin", "url")).isEqualTo(remoteUrl);
+
+    assertThatThrownBy(() -> gitClient.ensureRepoLocallyClonedAndUpdated(request))
+        .hasMessageContaining("Unable to checkout given reference: main");
+
+    request.setUnsureOrNonExistentBranch(true);
+    request.setBranch("master-test");
     request.setRepoUrl(remoteUrl);
     gitClient.ensureRepoLocallyClonedAndUpdated(request);
   }

@@ -56,7 +56,7 @@ public class StepElementParameters implements StepParameters {
   public String toViewJson() {
     StepElementParameters stepElementParameters = cloneParameters(false, false);
     stepElementParameters.setSpec(spec.getViewJsonObject());
-    return RecastOrchestrationUtils.pruneRecasterAdditions(stepElementParameters);
+    return RecastOrchestrationUtils.toJson(stepElementParameters);
   }
 
   public StepElementParameters cloneParameters(boolean includeUuid, boolean includeSpec) {

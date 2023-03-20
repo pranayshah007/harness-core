@@ -492,7 +492,10 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                                      .collect(Collectors.toList()));
       }
       serviceStepsHelper.checkForAccessOrThrow(ambiance, secretNGVariables);
-      entityMap.put(FreezeEntityType.ENVIRONMENT, Lists.newArrayList(environment.get().getIdentifier()));
+      entityMap.put(FreezeEntityType.ENVIRONMENT,
+          Lists.newArrayList(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(environment.get().getAccountId(),
+              environment.get().getOrgIdentifier(), environment.get().getProjectIdentifier(),
+              environment.get().getIdentifier())));
       entityMap.put(FreezeEntityType.ENV_TYPE, Lists.newArrayList(environment.get().getType().name()));
 
       Optional<EnvironmentGroupEntity> envGroupOpt = Optional.empty();
@@ -701,8 +704,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     serviceStepsHelper.checkForVariablesAccessOrThrow(
         ambiance, ngServiceConfig, stepParameters.getServiceRef().getValue());
 
-    entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(serviceEntity.getOrgIdentifier()));
-    entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(serviceEntity.getProjectIdentifier()));
+    entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(AmbianceUtils.getOrgIdentifier(ambiance)));
+    entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(AmbianceUtils.getProjectIdentifier(ambiance)));
     // serviceRef instead of identifier to be passed here
     entityMap.put(FreezeEntityType.SERVICE,
         Lists.newArrayList(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(serviceEntity.getAccountId(),

@@ -10,6 +10,7 @@ package io.harness.engine.pms.execution.strategy.identity;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
+import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SHALINI;
 
@@ -36,6 +37,7 @@ import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.advise.AdviseHandlerFactory;
+import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.advise.handlers.NextStepHandler;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.pms.data.PmsOutcomeService;
@@ -45,6 +47,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -65,6 +68,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -94,6 +98,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Mock private AdviseHandlerFactory adviseHandlerFactory;
   @Mock private NextStepHandler nextStepHandler;
   @Mock IdentityNodeExecutionStrategyHelper identityNodeExecutionStrategyHelper;
+  @Mock NodeAdviseHelper nodeAdviseHelper;
   @Inject @InjectMocks @Spy IdentityNodeExecutionStrategy executionStrategy;
 
   private static final StepType TEST_STEP_TYPE =
@@ -345,6 +350,36 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
     assertThatCode(() -> executionStrategy.processStepResponse(ambiance, stepResponseProto)).doesNotThrowAnyException();
   }
 
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testProcessStepResponseWithAdvisors() {
+    String nodeExecutionId = generateUuid();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanId("planId")
+                            .putAllSetupAbstractions(prepareInputArgs())
+                            .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
+                            .build();
+    IdentityPlanNode planNode =
+        IdentityPlanNode.builder()
+            .adviserObtainments(Collections.singletonList(AdviserObtainment.getDefaultInstance()))
+            .useAdviserObtainments(true)
+            .uuid("planNodeId")
+            .build();
+    NodeExecution nodeExecution =
+        NodeExecution.builder().uuid(nodeExecutionId).planNode(planNode).status(Status.RUNNING).build();
+    StepResponseProto stepResponse = StepResponseProto.newBuilder().setStatus(Status.RUNNING).build();
+    doReturn(nodeExecution)
+        .when(nodeExecutionService)
+        .updateStatusWithOps(nodeExecutionId, stepResponse.getStatus(), null, EnumSet.noneOf(Status.class));
+    doReturn(planNode).when(planService).fetchNode("planId", "planNodeId");
+
+    executionStrategy.processStepResponse(ambiance, stepResponse);
+    verify(nodeAdviseHelper, times(1)).queueAdvisingEvent(nodeExecution, planNode, Status.RUNNING);
+    verify(nodeExecutionService, times(0)).getWithFieldsIncluded(any(), any());
+    verify(adviseHandlerFactory, times(0)).obtainHandler(any());
+  }
+
   private static Map<String, String> prepareInputArgs() {
     return ImmutableMap.of("accountId", "kmpySmUISimoRrJL6NL73w", "appId", "XEsfW6D_RJm1IaGpDidD3g", "userId",
         triggeredBy.getUuid(), "userName", triggeredBy.getIdentifier(), "userEmail",
@@ -411,11 +446,12 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
     executionStrategy.processAdviserResponse(ambiance, adviserResponse);
     verify(executionStrategy, times(1)).endNodeExecution(ambiance);
     adviserResponse = AdviserResponse.newBuilder().setType(AdviseType.NEXT_STEP).build();
-    doReturn(NodeExecution.builder().build()).when(nodeExecutionService).get(uuid);
+    NodeExecution nodeExecution = NodeExecution.builder().uuid(uuid).build();
+    doReturn(nodeExecution).when(nodeExecutionService).update(any(), any());
     doReturn(nextStepHandler).when(adviseHandlerFactory).obtainHandler(AdviseType.NEXT_STEP);
-    doNothing().when(nextStepHandler).handleAdvise(any(), any());
+    doNothing().when(nextStepHandler).handleAdvise(nodeExecution, adviserResponse);
     executionStrategy.processAdviserResponse(ambiance, adviserResponse);
-    verify(nextStepHandler, times(1)).handleAdvise(any(), any());
+    verify(nextStepHandler, times(1)).handleAdvise(nodeExecution, adviserResponse);
   }
 
   @Test

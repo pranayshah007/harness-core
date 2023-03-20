@@ -5,15 +5,19 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.onboarding.beans;
+package io.harness.idp.gitintegration.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 @OwnedBy(HarnessTeam.IDP)
-public enum OnboardingAccessResult {
-  @JsonProperty("ALLOWED") ALLOWED,
-  @JsonProperty("NOT_ALLOWED") NOT_ALLOWED
+public enum CatalogInfraConnectorType {
+  DIRECT("Direct"),
+  PROXY("Proxy");
+
+  public final String type;
+
+  CatalogInfraConnectorType(String type) {
+    this.type = type;
+  }
 }

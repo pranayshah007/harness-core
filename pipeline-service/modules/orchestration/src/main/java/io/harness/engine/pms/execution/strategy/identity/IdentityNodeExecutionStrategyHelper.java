@@ -20,7 +20,6 @@ import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
-import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -46,8 +45,6 @@ public class IdentityNodeExecutionStrategyHelper {
       @NotNull Ambiance ambiance, @NotNull IdentityPlanNode node, String notifyId, String parentId, String previousId) {
     String uuid = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     NodeExecution originalExecution = nodeExecutionService.get(node.getOriginalNodeExecutionId());
-    AdviserResponse adviserResponse =
-        EmptyPredicate.isNotEmpty(node.getAdviserObtainments()) ? null : originalExecution.getAdviserResponse();
     NodeExecution execution = NodeExecution.builder()
                                   .uuid(uuid)
                                   .planNode(node)
@@ -73,9 +70,10 @@ public class IdentityNodeExecutionStrategyHelper {
                                   .skipInfo(originalExecution.getSkipInfo())
                                   .failureInfo(originalExecution.getFailureInfo())
                                   .progressData(originalExecution.getProgressData())
-                                  .adviserResponse(adviserResponse)
+                                  .adviserResponse(originalExecution.getAdviserResponse())
                                   .timeoutInstanceIds(originalExecution.getTimeoutInstanceIds())
                                   .timeoutDetails(originalExecution.getTimeoutDetails())
+                                  .adviserResponse(originalExecution.getAdviserResponse())
                                   .adviserTimeoutInstanceIds(originalExecution.getAdviserTimeoutInstanceIds())
                                   .interruptHistories(originalExecution.getInterruptHistories())
                                   .resolvedParams(originalExecution.getResolvedParams())
