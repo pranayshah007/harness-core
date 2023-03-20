@@ -19,8 +19,11 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.views.businessMapping.dao.BusinessMappingDao;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessMapping.entities.BusinessMappingListDTO;
+import io.harness.ccm.views.businessMapping.entities.CostCategorySortType;
 import io.harness.ccm.views.businessMapping.helper.BusinessMappingTestHelper;
 import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
@@ -67,11 +70,27 @@ public class BusinessMappingServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testList() {
     final List<BusinessMapping> businessMappings = Collections.singletonList(businessMapping);
-    when(businessMappingDao.findByAccountId(BusinessMappingTestHelper.TEST_ACCOUNT_ID)).thenReturn(businessMappings);
-    final List<BusinessMapping> response = businessMappingService.list(BusinessMappingTestHelper.TEST_ACCOUNT_ID);
-    verify(businessMappingDao).findByAccountId(BusinessMappingTestHelper.TEST_ACCOUNT_ID);
+    when(businessMappingDao.findByAccountIdAndRegexNameWithLimitAndOffsetAndOrder(
+             BusinessMappingTestHelper.TEST_ACCOUNT_ID, BusinessMappingTestHelper.TEST_SEARCH_KEY,
+             CostCategorySortType.LAST_EDIT, CCMSortOrder.DESCENDING, BusinessMappingTestHelper.TEST_LIMIT,
+             BusinessMappingTestHelper.TEST_OFFSET))
+        .thenReturn(businessMappings);
+    when(businessMappingDao.getCountByAccountIdAndRegexName(
+             BusinessMappingTestHelper.TEST_ACCOUNT_ID, BusinessMappingTestHelper.TEST_SEARCH_KEY))
+        .thenReturn(1L);
+    final BusinessMappingListDTO response = businessMappingService.list(BusinessMappingTestHelper.TEST_ACCOUNT_ID,
+        BusinessMappingTestHelper.TEST_SEARCH_KEY, CostCategorySortType.LAST_EDIT, CCMSortOrder.DESCENDING,
+        BusinessMappingTestHelper.TEST_LIMIT, BusinessMappingTestHelper.TEST_OFFSET);
+    verify(businessMappingDao)
+        .findByAccountIdAndRegexNameWithLimitAndOffsetAndOrder(BusinessMappingTestHelper.TEST_ACCOUNT_ID,
+            BusinessMappingTestHelper.TEST_SEARCH_KEY, CostCategorySortType.LAST_EDIT, CCMSortOrder.DESCENDING,
+            BusinessMappingTestHelper.TEST_LIMIT, BusinessMappingTestHelper.TEST_OFFSET);
+    verify(businessMappingDao)
+        .getCountByAccountIdAndRegexName(
+            BusinessMappingTestHelper.TEST_ACCOUNT_ID, BusinessMappingTestHelper.TEST_SEARCH_KEY);
     verify(awsAccountFieldHelper, times(4)).mergeAwsAccountNameInAccountRules(anyList(), anyString());
-    assertThat(response).isEqualTo(businessMappings);
+    assertThat(response.getBusinessMappings()).isEqualTo(businessMappings);
+    assertThat(response.getTotalCount()).isEqualTo(1L);
   }
 
   @Test
@@ -102,7 +121,7 @@ public class BusinessMappingServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdate() {
     when(businessMappingDao.update(businessMapping)).thenReturn(businessMapping);
-    final BusinessMapping response = businessMappingService.update(businessMapping);
+    final BusinessMapping response = businessMappingService.update(businessMapping, businessMapping);
     verify(businessMappingDao).update(businessMapping);
     verify(awsAccountFieldHelper, times(4)).removeAwsAccountNameFromAccountRules(anyList());
     assertThat(response).isEqualTo(businessMapping);

@@ -11,7 +11,6 @@ import io.harness.cvng.analysis.services.api.LogAnalysisService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
-import io.harness.cvng.statemachine.entities.DeploymentLogAnalysisState;
 import io.harness.cvng.statemachine.entities.LogAnalysisState;
 
 import com.google.common.base.Preconditions;
@@ -22,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class LogAnalysisStateExecutor<T extends LogAnalysisState> extends AnalysisStateExecutor<T> {
   @Inject protected transient LogAnalysisService logAnalysisService;
 
-  public abstract void handleFinalStatuses(DeploymentLogAnalysisState analysisState);
+  public abstract void handleFinalStatuses(T analysisState);
 
   protected abstract String scheduleAnalysis(AnalysisInput analysisInput);
 

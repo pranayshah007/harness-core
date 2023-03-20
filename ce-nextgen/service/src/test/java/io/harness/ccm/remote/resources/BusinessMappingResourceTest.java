@@ -20,8 +20,11 @@ import io.harness.category.element.UnitTests;
 import io.harness.ccm.audittrails.events.CostCategoryCreateEvent;
 import io.harness.ccm.audittrails.events.CostCategoryDeleteEvent;
 import io.harness.ccm.audittrails.events.CostCategoryUpdateEvent;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessMapping.entities.BusinessMappingListDTO;
+import io.harness.ccm.views.businessMapping.entities.CostCategorySortType;
 import io.harness.ccm.views.businessMapping.entities.CostTarget;
 import io.harness.ccm.views.businessMapping.entities.SharedCost;
 import io.harness.ccm.views.businessMapping.entities.SharedCostSplit;
@@ -84,7 +87,6 @@ public class BusinessMappingResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSave() {
     when(businessMappingService.save(any(BusinessMapping.class))).thenReturn(businessMapping);
-    when(businessMappingService.isNamePresent(any(), any())).thenReturn(true);
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
@@ -104,11 +106,22 @@ public class BusinessMappingResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testList() {
     final List<BusinessMapping> businessMappings = Collections.singletonList(businessMapping);
-    when(businessMappingService.list(BusinessMappingHelperTest.TEST_ACCOUNT_ID)).thenReturn(businessMappings);
-    final RestResponse<List<BusinessMapping>> response =
-        businessMappingResource.list(BusinessMappingHelperTest.TEST_ACCOUNT_ID);
-    verify(businessMappingService).list(BusinessMappingHelperTest.TEST_ACCOUNT_ID);
-    assertThat(response.getResource()).isEqualTo(businessMappings);
+    final BusinessMappingListDTO businessMappingListDTO =
+        BusinessMappingListDTO.builder().businessMappings(businessMappings).totalCount(1L).build();
+    when(businessMappingService.list(BusinessMappingHelperTest.TEST_ACCOUNT_ID,
+             BusinessMappingHelperTest.TEST_SEARCH_KEY, CostCategorySortType.LAST_EDIT, CCMSortOrder.DESCENDING,
+             BusinessMappingHelperTest.TEST_LIMIT, BusinessMappingHelperTest.TEST_OFFSET))
+        .thenReturn(businessMappingListDTO);
+    final RestResponse<BusinessMappingListDTO> response =
+        businessMappingResource.list(BusinessMappingHelperTest.TEST_ACCOUNT_ID,
+            BusinessMappingHelperTest.TEST_SEARCH_KEY, CostCategorySortType.LAST_EDIT, CCMSortOrder.DESCENDING,
+            BusinessMappingHelperTest.TEST_LIMIT, BusinessMappingHelperTest.TEST_OFFSET);
+    verify(businessMappingService)
+        .list(BusinessMappingHelperTest.TEST_ACCOUNT_ID, BusinessMappingHelperTest.TEST_SEARCH_KEY,
+            CostCategorySortType.LAST_EDIT, CCMSortOrder.DESCENDING, BusinessMappingHelperTest.TEST_LIMIT,
+            BusinessMappingHelperTest.TEST_OFFSET);
+    assertThat(response.getResource().getBusinessMappings()).isEqualTo(businessMappings);
+    assertThat(response.getResource().getTotalCount()).isEqualTo(1L);
   }
 
   @Test
@@ -127,7 +140,7 @@ public class BusinessMappingResourceTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testUpdate() {
-    when(businessMappingService.update(businessMapping)).thenReturn(businessMapping);
+    when(businessMappingService.update(businessMapping, businessMapping)).thenReturn(businessMapping);
     when(businessMappingService.get(businessMapping.getUuid(), BusinessMappingHelperTest.TEST_ACCOUNT_ID))
         .thenReturn(businessMapping);
     when(transactionTemplate.execute(any()))
@@ -136,7 +149,7 @@ public class BusinessMappingResourceTest extends CategoryTest {
                    .doInTransaction(new SimpleTransactionStatus()));
     final RestResponse<String> response =
         businessMappingResource.update(BusinessMappingHelperTest.TEST_ACCOUNT_ID, businessMapping);
-    verify(businessMappingService).update(businessMapping);
+    verify(businessMappingService).update(businessMapping, businessMapping);
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(costCategoryUpdateEventArgumentCaptor.capture());
     CostCategoryUpdateEvent costCategoryUpdateEvent = costCategoryUpdateEventArgumentCaptor.getValue();
@@ -174,6 +187,9 @@ public class BusinessMappingResourceTest extends CategoryTest {
     public static final String TEST_ACCOUNT_ID = "TEST_ACCOUNT_ID";
     public static final String TEST_NAME_1 = "TEST_NAME_1";
     public static final String TEST_NAME_2 = "TEST_NAME_2";
+    public static final String TEST_SEARCH_KEY = "SEARCH_KEY";
+    public static final int TEST_LIMIT = 10;
+    public static final int TEST_OFFSET = 0;
 
     private BusinessMappingHelperTest() {}
 

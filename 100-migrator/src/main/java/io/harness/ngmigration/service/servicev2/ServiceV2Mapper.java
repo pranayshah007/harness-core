@@ -20,12 +20,14 @@ import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.artifactstream.ArtifactStreamFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.beans.LambdaSpecification;
 import software.wings.beans.Service;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.ngmigration.CgEntityId;
@@ -38,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface ServiceV2Mapper {
@@ -45,10 +48,14 @@ public interface ServiceV2Mapper {
     return true;
   }
 
-  ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
+  ServiceDefinition getServiceDefinition(MigrationContext migrationContext, Service service,
       List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
       List<StartupScriptConfiguration> startupScriptConfigurations);
+
+  default List<NGYamlFile> getChildYamlFiles(
+      MigrationContext migrationContext, Service service, LambdaSpecification lambdaSpecification) {
+    return new ArrayList<>();
+  }
 
   default List<ArtifactStream> getArtifactStream(
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, Service service) {
@@ -93,5 +100,17 @@ public interface ServiceV2Mapper {
         .primaryArtifactRef(ParameterField.createValueField("<+input>"))
         .sources(sources)
         .build();
+  }
+
+  default List<ManifestConfigWrapper> changeIdentifier(List<ManifestConfigWrapper> manifests, String prefix) {
+    if (EmptyPredicate.isEmpty(manifests)) {
+      return new ArrayList<>();
+    }
+    prefix = StringUtils.isNotBlank(prefix) ? prefix : "manifest_";
+
+    for (int i = 0; i < manifests.size(); ++i) {
+      manifests.get(i).getManifest().setIdentifier(prefix + i);
+    }
+    return manifests;
   }
 }

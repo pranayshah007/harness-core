@@ -17,6 +17,7 @@ import io.harness.cdng.tas.TasInstanceSelectionWrapper;
 import io.harness.cdng.tas.TasInstanceUnitType;
 import io.harness.cdng.tas.TasPercentageInstanceSelection;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -55,7 +56,8 @@ public class PcfDeployStepMapperImpl extends PcfAbstractStepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     PcfDeployState state = (PcfDeployState) getState(graphNode);
     TasAppResizeStepNode tasAppResizeStepNode = new TasAppResizeStepNode();
     baseSetup(state, tasAppResizeStepNode, context.getIdentifierCaseFormat());

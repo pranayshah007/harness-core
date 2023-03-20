@@ -18,7 +18,7 @@ import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.infrastructure.InfrastructureType;
-import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -53,9 +53,10 @@ public class CustomDeploymentInfraDefMapper implements InfraDefMapper {
   }
 
   @Override
-  public Infrastructure getSpec(MigrationInputDTO inputDTO, InfrastructureDefinition infrastructureDefinition,
-      Map<CgEntityId, NGYamlFile> migratedEntities, Map<CgEntityId, CgEntityNode> entities,
+  public Infrastructure getSpec(MigrationContext migrationContext, InfrastructureDefinition infrastructureDefinition,
       List<ElastigroupConfiguration> elastigroupConfiguration) {
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     CustomInfrastructure infrastructure = (CustomInfrastructure) infrastructureDefinition.getInfrastructure();
     CgEntityId cgEntityId = CgEntityId.builder()
                                 .type(NGMigrationEntityType.TEMPLATE)

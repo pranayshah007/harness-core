@@ -27,6 +27,7 @@ import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.InputDefaults;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -100,7 +101,6 @@ public class MigratorUtility {
   private static final String[] schemes = {"https", "http"};
 
   private static final int APPLICATION = 0;
-
   private static final int SECRET_MANAGER_TEMPLATE = 1;
   private static final int SECRET_MANAGER = 2;
   private static final int SECRET = 5;
@@ -122,6 +122,7 @@ public class MigratorUtility {
   private static final int PIPELINE = 100;
 
   private static final int TRIGGER = 150;
+  private static final int USER_GROUP = -1;
 
   private static final Map<NGMigrationEntityType, Integer> MIGRATION_ORDER =
       ImmutableMap.<NGMigrationEntityType, Integer>builder()
@@ -145,6 +146,7 @@ public class MigratorUtility {
           .put(NGMigrationEntityType.WORKFLOW, WORKFLOW)
           .put(NGMigrationEntityType.PIPELINE, PIPELINE)
           .put(NGMigrationEntityType.TRIGGER, TRIGGER)
+          .put(NGMigrationEntityType.USER_GROUP, USER_GROUP)
           .build();
 
   private MigratorUtility() {}
@@ -299,6 +301,18 @@ public class MigratorUtility {
     return getIdentifierWithScope(detail);
   }
 
+  public static String getIdentifierWithScope(Scope scope, String name, CaseFormat caseFormat) {
+    String identifier = MigratorUtility.generateIdentifier(name, caseFormat);
+    switch (scope) {
+      case ACCOUNT:
+        return "account." + identifier;
+      case ORG:
+        return "org." + identifier;
+      default:
+        return identifier;
+    }
+  }
+
   public static String getIdentifierWithScope(NgEntityDetail entityDetail) {
     String orgId = entityDetail.getOrgIdentifier();
     String projectId = entityDetail.getProjectIdentifier();
@@ -312,29 +326,27 @@ public class MigratorUtility {
     return "org." + identifier;
   }
 
-  public static List<NGVariable> getVariables(List<Variable> cgVariables, CaseFormat identifierCaseFormat) {
+  public static List<NGVariable> getVariables(MigrationContext migrationContext, List<Variable> cgVariables) {
     List<NGVariable> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(cgVariables)) {
-      cgVariables.forEach(serviceVariable -> variables.add(getNGVariable(serviceVariable, identifierCaseFormat)));
+      cgVariables.forEach(serviceVariable -> variables.add(getNGVariable(migrationContext, serviceVariable)));
     }
     return variables;
   }
 
-  public static List<NGVariable> getVariables(List<ServiceVariable> serviceVariables,
-      Map<CgEntityId, NGYamlFile> migratedEntities, CaseFormat identifierCaseFormat) {
+  public static List<NGVariable> getServiceVariables(
+      MigrationContext migrationContext, List<ServiceVariable> serviceVariables) {
     List<NGVariable> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(serviceVariables)) {
-      serviceVariables.forEach(
-          serviceVariable -> variables.add(getNGVariable(serviceVariable, migratedEntities, identifierCaseFormat)));
+      serviceVariables.forEach(serviceVariable -> variables.add(getNGVariable(migrationContext, serviceVariable)));
     }
     return variables;
   }
 
-  public static NGVariable getNGVariable(Variable variable, CaseFormat identifierCaseFormat) {
+  public static NGVariable getNGVariable(MigrationContext migrationContext, Variable variable) {
     String value = "<+input>";
     if (EmptyPredicate.isNotEmpty(variable.getValue())) {
-      value = String.valueOf(MigratorExpressionUtils.render(
-          new HashMap<>(), new HashMap<>(), variable.getValue(), new HashMap<>(), identifierCaseFormat));
+      value = String.valueOf(MigratorExpressionUtils.render(migrationContext, variable.getValue(), new HashMap<>()));
     }
     String name = variable.getName();
     name = name.replace('-', '_');
@@ -345,20 +357,19 @@ public class MigratorUtility {
         .build();
   }
 
-  public static NGVariable getNGVariable(
-      ServiceVariable serviceVariable, Map<CgEntityId, NGYamlFile> migratedEntities, CaseFormat identifierCaseFormat) {
+  public static NGVariable getNGVariable(MigrationContext migrationContext, ServiceVariable serviceVariable) {
     if (serviceVariable.getType().equals(ServiceVariableType.ENCRYPTED_TEXT)) {
       return SecretNGVariable.builder()
           .type(NGVariableType.SECRET)
-          .value(ParameterField.createValueField(
-              MigratorUtility.getSecretRef(migratedEntities, serviceVariable.getEncryptedValue())))
+          .value(ParameterField.createValueField(MigratorUtility.getSecretRef(
+              migrationContext.getMigratedEntities(), serviceVariable.getEncryptedValue())))
           .name(StringUtils.trim(serviceVariable.getName()))
           .build();
     } else {
       String value = "";
       if (EmptyPredicate.isNotEmpty(serviceVariable.getValue())) {
-        value = String.valueOf(MigratorExpressionUtils.render(new HashMap<>(), new HashMap<>(),
-            String.valueOf(serviceVariable.getValue()), new HashMap<>(), identifierCaseFormat));
+        value = String.valueOf(MigratorExpressionUtils.render(
+            migrationContext, String.valueOf(serviceVariable.getValue()), new HashMap<>()));
       }
       String name = StringUtils.trim(serviceVariable.getName());
       name = name.replace('-', '_');
@@ -471,7 +482,7 @@ public class MigratorUtility {
   }
 
   @Nullable
-  public static NGYamlFile getYamlFile(
+  private static NGYamlFile getYamlFile(
       MigrationInputDTO inputDTO, byte[] content, String identifier, FileUsage fileUsage) {
     if (isEmpty(content)) {
       return null;
@@ -687,5 +698,13 @@ public class MigratorUtility {
     return tagLinks.stream()
         .filter(tl -> StringUtils.isNoneBlank(tl.getKey(), tl.getValue()))
         .collect(Collectors.toMap(HarnessTagLink::getKey, HarnessTagLink::getValue));
+  }
+
+  public static String getSafeNotEmptyString(String val) {
+    if (isEmpty(val) || isEmpty(val.trim())) {
+      return PLEASE_FIX_ME;
+    } else {
+      return val;
+    }
   }
 }

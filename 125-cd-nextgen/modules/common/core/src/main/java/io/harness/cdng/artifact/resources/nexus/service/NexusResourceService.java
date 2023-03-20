@@ -13,6 +13,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusRequestDTO;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusResponseDTO;
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
 
 import software.wings.helpers.ext.nexus.NexusRepositories;
 
@@ -36,4 +37,11 @@ public interface NexusResourceService {
   boolean validateArtifactServer(IdentifierRef nexusConnectorRef, String orgIdentifier, String projectIdentifier);
   List<NexusRepositories> getRepositories(
       IdentifierRef nexusConnectorRef, String orgIdentifier, String projectIdentifier, String repositoryFormat);
+
+  List<String> getGroupIds(String accountId, String orgIdentifier, String projectIdentifier, IdentifierRef connectorRef,
+      String repositoryFormat, String repository, ArtifactSourceType artifactSourceType);
+
+  List<String> getArtifactIds(String accountId, String orgIdentifier, String projectIdentifier,
+      IdentifierRef connectorRef, String repositoryFormat, String repository, String groupId,
+      ArtifactSourceType artifactSourceType);
 }

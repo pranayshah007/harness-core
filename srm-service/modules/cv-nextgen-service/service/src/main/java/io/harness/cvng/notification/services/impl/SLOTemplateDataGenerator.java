@@ -16,7 +16,6 @@ import io.harness.cvng.notification.entities.SLONotificationRule.SLONotification
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
 public abstract class SLOTemplateDataGenerator<T extends SLONotificationRuleCondition>
@@ -42,7 +41,7 @@ public abstract class SLOTemplateDataGenerator<T extends SLONotificationRuleCond
 
   public String getMonitoredServiceUrl(String baseUrl, ProjectParams projectParams, String monitoredServiceIdentifier) {
     Instant currentInstant = this.clock.instant();
-    Long endTime = currentInstant.plus(2, ChronoUnit.HOURS).toEpochMilli();
+    Long endTime = currentInstant.toEpochMilli();
     return String.format(MONITORED_SERVICE_URL_FORMAT, baseUrl, projectParams.getAccountIdentifier(), MODULE_NAME,
         projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), monitoredServiceIdentifier, endTime);
   }

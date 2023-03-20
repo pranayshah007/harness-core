@@ -16,17 +16,13 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidRequestException;
 import io.harness.idp.onboarding.services.OnboardingService;
-import io.harness.security.SecurityContextBuilder;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.security.dto.PrincipalType;
 import io.harness.spec.server.idp.v1.OnboardingResourceApi;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesResponse;
 import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
 import io.harness.spec.server.idp.v1.model.ImportHarnessEntitiesRequest;
 import io.harness.spec.server.idp.v1.model.ManualImportEntityRequest;
-import io.harness.spec.server.idp.v1.model.OnboardingAccessCheckResponse;
 import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
@@ -42,19 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.IDP)
 public class OnboardingResourceApiImpl implements OnboardingResourceApi {
   private OnboardingService onboardingService;
-
-  @Override
-  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response onboardingAccessCheck(@AccountIdentifier String harnessAccount) {
-    log.info("Request received to check idp onboarding access for account = {}", harnessAccount);
-    if (SecurityContextBuilder.getPrincipal().getType() != PrincipalType.USER) {
-      log.error("Principal type is not USER, cannot perform idp onboarding");
-      throw new InvalidRequestException("Harness IDP Onboarding allowed only for User Type");
-    }
-    OnboardingAccessCheckResponse onboardingAccessCheckResponse =
-        onboardingService.accessCheck(harnessAccount, SecurityContextBuilder.getPrincipal().getName());
-    return Response.status(Response.Status.OK).entity(onboardingAccessCheckResponse).build();
-  }
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)

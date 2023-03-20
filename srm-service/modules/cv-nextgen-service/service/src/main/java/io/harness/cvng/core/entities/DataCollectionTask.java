@@ -136,6 +136,10 @@ public abstract class DataCollectionTask
 
   public abstract boolean shouldCreateNextTask();
 
+  public boolean shouldHandlerCreateNextTask(Instant currentTime) {
+    return false;
+  }
+
   public abstract boolean eligibleForRetry(Instant currentTime);
 
   public abstract Instant getNextValidAfter(Instant currentTime);

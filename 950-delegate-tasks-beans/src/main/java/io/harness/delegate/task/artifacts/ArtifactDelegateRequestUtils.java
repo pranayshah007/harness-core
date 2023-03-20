@@ -128,7 +128,7 @@ public class ArtifactDelegateRequestUtils {
   public NexusArtifactDelegateRequest getNexusArtifactDelegateRequest(String repositoryName, String repositoryPort,
       String imagePath, String repositoryFormat, String artifactRepositoryUrl, String tag, String tagRegex,
       String connectorRef, NexusConnectorDTO nexusConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
-      ArtifactSourceType sourceType) {
+      ArtifactSourceType sourceType, String groupId, String artifactId) {
     return NexusArtifactDelegateRequest.builder()
         .repositoryName(repositoryName)
         .repositoryPort(repositoryPort)
@@ -141,6 +141,8 @@ public class ArtifactDelegateRequestUtils {
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
         .artifactRepositoryUrl(artifactRepositoryUrl)
+        .groupId(groupId)
+        .artifactId(artifactId)
         .build();
   }
 

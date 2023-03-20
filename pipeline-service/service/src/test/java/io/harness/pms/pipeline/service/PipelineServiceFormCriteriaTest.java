@@ -14,6 +14,7 @@ import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 import io.harness.PipelineServiceTestBase;
 import io.harness.PipelineSettingsService;
@@ -21,6 +22,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.filter.service.FilterService;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.governance.GovernanceMetadata;
+import io.harness.ng.core.dto.ProjectResponse;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
@@ -31,6 +34,8 @@ import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.yaml.PipelineVersion;
+import io.harness.project.remote.ProjectClient;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
@@ -47,10 +52,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
+import retrofit2.Call;
 
 public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
   @Mock private PMSPipelineServiceHelper pmsPipelineServiceHelperMocked;
@@ -71,6 +79,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
   @Mock private JsonExpander jsonExpander;
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
+  @Mock private ProjectClient projectClient;
 
   private final String accountId = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
@@ -120,7 +129,10 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(TemplateMergeResponseDTO.builder().build())
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(any(), anyBoolean(), anyBoolean());
-
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
+    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+        .thenReturn(projDTOCall);
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
 
     Criteria criteria = pmsPipelineServiceHelper.formCriteria(

@@ -61,7 +61,7 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
       filterValues.setRuleSetIds(ruleSetsIds);
     }
     GovernanceRuleFilter governancePolicyFilter = GovernanceRuleFilter.builder().build();
-    List<Rule> rules = rulesDao.list(governancePolicyFilter).getRule();
+    List<Rule> rules = rulesDao.list(governancePolicyFilter).getRules();
     if (rules != null) {
       HashMap<String, String> rulesIds = new HashMap<>();
       for (Rule iterate : rules) {

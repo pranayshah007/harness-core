@@ -24,6 +24,7 @@ import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ngmigration.beans.FileYamlDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -35,6 +36,7 @@ import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.Service;
@@ -53,6 +55,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,6 +65,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ContainerTaskMigrationService extends NgMigrationService {
+  @Inject private SecretRefUtils secretRefUtils;
   @Inject ServiceResourceService serviceResourceService;
 
   @Override
@@ -84,6 +88,9 @@ public class ContainerTaskMigrationService extends NgMigrationService {
                                     .id(containerTask.getUuid())
                                     .type(NGMigrationEntityType.CONTAINER_TASK)
                                     .build();
+    Set<CgEntityId> children = new HashSet<>();
+    children.addAll(secretRefUtils.getSecretRefFromExpressions(
+        containerTask.getAccountId(), MigratorExpressionUtils.getExpressions(containerTask)));
     return DiscoveryNode.builder().entityNode(cgEntityNode).build();
   }
 
@@ -99,20 +106,20 @@ public class ContainerTaskMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    ContainerTask serviceSpecification = (ContainerTask) entities.get(entityId).getEntity();
-    MigratorExpressionUtils.render(entities, migratedEntities, serviceSpecification, inputDTO.getCustomExpressions(),
-        inputDTO.getIdentifierCaseFormat());
-    NGYamlFile yamlFile = getYamlFile(serviceSpecification, inputDTO, entities);
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    ContainerTask serviceSpecification = (ContainerTask) migrationContext.getEntities().get(entityId).getEntity();
+    MigratorExpressionUtils.render(
+        migrationContext, serviceSpecification, migrationContext.getInputDTO().getCustomExpressions());
+    NGYamlFile yamlFile = getYamlFile(migrationContext, serviceSpecification);
     if (yamlFile == null) {
       return null;
     }
     return YamlGenerationDetails.builder().yamlFileList(Collections.singletonList(yamlFile)).build();
   }
 
-  private NGYamlFile getYamlFile(
-      ContainerTask containerTask, MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities) {
+  private NGYamlFile getYamlFile(MigrationContext migrationContext, ContainerTask containerTask) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     if (StringUtils.isBlank(containerTask.getAdvancedConfig())
         && EmptyPredicate.isEmpty(containerTask.getContainerDefinitions())) {
       return null;
@@ -174,8 +181,8 @@ public class ContainerTaskMigrationService extends NgMigrationService {
     return true;
   }
 
-  public List<ManifestConfigWrapper> getTaskSpecs(
-      Set<CgEntityId> serviceSpecIds, MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities) {
+  public List<ManifestConfigWrapper> getTaskSpecs(MigrationContext migrationContext, Set<CgEntityId> serviceSpecIds) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     if (isEmpty(serviceSpecIds)) {
       return new ArrayList<>();
     }
@@ -184,7 +191,7 @@ public class ContainerTaskMigrationService extends NgMigrationService {
       CgEntityNode configNode = entities.get(configEntityId);
       if (configNode != null) {
         ContainerTask specification = (ContainerTask) configNode.getEntity();
-        NGYamlFile file = getYamlFile(specification, inputDTO, entities);
+        NGYamlFile file = getYamlFile(migrationContext, specification);
         if (file != null) {
           manifestConfigWrappers.add(getConfigFileWrapper(specification, file));
         }

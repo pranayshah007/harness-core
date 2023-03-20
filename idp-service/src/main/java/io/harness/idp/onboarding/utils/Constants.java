@@ -19,6 +19,9 @@ public class Constants {
   public static final String ORGANIZATION = "Organization";
   public static final String PROJECT = "Project";
   public static final String SERVICE = "Service";
+  public static final String BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL = "harness.io/project-url";
+  public static final String BACKSTAGE_HARNESS_ANNOTATION_CD_SERVICE_ID = "harness.io/cd-serviceId";
+  public static final String PROJECT_URL = "projectUrl";
   public static final String PIPE_DELIMITER = "|";
   public static final String ENTITY_UNKNOWN_OWNER = "Unknown";
   public static final String ENTITY_UNKNOWN_LIFECYCLE = "Unknown";
@@ -29,7 +32,6 @@ public class Constants {
   public static final String SLASH_DELIMITER = "/";
   public static final String YAML_FILE_EXTENSION = ".yaml";
   public static final String SOURCE_FORMAT = "blob";
-  public static final String RELATIVE_TO_CURRENT_PATH = "./";
   public static final String BACKSTAGE_LOCATION_URL_TYPE = "url";
   public static final String BACKSTAGE_ALL_LOCATION_FILE_NAME = "all";
   public static final String STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED =

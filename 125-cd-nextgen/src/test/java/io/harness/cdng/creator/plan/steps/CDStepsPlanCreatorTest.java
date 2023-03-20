@@ -7,23 +7,29 @@
 
 package io.harness.cdng.creator.plan.steps;
 
+import static io.harness.pms.contracts.plan.ExecutionMode.POST_EXECUTION_ROLLBACK;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
+import io.harness.advisers.nextstep.NextStepAdviser;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.creator.plan.CDStepsPlanCreator;
 import io.harness.plancreator.execution.StepsExecutionConfig;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.steps.common.NGSectionStepParameters;
@@ -41,7 +47,11 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
+@PrepareForTest({YamlUtils.class})
 @OwnedBy(HarnessTeam.CDC)
 public class CDStepsPlanCreatorTest extends CDNGTestBase {
   @Inject @InjectMocks CDStepsPlanCreator stepsPlanCreator;
@@ -84,10 +94,30 @@ public class CDStepsPlanCreatorTest extends CDNGTestBase {
     NGSectionStepParameters stepParameters =
         NGSectionStepParameters.builder().childNodeId(childrenNodeId.get(0)).build();
 
+    YamlNode dummyYamlNode = getDummyNode();
+    MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class);
+    when(YamlUtils.getGivenYamlNodeFromParentPath(stepsYamlField.getNode(), "stage")).thenReturn(dummyYamlNode);
+
     PlanCreationContext ctx = PlanCreationContext.builder().currentField(stepsYamlField).build();
     PlanNode planForParentNode = stepsPlanCreator.createPlanForParentNode(ctx, null, childrenNodeId);
     assertThat(planForParentNode.getUuid()).isEqualTo(ctx.getCurrentField().getNode().getUuid());
     assertThat(planForParentNode.getStepParameters()).isEqualTo(stepParameters);
+
+    Map<ExecutionMode, List<AdviserObtainment>> advisorObtainmentsPerMode =
+        planForParentNode.getAdvisorObtainmentsForExecutionMode();
+    assertThat(advisorObtainmentsPerMode).hasSize(1);
+    assertThat(advisorObtainmentsPerMode).containsKey(POST_EXECUTION_ROLLBACK);
+    assertThat(advisorObtainmentsPerMode.get(POST_EXECUTION_ROLLBACK)).hasSize(1);
+    AdviserObtainment postExecAdvisor = advisorObtainmentsPerMode.get(POST_EXECUTION_ROLLBACK).get(0);
+    assertThat(postExecAdvisor.getType()).isEqualTo(NextStepAdviser.ADVISER_TYPE);
+    mockSettings.close();
+  }
+
+  private YamlNode getDummyNode() throws IOException {
+    String dummyStage = "stage:\n"
+        + "  __uuid: uuid2\n"
+        + "__uuid: uuid1\n";
+    return YamlUtils.readTree(dummyStage).getNode();
   }
 
   @Test

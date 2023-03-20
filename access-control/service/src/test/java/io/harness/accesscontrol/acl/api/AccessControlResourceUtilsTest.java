@@ -40,29 +40,18 @@ public class AccessControlResourceUtilsTest extends AccessControlTestBase {
     io.harness.security.dto.Principal principalInContext = new ServicePrincipal("service1");
     Principal principalToCheckPermissions =
         Principal.builder().principalType(PrincipalType.SERVICE).principalIdentifier("service2").build();
-    assertTrue(checkPreconditions(principalInContext, principalToCheckPermissions, true));
+    assertTrue(checkPreconditions(principalInContext, principalToCheckPermissions));
   }
 
   @Test
   @Owner(developers = JIMIT_GANDHI)
   @Category(UnitTests.class)
   public void
-  checkPreconditions_ServiceContextAndDifferentServicePrincipalInBody_When_DifferentPrincipalInContextAndBody_IsNotAllowed_ReturnsTrue() {
+  serviceContextAndOnlyServicePrincipalInBody_ServiceContextAndDifferentServicePrincipalInBody_When_DifferentPrincipalInContextAndBody_IsAllowed_ReturnsFalse() {
     io.harness.security.dto.Principal principalInContext = new ServicePrincipal("service1");
     Principal principalToCheckPermissions =
         Principal.builder().principalType(PrincipalType.SERVICE).principalIdentifier("service2").build();
-    assertTrue(checkPreconditions(principalInContext, principalToCheckPermissions, false));
-  }
-
-  @Test
-  @Owner(developers = JIMIT_GANDHI)
-  @Category(UnitTests.class)
-  public void
-  serviceContextAndOnlyServicePrincipalInBody_ServiceContextAndDifferentServicePrincipalInBody_When_DifferentPrincipalInContextAndBody_IsNotAllowed_ReturnsFalse() {
-    io.harness.security.dto.Principal principalInContext = new ServicePrincipal("service1");
-    Principal principalToCheckPermissions =
-        Principal.builder().principalType(PrincipalType.SERVICE).principalIdentifier("service2").build();
-    assertFalse(serviceContextAndOnlyServicePrincipalInBody(principalInContext, principalToCheckPermissions, false));
+    assertTrue(serviceContextAndOnlyServicePrincipalInBody(principalInContext, principalToCheckPermissions));
   }
 
   @Test
@@ -71,7 +60,7 @@ public class AccessControlResourceUtilsTest extends AccessControlTestBase {
   public void checkPreconditions_ServiceContextAndNoPrincipalInBody_ReturnsTrue() {
     io.harness.security.dto.Principal principalInContext = new ServicePrincipal("testService");
     // Principal principalToCheckPermissions = Principal.builder().principalType(PrincipalType.SERVICE).build();
-    assertTrue(checkPreconditions(principalInContext, null, true));
+    assertTrue(checkPreconditions(principalInContext, null));
   }
 
   @Test
@@ -81,7 +70,7 @@ public class AccessControlResourceUtilsTest extends AccessControlTestBase {
     io.harness.security.dto.Principal principalInContext = new ServicePrincipal("testService");
     Principal principalToCheckPermissions =
         Principal.builder().principalType(PrincipalType.SERVICE).principalIdentifier("testService").build();
-    assertTrue(checkPreconditions(principalInContext, principalToCheckPermissions, true));
+    assertTrue(checkPreconditions(principalInContext, principalToCheckPermissions));
   }
 
   @Test
@@ -91,7 +80,7 @@ public class AccessControlResourceUtilsTest extends AccessControlTestBase {
     io.harness.security.dto.Principal principalInContext = new ServicePrincipal("testService");
     Principal principalToCheckPermissions =
         Principal.builder().principalType(PrincipalType.USER).principalIdentifier("testUser").build();
-    assertTrue(checkPreconditions(principalInContext, principalToCheckPermissions, true));
+    assertTrue(checkPreconditions(principalInContext, principalToCheckPermissions));
   }
 
   @Test
@@ -101,7 +90,7 @@ public class AccessControlResourceUtilsTest extends AccessControlTestBase {
     io.harness.security.dto.Principal principalInContext = new UserPrincipal("user1", "userEmail", "user1", "123");
     Principal principalToCheckPermissions =
         Principal.builder().principalType(PrincipalType.USER).principalIdentifier("user2").build();
-    assertFalse(checkPreconditions(principalInContext, principalToCheckPermissions, false));
+    assertFalse(checkPreconditions(principalInContext, principalToCheckPermissions));
   }
 
   @Test
@@ -111,6 +100,6 @@ public class AccessControlResourceUtilsTest extends AccessControlTestBase {
     io.harness.security.dto.Principal principalInContext = new UserPrincipal("user1", "userEmail", "user1", "123");
     Principal principalToCheckPermissions =
         Principal.builder().principalType(PrincipalType.USER).principalIdentifier("user1").build();
-    assertTrue(checkPreconditions(principalInContext, principalToCheckPermissions, false));
+    assertTrue(checkPreconditions(principalInContext, principalToCheckPermissions));
   }
 }

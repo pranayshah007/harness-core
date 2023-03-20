@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.advisers.AdvisorObtainmentList;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PlanNodeProto;
@@ -22,6 +23,7 @@ import io.harness.pms.data.OrchestrationMap;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.timeout.contracts.TimeoutObtainment;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -78,6 +80,7 @@ public class PlanNode implements Node {
     if (planNodeProto == null) {
       return null;
     }
+
     return PlanNode.builder()
         .uuid(planNodeProto.getUuid())
         .name(planNodeProto.getName())
@@ -88,6 +91,8 @@ public class PlanNode implements Node {
         .stepParameters(PmsStepParameters.parse(planNodeProto.getStepParameters()))
         .refObjects(planNodeProto.getRebObjectsList())
         .adviserObtainments(planNodeProto.getAdviserObtainmentsList())
+        .advisorObtainmentsForExecutionMode(
+            buildAdvisorObtainmentsForExecutionMode(planNodeProto.getAdviserObtainmentsForExecutionModeMap()))
         .facilitatorObtainments(planNodeProto.getFacilitatorObtainmentsList())
         .timeoutObtainments(planNodeProto.getTimeoutObtainmentsList())
         .skipCondition(planNodeProto.getSkipCondition())
@@ -100,6 +105,16 @@ public class PlanNode implements Node {
         .stepInputs(OrchestrationMap.parse(planNodeProto.getStepInputs()))
         .executionInputTemplate(planNodeProto.getExecutionInputTemplate())
         .build();
+  }
+
+  static Map<ExecutionMode, List<AdviserObtainment>> buildAdvisorObtainmentsForExecutionMode(
+      Map<String, AdvisorObtainmentList> advisorObtainmentsForExecutionMode) {
+    Map<ExecutionMode, List<AdviserObtainment>> result = new HashMap<>();
+    for (Map.Entry<String, AdvisorObtainmentList> entry : advisorObtainmentsForExecutionMode.entrySet()) {
+      ExecutionMode executionMode = ExecutionMode.valueOf(entry.getKey());
+      result.put(executionMode, entry.getValue().getAdviserObtainmentsList());
+    }
+    return result;
   }
 
   @Override

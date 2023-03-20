@@ -212,11 +212,13 @@ public class YamlNode implements Visitable {
       if (!curr.isArray()) {
         throw new YamlException(String.format("Trying to use index path (%s) on non-array node", lastName));
       }
-      try {
-        int idx = Integer.parseInt(lastName.substring(1, lastName.length() - 1));
-        ArrayNode arrayNode = (ArrayNode) curr;
+      int idx = Integer.parseInt(lastName.substring(1, lastName.length() - 1));
+      ArrayNode arrayNode = (ArrayNode) curr;
+      if (idx < arrayNode.size()) {
         arrayNode.set(idx, newNode);
-      } catch (Exception ex) {
+      } else if (idx == arrayNode.size()) {
+        arrayNode.add(newNode);
+      } else {
         throw new YamlException(String.format("Incorrect index path (%s) on array node", lastName));
       }
     } else {
