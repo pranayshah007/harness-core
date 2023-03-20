@@ -159,7 +159,10 @@ public class IdentityNodeExecutionStrategy
         return;
       }
       log.info("Starting to handle Adviser Response of type: {}", adviserResponse.getType());
-      NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
+      // Get all fields of NodeExecution as advisors may use any fields of NodeExecution.
+      // As identity nodes can potentially have actual advisors on them, we'll need to update the advisor response
+      NodeExecution nodeExecution = nodeExecutionService.update(
+          nodeExecutionId, ops -> ops.set(NodeExecutionKeys.adviserResponse, adviserResponse));
       AdviserResponseHandler adviserResponseHandler = adviseHandlerFactory.obtainHandler(adviserResponse.getType());
       if (!isFailureStrategyAdvisor(adviserResponseHandler)) {
         adviserResponseHandler.handleAdvise(nodeExecution, adviserResponse);
