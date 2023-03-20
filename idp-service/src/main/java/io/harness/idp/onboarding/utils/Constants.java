@@ -32,7 +32,6 @@ public class Constants {
   public static final String SLASH_DELIMITER = "/";
   public static final String YAML_FILE_EXTENSION = ".yaml";
   public static final String SOURCE_FORMAT = "blob";
-  public static final String RELATIVE_TO_CURRENT_PATH = "./";
   public static final String BACKSTAGE_LOCATION_URL_TYPE = "url";
   public static final String BACKSTAGE_ALL_LOCATION_FILE_NAME = "all";
   public static final String STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED =

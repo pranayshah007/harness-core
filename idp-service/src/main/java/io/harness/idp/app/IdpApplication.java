@@ -13,6 +13,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.idp.app.IdpConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
+import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.health.HealthService;
@@ -23,6 +24,11 @@ import io.harness.idp.events.consumers.IdpEventConsumerController;
 import io.harness.idp.secret.jobs.EnvironmentSecretsSyncJob;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.service.api.MetricService;
+import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
+import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
+import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
+import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
+import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.persistence.HPersistence;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
@@ -43,10 +49,11 @@ import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
+import io.dropwizard.jersey.errors.EarlyEofExceptionMapper;
+import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
+import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
-import io.federecio.dropwizard.swagger.SwaggerBundle;
-import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -99,12 +106,6 @@ public class IdpApplication extends Application<IdpConfiguration> {
         bootstrap.getConfigurationSourceProvider(), new EnvironmentVariableSubstitutor(false)));
     bootstrap.addBundle(new FileAssetsBundle("/.well-known"));
     bootstrap.setMetricRegistry(metricRegistry);
-    bootstrap.addBundle(new SwaggerBundle<>() {
-      @Override
-      protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(IdpConfiguration idpConfiguration) {
-        return idpConfiguration.getSwaggerBundleConfiguration();
-      }
-    });
 
     log.info("bootstrapping done.");
   }
@@ -126,6 +127,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerQueueListeners(injector);
     registerAuthFilters(configuration, environment, injector);
     registerManagedJobs(environment, injector);
+    registerExceptionMappers(environment.jersey());
     //    initMetrics(injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
@@ -196,5 +198,16 @@ public class IdpApplication extends Application<IdpConfiguration> {
                && resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(annotation) != null)
         || (resourceInfoAndRequest.getKey().getResourceClass() != null
             && resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(annotation) != null);
+  }
+
+  private void registerExceptionMappers(JerseyEnvironment jersey) {
+    jersey.register(JerseyViolationExceptionMapperV2.class);
+    jersey.register(GenericExceptionMapperV2.class);
+    jersey.register(new JsonProcessingExceptionMapper(true));
+    jersey.register(EarlyEofExceptionMapper.class);
+    jersey.register(NGAccessDeniedExceptionMapper.class);
+    jersey.register(WingsExceptionMapperV2.class);
+    jersey.register(NotFoundExceptionMapper.class);
+    jersey.register(NotAllowedExceptionMapper.class);
   }
 }

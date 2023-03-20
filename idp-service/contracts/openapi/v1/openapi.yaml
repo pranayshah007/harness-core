@@ -309,21 +309,6 @@ paths:
         name: accountIdentifier
         in: path
         required: true
-  /v1/onboarding/access-check:
-    parameters: []
-    get:
-      summary: Check if User is allowed to perform IDP onboarding workflow
-      responses:
-        '200':
-          $ref: '#/components/responses/OnboardingAccessCheckResponse'
-      operationId: onboarding-access-check
-      description: Check if User is allowed to perform IDP onboarding workflow
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-      security:
-        - x-api-key: []
-      tags:
-        - OnboardingResource
   /v1/onboarding/harness-entities:
     parameters: []
     get:
@@ -733,18 +718,6 @@ components:
         - branch
         - path
         - infraConnector
-    OnboardingAccessCheckResponse:
-      title: OnboardingAccessCheckResponse
-      x-stoplight:
-        id: a46k1ggo6ptxc
-      type: object
-      x-examples: {}
-      description: Response to check whether user is allowed to perform IDP onboarding or not
-      properties:
-        access:
-          type: string
-      required:
-        - access
     HarnessEntitiesResponse:
       title: HarnessEntitiesResponse
       x-stoplight:
@@ -1249,12 +1222,6 @@ components:
         application/xml:
           schema:
             $ref: '#/components/schemas/NamepsaceResponse'
-    OnboardingAccessCheckResponse:
-      description: IDP Onboarding AccessCheck response for given user account
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/OnboardingAccessCheckResponse'
     HarnessEntitiesResponse:
       description: Response for harness entities mapping with backstage entities
       content:

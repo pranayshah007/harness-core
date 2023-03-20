@@ -25,8 +25,8 @@ public class HarnessOrgToBackstageDomain
     BackstageCatalogDomainEntity backstageCatalogDomainEntity = new BackstageCatalogDomainEntity();
 
     BackstageCatalogEntity.Metadata metadata = new BackstageCatalogEntity.Metadata();
-    metadata.setMetadata(organizationDTO.getIdentifier(), organizationDTO.getName(), organizationDTO.getDescription(),
-        new ArrayList<>(organizationDTO.getTags().values()), null);
+    metadata.setMetadata(organizationDTO.getIdentifier(), organizationDTO.getIdentifier(), organizationDTO.getName(),
+        organizationDTO.getDescription(), new ArrayList<>(organizationDTO.getTags().values()), null);
     backstageCatalogDomainEntity.setMetadata(metadata);
 
     BackstageCatalogDomainEntity.Spec spec = new BackstageCatalogDomainEntity.Spec();
