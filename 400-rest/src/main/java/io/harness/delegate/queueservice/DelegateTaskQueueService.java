@@ -27,6 +27,7 @@ import io.harness.hsqs.client.model.DequeueRequest;
 import io.harness.hsqs.client.model.DequeueResponse;
 import io.harness.hsqs.client.model.EnqueueRequest;
 import io.harness.hsqs.client.model.EnqueueResponse;
+import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.queueservice.DelegateTaskDequeue;
 import io.harness.queueservice.ResourceBasedDelegateSelectionCheckForTask;
@@ -45,6 +46,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -139,7 +141,8 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     }
   }
   private boolean isResourceAvailableToAssignTask(DelegateTaskDequeue delegateTaskDequeue) {
-    return isResourceAvailableToAssignTask(delegateTaskDequeue.getDelegateTask());
+    return isDelegateTaskAborted(delegateTaskDequeue)
+        || isResourceAvailableToAssignTask(delegateTaskDequeue.getDelegateTask());
   }
 
   public boolean isResourceAvailableToAssignTask(DelegateTask delegateTask) {
@@ -209,6 +212,13 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
         log.info("Delegate task {} acknowledge with item id {} from Queue Service",
             delegateTaskDequeue.getDelegateTask().getUuid(), itemId);
         if (isNotEmpty(itemId)) {
+          if (isDelegateTaskAborted(delegateTaskDequeue)) {
+            delegateTaskServiceClassic.abortTask(
+                delegateTaskDequeue.getDelegateTask().getAccountId(), delegateTaskDequeue.getDelegateTask().getUuid());
+            delegateCache.removeFromAbortedTaskList(
+                delegateTaskDequeue.getDelegateTask().getAccountId(), delegateTaskDequeue.getDelegateTask().getUuid());
+            return;
+          }
           String taskId =
               delegateTaskServiceClassic.saveAndBroadcastDelegateTask(delegateTaskDequeue.getDelegateTask());
           log.info("Queued task {} broadcasting to delegate.", taskId);
@@ -236,5 +246,20 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
       return;
     }
     dequeue();
+  }
+
+  private boolean isDelegateTaskAborted(DelegateTaskDequeue delegateTaskDequeue) {
+    // check if it's in the list of aborted task event list
+    String accountId = delegateTaskDequeue.getDelegateTask().getAccountId();
+    String delegateTaskId = delegateTaskDequeue.getDelegateTask().getUuid();
+    try (AutoLogContext ignore1 = new TaskLogContext(delegateTaskId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      Set<String> delegateTaskAborted = delegateCache.getAbortedTaskList(accountId);
+      if (delegateTaskAborted.contains(delegateTaskId)) {
+        log.info("Aborting delegate task from queue {}", delegateTaskDequeue.getDelegateTask().getUuid());
+        return true;
+      }
+    }
+    return false;
   }
 }

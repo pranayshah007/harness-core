@@ -15,7 +15,6 @@ import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.beans.DelegateTask.Status.runningStatuses;
 import static io.harness.beans.FeatureName.DELEGATE_TASK_LOAD_DISTRIBUTION;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
-import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.SizeFunction.size;
@@ -1776,7 +1775,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                                ErrorNotifyResponseData.builder().errorMessage("Delegate task was aborted").build()))
                            .build());
 
-      return endTaskV2(accountId, delegateTaskId, getRunningTaskQueryV2(accountId, delegateTaskId), ABORTED);
+      DelegateTask abortedDelegateTask =
+          endTaskV2(accountId, delegateTaskId, getRunningTaskQueryV2(accountId, delegateTaskId), ABORTED);
+      // if task is not in DB then check if task is in the queue
+      if (abortedDelegateTask == null) {
+        delegateCache.addToAbortedTaskList(accountId, Sets.newHashSet(delegateTaskId));
+      }
+      return abortedDelegateTask;
     }
   }
 
@@ -1808,10 +1813,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         delegateTaskQuery.asList().stream().filter(task -> task.getTaskDataV2().isAsync()).findFirst().orElse(null);
     if (oldTask != null) {
       persistence.update(oldTask, updateOperations, migrationEnabledForDelegateTask);
+      broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true)
+          .broadcast(aDelegateTaskAbortEvent().withAccountId(accountId).withDelegateTaskId(delegateTaskId).build());
     }
-    broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true)
-        .broadcast(aDelegateTaskAbortEvent().withAccountId(accountId).withDelegateTaskId(delegateTaskId).build());
-
     return oldTask;
   }
 
