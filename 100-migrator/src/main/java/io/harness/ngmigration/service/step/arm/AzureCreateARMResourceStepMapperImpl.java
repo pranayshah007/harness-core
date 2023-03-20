@@ -43,6 +43,7 @@ import io.harness.cdng.provision.azure.AzureTemplateFile;
 import io.harness.cdng.provision.azure.AzureTenantSpec;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -119,7 +120,8 @@ public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisione
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     ARMProvisionState state = (ARMProvisionState) getState(graphNode);
     String provisionerId = state.getProvisionerId();
 

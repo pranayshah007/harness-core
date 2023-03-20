@@ -9,8 +9,11 @@ package io.harness.ngmigration.expressions;
 
 import io.harness.beans.EncryptedData;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Scope;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.NotExpression;
+import io.harness.ngmigration.beans.InputDefaults;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -41,8 +44,9 @@ import org.jetbrains.annotations.NotNull;
 public class MigratorExpressionUtils {
   private static final int MAX_DEPTH = 8;
 
-  public static Object render(Map<CgEntityId, CgEntityNode> cgEntities, Map<CgEntityId, NGYamlFile> migratedEntities,
-      Object object, Map<String, Object> customExpressions, CaseFormat identifierCaseFormat) {
+  public static Object render(MigrationContext context, Object object, Map<String, Object> customExpressions) {
+    Map<CgEntityId, CgEntityNode> cgEntities = context.getEntities();
+    Map<CgEntityId, NGYamlFile> migratedEntities = context.getMigratedEntities();
     // Generate the secret map
     Map<String, String> secretRefMap = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(cgEntities) && EmptyPredicate.isNotEmpty(migratedEntities)) {
@@ -61,13 +65,14 @@ public class MigratorExpressionUtils {
       }
     }
 
-    Map<String, Object> context = prepareContextMap(secretRefMap, customExpressions, identifierCaseFormat);
-    return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(context));
+    Map<String, Object> ctx = prepareContextMap(context, secretRefMap, customExpressions);
+    return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(ctx));
   }
 
   @NotNull
   static Map<String, Object> prepareContextMap(
-      Map<String, String> secretRefMap, Map<String, Object> customExpressions, CaseFormat identifierCaseFormat) {
+      MigrationContext migrationContext, Map<String, String> secretRefMap, Map<String, Object> customExpressions) {
+    CaseFormat identifierCaseFormat = getCaseFormat(migrationContext);
     Map<String, Object> context = new HashMap<>();
 
     context.put("deploymentTriggeredBy", "<+pipeline.triggeredBy.name>");
@@ -148,9 +153,11 @@ public class MigratorExpressionUtils {
     context.put("servicevariable", new ServiceVariablesMigratorFunctor());
     context.put("environmentVariable", new EnvVariablesMigratorFunctor());
     context.put("environmentVariables", new EnvVariablesMigratorFunctor());
+    context.put("configFile", new ConfigFileMigratorFunctor());
 
     // Secrets
-    context.put("secrets", new SecretMigratorFunctor(secretRefMap, identifierCaseFormat));
+    context.put(
+        "secrets", new SecretMigratorFunctor(secretRefMap, identifierCaseFormat, getSecretScope(migrationContext)));
 
     // App
     context.put("app.defaults", new AppVariablesMigratorFunctor(identifierCaseFormat));
@@ -181,7 +188,7 @@ public class MigratorExpressionUtils {
   }
 
   private static Set<String> extractAll(String source, Pattern compiled) {
-    if (source == null) {
+    if (StringUtils.isBlank(source)) {
       return Collections.emptySet();
     }
     Set<String> matches = new HashSet<>();
@@ -265,5 +272,25 @@ public class MigratorExpressionUtils {
       c = c.getSuperclass();
     }
     return all;
+  }
+
+  private static Scope getSecretScope(MigrationContext context) {
+    Scope scope = Scope.PROJECT;
+    if (context == null || context.getInputDTO() == null
+        || EmptyPredicate.isEmpty(context.getInputDTO().getDefaults())) {
+      return scope;
+    }
+    InputDefaults inputDefaults = context.getInputDTO().getDefaults().getOrDefault(NGMigrationEntityType.SECRET, null);
+    if (inputDefaults == null) {
+      return scope;
+    }
+    return inputDefaults.getScope() == null ? scope : inputDefaults.getScope();
+  }
+
+  private static CaseFormat getCaseFormat(MigrationContext context) {
+    if (context == null || context.getInputDTO() == null || context.getInputDTO().getIdentifierCaseFormat() == null) {
+      return CaseFormat.CAMEL_CASE;
+    }
+    return context.getInputDTO().getIdentifierCaseFormat();
   }
 }

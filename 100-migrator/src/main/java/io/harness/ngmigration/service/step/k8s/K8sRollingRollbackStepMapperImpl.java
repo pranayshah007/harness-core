@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step.k8s;
 import io.harness.cdng.k8s.K8sRollingRollbackStepInfo;
 import io.harness.cdng.k8s.K8sRollingRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -36,7 +37,8 @@ public class K8sRollingRollbackStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     K8sRollingRollbackStepNode k8sRollingStepNode = new K8sRollingRollbackStepNode();
     baseSetup(graphNode, k8sRollingStepNode, context.getIdentifierCaseFormat());
     k8sRollingStepNode.setK8sRollingRollbackStepInfo(

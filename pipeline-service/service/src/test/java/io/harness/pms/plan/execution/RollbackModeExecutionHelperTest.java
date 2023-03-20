@@ -18,6 +18,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.NodeType;
 import io.harness.plan.Plan;
@@ -190,10 +191,11 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
     List<Node> identityNodes =
         nodes.stream().filter(node -> node.getNodeType() == NodeType.IDENTITY_PLAN_NODE).collect(Collectors.toList());
     assertThat(identityNodes).hasSize(1);
-    Node identityNode = identityNodes.get(0);
+    IdentityPlanNode identityNode = (IdentityPlanNode) identityNodes.get(0);
     assertThat(identityNode.getUuid()).isEqualTo("uuid1");
     assertThat(identityNode.getSkipGraphType()).isEqualTo(SkipType.SKIP_NODE);
     assertThat(identityNode.getAdviserObtainments()).hasSize(1);
+    assertThat(identityNode.getUseAdviserObtainments()).isTrue();
   }
 
   public static <T> CloseableIterator<T> createCloseableIterator(Iterator<T> iterator) {

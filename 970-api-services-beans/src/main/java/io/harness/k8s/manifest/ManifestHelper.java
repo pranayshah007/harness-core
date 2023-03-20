@@ -56,6 +56,8 @@ public class ManifestHelper {
   public static final String values_filename = "values.yaml";
   public static final String yaml_file_extension = ".yaml";
   public static final String yml_file_extension = ".yml";
+  public static final String kustomizeFileNameYaml = "kustomization.yaml";
+  public static final String kustomizeFileNameYml = "kustomization.yml";
   public static final String currentReleaseWorkloadExpression = "${k8s.currentReleaseWorkload}";
   public static final String previousReleaseWorkloadExpression = "${k8s.previousReleaseWorkload}";
 

@@ -36,8 +36,6 @@ import io.harness.secrets.validation.validators.AwsSecretManagerValidator;
 import io.harness.secrets.validation.validators.AzureSecretManagerValidator;
 import io.harness.secrets.validation.validators.GcpSecretManagerValidator;
 import io.harness.secrets.validation.validators.VaultSecretManagerValidator;
-import io.harness.secrets.yamlhandlers.SecretYamlHandler;
-import io.harness.secrets.yamlhandlers.SecretYamlHandlerImpl;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -73,7 +71,6 @@ public class SecretManagementCoreModule extends AbstractModule {
     bind(SecretsDao.class).to(SecretsDaoImpl.class);
     bind(SecretSetupUsageService.class).to(SecretSetupUsageServiceImpl.class);
     bind(SecretService.class).to(SecretServiceImpl.class);
-    bind(SecretYamlHandler.class).to(SecretYamlHandlerImpl.class);
     bind(new TypeLiteral<QueueListener<MigrateSecretTask> >() {}).to(SecretMigrationEventListener.class);
 
     binder()

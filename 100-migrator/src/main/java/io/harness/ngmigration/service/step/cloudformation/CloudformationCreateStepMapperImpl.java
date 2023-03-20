@@ -17,6 +17,7 @@ import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepInf
 import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepNode;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -80,7 +81,8 @@ public class CloudformationCreateStepMapperImpl extends BaseCloudformationProvis
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     CloudFormationCreateStackState state = (CloudFormationCreateStackState) getState(graphNode);
 
     CloudformationCreateStackStepConfiguration cfConfiguration =

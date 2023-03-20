@@ -20,6 +20,7 @@ import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
 
@@ -82,6 +83,18 @@ public class CDNGRbacUtility {
       return null;
     }
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
+    return getExecutionPrincipalInfo(executionPrincipalInfo);
+  }
+
+  public Principal constructPrincipalFromPlanCreationContextValue(PlanCreationContextValue ctxValue) {
+    if (ctxValue == null || ctxValue.getMetadata() == null || ctxValue.getMetadata().getPrincipalInfo() == null) {
+      return null;
+    }
+    ExecutionPrincipalInfo executionPrincipalInfo = ctxValue.getMetadata().getPrincipalInfo();
+    return getExecutionPrincipalInfo(executionPrincipalInfo);
+  }
+
+  private Principal getExecutionPrincipalInfo(ExecutionPrincipalInfo executionPrincipalInfo) {
     String principal = executionPrincipalInfo.getPrincipal();
     if (EmptyPredicate.isEmpty(principal)) {
       return null;

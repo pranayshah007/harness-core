@@ -15,6 +15,7 @@ import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepInfo;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepNode;
 import io.harness.data.structure.CompareUtils;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -44,7 +45,8 @@ public class ElastigroupDeployStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     SpotInstDeployState state = (SpotInstDeployState) getState(graphNode);
 
     ElastigroupDeployStepNode node = new ElastigroupDeployStepNode();

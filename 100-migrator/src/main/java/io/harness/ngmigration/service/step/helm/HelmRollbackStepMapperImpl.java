@@ -13,6 +13,7 @@ import io.harness.cdng.helm.HelmRollbackStepNode;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -52,7 +53,8 @@ public class HelmRollbackStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     HelmRollbackState state = (HelmRollbackState) getState(graphNode);
     HelmRollbackStepNode stepNode = new HelmRollbackStepNode();
     baseSetup(state, stepNode, context.getIdentifierCaseFormat());

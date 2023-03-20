@@ -76,6 +76,7 @@ import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.SLOTimeScaleService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
@@ -152,7 +153,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private CompositeSLORecordServiceImpl compositeSLORecordService;
   @Inject private AnnotationService annotationService;
   private Query<AbstractServiceLevelObjective> sloQuery;
-
+  @Inject SLOTimeScaleService sloTimeScaleService;
   @Inject private NotificationClient notificationClient;
 
   @Inject
@@ -220,7 +221,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       SimpleServiceLevelObjective simpleServiceLevelObjective =
           (SimpleServiceLevelObjective) saveServiceLevelObjectiveV2Entity(
               projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled());
-
+      sloTimeScaleService.upsertServiceLevelObjective(simpleServiceLevelObjective);
       sloHealthIndicatorService.upsert(simpleServiceLevelObjective);
       return getSLOResponse(simpleServiceLevelObjective.getIdentifier(), projectParams);
     } else {
@@ -304,6 +305,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                            .orgIdentifier(projectParams.getOrgIdentifier())
                            .projectIdentifier(projectParams.getProjectIdentifier())
                            .build());
+    sloTimeScaleService.upsertServiceLevelObjective(serviceLevelObjective);
     return getSLOResponse(serviceLevelObjectiveDTO.getIdentifier(), projectParams);
   }
 
@@ -419,6 +421,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .stream()
             .map(NotificationRuleRef::getNotificationRuleRef)
             .collect(Collectors.toList()));
+    sloTimeScaleService.deleteServiceLevelObjective(projectParams, identifier);
     if (serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.COMPOSITE)) {
       String verificationTaskId = verificationTaskService.getCompositeSLOVerificationTaskId(
           serviceLevelObjectiveV2.getAccountId(), serviceLevelObjectiveV2.getUuid());

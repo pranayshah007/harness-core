@@ -85,13 +85,13 @@ public class NodeProjectionUtils {
   public static final Set<String> forFacilitation = Sets.newHashSet(NodeExecutionKeys.ambiance,
       NodeExecutionKeys.originalNodeExecutionId, NodeExecutionKeys.module, NodeExecutionKeys.resolvedParams);
 
-  public static final Set<String> fieldsForResponseNotifyData =
-      Sets.newHashSet(NodeExecutionKeys.identifier, NodeExecutionKeys.nodeId, NodeExecutionKeys.status,
-          NodeExecutionKeys.adviserResponse, NodeExecutionKeys.failureInfo, NodeExecutionKeys.oldRetry);
+  public static final Set<String> fieldsForResponseNotifyData = Sets.newHashSet(NodeExecutionKeys.identifier,
+      NodeExecutionKeys.nodeId, NodeExecutionKeys.status, NodeExecutionKeys.adviserResponse,
+      NodeExecutionKeys.failureInfo, NodeExecutionKeys.oldRetry, NodeExecutionKeys.endTs);
 
   public static final Set<String> fieldsForExecutionStrategy =
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.adviserResponse,
-          NodeExecutionKeys.failureInfo, NodeExecutionKeys.notifyId);
+          NodeExecutionKeys.failureInfo, NodeExecutionKeys.notifyId, NodeExecutionKeys.endTs);
 
   public static final Set<String> fieldsForIdentityStrategyStep = Sets.newHashSet(NodeExecutionKeys.identifier,
       NodeExecutionKeys.name, NodeExecutionKeys.nodeId, NodeExecutionKeys.status, NodeExecutionKeys.executableResponses,

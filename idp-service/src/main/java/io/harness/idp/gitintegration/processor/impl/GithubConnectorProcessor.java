@@ -25,8 +25,9 @@ import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
 import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.math3.util.Pair;
 
 @OwnedBy(HarnessTeam.IDP)
@@ -38,7 +39,7 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     return config.getExecuteOnDelegate() ? CATALOG_INFRA_CONNECTOR_TYPE_PROXY : CATALOG_INFRA_CONNECTOR_TYPE_DIRECT;
   }
 
-  public Pair<ConnectorInfoDTO, List<EnvironmentSecret>> getConnectorAndSecretsInfo(
+  public Pair<ConnectorInfoDTO, Map<String, EnvironmentSecret>> getConnectorAndSecretsInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
     ConnectorInfoDTO connectorInfoDTO = getConnectorInfo(accountIdentifier, connectorIdentifier);
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.GITHUB_CONNECTOR_TYPE)) {
@@ -49,7 +50,7 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
     GithubApiAccessDTO apiAccess = config.getApiAccess();
 
-    List<EnvironmentSecret> resultList = new ArrayList<>();
+    Map<String, EnvironmentSecret> secrets = new HashMap<>();
 
     if (apiAccess != null && apiAccess.getType().toString().equals(GitIntegrationConstants.GITHUB_APP_CONNECTOR_TYPE)) {
       GithubAppSpecDTO apiAccessSpec = (GithubAppSpecDTO) apiAccess.getSpec();
@@ -57,10 +58,10 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
       EnvironmentSecret appIDEnvironmentSecret = new EnvironmentSecret();
       appIDEnvironmentSecret.setEnvName(GitIntegrationConstants.GITHUB_APP_ID);
       appIDEnvironmentSecret.setDecryptedValue(apiAccessSpec.getApplicationId());
-      resultList.add(appIDEnvironmentSecret);
+      secrets.put(GitIntegrationConstants.GITHUB_APP_ID, appIDEnvironmentSecret);
 
       String privateRefKeySecretIdentifier = apiAccessSpec.getPrivateKeyRef().getIdentifier();
-      resultList.add(
+      secrets.put(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF,
           GitIntegrationUtils.getEnvironmentSecret(ngSecretService, accountIdentifier, orgIdentifier, projectIdentifier,
               privateRefKeySecretIdentifier, connectorIdentifier, GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF));
     }
@@ -79,16 +80,18 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
           String.format("Secret identifier not found for connector: [%s] ", connectorIdentifier));
     }
 
-    resultList.add(GitIntegrationUtils.getEnvironmentSecret(ngSecretService, accountIdentifier, orgIdentifier,
-        projectIdentifier, tokenSecretIdentifier, connectorIdentifier, GitIntegrationConstants.GITHUB_TOKEN));
-    return new Pair<>(connectorInfoDTO, resultList);
+    secrets.put(GitIntegrationConstants.GITHUB_TOKEN,
+        GitIntegrationUtils.getEnvironmentSecret(ngSecretService, accountIdentifier, orgIdentifier, projectIdentifier,
+            tokenSecretIdentifier, connectorIdentifier, GitIntegrationConstants.GITHUB_TOKEN));
+    return new Pair<>(connectorInfoDTO, secrets);
   }
 
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
       String locationParentPath, String remoteFolder, List<String> filesToPush) {
-    Pair<ConnectorInfoDTO, List<EnvironmentSecret>> connectorSecretsInfo = getConnectorAndSecretsInfo(
+    Pair<ConnectorInfoDTO, Map<String, EnvironmentSecret>> connectorSecretsInfo = getConnectorAndSecretsInfo(
         accountIdentifier, null, null, catalogConnectorInfo.getSourceConnector().getIdentifier());
-    String githubConnectorSecret = connectorSecretsInfo.getSecond().get(0).getDecryptedValue();
+    String githubConnectorSecret =
+        connectorSecretsInfo.getSecond().get(GitIntegrationConstants.GITHUB_TOKEN).getDecryptedValue();
 
     GithubConnectorDTO config = (GithubConnectorDTO) connectorSecretsInfo.getFirst().getConnectorConfig();
     GithubHttpCredentialsOutcomeDTO outcome =

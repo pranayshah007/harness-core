@@ -103,4 +103,8 @@ public class KubernetesExceptionHints {
   public final String INVALID_OPENSHIFT_FILES =
       "Please check if the given openshift template and param files are valid";
   public final String TOO_LARGE_MANIFEST_YAML = "The dry run manifest yaml file might be too large to process.";
+  public final String AVAILABLE_FILES_IN_MANIFEST_DIRECTORY_FORMAT = "Available files in manifest directory:\n%s";
+  public final String MAYBE_DID_YOU_MEAN_FILE_FORMAT = "Maybe did you mean: %s";
+  public final String NO_FILES_FOUND_IN_MANIFEST_DIRECTORY =
+      "Check manifest folder/file path in manifest configuration";
 }

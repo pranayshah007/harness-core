@@ -27,7 +27,6 @@ import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord.CompositeSLORecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
@@ -420,11 +419,6 @@ public class GraphDataServiceImpl implements GraphDataService {
     }
     minutes.add(endTime.minus(Duration.ofMinutes(1)));
     minutes.add(lastRecord.getTimestamp()); // always include start and end minute.
-    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
-        .filter(SLIRecordKeys.sliId, sliId)
-        .field(SLIRecordKeys.timestamp)
-        .in(minutes)
-        .order(Sort.ascending(SLIRecordKeys.timestamp))
-        .asList();
+    return sliRecordService.getSLIRecordsOfMinutes(sliId, minutes);
   }
 }

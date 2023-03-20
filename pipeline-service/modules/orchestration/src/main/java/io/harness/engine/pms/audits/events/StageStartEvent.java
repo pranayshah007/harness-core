@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +19,6 @@ import lombok.NoArgsConstructor;
 @OwnedBy(PIPELINE)
 @Data
 @NoArgsConstructor
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class StageStartEvent extends NodeExecutionEvent {
   private String stageIdentifier;
   private String stageType;
@@ -41,6 +39,6 @@ public class StageStartEvent extends NodeExecutionEvent {
   @JsonIgnore
   @Override
   public String getEventType() {
-    return NodeExecutionOutboxEvents.STAGE_START;
+    return NodeExecutionOutboxEventConstants.STAGE_START;
   }
 }

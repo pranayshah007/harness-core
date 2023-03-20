@@ -14,6 +14,7 @@ import io.harness.cdng.aws.asg.AsgBlueGreenDeployStepNode;
 import io.harness.cdng.aws.asg.AsgRollingDeployStepInfo;
 import io.harness.cdng.aws.asg.AsgRollingDeployStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -43,7 +44,8 @@ public class AsgRollingDeployStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     AwsAmiServiceSetup state = (AwsAmiServiceSetup) getState(graphNode);
     if (state.isBlueGreen()) {
       return getBGRollingStepNode(state, context.getIdentifierCaseFormat());

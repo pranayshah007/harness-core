@@ -186,7 +186,8 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     ExecutionElementConfig executionElementConfig = ExecutionElementConfig.builder().steps(steps).build();
     IntegrationStageConfig integrationStageConfig =
         IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
-    List<String> identifiers = IntegrationStageStepParametersPMS.getStepIdentifiers(integrationStageConfig);
+    List<String> identifiers =
+        IntegrationStageStepParametersPMS.getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
     assertThat(identifiers).isNotEmpty();
     assertThat(identifiers.get(0)).isEqualTo("step-2");
     assertThat(identifiers.get(1)).isEqualTo("step_g_run2");

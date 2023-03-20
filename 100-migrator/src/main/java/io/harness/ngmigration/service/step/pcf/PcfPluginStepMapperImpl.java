@@ -15,6 +15,7 @@ import io.harness.cdng.tas.TasCommandScript;
 import io.harness.cdng.tas.TasCommandStepInfo;
 import io.harness.cdng.tas.TasCommandStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -52,7 +53,8 @@ public class PcfPluginStepMapperImpl extends PcfAbstractStepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     PcfPluginState state = (PcfPluginState) getState(graphNode);
 
     TasCommandStepNode tasCommandStepNode = new TasCommandStepNode();
@@ -75,6 +77,7 @@ public class PcfPluginStepMapperImpl extends PcfAbstractStepMapper {
                    .build())
         .build();
   }
+
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     return false;
