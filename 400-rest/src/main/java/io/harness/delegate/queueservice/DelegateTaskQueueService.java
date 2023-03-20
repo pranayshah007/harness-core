@@ -19,13 +19,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
-import io.harness.hsqs.client.HsqsClient;
+import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.AckRequest;
 import io.harness.hsqs.client.model.AckResponse;
 import io.harness.hsqs.client.model.DequeueRequest;
 import io.harness.hsqs.client.model.DequeueResponse;
 import io.harness.hsqs.client.model.EnqueueRequest;
 import io.harness.hsqs.client.model.EnqueueResponse;
+import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.queueservice.DelegateTaskDequeue;
 import io.harness.queueservice.ResourceBasedDelegateSelectionCheckForTask;
@@ -40,28 +41,23 @@ import software.wings.service.intfc.DelegateTaskServiceClassic;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTask>, Runnable {
-  @Inject private HsqsClient hsqsServiceClient;
+  @Inject private HsqsClientService hsqsClientService;
   @Inject private DelegateQueueServiceConfig delegateQueueServiceConfig;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private ResourceBasedDelegateSelectionCheckForTask delegateSelectionCheckForTask;
   @Inject private DelegateCache delegateCache;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
-
-  @Inject
-  public DelegateTaskQueueService(HsqsClient hsqsServiceClient) {
-    this.hsqsServiceClient = hsqsServiceClient;
-  }
 
   /**
    *
@@ -69,10 +65,8 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
    */
   @Override
   public void enqueue(DelegateTask delegateTask) {
-    String taskType = delegateTask.getData() != null ? delegateTask.getData().getTaskType()
-                                                     : delegateTask.getTaskDataV2().getTaskType();
-    try (AutoLogContext ignore = new TaskLogContext(
-             delegateTask.getUuid(), taskType, TaskType.valueOf(taskType).getTaskGroup().name(), OVERRIDE_ERROR)) {
+    try (AutoLogContext ignore = new TaskLogContext(delegateTask.getUuid(), delegateTask.getTaskDataV2().getTaskType(),
+             TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
       String topic = delegateQueueServiceConfig.getTopic();
       String task = referenceFalseKryoSerializer.asString(delegateTask);
       EnqueueRequest enqueueRequest = EnqueueRequest.builder()
@@ -82,7 +76,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                                           .producerName(topic)
                                           .build();
 
-      EnqueueResponse response = hsqsServiceClient.enqueue(enqueueRequest).execute().body();
+      EnqueueResponse response = hsqsClientService.enqueue(enqueueRequest);
       log.info("Delegate task {} queued with item ID {}", delegateTask.getUuid(), response.getItemId());
     } catch (Exception e) {
       log.error("Error while queueing delegate task {}", delegateTask.getUuid(), e);
@@ -102,7 +96,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                                           .consumerName(delegateQueueServiceConfig.getTopic())
                                           .topic(delegateQueueServiceConfig.getTopic())
                                           .build();
-      List<DequeueResponse> dequeueResponses = hsqsServiceClient.dequeue(dequeueRequest).execute().body();
+      List<DequeueResponse> dequeueResponses = hsqsClientService.dequeue(dequeueRequest);
       List<DelegateTaskDequeue> delegateTasksDequeueList =
           Objects.requireNonNull(dequeueResponses)
               .stream()
@@ -117,7 +111,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
               .collect(toList());
       delegateTasksDequeueList.forEach(this::acknowledgeAndProcessDelegateTask);
       return true;
-    } catch (IOException e) {
+    } catch (Exception e) {
       log.error("Error while dequeue delegate task ", e);
       return false;
     }
@@ -130,22 +124,17 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
   @Override
   public String acknowledge(String itemId, String accountId) {
     try {
-      AckResponse response = hsqsServiceClient
-                                 .ack(AckRequest.builder()
-                                          .itemId(itemId)
-                                          .topic(delegateQueueServiceConfig.getTopic())
-                                          .subTopic(accountId)
-                                          .build())
-                                 .execute()
-                                 .body();
+      AckResponse response = hsqsClientService.ack(
+          AckRequest.builder().itemId(itemId).topic(delegateQueueServiceConfig.getTopic()).subTopic(accountId).build());
       return Objects.requireNonNull(response).getItemId();
-    } catch (IOException e) {
+    } catch (Exception e) {
       log.error("Error while acknowledging delegate task ", e);
       return null;
     }
   }
   private boolean isResourceAvailableToAssignTask(DelegateTaskDequeue delegateTaskDequeue) {
-    return isResourceAvailableToAssignTask(delegateTaskDequeue.getDelegateTask());
+    return isDelegateTaskAborted(delegateTaskDequeue)
+        || isResourceAvailableToAssignTask(delegateTaskDequeue.getDelegateTask());
   }
 
   public boolean isResourceAvailableToAssignTask(DelegateTask delegateTask) {
@@ -215,6 +204,13 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
         log.info("Delegate task {} acknowledge with item id {} from Queue Service",
             delegateTaskDequeue.getDelegateTask().getUuid(), itemId);
         if (isNotEmpty(itemId)) {
+          if (isDelegateTaskAborted(delegateTaskDequeue)) {
+            delegateTaskServiceClassic.abortTask(
+                delegateTaskDequeue.getDelegateTask().getAccountId(), delegateTaskDequeue.getDelegateTask().getUuid());
+            delegateCache.removeFromAbortedTaskList(
+                delegateTaskDequeue.getDelegateTask().getAccountId(), delegateTaskDequeue.getDelegateTask().getUuid());
+            return;
+          }
           String taskId =
               delegateTaskServiceClassic.saveAndBroadcastDelegateTask(delegateTaskDequeue.getDelegateTask());
           log.info("Queued task {} broadcasting to delegate.", taskId);
@@ -242,5 +238,20 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
       return;
     }
     dequeue();
+  }
+
+  private boolean isDelegateTaskAborted(DelegateTaskDequeue delegateTaskDequeue) {
+    // check if it's in the list of aborted task event list
+    String accountId = delegateTaskDequeue.getDelegateTask().getAccountId();
+    String delegateTaskId = delegateTaskDequeue.getDelegateTask().getUuid();
+    try (AutoLogContext ignore1 = new TaskLogContext(delegateTaskId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      Set<String> delegateTaskAborted = delegateCache.getAbortedTaskList(accountId);
+      if (delegateTaskAborted.contains(delegateTaskId)) {
+        log.info("Aborting delegate task from queue {}", delegateTaskDequeue.getDelegateTask().getUuid());
+        return true;
+      }
+    }
+    return false;
   }
 }
