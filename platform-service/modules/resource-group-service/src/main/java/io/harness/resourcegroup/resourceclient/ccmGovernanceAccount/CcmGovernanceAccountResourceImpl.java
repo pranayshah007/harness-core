@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.resourcegroup.resourceclient.ccmGovernanceConnector;
+package io.harness.resourcegroup.resourceclient.ccmGovernanceAccount;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -18,7 +18,6 @@ import static org.apache.commons.lang3.StringUtils.stripToNull;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
-import io.harness.ccm.governanceAccount.GovernanceConnectorClient;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
@@ -54,8 +53,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 
 @OwnedBy(CE)
-public class CcmGovernanceConnectorResourceImpl implements Resource {
-  GovernanceConnectorClient governanceConnectorClient;
+public class CcmGovernanceAccountResourceImpl implements Resource {
+  ConnectorResourceClient governanceConnectorClient;
 
   @Override
   public String getType() {
@@ -68,7 +67,7 @@ public class CcmGovernanceConnectorResourceImpl implements Resource {
   }
   @Override
   public Optional<String> getEventFrameworkEntityType() {
-    return Optional.of(EventsFrameworkMetadataConstants.CONNECTOR_ENTITY);
+    return Optional.of(EventsFrameworkMetadataConstants.CCM_CONNECTOR);
   }
 
   @Override
@@ -96,7 +95,8 @@ public class CcmGovernanceConnectorResourceImpl implements Resource {
     }
     List<ConnectorResponseDTO> secretManagers =
         NGRestUtils
-            .getResponse(governanceConnectorClient.listConnectors(scope.getAccountIdentifier(), 0, resourceIds.size(),
+            .getResponse(governanceConnectorClient.listConnectors(scope.getAccountIdentifier(), null, null, 0,
+                resourceIds.size(),
                 ConnectorFilterPropertiesDTO.builder()
                     .connectorIdentifiers(resourceIds)
                     .ccmConnectorFilter(
