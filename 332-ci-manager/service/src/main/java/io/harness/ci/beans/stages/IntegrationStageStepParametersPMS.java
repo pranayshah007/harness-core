@@ -74,7 +74,7 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
 
     Infrastructure infrastructure = getInfrastructure(stageNode, ctx);
 
-    List<String> stepIdentifiers = getStepIdentifiers(integrationStageConfig);
+    List<String> stepIdentifiers = getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
 
     return IntegrationStageStepParametersPMS.builder()
         .buildStatusUpdateParameter(buildStatusUpdateParameter)
@@ -155,10 +155,9 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
     }
   }
 
-  public static List<String> getStepIdentifiers(IntegrationStageConfig integrationStageConfig) {
+  public static List<String> getStepIdentifiers(List<ExecutionWrapperConfig> executionWrapperConfigs) {
     List<String> stepIdentifiers = new ArrayList<>();
-    integrationStageConfig.getExecution().getSteps().forEach(
-        executionWrapper -> addStepIdentifier(executionWrapper, stepIdentifiers, ""));
+    executionWrapperConfigs.forEach(executionWrapper -> addStepIdentifier(executionWrapper, stepIdentifiers, ""));
     return stepIdentifiers;
   }
 
