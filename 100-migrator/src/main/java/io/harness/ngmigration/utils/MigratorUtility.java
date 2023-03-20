@@ -9,6 +9,8 @@ package io.harness.ngmigration.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.utils.CaseFormat.CAMEL_CASE;
+import static io.harness.ngmigration.utils.CaseFormat.LOWER_CASE;
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 import static io.harness.when.beans.WhenConditionStatus.SUCCESS;
 
@@ -25,6 +27,7 @@ import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.InputDefaults;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -32,6 +35,7 @@ import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -49,13 +53,16 @@ import io.harness.yaml.core.variables.StringNGVariable;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.GraphNode;
+import software.wings.beans.HarnessTagLink;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariableType;
 import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
+import software.wings.beans.container.ContainerTask;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -70,6 +77,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -93,7 +101,6 @@ public class MigratorUtility {
   private static final String[] schemes = {"https", "http"};
 
   private static final int APPLICATION = 0;
-
   private static final int SECRET_MANAGER_TEMPLATE = 1;
   private static final int SECRET_MANAGER = 2;
   private static final int SECRET = 5;
@@ -115,6 +122,7 @@ public class MigratorUtility {
   private static final int PIPELINE = 100;
 
   private static final int TRIGGER = 150;
+  private static final int USER_GROUP = -1;
 
   private static final Map<NGMigrationEntityType, Integer> MIGRATION_ORDER =
       ImmutableMap.<NGMigrationEntityType, Integer>builder()
@@ -138,6 +146,7 @@ public class MigratorUtility {
           .put(NGMigrationEntityType.WORKFLOW, WORKFLOW)
           .put(NGMigrationEntityType.PIPELINE, PIPELINE)
           .put(NGMigrationEntityType.TRIGGER, TRIGGER)
+          .put(NGMigrationEntityType.USER_GROUP, USER_GROUP)
           .build();
 
   private MigratorUtility() {}
@@ -152,11 +161,19 @@ public class MigratorUtility {
     return retrofit.create(clazz);
   }
 
-  public static String generateManifestIdentifier(String name) {
-    return generateIdentifier(name);
+  public static String generateManifestIdentifier(String name, CaseFormat caseFormat) {
+    return generateIdentifier(name, caseFormat);
   }
 
-  public static String generateIdentifier(String name) {
+  public static String generateIdentifier(String name, CaseFormat caseFormat) {
+    String identifier = generateCamelCaseIdentifier(name);
+    if (LOWER_CASE == caseFormat) {
+      return identifier.toLowerCase();
+    }
+    return identifier;
+  }
+
+  public static String generateCamelCaseIdentifier(String name) {
     if (StringUtils.isBlank(name)) {
       return "";
     }
@@ -284,6 +301,18 @@ public class MigratorUtility {
     return getIdentifierWithScope(detail);
   }
 
+  public static String getIdentifierWithScope(Scope scope, String name, CaseFormat caseFormat) {
+    String identifier = MigratorUtility.generateIdentifier(name, caseFormat);
+    switch (scope) {
+      case ACCOUNT:
+        return "account." + identifier;
+      case ORG:
+        return "org." + identifier;
+      default:
+        return identifier;
+    }
+  }
+
   public static String getIdentifierWithScope(NgEntityDetail entityDetail) {
     String orgId = entityDetail.getOrgIdentifier();
     String projectId = entityDetail.getProjectIdentifier();
@@ -297,28 +326,27 @@ public class MigratorUtility {
     return "org." + identifier;
   }
 
-  public static List<NGVariable> getVariables(List<Variable> cgVariables) {
+  public static List<NGVariable> getVariables(MigrationContext migrationContext, List<Variable> cgVariables) {
     List<NGVariable> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(cgVariables)) {
-      cgVariables.forEach(serviceVariable -> variables.add(getNGVariable(serviceVariable)));
+      cgVariables.forEach(serviceVariable -> variables.add(getNGVariable(migrationContext, serviceVariable)));
     }
     return variables;
   }
 
-  public static List<NGVariable> getVariables(
-      List<ServiceVariable> serviceVariables, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public static List<NGVariable> getServiceVariables(
+      MigrationContext migrationContext, List<ServiceVariable> serviceVariables) {
     List<NGVariable> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(serviceVariables)) {
-      serviceVariables.forEach(serviceVariable -> variables.add(getNGVariable(serviceVariable, migratedEntities)));
+      serviceVariables.forEach(serviceVariable -> variables.add(getNGVariable(migrationContext, serviceVariable)));
     }
     return variables;
   }
 
-  public static NGVariable getNGVariable(Variable variable) {
+  public static NGVariable getNGVariable(MigrationContext migrationContext, Variable variable) {
     String value = "<+input>";
     if (EmptyPredicate.isNotEmpty(variable.getValue())) {
-      value = String.valueOf(
-          MigratorExpressionUtils.render(new HashMap<>(), new HashMap<>(), variable.getValue(), new HashMap<>()));
+      value = String.valueOf(MigratorExpressionUtils.render(migrationContext, variable.getValue(), new HashMap<>()));
     }
     String name = variable.getName();
     name = name.replace('-', '_');
@@ -329,20 +357,19 @@ public class MigratorUtility {
         .build();
   }
 
-  public static NGVariable getNGVariable(
-      ServiceVariable serviceVariable, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public static NGVariable getNGVariable(MigrationContext migrationContext, ServiceVariable serviceVariable) {
     if (serviceVariable.getType().equals(ServiceVariableType.ENCRYPTED_TEXT)) {
       return SecretNGVariable.builder()
           .type(NGVariableType.SECRET)
-          .value(ParameterField.createValueField(
-              MigratorUtility.getSecretRef(migratedEntities, serviceVariable.getEncryptedValue())))
+          .value(ParameterField.createValueField(MigratorUtility.getSecretRef(
+              migrationContext.getMigratedEntities(), serviceVariable.getEncryptedValue())))
           .name(StringUtils.trim(serviceVariable.getName()))
           .build();
     } else {
       String value = "";
       if (EmptyPredicate.isNotEmpty(serviceVariable.getValue())) {
         value = String.valueOf(MigratorExpressionUtils.render(
-            new HashMap<>(), new HashMap<>(), String.valueOf(serviceVariable.getValue()), new HashMap<>()));
+            migrationContext, String.valueOf(serviceVariable.getValue()), new HashMap<>()));
       }
       String name = StringUtils.trim(serviceVariable.getName());
       name = name.replace('-', '_');
@@ -363,9 +390,9 @@ public class MigratorUtility {
   }
 
   public static String generateIdentifierDefaultName(
-      Map<CgEntityId, BaseProvidedInput> inputs, CgEntityId entityId, String name) {
+      Map<CgEntityId, BaseProvidedInput> inputs, CgEntityId entityId, String name, CaseFormat caseFormat) {
     if (inputs == null || !inputs.containsKey(entityId) || StringUtils.isBlank(inputs.get(entityId).getIdentifier())) {
-      return generateIdentifier(name);
+      return generateIdentifier(name, caseFormat);
     }
     return inputs.get(entityId).getIdentifier();
   }
@@ -446,10 +473,21 @@ public class MigratorUtility {
 
   @Nullable
   public static NGYamlFile getYamlConfigFile(MigrationInputDTO inputDTO, byte[] content, String identifier) {
+    return getYamlFile(inputDTO, content, identifier, FileUsage.CONFIG);
+  }
+
+  @Nullable
+  public static NGYamlFile getYamlManifestFile(MigrationInputDTO inputDTO, byte[] content, String identifier) {
+    return getYamlFile(inputDTO, content, identifier, FileUsage.MANIFEST_FILE);
+  }
+
+  @Nullable
+  private static NGYamlFile getYamlFile(
+      MigrationInputDTO inputDTO, byte[] content, String identifier, FileUsage fileUsage) {
     if (isEmpty(content)) {
       return null;
     }
-    String fileUsage = FileUsage.CONFIG.name();
+
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
 
@@ -457,7 +495,7 @@ public class MigratorUtility {
         .type(NGMigrationEntityType.CONFIG_FILE)
         .yaml(FileYamlDTO.builder()
                   .identifier(identifier)
-                  .fileUsage(fileUsage)
+                  .fileUsage(fileUsage.name())
                   .name(identifier)
                   .content(new String(content))
                   .orgIdentifier(orgIdentifier)
@@ -487,9 +525,9 @@ public class MigratorUtility {
     return migratedEntities.get(cgEntityId).getNgEntityDetail();
   }
 
-  public static String generateFileIdentifier(String fileName) {
+  public static String generateFileIdentifier(String fileName, CaseFormat caseFormat) {
     String prefix = fileName + ' ';
-    return MigratorUtility.generateManifestIdentifier(prefix);
+    return MigratorUtility.generateManifestIdentifier(prefix, caseFormat);
   }
 
   public static boolean checkIfStringIsValidUrl(String value) {
@@ -544,10 +582,10 @@ public class MigratorUtility {
         .collect(Collectors.toList());
   }
 
-  public static WaitStepNode getWaitStepNode(String name, int waitInterval, boolean skipAlways) {
+  public static WaitStepNode getWaitStepNode(String name, int waitInterval, boolean skipAlways, CaseFormat caseFormat) {
     WaitStepNode waitStepNode = new WaitStepNode();
     waitStepNode.setName(name);
-    waitStepNode.setIdentifier(generateIdentifier(name));
+    waitStepNode.setIdentifier(generateIdentifier(name, caseFormat));
     waitStepNode.setWaitStepInfo(
         WaitStepInfo.infoBuilder().duration(MigratorUtility.getTimeout(waitInterval * 1000)).build());
     if (skipAlways) {
@@ -610,6 +648,63 @@ public class MigratorUtility {
         .overrides(overrides)
         .defaults(defaults)
         .customExpressions(expressions)
+        .identifierCaseFormat(
+            importDTO.getIdentifierCaseFormat() == null ? CAMEL_CASE : importDTO.getIdentifierCaseFormat())
         .build();
+  }
+
+  public static Map<String, Object> getExpressions(
+      WorkflowPhase phase, List<StepExpressionFunctor> functors, CaseFormat caseFormat) {
+    Map<String, Object> expressions = new HashMap<>();
+
+    for (StepExpressionFunctor functor : functors) {
+      functor.setCurrentStageIdentifier(MigratorUtility.generateIdentifier(phase.getName(), caseFormat));
+      expressions.put(functor.getCgExpression(), functor);
+    }
+    return expressions;
+  }
+
+  public static boolean containsEcsTask(Set<CgEntityId> containerTaskIds, Map<CgEntityId, CgEntityNode> entities) {
+    if (isEmpty(containerTaskIds)) {
+      return false;
+    }
+
+    for (CgEntityId configEntityId : containerTaskIds) {
+      CgEntityNode configNode = entities.get(configEntityId);
+      if (configNode != null) {
+        ContainerTask specification = (ContainerTask) configNode.getEntity();
+        if ("ECS".equalsIgnoreCase(specification.getDeploymentType())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  public static boolean isGitFileConfigSimilar(GitFileConfig gitFileConfig1, GitFileConfig gitFileConfig2) {
+    if (gitFileConfig1 == null && gitFileConfig2 == null) {
+      return true;
+    } else if (gitFileConfig1 == null || gitFileConfig2 == null) {
+      return false;
+    } else {
+      return gitFileConfig1.equals(gitFileConfig2);
+    }
+  }
+
+  public static Map<String, String> getTags(List<HarnessTagLink> tagLinks) {
+    if (EmptyPredicate.isEmpty(tagLinks)) {
+      return Collections.emptyMap();
+    }
+    return tagLinks.stream()
+        .filter(tl -> StringUtils.isNoneBlank(tl.getKey(), tl.getValue()))
+        .collect(Collectors.toMap(HarnessTagLink::getKey, HarnessTagLink::getValue));
+  }
+
+  public static String getSafeNotEmptyString(String val) {
+    if (isEmpty(val) || isEmpty(val.trim())) {
+      return PLEASE_FIX_ME;
+    } else {
+      return val;
+    }
   }
 }

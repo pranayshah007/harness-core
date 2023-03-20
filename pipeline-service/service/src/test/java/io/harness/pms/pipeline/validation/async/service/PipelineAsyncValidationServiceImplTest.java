@@ -10,33 +10,35 @@ package io.harness.pms.pipeline.validation.async.service;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 
 import io.harness.PipelineServiceTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
+import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationParams;
 import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
-import io.harness.pms.pipeline.validation.async.handler.PipelineAsyncValidationHandler;
+import io.harness.repositories.pipeline.validation.async.PipelineValidationEventRepository;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
+import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.Mockito;
 
 public class PipelineAsyncValidationServiceImplTest extends PipelineServiceTestBase {
-  @Inject @InjectMocks PipelineAsyncValidationServiceImpl asyncValidationService;
-  @Mock ExecutorService executorService;
+  @Inject PipelineValidationEventRepository pipelineValidationEventRepository;
+  @Inject PMSPipelineTemplateHelper pipelineTemplateHelper;
+  @Inject PipelineGovernanceService pipelineGovernanceService;
+  PipelineAsyncValidationServiceImpl asyncValidationService;
 
   PipelineEntity pipeline;
   String fqn;
@@ -51,14 +53,17 @@ public class PipelineAsyncValidationServiceImplTest extends PipelineServiceTestB
                    .yaml("yaml")
                    .build();
     fqn = "acc/org/proj/pipeline";
-    doReturn(null).when(executorService).submit(any(PipelineAsyncValidationHandler.class));
+    Executor executor = Mockito.mock(Executor.class);
+    asyncValidationService = new PipelineAsyncValidationServiceImpl(
+        pipelineValidationEventRepository, executor, pipelineTemplateHelper, pipelineGovernanceService);
+    Reflect.on(asyncValidationService).set("executor", executor);
   }
 
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testServiceLayer() {
-    PipelineValidationEvent validationEvent = asyncValidationService.startEvent(pipeline, null, Action.CRUD);
+    PipelineValidationEvent validationEvent = asyncValidationService.startEvent(pipeline, null, Action.CRUD, false);
     assertThat(validationEvent).isNotNull();
     assertThat(validationEvent.getUuid()).isNotEmpty();
     assertThat(validationEvent.getFqn()).isEqualTo(fqn);
@@ -86,7 +91,7 @@ public class PipelineAsyncValidationServiceImplTest extends PipelineServiceTestB
     assertThat(updatedEvent.getParams()).isEqualTo(ValidationParams.builder().pipelineEntity(pipeline).build());
     assertThat(updatedEvent.getResult()).isEqualTo(ValidationResult.builder().build());
 
-    PipelineValidationEvent newEvent = asyncValidationService.startEvent(pipeline, null, Action.CRUD);
+    PipelineValidationEvent newEvent = asyncValidationService.startEvent(pipeline, null, Action.CRUD, false);
     assertThat(newEvent).isNotNull();
     String newEventUuid = newEvent.getUuid();
     Optional<PipelineValidationEvent> optionalLatest =

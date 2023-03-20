@@ -9,6 +9,7 @@ package io.harness.plancreator.steps.pluginstep;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
@@ -34,7 +35,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.common.steps.stepgroup.StepGroupStep;
 import io.harness.steps.common.steps.stepgroup.StepGroupStepParameters;
-import io.harness.steps.plugin.IContainerStepSpec;
+import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.utils.TimeoutUtils;
@@ -50,7 +51,6 @@ import java.util.Map;
 import java.util.Set;
 
 public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStepNode> extends ChildrenPlanCreator<T> {
-  public static final String CONTAINER_STEP_GROUP = "Container Step Group";
   @Inject KryoSerializer kryoSerializer;
 
   @Override public abstract Map<String, Set<String>> getSupportedTypes();
@@ -69,9 +69,17 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
     ByteString advisorParametersInitStep = ByteString.copyFrom(
         kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(stepNodeId).build()));
 
-    PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForField(
-        initStepNodeId, getStepParameters(config, ctx), advisorParametersInitStep);
-    PlanNode stepPlanNode = createPlanForStep(stepNodeId, getStepParameters(config, ctx));
+    StepParameters stepParameters = getStepParameters(config, ctx);
+    if (stepParameters instanceof StepElementParameters) {
+      StepElementParameters stepElementParameters = (StepElementParameters) stepParameters;
+      if (stepElementParameters.getSpec() instanceof ContainerStepSpec) {
+        ((ContainerStepSpec) stepElementParameters.getSpec()).setName(config.getName());
+        ((ContainerStepSpec) stepElementParameters.getSpec()).setIdentifier(config.getIdentifier());
+      }
+    }
+    PlanNode initPlanNode =
+        InitContainerStepPlanCreater.createPlanForField(initStepNodeId, stepParameters, advisorParametersInitStep);
+    PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters);
 
     planCreationResponseMap.put(
         initPlanNode.getUuid(), PlanCreationResponse.builder().node(initPlanNode.getUuid(), initPlanNode).build());
@@ -87,7 +95,7 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, T config, List<String> childrenNodeIds) {
     config.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, config.getIdentifier()));
-    config.setName(CONTAINER_STEP_GROUP);
+    config.setName(config.getName());
 
     StepGroupStepParameters stepGroupStepParameters =
         StepGroupStepParameters.builder()
@@ -161,14 +169,5 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
                   NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
               .build());
     }
-  }
-
-  @Override
-  public PlanCreationResponse createPlanForField(PlanCreationContext ctx, T field) {
-    if (field.getStepSpecType() instanceof IContainerStepSpec) {
-      ((IContainerStepSpec) field.getStepSpecType()).setName(field.getName());
-      ((IContainerStepSpec) field.getStepSpecType()).setIdentifier(field.getIdentifier());
-    }
-    return super.createPlanForField(ctx, field);
   }
 }

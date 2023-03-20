@@ -18,6 +18,7 @@ import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -44,7 +45,7 @@ import lombok.experimental.FieldNameConstants;
 @StoreIn(DbAliases.CVNG)
 @Entity(value = "clusteredLogs", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-public final class ClusteredLog extends VerificationTaskBase implements PersistentEntity {
+public final class ClusteredLog extends VerificationTaskBase implements PersistentEntity, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()

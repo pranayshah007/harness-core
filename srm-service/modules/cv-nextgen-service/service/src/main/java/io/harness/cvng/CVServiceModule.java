@@ -354,6 +354,7 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator.ThresholdServiceLevelIndicatorUpdatableEntity;
+import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
@@ -364,9 +365,11 @@ import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.SLOTimeScaleService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
+import io.harness.cvng.servicelevelobjective.services.impl.AnnotationServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLORecordServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLOServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.GraphDataServiceImpl;
@@ -377,6 +380,7 @@ import io.harness.cvng.servicelevelobjective.services.impl.SLIRecordServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLODashboardServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLOErrorBudgetResetServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLOHealthIndicatorServiceImpl;
+import io.harness.cvng.servicelevelobjective.services.impl.SLOTimeScaleServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelIndicatorServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelObjectiveV2ServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.ThresholdAnalyserServiceImpl;
@@ -399,6 +403,7 @@ import io.harness.cvng.statemachine.services.api.CanaryTimeSeriesAnalysisStateEx
 import io.harness.cvng.statemachine.services.api.CompositeSLOMetricAnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentLogAnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentLogClusterStateExecutor;
+import io.harness.cvng.statemachine.services.api.DeploymentLogFeedbackStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentLogHostSamplingStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentMetricHostSamplingStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentTimeSeriesAnalysisStateExecutor;
@@ -771,7 +776,7 @@ public class CVServiceModule extends AbstractModule {
     bind(ExecutionLogService.class).to(ExecutionLogServiceImpl.class);
     bind(DeleteEntityByHandler.class).to(DefaultDeleteEntityByHandler.class);
     bind(TimeSeriesAnomalousPatternsService.class).to(TimeSeriesAnomalousPatternsServiceImpl.class);
-
+    bind(SLOTimeScaleService.class).to(SLOTimeScaleServiceImpl.class);
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
@@ -927,6 +932,7 @@ public class CVServiceModule extends AbstractModule {
     bind(GraphDataService.class).to(GraphDataServiceImpl.class);
     bind(DowntimeService.class).to(DowntimeServiceImpl.class);
     bind(EntityUnavailabilityStatusesService.class).to(EntityUnavailabilityStatusesServiceImpl.class);
+    bind(AnnotationService.class).to(AnnotationServiceImpl.class);
     install(NgLicenseHttpClientModule.getInstance(verificationConfiguration.getNgManagerClientConfig(),
         verificationConfiguration.getNgManagerServiceSecret(), CV_NEXT_GEN.getServiceId()));
 
@@ -1327,6 +1333,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     stateTypeAnalysisStateExecutorMap.addBinding(StateType.DEPLOYMENT_TIME_SERIES_ANALYSIS_STATE)
         .to(DeploymentTimeSeriesAnalysisStateExecutor.class)
+        .in(Scopes.SINGLETON);
+    stateTypeAnalysisStateExecutorMap.addBinding(StateType.DEPLOYMENT_LOG_FEEDBACK_STATE)
+        .to(DeploymentLogFeedbackStateExecutor.class)
         .in(Scopes.SINGLETON);
   }
 

@@ -13,6 +13,7 @@ import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
 import static io.harness.pms.pipeline.MoveConfigOperationType.REMOTE_TO_INLINE;
 import static io.harness.pms.pipeline.service.PMSPipelineServiceStepHelper.LIBRARY;
+import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import static java.lang.String.format;
 
@@ -79,6 +80,7 @@ import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.utils.PipelineGitXHelper;
@@ -87,6 +89,7 @@ import io.harness.utils.PmsFeatureFlagHelper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -132,6 +135,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final EntitySetupUsageClient entitySetupUsageClient;
   @Inject private final PipelineAsyncValidationService pipelineAsyncValidationService;
   @Inject private final PipelineValidationService pipelineValidationService;
+  @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -154,6 +158,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
         pipelineEntity.getIdentifier());
+    checkProjectExists(
+        pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
     GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
         pipelineEntity, throwExceptionIfGovernanceFails, false);
     try {
@@ -407,21 +413,35 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     // if the branch in the request is null, then the branch from where the remote pipeline is taken from is set
     // inside the scm git metadata. Hence, the branch from there is the actual branch we need
     String branchFromScm = GitAwareContextHelper.getBranchInSCMGitMetadata();
-    String fqn = PipelineAsyncValidationHelper.buildFQN(pipelineEntity, branchFromScm);
-    Optional<PipelineValidationEvent> optionalEvent =
-        pipelineAsyncValidationService.getLatestEventByFQNAndAction(fqn, Action.CRUD);
-    String validationUUID;
-    if (optionalEvent.isPresent()) {
-      validationUUID = optionalEvent.get().getUuid();
-    } else {
-      PipelineValidationEvent newEvent =
-          pipelineAsyncValidationService.startEvent(pipelineEntity, branchFromScm, Action.CRUD);
-      validationUUID = newEvent.getUuid();
-    }
+    String validationUUID = getValidationUuid(pipelineEntity, loadFromCache, branchFromScm);
     return PipelineGetResult.builder()
         .pipelineEntity(optionalPipelineEntity)
         .asyncValidationUUID(validationUUID)
         .build();
+  }
+
+  String getValidationUuid(PipelineEntity pipelineEntity, boolean loadFromCache, String branchFromScm) {
+    String validationUUID;
+    if (!loadFromCache && pipelineEntity.getStoreType() == StoreType.REMOTE) {
+      // loadFromCache = false means user is reloading from Git. In this case, the validation data being shown can't be
+      // for an older yaml as user expects everything to be refreshed. That's why it makes sense to have a fresh
+      // validation process in this case
+      PipelineValidationEvent newEvent =
+          pipelineAsyncValidationService.startEvent(pipelineEntity, branchFromScm, Action.CRUD, loadFromCache);
+      validationUUID = newEvent.getUuid();
+    } else {
+      String fqn = PipelineAsyncValidationHelper.buildFQN(pipelineEntity, branchFromScm);
+      Optional<PipelineValidationEvent> optionalEvent =
+          pipelineAsyncValidationService.getLatestEventByFQNAndAction(fqn, Action.CRUD);
+      if (optionalEvent.isPresent()) {
+        validationUUID = optionalEvent.get().getUuid();
+      } else {
+        PipelineValidationEvent newEvent =
+            pipelineAsyncValidationService.startEvent(pipelineEntity, branchFromScm, Action.CRUD, loadFromCache);
+        validationUUID = newEvent.getUuid();
+      }
+    }
+    return validationUUID;
   }
 
   @Override
@@ -882,5 +902,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
             .storeType(StoreType.REMOTE)
             .repoName(moveConfigDTO.getRepoName())
             .build());
+  }
+
+  private void checkProjectExists(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    if (isNotEmpty(orgIdentifier) && isNotEmpty(projectIdentifier)) {
+      getResponse(projectClient.getProject(projectIdentifier, accountIdentifier, orgIdentifier),
+          String.format("Project with orgIdentifier %s and identifier %s not found", orgIdentifier, projectIdentifier));
+    }
   }
 }

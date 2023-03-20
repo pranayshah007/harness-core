@@ -31,6 +31,9 @@ public final class BusinessMappingTestHelper {
   public static final String TEST_ID = UUID.randomUUID().toString();
   public static final String TEST_ACCOUNT_ID = "TEST_ACCOUNT_ID";
   public static final String TEST_NAME = "TEST_NAME";
+  public static final String TEST_SEARCH_KEY = "SEARCH_KEY";
+  public static final int TEST_LIMIT = 10;
+  public static final int TEST_OFFSET = 0;
 
   private BusinessMappingTestHelper() {}
 
@@ -41,6 +44,7 @@ public final class BusinessMappingTestHelper {
         .name(TEST_NAME)
         .costTargets(getCostTargets())
         .sharedCosts(getSharedCosts())
+        .unallocatedCost(getUnallocatedCost(UnallocatedCostStrategy.DISPLAY_NAME))
         .build();
   }
 

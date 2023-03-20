@@ -20,6 +20,7 @@ import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
@@ -43,7 +44,7 @@ public class K8sManifestLocalStoreService implements NgManifestService {
   @Override
   public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
-      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
+      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList, CaseFormat identifierCaseFormat) {
     if (EmptyPredicate.isEmpty(yamlFileList)) {
       return new ArrayList<>();
     }
@@ -61,7 +62,7 @@ public class K8sManifestLocalStoreService implements NgManifestService {
 
     K8sManifest k8sManifest =
         K8sManifest.builder()
-            .identifier(MigratorUtility.generateManifestIdentifier(applicationManifest.getUuid()))
+            .identifier(MigratorUtility.generateManifestIdentifier(applicationManifest.getUuid(), identifierCaseFormat))
             .skipResourceVersioning(ParameterField.createValueField(
                 Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
             .valuesPaths(MigratorUtility.getFileStorePaths(valuesFiles))
@@ -71,13 +72,13 @@ public class K8sManifestLocalStoreService implements NgManifestService {
                                                        .build()))
             .build();
 
-    return Collections.singletonList(
-        ManifestConfigWrapper.builder()
-            .manifest(ManifestConfig.builder()
-                          .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-                          .type(ManifestConfigType.K8_MANIFEST)
-                          .spec(k8sManifest)
-                          .build())
-            .build());
+    return Collections.singletonList(ManifestConfigWrapper.builder()
+                                         .manifest(ManifestConfig.builder()
+                                                       .identifier(MigratorUtility.generateIdentifier(
+                                                           applicationManifest.getUuid(), identifierCaseFormat))
+                                                       .type(ManifestConfigType.K8_MANIFEST)
+                                                       .spec(k8sManifest)
+                                                       .build())
+                                         .build());
   }
 }

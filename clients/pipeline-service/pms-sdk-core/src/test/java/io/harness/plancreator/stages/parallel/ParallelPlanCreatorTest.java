@@ -144,14 +144,10 @@ public class ParallelPlanCreatorTest extends CategoryTest {
     assertThat(layoutNodeInfo).isNotNull();
     assertThat(layoutNodeInfo.getStartingNodeId()).isNull();
     Map<String, GraphLayoutNode> layoutNodes = layoutNodeInfo.getLayoutNodes();
-    assertThat(layoutNodes).hasSize(6);
+    assertThat(layoutNodes).hasSize(3);
     assertThat(layoutNodes.containsKey(stage0Field.getNode().getUuid())).isTrue();
     assertThat(layoutNodes.containsKey(stage1Field.getNode().getUuid())).isTrue();
     assertThat(layoutNodes.containsKey(parallelStagesField.getNode().getUuid())).isTrue();
-
-    assertThat(layoutNodes.containsKey(stage0Field.getNode().getUuid() + "_rollbackStage")).isTrue();
-    assertThat(layoutNodes.containsKey(stage1Field.getNode().getUuid() + "_rollbackStage")).isTrue();
-    assertThat(layoutNodes.containsKey(parallelStagesField.getNode().getUuid() + "_rollbackStage")).isTrue();
 
     GraphLayoutNode graphLayoutNode0 = layoutNodes.get(stage0Field.getNode().getUuid());
     assertThat(graphLayoutNode0.getNodeUUID()).isEqualTo(stage0Field.getNode().getUuid());

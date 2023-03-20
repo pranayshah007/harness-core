@@ -162,9 +162,6 @@ public class IdentityServiceResource {
   public RestResponse<User> signupOAuthUser(
       @NotNull OauthUserInfo oauthUserInfo, @QueryParam("provider") String oauthProviderName) {
     User user = userService.signUpUserUsingOauth(oauthUserInfo, oauthProviderName);
-    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
-      return new RestResponse<>(user.getPublicUser(true));
-    }
     return new RestResponse<>(user.getPublicUser(false));
   }
 

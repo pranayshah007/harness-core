@@ -150,7 +150,7 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
           setLicenseProperty(item, cdModuleLicense);
         }
         if (isItem("SUPPORT", item)) {
-          setSupport(item, cdModuleLicense);
+          cdModuleLicense.setPremiumSupport(true);
         }
       }
     });
@@ -167,7 +167,7 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
           setLicenseProperty(item, cfModuleLicense);
         }
         if (isItem(MAU_SUPPORT_TYPE, item) || isItem(DEVELOPERS_SUPPORT_TYPE, item)) {
-          setSupport(item, cfModuleLicense);
+          cfModuleLicense.setPremiumSupport(true);
         }
       }
     });
@@ -182,7 +182,7 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
           setLicenseProperty(item, ciModuleLicense);
         }
         if (isItem("SUPPORT", item)) {
-          setSupport(item, ciModuleLicense);
+          ciModuleLicense.setPremiumSupport(true);
         }
       }
     });
@@ -196,7 +196,7 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
           setLicenseProperty(item, ceModuleLicense);
         }
         if (isItem("SUPPORT", item)) {
-          setSupport(item, ceModuleLicense);
+          ceModuleLicense.setPremiumSupport(true);
         }
       }
     });
@@ -204,16 +204,6 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
 
   private boolean isItem(String itemName, InvoiceLineItem invoiceLineItem) {
     return itemName.equalsIgnoreCase(invoiceLineItem.getPrice().getMetadata().get("type"));
-  }
-
-  private boolean isPremium(InvoiceLineItem invoiceLineItem) {
-    return "PREMIUM".equalsIgnoreCase(invoiceLineItem.getPrice().getMetadata().get("level"));
-  }
-
-  private void setSupport(InvoiceLineItem item, ModuleLicense moduleLicense) {
-    if (isPremium(item)) {
-      moduleLicense.setPremiumSupport(true);
-    }
   }
 
   private boolean isEnterprise(InvoiceLineItem invoiceLineItem) {

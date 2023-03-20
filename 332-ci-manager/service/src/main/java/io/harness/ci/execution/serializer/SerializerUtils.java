@@ -30,8 +30,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SerializerUtils {
+  private static Pattern pattern = Pattern.compile("\\$\\{ngSecretManager\\.obtain[^\\}]*\\}");
+
   public static List<String> getEntrypoint(ParameterField<CIShellType> parametrizedShellType) {
     List<String> entrypoint;
     CIShellType shellType = RunTimeInputHandler.resolveShellType(parametrizedShellType);
@@ -103,12 +107,31 @@ public class SerializerUtils {
   }
 
   public static String convertMapToJsonString(Map<String, String> m) {
+    Map<String, String> o = new HashMap<>();
+    for (Map.Entry<String, String> entry : m.entrySet()) {
+      o.put(entry.getKey(), replaceDoubleQuoteWithSingleInSecretResolver(entry.getValue()));
+    }
+
     try {
       ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-      return ow.writeValueAsString(m);
+      return ow.writeValueAsString(o);
     } catch (Exception ex) {
       throw new CIStageExecutionException(String.format("Invalid setting %s", m));
     }
+  }
+
+  private static String replaceDoubleQuoteWithSingleInSecretResolver(String input) {
+    Matcher matcher = pattern.matcher(input);
+
+    String out = input;
+    int count = 0;
+    while (matcher.find() && count < 50) {
+      String match = matcher.group();
+      String replacedVal = match.replace("\"", "'");
+      out = out.replace(match, replacedVal);
+      count++;
+    }
+    return out;
   }
 
   // Return whether array contains only value node or not.

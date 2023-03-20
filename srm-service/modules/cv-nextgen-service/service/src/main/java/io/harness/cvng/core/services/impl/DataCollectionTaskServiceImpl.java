@@ -8,6 +8,7 @@
 package io.harness.cvng.core.services.impl;
 
 import static io.harness.cvng.core.entities.DataCollectionTask.Type.SERVICE_GUARD;
+import static io.harness.cvng.core.entities.DataCollectionTask.Type.SLI;
 import static io.harness.cvng.core.services.CVNextGenConstants.CVNG_MAX_PARALLEL_THREADS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
@@ -97,6 +98,8 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
             query.criteria(VerificationTaskBaseKeys.lastUpdatedAt)
                 .lessThan(clock.millis() - TimeUnit.MINUTES.toMillis(5))));
     query.or(query.criteria(DataCollectionTaskKeys.type).equal(SERVICE_GUARD),
+        query.and(query.criteria(DataCollectionTaskKeys.type).equal(SLI),
+            query.criteria(DataCollectionTaskKeys.retryCount).lessThanOrEq(SLIDataCollectionTask.MAX_RETRY_COUNT)),
         query.criteria(DataCollectionTaskKeys.retryCount).lessThanOrEq(DeploymentDataCollectionTask.MAX_RETRY_COUNT));
     UpdateOperations<DataCollectionTask> updateOperations =
         hPersistence.createUpdateOperations(DataCollectionTask.class)
@@ -311,6 +314,8 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
   }
 
   private void retry(DataCollectionTask dataCollectionTask) {
+    log.info("Retrying DataCollection task with id: {} and worker id: {}", dataCollectionTask.getUuid(),
+        dataCollectionTask.getDataCollectionWorkerId());
     if (dataCollectionTask.eligibleForRetry(clock.instant())) {
       UpdateOperations<DataCollectionTask> updateOperations =
           hPersistence.createUpdateOperations(DataCollectionTask.class)

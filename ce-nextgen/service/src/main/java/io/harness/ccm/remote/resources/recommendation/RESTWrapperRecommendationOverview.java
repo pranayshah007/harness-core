@@ -96,7 +96,6 @@ public class RESTWrapperRecommendationOverview {
            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @RequestBody(
           required = true, description = FILTER_DESCRIPTION) CCMRecommendationFilterPropertiesDTO ccmFilter) {
-    rbacHelper.checkRecommendationsViewPermission(accountId, null, null);
     K8sRecommendationFilterDTO filter = RecommendationQueryHelper.buildK8sRecommendationFilterDTO(ccmFilter);
     GraphQLToRESTHelper.setDefaultPaginatedFilterValues(filter);
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
@@ -125,7 +124,6 @@ public class RESTWrapperRecommendationOverview {
             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @RequestBody(
           required = true, description = FILTER_DESCRIPTION) CCMRecommendationFilterPropertiesDTO ccmFilter) {
-    rbacHelper.checkRecommendationsViewPermission(accountId, null, null);
     K8sRecommendationFilterDTO filter = RecommendationQueryHelper.buildK8sRecommendationFilterDTO(ccmFilter);
     GraphQLToRESTHelper.setDefaultFilterValues(filter);
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
@@ -154,7 +152,6 @@ public class RESTWrapperRecommendationOverview {
             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @RequestBody(
           required = true, description = FILTER_DESCRIPTION) CCMRecommendationFilterPropertiesDTO ccmFilter) {
-    rbacHelper.checkRecommendationsViewPermission(accountId, null, null);
     K8sRecommendationFilterDTO filter = RecommendationQueryHelper.buildK8sRecommendationFilterDTO(ccmFilter);
     GraphQLToRESTHelper.setDefaultFilterValues(filter);
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId, filter);
@@ -183,7 +180,6 @@ public class RESTWrapperRecommendationOverview {
                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @RequestBody(
           required = true, description = "Recommendation Filter Values Body.") FilterValuesDTO filterValues) {
-    rbacHelper.checkRecommendationsViewPermission(accountId, null, null);
     if (filterValues.getColumns() == null) {
       filterValues.setColumns(emptyList());
     }
@@ -215,8 +211,8 @@ public class RESTWrapperRecommendationOverview {
   markApplied(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @QueryParam("recommendationId") @NotNull @Valid String recommendationId) {
-    rbacHelper.checkRecommendationsViewPermission(accountId, null, null);
-    overviewQueryV2.markRecommendationAsApplied(recommendationId);
+    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
+    overviewQueryV2.markRecommendationAsApplied(recommendationId, env);
     return ResponseDTO.newResponse();
   }
 }

@@ -141,7 +141,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
     when(governanceRuleService.fetchById(ACCOUNT_ID, UUID, false)).thenReturn(rule);
     GovernanceRuleFilter governancePolicyFilter = GovernanceRuleFilter.builder().build();
     listOfRule.add(rule);
-    RuleList ruleList = RuleList.builder().rule(listOfRule).build();
+    RuleList ruleList = RuleList.builder().rules(listOfRule).build();
     when(governanceRuleService.list(governancePolicyFilter)).thenReturn(ruleList);
     governanceConfig = GovernanceConfig.builder()
                            .policyPerAccountLimit(LIMITpolicyPerAccountLimit)

@@ -59,7 +59,6 @@ import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.mapper.TriggerFilterHelper;
 import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
-import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.rule.Owner;
 import io.harness.utils.YamlPipelineUtils;
@@ -70,9 +69,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.junit.Before;
@@ -120,7 +117,6 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   private NGTriggerEntity ngTriggerEntityGitlabMRComment;
   private NGTriggerEntity ngTriggerEntityBitbucketPRComment;
   private NGTriggerConfigV2 ngTriggerConfig;
-  private MergeInputSetResponseDTOPMS mergeInputSetResponseDTOPMS;
 
   @Before
   public void setUp() throws IOException {
@@ -261,9 +257,6 @@ public class NGTriggerResourceImplTest extends CategoryTest {
                                             .version(0L)
                                             .build();
 
-    mergeInputSetResponseDTOPMS =
-        MergeInputSetResponseDTOPMS.builder().isErrorResponse(false).pipelineYaml("pipelineYaml").build();
-
     ngTriggerErrorDTO = NGTriggerResponseDTO.builder()
                             .accountIdentifier(ACCOUNT_ID)
                             .orgIdentifier(ORG_IDENTIFIER)
@@ -330,7 +323,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
         .when(ngTriggerElementMapper)
         .toTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, ngTriggerYaml, false);
     when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntity)).thenReturn(ngTriggerErrorDTO);
-    doThrow(InvalidTriggerYamlException.class).when(ngTriggerService).validateInputSets(any());
+    doThrow(InvalidTriggerYamlException.class).when(ngTriggerService).validatePipelineRef(any());
 
     NGTriggerResponseDTO responseDTO =
         ngTriggerResource
@@ -443,113 +436,6 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = SRIDHAR)
-  @Category(UnitTests.class)
-  public void testGetTriggerDetailsPipelineOutdated() throws IOException {
-    NGTriggerConfigV2 ngTriggerConfigV2 = YamlPipelineUtils.read(ngTriggerYaml, NGTriggerConfigV2.class);
-    NGTriggerDetailsResponseDTO ngTriggerDetailsResponse =
-        NGTriggerDetailsResponseDTO.builder()
-            .name(NAME)
-            .identifier(IDENTIFIER)
-            .type(NGTriggerType.WEBHOOK)
-            .lastTriggerExecutionDetails(LastTriggerExecutionDetails.builder()
-                                             .lastExecutionTime(1607306091861L)
-                                             .lastExecutionStatus("SUCCESS")
-                                             .lastExecutionSuccessful(false)
-                                             .planExecutionId("PYV86FtaSfes7uPrGYJhBg")
-                                             .message("Pipeline execution was requested successfully")
-                                             .build())
-            .webhookDetails(WebhookDetails.builder().webhookSourceRepo("Github").build())
-            .enabled(true)
-            .isPipelineInputOutdated(true)
-            .build();
-
-    doReturn(Optional.of(ngTriggerEntity))
-        .when(ngTriggerService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
-
-    doReturn(Optional.of(ngTriggerEntity))
-        .when(ngTriggerService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
-    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, true))
-        .thenReturn(ngTriggerDetailsResponse);
-
-    TriggerDetails triggerDetails =
-        TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).ngTriggerConfigV2(ngTriggerConfigV2).build();
-
-    doReturn(triggerDetails)
-        .when(ngTriggerService)
-        .fetchTriggerEntity(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYaml, false);
-
-    Map<String, Map<String, String>> errorMap = new HashMap<>();
-    Map<String, String> inner = new HashMap<>();
-    inner.put("key", "value");
-    errorMap.put("key", inner);
-
-    doReturn(errorMap).when(ngTriggerService).validatePipelineRef(triggerDetails);
-
-    NGTriggerDetailsResponseDTO responseDTO =
-        ngTriggerResource
-            .getTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, IDENTIFIER, PIPELINE_IDENTIFIER)
-            .getData();
-    assertThat(responseDTO).isEqualTo(ngTriggerDetailsResponse);
-    assertThat(responseDTO.isPipelineInputOutdated()).isEqualTo(true);
-  }
-
-  @Test
-  @Owner(developers = SRIDHAR)
-  @Category(UnitTests.class)
-  public void testGetTriggerDetailsPipelineOutdatedFalse() throws IOException {
-    NGTriggerConfigV2 ngTriggerConfigV2 = YamlPipelineUtils.read(ngTriggerYaml, NGTriggerConfigV2.class);
-    NGTriggerDetailsResponseDTO ngTriggerDetailsResponse =
-        NGTriggerDetailsResponseDTO.builder()
-            .name(NAME)
-            .identifier(IDENTIFIER)
-            .type(NGTriggerType.WEBHOOK)
-            .lastTriggerExecutionDetails(LastTriggerExecutionDetails.builder()
-                                             .lastExecutionTime(1607306091861L)
-                                             .lastExecutionStatus("SUCCESS")
-                                             .lastExecutionSuccessful(false)
-                                             .planExecutionId("PYV86FtaSfes7uPrGYJhBg")
-                                             .message("Pipeline execution was requested successfully")
-                                             .build())
-            .webhookDetails(WebhookDetails.builder().webhookSourceRepo("Github").build())
-            .enabled(true)
-            .isPipelineInputOutdated(false)
-            .build();
-
-    doReturn(Optional.of(ngTriggerEntity))
-        .when(ngTriggerService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
-
-    doReturn(Optional.of(ngTriggerEntity))
-        .when(ngTriggerService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
-    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false))
-        .thenReturn(ngTriggerDetailsResponse);
-
-    TriggerDetails triggerDetails =
-        TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).ngTriggerConfigV2(ngTriggerConfigV2).build();
-
-    doReturn(triggerDetails)
-        .when(ngTriggerService)
-        .fetchTriggerEntity(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYaml, false);
-
-    Map<String, Map<String, String>> errorMap = new HashMap<>();
-
-    doReturn(errorMap).when(ngTriggerService).validatePipelineRef(triggerDetails);
-
-    NGTriggerDetailsResponseDTO responseDTO =
-        ngTriggerResource
-            .getTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, IDENTIFIER, PIPELINE_IDENTIFIER)
-            .getData();
-    assertThat(responseDTO).isEqualTo(ngTriggerDetailsResponse);
-    assertThat(responseDTO.isPipelineInputOutdated()).isEqualTo(false);
-  }
-
-  @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testUpdate() throws Exception {
@@ -577,6 +463,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
 
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTO);
   }
+
   @Test
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
@@ -645,7 +532,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
-    doThrow(InvalidTriggerYamlException.class).when(ngTriggerService).validateInputSets(any());
+    doThrow(InvalidTriggerYamlException.class).when(ngTriggerService).validatePipelineRef(any());
     TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
     doReturn(triggerDetails)
         .when(ngTriggerElementMapper)

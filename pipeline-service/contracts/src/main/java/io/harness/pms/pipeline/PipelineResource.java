@@ -651,7 +651,8 @@ public interface PipelineResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true) @PathParam(
           NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineId,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @GET
   @Path("validate/{uuid}")

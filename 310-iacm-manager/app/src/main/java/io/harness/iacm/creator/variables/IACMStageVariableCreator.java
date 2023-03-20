@@ -7,6 +7,8 @@
 
 package io.harness.iacm.creator.variables;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IACMStageNode;
@@ -31,6 +33,7 @@ import java.util.Set;
 /*
 This class is the one used for autocompletion
 If it will be called if the pipeline contains variables and this resolves those variables.
+Note: Seems that there is no change for the v1 yaml update here
  */
 @OwnedBy(HarnessTeam.IACM)
 public class IACMStageVariableCreator extends AbstractStageVariableCreator<IACMStageNode> {
@@ -47,6 +50,17 @@ public class IACMStageVariableCreator extends AbstractStageVariableCreator<IACMS
       responseMap.put(executionField.getNode().getUuid(),
           VariableCreationResponse.builder()
               .dependencies(DependenciesUtils.toDependenciesProto(executionDependencyMap))
+              .build());
+    }
+
+    YamlField strategyField = config.getNode().getField(STRATEGY);
+
+    if (strategyField != null) {
+      Map<String, YamlField> strategyDependencyMap = new HashMap<>();
+      strategyDependencyMap.put(strategyField.getNode().getUuid(), strategyField);
+      responseMap.put(strategyField.getNode().getUuid(),
+          VariableCreationResponse.builder()
+              .dependencies(DependenciesUtils.toDependenciesProto(strategyDependencyMap))
               .build());
     }
 
@@ -89,8 +103,8 @@ public class IACMStageVariableCreator extends AbstractStageVariableCreator<IACMS
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
-    return Collections.singletonMap(
-        YAMLFieldNameConstants.STAGE, Collections.singleton(IACMStepSpecTypeConstants.IACM_STAGE));
+    return Collections.singletonMap(YAMLFieldNameConstants.STAGE,
+        Set.of(IACMStepSpecTypeConstants.IACM_STAGE, IACMStepSpecTypeConstants.IACM_STAGE_V1));
   }
 
   @Override

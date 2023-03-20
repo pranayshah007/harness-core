@@ -499,7 +499,7 @@
 5374:software.wings.delegatetasks.BambooTask.BambooExecutionResponse
 5375:software.wings.beans.HttpStateExecutionResponse
 5376:software.wings.service.impl.elk.ElkLogFetchRequest
-5377:software.wings.service.impl.ThirdPartyApiCallLog
+5377:software.wings.beans.dto.ThirdPartyApiCallLog
 5378:software.wings.beans.Variable
 5379:software.wings.beans.VariableType
 5380:software.wings.service.impl.aws.model.AwsRequest
@@ -1840,8 +1840,8 @@
 60017:io.harness.delegate.task.serverless.request.ServerlessS3FetchRequest
 60018:io.harness.delegate.beans.serverless.ServerlessS3FetchFileResult
 60019:io.harness.delegate.task.serverless.response.ServerlessS3FetchResponse
-71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
-71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
+71100:software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField
+71101:software.wings.beans.dto.ThirdPartyApiCallLog.FieldType
 71102:software.wings.beans.dto.Log
 71103:io.harness.logging.LogLevel
 71104:software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse
@@ -1926,6 +1926,7 @@
 97034:com.amazonaws.services.ec2.model.EnclaveOptions
 97035:io.harness.k8s.model.KubernetesResource
 97036:io.harness.exception.OciHelmDockerApiException
+97037:io.harness.exception.OpenShiftClientException
 97100:io.harness.manifest.CustomSourceConfig
 97101:io.harness.servicenow.ServiceNowActionNG
 97102:io.harness.servicenow.ServiceNowFieldAllowedValueNG
@@ -2542,6 +2543,7 @@
 930009:io.harness.licensing.LicenseStatus
 930010:io.harness.cd.CDLicenseType
 930011:io.harness.licensing.beans.modules.STOModuleLicenseDTO
+930012:io.harness.licensing.beans.modules.IACMModuleLicenseDTO
 955000:io.harness.beans.CommitDetails
 955001:io.harness.beans.Repository
 955002:io.harness.beans.WebhookGitUser
@@ -2741,3 +2743,5 @@
 10000517:io.harness.delegate.task.aws.lambda.AwsLambdaJenkinsArtifactConfig
 10000518:io.harness.delegate.task.aws.lambda.AwsLambdaArtifactoryArtifactConfig
 10000519:io.harness.delegate.task.aws.lambda.AwsLambdaCustomArtifactConfig
+10000520:io.harness.delegate.task.pcf.request.CfRouteMappingRequestNG
+10000521:io.harness.delegate.task.pcf.response.CfRouteMappingResponseNG

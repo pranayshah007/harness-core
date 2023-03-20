@@ -101,6 +101,7 @@ public class CDLicenseUsageResource {
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of all Services") },
       hidden = true)
   @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
+  @Deprecated
   public ResponseDTO<PageResponse<ServiceResponse>>
   getAllServices(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                      ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,

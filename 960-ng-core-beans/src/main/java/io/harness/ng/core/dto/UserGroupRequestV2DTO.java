@@ -47,7 +47,9 @@ public class UserGroupRequestV2DTO {
   @Schema(description = "Identifier of the UserGroup.") @NotNull @EntityIdentifier String identifier;
 
   @Schema(description = "Name of the UserGroup.") @NotNull @NGEntityName String name;
-  @Schema(description = "List of users emails in the UserGroup.") List<String> users;
+  @Schema(description = "List of users emails in the UserGroup. Maximum users can be 5000.")
+  @Size(max = 5000)
+  List<String> users;
   @Schema(description = "List of notification settings.") List<NotificationSettingConfigDTO> notificationConfigs;
 
   @Schema(description = "Specifies whether or not the userGroup is linked via SSO or not.") private boolean isSsoLinked;

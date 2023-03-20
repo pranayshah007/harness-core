@@ -152,16 +152,18 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     doCallRealMethod()
         .when(viewsQueryBuilder)
         .getFilterValuesQuery(any(), any(), any(), anyString(), anyInt(), anyInt(), anyBoolean(), anyBoolean());
-    doCallRealMethod().when(viewsQueryBuilder).getQuery(any(), any(), any(), any(), any(), any(), anyString(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt(), any(), any());
+        .getQuery(any(), any(), any(), any(), any(), any(), anyString(), any(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt(), any(), any());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt(), any(), any());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
+    doCallRealMethod()
+        .when(viewsQueryBuilder)
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
     doCallRealMethod().when(viewsQueryBuilder).getTotalCountQuery(any(), any(), any(), any(), anyString());
     doReturn(resultSet).when(bigQuery).query(any());
     doCallRealMethod().when(viewsQueryHelper).buildQueryParams(any(), anyBoolean());
@@ -171,7 +173,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .buildQueryParams(any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
     doCallRealMethod()
         .when(viewsQueryHelper)
-        .buildQueryParams(any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyInt(), anyBoolean());
+        .buildQueryParams(
+            any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyInt(), anyBoolean(), anyBoolean());
     doCallRealMethod().when(viewsQueryHelper).getDefaultViewGroupBy(any());
     doCallRealMethod().when(viewsQueryHelper).getViewFieldInput(any());
     doCallRealMethod().when(viewsQueryHelper).getUpdatedFiltersForPrevPeriod(any());

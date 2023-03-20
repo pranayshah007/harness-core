@@ -194,7 +194,7 @@ public class WorkflowImportService implements ImportService {
   private PipelineConfig getPipelineConfig(
       Workflow workflow, MigrationInputDTO inputDTO, NgEntityDetail ngEntityDetail) {
     String name = MigratorUtility.generateName(workflow.getName());
-    String identifier = MigratorUtility.generateIdentifier(workflow.getName());
+    String identifier = MigratorUtility.generateIdentifier(workflow.getName(), inputDTO.getIdentifierCaseFormat());
     Scope scope = Scope.PROJECT;
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);

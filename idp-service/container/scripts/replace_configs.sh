@@ -125,8 +125,16 @@ if [[ "" != "$NG_MANAGER_SERVICE_SECRET" ]]; then
   export NG_MANAGER_SERVICE_SECRET; yq -i '.ngManagerServiceSecret=env(NG_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MANAGER_SERVICE_SECRET" ]]; then
+  export MANAGER_SERVICE_SECRET; yq -i '.managerServiceSecret=env(MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
 if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
   export NG_MANAGER_BASE_URL; yq -i '.ngManagerServiceHttpClientConfig.baseUrl=env(NG_MANAGER_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_CLIENT_BASE_URL" ]]; then
+  export MANAGER_CLIENT_BASE_URL; yq -i '.managerClientConfig.baseUrl=env(MANAGER_CLIENT_BASE_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ACCESS_CONTROL_BASE_URL" ]]; then
@@ -175,3 +183,4 @@ replace_key_value accessControlClient.accessControlServiceConfig.baseUrl "$ACCES
 replace_key_value accessControlClient.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
 replace_key_value backstageHttpClientConfig.baseUrl "$BACKSTAGE_BASE_URL"
 replace_key_value backstageServiceSecret "$BACKSTAGE_SERVICE_SECRET"
+replace_key_value onboardingModuleConfig.harnessCiCdAnnotation.projectUrl "$ONBOARDING_MODULE_CONFIG_HARNESS_CI_CD_ANNOTATION_PROJECT_URL"

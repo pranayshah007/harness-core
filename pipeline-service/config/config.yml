@@ -304,6 +304,11 @@ orchestrationStepConfig:
     liteEngineImage: harness/ci-lite-engine:1.14.22
     isLocal: false
     logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
+    pluginConfig:
+      sscaOrchestrationConfig:
+        image: harness/ssca-plugin:latest
+        entrypoint:
+          - /bin/ssca-plugin
 
 
 shouldDeployWithGitSync: true
@@ -576,3 +581,9 @@ cfClientConfig:
 featureFlagConfig:
   featureFlagSystem: LOCAL
   syncFeaturesToCF: false
+
+pipelineAsyncValidationPoolConfig:
+  corePoolSize: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_CORE_SIZE:-2}
+  maxPoolSize: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_MAX_SIZE:-25}
+  idleTime: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}

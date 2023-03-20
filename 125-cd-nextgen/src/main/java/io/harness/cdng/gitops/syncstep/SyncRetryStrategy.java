@@ -29,13 +29,13 @@ public class SyncRetryStrategy {
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  public ParameterField<String> retryBackoffBaseDuration;
+  public ParameterField<String> baseBackoffDuration;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
-  public ParameterField<Integer> waitAfterRetryFactor;
+  public ParameterField<Integer> increaseBackoffByFactor;
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  public ParameterField<String> maxRetryBackoffDuration;
+  public ParameterField<String> maxBackoffDuration;
 }

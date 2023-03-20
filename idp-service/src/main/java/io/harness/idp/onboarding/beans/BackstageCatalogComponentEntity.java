@@ -48,6 +48,7 @@ public class BackstageCatalogComponentEntity extends BackstageCatalogEntity {
     private String owner;
     @JsonIgnore private String domain;
     private String system;
+    @JsonIgnore private String harnessSystem;
   }
 
   public static List<HarnessBackstageEntities> map(
@@ -61,13 +62,13 @@ public class BackstageCatalogComponentEntity extends BackstageCatalogEntity {
     HarnessBackstageEntities harnessIdpServiceEntity = new HarnessBackstageEntities();
 
     harnessIdpServiceEntity.setIdentifier(backstageCatalogComponentEntity.getSpec().getDomain() + PIPE_DELIMITER
-        + backstageCatalogComponentEntity.getSpec().getSystem() + PIPE_DELIMITER
+        + backstageCatalogComponentEntity.getSpec().getHarnessSystem() + PIPE_DELIMITER
         + backstageCatalogComponentEntity.getMetadata().getIdentifier());
     harnessIdpServiceEntity.setEntityType(SERVICE);
     harnessIdpServiceEntity.setName(backstageCatalogComponentEntity.getMetadata().getName());
     harnessIdpServiceEntity.setType(SERVICE);
     harnessIdpServiceEntity.setOwner(ENTITY_UNKNOWN_OWNER);
-    harnessIdpServiceEntity.setSystem(backstageCatalogComponentEntity.getSpec().getSystem());
+    harnessIdpServiceEntity.setSystem(backstageCatalogComponentEntity.getSpec().getHarnessSystem());
 
     return harnessIdpServiceEntity;
   }

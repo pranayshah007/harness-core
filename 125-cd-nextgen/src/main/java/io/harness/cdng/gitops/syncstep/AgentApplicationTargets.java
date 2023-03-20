@@ -14,7 +14,11 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
 import io.swagger.annotations.ApiModelProperty;
-import java.util.List;
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
 public class AgentApplicationTargets {
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
@@ -22,5 +26,5 @@ public class AgentApplicationTargets {
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  public ParameterField<List<String>> applicationName;
+  public ParameterField<String> applicationName;
 }

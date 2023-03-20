@@ -29,6 +29,7 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import java.net.ConnectException;
@@ -38,7 +39,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
-import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.internal.http2.ConnectionShutdownException;
 import okhttp3.internal.http2.StreamResetException;
@@ -240,6 +240,32 @@ public class K8sApiClient implements K8sClient {
       builder.clientCert(backstageSaCaCrt.toCharArray());
     }
     return builder.build();
+  }
+
+  @Override
+  public V1Namespace createNamespace(String namespace) {
+    KubernetesConfig kubernetesConfig = getKubernetesConfig();
+    ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+    CoreV1Api coreV1Api = new CoreV1Api(apiClient);
+    final Supplier<V1Namespace> namespaceSupplier = Retry.decorateSupplier(retry, () -> {
+      try {
+        V1Namespace v1Namespace = new V1Namespace();
+        V1ObjectMeta v1ObjectMeta = new V1ObjectMeta();
+        v1ObjectMeta.setName(namespace);
+        v1Namespace.setMetadata(v1ObjectMeta);
+        return coreV1Api.createNamespace(v1Namespace, null, null, null, null);
+      } catch (ApiException e) {
+        ApiException ex = ExceptionMessageSanitizer.sanitizeException(e);
+        if (ex.getCode() == 409) {
+          log.info("Namespace {} already exists", namespace);
+          return null;
+        }
+        String message =
+            format("Failed to create namespace %s. Code: %s, message: %s", namespace, ex.getCode(), ex.getMessage());
+        throw new InvalidRequestException(message, ex, USER);
+      }
+    });
+    return namespaceSupplier.get();
   }
 
   private Retry buildRetryAndRegisterListeners() {

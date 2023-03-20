@@ -128,6 +128,8 @@ import io.harness.cdng.tas.TasRollingDeployStepInfo;
 import io.harness.cdng.tas.TasRollingDeployStepParameters;
 import io.harness.cdng.tas.TasRollingRollbackStepInfo;
 import io.harness.cdng.tas.TasRollingRollbackStepParameters;
+import io.harness.cdng.tas.TasRouteMappingStepInfo;
+import io.harness.cdng.tas.TasRouteMappingStepParameters;
 import io.harness.cdng.tas.TasSwapRollbackStepInfo;
 import io.harness.cdng.tas.TasSwapRollbackStepParameters;
 import io.harness.cdng.tas.TasSwapRoutesStepInfo;
@@ -286,5 +288,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsLambdaRollbackStepInfo.class, 12663);
     kryo.register(AwsLambdaRollbackStepParameters.class, 12664);
     kryo.register(SyncStepOutcome.class, 12665);
+    kryo.register(TasRouteMappingStepInfo.class, 12666);
+    kryo.register(TasRouteMappingStepParameters.class, 12667);
   }
 }

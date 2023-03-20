@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 49
+version: 50
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -440,6 +440,14 @@ permissions:
       - account
   - identifier: core_serviceaccount_view
     name: View ServiceAccount details
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_serviceaccount_list
+    name: List Service Accounts
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:

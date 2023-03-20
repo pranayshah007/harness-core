@@ -36,6 +36,7 @@ import io.harness.cvng.downtime.beans.RuleType;
 import io.harness.cvng.downtime.entities.Downtime;
 import io.harness.cvng.downtime.entities.Downtime.DowntimeDetails;
 import io.harness.cvng.downtime.entities.Downtime.DowntimeKeys;
+import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.downtime.transformer.DowntimeSpecDetailsTransformer;
@@ -310,6 +311,18 @@ public class DowntimeServiceImpl implements DowntimeService {
                     Collections.singletonMap(MonitoredServiceKeys.identifier, monitoredServiceIdentifier))))
         .collect(Collectors.toList());
   }
+
+  @Override
+  public List<EntityUnavailabilityStatuses> filterDowntimeInstancesOnMSs(ProjectParams projectParams,
+      List<EntityUnavailabilityStatuses> entityUnavailabilityStatuses, Set<String> monitoredServiceIdentifiers) {
+    return entityUnavailabilityStatuses.stream()
+        .filter(instance
+            -> monitoredServiceIdentifiers.stream().anyMatch(monitoredServiceIdentifier
+                -> instance.getEntitiesRule().isPresent(
+                    Collections.singletonMap(MonitoredServiceKeys.identifier, monitoredServiceIdentifier))))
+        .collect(Collectors.toList());
+  }
+
   @Override
   public void deleteByProjectIdentifier(
       Class<Downtime> clazz, String accountId, String orgIdentifier, String projectIdentifier) {

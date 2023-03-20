@@ -20,6 +20,7 @@ import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.kinds.HelmRepoOverrideManifest;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
@@ -41,7 +42,7 @@ public class HelmChartOverrideRepoStoreService implements NgManifestService {
   @Override
   public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
-      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
+      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList, CaseFormat identifierCaseFormat) {
     HelmChartConfig helmChartConfig = applicationManifest.getHelmChartConfig();
     CgEntityId connectorId =
         CgEntityId.builder().type(NGMigrationEntityType.CONNECTOR).id(helmChartConfig.getConnectorId()).build();
@@ -66,18 +67,18 @@ public class HelmChartOverrideRepoStoreService implements NgManifestService {
     }
     HelmRepoOverrideManifest helmRepoOverride =
         HelmRepoOverrideManifest.builder()
-            .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
+            .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid(), identifierCaseFormat))
             .connectorRef(ParameterField.createValueField(
                 MigratorUtility.getIdentifierWithScope(connectorYamlFile.getNgEntityDetail())))
             .type(type)
             .build();
-    return Collections.singletonList(
-        ManifestConfigWrapper.builder()
-            .manifest(ManifestConfig.builder()
-                          .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-                          .type(ManifestConfigType.HELM_REPO_OVERRIDE)
-                          .spec(helmRepoOverride)
-                          .build())
-            .build());
+    return Collections.singletonList(ManifestConfigWrapper.builder()
+                                         .manifest(ManifestConfig.builder()
+                                                       .identifier(MigratorUtility.generateIdentifier(
+                                                           applicationManifest.getUuid(), identifierCaseFormat))
+                                                       .type(ManifestConfigType.HELM_REPO_OVERRIDE)
+                                                       .spec(helmRepoOverride)
+                                                       .build())
+                                         .build());
   }
 }

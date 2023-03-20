@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.VUK;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.VerificationApplication;
@@ -98,6 +99,7 @@ public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBa
   @Test
   @Owner(developers = VUK)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testProcessDeleteAction_entitiesList() {
     Set<Class<? extends PersistentEntity>> entitiesWithVerificationTaskId = new HashSet<>();
     entitiesWithVerificationTaskId.addAll(OrganizationChangeEventMessageProcessor.ENTITIES_MAP.keySet());
@@ -132,6 +134,7 @@ public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBa
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testCompoudIndexForOrgDeletionIsPresent() {
     Set<String> entitiesWithoutProperIndex = new HashSet<>();
     Set<Class<? extends PersistentEntity>> entitiesToBeDeletedWithOrgDeletion =

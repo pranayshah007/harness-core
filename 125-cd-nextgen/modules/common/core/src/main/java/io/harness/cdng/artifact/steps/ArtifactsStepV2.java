@@ -164,13 +164,22 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
 
     final ArtifactListConfig artifacts = service.getServiceDefinition().getServiceSpec().getArtifacts();
 
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    if (noArtifactConfigured(artifacts)) {
+      logCallback.saveExecutionLog(
+          String.format(
+              "No primary or sidecar artifacts configured in the service. <+%s> or <%s> expressions will not work",
+              OutcomeExpressionConstants.ARTIFACTS, OutcomeExpressionConstants.ARTIFACT),
+          LogLevel.WARN);
+      return AsyncExecutableResponse.newBuilder().build();
+    }
+
     resolveExpressions(ambiance, artifacts);
 
     checkForAccessOrThrow(ambiance, artifacts);
     final Set<String> taskIds = new HashSet<>();
     final Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
     final List<ArtifactConfig> artifactConfigMapForNonDelegateTaskTypes = new ArrayList<>();
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     String primaryArtifactTaskId = null;
 
     if (artifacts.getPrimary() != null) {
@@ -392,12 +401,22 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     String taskName = artifactStepHelper.getArtifactStepTaskType(artifactConfig).getDisplayName() + ": "
         + taskParameters.getArtifactTaskType().getDisplayName();
 
+    boolean withLogs = false;
+    String baseLogKey = "";
+    boolean shouldSkipOpenStream = false;
+    if (ArtifactSourceType.CUSTOM_ARTIFACT.equals(artifactConfig.getSourceType())) {
+      withLogs = true;
+      shouldSkipOpenStream = true;
+      baseLogKey = logCallback.getLogBaseKey();
+    }
+
     TaskRequest taskRequest =
         TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
-            TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), false, taskName, delegateSelectors);
+            TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), withLogs, taskName, delegateSelectors);
 
-    final DelegateTaskRequest delegateTaskRequest = cdStepHelper.mapTaskRequestToDelegateTaskRequest(
-        taskRequest, taskData, delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()));
+    final DelegateTaskRequest delegateTaskRequest = cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest,
+        taskData, delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()), baseLogKey,
+        shouldSkipOpenStream);
 
     return delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
   }
@@ -466,5 +485,10 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
             LogLevel.WARN);
       }
     }
+  }
+  private static boolean noArtifactConfigured(ArtifactListConfig artifacts) {
+    final boolean noPrimaryConfigured = artifacts.getPrimary() == null
+        || (artifacts.getPrimary().getSpec() == null && isEmpty(artifacts.getPrimary().getSources()));
+    return noPrimaryConfigured && EmptyPredicate.isEmpty(artifacts.getSidecars());
   }
 }

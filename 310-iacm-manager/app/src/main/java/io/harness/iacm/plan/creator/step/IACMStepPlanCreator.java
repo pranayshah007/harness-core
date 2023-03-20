@@ -18,6 +18,6 @@ import java.util.Set;
 public class IACMStepPlanCreator extends GenericStepPMSPlanCreator {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return IACMCreatorUtils.getSupportedSteps();
+    return IACMCreatorUtils.getSupportedStepsV2();
   }
 }

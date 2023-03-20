@@ -45,6 +45,7 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -360,8 +361,8 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
     return moduleConfig;
   }
 
-  protected AbstractStepNode getStepNode(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  protected AbstractStepNode getStepNode(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode, CaseFormat identifierCaseFormat) {
     TerragruntProvisionState state = (TerragruntProvisionState) getState(graphNode);
     if (state.isRunPlanOnly()) {
       TerragruntPlanExecutionData executionData = getPlanExecutionData(entities, migratedEntities, state);
@@ -371,7 +372,7 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
                                             .terragruntPlanExecutionData(executionData)
                                             .build();
       TerragruntPlanStepNode planStepNode = new TerragruntPlanStepNode();
-      baseSetup(graphNode, planStepNode);
+      baseSetup(graphNode, planStepNode, identifierCaseFormat);
       planStepNode.setTerragruntPlanStepInfo(stepInfo);
       return planStepNode;
     } else {
@@ -384,7 +385,7 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
                                              .provisionerIdentifier(MigratorUtility.RUNTIME_INPUT)
                                              .build();
       TerragruntApplyStepNode applyStepNode = new TerragruntApplyStepNode();
-      baseSetup(graphNode, applyStepNode);
+      baseSetup(graphNode, applyStepNode, identifierCaseFormat);
       applyStepNode.setTerragruntApplyStepInfo(stepInfo);
       return applyStepNode;
     }

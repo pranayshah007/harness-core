@@ -28,7 +28,7 @@ import lombok.Data;
 public class PipelineValidationResponseDTO {
   @Schema(description = "Status of the Pipeline Validation Event") String status;
   @Schema(description = "Start time of the Evaluation") long startTs;
-  @Schema(description = "End time of the Evaluation") long endTs;
+  @Schema(description = "End time of the Evaluation") Long endTs;
 
   @Schema(description = "Result of Policy Evaluations on the Pipeline") GovernanceMetadata policyEval;
 }

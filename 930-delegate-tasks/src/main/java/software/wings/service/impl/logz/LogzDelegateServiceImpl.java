@@ -9,20 +9,20 @@ package software.wings.service.impl.logz;
 
 import static io.harness.network.Http.getOkHttpClientBuilder;
 
+import static software.wings.beans.dto.ThirdPartyApiCallLog.PAYLOAD;
 import static software.wings.delegatetasks.cv.CVConstants.URL_STRING;
-import static software.wings.service.impl.ThirdPartyApiCallLog.PAYLOAD;
 
 import io.harness.exception.WingsException;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.config.LogzConfig;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog.FieldType;
+import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.delegatetasks.DelegateLogService;
 import software.wings.delegatetasks.cv.RequestExecutor;
 import software.wings.helpers.ext.logz.LogzRestClient;
-import software.wings.service.impl.ThirdPartyApiCallLog;
-import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;
-import software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.service.impl.elk.ElkLogFetchRequest;
 import software.wings.service.intfc.logz.LogzDelegateService;
 import software.wings.service.intfc.security.EncryptionService;

@@ -89,4 +89,5 @@ public class KubernetesExceptionExplanation {
   public final String EXPECTED_BLOCK_END = "Expected a 'block end' but found: scalar";
   public final String INVALID_TEMPLATE_PATH = "The openshift template file path is empty";
   public final String MANIFEST_SIZE_LIMIT = "The max limit of manifest file size is 5MB.";
+  public final String OPENSHIFT_RENDER_ERROR = "Failed to render template with error: %n%s %n%nCommand Executed: %n%s";
 }

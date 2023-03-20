@@ -21,12 +21,12 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.dto.CVActivityLog.CVActivityLogKeys;
+import software.wings.beans.dto.CVActivityLog.LogLevel;
 import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.verification.CVActivityLogService;
 import software.wings.verification.CVActivityLog;
-import software.wings.verification.CVActivityLog.CVActivityLogKeys;
-import software.wings.verification.CVActivityLog.LogLevel;
 
 import com.google.inject.Inject;
 import java.time.Instant;

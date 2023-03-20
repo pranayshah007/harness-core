@@ -102,12 +102,11 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
     secretResponse.setSecret(secretOpt.get());
-    return Response.status(Response.Status.CREATED).entity(secretResponse).build();
+    return Response.status(Response.Status.OK).entity(secretResponse).build();
   }
 
   @Override
-  public Response getEnvironmentSecrets(
-      @Valid EnvironmentSecretRequest body, String harnessAccount, Integer page, Integer limit, String sort) {
+  public Response getEnvironmentSecrets(String harnessAccount, Integer page, Integer limit, String sort) {
     List<EnvironmentSecret> secrets = environmentSecretService.findByAccountIdentifier(harnessAccount);
     return Response.status(Response.Status.OK).entity(EnvironmentSecretMapper.toResponseList(secrets)).build();
   }
@@ -118,7 +117,7 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
     try {
       environmentSecretService.syncK8sSecret(secrets, harnessAccount);
     } catch (Exception e) {
-      log.error("Could not create all environment secrets", e);
+      log.error("Could not sync all environment secrets", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
@@ -151,13 +150,11 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
     try {
       responseSecrets = environmentSecretService.updateAndSyncK8sSecrets(requestSecrets, accountIdentifier);
     } catch (Exception e) {
-      log.error("Could not create all environment secrets", e);
+      log.error("Could not update all environment secrets", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
     }
-    return Response.status(Response.Status.CREATED)
-        .entity(EnvironmentSecretMapper.toResponseList(responseSecrets))
-        .build();
+    return Response.status(Response.Status.OK).entity(EnvironmentSecretMapper.toResponseList(responseSecrets)).build();
   }
 }

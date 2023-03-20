@@ -10,6 +10,7 @@ package io.harness.freeze.mappers;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.freeze.beans.CurrentOrUpcomingWindow;
 import io.harness.freeze.beans.FilterType;
 import io.harness.freeze.beans.FreezeEntityRule;
 import io.harness.freeze.beans.FreezeEntityType;
@@ -249,8 +250,9 @@ public class NGFreezeDtoMapper {
     if (windows != null) {
       windows.stream().forEach(freezeWindow -> {
         try {
-          boolean active = FreezeTimeUtils.globalFreezeIsActive(freezeWindow);
-          if (!active && freezeInfoConfig.getStatus() == FreezeStatus.ENABLED) {
+          CurrentOrUpcomingWindow currentOrUpcomingWindow =
+              FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeInfoConfig.getWindows());
+          if (currentOrUpcomingWindow == null && freezeInfoConfig.getStatus() == FreezeStatus.ENABLED) {
             update[0] = true;
             return;
           }

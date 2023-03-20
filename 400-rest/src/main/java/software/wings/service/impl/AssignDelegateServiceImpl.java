@@ -59,6 +59,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.iterator.ValidationFailedTaskMessageHelper;
 import io.harness.persistence.HPersistence;
 import io.harness.service.dto.RetryDelegate;
 import io.harness.service.intfc.DelegateCache;
@@ -145,6 +146,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private DelegateCache delegateCache;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
+  @Inject private ValidationFailedTaskMessageHelper validationFailedTaskMessageHelper;
 
   @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
@@ -803,6 +805,12 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
     String errorMessage = "Unknown";
 
+    if (isNotEmpty(delegateTask.getValidationCompleteDelegateIds())
+        && delegateTask.getValidationCompleteDelegateIds().containsAll(
+            delegateTask.getEligibleToExecuteDelegateIds())) {
+      errorMessage = validationFailedTaskMessageHelper.generateValidationError(delegateTask);
+      log.info("Failing task {} due to validation error, {}", delegateTask.getUuid(), errorMessage);
+    }
     List<DelegateSelectionLogParams> delegateSelectionLogs =
         delegateSelectionLogsService.fetchTaskSelectionLogs(delegateTask.getAccountId(), delegateTask.getUuid());
 

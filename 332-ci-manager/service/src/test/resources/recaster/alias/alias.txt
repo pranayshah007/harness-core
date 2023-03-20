@@ -330,3 +330,5 @@ io.harness.beans.steps.stepinfo.V1.ActionStepInfoV1
 io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig
 io.harness.ssca.beans.stepnode.SscaOrchestrationStepNode
 io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo
+io.harness.beans.stages.IACMStageConfigImplV1
+io.harness.beans.stages.IACMStageNodeV1

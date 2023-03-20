@@ -72,9 +72,11 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.SLOT
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveKeys;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
+import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.SLOTimeScaleService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
@@ -149,8 +151,9 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private ServiceLevelObjectiveDetailsTransformer serviceLevelObjectiveDetailsTransformer;
   @Inject private SLIRecordServiceImpl sliRecordService;
   @Inject private CompositeSLORecordServiceImpl compositeSLORecordService;
+  @Inject private AnnotationService annotationService;
   private Query<AbstractServiceLevelObjective> sloQuery;
-
+  @Inject SLOTimeScaleService sloTimeScaleService;
   @Inject private NotificationClient notificationClient;
 
   @Inject
@@ -218,7 +221,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       SimpleServiceLevelObjective simpleServiceLevelObjective =
           (SimpleServiceLevelObjective) saveServiceLevelObjectiveV2Entity(
               projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled());
-
+      sloTimeScaleService.upsertServiceLevelObjective(simpleServiceLevelObjective);
       sloHealthIndicatorService.upsert(simpleServiceLevelObjective);
       return getSLOResponse(simpleServiceLevelObjective.getIdentifier(), projectParams);
     } else {
@@ -302,6 +305,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                            .orgIdentifier(projectParams.getOrgIdentifier())
                            .projectIdentifier(projectParams.getProjectIdentifier())
                            .build());
+    sloTimeScaleService.upsertServiceLevelObjective(serviceLevelObjective);
     return getSLOResponse(serviceLevelObjectiveDTO.getIdentifier(), projectParams);
   }
 
@@ -410,12 +414,14 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           projectParams, ((SimpleServiceLevelObjective) serviceLevelObjectiveV2).getServiceLevelIndicators());
     }
     sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifier);
-    sloHealthIndicatorService.delete(projectParams, serviceLevelObjectiveV2.getIdentifier());
+    sloHealthIndicatorService.delete(projectParams, identifier);
+    annotationService.delete(projectParams, identifier);
     notificationRuleService.delete(projectParams,
         serviceLevelObjectiveV2.getNotificationRuleRefs()
             .stream()
             .map(NotificationRuleRef::getNotificationRuleRef)
             .collect(Collectors.toList()));
+    sloTimeScaleService.deleteServiceLevelObjective(projectParams, identifier);
     if (serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.COMPOSITE)) {
       String verificationTaskId = verificationTaskService.getCompositeSLOVerificationTaskId(
           serviceLevelObjectiveV2.getAccountId(), serviceLevelObjectiveV2.getUuid());
@@ -763,6 +769,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     List<String> notificationRuleRefs = serviceLevelObjective.getNotificationRuleRefs()
                                             .stream()
                                             .filter(ref -> ref.isEligible(clock.instant(), COOL_OFF_DURATION))
+                                            .filter(ref -> ref.isEnabled())
                                             .map(NotificationRuleRef::getNotificationRuleRef)
                                             .collect(Collectors.toList());
     return notificationRuleService.getEntities(projectParams, notificationRuleRefs);

@@ -18,6 +18,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
@@ -38,10 +39,10 @@ public class OpenshiftParamLocalStoreService implements NgManifestService {
   @Override
   public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
-      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
+      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList, CaseFormat identifierCaseFormat) {
     String name = StringUtils.isBlank(applicationManifest.getName()) ? applicationManifest.getUuid()
                                                                      : applicationManifest.getName();
-    String identifier = MigratorUtility.generateIdentifier(name);
+    String identifier = MigratorUtility.generateIdentifier(name, identifierCaseFormat);
     OpenshiftParamManifest openshiftParamManifest =
         OpenshiftParamManifest.builder()
             .identifier(identifier)

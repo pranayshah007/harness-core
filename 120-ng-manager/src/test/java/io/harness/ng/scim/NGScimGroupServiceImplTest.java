@@ -12,7 +12,7 @@ import static io.harness.NGConstants.LOCATION;
 import static io.harness.NGConstants.RESOURCE_TYPE;
 import static io.harness.NGConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.PL_JPMC_SCIM_REQUIREMENTS;
+import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRATEEK;
@@ -32,7 +32,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.user.entities.UserGroup;
-import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
+import io.harness.ng.core.user.entities.UserMetadata;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.rule.Owner;
 import io.harness.scim.Member;
@@ -40,10 +40,13 @@ import io.harness.scim.ScimGroup;
 import io.harness.scim.ScimListResponse;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
+import io.vavr.collection.List;
 import java.util.ArrayList;
+import java.util.Iterator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PL)
 public class NGScimGroupServiceImplTest extends NgManagerTestBase {
@@ -101,7 +104,7 @@ public class NGScimGroupServiceImplTest extends NgManagerTestBase {
                               .identifier(scimGroup.getDisplayName().replaceAll("\\.", "_"))
                               .build();
     when(userGroupService.create(any())).thenReturn(userGroup);
-    when(ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(true);
+    when(ngFeatureFlagHelperService.isEnabled(accountId, PL_NEW_SCIM_STANDARDS)).thenReturn(true);
     ScimGroup userGroupCreated = scimGroupService.createGroup(scimGroup, accountId);
 
     assertThat(userGroupCreated.getDisplayName()).isNotNull();
@@ -130,7 +133,7 @@ public class NGScimGroupServiceImplTest extends NgManagerTestBase {
                               .identifier(scimGroup.getDisplayName().replaceAll("\\.", "_"))
                               .build();
     when(userGroupService.create(any())).thenReturn(userGroup);
-    when(ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(false);
+    when(ngFeatureFlagHelperService.isEnabled(accountId, PL_NEW_SCIM_STANDARDS)).thenReturn(false);
     ScimGroup userGroupCreated = scimGroupService.createGroup(scimGroup, accountId);
 
     assertThat(userGroupCreated.getDisplayName()).isNotNull();
@@ -241,16 +244,14 @@ public class NGScimGroupServiceImplTest extends NgManagerTestBase {
     scimGroup.setId("id");
 
     UserGroup userGroup1 = UserGroup.builder().name(scimGroup.getDisplayName()).identifier(scimGroup.getId()).build();
-    UserMetadataDTO userMetadataDTO =
-        UserMetadataDTO.builder().name("testName").email("dummy@gmail.com").uuid("UUID").build();
+    UserMetadata userMetadata = UserMetadata.builder().name("testName").email("dummy@gmail.com").userId("UUID").build();
 
     when(userGroupService.list(any(), any(), any())).thenReturn(new ArrayList<UserGroup>() {
       { add(userGroup1); }
     });
 
-    when(userGroupService.getUsersInUserGroup(any(), any())).thenReturn(new ArrayList<UserMetadataDTO>() {
-      { add(userMetadataDTO); }
-    });
+    when(userGroupService.getUsersInUserGroup(any(), any()))
+        .thenReturn(createCloseableIterator(List.of(userMetadata).iterator()));
 
     ScimListResponse<ScimGroup> response = scimGroupService.searchGroup(null, accountId, count, startIndex);
 
@@ -534,5 +535,22 @@ public class NGScimGroupServiceImplTest extends NgManagerTestBase {
     assertThat(userGroupCreated.getDisplayName()).isNull();
     assertThat(userGroupCreated.getId()).isNull();
     assertThat(userGroupCreated.getMembers()).isNull();
+  }
+
+  private static <T> CloseableIterator<T> createCloseableIterator(Iterator<T> iterator) {
+    return new CloseableIterator<T>() {
+      @Override
+      public void close() {}
+
+      @Override
+      public boolean hasNext() {
+        return iterator.hasNext();
+      }
+
+      @Override
+      public T next() {
+        return iterator.next();
+      }
+    };
   }
 }

@@ -31,7 +31,7 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.InfrastructureType;
-import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -49,7 +49,6 @@ import software.wings.infra.InfrastructureDefinition;
 import software.wings.infra.PhysicalInfra;
 import software.wings.infra.PhysicalInfraWinrm;
 import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -120,9 +119,9 @@ public class SshWinRmInfraDefMapper implements InfraDefMapper {
   }
 
   @Override
-  public Infrastructure getSpec(MigrationInputDTO inputDTO, InfrastructureDefinition infrastructureDefinition,
-      Map<CgEntityId, NGYamlFile> migratedEntities, Map<CgEntityId, CgEntityNode> entities,
+  public Infrastructure getSpec(MigrationContext migrationContext, InfrastructureDefinition infrastructureDefinition,
       List<ElastigroupConfiguration> elastigroupConfiguration) {
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     switch (infrastructureDefinition.getCloudProviderType()) {
       case AWS:
         return getAwsSshInfra(migratedEntities, infrastructureDefinition.getInfrastructure(),

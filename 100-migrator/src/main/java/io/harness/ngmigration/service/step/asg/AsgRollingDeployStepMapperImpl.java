@@ -14,9 +14,11 @@ import io.harness.cdng.aws.asg.AsgBlueGreenDeployStepNode;
 import io.harness.cdng.aws.asg.AsgRollingDeployStepInfo;
 import io.harness.cdng.aws.asg.AsgRollingDeployStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
@@ -42,18 +44,19 @@ public class AsgRollingDeployStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     AwsAmiServiceSetup state = (AwsAmiServiceSetup) getState(graphNode);
     if (state.isBlueGreen()) {
-      return getBGRollingStepNode(state);
+      return getBGRollingStepNode(state, context.getIdentifierCaseFormat());
     } else {
-      return getRollingStepNode(state);
+      return getRollingStepNode(state, context.getIdentifierCaseFormat());
     }
   }
 
-  private AbstractStepNode getBGRollingStepNode(AwsAmiServiceSetup state) {
+  private AbstractStepNode getBGRollingStepNode(AwsAmiServiceSetup state, CaseFormat identifierCaseFormat) {
     AsgBlueGreenDeployStepNode node = new AsgBlueGreenDeployStepNode();
-    baseSetup(state, node);
+    baseSetup(state, node, identifierCaseFormat);
     node.setAsgBlueGreenDeployStepInfo(AsgBlueGreenDeployStepInfo.infoBuilder()
                                            .loadBalancer(ParameterField.createValueField(PLEASE_FIX_ME))
                                            .prodListener(ParameterField.createValueField(PLEASE_FIX_ME))
@@ -65,9 +68,9 @@ public class AsgRollingDeployStepMapperImpl extends StepMapper {
     return node;
   }
 
-  private AbstractStepNode getRollingStepNode(AwsAmiServiceSetup state) {
+  private AbstractStepNode getRollingStepNode(AwsAmiServiceSetup state, CaseFormat identifierCaseFormat) {
     AsgRollingDeployStepNode node = new AsgRollingDeployStepNode();
-    baseSetup(state, node);
+    baseSetup(state, node, identifierCaseFormat);
     node.setAsgRollingDeployStepInfo(
         AsgRollingDeployStepInfo.infoBuilder()
             .useAlreadyRunningInstances(ParameterField.createValueField(state.isUseCurrentRunningCount()))
@@ -78,8 +81,9 @@ public class AsgRollingDeployStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    // @deepak: Please re-evaluate
-    return false;
+    AwsAmiServiceSetup state1 = (AwsAmiServiceSetup) getState(stepYaml1);
+    AwsAmiServiceSetup state2 = (AwsAmiServiceSetup) getState(stepYaml2);
+    return state1.isUseCurrentRunningCount() == state2.isUseCurrentRunningCount();
   }
 
   @Override

@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step.asg;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStepInfo;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -36,11 +37,12 @@ public class AsgRollingRollbackStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     AwsAmiServiceRollback state = (AwsAmiServiceRollback) getState(graphNode);
 
     AsgRollingRollbackStepNode node = new AsgRollingRollbackStepNode();
-    baseSetup(state, node);
+    baseSetup(state, node, context.getIdentifierCaseFormat());
     AsgRollingRollbackStepInfo rollbackStepInfo = AsgRollingRollbackStepInfo.infoBuilder().build();
 
     node.setAsgRollingRollbackStepInfo(rollbackStepInfo);

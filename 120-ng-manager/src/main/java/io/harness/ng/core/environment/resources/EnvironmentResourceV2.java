@@ -82,7 +82,6 @@ import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
-import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.rbac.CDNGRbacUtility;
@@ -524,6 +523,65 @@ public class EnvironmentResourceV2 {
     return getEnvironmentsPageByCriteria(criteria, pageRequest);
   }
 
+  @POST
+  @Path("/listV2/access")
+  @ApiOperation(value = "Gets environment access list", nickname = "getEnvironmentAccessListV2")
+  @Operation(operationId = "getEnvironmentAccessListV2",
+      summary = "Gets Environment Access list for a project with filters",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of Environments for a Project that are accessible")
+      },
+      hidden = true)
+  public ResponseDTO<List<EnvironmentResponse>>
+  listAccessEnvironmentsV2(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+                               NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") int size,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
+      @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(description = "List of EnvironmentIds") @QueryParam("envIdentifiers") List<String> envIdentifiers,
+      @Parameter(
+          description =
+              "Specifies sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
+      @QueryParam("sort") List<String> sort,
+      @RequestBody(description = "This is the body for the filter properties for listing environments.")
+      EnvironmentFilterPropertiesDTO filterProperties,
+      @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier,
+      @Parameter(
+          description =
+              "Specify true if all accessible environments are to be included. Returns environments at account/org/project level.")
+      @QueryParam(NGResourceFilterConstants.INCLUDE_ALL_ACCESSIBLE_AT_SCOPE) @DefaultValue(
+          "false") boolean includeAllAccessibleAtScope) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+        Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier,
+        false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope);
+
+    if (isNotEmpty(envIdentifiers)) {
+      criteria.and(EnvironmentKeys.identifier).in(envIdentifiers);
+    }
+    List<EnvironmentResponse> environmentList = environmentService.listAccess(criteria)
+                                                    .stream()
+                                                    .map(EnvironmentMapper::toResponseWrapper)
+                                                    .collect(Collectors.toList());
+
+    List<PermissionCheckDTO> permissionCheckDTOS = environmentList.stream()
+                                                       .map(CDNGRbacUtility::environmentResponseToPermissionCheckDTO)
+                                                       .collect(Collectors.toList());
+    List<AccessControlDTO> accessControlList =
+        accessControlClient.checkForAccess(permissionCheckDTOS).getAccessControlList();
+
+    return ResponseDTO.newResponse(filterEnvironmentResponseByPermissionAndId(accessControlList, environmentList));
+  }
+
   @GET
   @Path("/list/access")
   @ApiOperation(value = "Gets environment access list", nickname = "getEnvironmentAccessList")
@@ -569,10 +627,11 @@ public class EnvironmentResourceV2 {
                 String.format("Could not find environment group with identifier: %s", envGroupIdentifier));
           });
       // fetch environments from the same scope as of env group
-      criteria = CoreCriteriaUtils.createCriteriaForGetList(envGroupIdentifierRef.getAccountIdentifier(),
-          envGroupIdentifierRef.getOrgIdentifier(), envGroupIdentifierRef.getProjectIdentifier(), false);
+      criteria = environmentFilterHelper.createCriteriaForGetList(envGroupIdentifierRef.getAccountIdentifier(),
+          envGroupIdentifierRef.getOrgIdentifier(), envGroupIdentifierRef.getProjectIdentifier(), false, searchTerm);
     } else {
-      criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false);
+      criteria = environmentFilterHelper.createCriteriaForGetList(
+          accountId, orgIdentifier, projectIdentifier, false, searchTerm);
     }
 
     if (isNotEmpty(envIdentifiers)) {
@@ -725,9 +784,9 @@ public class EnvironmentResourceV2 {
   public ResponseDTO<Boolean>
   deleteServiceOverride(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
-      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE, required = true) @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ResourceIdentifier String environmentIdentifier,

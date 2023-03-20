@@ -72,7 +72,8 @@ public class AwsKmsSecretMigrator implements SecretMigrator {
 
     List<SecretDTOV2> secrets = new ArrayList<>();
 
-    String keyArn = String.format("migratedAwsArm_%s", MigratorUtility.generateIdentifier(kmsConfig.getName()));
+    String keyArn = String.format("migratedAwsArm_%s",
+        MigratorUtility.generateIdentifier(kmsConfig.getName(), inputDTO.getIdentifierCaseFormat()));
     NgEntityDetail keyArnEntityDetail = NgEntityDetail.builder()
                                             .identifier(keyArn)
                                             .orgIdentifier(orgIdentifier)
@@ -92,14 +93,15 @@ public class AwsKmsSecretMigrator implements SecretMigrator {
 
     // Handle Auth Token
     if (StringUtils.isNotBlank(kmsConfig.getAccessKey())) {
-      String awsAccessKey = String.format("migratedAwsKey_%s", MigratorUtility.generateIdentifier(kmsConfig.getName()));
+      String awsAccessKey = String.format("migratedAwsKey_%s",
+          MigratorUtility.generateIdentifier(kmsConfig.getName(), inputDTO.getIdentifierCaseFormat()));
       NgEntityDetail awsAccessKeyEntityDetail = NgEntityDetail.builder()
                                                     .identifier(awsAccessKey)
                                                     .orgIdentifier(orgIdentifier)
                                                     .projectIdentifier(projectIdentifier)
                                                     .build();
-      String awsSecretKey =
-          String.format("migratedAwsSecret_%s", MigratorUtility.generateIdentifier(kmsConfig.getName()));
+      String awsSecretKey = String.format("migratedAwsSecret_%s",
+          MigratorUtility.generateIdentifier(kmsConfig.getName(), inputDTO.getIdentifierCaseFormat()));
       NgEntityDetail awsSecretEntityDetail = NgEntityDetail.builder()
                                                  .identifier(awsAccessKey)
                                                  .orgIdentifier(orgIdentifier)

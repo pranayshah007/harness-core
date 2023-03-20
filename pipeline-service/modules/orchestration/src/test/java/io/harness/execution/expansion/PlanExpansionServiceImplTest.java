@@ -16,7 +16,6 @@ import io.harness.CategoryTest;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
-import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -28,7 +27,6 @@ import io.harness.utils.PmsFeatureFlagService;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import org.assertj.core.util.Maps;
 import org.bson.Document;
@@ -187,46 +185,5 @@ public class PlanExpansionServiceImplTest extends CategoryTest {
     }
     assertThat(fieldsUpdated.size()).isEqualTo(1);
     assertThat(fieldsUpdated.iterator().next()).isEqualTo("expandedJson.pipeline.spec.stepInputs");
-  }
-
-  @Test
-  @Owner(developers = SAHIL)
-  @Category(UnitTests.class)
-  public void testAddNameAndIdentifier() {
-    Mockito.when(pmsFeatureFlagService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(PLAN_EXECUTION_ID)
-                            .putSetupAbstractions("accountId", "accountId")
-                            .addLevels(Level.newBuilder().setIdentifier(PIPELINE).setSkipExpressionChain(false).build())
-                            .addLevels(Level.newBuilder().setIdentifier("spec").setSkipExpressionChain(true).build())
-                            .build();
-    NodeExecution nodeExecution =
-        NodeExecution.builder().identifier("identifier").name("name").ambiance(ambiance).build();
-    planExpansionService.addNameAndIdentifier(nodeExecution);
-    Mockito.verifyNoInteractions(planExecutionExpansionRepository);
-
-    ambiance = Ambiance.newBuilder()
-                   .setPlanExecutionId(PLAN_EXECUTION_ID)
-                   .putSetupAbstractions("accountId", "accountId")
-                   .addLevels(Level.newBuilder().setIdentifier(PIPELINE).setSkipExpressionChain(false).build())
-                   .addLevels(Level.newBuilder().setIdentifier(SPEC).setSkipExpressionChain(false).build())
-                   .build();
-
-    NodeExecution nodeExecution1 =
-        NodeExecution.builder().identifier("identifier").name("name").ambiance(ambiance).build();
-    Mockito.when(pmsFeatureFlagService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
-    ArgumentCaptor<Update> updateCaptor = ArgumentCaptor.forClass(Update.class);
-    planExpansionService.addNameAndIdentifier(nodeExecution1);
-    ArgumentCaptor<String> planExecutionCaptor = ArgumentCaptor.forClass(String.class);
-    Mockito.verify(planExecutionExpansionRepository).update(planExecutionCaptor.capture(), updateCaptor.capture());
-    Update update = updateCaptor.getValue();
-    Set<String> fieldsUpdated = new HashSet<>();
-    if (update.getUpdateObject().containsKey("$set")) {
-      fieldsUpdated.addAll(((Document) update.getUpdateObject().get("$set")).keySet());
-    }
-    assertThat(fieldsUpdated.size()).isEqualTo(2);
-    Iterator itr = fieldsUpdated.iterator();
-    assertThat(itr.next()).isEqualTo("expandedJson.pipeline.spec.name");
-    assertThat(itr.next()).isEqualTo("expandedJson.pipeline.spec.identifier");
   }
 }

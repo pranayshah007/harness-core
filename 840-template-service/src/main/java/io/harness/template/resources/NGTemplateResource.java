@@ -37,6 +37,7 @@ import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
+import io.harness.gitx.USER_FLOW;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.customDeployment.CustomDeploymentVariableResponseDTO;
 import io.harness.ng.core.customDeployment.CustomDeploymentYamlRequestDTO;
@@ -612,7 +613,6 @@ public class NGTemplateResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the Template Input Set YAML")
       })
-  @Hidden
   public ResponseDTO<String>
   getTemplateInputsYaml(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -738,7 +738,7 @@ public class NGTemplateResource {
       @QueryParam("AppendInputSetValidator") @DefaultValue("false") boolean appendInputSetValidator) {
     log.info("Applying templates to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
     if (templateApplyRequestDTO.isGetOnlyFileContent()) {
-      TemplateUtils.setUserFlowContext();
+      TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
     }
     long start = System.currentTimeMillis();
     TemplateMergeResponseDTO templateMergeResponseDTO =
@@ -772,7 +772,7 @@ public class NGTemplateResource {
     long start = System.currentTimeMillis();
     log.info("Principal in the applyTemplate resource layer is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
     if (templateApplyRequestDTO.isGetOnlyFileContent()) {
-      TemplateUtils.setUserFlowContext();
+      TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
     }
     TemplateMergeResponseDTO templateMergeResponseDTO =
         templateMergeService.applyTemplatesToYamlV2(accountId, orgId, projectId,

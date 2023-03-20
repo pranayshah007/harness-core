@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.entity;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,11 +18,13 @@ import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ngmigration.beans.FileYamlDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -30,8 +33,10 @@ import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.ConfigFile;
@@ -60,6 +65,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ConfigFileMigrationService extends NgMigrationService {
+  @Inject private SecretRefUtils secretRefUtils;
   @Inject ConfigService configService;
 
   @Override
@@ -86,6 +92,11 @@ public class ConfigFileMigrationService extends NgMigrationService {
     if (configFile.isEncrypted() && StringUtils.isNotBlank(configFile.getEncryptedFileId())) {
       children.add(CgEntityId.builder().id(configFile.getEncryptedFileId()).type(NGMigrationEntityType.SECRET).build());
     }
+    byte[] fileContent = getFileContent(configFile);
+    if (EmptyPredicate.isNotEmpty(fileContent)) {
+      children.addAll(secretRefUtils.getSecretRefFromExpressions(
+          configFile.getAccountId(), MigratorExpressionUtils.extractAll(new String(fileContent))));
+    }
     return DiscoveryNode.builder().children(children).entityNode(cgEntityNode).build();
   }
 
@@ -101,8 +112,9 @@ public class ConfigFileMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     ConfigFile configFile = (ConfigFile) entities.get(entityId).getEntity();
     if (configFile.isEncrypted()) {
       return null;
@@ -114,16 +126,22 @@ public class ConfigFileMigrationService extends NgMigrationService {
     return YamlGenerationDetails.builder().yamlFileList(Collections.singletonList(yamlFile)).build();
   }
 
-  private NGYamlFile getYamlFileForConfigFile(
-      ConfigFile configFile, MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities) {
-    byte[] fileContent;
+  private byte[] getFileContent(ConfigFile configFile) {
     try {
-      fileContent = configService.getFileContent(configFile.getAppId(), configFile);
-      if (isEmpty(fileContent)) {
-        return null;
+      byte[] fileContent = configService.getFileContent(configFile.getAppId(), configFile);
+      if (isNotEmpty(fileContent)) {
+        return fileContent;
       }
     } catch (Exception e) {
       log.error(String.format("There was an error with reading contents of config file %s", configFile.getUuid()), e);
+    }
+    return null;
+  }
+
+  private NGYamlFile getYamlFileForConfigFile(
+      ConfigFile configFile, MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities) {
+    byte[] fileContent = getFileContent(configFile);
+    if (EmptyPredicate.isEmpty(fileContent)) {
       return null;
     }
     CgEntityNode serviceNode = null;
@@ -167,7 +185,8 @@ public class ConfigFileMigrationService extends NgMigrationService {
     String fileUsage = FileUsage.CONFIG.name();
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
-    String identifier = MigratorUtility.generateManifestIdentifier(prefix + configFile.getRelativeFilePath());
+    String identifier = MigratorUtility.generateManifestIdentifier(
+        prefix + configFile.getRelativeFilePath(), inputDTO.getIdentifierCaseFormat());
     String name = identifier;
     if (MigratorUtility.endsWithIgnoreCase(identifier, "yaml", "yml")) {
       name = MigratorUtility.endsWithIgnoreCase(identifier, "yaml")
@@ -211,8 +230,10 @@ public class ConfigFileMigrationService extends NgMigrationService {
     return true;
   }
 
-  public List<ConfigFileWrapper> getConfigFiles(Set<CgEntityId> configFileIds, MigrationInputDTO inputDTO,
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public List<ConfigFileWrapper> getConfigFiles(MigrationContext migrationContext, Set<CgEntityId> configFileIds) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     if (isEmpty(configFileIds)) {
       return new ArrayList<>();
     }

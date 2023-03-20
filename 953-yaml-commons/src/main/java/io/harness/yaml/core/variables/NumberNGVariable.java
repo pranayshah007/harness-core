@@ -69,4 +69,8 @@ public class NumberNGVariable implements NGVariable {
         ? ParameterField.createValueField(defaultValue)
         : value;
   }
+  @JsonIgnore
+  public ParameterField<?> fetchValue() {
+    return value;
+  }
 }

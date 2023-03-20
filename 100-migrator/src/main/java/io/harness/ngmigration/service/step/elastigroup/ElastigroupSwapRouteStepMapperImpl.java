@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step.elastigroup;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStepInfo;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -37,11 +38,12 @@ public class ElastigroupSwapRouteStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     SpotInstListenerUpdateState state = (SpotInstListenerUpdateState) getState(graphNode);
 
     ElastigroupSwapRouteStepNode node = new ElastigroupSwapRouteStepNode();
-    baseSetup(state, node);
+    baseSetup(state, node, context.getIdentifierCaseFormat());
     ElastigroupSwapRouteStepInfo elastigroupDeployStepInfo =
         ElastigroupSwapRouteStepInfo.infoBuilder()
             .downsizeOldElastigroup(ParameterField.createValueField(state.isDownsizeOldElastiGroup()))
@@ -53,8 +55,9 @@ public class ElastigroupSwapRouteStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    // @deepak: Please re-evaluate
-    return false;
+    SpotInstListenerUpdateState state1 = (SpotInstListenerUpdateState) getState(stepYaml1);
+    SpotInstListenerUpdateState state2 = (SpotInstListenerUpdateState) getState(stepYaml2);
+    return state1.isDownsizeOldElastiGroup() == state2.isDownsizeOldElastiGroup();
   }
 
   @Override

@@ -13,7 +13,6 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ResponseDTO;
 
-import java.util.List;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.Call;
 import retrofit2.http.POST;
@@ -21,7 +20,7 @@ import retrofit2.http.Query;
 
 @OwnedBy(CE)
 public interface GovernanceRuleClient {
-  @POST("governance/rule")
-  Call<ResponseDTO<List<RuleDTO>>> getRule(
+  @POST("governance/rule/list")
+  Call<ResponseDTO<RuleListDTO>> listRule(
       @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
 }

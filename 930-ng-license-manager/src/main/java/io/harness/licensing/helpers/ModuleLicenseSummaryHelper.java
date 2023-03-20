@@ -12,6 +12,7 @@ import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
+import io.harness.licensing.beans.modules.IACMModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
 import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
@@ -21,6 +22,7 @@ import io.harness.licensing.beans.summary.CFLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CILicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CVLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.ChaosLicenseSummaryDTO;
+import io.harness.licensing.beans.summary.IACMLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.licensing.beans.summary.STOLicenseSummaryDTO;
 import io.harness.licensing.utils.ModuleLicenseUtils;
@@ -137,6 +139,19 @@ public class ModuleLicenseSummaryHelper {
       case CHAOS:
         licensesWithSummaryDTO = ChaosLicenseSummaryDTO.builder().build();
         summaryHandler = (moduleLicenseDTO, summaryDTO, current) -> {};
+        break;
+      case IACM:
+        licensesWithSummaryDTO = IACMLicenseSummaryDTO.builder().build();
+        summaryHandler = (moduleLicenseDTO, summaryDTO, current) -> {
+          IACMModuleLicenseDTO temp = (IACMModuleLicenseDTO) moduleLicenseDTO;
+          IACMLicenseSummaryDTO iacmLicenseSummaryDTO = (IACMLicenseSummaryDTO) summaryDTO;
+          if (current < temp.getExpiryTime()) {
+            if (temp.getNumberOfDevelopers() != null) {
+              iacmLicenseSummaryDTO.setTotalDevelopers(ModuleLicenseUtils.computeAdd(
+                  iacmLicenseSummaryDTO.getTotalDevelopers(), temp.getNumberOfDevelopers()));
+            }
+          }
+        };
         break;
       default:
         throw new UnsupportedOperationException("Unsupported module type");

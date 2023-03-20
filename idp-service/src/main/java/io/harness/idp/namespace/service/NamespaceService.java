@@ -10,8 +10,11 @@ package io.harness.idp.namespace.service;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
+import java.util.List;
+
 public interface NamespaceService {
   NamespaceInfo getNamespaceForAccountIdentifier(String accountIdentifier);
   NamespaceInfo getAccountIdForNamespace(String namespace);
   NamespaceEntity saveAccountIdNamespace(String accountIdentifier);
+  List<String> getAccountIds();
 }

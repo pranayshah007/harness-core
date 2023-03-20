@@ -7,10 +7,13 @@
 
 package io.harness.cvng.servicelevelobjective.services.api;
 
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 
 public interface SLOTimeScaleService {
   void upsertServiceLevelObjective(AbstractServiceLevelObjective serviceLevelObjective);
-
-  void upsertSloHealthIndicator(AbstractServiceLevelObjective serviceLevelObjective);
+  void deleteServiceLevelObjective(ProjectParams projectParams, String identifier);
+  void upsertSloHealthIndicator(SLOHealthIndicator sloHealthIndicator);
+  void insertSLOHistory(AbstractServiceLevelObjective serviceLevelObjective);
 }

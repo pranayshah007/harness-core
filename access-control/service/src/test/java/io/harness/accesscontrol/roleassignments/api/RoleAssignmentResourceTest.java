@@ -16,11 +16,13 @@ import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTOMapper.fromDTO;
+import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromParams;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.beans.PageResponse.getEmptyPageResponse;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.REETIKA;
 
 import static javax.validation.Validation.buildDefaultValidatorFactory;
@@ -29,10 +31,12 @@ import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -42,6 +46,7 @@ import static org.mockito.Mockito.when;
 import io.harness.accesscontrol.AccessControlPermissions;
 import io.harness.accesscontrol.AccessControlResourceTypes;
 import io.harness.accesscontrol.AccessControlTestBase;
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -70,6 +75,7 @@ import io.harness.accesscontrol.roleassignments.validator.RoleAssignmentValidati
 import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.roles.api.RoleDTOMapper;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
+import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
@@ -95,10 +101,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import javax.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -123,6 +132,8 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
   private HarnessScopeParams harnessScopeParams;
   private ResourceScope resourceScope;
 
+  private RoleAssignmentDTOMapper roleAssignmentDTOMapper;
+
   @Before
   public void setup() {
     roleAssignmentService = mock(RoleAssignmentService.class);
@@ -140,15 +151,16 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     transactionTemplate = mock(TransactionTemplate.class);
     actionValidator = mock(HarnessActionValidator.class);
     accessControlClient = mock(AccessControlClient.class);
+    roleAssignmentDTOMapper = mock(RoleAssignmentDTOMapper.class);
     RoleAssignmentApiUtils roleAssignmentApiUtils =
         spy(new RoleAssignmentApiUtils(buildDefaultValidatorFactory().getValidator(), harnessResourceGroupService,
             harnessUserGroupService, harnessUserService, harnessServiceAccountService, harnessScopeService,
             scopeService, resourceGroupService, userGroupService, userService, serviceAccountService,
             mock(RoleAssignmentDTOMapper.class), accessControlClient));
     roleAssignmentResource = spy(new RoleAssignmentResourceImpl(roleAssignmentService, harnessResourceGroupService,
-        scopeService, roleService, resourceGroupService, userGroupService, userService,
-        mock(RoleAssignmentDTOMapper.class), mock(RoleAssignmentAggregateMapper.class), mock(RoleDTOMapper.class),
-        transactionTemplate, actionValidator, mock(OutboxService.class), roleAssignmentApiUtils));
+        scopeService, roleService, resourceGroupService, userGroupService, userService, roleAssignmentDTOMapper,
+        mock(RoleAssignmentAggregateMapper.class), mock(RoleDTOMapper.class), transactionTemplate, actionValidator,
+        mock(OutboxService.class), roleAssignmentApiUtils));
     pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
     harnessScopeParams = HarnessScopeParams.builder()
                              .accountIdentifier(randomAlphabetic(10))
@@ -802,6 +814,115 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     assertCheckUpdatePermission(roleAssignmentDTO);
     verify(actionValidator, times(1)).canDelete(any());
     verify(transactionTemplate, times(1)).execute(any());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testBulkDelete() {
+    RoleAssignmentDTO roleAssignmentDTO1 = getRoleAssignmentDTO();
+    RoleAssignmentDTO roleAssignmentDTO2 = getRoleAssignmentDTO();
+    RoleAssignmentDTO roleAssignmentDTO3 = getRoleAssignmentDTO();
+    Scope scope = ScopeMapper.fromParams(harnessScopeParams);
+    String scopeIdentifier = fromParams(harnessScopeParams).toString();
+    RoleAssignment roleAssignment1 = fromDTO(scope, roleAssignmentDTO1);
+    RoleAssignment roleAssignment2 = fromDTO(scope, roleAssignmentDTO2);
+    RoleAssignment roleAssignment3 = fromDTO(scope, roleAssignmentDTO3);
+    String id1 = roleAssignment1.getIdentifier();
+    String id2 = roleAssignment2.getIdentifier();
+    String id3 = roleAssignment3.getIdentifier();
+
+    mockCallForBulkDelete(roleAssignmentDTO1, roleAssignmentDTO2, roleAssignmentDTO3);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    ArgumentCaptor<List<String>> deleteCapture = ArgumentCaptor.forClass(List.class);
+    when(roleAssignmentDTOMapper.toResponseDTO(roleAssignment1))
+        .thenReturn(RoleAssignmentResponseDTO.builder()
+                        .scope(ScopeDTO.builder().accountIdentifier("acc").build())
+                        .roleAssignment(roleAssignmentDTO1)
+                        .build());
+    ResponseDTO<RoleAssignmentDeleteResponseDTO> result =
+        roleAssignmentResource.bulkDelete(harnessScopeParams, Set.of(id1, id2, id3));
+    verify(roleAssignmentService, times(1)).deleteMulti(eq(scopeIdentifier), deleteCapture.capture());
+    List<String> deletedIds = deleteCapture.getValue();
+    assertThat(deletedIds).isEqualTo(List.of(id1));
+    assertThat(result).isNotNull();
+    assertThat(result.getData().failedToDelete).isEqualTo(2);
+    assertThat(result.getData().successfullyDeleted).isEqualTo(1);
+    assertThat(result.getData().roleAssignmentErrorResponseDTOList)
+        .containsAll(List.of(RoleAssignmentErrorResponseDTO.builder()
+                                 .roleAssignmentId(id2)
+                                 .errorMessage("Role Assignment not found or have been already deleted.")
+                                 .build(),
+            RoleAssignmentErrorResponseDTO.builder()
+                .roleAssignmentId(id3)
+                .errorMessage("Failed due to missing permission to manage users")
+                .build()));
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testFilterRoleAssignmentThatCanBeDeleted() {
+    List<RoleAssignmentErrorResponseDTO> roleAssignmentErrorResponseDTOS = new ArrayList<>();
+    List<RoleAssignment> roleAssignmentThatCanBeDeleted = new ArrayList<>();
+    RoleAssignmentDTO roleAssignmentDTO1 = getRoleAssignmentDTO();
+    RoleAssignmentDTO roleAssignmentDTO2 = getRoleAssignmentDTO();
+    RoleAssignmentDTO roleAssignmentDTO3 = getRoleAssignmentDTO();
+    Scope scope = ScopeMapper.fromParams(harnessScopeParams);
+
+    RoleAssignment roleAssignment1 = fromDTO(scope, roleAssignmentDTO1);
+    RoleAssignment roleAssignment2 = fromDTO(scope, roleAssignmentDTO2);
+    RoleAssignment roleAssignment3 = fromDTO(scope, roleAssignmentDTO3);
+    String id1 = roleAssignment1.getIdentifier();
+    String id2 = roleAssignment2.getIdentifier();
+    String id3 = roleAssignment3.getIdentifier();
+
+    mockCallForBulkDelete(roleAssignmentDTO1, roleAssignmentDTO2, roleAssignmentDTO3);
+
+    roleAssignmentResource.filterRoleAssignmentThatCanBeDeleted(
+        harnessScopeParams, Set.of(id1, id2, id3), roleAssignmentErrorResponseDTOS, roleAssignmentThatCanBeDeleted);
+
+    assertThat(roleAssignmentThatCanBeDeleted.size()).isEqualTo(1);
+    assertThat(roleAssignmentErrorResponseDTOS.size()).isEqualTo(2);
+    assertThat(roleAssignmentErrorResponseDTOS)
+        .containsAll(List.of(RoleAssignmentErrorResponseDTO.builder()
+                                 .roleAssignmentId(id2)
+                                 .errorMessage("Role Assignment not found or have been already deleted.")
+                                 .build(),
+            RoleAssignmentErrorResponseDTO.builder()
+                .roleAssignmentId(id3)
+                .errorMessage("Failed due to missing permission to manage users")
+                .build()));
+  }
+
+  private void mockCallForBulkDelete(RoleAssignmentDTO roleAssignmentDTO1, RoleAssignmentDTO roleAssignmentDTO2,
+      RoleAssignmentDTO roleAssignmentDTO3) {
+    Scope scope = ScopeMapper.fromParams(harnessScopeParams);
+    RoleAssignment roleAssignment1 = fromDTO(scope, roleAssignmentDTO1);
+    RoleAssignment roleAssignment2 = fromDTO(scope, roleAssignmentDTO2);
+    RoleAssignment roleAssignment3 = fromDTO(scope, roleAssignmentDTO3);
+    String id1 = roleAssignment1.getIdentifier();
+    String id2 = roleAssignment2.getIdentifier();
+    String id3 = roleAssignment3.getIdentifier();
+    String scopeIdentifier = fromParams(harnessScopeParams).toString();
+    preCheckUpdatePermission(roleAssignmentDTO1);
+    ValidationResult validResult = ValidationResult.VALID;
+    when(actionValidator.canDelete(roleAssignment1)).thenReturn(validResult);
+
+    when(roleAssignmentService.get(id1, scopeIdentifier)).thenReturn(Optional.of(roleAssignment1));
+    when(roleAssignmentService.get(id2, scopeIdentifier))
+        .thenThrow(new NotFoundException("Role Assignment not found or have been already deleted."));
+    when(roleAssignmentService.get(id3, scopeIdentifier)).thenReturn(Optional.of(roleAssignment3));
+
+    doThrow(new NGAccessDeniedException("Failed due to missing permission to manage users", null, null))
+        .when(accessControlClient)
+        .checkForAccessOrThrow(ResourceScope.of(harnessScopeParams.getAccountIdentifier(),
+                                   harnessScopeParams.getOrgIdentifier(), harnessScopeParams.getProjectIdentifier()),
+            Resource.of(AccessControlResourceTypes.USER, roleAssignmentDTO3.getPrincipal().getIdentifier()),
+            MANAGE_USER_PERMISSION);
   }
 
   @Test

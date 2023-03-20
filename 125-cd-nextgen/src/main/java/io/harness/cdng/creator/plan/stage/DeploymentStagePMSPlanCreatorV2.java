@@ -76,6 +76,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.rbac.CDNGRbacUtility;
 import io.harness.serializer.KryoSerializer;
 import io.harness.strategy.StrategyValidationUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
@@ -728,8 +729,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       String accountId = ctx.getAccountIdentifier();
       String orgId = ctx.getOrgIdentifier();
       String projectId = ctx.getProjectIdentifier();
-      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
-              featureFlagHelperService, accountId, orgId, projectId, accessControlClient)) {
+      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(featureFlagHelperService, accountId, orgId, projectId,
+              accessControlClient, CDNGRbacUtility.constructPrincipalFromPlanCreationContextValue(ctx.getMetadata()))) {
         return;
       }
       projectFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId);
