@@ -675,6 +675,19 @@ public class AccountServiceImpl implements AccountService {
     update(account);
   }
 
+  @Override
+  public Integer getSessionTimeoutInMinutes(String accountId) {
+    Query<Account> getQuery = wingsPersistence.createQuery(Account.class).filter(ID_KEY2, accountId);
+    return getQuery.get().getSessionTimeOutInMinutes();
+  }
+
+  @Override
+  public void setSessionTimeout(String accountId, Integer sessionTimeOutInMinutes) {
+    Account account = get(accountId);
+    account.setSessionTimeOutInMinutes(sessionTimeOutInMinutes);
+    update(account);
+  }
+
   /**
    * Takes a valid account name and checks database for duplicates, if duplicate exists appends
    * "-x" (where x is a random number between 1000 and 9999) to the name and repeats the process until it generates a
@@ -911,6 +924,10 @@ public class AccountServiceImpl implements AccountService {
             .set("whitelistedDomains", account.getWhitelistedDomains())
             .set("smpAccount", account.isSmpAccount())
             .set("isProductLed", account.isProductLed());
+
+    if (null != account.getSessionTimeOutInMinutes()) {
+      updateOperations.set(AccountKeys.sessionTimeOutInMinutes, account.getSessionTimeOutInMinutes());
+    }
 
     if (null != account.getLicenseInfo()) {
       updateOperations.set(AccountKeys.licenseInfo, account.getLicenseInfo());

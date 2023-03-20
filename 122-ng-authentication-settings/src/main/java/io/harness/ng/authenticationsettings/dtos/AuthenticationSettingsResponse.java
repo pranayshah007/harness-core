@@ -34,4 +34,7 @@ public class AuthenticationSettingsResponse {
   AuthenticationMechanism authenticationMechanism;
   @Schema(description = "If Two Factor Authentication is enabled, this value is true. Otherwise, it is false.")
   boolean twoFactorEnabled;
+  @Schema(
+      description = "Any user of this account will be logged out if there is no activity for this number of minutes")
+  Integer sessionTimeoutInMinutes;
 }

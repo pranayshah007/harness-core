@@ -10,6 +10,7 @@ package software.wings.resources;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.user.SessionTimeoutSettings.MIN_SESSION_TIMEOUT;
 import static io.harness.security.dto.PrincipalType.USER;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -29,6 +30,7 @@ import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
+import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserRequestDTO;
@@ -574,6 +576,19 @@ public class UserResourceNG {
     // Trying Override = false
     else {
       return new RestResponse(twoFactorAuthenticationManager.overrideTwoFactorAuthentication(accountId, settings));
+    }
+  }
+
+  @PUT
+  @Path("session-timeout-account-level")
+  public RestResponse<Boolean> setSessionTimeoutAtAccountLevel(
+      @QueryParam("accountId") @NotEmpty String accountId, @NotNull SessionTimeoutSettings sessionTimeoutSettings) {
+    if (null == sessionTimeoutSettings.getSessionTimeOutInMinutes()
+        || sessionTimeoutSettings.getSessionTimeOutInMinutes() < MIN_SESSION_TIMEOUT) {
+      throw new InvalidRequestException(String.format("Session Timeout should be a positive Integer."));
+    } else {
+      accountService.setSessionTimeout(accountId, sessionTimeoutSettings.getSessionTimeOutInMinutes());
+      return new RestResponse(Boolean.TRUE);
     }
   }
 

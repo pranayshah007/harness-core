@@ -176,6 +176,12 @@ public class AccountResourceNG {
   }
 
   @GET
+  @Path("session-timeout-account-level")
+  public RestResponse<Integer> getSessionTimeoutAtAccountLevel(@QueryParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse(accountService.getSessionTimeoutInMinutes(accountId));
+  }
+
+  @GET
   @Hidden
   @Path("is-auto-invite-acceptance-enabled")
   @InternalApi

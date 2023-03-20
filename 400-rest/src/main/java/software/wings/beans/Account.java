@@ -140,6 +140,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @Getter @Setter boolean isProductLed;
 
   @Getter @Setter private boolean smpAccount;
+  @Getter @Setter private Integer sessionTimeOutInMinutes;
 
   /**
    * If this flag is set, all encryption/decryption activities will go through LOCAL security manager.

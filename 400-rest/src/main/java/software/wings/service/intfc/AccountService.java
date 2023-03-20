@@ -90,6 +90,10 @@ public interface AccountService {
 
   void updateTwoFactorEnforceInfo(String accountId, boolean enabled);
 
+  Integer getSessionTimeoutInMinutes(String accountId);
+
+  void setSessionTimeout(String accountId, Integer sessionTimeOutInMinutes);
+
   String suggestAccountName(@NotNull String accountName);
 
   boolean updateTechStacks(String accountId, Set<TechStack> techStacks);
