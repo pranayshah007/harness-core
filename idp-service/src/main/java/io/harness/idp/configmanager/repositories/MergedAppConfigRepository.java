@@ -6,13 +6,16 @@
  */
 package io.harness.idp.configmanager.repositories;
 
+import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
+import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 
+import org.springframework.data.repository.CrudRepository;
+
+@HarnessRepo
 @OwnedBy(HarnessTeam.IDP)
-public interface AppConfigRepositoryCustom {
-  AppConfigEntity updateConfig(AppConfigEntity appConfigEntity);
-
-  AppConfigEntity updatePluginEnablement(String accountIdentifier, String pluginName, Boolean isEnabled);
+public interface MergedAppConfigRepository
+    extends CrudRepository<MergedAppConfigEntity, String>, MergedAppConfigRepositoryCustom {
+  MergedAppConfigEntity findByAccountIdentifier(String accountIdentifier);
 }
