@@ -7,7 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
-import static io.harness.beans.FeatureName.TERRAFORM_REMOTE_BACKEND_CONFIG;
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -865,7 +865,7 @@ public class TerraformStepHelper {
   public TerraformBackendConfigFileInfo toTerraformBackendFileInfo(
       TerraformBackendConfig backendConfig, Ambiance ambiance) {
     TerraformBackendConfigFileInfo fileInfo = null;
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), TERRAFORM_REMOTE_BACKEND_CONFIG)) {
+    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG)) {
       return null;
     }
     if (backendConfig != null) {
@@ -1068,7 +1068,7 @@ public class TerraformStepHelper {
   public TerraformBackendConfigFileInfo prepareTerraformBackendConfigFileInfo(
       TerraformBackendConfigFileConfig bcFileConfig, Ambiance ambiance) {
     TerraformBackendConfigFileInfo fileInfo = null;
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), TERRAFORM_REMOTE_BACKEND_CONFIG)) {
+    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG)) {
       return null;
     }
     if (bcFileConfig != null) {
