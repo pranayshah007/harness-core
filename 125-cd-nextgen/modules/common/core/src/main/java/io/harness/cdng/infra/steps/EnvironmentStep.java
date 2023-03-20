@@ -9,9 +9,12 @@ package io.harness.cdng.infra.steps;
 
 import static io.harness.eraro.ErrorCode.FREEZE_EXCEPTION;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.cdng.infra.InfraSectionStepParameters;
@@ -41,12 +44,14 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.executable.SyncExecutableWithRbac;
 import io.harness.utils.NGFeatureFlagHelperService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -90,13 +95,26 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
     entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(AmbianceUtils.getOrgIdentifier(ambiance)));
     entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(AmbianceUtils.getProjectIdentifier(ambiance)));
-    entityMap.put(FreezeEntityType.ENVIRONMENT, Lists.newArrayList(environmentOutcome.getIdentifier()));
+    entityMap.put(FreezeEntityType.ENVIRONMENT,
+        Lists.newArrayList(
+            getEnviromentRef(stepParameters.getEnvironment(), stepParameters.getEnvironmentRef(), environmentOutcome)));
     entityMap.put(FreezeEntityType.ENV_TYPE, Lists.newArrayList(environmentOutcome.getType().name()));
     StepResponse stepResponse = executeFreezePart(ambiance, entityMap);
     if (stepResponse != null) {
       return stepResponse;
     }
     return StepResponse.builder().status(Status.SUCCEEDED).build();
+  }
+
+  @VisibleForTesting
+  protected String getEnviromentRef(
+      EnvironmentYaml environmentYaml, ParameterField<String> environmentRef, EnvironmentOutcome environmentOutcome) {
+    if (environmentRef != null && isNotBlank(environmentRef.getValue())) {
+      return environmentRef.getValue();
+    } else if (environmentYaml != null) {
+      return environmentYaml.getIdentifier();
+    }
+    return environmentOutcome.getIdentifier();
   }
 
   @Override
