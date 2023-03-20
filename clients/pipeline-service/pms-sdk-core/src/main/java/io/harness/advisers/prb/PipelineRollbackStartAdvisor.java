@@ -14,6 +14,7 @@ import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.advisers.NextStepAdvise;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.sdk.core.adviser.Adviser;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -46,6 +47,9 @@ public class PipelineRollbackStartAdvisor implements Adviser {
 
   @Override
   public boolean canAdvise(AdvisingEvent advisingEvent) {
+    if (isRollbackMode(advisingEvent.getAmbiance().getMetadata().getExecutionMode())) {
+      return false;
+    }
     OptionalSweepingOutput optionalSweepingOutput =
         executionSweepingOutputService.resolveOptional(advisingEvent.getAmbiance(),
             RefObjectUtils.getSweepingOutputRefObject(YAMLFieldNameConstants.USE_PIPELINE_ROLLBACK_STRATEGY));
@@ -60,5 +64,9 @@ public class PipelineRollbackStartAdvisor implements Adviser {
   private PipelineRollbackStartParameters extractParameters(AdvisingEvent advisingEvent) {
     return (PipelineRollbackStartParameters) Preconditions.checkNotNull(
         kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
+  }
+
+  boolean isRollbackMode(ExecutionMode executionMode) {
+    return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
   }
 }

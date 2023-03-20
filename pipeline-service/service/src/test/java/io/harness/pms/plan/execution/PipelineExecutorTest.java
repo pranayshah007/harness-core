@@ -310,7 +310,7 @@ public class PipelineExecutorTest extends CategoryTest {
         .findByPlanExecutionId(originalExecutionId);
     doReturn(planExecutionMetadata)
         .when(rollbackModeExecutionHelper)
-        .transformPlanExecutionMetadata(originalPlanExecutionMetadata, "planId");
+        .transformPlanExecutionMetadata(originalPlanExecutionMetadata, "planId", ExecutionMode.POST_EXECUTION_ROLLBACK);
     doReturn(planExecution)
         .when(executionHelper)
         .startExecution(

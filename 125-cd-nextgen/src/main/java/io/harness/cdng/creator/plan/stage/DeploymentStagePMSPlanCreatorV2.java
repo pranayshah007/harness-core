@@ -60,6 +60,7 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.StepType;
@@ -194,13 +195,15 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     if (!MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
       adviserObtainments = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
     }
-    adviserObtainments.add(AdviserObtainment.newBuilder()
-                               .setType(PipelineRollbackStartAdvisor.ADVISER_TYPE)
-                               .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                                   PipelineRollbackStartParameters.builder()
-                                       .pipelineRollbackStageId(getPipelineRollbackStageId(ctx.getCurrentField()))
-                                       .build())))
-                               .build());
+    if (!isRollbackMode(ctx.getGlobalContext().get("metadata").getMetadata().getExecutionMode())) {
+      adviserObtainments.add(AdviserObtainment.newBuilder()
+                                 .setType(PipelineRollbackStartAdvisor.ADVISER_TYPE)
+                                 .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                                     PipelineRollbackStartParameters.builder()
+                                         .pipelineRollbackStageId(getPipelineRollbackStageId(ctx.getCurrentField()))
+                                         .build())))
+                                 .build());
+    }
     // We need to swap the ids if strategy is present
     PlanNodeBuilder builder =
         PlanNode.builder()
@@ -211,7 +214,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .stepParameters(stageParameters.build())
             .stepType(getStepType(stageNode))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-            .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
+            .whenCondition(RunInfoUtils.getRunConditionForStage(
+                stageNode.getWhen(), ctx.getGlobalContext().get("metadata").getMetadata().getExecutionMode()))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
@@ -759,5 +763,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
   private boolean isGitopsEnabled(DeploymentStageConfig deploymentStageConfig) {
     return deploymentStageConfig.getGitOpsEnabled();
+  }
+
+  boolean isRollbackMode(ExecutionMode executionMode) {
+    return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
   }
 }

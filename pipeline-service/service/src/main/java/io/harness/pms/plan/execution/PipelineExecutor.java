@@ -181,8 +181,8 @@ public class PipelineExecutor {
       return null;
     }
     PlanExecutionMetadata originalPlanExecutionMetadata = optPlanExecutionMetadata.get();
-    PlanExecutionMetadata planExecutionMetadata =
-        rollbackModeExecutionHelper.transformPlanExecutionMetadata(originalPlanExecutionMetadata, executionId);
+    PlanExecutionMetadata planExecutionMetadata = rollbackModeExecutionHelper.transformPlanExecutionMetadata(
+        originalPlanExecutionMetadata, executionId, executionMode);
     return executionHelper.startExecution(accountId, orgIdentifier, projectIdentifier, executionMetadata,
         planExecutionMetadata, false, null, originalExecutionId, null);
   }
