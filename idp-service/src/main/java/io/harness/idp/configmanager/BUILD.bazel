@@ -19,6 +19,7 @@ java_library(
         "//960-persistence/src/main/java/io/harness/mongo/index/annotation:module",
         "//960-persistence/src/main/java/io/harness/ng:module",
         "//960-persistence/src/main/java/io/harness/persistence/api:module",
+        "//960-yaml-sdk:module",
         "//980-commons/src/main/java/io/harness/annotations:module",
         "//980-commons/src/main/java/io/harness/morphia:module",
         "//999-annotations:module",

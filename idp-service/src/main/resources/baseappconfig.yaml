@@ -1,0 +1,5 @@
+app:
+  title: Backstage Example App
+  baseUrl: http://localhost:300
+backend:
+  baseUrl: http://localhost:7007
