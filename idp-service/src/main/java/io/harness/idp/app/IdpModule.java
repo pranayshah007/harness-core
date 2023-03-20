@@ -284,6 +284,13 @@ public class IdpModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("backstagePodLabel")
+  public String backstagePodLabel() {
+    return this.appConfig.getBackstagePodLabel();
+  }
+
+  @Provides
+  @Singleton
   @Named(PROVISION_MODULE_CONFIG)
   public ProvisionModuleConfig provisionModuleConfig() {
     return this.appConfig.getProvisionModuleConfig();
