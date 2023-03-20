@@ -173,7 +173,13 @@ io.harness.yaml.sto.variables.STOYamlFailOnSeverity
 io.harness.beans.steps.stepinfo.security.NiktoStepInfo
 io.harness.beans.steps.stepinfo.security.NmapStepInfo
 io.harness.beans.steps.nodes.security.NmapScanNode
-io.harness.beans.steps.nodes.security.ExternalScanNode
+io.harness.beans.steps.stepinfo.security.CustomIngestStepInfo
+io.harness.yaml.sto.variables.STOYamlProwlerConfig
+io.harness.beans.steps.stepinfo.security.AwsSecurityHubStepInfo
+io.harness.yaml.sto.variables.STOYamlNmapConfig
+io.harness.beans.steps.nodes.security.AwsSecurityHubScanNode
+io.harness.beans.steps.nodes.security.CustomIngestScanNode
+io.harness.yaml.sto.variables.STOYamlMetasploitConfig
 io.harness.beans.steps.nodes.security.ZapScanNode
 io.harness.beans.steps.stepinfo.security.BlackDuckStepInfo
 io.harness.beans.steps.stepinfo.security.ProwlerStepInfo
@@ -203,7 +209,6 @@ io.harness.beans.steps.stepinfo.security.BrakemanStepInfo
 io.harness.beans.steps.stepinfo.security.NessusStepInfo
 io.harness.beans.steps.nodes.security.CheckmarxScanNode
 io.harness.beans.steps.nodes.security.JfrogXrayScanNode
-io.harness.beans.steps.stepinfo.security.ExternalStepInfo
 io.harness.beans.steps.stepinfo.security.FortifyOnDemandStepInfo
 io.harness.beans.steps.stepinfo.security.STOGenericStepInfo
 io.harness.beans.steps.nodes.security.SniperScanNode

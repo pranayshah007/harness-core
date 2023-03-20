@@ -172,7 +172,7 @@ public class CIStepInfoUtils {
       String defaultTag = stoStepsConfig.getDefaultTag();
       List<String> defaultEntryPoint = stoStepsConfig.getDefaultEntrypoint();
       Optional<STOImageConfig> optionalSTOImageConfig =
-          stoStepImages.stream().filter(el -> el.getProduct().toString().equals(stepProductName)).findFirst();
+          stoStepImages.stream().filter(el -> stepProductName.matches(el.getProduct())).findFirst();
 
       if (optionalSTOImageConfig.isPresent()) {
         STOImageConfig stepImageConfig = optionalSTOImageConfig.get();
