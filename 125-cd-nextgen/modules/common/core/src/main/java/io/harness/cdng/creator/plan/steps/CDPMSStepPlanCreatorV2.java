@@ -368,7 +368,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
           break;
         case PIPELINE_ROLLBACK:
           OnFailPipelineRollbackParameters onFailPipelineRollbackParameters =
-              GenericPlanCreatorUtils.buildOnFailPipelineRollbackParameters(failureTypes, currentField);
+              GenericPlanCreatorUtils.buildOnFailPipelineRollbackParameters(failureTypes);
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(OnFailPipelineRollbackAdviser.ADVISER_TYPE)
                   .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(onFailPipelineRollbackParameters)))

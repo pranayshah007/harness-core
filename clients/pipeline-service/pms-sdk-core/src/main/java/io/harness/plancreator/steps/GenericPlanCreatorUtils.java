@@ -130,15 +130,7 @@ public class GenericPlanCreatorUtils {
     return stageNodeId + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX;
   }
 
-  public OnFailPipelineRollbackParameters buildOnFailPipelineRollbackParameters(
-      Set<FailureType> failureTypes, YamlField currentField) {
-    return OnFailPipelineRollbackParameters.builder()
-        .applicableFailureTypes(failureTypes)
-        .pipelineRollbackStageId(getPipelineRollbackStageNodeId(currentField))
-        .build();
-  }
-
-  public String getPipelineRollbackStageNodeId(YamlField currentField) {
-    return null;
+  public OnFailPipelineRollbackParameters buildOnFailPipelineRollbackParameters(Set<FailureType> failureTypes) {
+    return OnFailPipelineRollbackParameters.builder().applicableFailureTypes(failureTypes).build();
   }
 }

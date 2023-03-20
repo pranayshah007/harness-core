@@ -283,7 +283,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
           break;
         case PIPELINE_ROLLBACK:
           OnFailPipelineRollbackParameters onFailPipelineRollbackParameters =
-              GenericPlanCreatorUtils.buildOnFailPipelineRollbackParameters(failureTypes, currentField);
+              GenericPlanCreatorUtils.buildOnFailPipelineRollbackParameters(failureTypes);
           adviserObtainmentList.add(
               adviserObtainmentBuilder.setType(OnFailPipelineRollbackAdviser.ADVISER_TYPE)
                   .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(onFailPipelineRollbackParameters)))

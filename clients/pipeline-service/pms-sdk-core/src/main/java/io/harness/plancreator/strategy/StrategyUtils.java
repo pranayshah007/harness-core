@@ -64,6 +64,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -114,7 +115,8 @@ public class StrategyUtils {
       }
       YamlField siblingField = stageField.getNode().nextSiblingFromParentArray(
           stageField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
-      if (siblingField != null && siblingField.getNode().getUuid() != null) {
+      if (siblingField != null && siblingField.getNode().getUuid() != null
+          && !"PipelineRollback".equals(siblingField.getType())) {
         adviserObtainments.add(
             AdviserObtainment.newBuilder()
                 .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())

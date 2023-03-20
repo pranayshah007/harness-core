@@ -10,26 +10,55 @@ package io.harness.advisers.prb;
 import io.harness.advisers.CommonAdviserTypes;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.AdviserType;
+import io.harness.pms.contracts.advisers.NextStepAdvise;
 import io.harness.pms.sdk.core.adviser.Adviser;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.serializer.KryoSerializer;
+
+import com.google.common.base.Preconditions;
+import com.google.inject.Inject;
+import javax.validation.constraints.NotNull;
 
 // duplicate of RollbackCustomAdvisor
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineRollbackStartAdvisor implements Adviser {
+  @Inject private KryoSerializer kryoSerializer;
+  @Inject ExecutionSweepingOutputService executionSweepingOutputService;
+
   public static final AdviserType ADVISER_TYPE =
       AdviserType.newBuilder().setType(CommonAdviserTypes.PIPELINE_ROLLBACK_START.name()).build();
 
   @Override
   public AdviserResponse onAdviseEvent(AdvisingEvent advisingEvent) {
-    // todo: implement
-    return null;
+    PipelineRollbackStartParameters parameters = extractParameters(advisingEvent);
+    return AdviserResponse.newBuilder()
+        .setType(AdviseType.NEXT_STEP)
+        .setNextStepAdvise(NextStepAdvise.newBuilder().setNextNodeId(parameters.getPipelineRollbackStageId()).build())
+        .build();
   }
 
   @Override
   public boolean canAdvise(AdvisingEvent advisingEvent) {
-    // todo: implement
-    return false;
+    OptionalSweepingOutput optionalSweepingOutput =
+        executionSweepingOutputService.resolveOptional(advisingEvent.getAmbiance(),
+            RefObjectUtils.getSweepingOutputRefObject(YAMLFieldNameConstants.USE_PIPELINE_ROLLBACK_STRATEGY));
+    if (!optionalSweepingOutput.isFound()) {
+      return false;
+    }
+    OnFailPipelineRollbackOutput output = (OnFailPipelineRollbackOutput) optionalSweepingOutput.getOutput();
+    return output.isShouldStartPipelineRollback();
+  }
+
+  @NotNull
+  private PipelineRollbackStartParameters extractParameters(AdvisingEvent advisingEvent) {
+    return (PipelineRollbackStartParameters) Preconditions.checkNotNull(
+        kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
   }
 }
