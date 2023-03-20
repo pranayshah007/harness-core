@@ -656,7 +656,9 @@ public enum FeatureName {
   NG_CDS_NATIVE_EKS_SUPPORT("Enable native EKS support for K8s/Native Helm Infrastructures", HarnessTeam.CDP),
   CDS_RANCHER_SUPPORT_NG("Enable Rancher support in NG.", HarnessTeam.CDP),
   PL_SELECT_SPECIFIC_SERVICE_ACCOUNT_IN_RESOURCE_GROUP(
-      "Allow selection of specific service accounts in Resource group", HarnessTeam.PL);
+      "Allow selection of specific service accounts in Resource group", HarnessTeam.PL),
+  CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG(
+      "Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
