@@ -95,6 +95,7 @@ public class RedisStreamsMetricsAggregatorImpl implements RedisStreamsMetricsAgg
   @Override
   public AggregateRedisStreamMetricsDTO getStreamStats() {
     Iterator<String> keysIterator = redisClient.getKeys().getKeysByPattern("*:streams:*", 1000).iterator();
+
     try {
       List<RedisStreamMetricsDTO> redisStreamMetricsDTOList = new ArrayList<>();
       while (keysIterator.hasNext()) {
