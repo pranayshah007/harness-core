@@ -34,7 +34,6 @@ import (
 
 const (
 	delegateSvcEndpointEnv = "DELEGATE_SERVICE_ENDPOINT"
-	restEnabledEnv         = "HARNESS_LE_STATUS_REST_ENABLED"
 	delegateSvcTokenEnv    = "DELEGATE_SERVICE_TOKEN"
 	delegateSvcIDEnv       = "DELEGATE_SERVICE_ID"
 	delegateTokenKey       = "token"
@@ -55,23 +54,15 @@ var (
 func SendStepStatus(ctx context.Context, stepID, endpoint, managerSvcEndpoint, delegateID, accountKey, accountID, callbackToken, taskID string, numRetries int32, timeTaken time.Duration,
 	status pb.StepExecutionStatus, errMsg string, stepOutput *output.StepOutput, artifact *enginepb.Artifact, log *zap.SugaredLogger) error {
 	start := time.Now()
-	restEnabled, ok := os.LookupEnv(restEnabledEnv)
-	if ok {
-		log.Info(fmt.Sprintf("%s env is set with value: %s ", restEnabledEnv, restEnabled))
-	}
 
 	var err error
-	if restEnabled == "true" {
-		log.Info("Sending step status via REST", "stepID: ", stepID, "taskID: ", taskID)
-		err = sendStatusHTTP(ctx, stepID, delegateID, accountKey, accountID, taskID, status.String(), endpoint, managerSvcEndpoint, numRetries, timeTaken, errMsg, stepOutput, artifact, log)
-		if err != nil {
-			log.Warn("Error sending status with http, Sending step status via GRPC as fallback. err:", err, "stepID: ", stepID, "taskID: ", taskID)
-			err = sendStatusGrpc(ctx, endpoint, stepID, accountID, callbackToken, taskID, numRetries, timeTaken, status, errMsg, stepOutput, artifact, log)
-		}
-	} else {
-		log.Info("Sending step status via GRPC", "stepID: ", stepID, "taskID: ", taskID)
+	log.Info("Sending step status via REST", "stepID: ", stepID, "taskID: ", taskID)
+	err = sendStatusHTTP(ctx, stepID, delegateID, accountKey, accountID, taskID, status.String(), endpoint, managerSvcEndpoint, numRetries, timeTaken, errMsg, stepOutput, artifact, log)
+	if err != nil {
+		log.Warn("Error sending status with http, Sending step status via GRPC as fallback. err:", err, "stepID: ", stepID, "taskID: ", taskID)
 		err = sendStatusGrpc(ctx, endpoint, stepID, accountID, callbackToken, taskID, numRetries, timeTaken, status, errMsg, stepOutput, artifact, log)
 	}
+
 	if err != nil {
 		log.Errorw(
 			"Failed to send/execute delegate task status",

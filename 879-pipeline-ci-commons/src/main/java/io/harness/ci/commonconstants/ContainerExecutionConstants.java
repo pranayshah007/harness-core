@@ -80,7 +80,6 @@ public class ContainerExecutionConstants {
   // All FFs go here
   public static final String HARNESS_CI_INDIRECT_LOG_UPLOAD_FF = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF";
 
-  public static final String HARNESS_LE_STATUS_REST_ENABLED = "HARNESS_LE_STATUS_REST_ENABLED";
   public static final String IMAGE_PATH_SPLIT_REGEX = ":";
   public static final String PORT_PREFIX = "--port";
   public static final String UNIX_STEP_COMMAND = "/addon/bin/ci-addon";

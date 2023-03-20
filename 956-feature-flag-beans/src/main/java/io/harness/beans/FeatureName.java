@@ -78,8 +78,6 @@ public enum FeatureName {
   CF_ROLLBACK_CONFIG_FILTER,
   CING_ENABLED,
   CI_INDIRECT_LOG_UPLOAD,
-  CI_LE_STATUS_REST_ENABLED(
-      "Used for sending step status for CI via REST APIs instead of gRPC from Lite Engine to manager", HarnessTeam.CI),
   CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED(
       "If enabled, OOTB steps will run directly on host in cloud infra", HarnessTeam.CI),
   CUSTOM_DASHBOARD,
