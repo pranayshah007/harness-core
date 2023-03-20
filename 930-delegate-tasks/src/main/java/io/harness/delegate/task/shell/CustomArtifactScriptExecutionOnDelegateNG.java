@@ -14,7 +14,6 @@ import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDeta
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
@@ -23,6 +22,8 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.k8s.K8sConstants;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.JsonUtils;
 import io.harness.shell.ExecuteCommandResponse;
@@ -53,11 +54,11 @@ public class CustomArtifactScriptExecutionOnDelegateNG {
   @Inject private SecretDecryptionService secretDecryptionService;
 
   public ShellScriptTaskResponseNG executeOnDelegate(
-      ShellScriptTaskParametersNG taskParameters, ILogStreamingTaskClient logStreamingTaskClient) {
+      ShellScriptTaskParametersNG taskParameters, LogCallback logCallback) {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(taskParameters);
     ScriptProcessExecutor executor =
-        shellExecutorFactory.getExecutor(shellExecutorConfig, logStreamingTaskClient, commandUnitsProgress);
+        shellExecutorFactory.getExecutorForCustomArtifactScriptExecution(shellExecutorConfig, logCallback);
     // TODO: check later
     // if (taskParameters.isLocalOverrideFeatureFlag()) {
     //   taskParameters.setScript(delegateLocalConfigService.replacePlaceholdersWithLocalConfig(taskParameters.getScript()));
@@ -105,8 +106,8 @@ public class CustomArtifactScriptExecutionOnDelegateNG {
     }
   }
 
-  public List<BuildDetails> getBuildDetails(
-      String artifactResultPath, CustomArtifactDelegateRequest customArtifactDelegateRequest) {
+  public List<BuildDetails> getBuildDetails(String artifactResultPath,
+      CustomArtifactDelegateRequest customArtifactDelegateRequest, LogCallback executionLogCallback) {
     // Convert to Build details
     List<BuildDetails> buildDetails = new ArrayList<>();
     File file = new File(artifactResultPath);
@@ -123,6 +124,8 @@ public class CustomArtifactScriptExecutionOnDelegateNG {
             (CustomRepositoryResponse) JsonUtils.readFromFile(file, CustomRepositoryResponse.class);
       }
 
+      executionLogCallback.saveExecutionLog(
+          "Successfully got response from Json in the script response", LogLevel.INFO);
       List<CustomRepositoryResponse.Result> results = customRepositoryResponse.getResults();
       List<String> buildNumbers = new ArrayList<>();
       if (isNotEmpty(results)) {
@@ -133,6 +136,9 @@ public class CustomArtifactScriptExecutionOnDelegateNG {
               log.warn(
                   "There is an entry with buildNo {} already exists. So, skipping the result. Please ensure that buildNo is unique across the results",
                   buildNo);
+              executionLogCallback.saveExecutionLog("There is an entry with buildNo " + buildNo
+                      + "So, skipping the result. Please ensure that buildNo is unique across the results",
+                  LogLevel.WARN);
               return;
             }
             buildDetails.add(aBuildDetails()
@@ -143,12 +149,15 @@ public class CustomArtifactScriptExecutionOnDelegateNG {
             buildNumbers.add(buildNo);
           } else {
             log.warn("There is an object in output without mandatory build number");
+            executionLogCallback.saveExecutionLog("There is an object in output without mandatory build number");
           }
         });
       } else {
         log.warn("Results are empty");
+        executionLogCallback.saveExecutionLog("Build Details Results are empty", LogLevel.WARN);
       }
       log.info("Retrieving build details of Custom Repository success");
+      executionLogCallback.saveExecutionLog("Retrieving build details of Custom Repository success", LogLevel.INFO);
     } catch (Exception ex) {
       String msg =
           "Failed to transform results to the Custom Repository Response. Please verify if the script output is in the required format. Reason ["

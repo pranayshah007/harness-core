@@ -58,4 +58,9 @@ public class ShellExecutorFactoryNG {
       ShellExecutorConfig shellExecutorConfig, CommandUnitsProgress commandUnitsProgress) {
     return new ScriptProcessExecutor(new DummyLogCallbackImpl(), false, shellExecutorConfig);
   }
+
+  public ScriptProcessExecutor getExecutorForCustomArtifactScriptExecution(
+      ShellExecutorConfig shellExecutorConfig, LogCallback logCallback) {
+    return new ScriptProcessExecutor(logCallback, true, shellExecutorConfig);
+  }
 }
