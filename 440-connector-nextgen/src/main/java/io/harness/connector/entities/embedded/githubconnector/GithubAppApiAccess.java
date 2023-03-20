@@ -18,4 +18,6 @@ public class GithubAppApiAccess implements GithubApiAccess {
   String installationId;
   String applicationId;
   String privateKeyRef;
+  String installationIdRef;
+  String applicationIdRef;
 }

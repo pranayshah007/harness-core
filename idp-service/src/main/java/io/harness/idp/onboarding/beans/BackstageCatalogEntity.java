@@ -38,13 +38,15 @@ public class BackstageCatalogEntity {
   @AllArgsConstructor
   public static class Metadata {
     @JsonIgnore private String identifier;
+    @JsonIgnore private String absoluteIdentifier;
     private String name;
     private String description;
     private List<String> tags;
     @JsonInclude(JsonInclude.Include.NON_EMPTY) private Map<String, String> annotations;
 
-    public void setMetadata(
-        String identifier, String name, String description, List<String> tags, Map<String, String> annotations) {
+    public void setMetadata(String identifier, String absoluteIdentifier, String name, String description,
+        List<String> tags, Map<String, String> annotations) {
+      this.absoluteIdentifier = absoluteIdentifier;
       this.identifier = identifier;
       this.name = name;
       this.description = description;

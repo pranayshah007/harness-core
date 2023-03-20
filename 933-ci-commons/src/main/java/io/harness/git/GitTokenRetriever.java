@@ -36,6 +36,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.task.ci.GitSCMType;
+import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.secrets.SecretDecryptor;
@@ -85,8 +86,10 @@ public class GitTokenRetriever {
       GithubAppSpecDTO githubAppSpecDTO = (GithubAppSpecDTO) decryptableEntity;
       GithubAppConfig githubAppConfig =
           GithubAppConfig.builder()
-              .installationId(githubAppSpecDTO.getInstallationId())
-              .appId(githubAppSpecDTO.getApplicationId())
+              .installationId(FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
+                  githubAppSpecDTO.getInstallationId(), githubAppSpecDTO.getInstallationIdRef()))
+              .appId(FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
+                  githubAppSpecDTO.getApplicationId(), githubAppSpecDTO.getInstallationIdRef()))
               .privateKey(new String(githubAppSpecDTO.getPrivateKeyRef().getDecryptedValue()))
               .githubUrl(getGitApiURL(gitConfigDTO.getUrl()))
               .build();

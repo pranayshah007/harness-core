@@ -119,14 +119,12 @@ public class CCMJiraHelperImpl implements CCMJiraHelper {
       dto.getAuth().setCredentials(decryptedEntity);
       return dto;
     } else {
-      JiraAuthCredentialsDTO decryptedEntity = (JiraAuthCredentialsDTO) NGRestUtils.getResponse(
+      return (JiraConnectorDTO) NGRestUtils.getResponse(
           secretManagerClient.decryptEncryptedDetails(DecryptableEntityWithEncryptionConsumers.builder()
                                                           .decryptableEntity(dto)
                                                           .encryptedDataDetailList(encryptionDetails)
                                                           .build(),
               accountIdentifier));
-      dto.getAuth().setCredentials(decryptedEntity);
-      return dto;
     }
   }
 
