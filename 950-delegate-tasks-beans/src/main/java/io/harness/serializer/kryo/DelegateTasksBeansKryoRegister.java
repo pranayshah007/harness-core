@@ -757,6 +757,7 @@ import io.harness.delegate.task.jira.JiraTaskNGResponse;
 import io.harness.delegate.task.k8s.AzureK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.DeleteResourcesType;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
+import io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sApplyRequest;
@@ -2047,6 +2048,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ServerlessEcrArtifactConfig.class, 563534);
     kryo.register(AwsCliInstallationCapability.class, 563535);
     kryo.register(ServerlessS3ArtifactConfig.class, 563536);
+    kryo.register(EksK8sInfraDelegateConfig.class, 563537);
     kryo.register(LdapTestResponse.Status.class, 5500);
     kryo.register(LdapGroupSettings.class, 5498);
     kryo.register(LdapTestResponse.class, 5499);
