@@ -10,15 +10,20 @@ package io.harness.advisers.nextstep;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 
+import io.harness.advisers.prb.OnFailPipelineRollbackOutput;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.advisers.NextStepAdvise;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.sdk.core.adviser.Adviser;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.common.base.Preconditions;
@@ -43,6 +48,24 @@ public class NextStageAdviser implements Adviser {
 
   @Override
   public boolean canAdvise(AdvisingEvent advisingEvent) {
-    return advisingEvent.getToStatus() != ABORTED;
+    boolean isAborted = advisingEvent.getToStatus() == ABORTED;
+    if (isAborted) {
+      return false;
+    }
+    if (isRollbackMode(advisingEvent.getAmbiance().getMetadata().getExecutionMode())) {
+      return true;
+    }
+    OptionalSweepingOutput optionalSweepingOutput =
+        executionSweepingOutputService.resolveOptional(advisingEvent.getAmbiance(),
+            RefObjectUtils.getSweepingOutputRefObject(YAMLFieldNameConstants.USE_PIPELINE_ROLLBACK_STRATEGY));
+    if (!optionalSweepingOutput.isFound()) {
+      return true;
+    }
+    OnFailPipelineRollbackOutput output = (OnFailPipelineRollbackOutput) optionalSweepingOutput.getOutput();
+    return !output.isShouldStartPipelineRollback();
+  }
+
+  boolean isRollbackMode(ExecutionMode executionMode) {
+    return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
   }
 }
