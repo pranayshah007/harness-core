@@ -9,6 +9,7 @@ package io.harness.resourcegroup.resourceclient.connector;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_IDENTIFIER;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES;
@@ -42,6 +43,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -115,7 +117,9 @@ public class ConnectorResourceImpl implements Resource {
   }
 
   @Override
-  public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
-    return attributeFilter.getAttributeName().equals("category") && !attributeFilter.getAttributeValues().isEmpty();
+  public boolean isValidAttributeFilter(@NotNull AttributeFilter attributeFilter) {
+    String validAttributeName = "category";
+    return validAttributeName.equals(attributeFilter.getAttributeName())
+        && isNotEmpty(attributeFilter.getAttributeValues());
   }
 }
