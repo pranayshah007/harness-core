@@ -59,7 +59,7 @@ public class ExecutionQueueLimitResourceImpl implements ExecutionQueueLimitResou
   @Override
   public ResponseDTO<Boolean> resetExecutionLimits(String accountIdentifier) {
     try {
-      executionQueueLimitRepository.deleteByAccountIdentifier(accountIdentifier);
+      executionQueueLimitRepository.deleteAllByAccountIdentifier(accountIdentifier);
       return ResponseDTO.newResponse(true);
     } catch (Exception ex) {
       log.info("no execution config found for accountId: {}", accountIdentifier);
