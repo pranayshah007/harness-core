@@ -305,6 +305,10 @@
     },
     "AgentApplicationTargets": {
       "type": "object",
+      "required": [
+        "agentId",
+        "applicationName"
+      ],
       "properties": {
         "agentId": {
           "oneOf": [
@@ -321,10 +325,7 @@
         "applicationName": {
           "oneOf": [
             {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "type": "string"
             },
             {
               "type": "string",
@@ -14973,6 +14974,14 @@
     },
     "SyncOptions": {
       "type": "object",
+      "required": [
+        "applyOutOfSyncOnly",
+        "autoCreateNamespace",
+        "prunePropagationPolicy",
+        "pruneResourcesAtLast",
+        "replaceResources",
+        "skipSchemaValidation"
+      ],
       "properties": {
         "applyOutOfSyncOnly": {
           "oneOf": [
@@ -15037,11 +15046,18 @@
     },
     "SyncRetryStrategy": {
       "type": "object",
+      "required": [
+        "baseBackoffDuration",
+        "increaseBackoffByFactor",
+        "limit",
+        "maxBackoffDuration"
+      ],
       "properties": {
         "baseBackoffDuration": {
           "oneOf": [
             {
-              "type": "string"
+              "type": "string",
+              "pattern": "/^([\\d\\.]+[HMS])+$/i"
             },
             {
               "type": "string",
@@ -15054,7 +15070,8 @@
           "oneOf": [
             {
               "type": "integer",
-              "format": "int32"
+              "format": "int32",
+              "minimum": 0
             },
             {
               "type": "string"
@@ -15065,7 +15082,8 @@
           "oneOf": [
             {
               "type": "integer",
-              "format": "int32"
+              "format": "int32",
+              "minimum": 0
             },
             {
               "type": "string"
@@ -15075,7 +15093,8 @@
         "maxBackoffDuration": {
           "oneOf": [
             {
-              "type": "string"
+              "type": "string",
+              "pattern": "/^([\\d\\.]+[HMS])+$/i"
             },
             {
               "type": "string",
@@ -15094,6 +15113,13 @@
         },
         {
           "type": "object",
+          "required": [
+            "applyOnly",
+            "dryRun",
+            "forceApply",
+            "prune",
+            "syncOptions"
+          ],
           "properties": {
             "applicationsList": {
               "type": "array",

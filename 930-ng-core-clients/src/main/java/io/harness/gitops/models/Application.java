@@ -8,6 +8,7 @@
 package io.harness.gitops.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.Objects;
 import lombok.Builder;
 import lombok.Data;
 
@@ -21,5 +22,38 @@ public class Application {
   String url;
   String healthStatus;
   String syncStatus;
-  String syncErrorMessage;
+  String syncMessage;
+  String revision;
+  boolean isAutoSyncEnabled;
+
+  // TODO add account, org, project ids here
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Application)) {
+      return false;
+    }
+    Application application = (Application) o;
+    return Objects.equals(getName(), application.getName())
+        && Objects.equals(getAgentIdentifier(), application.getAgentIdentifier());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getName(), getAgentIdentifier());
+  }
+
+  @Override
+  public String toString() {
+    return "Application{"
+        + "name='" + name + '\'' + ", agentIdentifier='" + agentIdentifier + '\'' + '}';
+  }
+
+  public String getSyncError() {
+    return "Application{"
+        + "name: '" + name + '\'' + ", agentIdentifier: '" + agentIdentifier + '\'' + ", errorMessage: '" + syncMessage
+        + '\'' + '}';
+  }
 }
