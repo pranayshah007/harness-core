@@ -20,6 +20,7 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ExecutionGraph;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationService;
@@ -85,6 +86,7 @@ import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
+import io.harness.steps.StepSpecTypeConstants;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.threading.Morpheus;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -565,10 +567,21 @@ public class ExecutionHelper {
     String planExecutionId = executionSummaryEntity.getPlanExecutionId();
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()), PipelineRbacPermissions.PIPELINE_VIEW);
+    boolean isPipelineRollbackStageSelected = executionSummaryEntity.getLayoutNodeMap().containsKey(stageNodeId)
+        && executionSummaryEntity.getLayoutNodeMap()
+               .get(stageNodeId)
+               .getNodeType()
+               .equals(StepSpecTypeConstants.PIPELINE_ROLLBACK_STAGE);
 
+    ChildExecutionDetailDTO rollbackGraph = null;
     if (executionSummaryEntity.getRollbackModeExecutionId() != null) {
-      return buildExecutionDetailDTOWithRollbackInfo(
-          accountId, orgId, projectId, executionSummaryEntity, entityGitDetails);
+      if (isPipelineRollbackStageSelected) {
+        rollbackGraph = buildRollbackGraph(accountId, orgId, projectId, executionSummaryEntity, entityGitDetails,
+            childStageNodeId, stageNodeExecutionId);
+      } else {
+        rollbackGraph =
+            buildRollbackGraph(accountId, orgId, projectId, executionSummaryEntity, entityGitDetails, null, null);
+      }
     }
     // Checking if the stage is of type Pipeline Stage, then return the child graph along with top graph of parent
     // pipeline
@@ -577,15 +590,19 @@ public class ExecutionHelper {
       if (nodeExecution != null && isNotEmpty(nodeExecution.getExecutableResponses())) {
         // TODO: check with @sahilHindwani whether this update is required or not.
         pmsExecutionService.sendGraphUpdateEvent(executionSummaryEntity);
-        return pipelineStageHelper.getResponseDTOWithChildGraph(
-            accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, nodeExecution, stageNodeExecutionId);
+        return pipelineStageHelper
+            .getResponseDTOWithChildGraph(accountId, childStageNodeId, executionSummaryEntity, entityGitDetails,
+                nodeExecution, stageNodeExecutionId)
+            .withRollbackGraph(rollbackGraph);
       }
     }
 
-    if (EmptyPredicate.isEmpty(stageNodeId) && (renderFullBottomGraph == null || !renderFullBottomGraph)) {
+    if ((EmptyPredicate.isEmpty(stageNodeId) || isPipelineRollbackStageSelected)
+        && (renderFullBottomGraph == null || !renderFullBottomGraph)) {
       pmsExecutionService.sendGraphUpdateEvent(executionSummaryEntity);
       return PipelineExecutionDetailDTO.builder()
           .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
+          .rollbackGraph(rollbackGraph)
           .build();
     }
 
@@ -594,6 +611,7 @@ public class ExecutionHelper {
         .executionGraph(ExecutionGraphMapper.toExecutionGraph(
             pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId, stageNodeExecutionId),
             executionSummaryEntity))
+        .rollbackGraph(rollbackGraph)
         .build();
   }
 
@@ -606,24 +624,24 @@ public class ExecutionHelper {
     return null;
   }
 
-  public PipelineExecutionDetailDTO buildExecutionDetailDTOWithRollbackInfo(String accountId, String orgId,
-      String projectId, PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails) {
+  ChildExecutionDetailDTO buildRollbackGraph(String accountId, String orgId, String projectId,
+      PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails, String childStageNodeId,
+      String stageNodeExecutionId) {
     String childExecutionId = executionSummaryEntity.getRollbackModeExecutionId();
     PipelineExecutionSummaryEntity executionSummaryEntityForChild =
         pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, childExecutionId, false);
 
-    return PipelineExecutionDetailDTO.builder()
-        .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
-        .rollbackGraph(getRollbackGraph(executionSummaryEntityForChild, entityGitDetails))
-        .build();
-  }
-
-  private ChildExecutionDetailDTO getRollbackGraph(
-      PipelineExecutionSummaryEntity executionSummaryEntityForChild, EntityGitDetails entityGitDetailsForChild) {
-    // todo: add child stage node id for stages in rollback execution
+    ExecutionGraph executionGraphForChild = null;
+    if (childStageNodeId != null) {
+      executionGraphForChild = ExecutionGraphMapper.toExecutionGraph(
+          pmsExecutionService.getOrchestrationGraph(
+              childStageNodeId, executionSummaryEntityForChild.getPlanExecutionId(), stageNodeExecutionId),
+          executionSummaryEntityForChild);
+    }
     return ChildExecutionDetailDTO.builder()
         .pipelineExecutionSummary(
-            PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntityForChild, entityGitDetailsForChild))
+            PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntityForChild, entityGitDetails))
+        .executionGraph(executionGraphForChild)
         .build();
   }
 }

@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
+import lombok.With;
 import lombok.experimental.FieldDefaults;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -34,5 +35,6 @@ public class PipelineExecutionDetailDTO {
 
   ChildExecutionDetailDTO childGraph;
   @Schema(hidden = true, description = "Execution details of the Rollback Stages executed under Pipeline Rollback")
+  @With
   ChildExecutionDetailDTO rollbackGraph;
 }
