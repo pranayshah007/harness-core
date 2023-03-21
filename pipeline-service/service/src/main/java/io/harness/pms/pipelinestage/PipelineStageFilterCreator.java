@@ -95,13 +95,8 @@ public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<
       throw new InvalidRequestException(
           String.format("Child pipeline does not exists %s ", pipelineStageConfig.getPipeline()));
     }
-    try {
-      pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get());
-    } catch (Exception e) {
-      throw new InvalidRequestException(String.format(
-          "Chained Pipeline %s, added as stage %s, in Parent Pipeline, should not be contain another Pipeline as child",
-          pipelineStageConfig.getPipeline(), stageNode.getName()));
-    }
+
+    pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get(), stageNode.getName());
 
     pipelineStageHelper.validateFailureStrategy(stageNode.getFailureStrategies());
     EntityDetailProtoDTO entityDetailProtoDTO =
