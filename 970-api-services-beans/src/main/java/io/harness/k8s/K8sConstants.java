@@ -146,27 +146,20 @@ public interface K8sConstants {
       + "    server: ${MASTER_URL}\n"
       + "    ${INSECURE_SKIP_TLS_VERIFY}\n"
       + "    ${CERTIFICATE_AUTHORITY_DATA}\n"
-      + "  name: ${CLUSTER_NAME}\n"
+      + "  name: CLUSTER_NAME\n"
       + "contexts:\n"
       + "- context:\n"
-      + "    cluster: ${CLUSTER_NAME}\n"
-      + "    user: ${CLUSTER_USER}\n"
+      + "    cluster: CLUSTER_NAME\n"
+      + "    user: HARNESS_USER\n"
       + "    ${NAMESPACE}\n"
-      + "  name: ${CURRENT_CONTEXT}\n"
-      + "current-context: ${CURRENT_CONTEXT}\n"
+      + "  name: CURRENT_CONTEXT\n"
+      + "current-context: CURRENT_CONTEXT\n"
       + "kind: Config\n"
       + "preferences: {}\n"
       + "users:\n"
-      + "- name: ${CLUSTER_USER}\n"
+      + "- name: HARNESS_USER\n"
       + "  user:\n"
-      + "    exec:\n"
-      + "      apiVersion: client.authentication.k8s.io/${API_VERSION}\n"
-      + "      args: ${ARGS}\n"
-      + "      command: ${KUBELOGIN_BINARY}\n"
-      + "      installHint: ${INSTALL_HINT}"
-      + "      env: ${ENV}\n"
-      + "      interactiveMode: Never\n"
-      + "      provideClusterInfo: false\n";
+      + "    ${EXEC}";
 
   String eventOutputFormat =
       "custom-columns=KIND:involvedObject.kind,NAME:.involvedObject.name,MESSAGE:.message,REASON:.reason";
@@ -197,6 +190,8 @@ public interface K8sConstants {
   String KUBECFG_INTERACTIVE_MODE = "interactiveMode";
   String KUBECFG_CLUSTER_INFO = "provideClusterInfo";
   String KUBECFG_INSTALL_HINT = "installHint";
+  String KUBECFG_NAME = "name";
+  String KUBECFG_VALUE = "value";
 
   String AZURE_AUTH_PLUGIN_BINARY = "kubelogin";
   String GCP_AUTH_PLUGIN_BINARY = "gke-gcloud-auth-plugin";
