@@ -56,7 +56,8 @@ public class LicenseUsageInterfaceImpl implements LicenseUsageInterface<CELicens
   public static final String TABLE_NAME = "costAggregated";
   public static final String QUERY_TEMPLATE =
       "SELECT SUM(cost) AS cost, TIMESTAMP_TRUNC(day, month) AS month, cloudProvider FROM `%s` "
-      + "WHERE day >= TIMESTAMP_MILLIS(%s) AND day <= TIMESTAMP_MILLIS(%s) AND accountId = '%s' GROUP BY month, cloudProvider";
+      + "WHERE day >= TIMESTAMP_MILLIS(%s) AND day <= TIMESTAMP_MILLIS(%s) AND accountId = '%s' "
+      + "GROUP BY month, cloudProvider";
   public static final String QUERY_TEMPLATE_CLICKHOUSE =
       "SELECT SUM(cost) AS cost, date_trunc('month',day) AS month, cloudProvider FROM %s "
       + "WHERE day >= toDateTime(%s) AND day <= toDateTime(%s) GROUP BY month, cloudProvider";
@@ -119,19 +120,21 @@ public class LicenseUsageInterfaceImpl implements LicenseUsageInterface<CELicens
       Thread.currentThread().interrupt();
       return null;
     }
-    return CCMLicenseUsageHelper.computeDeduplicatedActiveSpend(result);
+    return CCMLicenseUsageHelper.computeDeduplicatedActiveSpend(
+        CCMLicenseUsageHelper.getActiveSpendResultSetDTOs(result));
   }
 
   private Long getActiveSpendClickHouse(long timestamp, String accountIdentifier) {
     String cloudProviderTableName = format("%s.%s", "ccm", TABLE_NAME);
     long endOfDay = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS).toEpochMilli();
     String query = format(QUERY_TEMPLATE_CLICKHOUSE, cloudProviderTableName, timestamp / 1000, endOfDay / 1000);
-    log.info("Query: {}", query);
+    log.info("Query for active spend: {}", query);
     ResultSet resultSet = null;
     try (Connection connection = clickHouseService.getConnection(clickHouseConfig);
          Statement statement = connection.createStatement()) {
       resultSet = statement.executeQuery(query);
-      return CCMLicenseUsageHelper.computeDeduplicatedActiveSpend(resultSet);
+      return CCMLicenseUsageHelper.computeDeduplicatedActiveSpend(
+          CCMLicenseUsageHelper.getActiveSpendResultSetDTOs(resultSet));
     } catch (SQLException e) {
       log.error("Failed to getActiveSpend for Account:{}, {}", accountIdentifier, e);
     } finally {
