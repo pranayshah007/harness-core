@@ -5608,6 +5608,7 @@ maven_install(
     override_targets = {
         "com.fasterxml.jackson.core:jackson-databind": "@maven//:com_fasterxml_jackson_core_jackson_databind",
     },
+
     version_conflict_policy = "pinned",
 )
 
