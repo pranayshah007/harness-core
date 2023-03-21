@@ -54,9 +54,12 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
+import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -206,8 +209,15 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
       if (isNotEmpty(failedResponses)) {
         log.error("Error notify response found for Infrastructure step " + failedResponses);
+        ErrorNotifyResponseData errorNotifyResponseData = failedResponses.get(0);
+        if (errorNotifyResponseData.getException().getCause() instanceof HintException) {
+          HintException hintException = (HintException) errorNotifyResponseData.getException().getCause();
+          if (hintException.getCause() instanceof ExplanationException) {
+            return getHintExceptionStepResponse(failedResponses.get(0));
+          }
+        }
         throw new InvalidRequestException(
-            "Failed to complete Infrastructure step. " + failedResponses.get(0).getErrorMessage());
+            "Failed to complete Infrastructure step. " + errorNotifyResponseData.getErrorMessage());
       }
 
       Iterator<ResponseData> dataIterator = responseDataMap.values().iterator();
@@ -220,6 +230,29 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     // just produce step response. Sync flow
     return produceStepResponseForNonTaskStepInfra(ambiance, infraOutput, logCallback);
+  }
+
+  private StepResponse getHintExceptionStepResponse(ErrorNotifyResponseData errorNotifyResponseData) {
+    HintException hintException = (HintException) errorNotifyResponseData.getException().getCause();
+    return StepResponse.builder()
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder()
+                         .setErrorMessage(errorNotifyResponseData.getErrorMessage())
+                         .addFailureData(getFailureData(ErrorCode.HINT, LogLevel.INFO, hintException.getMessage()))
+                         .addFailureData(getFailureData(
+                             ErrorCode.EXPLANATION, LogLevel.INFO, hintException.getCause().getMessage()))
+                         .addFailureData(getFailureData(ErrorCode.GENERAL_ERROR, LogLevel.ERROR,
+                             errorNotifyResponseData.getException().getMessage()))
+                         .build())
+        .build();
+  }
+
+  private FailureData getFailureData(ErrorCode errorCode, LogLevel logLevel, String message) {
+    return FailureData.newBuilder()
+        .setCode(errorCode.toString())
+        .setLevel(logLevel.toString())
+        .setMessage(message)
+        .build();
   }
 
   private StepResponse produceStepResponseForNonTaskStepInfra(
