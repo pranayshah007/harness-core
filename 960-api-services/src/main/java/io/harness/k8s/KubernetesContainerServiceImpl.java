@@ -25,6 +25,7 @@ import static io.harness.k8s.K8sConstants.GCP_KUBE_CONFIG_TEMPLATE;
 import static io.harness.k8s.K8sConstants.HARNESS_KUBERNETES_REVISION_LABEL_KEY;
 import static io.harness.k8s.K8sConstants.ID_TOKEN_KEY;
 import static io.harness.k8s.K8sConstants.ISSUER_URL_KEY;
+import static io.harness.k8s.K8sConstants.KUBE_CONFIG_EXEC_TEMPLATE;
 import static io.harness.k8s.K8sConstants.KUBE_CONFIG_OIDC_TEMPLATE;
 import static io.harness.k8s.K8sConstants.KUBE_CONFIG_TEMPLATE;
 import static io.harness.k8s.K8sConstants.MASTER_URL;
@@ -77,6 +78,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.UrlNotProvidedException;
 import io.harness.exception.UrlNotReachableException;
 import io.harness.exception.WingsException;
@@ -97,6 +99,11 @@ import io.harness.oidc.model.OidcTokenRequestData;
 import io.harness.retry.RetryHelper;
 import io.harness.supplier.ThrowingSupplier;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.github.scribejava.apis.openid.OpenIdOAuth2AccessToken;
 import com.google.api.client.util.Charsets;
 import com.google.common.annotations.VisibleForTesting;
@@ -2161,6 +2168,10 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       return generateKubeConfigStringForAzure(config);
     }
 
+    if (KubernetesClusterAuthType.EXEC_OAUTH == config.getAuthType()) {
+      return generateExecFormatKubeconfig(config);
+    }
+
     String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";
     String certificateAuthorityData =
         isNotEmpty(config.getCaCert()) ? "certificate-authority-data: " + new String(config.getCaCert()) : "";
@@ -2360,5 +2371,40 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
             StreamResetException.class, SocketException.class, EOFException.class});
     RetryHelper.registerEventListeners(exponentialRetry);
     return exponentialRetry;
+  }
+
+  private String generateExecFormatKubeconfig(KubernetesConfig config) {
+    String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";
+    String certificateAuthorityData =
+        isNotEmpty(config.getCaCert()) ? "certificate-authority-data: " + String.valueOf(config.getCaCert()) : "";
+    String namespace = isNotEmpty(config.getNamespace()) ? "namespace: " + config.getNamespace() : "";
+    String exec;
+    try {
+      ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()
+                                                       .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
+                                                       .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                                                       .enable(YAMLGenerator.Feature.USE_PLATFORM_LINE_BREAKS));
+      objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
+      objectMapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
+      // Indenting the exec yaml string by 4 white spaces so that the complete string remains coherent
+      exec = objectMapper.writeValueAsString(config.getExec()).replace("\n", "\n    ").stripTrailing();
+    } catch (JsonProcessingException ex) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "For kubernetes version < 1.26 then use auth-provider to generate kubeconfig file.",
+          "An error has occurred. Please contact the Harness support team.",
+          new InvalidRequestException("Unable to convert kubeconfig with client-go-exec-plugin JSON to YAML.", ex));
+    }
+    String kubeconfig = KUBE_CONFIG_EXEC_TEMPLATE.replace("${MASTER_URL}", config.getMasterUrl())
+                            .replace("${INSECURE_SKIP_TLS_VERIFY}", insecureSkipTlsVerify)
+                            .replace("${CERTIFICATE_AUTHORITY_DATA}", certificateAuthorityData)
+                            .replace("${NAMESPACE}", namespace)
+                            .replace("${EXEC}", exec);
+
+    if (config.getAzureConfig() != null) {
+      kubeconfig = kubeconfig.replace("CLUSTER_NAME", config.getAzureConfig().getClusterName())
+                       .replace("HARNESS_USER", config.getAzureConfig().getClusterUser())
+                       .replace("CURRENT_CONTEXT", config.getAzureConfig().getCurrentContext());
+    }
+    return kubeconfig;
   }
 }
