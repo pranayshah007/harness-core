@@ -15,18 +15,26 @@ import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
 import io.harness.ssca.beans.tools.syft.SyftSbomOrchestration;
+import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@Singleton
+@Slf4j
 @OwnedBy(HarnessTeam.SSCA)
 public class SscaOrchestrationPluginUtils {
   public static final String PLUGIN_TOOL = "PLUGIN_TOOL";
@@ -39,9 +47,12 @@ public class SscaOrchestrationPluginUtils {
   public static final String DOCKER_USERNAME = "DOCKER_USERNAME";
   public static final String DOCKER_PASSW = "DOCKER_PASSWORD";
   public static final String DOCKER_REGISTRY = "DOCKER_REGISTRY";
+  public static final String SSCA_CORE_URL = "SSCS_Core_Url";
+  public static final String STEP_EXECUTION_ID = "STEP_EXECUTION_ID";
+  @Inject private SSCAServiceUtils sscaServiceUtils;
 
-  public static Map<String, String> getSscaOrchestrationStepEnvVariables(
-      SscaOrchestrationStepInfo stepInfo, String identifier) {
+  public Map<String, String> getSscaOrchestrationStepEnvVariables(
+      SscaOrchestrationStepInfo stepInfo, String identifier, Ambiance ambiance) {
     Map<String, String> envMap = new HashMap<>();
 
     String tool = stepInfo.getTool().getType().toString();
@@ -56,9 +67,13 @@ public class SscaOrchestrationPluginUtils {
       envMap.put(PLUGIN_SBOMSOURCE, sbomSource);
     }
 
+    String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    envMap.put(STEP_EXECUTION_ID, runtimeId);
+
     envMap.put(PLUGIN_TYPE, "Orchestrate");
     envMap.put(PLUGIN_SBOMDESTINATION, "harness/sbom");
     envMap.put(SKIP_NORMALISATION, "true");
+    envMap.put(SSCA_CORE_URL, sscaServiceUtils.getSscaServiceConfig().getBaseUrl());
     return envMap;
   }
 

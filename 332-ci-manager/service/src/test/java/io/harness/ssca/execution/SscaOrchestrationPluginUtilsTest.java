@@ -9,7 +9,6 @@ package io.harness.ssca.execution;
 
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.ssca.execution.SscaOrchestrationPluginUtils.getSscaOrchestrationSecretVars;
-import static io.harness.ssca.execution.SscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables;
 import static io.harness.ssca.execution.SscaOrchestrationStepPluginUtils.ATTESTATION_PRIVATE_KEY;
 import static io.harness.ssca.execution.SscaOrchestrationStepPluginUtils.PLUGIN_FORMAT;
 import static io.harness.ssca.execution.SscaOrchestrationStepPluginUtils.PLUGIN_SBOMDESTINATION;
@@ -26,6 +25,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.ssca.beans.Attestation;
@@ -40,12 +40,15 @@ import io.harness.ssca.beans.tools.syft.SyftSbomOrchestration.SyftOrchestrationF
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
+import com.google.inject.Inject;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.SSCA)
 public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
+  @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
+
   @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
@@ -65,9 +68,15 @@ public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
                                             .build())
                         .build())
             .build();
-    Map<String, String> sscaEnvVarMap = getSscaOrchestrationStepEnvVariables(stepInfo, "id1");
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions("accountId", "accountId")
+                            .putSetupAbstractions("orgIdentifier", "orgIdentifier")
+                            .putSetupAbstractions("projectIdentifier", "projectIdentifier")
+                            .build();
+    Map<String, String> sscaEnvVarMap =
+        sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(stepInfo, "id1", ambiance);
     assertThat(sscaEnvVarMap).isNotNull().isNotEmpty();
-    assertThat(sscaEnvVarMap).hasSize(6);
+    assertThat(sscaEnvVarMap).hasSize(8);
     assertThat(sscaEnvVarMap.get(PLUGIN_TOOL)).isEqualTo(SbomOrchestrationToolType.SYFT.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_FORMAT)).isEqualTo(SyftOrchestrationFormat.SPDX_JSON.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_SBOMSOURCE)).isEqualTo("image:tag");
