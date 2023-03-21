@@ -303,6 +303,13 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
       }
 
       @Provides
+      @Named("aborted_task_list")
+      @Singleton
+      public RLocalCachedMap<String, Set<String>> getAbortedTaskListCache(DelegateRedissonCacheManager cacheManager) {
+        return mock(RLocalCachedMap.class);
+      }
+
+      @Provides
       @Singleton
       @Named("enableRedisForDelegateService")
       boolean isEnableRedisForDelegateService() {
