@@ -18,11 +18,14 @@ import io.harness.idp.configmanager.mappers.MergedAppConfigMapper;
 import io.harness.idp.configmanager.repositories.AppConfigRepository;
 import io.harness.idp.configmanager.repositories.MergedAppConfigRepository;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
+import io.harness.idp.k8s.client.K8sClient;
+import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -38,13 +41,18 @@ import lombok.extern.slf4j.Slf4j;
 public class ConfigManagerServiceImpl implements ConfigManagerService {
   private AppConfigRepository appConfigRepository;
   private MergedAppConfigRepository mergedAppConfigRepository;
-
+  private K8sClient k8sClient;
+  private NamespaceService namespaceService;
   private static final String PLUGIN_CONFIG_NOT_FOUND =
       "Plugin configs for plugin - %s is not present for account - %s";
   private static final String PLUGIN_SAVE_UNSUCCESSFUL =
       "Plugin config saving is unsuccessful for plugin - % in account - %s";
   private static final String NO_PLUGIN_ENABLED_FOR_ACCOUNT = "No plugin is enabled for account - %s";
   private static final String BASE_APP_CONFIG_PATH = "baseappconfig.yaml";
+
+  private static final String CONFIG_DATA_NAME = "config";
+
+  private static final String CONFIG_NAME = "app-config";
 
   @Override
   public Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier) {
@@ -95,6 +103,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   @Override
   public MergedAppConfigEntity mergeAndSaveAppConfig(String accountIdentifier) throws Exception {
     String mergedAppConfig = mergeAllAppConfigsForAccount(accountIdentifier);
+    updateConfigMap(accountIdentifier, mergedAppConfig);
     MergedAppConfigEntity mergedAppConfigEntity =
         MergedAppConfigMapper.getMergedAppConfigEntity(accountIdentifier, mergedAppConfig);
     return mergedAppConfigRepository.saveOrUpdate(mergedAppConfigEntity);
@@ -125,5 +134,13 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       throw new InvalidRequestException(format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
     }
     return allEnabledPluginEntity.stream().map(entity -> entity.getConfigs()).collect(Collectors.toList());
+  }
+  private void updateConfigMap(String accountIdentifier, String appConfigYamlData) {
+    Map<String, String> data = new HashMap<>();
+    data.put(CONFIG_DATA_NAME, appConfigYamlData);
+    String namespace = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier).getNamespace();
+    k8sClient.updateConfigMapData(namespace, CONFIG_NAME, data, true);
+    log.info(
+        "Config map successfully created/updated for account - {} in namespace - {}", accountIdentifier, namespace);
   }
 }
