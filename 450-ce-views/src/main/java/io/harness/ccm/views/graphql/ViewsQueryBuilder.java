@@ -150,18 +150,35 @@ public class ViewsQueryBuilder {
       List<QLCEViewGroupBy> groupByList, List<QLCEViewAggregation> aggregations,
       List<QLCEViewSortCriteria> sortCriteriaList, String cloudProviderTableName, ViewQueryParams queryParams,
       List<BusinessMapping> sharedCostBusinessMappings) {
-    return getQuery(rules, filters, timeFilters, Collections.emptyList(), groupByList, aggregations, sortCriteriaList,
-        cloudProviderTableName, queryParams, null, sharedCostBusinessMappings);
+    return getQuery(rules, filters, timeFilters, Collections.emptyList(), groupByList, Collections.emptyList(),
+        aggregations, sortCriteriaList, cloudProviderTableName, queryParams, null, sharedCostBusinessMappings);
   }
 
+  /**
+   * Gets the select query
+   * @param rules perspective rules
+   * @param filters filters applied
+   * @param timeFilters time filters applied
+   * @param inExpressionFilters to fetch top entries, used only in timeSeriesStats
+   * @param groupByList groupBys applied
+   * @param sharedCostGroupBy shared bucket business mapping groupBy, used only for decoration
+   * @param aggregations aggregations applied
+   * @param sortCriteriaList sort criteria applied
+   * @param cloudProviderTableName cloud provider table name
+   * @param queryParams query parameters
+   * @param sharedCostBusinessMapping used to apply shared bucket rules in the union query
+   * @param sharedCostBusinessMappings negating shared cost buckets for the base query to handle duplicate cost
+   * @return SelectQuery
+   */
   public SelectQuery getQuery(List<ViewRule> rules, List<QLCEViewFilter> filters, List<QLCEViewTimeFilter> timeFilters,
       List<QLCEInExpressionFilter> inExpressionFilters, List<QLCEViewGroupBy> groupByList,
-      List<QLCEViewAggregation> aggregations, List<QLCEViewSortCriteria> sortCriteriaList,
-      String cloudProviderTableName, ViewQueryParams queryParams, BusinessMapping sharedCostBusinessMapping,
-      List<BusinessMapping> sharedCostBusinessMappings) {
+      List<QLCEViewGroupBy> sharedCostGroupBy, List<QLCEViewAggregation> aggregations,
+      List<QLCEViewSortCriteria> sortCriteriaList, String cloudProviderTableName, ViewQueryParams queryParams,
+      BusinessMapping sharedCostBusinessMapping, List<BusinessMapping> sharedCostBusinessMappings) {
     SelectQuery selectQuery = new SelectQuery();
     selectQuery.addCustomFromTable(cloudProviderTableName);
     List<QLCEViewFieldInput> groupByEntity = getGroupByEntity(groupByList);
+    List<QLCEViewFieldInput> sharedCostGroupByEntity = getGroupByEntity(sharedCostGroupBy);
     QLCEViewTimeTruncGroupBy groupByTime = getGroupByTime(groupByList);
     boolean isClusterTable = isClusterTable(cloudProviderTableName);
     String tableIdentifier = getTableIdentifier(cloudProviderTableName);
@@ -173,6 +190,11 @@ public class ViewsQueryBuilder {
 
     if ((!isApplicationQuery(groupByList) || !isClusterTable) && !isInstanceQuery(groupByList)) {
       modifyQueryWithInstanceTypeFilter(rules, filters, groupByEntity, customFields, businessMapping, selectQuery);
+    }
+
+    // This indicates that the query is to calculate shared cost
+    if (sharedCostBusinessMapping != null) {
+      rules = removeSharedCostRules(rules, sharedCostBusinessMapping);
     }
 
     if (!rules.isEmpty()) {
@@ -196,7 +218,11 @@ public class ViewsQueryBuilder {
     }
 
     if (!queryParams.isSkipGroupBy()) {
-      decorateQueryWithGroupByAndColumns(selectQuery, groupByEntity, tableIdentifier);
+      if (!Lists.isNullOrEmpty(sharedCostGroupByEntity)) {
+        decorateQueryWithGroupByAndColumns(selectQuery, sharedCostGroupByEntity, tableIdentifier);
+      } else {
+        decorateQueryWithGroupByAndColumns(selectQuery, groupByEntity, tableIdentifier);
+      }
     }
 
     if (groupByTime != null) {
@@ -213,7 +239,7 @@ public class ViewsQueryBuilder {
     }
 
     decorateQueryWithSharedCostAggregations(
-        selectQuery, groupByEntity, isClusterTable, tableIdentifier, sharedCostBusinessMapping);
+        selectQuery, sharedCostGroupByEntity, isClusterTable, tableIdentifier, sharedCostBusinessMapping);
 
     if (!sortCriteriaList.isEmpty()) {
       decorateQueryWithSortCriteria(selectQuery, sortCriteriaList);
@@ -221,6 +247,32 @@ public class ViewsQueryBuilder {
 
     log.info("Query for view {}", selectQuery);
     return selectQuery;
+  }
+
+  private List<ViewRule> removeSharedCostRules(List<ViewRule> viewRules, BusinessMapping sharedCostBusinessMapping) {
+    if (sharedCostBusinessMapping != null) {
+      List<ViewRule> updatedViewRules = new ArrayList<>();
+      viewRules.forEach(rule -> {
+        List<ViewCondition> updatedViewConditions =
+            removeSharedCostRulesFromViewConditions(rule.getViewConditions(), sharedCostBusinessMapping);
+        if (!updatedViewConditions.isEmpty()) {
+          updatedViewRules.add(ViewRule.builder().viewConditions(updatedViewConditions).build());
+        }
+      });
+      return updatedViewRules;
+    }
+    return viewRules;
+  }
+
+  private List<ViewCondition> removeSharedCostRulesFromViewConditions(
+      List<ViewCondition> viewConditions, BusinessMapping sharedCostBusinessMapping) {
+    List<ViewCondition> updatedViewConditions = new ArrayList<>();
+    for (ViewCondition condition : viewConditions) {
+      if (!((ViewIdCondition) condition).getViewField().getFieldId().equals(sharedCostBusinessMapping.getUuid())) {
+        updatedViewConditions.add(condition);
+      }
+    }
+    return updatedViewConditions;
   }
 
   private void decorateQueryWithNegateSharedCosts(final SelectQuery selectQuery,

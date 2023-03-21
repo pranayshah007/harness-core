@@ -26,10 +26,18 @@ import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Singleton
 public class SyncStepHelper {
   private static final String OUT_OF_SYNC = "OutOfSync";
+  public static final String SYNC_RETRY_STRATEGY_DURATION_REGEX = "/^([\\d\\.]+[HMS])+$/i";
+  public static final int NETWORK_CALL_RETRY_SLEEP_DURATION_MILLIS = 10;
+  public static final int NETWORK_CALL_MAX_RETRY_ATTEMPTS = 3;
+  public static final long STOP_BEFORE_STEP_TIMEOUT_SECS = 10;
+  public static final long POLLER_SLEEP_SECS = 5;
+  public static final String APPLICATION_REFRESH_TYPE = "normal";
 
   public static List<Application> getApplicationsToBeSynced(
       List<AgentApplicationTargets> agentApplicationTargetsToBeSynced) {
@@ -42,13 +50,12 @@ public class SyncStepHelper {
         .collect(Collectors.toList());
   }
 
-  public static ApplicationSyncRequest getSyncRequest(
-      Application application, String targetRevision, SyncStepParameters syncStepParameters) {
+  public static ApplicationSyncRequest getSyncRequest(Application application, SyncStepParameters syncStepParameters) {
     ApplicationSyncRequestBuilder syncRequestBuilder = ApplicationSyncRequest.builder();
     syncRequestBuilder.dryRun(syncStepParameters.getDryRun().getValue());
     syncRequestBuilder.prune(syncStepParameters.getPrune().getValue());
     syncRequestBuilder.applicationName(application.getName());
-    syncRequestBuilder.targetRevision(targetRevision);
+    syncRequestBuilder.targetRevision(application.getRevision());
 
     mapSyncStrategy(syncStepParameters, syncRequestBuilder);
     mapSyncRetryStrategy(syncStepParameters, syncRequestBuilder);
@@ -74,8 +81,6 @@ public class SyncStepHelper {
       SyncStepParameters syncStepParameters, ApplicationSyncRequestBuilder syncRequestBuilder) {
     SyncRetryStrategy syncRetryStrategy = syncStepParameters.getRetryStrategy();
     if (syncRetryStrategy != null) {
-      // if retry is selected in the UI, all the below options should be populated, otherwise UI should throw the error
-      // as same as the Sync UI in GitOps
       syncRequestBuilder.retryStrategy(
           RetryStrategy.builder()
               .limit(syncRetryStrategy.getLimit().getValue())
@@ -149,5 +154,9 @@ public class SyncStepHelper {
 
   public static boolean isStaleApplication(ApplicationResource latestApplicationState) {
     return Boolean.TRUE.equals(latestApplicationState.getStale());
+  }
+
+  public static List<Application> getApplicationsToBeManuallySynced(List<Application> applications) {
+    return applications.stream().filter(application -> !application.isAutoSyncEnabled()).collect(Collectors.toList());
   }
 }

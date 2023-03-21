@@ -6,6 +6,8 @@
  */
 package io.harness.idp.configmanager.repositories;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity.AppConfigEntityKeys;
 
@@ -18,6 +20,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 public class AppConfigRepositoryCustomImpl implements AppConfigRepositoryCustom {
   private MongoTemplate mongoTemplate;

@@ -12,9 +12,11 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth;
 import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
@@ -24,13 +26,22 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-@JsonTypeName("External")
+@JsonTypeName("AWSSecurityHub")
 @JsonIgnoreProperties(ignoreUnknown = true)
-@TypeAlias("externalStepInfo")
+@TypeAlias("awsSecurityHubStepInfo")
 @OwnedBy(STO)
-@RecasterAlias("io.harness.beans.steps.stepinfo.security.ExternalStepInfo")
-public class ExternalStepInfo extends STOGenericStepInfo {
+@RecasterAlias("io.harness.beans.steps.stepinfo.security.AwsSecurityHubStepInfo")
+public class AwsSecurityHubStepInfo extends STOGenericStepInfo {
+  private static final String PRODUCT_NAME = "aws_security_hub";
+
+  @JsonProperty protected STOYamlAuth auth;
+
   @NotNull
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlGenericConfig")
   protected STOYamlGenericConfig config;
+
+  @ApiModelProperty(hidden = true)
+  public String getProductName() {
+    return PRODUCT_NAME;
+  }
 }

@@ -53,6 +53,11 @@ public final class MonitoringSourcePerpetualTask
                  .field(MonitoringSourcePerpetualTaskKeys.verificationType)
                  .field(MonitoringSourcePerpetualTaskKeys.connectorIdentifier)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("perpetualTaskId_dataCollectionTaskIteration_idx")
+                 .field(MonitoringSourcePerpetualTaskKeys.perpetualTaskId)
+                 .field(MonitoringSourcePerpetualTaskKeys.dataCollectionTaskIteration)
+                 .build())
         .build();
   }
 

@@ -32,4 +32,5 @@ import org.springframework.data.annotation.TypeAlias;
 public class IntegrationStageOutcome implements Outcome {
   @Singular Set<PublishedImageArtifact> imageArtifacts;
   @Singular Set<PublishedFileArtifact> fileArtifacts;
+  @Singular Set<PublishedSbomArtifact> sbomArtifacts;
 }

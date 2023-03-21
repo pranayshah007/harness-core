@@ -33,6 +33,8 @@ public class STOYamlAuth {
   @ApiModelProperty(dataType = STRING_CLASSPATH, name = "access_token")
   protected ParameterField<String> accessToken;
 
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> region;
+
   @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> version;
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> domain;

@@ -383,7 +383,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
                                                                         .build();
     final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
 
-    when(azureAsyncTaskHelper.getClusterConfig(any(AzureConfigContext.class))).thenReturn(kubernetesConfig);
+    when(azureAsyncTaskHelper.getClusterConfig(any(AzureConfigContext.class), any())).thenReturn(kubernetesConfig);
 
     containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(azureK8sInfraDelegateConfig);
     verify(kubernetesContainerService).getConfigFileContent(kubernetesConfig);
@@ -406,7 +406,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
                                                                         .build();
     final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
 
-    when(azureAsyncTaskHelper.getClusterConfig(any(AzureConfigContext.class))).thenReturn(kubernetesConfig);
+    when(azureAsyncTaskHelper.getClusterConfig(any(AzureConfigContext.class), any())).thenReturn(kubernetesConfig);
 
     containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(azureK8sInfraDelegateConfig);
     verify(kubernetesContainerService).getConfigFileContent(kubernetesConfig);

@@ -11,6 +11,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
+import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.StepSpecTypeConstants;
@@ -147,7 +148,7 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     stepInfos.add(runStepInfo);
     stepInfos.add(backgroundStepInfo);
 
-    stepInfos.addAll(STOStepType.getStepInfos());
+    stepInfos.addAll(STOStepType.getStepInfos(ModuleType.STO));
 
     return stepInfos;
   }

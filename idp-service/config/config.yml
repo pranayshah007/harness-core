@@ -110,6 +110,7 @@ accessControlClient:
 backstageSaToken: ""
 backstageSaCaCrt: ""
 backstageMasterUrl: ""
+backstagePodLabel: ""
 
 provisionModuleConfig:
   triggerPipelineUrl: ""

@@ -29,6 +29,7 @@ import io.harness.persistence.HPersistence;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Sort;
 import java.time.Clock;
@@ -157,12 +158,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
     List<Instant> minutes = new ArrayList<>();
     minutes.add(startTime);
     minutes.add(endTime);
-    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
-        .filter(SLIRecordKeys.sliId, sliId)
-        .field(SLIRecordKeys.timestamp)
-        .in(minutes)
-        .order(Sort.ascending(SLIRecordKeys.timestamp))
-        .asList();
+    return getSLIRecordsOfMinutes(sliId, minutes);
   }
 
   @Override
@@ -205,6 +201,15 @@ public class SLIRecordServiceImpl implements SLIRecordService {
     hPersistence.delete(hPersistence.createQuery(SLIRecord.class).field(SLIRecordKeys.sliId).in(sliIds));
   }
 
+  @Override
+  public List<SLIRecord> getSLIRecordsOfMinutes(String sliId, List<Instant> minutes) {
+    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
+        .filter(SLIRecordKeys.sliId, sliId)
+        .field(SLIRecordKeys.timestamp)
+        .in(minutes)
+        .order(Sort.ascending(SLIRecordKeys.timestamp))
+        .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
+  }
   public Pair<Map<ServiceLevelObjectivesDetail, List<SLIRecord>>, Map<ServiceLevelObjectivesDetail, SLIMissingDataType>>
   getSLODetailsSLIRecordsAndSLIMissingDataType(
       List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,

@@ -82,6 +82,11 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
           ((AzureK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAzureConnectorDTO(), maskingEvaluator));
     }
 
+    if (k8sInfraDelegateConfig instanceof EksK8sInfraDelegateConfig) {
+      capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+          ((EksK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAwsConnectorDTO(), maskingEvaluator));
+    }
+
     if (getManifestDelegateConfig() != null) {
       if (KUSTOMIZE == getManifestDelegateConfig().getManifestType()) {
         KustomizeManifestDelegateConfig kustomizeManifestConfig =

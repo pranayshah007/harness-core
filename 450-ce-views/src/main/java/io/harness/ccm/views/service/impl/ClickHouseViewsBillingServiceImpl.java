@@ -374,7 +374,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
       List<QLCEViewGroupBy> businessMappingGroupBy =
           viewsQueryHelper.createBusinessMappingGroupBy(sharedCostBusinessMapping);
       SelectQuery query = viewBillingServiceHelper.getQuery(
-          viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()),
+          viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()), groupBy,
           businessMappingGroupBy, aggregateFunction, sort, cloudProviderTableName, queryParams,
           sharedCostBusinessMapping, Collections.emptyList());
       query.addCustomization(new PgLimitClause(limit));
@@ -1005,9 +1005,9 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
           groupByBusinessMappingId != null && groupByBusinessMappingId.equals(sharedCostBusinessMapping.getUuid());
 
       SelectQuery query = viewBillingServiceHelper.getQuery(
-          viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()), updatedGroupBy,
-          aggregateFunction, sort, cloudProviderTableName, queryParams, sharedCostBusinessMappings.get(0),
-          Collections.emptyList());
+          viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()), groupBy,
+          updatedGroupBy, aggregateFunction, sort, cloudProviderTableName, queryParams,
+          sharedCostBusinessMappings.get(0), Collections.emptyList());
 
       List<String> sharedCostBucketNames =
           sharedCostBusinessMapping.getSharedCosts()
