@@ -14,6 +14,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
@@ -22,9 +23,11 @@ import lombok.Data;
 public class AgentApplicationTargets {
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @NotNull
   public ParameterField<String> agentId;
 
   @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @NotNull
   public ParameterField<String> applicationName;
 }
