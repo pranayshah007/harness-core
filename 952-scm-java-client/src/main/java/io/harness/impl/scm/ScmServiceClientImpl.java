@@ -200,6 +200,8 @@ public class ScmServiceClientImpl implements ScmServiceClient {
           .setError(Constants.SCM_INTERNAL_SERVER_ERROR_MESSAGE)
           .build();
     }
+    //    check if we should call the get latest commit id of the file if the commit id is empty and response is 200
+    //    [getLatestCommitOnFile]
     return updateFileResponse;
   }
 

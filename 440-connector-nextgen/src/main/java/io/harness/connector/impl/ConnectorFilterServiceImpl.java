@@ -28,12 +28,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorConnectivityMode;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
+import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.entities.embedded.ceawsconnector.CEAwsConfig.CEAwsConfigKeys;
 import io.harness.connector.entities.embedded.ceazure.CEAzureConfig.CEAzureConfigKeys;
 import io.harness.connector.entities.embedded.cek8s.CEK8sDetails.CEK8sDetailsKeys;
 import io.harness.connector.entities.embedded.gcpccm.GcpCloudCostConfig.GcpCloudCostConfigKeys;
 import io.harness.connector.entities.embedded.gcpkmsconnector.GcpKmsConnector.GcpKmsConnectorKeys;
+import io.harness.connector.entities.embedded.gitlabconnector.GitlabConnector;
 import io.harness.connector.services.ConnectorFilterService;
 import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -48,12 +50,7 @@ import io.harness.scope.ScopeHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -158,7 +155,11 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
       return;
     }
     populateInFilter(criteria, ConnectorKeys.categories, connectorFilter.getCategories());
-    populateInFilter(criteria, ConnectorKeys.type, connectorFilter.getTypes());
+    //    populateInFilter(criteria, ConnectorKeys.type, connectorFilter.getTypes());
+    List<ConnectorType> types = connectorFilter.getTypes();
+    types.add(ConnectorType.GITLAB);
+    //    criteria.and(ConnectorKeys.type).in(ConnectorKeys.type);
+    populateInFilter(criteria, ConnectorKeys.type, types);
     populateNameDesciptionAndSearchTermFilter(criteria, connectorFilter.getConnectorNames(),
         connectorFilter.getDescription(), searchTerm, connectorFilter.getInheritingCredentialsFromDelegate(),
         criteriaListForAndOperator);

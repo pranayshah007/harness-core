@@ -21,8 +21,10 @@ import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabConnectorOutcomeDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
+import io.harness.utils.FilePathUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -111,7 +113,16 @@ public class GitlabConnectorDTO
 
   @Override
   public String getGitConnectionUrl(GitRepositoryDTO gitRepositoryDTO) {
-    return "";
+    if (connectionType == GitConnectionType.REPO) {
+      String linkedRepo = getGitRepositoryDetails().getName();
+      if (!linkedRepo.equals(gitRepositoryDTO.getName())) {
+        throw new InvalidRequestException(
+            String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
+                gitRepositoryDTO.getName(), linkedRepo));
+      }
+      return url;
+    }
+    return FilePathUtils.addEndingSlashIfMissing(url) + gitRepositoryDTO.getName().split("/")[1];
   }
 
   @Override

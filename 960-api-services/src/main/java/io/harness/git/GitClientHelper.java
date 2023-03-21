@@ -600,6 +600,13 @@ public class GitClientHelper {
     return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR, gitOwner,
         PATH_SEPARATOR, gitRepo);
   }
+  public static String getCompleteHTTPUrlForGitLab(String anyRepoUrl) {
+    String scmGroup = getGitSCM(anyRepoUrl);
+    String gitOwner = getGitOwner(anyRepoUrl, true);
+    String gitRepo = getGitRepo(anyRepoUrl);
+    return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR, gitOwner,
+        PATH_SEPARATOR, gitRepo);
+  }
 
   public static String getCompleteHTTPUrlForBitbucketSaas(String anyRepoUrl) {
     String scmGroup = getGitSCM(anyRepoUrl);
