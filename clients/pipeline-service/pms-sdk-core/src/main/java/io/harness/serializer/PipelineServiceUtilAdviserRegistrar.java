@@ -13,7 +13,6 @@ import io.harness.advisers.manualIntervention.ManualInterventionAdviserWithRollb
 import io.harness.advisers.nextstep.NextStageAdviser;
 import io.harness.advisers.nextstep.NextStepAdviser;
 import io.harness.advisers.prb.OnFailPipelineRollbackAdviser;
-import io.harness.advisers.prb.PipelineRollbackStartAdvisor;
 import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.annotations.dev.OwnedBy;
@@ -32,7 +31,6 @@ public class PipelineServiceUtilAdviserRegistrar {
     Map<AdviserType, Class<? extends Adviser>> advisersMap = new HashMap<>();
     advisersMap.put(RetryAdviserWithRollback.ADVISER_TYPE, RetryAdviserWithRollback.class);
     advisersMap.put(OnFailRollbackAdviser.ADVISER_TYPE, OnFailRollbackAdviser.class);
-    advisersMap.put(PipelineRollbackStartAdvisor.ADVISER_TYPE, PipelineRollbackStartAdvisor.class);
     advisersMap.put(ManualInterventionAdviserWithRollback.ADVISER_TYPE, ManualInterventionAdviserWithRollback.class);
     advisersMap.put(NextStepAdviser.ADVISER_TYPE, NextStepAdviser.class);
     advisersMap.put(NextStageAdviser.ADVISER_TYPE, NextStageAdviser.class);
