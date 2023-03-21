@@ -8,6 +8,7 @@
 package io.harness.delegate.aws.lambda;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -95,10 +96,8 @@ public class AwsLambdaPrepareRollbackTaskHandlerTest extends CategoryTest {
     doReturn(awsInternalConfig).when(awsLambdaTaskHelper).getAwsInternalConfig(any(), any());
     FunctionConfiguration functionConfiguration1 = mock(FunctionConfiguration.class);
     FunctionCodeLocation functionCodeLocation = mock(FunctionCodeLocation.class);
-    GetFunctionResponse getFunctionResponse = (GetFunctionResponse) GetFunctionResponse.builder()
-                                                  .code(functionCodeLocation)
-                                                  .configuration(functionConfiguration1)
-                                                  .build();
+    GetFunctionResponse getFunctionResponse =
+        GetFunctionResponse.builder().code(functionCodeLocation).configuration(functionConfiguration1).build();
     doReturn(Optional.of(getFunctionResponse)).when(awsLambdaClient).getFunction(any(), any());
 
     String version1 = "version1";
@@ -118,7 +117,7 @@ public class AwsLambdaPrepareRollbackTaskHandlerTest extends CategoryTest {
     doReturn(memorySize).when(functionConfiguration2).memorySize();
 
     ListVersionsByFunctionResponse listVersionsByFunctionResponse =
-        (ListVersionsByFunctionResponse) ListVersionsByFunctionResponse.builder()
+        ListVersionsByFunctionResponse.builder()
             .versions(Arrays.asList(functionConfiguration1, functionConfiguration2))
             .build();
     doReturn(listVersionsByFunctionResponse).when(awsLambdaClient).listVersionsByFunction(any(), any());
@@ -151,10 +150,8 @@ public class AwsLambdaPrepareRollbackTaskHandlerTest extends CategoryTest {
     doReturn(awsInternalConfig).when(awsLambdaTaskHelper).getAwsInternalConfig(any(), any());
     FunctionConfiguration functionConfiguration1 = mock(FunctionConfiguration.class);
     FunctionCodeLocation functionCodeLocation = mock(FunctionCodeLocation.class);
-    GetFunctionResponse getFunctionResponse = (GetFunctionResponse) GetFunctionResponse.builder()
-                                                  .code(functionCodeLocation)
-                                                  .configuration(functionConfiguration1)
-                                                  .build();
+    GetFunctionResponse getFunctionResponse =
+        GetFunctionResponse.builder().code(functionCodeLocation).configuration(functionConfiguration1).build();
     doReturn(Optional.empty()).when(awsLambdaClient).getFunction(any(), any());
 
     String version1 = "version1";
@@ -174,9 +171,7 @@ public class AwsLambdaPrepareRollbackTaskHandlerTest extends CategoryTest {
     doReturn(memorySize).when(functionConfiguration2).memorySize();
 
     ListVersionsByFunctionResponse listVersionsByFunctionResponse =
-        (ListVersionsByFunctionResponse) ListVersionsByFunctionResponse.builder()
-            .versions(Collections.emptyList())
-            .build();
+        ListVersionsByFunctionResponse.builder().versions(Collections.emptyList()).build();
     doReturn(listVersionsByFunctionResponse).when(awsLambdaClient).listVersionsByFunction(any(), any());
 
     ObjectMapper objectMapper = mock(ObjectMapper.class);
@@ -190,6 +185,58 @@ public class AwsLambdaPrepareRollbackTaskHandlerTest extends CategoryTest {
     AwsLambdaPrepareRollbackResponse awsLambdaDeployResponse = awsLambdaPrepareRollbackTaskHandler.executeTaskInternal(
         awsLambdaPrepareRollbackRequest, logStreamingTaskClient, commandUnitsProgress);
     assertThat(awsLambdaDeployResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test()
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void executeTaskInternalTestWhenFunctionConfigurationNotAvailable() throws Exception {
+    AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = AwsLambdaFunctionsInfraConfig.builder().build();
+    AwsLambdaPrepareRollbackRequest awsLambdaPrepareRollbackRequest =
+        AwsLambdaPrepareRollbackRequest.builder().awsLambdaInfraConfig(awsLambdaFunctionsInfraConfig).build();
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    String functionName = "name";
+    CreateFunctionRequest.Builder createFunctionBuilder = CreateFunctionRequest.builder().functionName(functionName);
+    doReturn(createFunctionBuilder).when(awsLambdaTaskHelper).parseYamlAsObject(any(), any());
+    AwsInternalConfig awsInternalConfig = mock(AwsInternalConfig.class);
+    doReturn(awsInternalConfig).when(awsLambdaTaskHelper).getAwsInternalConfig(any(), any());
+    FunctionConfiguration functionConfiguration1 = mock(FunctionConfiguration.class);
+    FunctionCodeLocation functionCodeLocation = mock(FunctionCodeLocation.class);
+    GetFunctionResponse getFunctionResponse =
+        GetFunctionResponse.builder().code(functionCodeLocation).configuration(functionConfiguration1).build();
+    doReturn(Optional.of(getFunctionResponse)).when(awsLambdaClient).getFunction(any(), any());
+
+    String version1 = "version1";
+    String functionArn = "arn";
+    String codeSha56 = "code";
+    Integer memorySize = 10;
+    FunctionConfiguration functionConfiguration2 = mock(FunctionConfiguration.class);
+    doReturn(functionName).when(functionConfiguration1).functionName();
+    doReturn(functionName).when(functionConfiguration2).functionName();
+    doReturn(version1).when(functionConfiguration1).version();
+    doReturn(AwsLambdaPrepareRollbackTaskHandlerTest.LATEST).when(functionConfiguration2).version();
+    doReturn(functionArn).when(functionConfiguration1).functionArn();
+    doReturn(functionArn).when(functionConfiguration2).functionArn();
+    doReturn(codeSha56).when(functionConfiguration1).codeSha256();
+    doReturn(codeSha56).when(functionConfiguration2).codeSha256();
+    doReturn(memorySize).when(functionConfiguration1).memorySize();
+    doReturn(memorySize).when(functionConfiguration2).memorySize();
+
+    ListVersionsByFunctionResponse listVersionsByFunctionResponse =
+        ListVersionsByFunctionResponse.builder()
+            .versions(Arrays.asList(FunctionConfiguration.builder().version("$LATEST").build()))
+            .build();
+
+    doReturn(listVersionsByFunctionResponse).when(awsLambdaClient).listVersionsByFunction(any(), any());
+
+    doReturn(executionLogCallback)
+        .when(awsLambdaTaskHelper)
+        .getLogCallback(logStreamingTaskClient, AwsLambdaCommandUnitConstants.prepareRollbackData.toString(), true,
+            commandUnitsProgress);
+    AwsLambdaPrepareRollbackResponse awsLambdaDeployResponse = awsLambdaPrepareRollbackTaskHandler.executeTaskInternal(
+        awsLambdaPrepareRollbackRequest, logStreamingTaskClient, commandUnitsProgress);
+    assertThat(awsLambdaDeployResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(awsLambdaDeployResponse.isFirstDeployment()).isFalse();
   }
 
   @Test()
@@ -207,10 +254,8 @@ public class AwsLambdaPrepareRollbackTaskHandlerTest extends CategoryTest {
     doReturn(awsInternalConfig).when(awsLambdaTaskHelper).getAwsInternalConfig(any(), any());
     FunctionConfiguration functionConfiguration1 = mock(FunctionConfiguration.class);
     FunctionCodeLocation functionCodeLocation = mock(FunctionCodeLocation.class);
-    GetFunctionResponse getFunctionResponse = (GetFunctionResponse) GetFunctionResponse.builder()
-                                                  .code(functionCodeLocation)
-                                                  .configuration(functionConfiguration1)
-                                                  .build();
+    GetFunctionResponse getFunctionResponse =
+        GetFunctionResponse.builder().code(functionCodeLocation).configuration(functionConfiguration1).build();
     doThrow(InvalidRequestException.class).when(awsLambdaClient).getFunction(any(), any());
 
     String version1 = "version1";
@@ -230,9 +275,7 @@ public class AwsLambdaPrepareRollbackTaskHandlerTest extends CategoryTest {
     doReturn(memorySize).when(functionConfiguration2).memorySize();
 
     ListVersionsByFunctionResponse listVersionsByFunctionResponse =
-        (ListVersionsByFunctionResponse) ListVersionsByFunctionResponse.builder()
-            .versions(Collections.emptyList())
-            .build();
+        ListVersionsByFunctionResponse.builder().versions(Collections.emptyList()).build();
     doReturn(listVersionsByFunctionResponse).when(awsLambdaClient).listVersionsByFunction(any(), any());
 
     ObjectMapper objectMapper = mock(ObjectMapper.class);
@@ -249,5 +292,29 @@ public class AwsLambdaPrepareRollbackTaskHandlerTest extends CategoryTest {
     AwsLambdaPrepareRollbackResponse awsLambdaDeployResponse = awsLambdaPrepareRollbackTaskHandler.executeTaskInternal(
         awsLambdaPrepareRollbackRequest, logStreamingTaskClient, commandUnitsProgress);
     assertThat(awsLambdaDeployResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+  }
+
+  @Test()
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testGetLatestFunctionConfiguration() {
+    ListVersionsByFunctionResponse listVersionsByFunctionResponse =
+        ListVersionsByFunctionResponse.builder()
+            .versions(Arrays.asList(FunctionConfiguration.builder().version("$LATEST").build()))
+            .build();
+
+    doReturn(listVersionsByFunctionResponse).when(awsLambdaClient).listVersionsByFunction(any(), any());
+
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    doReturn(executionLogCallback)
+        .when(awsLambdaTaskHelper)
+        .getLogCallback(logStreamingTaskClient, AwsLambdaCommandUnitConstants.prepareRollbackData.toString(), true,
+            commandUnitsProgress);
+
+    Optional<FunctionConfiguration> functionConfiguration =
+        awsLambdaPrepareRollbackTaskHandler.getLatestFunctionConfiguration(
+            "functionName", AwsLambdaFunctionsInfraConfig.builder().build(), executionLogCallback);
+
+    assertThat(functionConfiguration.isPresent()).isFalse();
   }
 }
