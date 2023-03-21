@@ -155,7 +155,7 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
 
   private FetchFilesResult fetchFilesFromRepo(GitFetchFilesConfig gitFetchFilesConfig, LogCallback executionLogCallback,
       String accountId, boolean closeLogStream) throws IOException {
-    String identifier = gitFetchFilesConfig.getIdentifier();
+    String identifier = modifyIdentifier(gitFetchFilesConfig.getIdentifier());
     GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
     executionLogCallback.saveExecutionLog("Git connector Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
     String fetchTypeInfo = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH
@@ -204,5 +204,11 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public boolean isSupportingErrorFramework() {
     return true;
+  }
+
+  private String modifyIdentifier(String identifier) {
+    identifier = identifier.replaceAll("\\s", "");
+    identifier = identifier.replaceAll("-", "");
+    return identifier;
   }
 }
