@@ -129,6 +129,7 @@ io.harness.beans.build.PublishedArtifact
 io.harness.when.beans.StageWhenCondition
 io.harness.plancreator.strategy.ExcludeConfig
 io.harness.beans.execution.PublishedImageArtifact
+io.harness.beans.execution.PublishedSbomArtifact
 io.harness.ci.beans.entities.CIExecutionImages
 io.harness.beans.execution.WebhookGitUser
 io.harness.plancreator.stages.stage.StageElementConfig

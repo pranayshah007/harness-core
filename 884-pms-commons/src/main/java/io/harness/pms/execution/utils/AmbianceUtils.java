@@ -355,4 +355,11 @@ public class AmbianceUtils {
   public TriggeredBy getTriggerBy(Ambiance ambiance) {
     return ambiance.getMetadata().getTriggerInfo().getTriggeredBy();
   }
+
+  public String getPipelineExecutionIdentifier(Ambiance ambiance) {
+    if (ambiance.getMetadata() != null) {
+      return ambiance.getMetadata().getExecutionUuid();
+    }
+    return null;
+  }
 }

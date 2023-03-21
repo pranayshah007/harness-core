@@ -10,9 +10,21 @@ package io.harness.delegate.task.stepstatus.artifact;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(HarnessTeam.CI)
-public enum ArtifactMetadataType {
-  DOCKER_ARTIFACT_METADATA,
-  FILE_ARTIFACT_METADATA,
-  SSCA_ARTIFACT_METADATA
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
+@JsonTypeName(ArtifactMetadataTypes.DOCKER_ARTIFACT_METADATA)
+@OwnedBy(HarnessTeam.SSCA)
+public class SscaArtifactMetadata implements ArtifactMetadataSpec {
+  String id;
+  String registryType;
+  String registryUrl;
+  String imageName;
+  String digest;
+  String sbomName;
+  String sbomUrl;
+  boolean isSbomAttested;
 }

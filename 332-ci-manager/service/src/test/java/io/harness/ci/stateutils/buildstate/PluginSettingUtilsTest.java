@@ -64,6 +64,7 @@ import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildSpec;
 import io.harness.yaml.extended.ci.codebase.BuildType;
@@ -88,11 +89,13 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
   @Mock private CodebaseUtils codebaseUtils;
   @Mock private ConnectorUtils connectorUtils;
+  @Mock private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
 
   @Before
   public void setUp() {
     on(pluginSettingUtils).set("codebaseUtils", codebaseUtils);
     on(pluginSettingUtils).set("connectorUtils", connectorUtils);
+    on(pluginSettingUtils).set("sscaOrchestrationPluginUtils", sscaOrchestrationPluginUtils);
     on(codebaseUtils).set("connectorUtils", connectorUtils);
   }
 
