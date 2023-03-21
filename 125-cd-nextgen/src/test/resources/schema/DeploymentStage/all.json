@@ -7864,7 +7864,9 @@
                   "type": "array",
                   "items": {
                     "type": "string"
-                  }
+                  },
+                  "maxItems": 2147483647,
+                  "minItems": 1
                 },
                 {
                   "type": "string",
