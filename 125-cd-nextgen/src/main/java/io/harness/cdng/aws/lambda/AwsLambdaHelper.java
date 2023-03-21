@@ -153,13 +153,10 @@ public class AwsLambdaHelper extends CDStepHelper {
 
   public List<ManifestOutcome> getAwsLambdaManifestOutcome(@NotEmpty Collection<ManifestOutcome> manifestOutcomes) {
     // Filter only Aws Lambda supported manifest types
-    List<ManifestOutcome> awsLambdaManifests =
-        manifestOutcomes.stream()
-            .filter(
-                manifestOutcome -> ManifestType.AWS_LAMBDA_SUPPORTED_MANIFEST_TYPES.contains(manifestOutcome.getType()))
-            .collect(Collectors.toList());
 
-    return awsLambdaManifests;
+    return manifestOutcomes.stream()
+        .filter(manifestOutcome -> ManifestType.AWS_LAMBDA_SUPPORTED_MANIFEST_TYPES.contains(manifestOutcome.getType()))
+        .collect(Collectors.toList());
   }
 
   public TaskChainResponse executeNextLink(Ambiance ambiance, StepElementParameters stepElementParameters,
