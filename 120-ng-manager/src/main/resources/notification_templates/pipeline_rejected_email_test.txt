@@ -1,3 +1,3 @@
 subject: Pipeline Execution Rejected for ${WORKFLOW_NAME}
 body: "<div>Pipeline Execution Rejected</div>
-       <div><b>Pipeline</b>: <b><a href=\"${WORKFLOW_URL}\" target=\"_blank\">${WORKFLOW_NAME}</a></b><br><b>Account</b>: <b>${ACCOUNT_ID}</b><br>The Pipeline Execution triggered by <b>${USER_NAME}</b> was rejected because of active Deployment Freeze Window <b><a href=\"${BLACKOUT_WINDOW_URL}\" target=\"_blank\">${BLACKOUT_WINDOW_NAME}</a></b>. The deployment freeze ends at ${END_TIME}. ${CUSTOMIZED_MESSAGE}</div>"
+       <div><b>Pipeline</b>: <b><a href=\"${WORKFLOW_URL}\" target=\"_blank\">${WORKFLOW_NAME}</a></b><br><b>Account</b>: <b>${ACCOUNT_ID}</b><br>The Pipeline Execution triggered by <b>${USER_NAME}</b> was rejected because of active Deployment Freeze Window <b><a href=\"${BLACKOUT_WINDOW_URL}\" target=\"_blank\">${BLACKOUT_WINDOW_NAME}</a></b>. The deployment freeze ends at ${END_TIME}. </div> <pre> ${CUSTOMIZED_MESSAGE}. </pre>"
