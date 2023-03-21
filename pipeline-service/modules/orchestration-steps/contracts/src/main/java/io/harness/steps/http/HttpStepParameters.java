@@ -33,7 +33,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("httpStepParameters")
 @RecasterAlias("io.harness.steps.http.HttpStepParameters")
 public class HttpStepParameters extends HttpBaseStepInfo implements SpecParameters {
-  @SkipAutoEvaluation ParameterField<Map<String, Object>> outputVariables;
+  ParameterField<Map<String, Object>> outputVariables;
   Map<String, String> headers;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
