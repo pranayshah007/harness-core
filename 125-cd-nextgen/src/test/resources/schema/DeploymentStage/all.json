@@ -469,7 +469,8 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "metadata": {
           "type": "string"
@@ -1288,7 +1289,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1502,7 +1503,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1652,7 +1653,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6248,7 +6249,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -10356,7 +10357,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        { }
+        {}
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [
@@ -11531,7 +11532,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -12797,7 +12798,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -15286,7 +15287,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
