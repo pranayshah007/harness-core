@@ -9,6 +9,7 @@ package io.harness.ssca.execution;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.pms.yaml.ParameterField;
@@ -31,6 +32,11 @@ public class SscaOrchestrationStepPluginUtils {
   public static final String PLUGIN_SBOMDESTINATION = "PLUGIN_SBOMDESTINATION";
   public static final String SKIP_NORMALISATION = "SKIP_NORMALISATION";
   public static final String ATTESTATION_PRIVATE_KEY = "COSIGN_PASSWORD";
+  public static final String SSCA_CORE_URL = "SSCS_Core_Url";
+  public static final String STEP_EXECUTION_ID = "STEP_EXECUTION_ID";
+  public static final String DOCKER_USERNAME = "DOCKER_USERNAME";
+  public static final String DOCKER_PASSW = "DOCKER_PASSWORD";
+  public static final String DOCKER_REGISTRY = "DOCKER_REGISTRY";
 
   public Map<String, String> getSScaOrchestrationStepEnvVariables(OrchestrationStepEnvVariables envVariables) {
     Map<String, String> envMap = new HashMap<>();
@@ -40,6 +46,8 @@ public class SscaOrchestrationStepPluginUtils {
     envMap.put(PLUGIN_TYPE, "Orchestrate");
     envMap.put(PLUGIN_SBOMDESTINATION, "harness/sbom");
     envMap.put(SKIP_NORMALISATION, "true");
+    envMap.put(SSCA_CORE_URL, envVariables.getSscaCoreUrl());
+    envMap.put(STEP_EXECUTION_ID, envVariables.getStepExecutionId());
     return envMap;
   }
 
@@ -54,5 +62,13 @@ public class SscaOrchestrationStepPluginUtils {
             .name(ATTESTATION_PRIVATE_KEY)
             .build());
     return secretNGVariableMap;
+  }
+
+  public static Map<EnvVariableEnum, String> getConnectorSecretEnvMap() {
+    Map<EnvVariableEnum, String> map = new HashMap<>();
+    map.put(EnvVariableEnum.DOCKER_USERNAME, DOCKER_USERNAME);
+    map.put(EnvVariableEnum.DOCKER_PASSWORD, DOCKER_PASSW);
+    map.put(EnvVariableEnum.DOCKER_REGISTRY, DOCKER_REGISTRY);
+    return map;
   }
 }
