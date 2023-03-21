@@ -13,7 +13,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.InterruptEffect;
-import io.harness.plan.PlanNode;
+import io.harness.plan.Node;
 import io.harness.pms.contracts.advisers.AdviseEvent;
 import io.harness.pms.contracts.advisers.AdviseEvent.Builder;
 import io.harness.pms.contracts.execution.Status;
@@ -28,13 +28,12 @@ public class RedisNodeAdviseEventPublisher implements NodeAdviseEventPublisher {
   @Inject private PmsEventSender eventSender;
 
   @Override
-  public String publishEvent(NodeExecution nodeExecution, PlanNode planNode, Status fromStatus) {
+  public String publishEvent(NodeExecution nodeExecution, Node planNode, Status fromStatus) {
     return publishEvent(nodeExecution, nodeExecution.getFailureInfo(), planNode, fromStatus);
   }
 
   @Override
-  public String publishEvent(
-      NodeExecution nodeExecution, FailureInfo failureInfo, PlanNode planNode, Status fromStatus) {
+  public String publishEvent(NodeExecution nodeExecution, FailureInfo failureInfo, Node planNode, Status fromStatus) {
     Builder builder = AdviseEvent.newBuilder()
                           .setAmbiance(nodeExecution.getAmbiance())
                           .setFailureInfo(failureInfo)

@@ -7,12 +7,16 @@
 
 package io.harness.steps.container.execution.plugin;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
+@OwnedBy(HarnessTeam.SSCA)
 public class StepImageConfig {
   String image;
   List<String> entrypoint;

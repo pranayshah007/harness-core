@@ -34,6 +34,8 @@ import io.harness.pms.contracts.commons.RepairActionCode;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExecutionMode;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
@@ -119,6 +121,8 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
     List<AdviserObtainment> adviserObtainmentFromMetaData = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
 
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
+    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
+    ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
     PlanNode stepPlanNode =
         PlanNode.builder()
             .uuid(ctx.getCurrentField().getNode().getUuid())
@@ -134,8 +138,9 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
                                        .build())
             .adviserObtainments(adviserObtainmentFromMetaData)
             .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
-            .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
-                                                : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
+            .whenCondition(isStepInsideRollback
+                    ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen(), executionMode)
+                    : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()
                     .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)

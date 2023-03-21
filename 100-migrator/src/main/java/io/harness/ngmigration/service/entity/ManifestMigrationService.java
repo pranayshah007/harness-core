@@ -46,6 +46,7 @@ import io.harness.ngmigration.service.manifest.NgManifestFactory;
 import io.harness.ngmigration.service.manifest.NgManifestService;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.JsonUtils;
 
@@ -85,6 +86,7 @@ public class ManifestMigrationService extends NgMigrationService {
   @Inject private ServiceResourceService serviceResourceService;
 
   @Inject private ServiceVariableMigrationService serviceVariableMigrationService;
+  @Inject private SecretRefUtils secretRefUtils;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -140,6 +142,14 @@ public class ManifestMigrationService extends NgMigrationService {
       children.addAll(Lists.newArrayList(
           CgEntityId.builder().id(appManifest.getServiceId()).type(NGMigrationEntityType.SERVICE).build(),
           CgEntityId.builder().id(appManifest.getEnvId()).type(NGMigrationEntityType.ENVIRONMENT).build()));
+    }
+    List<ManifestFile> manifestFiles =
+        applicationManifestService.listManifestFiles(appManifest.getUuid(), appManifest.getAppId());
+    if (EmptyPredicate.isNotEmpty(manifestFiles)) {
+      for (ManifestFile manifestFile : manifestFiles) {
+        children.addAll(secretRefUtils.getSecretRefFromExpressions(
+            appManifest.getAccountId(), MigratorExpressionUtils.extractAll(manifestFile.getFileContent())));
+      }
     }
     return DiscoveryNode.builder().children(children).entityNode(cgEntityNode).build();
   }

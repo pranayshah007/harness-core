@@ -18,6 +18,7 @@ import io.harness.k8s.KubernetesHelperService;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
 
+import com.google.inject.name.Named;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
@@ -37,8 +38,7 @@ public class PodHealthCheck implements HealthCheck {
   @Inject private KubernetesHelperService kubernetesHelperService;
   @Inject private NamespaceService namespaceService;
   @Inject private K8sClient k8sClient;
-
-  private static final String LABEL_SELECTOR = "app=idp-ui";
+  @Inject @Named("backstagePodLabel") private String backstagePodLabel;
   public static final String MESSAGE_SEPARATOR = ". ";
 
   @Override
@@ -50,7 +50,7 @@ public class PodHealthCheck implements HealthCheck {
       CoreV1Api api = new CoreV1Api(apiClient);
       // TODO: Implement logic for pod restart scenarios
       V1PodList podList =
-          api.listNamespacedPod(namespace, null, null, null, null, LABEL_SELECTOR, null, null, null, null, false);
+          api.listNamespacedPod(namespace, null, null, null, null, backstagePodLabel, null, null, null, null, false);
       if (CollectionUtils.isEmpty(podList.getItems())) {
         statusInfo.setCurrentStatus(StatusInfo.CurrentStatusEnum.NOT_FOUND);
         statusInfo.setReason("No pod exists for namespace: " + namespace);

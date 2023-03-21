@@ -243,6 +243,8 @@ import io.harness.secrets.setupusage.builders.SecretManagerSetupUsageBuilder;
 import io.harness.secrets.setupusage.builders.ServiceVariableSetupUsageBuilder;
 import io.harness.secrets.setupusage.builders.SettingAttributeSetupUsageBuilder;
 import io.harness.secrets.setupusage.builders.TriggerSetupUsageBuilder;
+import io.harness.secrets.yamlhandlers.SecretYamlHandler;
+import io.harness.secrets.yamlhandlers.SecretYamlHandlerImpl;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.seeddata.SampleDataProviderService;
 import io.harness.seeddata.SampleDataProviderServiceImpl;
@@ -274,6 +276,8 @@ import io.harness.timescaledb.retention.RetentionManager;
 import io.harness.timescaledb.retention.RetentionManagerImpl;
 import io.harness.usergroups.UserGroupClientModule;
 import io.harness.usermembership.UserMembershipClientModule;
+import io.harness.utils.featureflaghelper.CGFeatureFlagHelperServiceImpl;
+import io.harness.utils.featureflaghelper.FeatureFlagHelperService;
 import io.harness.version.VersionModule;
 
 import software.wings.DataStorageMode;
@@ -1295,6 +1299,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     registerEventListeners();
 
+    bind(FeatureFlagHelperService.class).to(CGFeatureFlagHelperServiceImpl.class);
+    bind(SecretYamlHandler.class).to(SecretYamlHandlerImpl.class);
     bind(PersistentScheduler.class)
         .annotatedWith(Names.named("BackgroundJobScheduler"))
         .to(BackgroundJobScheduler.class)

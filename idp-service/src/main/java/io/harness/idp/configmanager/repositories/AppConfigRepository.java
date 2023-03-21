@@ -11,11 +11,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
 @OwnedBy(HarnessTeam.IDP)
 public interface AppConfigRepository extends CrudRepository<AppConfigEntity, String>, AppConfigRepositoryCustom {
-  Optional<AppConfigEntity> findByAccountIdentifierAndPluginId(String accountIdentifier, String pluginName);
+  List<AppConfigEntity> findAllByAccountIdentifier(String accountIdentifier);
+  Optional<AppConfigEntity> findByAccountIdentifierAndPluginId(String accountIdentifier, String pluginId);
+  List<AppConfigEntity> findAllByAccountIdentifierAndEnabled(String accountIdentifier, Boolean enabled);
 }

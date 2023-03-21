@@ -23,6 +23,7 @@ import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.steps.template.TemplateStepNode;
 
 import software.wings.beans.GraphNode;
+import software.wings.beans.PhaseStep;
 import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -78,8 +79,8 @@ public class CommandStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public TemplateStepNode getTemplateSpec(
-      MigrationContext migrationContext, WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
+  public TemplateStepNode getTemplateSpec(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode, String skipCondition) {
     String templateId = graphNode.getTemplateUuid();
     if (isEmpty(templateId)) {
       WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(context.getWorkflow());
@@ -91,9 +92,9 @@ public class CommandStepMapperImpl extends StepMapper {
                                                 .id(serviceId + SERVICE_COMMAND_TEMPLATE_SEPARATOR + commandName)
                                                 .type(NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE)
                                                 .build());
-      return getTemplateStepNode(migrationContext, context, phase, graphNode, template);
+      return getTemplateStepNode(migrationContext, context, phase, phaseStep, graphNode, template, skipCondition);
     } else {
-      return defaultTemplateSpecMapper(migrationContext, context, phase, graphNode);
+      return defaultTemplateSpecMapper(migrationContext, context, phase, phaseStep, graphNode, skipCondition);
     }
   }
 

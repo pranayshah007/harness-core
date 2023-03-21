@@ -45,6 +45,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.collect.Lists;
@@ -84,9 +85,11 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
     ServiceEntity serviceEntity = ServiceStepUtils.getServiceEntity(serviceEntityService, ambiance, stepParameters);
     serviceEntityService.upsert(serviceEntity, UpsertOptions.DEFAULT.withNoOutbox().withNoSetupUsage());
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
-    entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(serviceEntity.getOrgIdentifier()));
-    entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(serviceEntity.getProjectIdentifier()));
-    entityMap.put(FreezeEntityType.SERVICE, Lists.newArrayList(serviceEntity.getIdentifier()));
+    entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(AmbianceUtils.getOrgIdentifier(ambiance)));
+    entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(AmbianceUtils.getProjectIdentifier(ambiance)));
+    entityMap.put(FreezeEntityType.SERVICE,
+        Lists.newArrayList(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(serviceEntity.getAccountId(),
+            serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier())));
     StepResponse stepResponse = executeFreezePart(ambiance, entityMap, stepParameters, serviceEntity);
     if (stepResponse != null) {
       return stepResponse;

@@ -35,4 +35,7 @@ public class KubernetesExceptionMessages {
 
   public final String CHARACTER_LIMIT_ERROR = ".*must be no more than \\d+ characters.*";
   public final String INVALID_CHARACTERS_ERROR = ".*must consist of lower case alphanumeric characters.*";
+
+  public final String UNABLE_TO_FIND_FILE_IN_MANIFEST_DIRECTORY_FORMAT =
+      "Unable to find file path %s in manifest directory";
 }

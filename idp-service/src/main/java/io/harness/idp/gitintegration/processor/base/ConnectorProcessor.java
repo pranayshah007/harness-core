@@ -38,6 +38,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.util.Pair;
@@ -61,7 +62,7 @@ public abstract class ConnectorProcessor {
     return connectorDTO.get().getConnectorInfo();
   }
 
-  public abstract Pair<ConnectorInfoDTO, List<EnvironmentSecret>> getConnectorAndSecretsInfo(
+  public abstract Pair<ConnectorInfoDTO, Map<String, EnvironmentSecret>> getConnectorAndSecretsInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier);
 
   public abstract void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
@@ -73,6 +74,7 @@ public abstract class ConnectorProcessor {
         DownloadFilesRequest.builder()
             .repoUrl(catalogConnectorInfo.getRepo())
             .branch(catalogConnectorInfo.getBranch())
+            .unsureOrNonExistentBranch(true)
             .filePaths(Collections.singletonList(remoteFolder))
             .connectorId(catalogConnectorInfo.getSourceConnector().getIdentifier())
             .accountId(accountIdentifier)
@@ -106,6 +108,7 @@ public abstract class ConnectorProcessor {
         CommitAndPushRequest.builder()
             .repoUrl(catalogConnectorInfo.getRepo())
             .branch(catalogConnectorInfo.getBranch())
+            .unsureOrNonExistentBranch(true)
             .connectorId(catalogConnectorInfo.getSourceConnector().getIdentifier())
             .accountId(accountIdentifier)
             .authRequest(

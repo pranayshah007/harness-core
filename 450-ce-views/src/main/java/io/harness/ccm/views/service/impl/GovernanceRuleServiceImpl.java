@@ -94,7 +94,7 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
     GovernanceRuleFilter governancePolicyFilter = GovernanceRuleFilter.builder().build();
     governancePolicyFilter.setAccountId(accountId);
     governancePolicyFilter.setIsOOTB(false);
-    if (list(governancePolicyFilter).getRule().size() >= 300) {
+    if (list(governancePolicyFilter).getRules().size() >= 300) {
       throw new InvalidRequestException("You have exceeded the limit for rules creation");
     }
   }

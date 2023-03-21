@@ -48,7 +48,7 @@ public class NativeHelmServiceV2Mapper implements ServiceV2Mapper {
     if (primaryArtifact != null) {
       helmServiceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
-    helmServiceSpecBuilder.manifests(manifests);
+    helmServiceSpecBuilder.manifests(changeIdentifier(manifests, "helm_"));
     helmServiceSpecBuilder.configFiles(configFiles);
     helmServiceSpecBuilder.variables(variables);
     return ServiceDefinition.builder()

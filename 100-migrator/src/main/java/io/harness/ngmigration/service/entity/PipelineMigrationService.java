@@ -8,7 +8,6 @@
 package io.harness.ngmigration.service.entity;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_FIELD;
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
@@ -67,16 +66,20 @@ import io.harness.steps.template.stage.TemplateStageNode;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateLinkConfig;
+import io.harness.when.beans.StageWhenCondition;
+import io.harness.when.beans.WhenConditionStatus;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.StringNGVariable;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
+import software.wings.beans.EntityType;
 import software.wings.beans.Pipeline;
 import software.wings.beans.PipelineStage;
 import software.wings.beans.PipelineStage.PipelineStageElement;
 import software.wings.beans.TemplateExpression;
+import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgBasicInfo;
@@ -86,11 +89,13 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.PipelineService;
+import software.wings.service.intfc.WorkflowService;
 import software.wings.sm.StateType;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -101,6 +106,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -122,6 +128,7 @@ public class PipelineMigrationService extends NgMigrationService {
   @Inject private MigrationTemplateUtils migrationTemplateUtils;
   @Inject PipelineServiceClient pipelineServiceClient;
   @Inject ApprovalStepMapperImpl approvalStepMapper;
+  @Inject private WorkflowService workflowService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -169,6 +176,31 @@ public class PipelineMigrationService extends NgMigrationService {
           String workflowId = (String) stageElement.getProperties().get("workflowId");
           if (isNotEmpty(workflowId)) {
             children.add(CgEntityId.builder().type(NGMigrationEntityType.WORKFLOW).id(workflowId).build());
+            Workflow workflow = workflowService.readWorkflow(pipeline.getAppId(), workflowId);
+            if (workflow != null) {
+              Map<String, String> workflowVariables = MapUtils.emptyIfNull(stageElement.getWorkflowVariables());
+              Map<String, Variable> userVariables =
+                  ListUtils.emptyIfNull(workflow.getOrchestration().getUserVariables())
+                      .stream()
+                      .collect(Collectors.toMap(Variable::getName, Function.identity()));
+
+              children.addAll(
+                  workflowVariables.entrySet()
+                      .stream()
+                      .filter(entry -> userVariables.get(entry.getKey()) != null)
+                      .filter(entry -> userVariables.get(entry.getKey()).obtainEntityType() != null)
+                      .filter(entry
+                          -> Lists.newArrayList(EntityType.SERVICE, EntityType.ENVIRONMENT)
+                                 .contains(userVariables.get(entry.getKey()).obtainEntityType()))
+                      .map(entry
+                          -> CgEntityId.builder()
+                                 .id(entry.getValue())
+                                 .type(userVariables.get(entry.getKey()).obtainEntityType() != EntityType.SERVICE
+                                         ? ENVIRONMENT
+                                         : SERVICE)
+                                 .build())
+                      .collect(Collectors.toList()));
+            }
           }
         }
       });
@@ -244,7 +276,7 @@ public class PipelineMigrationService extends NgMigrationService {
 
     List<StageElementWrapperConfig> ngStages = new ArrayList<>();
     List<StageElementWrapperConfig> parallelStages = null;
-    List<NGVariable> pipelineVariables = getPipelineVariables(pipeline, entities);
+    List<NGVariable> pipelineVariables = getPipelineVariables(migrationContext, pipeline);
     for (int i = 0; i < pipeline.getPipelineStages().size(); ++i) {
       PipelineStage pipelineStage = pipeline.getPipelineStages().get(i);
       if (!isPartOfParallelStage(pipeline.getPipelineStages(), i)) {
@@ -268,7 +300,7 @@ public class PipelineMigrationService extends NgMigrationService {
                 migrationContext, pipeline.getAccountId(), stageElement, inputDTO.getIdentifierCaseFormat());
           }
         } else {
-          stage = buildApprovalStage(stageElement, inputDTO.getIdentifierCaseFormat());
+          stage = buildApprovalStage(migrationContext, stageElement, inputDTO.getIdentifierCaseFormat());
         }
         // If the stage cannot be migrated then we skip building the pipeline.
         if (stage == null) {
@@ -341,7 +373,8 @@ public class PipelineMigrationService extends NgMigrationService {
     return false;
   }
 
-  private StageElementWrapperConfig buildApprovalStage(PipelineStageElement stageElement, CaseFormat caseFormat) {
+  private StageElementWrapperConfig buildApprovalStage(
+      MigrationContext migrationContext, PipelineStageElement stageElement, CaseFormat caseFormat) {
     AbstractStepNode stepNode = approvalStepMapper.getSpec(stageElement, caseFormat);
     ExecutionWrapperConfig stepWrapper =
         ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(stepNode)).build();
@@ -355,6 +388,15 @@ public class PipelineMigrationService extends NgMigrationService {
             .build());
     approvalStageNode.setFailureStrategies(WorkflowHandler.getDefaultFailureStrategy());
 
+    Map<String, Object> properties = MapUtils.emptyIfNull(stageElement.getProperties());
+    String assertion = (String) properties.get("disableAssertion");
+    if (StringUtils.isNotBlank(assertion)) {
+      assertion = (String) MigratorExpressionUtils.render(migrationContext, assertion, new HashMap<>());
+      approvalStageNode.setWhen(ParameterField.createValueField(StageWhenCondition.builder()
+                                                                    .pipelineStatus(WhenConditionStatus.SUCCESS)
+                                                                    .condition(WorkflowHandler.wrapNot(assertion))
+                                                                    .build()));
+    }
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(approvalStageNode)).build();
   }
 
@@ -387,7 +429,8 @@ public class PipelineMigrationService extends NgMigrationService {
     return null;
   }
 
-  private List<NGVariable> getPipelineVariables(Pipeline pipeline, Map<CgEntityId, CgEntityNode> entities) {
+  private List<NGVariable> getPipelineVariables(MigrationContext migrationContext, Pipeline pipeline) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     if (EmptyPredicate.isEmpty(pipeline.getPipelineStages())) {
       return new ArrayList<>();
     }
@@ -402,6 +445,7 @@ public class PipelineMigrationService extends NgMigrationService {
             .collect(Collectors.toList());
 
     List<String> toSkip = new ArrayList<>();
+    Map<String, Variable> workflowVariables = new HashMap<>();
     for (PipelineStageElement stageElement : stageElements) {
       String workflowId = stageElement.getProperties().get("workflowId").toString();
       CgEntityId workflowEntityId = CgEntityId.builder().id(workflowId).type(WORKFLOW).build();
@@ -422,19 +466,35 @@ public class PipelineMigrationService extends NgMigrationService {
         if (StringUtils.isNotBlank(infra)) {
           toSkip.add(infra);
         }
+        if (EmptyPredicate.isNotEmpty(orchestrationWorkflow.getUserVariables())) {
+          workflowVariables.putAll(orchestrationWorkflow.getUserVariables().stream().collect(
+              Collectors.toMap(Variable::getName, Function.identity())));
+        }
       }
     }
 
-    return stageElements.stream()
+    Map<String, NGVariable> pipelineVariables = new HashMap<>();
+    stageElements.stream()
         .map(PipelineStageElement::getWorkflowVariables)
         .flatMap(variables -> variables.entrySet().stream())
         .filter(entry -> StringUtils.isNotBlank(entry.getValue()) && isExpression(entry.getValue()))
         .filter(entry -> !toSkip.contains(entry.getKey()))
-        .map(entry -> entry.getValue().substring(2, entry.getValue().length() - 1))
-        .distinct()
-        .filter(key -> VARIABLE_PATTERN.matcher(key).matches())
-        .map(val -> StringNGVariable.builder().type(NGVariableType.STRING).name(val).value(RUNTIME_FIELD).build())
-        .collect(Collectors.toList());
+        .forEach(entry -> {
+          String pipelineVar = entry.getValue().substring(2, entry.getValue().length() - 1);
+          Variable wfVar = workflowVariables.get(entry.getKey());
+          if (VARIABLE_PATTERN.matcher(pipelineVar).matches() && wfVar != null) {
+            pipelineVariables.put(pipelineVar,
+                StringNGVariable.builder()
+                    .type(NGVariableType.STRING)
+                    .required(wfVar.isMandatory())
+                    .defaultValue(wfVar.getValue())
+                    .name(pipelineVar)
+                    .value(WorkflowHandler.getVariable(wfVar))
+                    .build());
+          }
+        });
+
+    return Lists.newArrayList(pipelineVariables.values());
   }
 
   private StageElementWrapperConfig buildWorkflowStage(

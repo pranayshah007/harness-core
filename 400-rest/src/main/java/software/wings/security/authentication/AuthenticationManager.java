@@ -314,9 +314,6 @@ public class AuthenticationManager {
                               .accounts(user.getAccounts())
                               .defaultAccountId(user.getDefaultAccountId())
                               .emailVerified(user.isEmailVerified());
-    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
-      userBuilder.supportAccounts(user.getSupportAccounts());
-    }
     return userBuilder.build();
   }
 

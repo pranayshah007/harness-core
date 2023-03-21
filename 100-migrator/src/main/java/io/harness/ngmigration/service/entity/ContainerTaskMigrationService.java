@@ -36,6 +36,7 @@ import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.Service;
@@ -54,6 +55,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,6 +65,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ContainerTaskMigrationService extends NgMigrationService {
+  @Inject private SecretRefUtils secretRefUtils;
   @Inject ServiceResourceService serviceResourceService;
 
   @Override
@@ -85,6 +88,9 @@ public class ContainerTaskMigrationService extends NgMigrationService {
                                     .id(containerTask.getUuid())
                                     .type(NGMigrationEntityType.CONTAINER_TASK)
                                     .build();
+    Set<CgEntityId> children = new HashSet<>();
+    children.addAll(secretRefUtils.getSecretRefFromExpressions(
+        containerTask.getAccountId(), MigratorExpressionUtils.getExpressions(containerTask)));
     return DiscoveryNode.builder().entityNode(cgEntityNode).build();
   }
 

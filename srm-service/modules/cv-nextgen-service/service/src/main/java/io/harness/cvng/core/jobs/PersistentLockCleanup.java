@@ -27,7 +27,7 @@ public class PersistentLockCleanup implements Runnable {
     try {
       OffsetDateTime deleteBefore = OffsetDateTime.now().minusMinutes(15);
       final BasicDBObject filter =
-          new BasicDBObject().append("lastUpdated", new BasicDBObject("$lt", Date.from(deleteBefore.toInstant())));
+          new BasicDBObject().append("lastHeartbeat", new BasicDBObject("$lt", Date.from(deleteBefore.toInstant())));
       hPersistence.getCollection(LOCKS_STORE, "locks").remove(filter);
     } catch (Exception ex) {
       log.error("Error while cleaning up Persistent lock : ", ex);

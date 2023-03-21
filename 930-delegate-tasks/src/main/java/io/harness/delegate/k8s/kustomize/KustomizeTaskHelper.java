@@ -30,6 +30,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileData;
 import io.harness.cli.CliResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.K8sTaskManifestValidator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
@@ -59,6 +60,7 @@ public class KustomizeTaskHelper {
   private static final Pattern ACCUMULATING_RESOURCES_PATH_PATTERN =
       Pattern.compile("accumulating resources from '(.*?)'");
   @Inject private KustomizeClientFactory kustomizeClientFactory;
+  @Inject private K8sTaskManifestValidator k8sTaskManifestValidator;
 
   @Nonnull
   public List<FileData> build(@Nonnull String manifestFilesDirectory, @Nonnull String kustomizeBinaryPath,
@@ -122,6 +124,9 @@ public class KustomizeTaskHelper {
     if (filesToApply.size() > 1) {
       throw new InvalidRequestException("Apply with Kustomize is supported for single file only", USER);
     }
+
+    k8sTaskManifestValidator.checkFilePartOfManifest(
+        manifestFilesDirectory, filesToApply.get(0), K8sTaskManifestValidator.IS_KUSTOMIZE_OVERLAY_FOLDER);
     if (useLatestKustomizeVersion) {
       String kustomizePath = Paths.get(manifestFilesDirectory, filesToApply.get(0)).toString();
       k8sTaskHelperBase.savingPatchesToDirectory(kustomizePath, kustomizePatchesFiles, executionLogCallback);

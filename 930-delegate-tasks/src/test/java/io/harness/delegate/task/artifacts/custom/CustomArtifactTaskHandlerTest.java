@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -46,11 +47,11 @@ public class CustomArtifactTaskHandlerTest extends CategoryTest {
                                                                       .script("script")
                                                                       .build();
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
-    doReturn(artifactTaskExecutionResponse).when(customArtifactService).getBuilds(customArtifactDelegateRequest);
+    doReturn(artifactTaskExecutionResponse).when(customArtifactService).getBuilds(customArtifactDelegateRequest, null);
     ArtifactTaskExecutionResponse getBuilds = customArtifactTaskHandler.getBuilds(customArtifactDelegateRequest);
     assertThat(getBuilds).isNotNull();
-    verify(customArtifactService).getBuilds(customArtifactDelegateRequest);
-    verify(customArtifactService, times(1)).getBuilds(any());
+    verify(customArtifactService).getBuilds(eq(customArtifactDelegateRequest), any());
+    verify(customArtifactService, times(1)).getBuilds(any(), any());
   }
 
   @Test
@@ -65,12 +66,12 @@ public class CustomArtifactTaskHandlerTest extends CategoryTest {
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
     doReturn(artifactTaskExecutionResponse)
         .when(customArtifactService)
-        .getLastSuccessfulBuild(customArtifactDelegateRequest);
+        .getLastSuccessfulBuild(customArtifactDelegateRequest, null);
     ArtifactTaskExecutionResponse getBuilds =
         customArtifactTaskHandler.getLastSuccessfulBuild(customArtifactDelegateRequest);
     assertThat(getBuilds).isNotNull();
-    verify(customArtifactService).getLastSuccessfulBuild(customArtifactDelegateRequest);
-    verify(customArtifactService, times(1)).getLastSuccessfulBuild(any());
+    verify(customArtifactService).getLastSuccessfulBuild(eq(customArtifactDelegateRequest), any());
+    verify(customArtifactService, times(1)).getLastSuccessfulBuild(any(), any());
   }
 
   @Test

@@ -185,7 +185,8 @@ public class RollbackModeExecutionHelper {
       List<AdviserObtainment> adviserObtainments = planNode.getAdvisorObtainmentsForExecutionMode().get(executionMode);
       if (EmptyPredicate.isNotEmpty(adviserObtainments)) {
         IdentityPlanNode updatedNode = (IdentityPlanNode) planNodeIDToUpdatedPlanNodes.get(planNode.getUuid());
-        planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), updatedNode.withAdviserObtainments(adviserObtainments));
+        planNodeIDToUpdatedPlanNodes.put(
+            planNode.getUuid(), updatedNode.withAdviserObtainments(adviserObtainments).withUseAdviserObtainments(true));
       }
     }
   }

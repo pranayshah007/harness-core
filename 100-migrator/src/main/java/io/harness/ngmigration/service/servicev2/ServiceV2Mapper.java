@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface ServiceV2Mapper {
@@ -99,5 +100,17 @@ public interface ServiceV2Mapper {
         .primaryArtifactRef(ParameterField.createValueField("<+input>"))
         .sources(sources)
         .build();
+  }
+
+  default List<ManifestConfigWrapper> changeIdentifier(List<ManifestConfigWrapper> manifests, String prefix) {
+    if (EmptyPredicate.isEmpty(manifests)) {
+      return new ArrayList<>();
+    }
+    prefix = StringUtils.isNotBlank(prefix) ? prefix : "manifest_";
+
+    for (int i = 0; i < manifests.size(); ++i) {
+      manifests.get(i).getManifest().setIdentifier(prefix + i);
+    }
+    return manifests;
   }
 }

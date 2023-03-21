@@ -33,6 +33,11 @@ public class AbortInfoHelper {
         abortedBy = AbortedBy.builder().email(manualIssuer.getEmailId()).userName(manualIssuer.getUserId()).build();
       }
     }
+    // In case of pipeline stage, if a child pipeline is aborted, interrupt won't be registered with parent pipeline's
+    // planExecutionId
+    else {
+      abortedBy = AbortedBy.builder().userName(SYSTEM_USER).build();
+    }
     return abortedBy;
   }
 }

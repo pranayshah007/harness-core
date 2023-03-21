@@ -45,6 +45,7 @@ import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.ngexception.NGTemplateException;
+import io.harness.exception.ngexception.TemplateAlreadyExistsException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitaware.helper.TemplateMoveConfigOperationDTO;
@@ -505,7 +506,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     TemplateEntity createdEntity = templateService.create(entity, false, "", false);
     assertThat(createdEntity.isStableTemplate()).isTrue();
     assertThatThrownBy(() -> templateService.create(entity.withVersionLabel("version2"), false, "", true))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(TemplateAlreadyExistsException.class)
         .hasMessage(String.format(
             "The template with identifier template1 already exists in account %s, org orgId, project projId, if you want to create a new version version2 of this template then use save as new version option from the given template or if you want to create a new Template then use a different identifier.",
             createdEntity.getAccountId()));
