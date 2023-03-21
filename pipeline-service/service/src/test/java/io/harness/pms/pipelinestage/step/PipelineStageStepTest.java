@@ -129,7 +129,7 @@ public class PipelineStageStepTest extends CategoryTest {
                             .build();
 
     PipelineStageStepParameters stepParameters =
-        PipelineStageStepParameters.builder().stageNodeId("stageNodeId").build();
+        PipelineStageStepParameters.builder().stageNodeId("stageNodeId").triggerJsonPayload("").build();
     PipelineStageInfo info = pipelineStageStep.prepareParentStageInfo(ambiance, stepParameters);
     assertThat(info.getHasParentPipeline()).isEqualTo(true);
     assertThat(info.getStageNodeId()).isEqualTo("stageNodeId");
