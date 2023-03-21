@@ -66,6 +66,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -261,6 +262,15 @@ public class DowntimeServiceImpl implements DowntimeService {
     }
     Downtime downtime = downtimeOptional.get();
     DowntimeDTO downtimeDTO = getDowntimeDTOFromDowntime(downtime);
+    List<EntityUnavailabilityStatusesDTO> pastOrActiveInstances =
+        entityUnavailabilityStatusesService.getPastAndActiveDowntimeInstances(
+            projectParams, Collections.singletonList(identifier));
+    if (!pastOrActiveInstances.isEmpty()) {
+      throw new InvalidRequestException(String.format(
+          "Downtime with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can't be deleted, as it's SLI calculation has already started.",
+          identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          projectParams.getProjectIdentifier()));
+    }
     entityUnavailabilityStatusesService.deleteFutureDowntimeInstances(projectParams, identifier);
     entityUnavailabilityStatusesService.updateAndSaveRunningInstance(projectParams, identifier);
     outboxService.save(DowntimeDeleteEvent.builder()
@@ -609,8 +619,17 @@ public class DowntimeServiceImpl implements DowntimeService {
   private List<DowntimeListView> getDowntimeListViewFromDowntime(
       ProjectParams projectParams, List<Downtime> downtimes, Map<String, AffectedEntity> identifierAffectedEntityMap) {
     List<String> downtimeIdentifiers = downtimes.stream().map(Downtime::getIdentifier).collect(Collectors.toList());
+    List<EntityUnavailabilityStatusesDTO> pastOrActiveInstances =
+        entityUnavailabilityStatusesService.getPastAndActiveDowntimeInstances(projectParams, downtimeIdentifiers);
     List<EntityUnavailabilityStatusesDTO> activeOrFirstUpcomingInstance =
         entityUnavailabilityStatusesService.getActiveOrFirstUpcomingInstance(projectParams, downtimeIdentifiers);
+    Map<String, Integer> downtimeIdentifierToPastAndActiveInstancesCountMap = new HashMap<>();
+    for (EntityUnavailabilityStatusesDTO dto : pastOrActiveInstances) {
+      String entityId = dto.getEntityId();
+      downtimeIdentifierToPastAndActiveInstancesCountMap.put(
+          entityId, downtimeIdentifierToPastAndActiveInstancesCountMap.getOrDefault(entityId, 0) + 1);
+    }
+
     Map<String, EntityUnavailabilityStatusesDTO> downtimeIdentifierToInstancesDTOMap =
         activeOrFirstUpcomingInstance.stream().collect(
             Collectors.toMap(EntityUnavailabilityStatusesDTO::getEntityId, statusesDTO -> statusesDTO));
@@ -651,6 +670,8 @@ public class DowntimeServiceImpl implements DowntimeService {
                    .duration(downtimeTransformerMap.get(downtime.getType())
                                  .getDowntimeDuration(downtime.getDowntimeDetails()))
                    .spec(getDowntimeSpecDTO(downtime.getType(), downtime.getDowntimeDetails(), downtime.getTimezone()))
+                   .pastOrActiveInstancesCount(
+                       downtimeIdentifierToPastAndActiveInstancesCountMap.get(downtime.getIdentifier()))
                    .build())
         .collect(Collectors.toList());
   }
