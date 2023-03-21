@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.BUHA;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
@@ -257,7 +258,6 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     TerraformCloudRunOutcome terraformCloudRunOutcome = getOutcomeFromResponse(stepResponse);
     assertThat(terraformCloudRunOutcome.getJsonFilePath()).isEqualTo("<+terraformCloudPlanJson.\"provisionerId\">");
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
-    verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
     verify(helper, times(1)).saveTerraformCloudPlanExecutionDetails(any(), any(), any(), any(), any());
   }
 
@@ -284,7 +284,6 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(terraformCloudRunOutcome.getJsonFilePath()).isNull();
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     assertThat(terraformCloudRunOutcome.getOutputs().get("x1")).isEqualTo("y1");
-    verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
     verify(helper, times(1)).saveTerraformCloudPlanExecutionDetails(any(), any(), any(), any(), any());
     verify(helper, times(1)).parseTerraformOutputs(any());
   }
@@ -311,7 +310,6 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(terraformCloudRunOutcome.getJsonFilePath()).isNull();
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     assertThat(terraformCloudRunOutcome.getOutputs().get("x1")).isEqualTo("y1");
-    verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
     verify(helper, times(1)).saveTerraformCloudPlanExecutionDetails(any(), any(), any(), any(), any());
     verify(helper, times(1)).parseTerraformOutputs(any());
   }
@@ -337,8 +335,7 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(terraformCloudRunOutcome.getJsonFilePath()).isEqualTo("<+terraformCloudPlanJson.\"provisionerId\">");
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     assertThat(terraformCloudRunOutcome.getOutputs()).isNull();
-    verify(helper, times(1)).saveTerraformCloudPlanOutput(any(), any(), any());
-    verify(helper, times(1)).saveTerraformCloudPlanExecutionDetails(any(), any(), any(), any(), any());
+    verify(helper, times(1)).saveTerraformCloudPlanExecutionDetails(any(), any(), any(), any(), any(), anyBoolean());
     verify(helper, times(0)).parseTerraformOutputs(any());
   }
 
@@ -363,7 +360,6 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(terraformCloudRunOutcome.getJsonFilePath()).isNull();
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     assertThat(terraformCloudRunOutcome.getOutputs().get("x1")).isEqualTo("y1");
-    verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
     verify(helper, times(1)).updateRunDetails(any(), any());
     verify(helper, times(1)).parseTerraformOutputs(any());
   }
@@ -372,8 +368,6 @@ public class TerraformCloudRunStepTest extends CategoryTest {
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
   public void testExecuteNextLinkWithSecurityContext() throws Exception {
-    StepInputPackage stepInputPackage = StepInputPackage.builder().build();
-
     doReturn("test-account/test-org/test-project/id").when(helper).generateFullIdentifier(any(), any());
 
     when(mapper.mapRunSpecToTaskParams(any(), any()))
