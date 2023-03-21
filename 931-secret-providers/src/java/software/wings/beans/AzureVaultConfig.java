@@ -25,6 +25,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.SecretManagerCapabilities;
 import io.harness.beans.SecretManagerConfig;
+import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
@@ -68,22 +69,25 @@ public class AzureVaultConfig extends SecretManagerConfig {
   public static final String AZURE_VAULT_VALIDATION_URL = "harnessAzureVaultValidation";
   @Attributes(title = "Name", required = true) private String name;
 
-  @Attributes(title = "Azure Client Id", required = true) @NotEmpty private String clientId;
+  @Attributes(title = "Azure Client Id") private String clientId;
 
-  @Attributes(title = "Azure Secret Id", required = true)
-  @NotEmpty
-  @Encrypted(fieldName = "azure_secret_id")
-  private String secretKey;
+  @Attributes(title = "Azure Secret Id") @Encrypted(fieldName = "azure_secret_id") private String secretKey;
 
-  @Attributes(title = "Azure Tenant Id", required = true) @NotEmpty private String tenantId;
+  @Attributes(title = "Azure Tenant Id") private String tenantId;
 
-  @Attributes(title = "Azure Vault Name", required = true) private String vaultName;
+  @Attributes(title = "Azure Vault Name") private String vaultName;
 
   @Attributes(title = "Subscription") private String subscription;
 
   @Attributes(title = "delegateSelectors") private Set<String> delegateSelectors;
 
   @Builder.Default private AzureEnvironmentType azureEnvironmentType = AZURE;
+
+  @Attributes(title = "useManagedIdentity") private Boolean useManagedIdentity;
+
+  @Attributes(title = "azureManagedIdentityType") private AzureManagedIdentityType azureManagedIdentityType;
+
+  @Attributes(title = "managedClientId") private String managedClientId;
 
   @Override
   public void maskSecrets() {
@@ -164,6 +168,9 @@ public class AzureVaultConfig extends SecretManagerConfig {
                                                           .subscription(getSubscription())
                                                           .azureEnvironmentType(getAzureEnvironmentType())
                                                           .delegateSelectors(getDelegateSelectors())
+                                                          .useManagedIdentity(getUseManagedIdentity())
+                                                          .managedClientId(getManagedClientId())
+                                                          .azureManagedIdentityType(getAzureManagedIdentityType())
                                                           .build();
     updateNGSecretManagerMetadata(getNgMetadata(), ngAzureKeyVaultConfigDTO);
     if (!maskSecrets) {

@@ -686,6 +686,9 @@ public class NGVaultServiceImpl implements NGVaultService {
         .ifPresent(secretKey -> azureVaultConfig.setSecretKey(String.valueOf(secretKey.getDecryptedValue())));
     Optional.ofNullable(specDTO.getAzureEnvironmentType()).ifPresent(azureVaultConfig::setAzureEnvironmentType);
     Optional.ofNullable(specDTO.getDelegateSelectors()).ifPresent(azureVaultConfig::setDelegateSelectors);
+    Optional.ofNullable(specDTO.getUseManagedIdentity()).ifPresent(azureVaultConfig::setUseManagedIdentity);
+    Optional.ofNullable(specDTO.getManagedClientId()).ifPresent(azureVaultConfig::setManagedClientId);
+    Optional.ofNullable(specDTO.getAzureManagedIdentityType()).ifPresent(azureVaultConfig::setAzureManagedIdentityType);
     List<String> vaultNames;
     try {
       vaultNames = listVaultsInternal(accountIdentifier, azureVaultConfig);
@@ -718,6 +721,9 @@ public class NGVaultServiceImpl implements NGVaultService {
             .subscription(azureVaultConfig.getSubscription())
             .delegateSelectors(azureVaultConfig.getDelegateSelectors())
             .azureEnvironmentType(azureVaultConfig.getAzureEnvironmentType())
+            .useManagedIdentity(azureVaultConfig.getUseManagedIdentity())
+            .azureManagedIdentityType(azureVaultConfig.getAzureManagedIdentityType())
+            .managedClientId(azureVaultConfig.getManagedClientId())
             .build();
     int failedAttempts = 0;
     while (true) {

@@ -14,6 +14,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.utility.AzureUtils;
+import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConstants;
 
@@ -23,6 +24,7 @@ import com.azure.core.http.HttpPipeline;
 import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.management.profile.AzureProfile;
 import com.azure.identity.ClientSecretCredentialBuilder;
+import com.azure.identity.ManagedIdentityCredentialBuilder;
 import com.azure.resourcemanager.AzureResourceManager;
 import com.azure.resourcemanager.resources.models.Subscription;
 import com.azure.security.keyvault.secrets.SecretClient;
@@ -58,6 +60,15 @@ public class KeyVaultAuthenticator {
         .httpClient(httpClient)
         .authorityHost(AzureUtils.getAuthorityHost(azureEnvironmentType, tenantId))
         .build();
+  }
+
+  public static TokenCredential getManagedIdentityCredentials(
+      String managedClientId, AzureManagedIdentityType managedIdentityType) {
+    if (managedIdentityType.equals(AzureManagedIdentityType.USER_ASSIGNED_MANAGED_IDENTITY)) {
+      return new ManagedIdentityCredentialBuilder().clientId(managedClientId).build();
+    } else {
+      return new ManagedIdentityCredentialBuilder().build();
+    }
   }
 
   public static AzureProfile getAzureProfile(

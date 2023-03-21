@@ -38,8 +38,11 @@ import com.azure.core.http.rest.Response;
 import com.azure.core.util.Context;
 import com.azure.core.util.polling.LongRunningOperationStatus;
 import com.azure.core.util.polling.SyncPoller;
+import com.azure.identity.DefaultAzureCredential;
+import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.security.keyvault.administration.implementation.models.KeyVaultErrorException;
 import com.azure.security.keyvault.secrets.SecretClient;
+import com.azure.security.keyvault.secrets.SecretClientBuilder;
 import com.azure.security.keyvault.secrets.models.DeletedSecret;
 import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
 import com.azure.security.keyvault.secrets.models.SecretProperties;
@@ -51,6 +54,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.BooleanUtils;
 
 @ValidateOnExecution
 @Singleton
@@ -339,12 +343,21 @@ public class AzureVaultEncryptor implements VaultEncryptor {
       throw new SecretManagementDelegateException(AZURE_KEY_VAULT_OPERATION_ERROR, message, USER);
     }
   }
-
   private SecretClient getAzureVaultSecretsClient(AzureVaultConfig azureVaultConfig) {
-    return KeyVaultAuthenticator.getSecretsClient(azureVaultConfig.getVaultName(),
-        KeyVaultAuthenticator.getAzureHttpPipeline(azureVaultConfig.getClientId(), azureVaultConfig.getSecretKey(),
-            azureVaultConfig.getTenantId(), azureVaultConfig.getSubscription(),
-            azureVaultConfig.getAzureEnvironmentType()),
-        azureVaultConfig.getAzureEnvironmentType());
+    if (BooleanUtils.isTrue(azureVaultConfig.getUseManagedIdentity())) {
+      DefaultAzureCredential defaultCredential =
+          new DefaultAzureCredentialBuilder().managedIdentityClientId("<MANAGED_IDENTITY_CLIENT_ID>").build();
+
+      return new SecretClientBuilder()
+          .vaultUrl("https://{YOUR_VAULT_NAME}.vault.azure.net")
+          .credential(defaultCredential)
+          .buildClient();
+    } else {
+      return KeyVaultAuthenticator.getSecretsClient(azureVaultConfig.getVaultName(),
+          KeyVaultAuthenticator.getAzureHttpPipeline(azureVaultConfig.getClientId(), azureVaultConfig.getSecretKey(),
+              azureVaultConfig.getTenantId(), azureVaultConfig.getSubscription(),
+              azureVaultConfig.getAzureEnvironmentType()),
+          azureVaultConfig.getAzureEnvironmentType());
+    }
   }
 }
