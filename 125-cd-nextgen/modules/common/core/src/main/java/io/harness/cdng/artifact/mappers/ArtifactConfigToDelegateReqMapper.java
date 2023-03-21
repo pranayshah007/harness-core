@@ -180,13 +180,18 @@ public class ArtifactConfigToDelegateReqMapper {
 
     // If both version and versionRegex are empty, throw exception.
     if (StringUtils.isAllBlank(version, versionRegex)) {
-      throw new InvalidRequestException("Please specify version or versionRegex. Both cannot be empty.");
+      versionRegex = "*";
+    }
+
+    String scope = null;
+    if (artifactConfig.getScope() != null) {
+      scope = artifactConfig.getScope().getValue();
     }
 
     return ArtifactDelegateRequestUtils.getAzureArtifactsDelegateRequest(artifactConfig.getPackageName().getValue(),
         artifactConfig.getPackageType().getValue(), version, versionRegex, artifactConfig.getProject().getValue(),
-        artifactConfig.getScope().getValue(), artifactConfig.getFeed().getValue(), connectorRef, connectorDTO,
-        encryptedDataDetails, ArtifactSourceType.AZURE_ARTIFACTS);
+        scope, artifactConfig.getFeed().getValue(), connectorRef, connectorDTO, encryptedDataDetails,
+        ArtifactSourceType.AZURE_ARTIFACTS);
   }
 
   public AMIArtifactDelegateRequest getAMIDelegateRequest(AMIArtifactConfig artifactConfig,
