@@ -12,12 +12,10 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//960-ng-core-beans/src/main/java/io/harness/ng/core/role/dto:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
-        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:io_swagger_core_v3_swagger_annotations",
         "@maven//:io_swagger_swagger_annotations",
-        "@maven//:org_hibernate_validator_hibernate_validator",
+        "@maven//:javax_validation_validation_api",
     ],
 )
 

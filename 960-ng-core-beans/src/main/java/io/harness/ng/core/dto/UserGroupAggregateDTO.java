@@ -10,6 +10,7 @@ package io.harness.ng.core.dto;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.role.dto.RoleAssignmentMetadataDTO;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;

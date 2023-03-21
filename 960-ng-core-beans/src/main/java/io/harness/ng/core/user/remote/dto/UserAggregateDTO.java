@@ -10,7 +10,7 @@ package io.harness.ng.core.user.remote.dto;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.dto.RoleAssignmentMetadataDTO;
+import io.harness.ng.core.role.dto.RoleAssignmentMetadataDTO;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;

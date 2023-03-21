@@ -9,7 +9,7 @@ package io.harness.ng.serviceaccounts.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.dto.RoleAssignmentMetadataDTO;
+import io.harness.ng.core.role.dto.RoleAssignmentMetadataDTO;
 import io.harness.serviceaccount.ServiceAccountDTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
