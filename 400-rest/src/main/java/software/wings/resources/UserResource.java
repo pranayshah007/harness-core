@@ -420,6 +420,11 @@ public class UserResource {
       throw new InvalidRequestException("Can not delete user added via SCIM", USER);
     }
     userService.delete(accountId, userId);
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId) && userService.isUserPresent(userId)
+        && !userService.isUserPartOfAnyUserGroupInCG(userId, accountId)) {
+      throw new InvalidRequestException(
+          "User is part of NG, hence the userGroups are removed for the user. Please delete the user from NG to remove the user from Harness.");
+    }
     return new RestResponse();
   }
 

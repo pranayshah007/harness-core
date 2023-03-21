@@ -675,4 +675,6 @@ public interface UserService extends OwnedByAccount {
   boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
 
   boolean isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled();
+
+  void removeAllUserGroupsFromUser(User user, String accountId);
 }
