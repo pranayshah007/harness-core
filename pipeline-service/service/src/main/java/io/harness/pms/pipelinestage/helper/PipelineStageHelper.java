@@ -77,6 +77,16 @@ public class PipelineStageHelper {
 
   private final List<String> actionTypeNotSupported = Arrays.asList(NGFailureActionTypeConstants.RETRY,
       NGFailureActionTypeConstants.PIPELINE_ROLLBACK, NGFailureActionTypeConstants.MANUAL_INTERVENTION);
+
+  public void validateNestedChainedPipeline(PipelineEntity pipelineEntity, String stageName) {
+    try {
+      validateNestedChainedPipeline(pipelineEntity);
+    } catch (Exception e) {
+      log.error("Error during nested chaining validation");
+      throw new InvalidRequestException(
+          String.format("Chained Stage [%s] is a parent pipeline. Nested chaining is not supported", stageName));
+    }
+  }
   public void validateNestedChainedPipeline(PipelineEntity entity) {
     TemplateMergeResponseDTO templateMergeResponseDTO =
         pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity, BOOLEAN_FALSE_VALUE);
