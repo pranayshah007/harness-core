@@ -205,7 +205,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
     // If both version and versionRegex are empty, throw exception.
     if (StringUtils.isAllBlank(version, versionRegex)) {
-      throw new InvalidRequestException("Please specify version or versionRegex. Both cannot be empty.");
+      versionRegex = "*";
     }
 
     return ArtifactDelegateRequestUtils.getAMIArtifactDelegateRequest(artifactConfig.getTags().getValue(),

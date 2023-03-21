@@ -24,6 +24,7 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
@@ -48,7 +49,19 @@ public class AMIArtifactTaskHandler extends DelegateArtifactTaskHandler<AMIArtif
     List<BuildDetails> builds = amiRegistryService.listBuilds(awsInternalConfig, attributes.getRegion(),
         attributes.getTags(), attributes.getFilters(), attributes.getVersionRegex());
 
-    return ArtifactTaskExecutionResponse.builder().buildDetails(builds).build();
+    List<AMIArtifactDelegateResponse> amiArtifactDelegateResponseList = new ArrayList<>();
+
+    for (BuildDetails b : builds) {
+      AMIArtifactDelegateResponse artifactDelegateResponse =
+          AMIArtifactDelegateResponse.builder().version(b.getNumber()).sourceType(attributes.getSourceType()).build();
+
+      amiArtifactDelegateResponseList.add(artifactDelegateResponse);
+    }
+
+    return ArtifactTaskExecutionResponse.builder()
+        .artifactDelegateResponses(amiArtifactDelegateResponseList)
+        .buildDetails(builds)
+        .build();
   }
 
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(AMIArtifactDelegateRequest attributes) {
