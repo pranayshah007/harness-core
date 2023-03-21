@@ -130,11 +130,14 @@ public class RollbackModeExecutionHelper {
     ArrayNode reversedStages = stagesList.deepCopy().removeAll();
     int numStages = stagesList.size();
     for (int i = numStages - 1; i >= 0; i--) {
-      JsonNode currentStageNode = stagesList.get(i);
+      JsonNode currentNode = stagesList.get(i);
+      JsonNode currentStageNode = currentNode.get(YAMLFieldNameConstants.PARALLEL) == null
+          ? currentNode
+          : currentNode.get(YAMLFieldNameConstants.PARALLEL).get(0);
       String stageId =
           currentStageNode.get(YAMLFieldNameConstants.STAGE).get(YAMLFieldNameConstants.IDENTIFIER).asText();
       if (executedStages.contains(stageId)) {
-        reversedStages.add(currentStageNode);
+        reversedStages.add(currentNode);
       }
     }
     pipelineInnerNode.set(YAMLFieldNameConstants.STAGES, reversedStages);

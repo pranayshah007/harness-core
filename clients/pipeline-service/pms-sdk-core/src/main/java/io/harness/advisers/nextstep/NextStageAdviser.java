@@ -40,32 +40,39 @@ public class NextStageAdviser implements Adviser {
   public AdviserResponse onAdviseEvent(AdvisingEvent advisingEvent) {
     NextStepAdviserParameters nextStepAdviserParameters = (NextStepAdviserParameters) Preconditions.checkNotNull(
         kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
-    return AdviserResponse.newBuilder()
-        .setNextStepAdvise(NextStepAdvise.newBuilder().setNextNodeId(nextStepAdviserParameters.getNextNodeId()).build())
-        .setType(AdviseType.NEXT_STEP)
-        .build();
-  }
-
-  @Override
-  public boolean canAdvise(AdvisingEvent advisingEvent) {
-    boolean isAborted = advisingEvent.getToStatus() == ABORTED;
-    if (isAborted) {
-      return false;
-    }
-    if (isRollbackMode(advisingEvent.getAmbiance().getMetadata().getExecutionMode())) {
-      return true;
+    AdviserResponse goToNextStageAdvise =
+        AdviserResponse.newBuilder()
+            .setNextStepAdvise(
+                NextStepAdvise.newBuilder().setNextNodeId(nextStepAdviserParameters.getNextNodeId()).build())
+            .setType(AdviseType.NEXT_STEP)
+            .build();
+    if (isRollbackMode(advisingEvent)) {
+      return goToNextStageAdvise;
     }
     OptionalSweepingOutput optionalSweepingOutput =
         executionSweepingOutputService.resolveOptional(advisingEvent.getAmbiance(),
             RefObjectUtils.getSweepingOutputRefObject(YAMLFieldNameConstants.USE_PIPELINE_ROLLBACK_STRATEGY));
     if (!optionalSweepingOutput.isFound()) {
-      return true;
+      return goToNextStageAdvise;
     }
     OnFailPipelineRollbackOutput output = (OnFailPipelineRollbackOutput) optionalSweepingOutput.getOutput();
-    return !output.isShouldStartPipelineRollback();
+    if (output.isShouldStartPipelineRollback()) {
+      return AdviserResponse.newBuilder()
+          .setNextStepAdvise(
+              NextStepAdvise.newBuilder().setNextNodeId(nextStepAdviserParameters.getPipelineRollbackStageId()).build())
+          .setType(AdviseType.NEXT_STEP)
+          .build();
+    }
+    return goToNextStageAdvise;
   }
 
-  boolean isRollbackMode(ExecutionMode executionMode) {
+  @Override
+  public boolean canAdvise(AdvisingEvent advisingEvent) {
+    return advisingEvent.getToStatus() != ABORTED;
+  }
+
+  boolean isRollbackMode(AdvisingEvent advisingEvent) {
+    ExecutionMode executionMode = advisingEvent.getAmbiance().getMetadata().getExecutionMode();
     return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
   }
 }

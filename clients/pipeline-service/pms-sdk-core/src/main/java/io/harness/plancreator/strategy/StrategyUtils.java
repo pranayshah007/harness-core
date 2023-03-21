@@ -120,12 +120,21 @@ public class StrategyUtils {
         adviserObtainments.add(
             AdviserObtainment.newBuilder()
                 .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
-                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                    NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+                .setParameters(ByteString.copyFrom(
+                    kryoSerializer.asBytes(NextStepAdviserParameters.builder()
+                                               .nextNodeId(siblingField.getNode().getUuid())
+                                               .pipelineRollbackStageId(getPipelineRollbackStageId(stageField))
+                                               .build())))
                 .build());
       }
     }
     return adviserObtainments;
+  }
+
+  private String getPipelineRollbackStageId(YamlField currentField) {
+    List<YamlNode> stages =
+        YamlUtils.getGivenYamlNodeFromParentPath(currentField.getNode(), YAMLFieldNameConstants.STAGES).asArray();
+    return stages.get(stages.size() - 1).getField(YAMLFieldNameConstants.STAGE).getUuid();
   }
 
   public Map<String, GraphLayoutNode> modifyStageLayoutNodeGraph(YamlField yamlField) {

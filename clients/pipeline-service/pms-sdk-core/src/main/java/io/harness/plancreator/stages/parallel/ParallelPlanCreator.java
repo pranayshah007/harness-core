@@ -115,7 +115,7 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
         children.stream().map(YamlField::getNode).map(YamlNode::getUuid).collect(Collectors.toList());
 
     EdgeLayoutList.Builder stagesEdgesBuilder = EdgeLayoutList.newBuilder().addAllCurrentNodeChildren(childrenUuids);
-    if (nextSibling != null) {
+    if (nextSibling != null && !"PipelineRollback".equals(nextSibling.getType())) {
       stagesEdgesBuilder.addNextIds(nextSibling.getNode().getUuid());
     }
 
@@ -150,7 +150,8 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
       YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(currentField.getName(),
           Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.STEP, YAMLFieldNameConstants.STEP_GROUP,
               YAMLFieldNameConstants.PARALLEL));
-      if (siblingField != null && siblingField.getNode().getUuid() != null) {
+      if (siblingField != null && siblingField.getNode().getUuid() != null
+          && !"PipelineRollback".equals(siblingField.getType())) {
         AdviserObtainment adviserObtainment;
         YamlNode parallelNodeInStage = YamlUtils.findParentNode(currentField.getNode(), YAMLFieldNameConstants.STAGE);
         if (parallelNodeInStage != null) {
@@ -160,14 +161,23 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
           adviserObtainment =
               AdviserObtainment.newBuilder()
                   .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                      NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+                  .setParameters(ByteString.copyFrom(
+                      kryoSerializer.asBytes(NextStepAdviserParameters.builder()
+                                                 .nextNodeId(siblingField.getNode().getUuid())
+                                                 .pipelineRollbackStageId(getPipelineRollbackStageId(currentField))
+                                                 .build())))
                   .build();
         }
         adviserObtainments.add(adviserObtainment);
       }
     }
     return adviserObtainments;
+  }
+
+  private String getPipelineRollbackStageId(YamlField currentField) {
+    List<YamlNode> stages =
+        YamlUtils.getGivenYamlNodeFromParentPath(currentField.getNode(), YAMLFieldNameConstants.STAGES).asArray();
+    return stages.get(stages.size() - 1).getField(YAMLFieldNameConstants.STAGE).getUuid();
   }
 
   @Override

@@ -21,4 +21,5 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("nextStepAdviserParameters")
 public class NextStepAdviserParameters {
   String nextNodeId;
+  String pipelineRollbackStageId;
 }

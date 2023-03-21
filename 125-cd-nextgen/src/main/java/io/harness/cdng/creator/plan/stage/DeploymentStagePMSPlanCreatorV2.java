@@ -12,8 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
-import io.harness.advisers.prb.PipelineRollbackStartAdvisor;
-import io.harness.advisers.prb.PipelineRollbackStartParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
@@ -195,15 +193,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     if (!MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
       adviserObtainments = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
     }
-    if (!isRollbackMode(ctx.getGlobalContext().get("metadata").getMetadata().getExecutionMode())) {
-      adviserObtainments.add(AdviserObtainment.newBuilder()
-                                 .setType(PipelineRollbackStartAdvisor.ADVISER_TYPE)
-                                 .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                                     PipelineRollbackStartParameters.builder()
-                                         .pipelineRollbackStageId(getPipelineRollbackStageId(ctx.getCurrentField()))
-                                         .build())))
-                                 .build());
-    }
     // We need to swap the ids if strategy is present
     PlanNodeBuilder builder =
         PlanNode.builder()
@@ -226,12 +215,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       builder.executionInputTemplate(ctx.getExecutionInputTemplate());
     }
     return builder.build();
-  }
-
-  private String getPipelineRollbackStageId(YamlField currentField) {
-    List<YamlNode> stages =
-        YamlUtils.getGivenYamlNodeFromParentPath(currentField.getNode(), YAMLFieldNameConstants.STAGES).asArray();
-    return stages.get(stages.size() - 1).getField(YAMLFieldNameConstants.STAGE).getUuid();
   }
 
   public String getIdentifierWithExpression(PlanCreationContext ctx, DeploymentStageNode node, String identifier) {
