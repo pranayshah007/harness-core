@@ -17,6 +17,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -75,6 +76,11 @@ public class PipelineStageHelper {
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
   @Inject private final PipelineStageHelperV1 pipelineStageHelperV1;
 
+  private static String NESTED_ERROR_EXCEPTION_HINT =
+      "Check if the Chained Pipeline at stage [%s] is not a Parent Pipeline";
+  private static String NESTED_ERROR_EXCEPTION =
+      "Chained Stage [%s] is a parent pipeline. Nested chaining is not supported";
+
   private final List<String> actionTypeNotSupported = Arrays.asList(NGFailureActionTypeConstants.RETRY,
       NGFailureActionTypeConstants.PIPELINE_ROLLBACK, NGFailureActionTypeConstants.MANUAL_INTERVENTION);
 
@@ -82,9 +88,9 @@ public class PipelineStageHelper {
     try {
       validateNestedChainedPipeline(pipelineEntity);
     } catch (Exception e) {
-      log.error("Error during nested chaining validation");
-      throw new InvalidRequestException(
-          String.format("Chained Stage [%s] is a parent pipeline. Nested chaining is not supported", stageName));
+      log.error("Error during nested chaining validation ", e);
+      throw NestedExceptionUtils.hintWithExplanationException(String.format(NESTED_ERROR_EXCEPTION_HINT, stageName),
+          String.format(NESTED_ERROR_EXCEPTION, stageName), null);
     }
   }
   public void validateNestedChainedPipeline(PipelineEntity entity) {
