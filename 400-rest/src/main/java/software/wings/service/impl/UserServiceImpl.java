@@ -1607,7 +1607,7 @@ public class UserServiceImpl implements UserService {
     return new ArrayList<>();
   }
 
-  private void removeUserFromUserGroups(User user, List<UserGroup> userGroups, boolean sendNotification) {
+  public void removeUserFromUserGroups(User user, List<UserGroup> userGroups, boolean sendNotification) {
     if (isNotEmpty(userGroups)) {
       final User userFinal = user;
       userGroups.forEach(userGroup -> {
@@ -2938,7 +2938,14 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public boolean isUserPartOfAnyUserGroupInCG(String userId, String accountId) {
-    User user = get(userId);
+    User user;
+    try {
+      user = get(userId);
+    } catch (UnauthorizedException exception) {
+      log.warn("User {}, is not found in Harness account {}", userId, accountId);
+      return false;
+    }
+
     List<UserGroup> allUserGroupList = getUserGroupsOfAccount(accountId);
     if (isEmpty(allUserGroupList)) {
       return false;
@@ -2969,7 +2976,7 @@ public class UserServiceImpl implements UserService {
         deleteInternal(accountId, userId, true, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
       } else {
         log.warn("User is removed from all user groups in CG");
-        user.setUserGroups(new ArrayList<>());
+        removeAllUserGroupsFromUser(user, accountId);
         log.error(
             "User {} cannot be deleted in CG, since it is active on NG in account {}", user.getEmail(), accountId);
       }
@@ -3005,14 +3012,7 @@ public class UserServiceImpl implements UserService {
       }
 
       if (updateUsergroup) {
-        PageResponse<UserGroup> pageResponse = userGroupService.list(accountId,
-            aPageRequest()
-                .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
-                .addFilter(UserGroupKeys.memberIds, HAS, user.getUuid())
-                .build(),
-            true, null, null);
-        List<UserGroup> userGroupList = pageResponse.getResponse();
-        removeUserFromUserGroups(user, userGroupList, false);
+        removeAllUserGroupsFromUser(user, accountId);
       }
 
       if (updatedActiveAccounts.isEmpty() && updatedPendingAccounts.isEmpty()) {
@@ -4182,5 +4182,17 @@ public class UserServiceImpl implements UserService {
     segmentHelper.reportTrackEvent(SYSTEM, SETUP_ACCOUNT_FROM_MARKETPLACE, properties, integrations);
 
     return accountId;
+  }
+
+  @Override
+  public void removeAllUserGroupsFromUser(User user, String accountId) {
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId,
+        aPageRequest()
+            .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
+            .addFilter(UserGroupKeys.memberIds, HAS, user.getUuid())
+            .build(),
+        true, null, null);
+    List<UserGroup> userGroupList = pageResponse.getResponse();
+    removeUserFromUserGroups(user, userGroupList, false);
   }
 }

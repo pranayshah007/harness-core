@@ -232,6 +232,7 @@ public enum EntityType {
   AQUA_TRIVY(ModuleType.STO, EntityTypeConstants.AQUA_TRIVY, IdentifierRef.class, EntityYamlRootNames.AQUA_TRIVY),
   @JsonProperty(EntityTypeConstants.AWS_ECR)
   AWS_ECR(ModuleType.STO, EntityTypeConstants.AWS_ECR, IdentifierRef.class, EntityYamlRootNames.AWS_ECR),
+
   @JsonProperty(EntityTypeConstants.BANDIT)
   BANDIT(ModuleType.STO, EntityTypeConstants.BANDIT, IdentifierRef.class, EntityYamlRootNames.BANDIT),
   @JsonProperty(EntityTypeConstants.BLACKDUCK)
@@ -559,7 +560,11 @@ public enum EntityType {
   CD_SSCA_ORCHESTRATION(ModuleType.CD, EntityTypeConstants.CD_SSCA_ORCHESTRATION, IdentifierRef.class),
   @JsonProperty(EntityTypeConstants.TAS_ROUTE_MAPPING)
   TAS_ROUTE_MAPPING(
-      ModuleType.CD, EntityTypeConstants.TAS_ROUTE_MAPPING, IdentifierRef.class, EntityYamlRootNames.TAS_ROUTE_MAPPING);
+      ModuleType.CD, EntityTypeConstants.TAS_ROUTE_MAPPING, IdentifierRef.class, EntityYamlRootNames.TAS_ROUTE_MAPPING),
+
+  @JsonProperty(EntityTypeConstants.AWS_SECURITY_HUB)
+  AWS_SECURITY_HUB(
+      ModuleType.STO, EntityTypeConstants.AWS_SECURITY_HUB, IdentifierRef.class, EntityYamlRootNames.AWS_SECURITY_HUB);
 
   private final ModuleType moduleType;
   String yamlName;

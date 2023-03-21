@@ -33,6 +33,7 @@ import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.AzureK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
+import io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -97,6 +98,11 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
     if (k8sInfraDelegateConfig instanceof AzureK8sInfraDelegateConfig) {
       capabilities.addAll(AzureCapabilityHelper.fetchRequiredExecutionCapabilities(
           ((AzureK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAzureConnectorDTO(), maskingEvaluator));
+    }
+
+    if (k8sInfraDelegateConfig instanceof EksK8sInfraDelegateConfig) {
+      capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+          ((EksK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAwsConnectorDTO(), maskingEvaluator));
     }
 
     if (manifestDelegateConfig != null) {

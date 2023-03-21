@@ -156,6 +156,7 @@ public class PluginSettingUtils {
   public static final String PLUGIN_DOCKER_REGISTRY = "PLUGIN_DOCKER_REGISTRY";
   @Inject private CodebaseUtils codebaseUtils;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
 
   public Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
       long timeout, Ambiance ambiance, Type infraType, boolean isMandatory) {
@@ -187,8 +188,8 @@ public class PluginSettingUtils {
       case GIT_CLONE:
         return getGitCloneStepInfoEnvVariables((GitCloneStepInfo) stepInfo, ambiance, identifier);
       case SSCA_ORCHESTRATION:
-        return SscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
-            (SscaOrchestrationStepInfo) stepInfo, identifier);
+        return sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
+            (SscaOrchestrationStepInfo) stepInfo, identifier, ambiance);
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
     }

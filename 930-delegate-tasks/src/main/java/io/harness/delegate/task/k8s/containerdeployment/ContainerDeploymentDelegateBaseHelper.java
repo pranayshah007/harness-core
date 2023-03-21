@@ -147,7 +147,7 @@ public class ContainerDeploymentDelegateBaseHelper {
                 .useClusterAdminCredentials(azureK8sInfraDelegateConfig.isUseClusterAdminCredentials())
                 .certificateWorkingDirectory(workingDirectory)
                 .build();
-        return azureAsyncTaskHelper.getClusterConfig(azureConfigContext);
+        return azureAsyncTaskHelper.getClusterConfig(azureConfigContext, logCallback);
       } catch (IOException ioe) {
         throw NestedExceptionUtils.hintWithExplanationException("Failed to authenticate with Azure",
             "Please check you Azure connector configuration or delegate filesystem permissions.",
