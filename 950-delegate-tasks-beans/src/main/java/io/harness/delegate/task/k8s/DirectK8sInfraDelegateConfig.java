@@ -20,4 +20,10 @@ public class DirectK8sInfraDelegateConfig implements K8sInfraDelegateConfig {
   String namespace;
   KubernetesClusterConfigDTO kubernetesClusterConfigDTO;
   List<EncryptedDataDetail> encryptionDataDetails;
+  boolean useSocketCapability;
+
+  @Override
+  public boolean useSocketCapability() {
+    return useSocketCapability;
+  }
 }

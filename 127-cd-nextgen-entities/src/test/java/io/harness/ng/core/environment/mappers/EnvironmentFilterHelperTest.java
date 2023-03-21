@@ -31,6 +31,7 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
 import java.beans.PropertyDescriptor;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -285,5 +286,60 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
     assertThat(criteriaObj.toJson())
         .isEqualTo(
             "{\"accountId\": \"accountIdentifier\", \"deleted\": false, \"$and\": [{\"$or\": [{\"orgIdentifier\": null, \"projectIdentifier\": null}]}, {\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"qa\", \"options\": \"i\"}}}]}]}");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testListFilteringWithRefsAtProjectLevel() {
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(accountIdentifier, orgIdentifier,
+        projectIdentifier, Arrays.asList("account.accEnv", "org.orgEnv", "projEnv"), false);
+    Document criteriaObj = criteria.getCriteriaObject();
+    // 3 criteria for org/project
+    assertThat(criteriaObj.toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accountIdentifier\", \"$and\": [{\"$or\": [{\"orgIdentifier\": null, \"projectIdentifier\": null, \"identifier\": {\"$in\": [\"accEnv\"]}}, {\"orgIdentifier\": \"orgIdentifier\", \"projectIdentifier\": null, \"identifier\": {\"$in\": [\"orgEnv\"]}}, {\"orgIdentifier\": \"orgIdentifier\", \"projectIdentifier\": \"projectIdentifier\", \"identifier\": {\"$in\": [\"projEnv\"]}}]}], \"deleted\": false}");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testListFilteringWithoutRefsAtProjectLevel() {
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, projectIdentifier, null, false);
+    Document criteriaObj = criteria.getCriteriaObject();
+    assertThat(criteriaObj.toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accountIdentifier\", \"orgIdentifier\": \"orgIdentifier\", \"projectIdentifier\": \"projectIdentifier\", \"deleted\": false}");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testListFilteringWithNullRefsAtProjectLevel() {
+    List<String> envRefs = new ArrayList<>();
+    envRefs.add(null);
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, projectIdentifier, envRefs, false);
+    Document criteriaObj = criteria.getCriteriaObject();
+    assertThat(criteriaObj.toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accountIdentifier\", \"orgIdentifier\": \"orgIdentifier\", \"projectIdentifier\": \"projectIdentifier\", \"deleted\": false}");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testListFilteringIncludingNullRefsAtProjectLevel() {
+    List<String> envRefs = new ArrayList<>();
+    envRefs.add(null);
+    envRefs.add("env");
+
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, projectIdentifier, envRefs, false);
+    Document criteriaObj = criteria.getCriteriaObject();
+    assertThat(criteriaObj.toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accountIdentifier\", \"$and\": [{\"$or\": [{\"orgIdentifier\": \"orgIdentifier\", \"projectIdentifier\": \"projectIdentifier\", \"identifier\": {\"$in\": [\"env\"]}}]}], \"deleted\": false}");
   }
 }

@@ -326,6 +326,7 @@ public enum FeatureName {
   CDC_DASHBOARD_ENHANCEMENT_NG("New APIs added to send trend object in response for change rates", HarnessTeam.CDC),
   CDC_SERVICE_DASHBOARD_REVAMP_NG("Service Dashboard Revamp is behind this FF", HarnessTeam.CDC),
   DEBEZIUM_ENABLED,
+  USE_CDC_FOR_PIPELINE_HANDLER,
   TEMPLATE_SCHEMA_VALIDATION,
   YAML_APIS_GRANULAR_PERMISSION,
   AZURE_ARTIFACTS_NG,
@@ -643,7 +644,10 @@ public enum FeatureName {
       "Allow migration of secrets from local to gcpKms in ng prod3", HarnessTeam.PL),
   CDS_MANIFEST_LAST_STEP("Show last step of the manifest directly when user is editing manifest", HarnessTeam.CDP),
   CHAOS_SRM_EVENT(
-      "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS);
+      "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS),
+  PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", HarnessTeam.PLG),
+  CDS_K8S_SOCKET_CAPABILITY_CHECK_NG(
+      "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

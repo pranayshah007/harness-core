@@ -14,6 +14,7 @@ import io.harness.changehandlers.PlanExecutionSummaryCIStageChangeDataHandler;
 import io.harness.changehandlers.PlanExecutionSummaryCdChangeDataHandler;
 import io.harness.changehandlers.PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew;
 import io.harness.changehandlers.PlanExecutionSummaryChangeDataHandler;
+import io.harness.changehandlers.PlanExecutionSummaryChangeDataHandlerAllStages;
 import io.harness.changehandlers.TagsInfoNGCDChangeDataHandler;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
@@ -26,6 +27,7 @@ public class PipelineExecutionSummaryEntityCDCEntity implements CDCEntity<Pipeli
   @Inject private PlanExecutionSummaryChangeDataHandler planExecutionSummaryChangeDataHandler;
   @Inject private PlanExecutionSummaryCdChangeDataHandler planExecutionSummaryCdChangeDataHandler;
   @Inject private PlanExecutionSummaryCIStageChangeDataHandler planExecutionSummaryCIStageChangeDataHandler;
+  @Inject private PlanExecutionSummaryChangeDataHandlerAllStages planExecutionSummaryChangeDataHandlerAllStages;
   @Inject private TagsInfoNGCDChangeDataHandler tagsInfoNGCDChangeDataHandler;
   @Inject
   private PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew
@@ -33,7 +35,9 @@ public class PipelineExecutionSummaryEntityCDCEntity implements CDCEntity<Pipeli
 
   @Override
   public ChangeHandler getChangeHandler(String handlerClass) {
-    if (handlerClass.contentEquals("PipelineExecutionSummaryEntity")) {
+    if (handlerClass.contentEquals("PipelineExecutionSummaryEntityAllStages")) {
+      return planExecutionSummaryChangeDataHandlerAllStages;
+    } else if (handlerClass.contentEquals("PipelineExecutionSummaryEntity")) {
       return planExecutionSummaryChangeDataHandler;
     } else if (handlerClass.contentEquals("PipelineExecutionSummaryEntityCD")) {
       return planExecutionSummaryCdChangeDataHandler;
