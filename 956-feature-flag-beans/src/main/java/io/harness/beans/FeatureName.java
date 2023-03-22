@@ -659,7 +659,8 @@ public enum FeatureName {
   CDS_K8S_SOCKET_CAPABILITY_CHECK_NG(
       "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP),
   PL_SELECT_SPECIFIC_SERVICE_ACCOUNT_IN_RESOURCE_GROUP(
-      "Allow selection of specific service accounts in Resource group", HarnessTeam.PL);
+      "Allow selection of specific service accounts in Resource group", HarnessTeam.PL),
+  FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE);
 
   @Deprecated
   FeatureName() {
