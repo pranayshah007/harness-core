@@ -236,7 +236,6 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
     if (secretManagerConfig.isTemplatized()) {
       updateRuntimeParameters(secretManagerConfig, runtimeParameters, true);
     }
-    updateConfigForAppRoleTokenRenewal(secretManagerConfig, accountId);
     return secretManagerConfig;
   }
 
@@ -247,7 +246,6 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
       decryptEncryptionConfigSecrets(accountId, secretManagerConfig, maskSecrets);
       secretManagerConfig.setNumOfEncryptedValue(getEncryptedDataCount(accountId, entityId));
     }
-    updateConfigForAppRoleTokenRenewal(secretManagerConfig, accountId);
     return secretManagerConfig;
   }
 
@@ -316,15 +314,6 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
           .equal(null)
           .enableValidation()
           .get();
-    }
-  }
-
-  private void updateConfigForAppRoleTokenRenewal(SecretManagerConfig secretManagerConfig, String accountId) {
-    if ((secretManagerConfig instanceof BaseVaultConfig)
-        && (((BaseVaultConfig) secretManagerConfig).getAccessType() == APP_ROLE)
-        && ((BaseVaultConfig) secretManagerConfig).getRenewAppRoleToken()
-        && (accountService.isFeatureFlagEnabled(FeatureName.DO_NOT_RENEW_APPROLE_TOKEN.name(), accountId))) {
-      ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
     }
   }
 

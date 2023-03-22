@@ -116,11 +116,6 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
                                      .validateSecretManagerConfiguration(accountIdentifier, encryptionConfig);
             } else {
               VaultConfig vaultConfig = (VaultConfig) encryptionConfig;
-              if (APP_ROLE.equals(vaultConfig.getAccessType())
-                  && (ngFeatureFlagHelperService.isEnabled(
-                      accountIdentifier, FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
-                vaultConfig.setRenewAppRoleToken(false);
-              }
               if (!vaultConfig.isReadOnly()) {
                 validationResult = vaultEncryptorsRegistry.getVaultEncryptor(VAULT).validateSecretManagerConfiguration(
                     accountIdentifier, vaultConfig);

@@ -29,8 +29,6 @@ public interface NGVaultService {
 
   List<SecretEngineSummary> listSecretEngines(BaseVaultConfig baseVaultConfig);
 
-  void renewAppRoleClientToken(VaultConnector vaultConnector);
-
   VaultAppRoleLoginResult appRoleLogin(BaseVaultConfig vaultConfig);
 
   SecretManagerMetadataDTO getListOfEngines(String accountIdentifier, SecretManagerMetadataRequestDTO requestDTO);

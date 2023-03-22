@@ -44,72 +44,6 @@ public class VaultSecretManagerRenewalHandlerTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  public void testRenewalForAppRoleVaultConfig_customInterval_shouldSucceed() {
-    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAppRole("appRoleId", "secretId");
-    vaultConfig.setAccountId("accountId");
-    vaultConfig.setRenewalInterval(5);
-    vaultConfig.setRenewedAt(System.currentTimeMillis() - Duration.ofMinutes(5).toMillis());
-    vaultSecretManagerRenewalHandler.handle(vaultConfig);
-    verify(vaultService, times(1)).renewAppRoleClientToken(vaultConfig);
-    verify(vaultService, times(0)).renewToken(any());
-    verifySuccessAlertInteraction(vaultConfig.getAccountId());
-  }
-
-  @Test
-  @Owner(developers = UTKARSH)
-  @Category(UnitTests.class)
-  public void testRenewalForAppRoleVaultConfig_customInterval_shouldNotHappen() {
-    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAppRole("appRoleId", "secretId");
-    vaultConfig.setAccountId("accountId");
-    vaultConfig.setRenewalInterval(5);
-    vaultConfig.setRenewedAt(System.currentTimeMillis() - Duration.ofMinutes(2).toMillis());
-    vaultSecretManagerRenewalHandler.handle(vaultConfig);
-    verifyInteractionWithNoMocks();
-  }
-
-  @Test
-  @Owner(developers = UTKARSH)
-  @Category(UnitTests.class)
-  public void testRenewalForAppRoleVaultConfig_disabled_shouldNotHappen() {
-    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAppRole("appRoleId", "secretId");
-    vaultConfig.setAccountId("accountId");
-    vaultConfig.setRenewalInterval(0);
-    vaultConfig.setRenewedAt(System.currentTimeMillis() - Duration.ofMinutes(15).toMillis());
-    vaultSecretManagerRenewalHandler.handle(vaultConfig);
-    verifyInteractionWithNoMocks();
-  }
-
-  @Test
-  @Owner(developers = VIKAS_M)
-  @Category(UnitTests.class)
-  public void testRenewalForAppRoleVaultConfig_withRenewAppRoleTokenSetToFalse_shouldNotPass() {
-    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAppRole("appRoleId", "secretId");
-    vaultConfig.setAccountId("accountId");
-    vaultConfig.setRenewalInterval(5);
-    vaultConfig.setRenewedAt(System.currentTimeMillis() - Duration.ofMinutes(5).toMillis());
-    vaultConfig.setRenewAppRoleToken(false);
-    vaultSecretManagerRenewalHandler.handle(vaultConfig);
-    verify(vaultService, times(0)).renewAppRoleClientToken(any());
-  }
-
-  @Test
-  @Owner(developers = VIKAS_M)
-  @Category(UnitTests.class)
-  public void testRenewalForAppRoleVaultConfig_withRenewAppRoleSetToTrue_shouldPass() {
-    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAppRole("appRoleId", "secretId");
-    vaultConfig.setAccountId("accountId");
-    vaultConfig.setRenewalInterval(5);
-    vaultConfig.setRenewedAt(System.currentTimeMillis() - Duration.ofMinutes(5).toMillis());
-    vaultConfig.setRenewAppRoleToken(true);
-    vaultSecretManagerRenewalHandler.handle(vaultConfig);
-    verify(vaultService, times(1)).renewAppRoleClientToken(vaultConfig);
-    verify(vaultService, times(0)).renewToken(any());
-    verifySuccessAlertInteraction(vaultConfig.getAccountId());
-  }
-
-  @Test
-  @Owner(developers = UTKARSH)
-  @Category(UnitTests.class)
   public void testRenewalForTokenVaultConfig_disabled_shouldNotHappen() {
     VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAuthToken("authToken");
     vaultSecretManagerRenewalHandler.handle(vaultConfig);
@@ -136,7 +70,6 @@ public class VaultSecretManagerRenewalHandlerTest extends WingsBaseTest {
     vaultConfig.setRenewalInterval(5);
     vaultConfig.setRenewedAt(System.currentTimeMillis() - Duration.ofMinutes(10).toMillis());
     vaultSecretManagerRenewalHandler.handle(vaultConfig);
-    verify(vaultService, times(0)).renewAppRoleClientToken(any());
     verify(vaultService, times(1)).renewToken(vaultConfig);
     verifySuccessAlertInteraction(vaultConfig.getAccountId());
   }
@@ -151,28 +84,11 @@ public class VaultSecretManagerRenewalHandlerTest extends WingsBaseTest {
     vaultConfig.setRenewedAt(System.currentTimeMillis() - Duration.ofMinutes(10).toMillis());
     doThrow(new RuntimeException()).when(vaultService).renewToken(vaultConfig);
     vaultSecretManagerRenewalHandler.handle(vaultConfig);
-    verify(vaultService, times(0)).renewAppRoleClientToken(any());
     verify(vaultService, times(1)).renewToken(vaultConfig);
     verifyFailureAlertInteraction(vaultConfig.getAccountId());
   }
 
-  @Test
-  @Owner(developers = UTKARSH)
-  @Category(UnitTests.class)
-  public void testRenewalForAppRoleConfig_shouldFail() {
-    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAppRole("appRole", "secretId");
-    vaultConfig.setAccountId("accountId");
-    vaultConfig.setRenewalInterval(5);
-    vaultConfig.setRenewedAt(System.currentTimeMillis() - Duration.ofMinutes(10).toMillis());
-    doThrow(new RuntimeException()).when(vaultService).renewAppRoleClientToken(vaultConfig);
-    vaultSecretManagerRenewalHandler.handle(vaultConfig);
-    verify(vaultService, times(1)).renewAppRoleClientToken(any());
-    verify(vaultService, times(0)).renewToken(vaultConfig);
-    verifyFailureAlertInteraction(vaultConfig.getAccountId());
-  }
-
   private void verifyInteractionWithNoMocks() {
-    verify(vaultService, times(0)).renewAppRoleClientToken(any());
     verify(vaultService, times(0)).renewToken(any());
     verify(alertService, times(0)).closeAlert(any(), any(), any(), any());
     verify(alertService, times(0)).openAlert(any(), any(), any(), any());

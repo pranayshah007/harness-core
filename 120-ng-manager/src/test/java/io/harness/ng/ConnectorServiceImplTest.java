@@ -91,65 +91,6 @@ public class ConnectorServiceImplTest extends CategoryTest {
         instrumentationHelper, opaConnectorService, ngFeatureFlagHelperService));
   }
 
-  private ConnectorDTO getRequestDTO_vaultAppRole() {
-    SecretRefData secretRefData = new SecretRefData(randomAlphabetic(10));
-    secretRefData.setDecryptedValue(randomAlphabetic(5).toCharArray());
-    ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder().build();
-    connectorInfo.setConnectorType(ConnectorType.VAULT);
-    connectorInfo.setConnectorConfig(VaultConnectorDTO.builder()
-                                         .vaultUrl("https://vaultqa.harness.io")
-                                         .secretEngineVersion(1)
-                                         .appRoleId(randomAlphabetic(10))
-                                         .secretId(secretRefData)
-                                         .renewalIntervalMinutes(10)
-                                         .build());
-    connectorInfo.setName("name");
-    connectorInfo.setIdentifier("identifier");
-    connectorInfo.setOrgIdentifier("orgIdentifier");
-    connectorInfo.setProjectIdentifier("projectIdentifier");
-    return ConnectorDTO.builder().connectorInfo(connectorInfo).build();
-  }
-
-  @Test
-  @Owner(developers = VIKAS_M)
-  @Category(UnitTests.class)
-  public void createConnector_appRoleWithFFEnabled() {
-    ConnectorDTO connectorDTO = getRequestDTO_vaultAppRole();
-    String accountIdentifier = randomAlphabetic(10);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
-    when(harnessManagedConnectorHelper.isHarnessManagedSecretManager(any())).thenReturn(true);
-    when(gitSyncSdkService.isDefaultBranch(any(), any(), any())).thenReturn(false);
-    ArgumentCaptor<ConnectorDTO> argumentCaptor = ArgumentCaptor.forClass(ConnectorDTO.class);
-    when(secretManagerConnectorService.create(argumentCaptor.capture(), any(), any()))
-        .thenReturn(ConnectorResponseDTO.builder().build());
-    when(instrumentationHelper.sendConnectorCreateEvent(any(), any())).thenReturn(null);
-
-    connectorService.create(connectorDTO, accountIdentifier, ChangeType.ADD);
-    VaultConnectorDTO vaultConnectorDTO =
-        (VaultConnectorDTO) argumentCaptor.getValue().getConnectorInfo().getConnectorConfig();
-    assertThat(vaultConnectorDTO.isRenewAppRoleToken()).isEqualTo(false);
-  }
-
-  @Test
-  @Owner(developers = VIKAS_M)
-  @Category(UnitTests.class)
-  public void createConnector_appRoleWithFFDisabled() {
-    ConnectorDTO connectorDTO = getRequestDTO_vaultAppRole();
-    String accountIdentifier = randomAlphabetic(10);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
-    when(harnessManagedConnectorHelper.isHarnessManagedSecretManager(any())).thenReturn(true);
-    when(gitSyncSdkService.isDefaultBranch(any(), any(), any())).thenReturn(false);
-    ArgumentCaptor<ConnectorDTO> argumentCaptor = ArgumentCaptor.forClass(ConnectorDTO.class);
-    when(secretManagerConnectorService.create(argumentCaptor.capture(), any(), any()))
-        .thenReturn(ConnectorResponseDTO.builder().build());
-    when(instrumentationHelper.sendConnectorCreateEvent(any(), any())).thenReturn(null);
-
-    connectorService.create(connectorDTO, accountIdentifier, ChangeType.ADD);
-    VaultConnectorDTO vaultConnectorDTO =
-        (VaultConnectorDTO) argumentCaptor.getValue().getConnectorInfo().getConnectorConfig();
-    assertThat(vaultConnectorDTO.isRenewAppRoleToken()).isEqualTo(true);
-  }
-
   @Test
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)

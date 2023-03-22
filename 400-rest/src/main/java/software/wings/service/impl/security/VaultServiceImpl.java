@@ -248,10 +248,6 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
 
     checkIfTemplatizedSecretManagerCanBeCreatedOrUpdated(vaultConfig);
 
-    // App Role Token renew FF
-    vaultConfig.setRenewAppRoleToken(
-        !accountService.isFeatureFlagEnabled(FeatureName.DO_NOT_RENEW_APPROLE_TOKEN.name(), accountId));
-
     return isBlank(vaultConfig.getUuid()) ? saveVaultConfig(accountId, vaultConfig, validateBySavingTestSecret)
                                           : updateVaultConfig(accountId, vaultConfig, true, validateBySavingTestSecret);
   }

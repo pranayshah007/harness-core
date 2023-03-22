@@ -59,7 +59,6 @@ public class NGVaultSecretManagerRenewalHandlerTest extends CategoryTest {
     when(mongoTemplate.findById(any(), any())).thenReturn(vaultConnector);
     vaultSecretManagerRenewalHandler.handle(vaultConnector);
     verify(ngVaultService, times(1)).renewToken(vaultConnector);
-    verify(ngVaultService, times(0)).renewAppRoleClientToken(any());
   }
 
   @Test
@@ -72,7 +71,6 @@ public class NGVaultSecretManagerRenewalHandlerTest extends CategoryTest {
     when(mongoTemplate.findById(any(), any())).thenReturn(vaultConnector);
     vaultSecretManagerRenewalHandler.handle(vaultConnector);
     verify(ngVaultService, times(0)).renewToken(any());
-    verify(ngVaultService, times(1)).renewAppRoleClientToken(vaultConnector);
   }
 
   @Test
@@ -85,7 +83,6 @@ public class NGVaultSecretManagerRenewalHandlerTest extends CategoryTest {
     when(mongoTemplate.findById(any(), any())).thenReturn(vaultConnector);
     vaultSecretManagerRenewalHandler.handle(vaultConnector);
     verify(ngVaultService, times(0)).renewToken(any());
-    verify(ngVaultService, times(0)).renewAppRoleClientToken(any());
   }
 
   @Test
@@ -98,7 +95,6 @@ public class NGVaultSecretManagerRenewalHandlerTest extends CategoryTest {
     when(mongoTemplate.findById(any(), any())).thenReturn(vaultConnector);
     vaultSecretManagerRenewalHandler.handle(vaultConnector);
     verify(ngVaultService, times(0)).renewToken(any());
-    verify(ngVaultService, times(0)).renewAppRoleClientToken(any());
   }
 
   @Test
@@ -111,7 +107,6 @@ public class NGVaultSecretManagerRenewalHandlerTest extends CategoryTest {
     when(mongoTemplate.findById(any(), any())).thenReturn(vaultConnector);
     vaultSecretManagerRenewalHandler.handle(vaultConnector);
     verify(ngVaultService, times(0)).renewToken(any());
-    verify(ngVaultService, times(0)).renewAppRoleClientToken(any());
   }
 
   @Test
@@ -125,7 +120,6 @@ public class NGVaultSecretManagerRenewalHandlerTest extends CategoryTest {
     when(mongoTemplate.findById(any(), any())).thenReturn(vaultConnector);
     vaultSecretManagerRenewalHandler.handle(vaultConnector);
     verify(ngVaultService, times(0)).renewToken(vaultConnector);
-    verify(ngVaultService, times(0)).renewAppRoleClientToken(any());
   }
 
   private VaultConnector getAppRoleBasedVault() {

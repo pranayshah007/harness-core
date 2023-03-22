@@ -44,8 +44,6 @@ public interface VaultService {
 
   VaultTokenLookupResult tokenLookup(BaseVaultConfig baseVaultConfig);
 
-  void renewAppRoleClientToken(BaseVaultConfig baseVaultConfig);
-
   List<SecretChangeLog> getVaultSecretChangeLogs(EncryptedData encryptedData, VaultConfig vaultConfig);
 
   KmsSetupAlert getRenewalAlert(BaseVaultConfig baseVaultConfig);

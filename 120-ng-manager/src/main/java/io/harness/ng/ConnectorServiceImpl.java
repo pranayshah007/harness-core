@@ -170,19 +170,6 @@ public class ConnectorServiceImpl implements ConnectorService {
     return createInternal(connector, accountIdentifier, gitChangeType);
   }
 
-  private void skipAppRoleRenewalForVaultConnector(ConnectorDTO connectorDTO, String accountIdentifier) {
-    if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof VaultConnectorDTO) {
-      ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
-      VaultConnectorDTO vaultConnectorDTO = (VaultConnectorDTO) connectorInfoDTO.getConnectorConfig();
-      if (AccessType.APP_ROLE.equals(vaultConnectorDTO.getAccessType())) {
-        vaultConnectorDTO.setRenewAppRoleToken(
-            !ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.DO_NOT_RENEW_APPROLE_TOKEN));
-        connectorInfoDTO.setConnectorConfig(vaultConnectorDTO);
-        connectorDTO.setConnectorInfo(connectorInfoDTO);
-      }
-    }
-  }
-
   private void applyPatAuthFFCheckForJiraConnector(ConnectorDTO connectorDTO, String accountIdentifier) {
     if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof JiraConnectorDTO) {
       ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
@@ -196,7 +183,6 @@ public class ConnectorServiceImpl implements ConnectorService {
 
   private ConnectorResponseDTO createInternal(
       ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
-    skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
     applyPatAuthFFCheckForJiraConnector(connectorDTO, accountIdentifier);
     PerpetualTaskId connectorHeartbeatTaskId = null;
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
@@ -301,7 +287,6 @@ public class ConnectorServiceImpl implements ConnectorService {
 
   @Override
   public ConnectorResponseDTO update(ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
-    skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
     applyPatAuthFFCheckForJiraConnector(connectorDTO, accountIdentifier);
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);

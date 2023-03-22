@@ -9,7 +9,6 @@ package io.harness.connector.impl;
 
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.DO_NOT_RENEW_APPROLE_TOKEN;
 import static io.harness.beans.FeatureName.ENABLE_CERT_VALIDATION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -213,51 +212,6 @@ public class NGVaultServiceImpl implements NGVaultService {
     }
 
     return secretEngineSummaries;
-  }
-
-  @Override
-  public void renewAppRoleClientToken(VaultConnector vaultConnector) {
-    if (CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(
-            DO_NOT_RENEW_APPROLE_TOKEN.name(), vaultConnector.getAccountIdentifier()))) {
-      vaultConnector.setRenewAppRoleToken(false);
-      connectorRepository.save(vaultConnector, ChangeType.NONE);
-      return;
-    }
-    SecretManagerConfig secretManagerConfig = getSecretManagerConfig(vaultConnector.getAccountIdentifier(),
-        vaultConnector.getOrgIdentifier(), vaultConnector.getProjectIdentifier(), vaultConnector.getIdentifier());
-    BaseVaultConfig baseVaultConfig = (BaseVaultConfig) secretManagerConfig;
-    VaultAppRoleLoginResult vaultAppRoleLoginResult = appRoleLogin(baseVaultConfig);
-
-    SecretRefData secretRef = SecretRefHelper.createSecretRef(vaultConnector.getAuthTokenRef());
-    Scope scope = secretRef.getScope();
-    String accountIdentifier = vaultConnector.getAccountIdentifier();
-    String orgIdentifier = getOrgIdentifier(vaultConnector.getOrgIdentifier(), scope);
-    String projectIdentifier = getProjectIdentifier(vaultConnector.getProjectIdentifier(), scope);
-
-    SecretTextSpecDTO secretTextSpecDTO = SecretTextSpecDTO.builder()
-                                              .value(String.valueOf(vaultAppRoleLoginResult.getClientToken()))
-                                              .valueType(ValueType.Inline)
-                                              .secretManagerIdentifier(HARNESS_SECRET_MANAGER_IDENTIFIER)
-                                              .build();
-    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
-                                  .type(SecretType.SecretText)
-                                  .identifier(secretRef.getIdentifier())
-                                  .projectIdentifier(projectIdentifier)
-                                  .orgIdentifier(orgIdentifier)
-                                  .spec(secretTextSpecDTO)
-                                  .build();
-
-    try {
-      encryptedDataService.updateSecretText(accountIdentifier, secretDTOV2);
-    } catch (Exception e) {
-      String message = "NG: Failed to update token for AppRole based login for secret manager "
-          + vaultConnector.getName() + " at " + vaultConnector.getVaultUrl();
-      log.error(message, e);
-      throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, USER);
-    }
-    vaultConnector.setRenewedAt(System.currentTimeMillis());
-    connectorRepository.save(vaultConnector, ChangeType.NONE);
-    updatePerpetualTaskWhenTokenIsRenewed(vaultConnector);
   }
 
   @Override
