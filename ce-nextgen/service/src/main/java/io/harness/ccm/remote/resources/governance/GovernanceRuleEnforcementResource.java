@@ -193,9 +193,14 @@ public class GovernanceRuleEnforcementResource {
     }
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
     ruleEnforcementService.checkLimitsAndValidate(ruleEnforcement, governanceConfig);
+    if (ruleEnforcement.getTargetAccountIdentifiers() == null) {
+      throw new InvalidRequestException("You need to have valid accountId and Identifiers as part of payload");
+    }
     Set<String> allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(
-        accountId, null, null, ruleEnforcement.getTargetAccountIdentifiers(), RULE_EXECUTE);
+        accountId, null, null, (Set<String>) ruleEnforcement.getTargetAccountIdentifiers(), RULE_EXECUTE);
 
+    log.info("allowedAccountIds {}", allowedAccountIds);
+    log.info("getTargetAccountIdentifiers {}", ruleEnforcement.getTargetAccountIdentifiers());
     if (allowedAccountIds.size() != ruleEnforcement.getTargetAccountIdentifiers().size()) {
       throw new NGAccessDeniedException(
           String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, GOVERNANCE_CONNECTOR), WingsException.USER, null);

@@ -621,7 +621,7 @@ public class GovernanceRuleResource {
             RULE_EXECUTE);
       } else {
         allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(
-            accountId, null, null, ruleEnforcement.getTargetAccountIdentifiers(), RULE_EXECUTE);
+            accountId, null, null, (Set<String>) ruleEnforcement.getTargetAccountIdentifiers(), RULE_EXECUTE);
       }
       if (allowedAccountIds.size() != nextGenConnectorResponses.size()) {
         throw new NGAccessDeniedException(

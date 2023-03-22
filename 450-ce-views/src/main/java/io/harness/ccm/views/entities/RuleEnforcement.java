@@ -60,7 +60,7 @@ public final class RuleEnforcement implements PersistentEntity, UuidAware, Creat
   @Schema(description = "executionSchedule") String executionSchedule;
   @Schema(description = "executionTimezone") String executionTimezone;
   @Schema(description = "targetAccounts") List<String> targetAccounts;
-  @Schema(description = "targetAccountIdentifiers") Set<String> targetAccountIdentifiers;
+  @Schema(description = "targetAccountIdentifiers") List<String> targetAccountIdentifiers;
   @Schema(description = "targetRegions") List<String> targetRegions;
   @Schema(description = "isDryRun") Boolean isDryRun;
   @Schema(description = "deleted") Boolean deleted;
