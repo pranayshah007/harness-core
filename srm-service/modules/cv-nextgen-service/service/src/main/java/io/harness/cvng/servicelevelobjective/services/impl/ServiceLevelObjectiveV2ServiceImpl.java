@@ -12,6 +12,7 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.BURN_
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_MINUTES;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_PERCENTAGE;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_NAME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -116,6 +117,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -733,17 +735,30 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             getNotificationData(serviceLevelObjective, condition);
         if (notificationData.shouldSendNotification()) {
           NotificationRule.CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
-          String templateId = getNotificationTemplateId(notificationRule.getType(), notificationChannel.getType());
-          MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
-              MonitoredServiceParams.builderWithProjectParams(projectParams)
-                  .monitoredServiceIdentifier(
-                      ((SimpleServiceLevelObjective) serviceLevelObjective).getMonitoredServiceIdentifier())
-                  .build());
+          String templateId = getNotificationTemplateId(
+              notificationRule.getType(), serviceLevelObjective.getType(), notificationChannel.getType());
+          Optional<String> monitoredServiceIdentifierOptional =
+              serviceLevelObjective.mayBeGetMonitoredServiceIdentifier();
+          MonitoredService monitoredService = null;
+          String serviceIdentifier = null;
+          if (monitoredServiceIdentifierOptional.isPresent()) {
+            monitoredService = monitoredServiceService.getMonitoredService(
+                MonitoredServiceParams.builderWithProjectParams(projectParams)
+                    .monitoredServiceIdentifier(
+                        ((SimpleServiceLevelObjective) serviceLevelObjective).getMonitoredServiceIdentifier())
+                    .build());
+            serviceIdentifier = monitoredService.getServiceIdentifier();
+          }
           Map<String, String> templateData =
               notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType())
                   .getTemplateData(projectParams, serviceLevelObjective.getName(),
-                      serviceLevelObjective.getIdentifier(), monitoredService.getServiceIdentifier(),
-                      monitoredService.getIdentifier(), condition, notificationData.getTemplateDataMap());
+                      serviceLevelObjective.getIdentifier(), serviceIdentifier,
+                      monitoredServiceIdentifierOptional.orElse(null), condition,
+                      notificationData.getTemplateDataMap());
+          if (serviceLevelObjective.getType() == ServiceLevelObjectiveType.COMPOSITE) {
+            // Removing service name here since linked hash map doesnt accept null as a value.
+            templateData.remove(SERVICE_NAME);
+          }
           try {
             NotificationResult notificationResult =
                 notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
