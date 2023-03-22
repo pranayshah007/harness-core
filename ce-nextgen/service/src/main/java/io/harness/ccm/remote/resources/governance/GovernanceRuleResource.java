@@ -620,8 +620,8 @@ public class GovernanceRuleResource {
             nextGenConnectorResponses.stream().map(e -> e.getConnector().getIdentifier()).collect(Collectors.toSet()),
             RULE_EXECUTE);
       } else {
-        allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(
-            accountId, null, null, (Set<String>) ruleEnforcement.getTargetAccountIdentifiers(), RULE_EXECUTE);
+        allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
+            ruleEnforcement.getTargetAccountIdentifiers().stream().collect(Collectors.toSet()), RULE_EXECUTE);
       }
       if (allowedAccountIds.size() != nextGenConnectorResponses.size()) {
         throw new NGAccessDeniedException(

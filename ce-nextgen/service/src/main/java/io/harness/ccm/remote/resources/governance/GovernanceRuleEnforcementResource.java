@@ -77,6 +77,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -196,8 +197,8 @@ public class GovernanceRuleEnforcementResource {
     if (ruleEnforcement.getTargetAccountIdentifiers() == null) {
       throw new InvalidRequestException("You need to have valid accountId and Identifiers as part of payload");
     }
-    Set<String> allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(
-        accountId, null, null, (Set<String>) ruleEnforcement.getTargetAccountIdentifiers(), RULE_EXECUTE);
+    Set<String> allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
+        ruleEnforcement.getTargetAccountIdentifiers().stream().collect(Collectors.toSet()), RULE_EXECUTE);
 
     log.info("allowedAccountIds {}", allowedAccountIds);
     log.info("getTargetAccountIdentifiers {}", ruleEnforcement.getTargetAccountIdentifiers());
