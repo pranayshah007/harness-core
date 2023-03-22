@@ -663,7 +663,10 @@ public enum FeatureName {
   SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
       "Unnecessary restriction apps calls are not called from UI", HarnessTeam.SPG),
   CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG(
-      "Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP);
+      "Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP),
+  SPG_SERVICES_OVERVIEW_RBAC(
+      "Applies RBAC on services overview page, only displays services which the user has access to read",
+      HarnessTeam.SPG);
 
   @Deprecated
   FeatureName() {

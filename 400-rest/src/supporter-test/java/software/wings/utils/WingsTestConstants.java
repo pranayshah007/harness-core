@@ -191,6 +191,8 @@ public interface WingsTestConstants {
 
   String USER_NAME = "USER_NAME";
 
+  String USER_NAME_2 = "USER_NAME_2";
+
   char[] USER_NAME_DECRYPTED = "USER_NAME".toCharArray();
 
   String DOMAIN = "DOMAIN";
@@ -230,6 +232,8 @@ public interface WingsTestConstants {
   String USER_ID = "USER_ID";
 
   String USER1_ID = "USER1_ID";
+
+  String USER_ID_2 = "USER_ID_2";
 
   String DASHBOARD1_ID = "DASHBOARD1_ID";
 
