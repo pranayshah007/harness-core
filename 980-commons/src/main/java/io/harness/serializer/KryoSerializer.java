@@ -11,10 +11,10 @@ import static java.lang.String.format;
 
 import io.harness.reflection.CodeUtils;
 
+import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.esotericsoftware.kryo.pool.KryoPool;
 import com.esotericsoftware.kryo.util.IntMap;
 import com.google.api.client.util.Base64;
 import com.google.common.annotations.VisibleForTesting;
@@ -51,7 +51,7 @@ public class KryoSerializer {
     }
   }
 
-  private final KryoPool pool;
+  private final KryoPoolImpl pool;
   private final boolean skipHarnessClassOriginRegistrarCheck;
 
   @Inject
@@ -67,13 +67,24 @@ public class KryoSerializer {
    */
   @VisibleForTesting
   public KryoSerializer(Set<Class<? extends KryoRegistrar>> registrars, boolean skipHarnessClassOriginRegistrarCheck) {
-    this.pool = new KryoPool.Builder(() -> kryo(registrars, true)).softReferences().build();
+    // Shall we limit the max size of the pool?
+    this.pool = new KryoPoolImpl(true, true) {
+      @Override
+      protected Kryo create() {
+        return kryo(registrars, true);
+      }
+    };
     this.skipHarnessClassOriginRegistrarCheck = skipHarnessClassOriginRegistrarCheck;
   }
 
   public KryoSerializer(Set<Class<? extends KryoRegistrar>> registrars, boolean skipHarnessClassOriginRegistrarCheck,
       boolean shouldSetReferences) {
-    this.pool = new KryoPool.Builder(() -> kryo(registrars, shouldSetReferences)).softReferences().build();
+    this.pool = new KryoPoolImpl(true, true) {
+      @Override
+      protected Kryo create() {
+        return kryo(registrars, shouldSetReferences);
+      }
+    };
     this.skipHarnessClassOriginRegistrarCheck = skipHarnessClassOriginRegistrarCheck;
   }
 

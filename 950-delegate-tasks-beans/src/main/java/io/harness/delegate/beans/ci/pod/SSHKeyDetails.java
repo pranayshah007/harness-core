@@ -10,7 +10,7 @@ package io.harness.delegate.beans.ci.pod;
 import io.harness.ng.core.dto.secrets.SSHKeyReferenceCredentialDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import com.esotericsoftware.kryo.NotNull;
+import com.esotericsoftware.kryo.serializers.FieldSerializer.NotNull;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;

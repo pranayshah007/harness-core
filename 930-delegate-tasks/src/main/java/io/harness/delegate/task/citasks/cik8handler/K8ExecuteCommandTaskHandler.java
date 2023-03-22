@@ -16,7 +16,7 @@ import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.task.citasks.ExecuteCommandTaskHandler;
 import io.harness.logging.CommandExecutionStatus;
 
-import com.esotericsoftware.kryo.NotNull;
+import com.esotericsoftware.kryo.serializers.FieldSerializer.NotNull;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;

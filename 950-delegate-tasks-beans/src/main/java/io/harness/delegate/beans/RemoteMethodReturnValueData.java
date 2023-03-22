@@ -20,5 +20,5 @@ import lombok.Value;
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 public class RemoteMethodReturnValueData implements DelegateResponseData {
   private Object returnValue;
-  @Bind(JavaSerializer.class) private Throwable exception;
+  @Bind(serializer = JavaSerializer.class) private Throwable exception;
 }

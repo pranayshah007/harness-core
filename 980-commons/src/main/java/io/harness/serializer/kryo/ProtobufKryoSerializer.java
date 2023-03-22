@@ -37,7 +37,7 @@ public class ProtobufKryoSerializer<P extends Message> extends Serializer<P> {
   }
 
   @Override
-  public P read(Kryo kryo, Input input, Class<P> aClass) {
+  public P read(Kryo kryo, Input input, Class<? extends P> aClass) {
     int length = input.readInt(true);
     if (length == NULL) {
       return null;

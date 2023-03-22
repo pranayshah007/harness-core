@@ -19,9 +19,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
+import com.esotericsoftware.kryo.serializers.DefaultSerializers;
 import com.esotericsoftware.kryo.serializers.EnumNameSerializer;
-import com.esotericsoftware.kryo.serializers.FieldSerializer;
-import com.esotericsoftware.kryo.util.DefaultStreamFactory;
+import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
 import com.esotericsoftware.kryo.util.IntMap;
 import com.esotericsoftware.kryo.util.MapReferenceResolver;
 import com.google.common.collect.ArrayListMultimap;
@@ -92,14 +92,18 @@ public class HKryo extends Kryo {
    *     only meant for UTs.
    */
   public HKryo(ClassResolver classResolver, boolean skipHarnessClassOriginRegistrarCheck, boolean shouldSetReferences) {
-    super(classResolver, new MapReferenceResolver(), new DefaultStreamFactory());
+    super(classResolver, new MapReferenceResolver());
 
     this.skipHarnessClassOriginRegistrarCheck = skipHarnessClassOriginRegistrarCheck;
 
-    setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
+    setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
     setDefaultSerializer(CompatibleFieldSerializer.class);
-    getFieldSerializerConfig().setCachedFieldNameStrategy(FieldSerializer.CachedFieldNameStrategy.EXTENDED);
-    getFieldSerializerConfig().setCopyTransient(false);
+    ((CompatibleFieldSerializer<?>) (getDefaultSerializer(CompatibleFieldSerializer.class)))
+        .getFieldSerializerConfig()
+        .setExtendedFieldNames(true);
+    ((CompatibleFieldSerializer<?>) (getDefaultSerializer(CompatibleFieldSerializer.class)))
+        .getFieldSerializerConfig()
+        .setCopyTransient(false);
     setRegistrationRequired(true);
     // shouldSetReferences is false for delegate <=> manager kryo serialization
     // in that case we don't use references and also do enum serialization based on name
@@ -108,6 +112,7 @@ public class HKryo extends Kryo {
       addDefaultSerializer(Enum.class, EnumNameSerializer.class);
     }
 
+    register(void.class, new DefaultSerializers.VoidSerializer());
     register(byte[].class, 10);
     register(char[].class, 11);
     register(short[].class, 12);
