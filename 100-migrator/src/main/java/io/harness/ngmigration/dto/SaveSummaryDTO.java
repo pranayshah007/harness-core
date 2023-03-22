@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigrationTrackRespPayload;
 import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.SkippedExpressionDetail;
 
 import software.wings.ngmigration.NGMigrationEntityType;
 
@@ -35,5 +36,7 @@ public class SaveSummaryDTO extends MigrationTrackRespPayload {
   private List<MigratedDetails> alreadyMigratedDetails;
   private List<MigratedDetails> successfullyMigratedDetails;
   private List<NGSkipDetail> skipDetails;
+  private List<SkippedExpressionDetail> skippedExpressions;
+
   @BsonIgnore @JsonIgnore private transient List<NGYamlFile> ngYamlFiles;
 }

@@ -35,6 +35,7 @@ public class AsyncUpgradeHandler extends AsyncTaskHandler {
   MigrationTrackRespPayload processTask(
       String apiKey, String accountId, String requestId, MigrationTrackReqPayload reqPayload) {
     ImportDTO importDTO = (ImportDTO) reqPayload;
+    importDTO.setAccountIdentifier(accountId);
     return migrationResourceService.save(apiKey, importDTO);
   }
 

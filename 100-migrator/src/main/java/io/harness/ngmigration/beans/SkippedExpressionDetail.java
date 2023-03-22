@@ -10,7 +10,9 @@ package io.harness.ngmigration.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import java.util.List;
+import software.wings.ngmigration.NGMigrationEntityType;
+
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,9 +23,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class YamlGenerationDetails {
-  List<NGYamlFile> yamlFileList;
-  List<NGSkipDetail> skipDetails;
-
-  List<SkippedExpressionDetail> skippedExpressions;
+public class SkippedExpressionDetail {
+  private NGMigrationEntityType entityType;
+  private String identifier;
+  private String orgIdentifier;
+  private String projectIdentifier;
+  private Set<String> expressions;
 }

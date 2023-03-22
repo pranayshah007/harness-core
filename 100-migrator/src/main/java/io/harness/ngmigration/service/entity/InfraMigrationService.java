@@ -270,6 +270,7 @@ public class InfraMigrationService extends NgMigrationService {
                 ((NGEnvironmentConfig) envNgYamlFile.getYaml()).getNgEnvironmentInfoConfig().getName(), name))
             .yaml(infrastructureConfig)
             .ngEntityDetail(NgEntityDetail.builder()
+                                .entityType(NGMigrationEntityType.INFRA)
                                 .identifier(identifier)
                                 .orgIdentifier(orgIdentifier)
                                 .projectIdentifier(projectIdentifier)
