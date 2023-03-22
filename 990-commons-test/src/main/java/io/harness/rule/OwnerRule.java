@@ -78,6 +78,7 @@ public class OwnerRule implements TestRule {
   public static final String SPG = "SPG";
   public static final String STO = "STO";
   public static final String SMP = "SMP";
+  public static final String IDP = "IDP";
 
   public static final String AADITI = "aaditi.joag";
   public static final String ABHIJEET = "abhijeet.sharma";
@@ -189,6 +190,7 @@ public class OwnerRule implements TestRule {
   public static final String SANDESH = "sandesh.katta";
   public static final String SANJA = "sanja.jokic";
   public static final String SANYASI_NAIDU = "sanyasi.naidu";
+  public static final String SARTHAK_KASAT = "sarthak.kasat";
   public static final String SATHISH = "sathish.soundarapandian";
   public static final String SEAN = "sean.dunne";
   public static final String SHALINI = "shalini.agrawal";
@@ -430,6 +432,7 @@ public class OwnerRule implements TestRule {
           .put(SANDESH, defaultUserInfo(SANDESH).slack("U015PLPSD47").team(CE).build())
           .put(SANJA, defaultUserInfo(SANJA).slack("U015Q24465T").team(DEL).build())
           .put(SANYASI_NAIDU, defaultUserInfo(SANYASI_NAIDU).slack("U012P5KH3RU").team(DX).build())
+          .put(SARTHAK_KASAT, defaultUserInfo(SARTHAK_KASAT).slack("U03NL4KT5F1").team(IDP).build())
           .put(SATHISH, defaultUserInfo(SATHISH).slack("U0497B0V0FK").team(CV).build())
           .put(SEAN, defaultUserInfo(SEAN).slack("U020VELFZNK").team(DEL).build())
           .put(SHALINI, defaultUserInfo(SHALINI).slack("U02TYJR6ZR6").build())
