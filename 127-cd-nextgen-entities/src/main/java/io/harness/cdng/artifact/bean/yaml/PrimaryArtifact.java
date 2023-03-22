@@ -90,7 +90,7 @@ public class PrimaryArtifact implements Visitable {
     VisitableChildren visitableChildren = VisitableChildren.builder().build();
     visitableChildren.add(YAMLFieldNameConstants.SPEC, spec);
     if (EmptyPredicate.isNotEmpty(sources)) {
-      sources.forEach(source -> visitableChildren.add("sources", source));
+      sources.forEach(source -> visitableChildren.add("sources." + source.getIdentifier(), source));
     }
     return visitableChildren;
   }

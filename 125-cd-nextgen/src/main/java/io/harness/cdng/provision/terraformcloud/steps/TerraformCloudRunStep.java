@@ -301,8 +301,7 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
             .build();
 
     helper.saveTerraformCloudPlanExecutionDetails(
-        ambiance, tfPlanJsonFileId, policyChecksJsonFileId, provisionIdentifier, runDetails);
-    helper.saveTerraformCloudPlanOutput(planSpecParameters, runId, ambiance);
+        ambiance, tfPlanJsonFileId, policyChecksJsonFileId, provisionIdentifier, runDetails, true);
     return getTerraformCloudRunOutcome(runId, policyChecksJsonFileId, tfPlanJsonFileId, provisionIdentifier, null);
   }
 

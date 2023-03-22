@@ -45,6 +45,8 @@ import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.springdata.SpringPersistenceTestModule;
+import io.harness.ssca.beans.entities.SSCAServiceConfig;
+import io.harness.ssca.client.SSCAServiceClientModule;
 import io.harness.sto.beans.entities.STOServiceConfig;
 import io.harness.sto.registrars.STOExecutionRegistrar;
 import io.harness.testlib.module.MongoRuleMixin;
@@ -191,6 +193,8 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
                                   .build())
             .iacmServiceConfig(
                 IACMServiceConfig.builder().baseUrl("http://localhost-inc:4000").globalToken("global-token").build())
+            .sscaServiceConfig(
+                SSCAServiceConfig.builder().baseUrl("http://localhost:8186").globalToken("global-token").build())
             .managerServiceSecret("IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM")
             .ngManagerClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build())
             .managerClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:3457/").build())
@@ -201,6 +205,7 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
     modules.add(new ClosingFactoryModule(closingFactory));
     modules.add(mongoTypeModule(annotations));
     modules.add(TestMongoModule.getInstance());
+    modules.add(new SSCAServiceClientModule(configuration.getSscaServiceConfig()));
     modules.add(new SpringPersistenceTestModule());
     modules.add(new STOManagerServiceModule(configuration));
     modules.add(PmsSdkModule.getInstance(getPmsSdkConfiguration()));

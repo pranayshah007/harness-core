@@ -389,20 +389,20 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
             projectParams, EntityType.MAINTENANCE_WINDOW, recurringDowntimeDTO.getIdentifier());
     assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(53);
     clock = Clock.fixed(
-        Instant.ofEpochSecond(recurringDowntimeDTO.getSpec().getSpec().getStartTime()).plus(7, ChronoUnit.DAYS),
+        Instant.ofEpochSecond(recurringDowntimeDTO.getSpec().getSpec().getStartTime()).minus(1, ChronoUnit.DAYS),
         ZoneId.of("UTC"));
     FieldUtils.writeField(entityUnavailabilityStatusesService, "clock", clock, true);
     boolean response = downtimeService.delete(projectParams, recurringDowntimeDTO.getIdentifier());
     assertThat(response).isEqualTo(true);
     entityUnavailabilityStatusesDTOS = entityUnavailabilityStatusesService.getAllInstances(
         projectParams, EntityType.MAINTENANCE_WINDOW, recurringDowntimeDTO.getIdentifier());
-    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(1);
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(0);
   }
 
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
-  public void testDeleteSuccessForActiveInstances() throws IllegalAccessException {
+  public void testDeleteFailureForActiveInstances() throws IllegalAccessException {
     FieldUtils.writeField(
         downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
     downtimeService.create(projectParams, oneTimeEndTimeBasedDowntimeDTO);
@@ -422,20 +422,18 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
                             .plus(10, ChronoUnit.MINUTES),
         ZoneId.of("UTC"));
     FieldUtils.writeField(entityUnavailabilityStatusesService, "clock", clock, true);
-    boolean response = downtimeService.delete(projectParams, oneTimeEndTimeBasedDowntimeDTO.getIdentifier());
-    assertThat(response).isEqualTo(true);
-    entityUnavailabilityStatusesDTOS = entityUnavailabilityStatusesService.getAllInstances(
-        projectParams, EntityType.MAINTENANCE_WINDOW, oneTimeEndTimeBasedDowntimeDTO.getIdentifier());
-    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(1);
-    assertThat(entityUnavailabilityStatusesDTOS.get(0).getStartTime())
-        .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.getSpec().getSpec().getStartTime());
-    assertThat(entityUnavailabilityStatusesDTOS.get(0).getEndTime()).isEqualTo(clock.millis() / 1000);
+    assertThatThrownBy(() -> downtimeService.delete(projectParams, oneTimeEndTimeBasedDowntimeDTO.getIdentifier()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format(
+            "Downtime with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can't be deleted, as it's SLI calculation has already started.",
+            oneTimeEndTimeBasedDowntimeDTO.getIdentifier(), projectParams.getAccountIdentifier(),
+            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
   }
 
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
-  public void testDeleteSuccessForActiveRecurringInstances() throws IllegalAccessException {
+  public void testDeleteFailureForActiveRecurringInstances() throws IllegalAccessException {
     FieldUtils.writeField(
         downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
     downtimeService.create(projectParams, recurringDowntimeDTO);
@@ -447,14 +445,12 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
         Instant.ofEpochSecond(entityUnavailabilityStatusesDTOS.get(1).getStartTime()).plus(10, ChronoUnit.MINUTES),
         ZoneId.of("UTC"));
     FieldUtils.writeField(entityUnavailabilityStatusesService, "clock", clock, true);
-    boolean response = downtimeService.delete(projectParams, recurringDowntimeDTO.getIdentifier());
-    assertThat(response).isEqualTo(true);
-    entityUnavailabilityStatusesDTOS = entityUnavailabilityStatusesService.getAllInstances(
-        projectParams, EntityType.MAINTENANCE_WINDOW, recurringDowntimeDTO.getIdentifier());
-    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(2);
-    assertThat(entityUnavailabilityStatusesDTOS.get(1).getStartTime())
-        .isEqualTo(entityUnavailabilityStatusesDTOS.get(1).getStartTime());
-    assertThat(entityUnavailabilityStatusesDTOS.get(1).getEndTime()).isEqualTo(clock.millis() / 1000);
+    assertThatThrownBy(() -> downtimeService.delete(projectParams, recurringDowntimeDTO.getIdentifier()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format(
+            "Downtime with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can't be deleted, as it's SLI calculation has already started.",
+            recurringDowntimeDTO.getIdentifier(), projectParams.getAccountIdentifier(),
+            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
   }
   @Test
   @Owner(developers = VARSHA_LALWANI)
@@ -910,6 +906,7 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
                               .getSpec())
                              .getEndTime())
                 .build());
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getPastOrActiveInstancesCount()).isEqualTo(1);
 
     assertThat(downtimeListViewPageResponse.getContent().get(2).getName()).isEqualTo(recurringDowntimeDTO.getName());
     assertThat(downtimeListViewPageResponse.getContent().get(2).getDowntimeStatusDetails())
@@ -921,6 +918,7 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
 
     assertThat(downtimeListViewPageResponse.getContent().get(1).getName())
         .isEqualTo(oneTimeDurationBasedDowntimeDTO.getName());
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getPastOrActiveInstancesCount()).isEqualTo(1);
   }
 
   @Test

@@ -43,8 +43,9 @@ public class PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled
     if (handlerClass.contentEquals("PipelineExecutionSummaryEntityAllStages")) {
       if (useCDCForPipelineHandler) {
         return planExecutionSummaryChangeDataHandlerAllStages;
-      } else
+      } else {
         return null;
+      }
     }
     if (handlerClass.contentEquals("PipelineExecutionSummaryEntity")) {
       return planExecutionSummaryChangeDataHandler;

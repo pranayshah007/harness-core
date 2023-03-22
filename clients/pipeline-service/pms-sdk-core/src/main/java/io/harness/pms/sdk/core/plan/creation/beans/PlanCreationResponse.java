@@ -40,6 +40,8 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
   String startingNodeId;
   @Singular List<String> errorMessages;
 
+  // list of Node IDs that are not to be converted into Identity Plan Nodes during Rollback Mode execution, meaning that
+  // these nodes should be actually executed again rather than them being replicated from a previous execution
   List<String> preservedNodesInRollbackMode;
 
   public Dependencies getDependencies() {
@@ -59,6 +61,10 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     mergePreservedNodesInRollbackMode(other.getPreservedNodesInRollbackMode());
   }
 
+  /**
+   * newPreservedNodes: the nodeIDs in this list will be added to the preservedNodesInRollbackMode into
+   * preservedNodesInRollbackMode in the current object
+   */
   public void mergePreservedNodesInRollbackMode(List<String> newPreservedNodes) {
     if (EmptyPredicate.isEmpty(newPreservedNodes)) {
       return;
@@ -66,6 +72,8 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     if (EmptyPredicate.isEmpty(preservedNodesInRollbackMode)) {
       preservedNodesInRollbackMode = newPreservedNodes;
     } else {
+      // On creation, preservedNodesInRollbackMode can be an immutable list (for eg: Collections.singletonList(...),
+      // hence explicitly converting it here to ArrayList
       List<String> res = new ArrayList<>(preservedNodesInRollbackMode);
       res.addAll(newPreservedNodes);
       preservedNodesInRollbackMode = res;

@@ -122,10 +122,13 @@ public class MigratorUtility {
   private static final int PIPELINE = 100;
 
   private static final int TRIGGER = 150;
-  private static final int USER_GROUP = -1;
+  private static final int USER_GROUP = -2;
+  private static final int FILE_STORE = -1;
 
   private static final Map<NGMigrationEntityType, Integer> MIGRATION_ORDER =
       ImmutableMap.<NGMigrationEntityType, Integer>builder()
+          .put(NGMigrationEntityType.USER_GROUP, USER_GROUP)
+          .put(NGMigrationEntityType.FILE_STORE, FILE_STORE)
           .put(NGMigrationEntityType.APPLICATION, APPLICATION)
           .put(NGMigrationEntityType.SECRET_MANAGER_TEMPLATE, SECRET_MANAGER_TEMPLATE)
           .put(NGMigrationEntityType.SECRET_MANAGER, SECRET_MANAGER)
@@ -146,7 +149,6 @@ public class MigratorUtility {
           .put(NGMigrationEntityType.WORKFLOW, WORKFLOW)
           .put(NGMigrationEntityType.PIPELINE, PIPELINE)
           .put(NGMigrationEntityType.TRIGGER, TRIGGER)
-          .put(NGMigrationEntityType.USER_GROUP, USER_GROUP)
           .build();
 
   private MigratorUtility() {}
@@ -441,8 +443,18 @@ public class MigratorUtility {
     if (EmptyPredicate.isEmpty(files)) {
       return ParameterField.ofNull();
     }
-    return ParameterField.createValueField(
-        files.stream().map(file -> "/" + ((FileYamlDTO) file.getYaml()).getName()).collect(Collectors.toList()));
+
+    List<String> paths = new ArrayList<>();
+    for (NGYamlFile file : files) {
+      FileYamlDTO yamlDTO = (FileYamlDTO) file.getYaml();
+      if (StringUtils.isBlank(yamlDTO.getFilePath())) {
+        paths.add("/" + yamlDTO.getName());
+      } else {
+        paths.add(yamlDTO.getFilePath());
+      }
+    }
+
+    return ParameterField.createValueField(paths);
   }
 
   public static ParameterField<List<String>> splitWithComma(String str) {
@@ -498,10 +510,14 @@ public class MigratorUtility {
                   .fileUsage(fileUsage.name())
                   .name(identifier)
                   .content(new String(content))
+                  .rootIdentifier("Root")
+                  .depth(Integer.MAX_VALUE)
+                  .filePath("")
                   .orgIdentifier(orgIdentifier)
                   .projectIdentifier(projectIdentifier)
                   .build())
         .ngEntityDetail(NgEntityDetail.builder()
+                            .entityType(NGMigrationEntityType.FILE_STORE)
                             .identifier(identifier)
                             .orgIdentifier(orgIdentifier)
                             .projectIdentifier(projectIdentifier)

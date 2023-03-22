@@ -338,7 +338,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
         throw new InvalidRequestException("Service overrides yaml is empty.");
       }
       try {
-        String serviceOverrideInputs = RuntimeInputFormHelper.createRuntimeInputForm(yaml, true);
+        String serviceOverrideInputs = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(yaml);
         if (isEmpty(serviceOverrideInputs)) {
           return null;
         }

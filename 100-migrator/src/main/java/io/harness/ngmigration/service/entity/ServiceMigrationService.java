@@ -414,6 +414,7 @@ public class ServiceMigrationService extends NgMigrationService {
                                 .yaml(serviceYaml)
                                 .type(SERVICE)
                                 .ngEntityDetail(NgEntityDetail.builder()
+                                                    .entityType(SERVICE)
                                                     .identifier(identifier)
                                                     .orgIdentifier(orgIdentifier)
                                                     .projectIdentifier(projectIdentifier)
@@ -422,7 +423,7 @@ public class ServiceMigrationService extends NgMigrationService {
                                 .build();
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
     files.add(ngYamlFile);
-
+    files.add(getFolder(name, identifier, projectIdentifier, orgIdentifier));
     return YamlGenerationDetails.builder().yamlFileList(files).build();
   }
 

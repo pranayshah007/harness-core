@@ -18,6 +18,7 @@ import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.sdk.core.plan.PlanNode;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,10 @@ public class MergePlanCreationResponse implements AsyncCreatorResponse {
     mergePreservedNodesInRollbackMode(response.getPreservedNodesInRollbackMode());
   }
 
+  /**
+   * newPreservedNodes: the nodeIDs in this list will be added to the preservedNodesInRollbackMode into
+   * preservedNodesInRollbackMode in the current object
+   */
   public void mergePreservedNodesInRollbackMode(List<String> newPreservedNodes) {
     if (EmptyPredicate.isEmpty(newPreservedNodes)) {
       return;
@@ -60,7 +65,11 @@ public class MergePlanCreationResponse implements AsyncCreatorResponse {
     if (EmptyPredicate.isEmpty(preservedNodesInRollbackMode)) {
       preservedNodesInRollbackMode = newPreservedNodes;
     } else {
-      preservedNodesInRollbackMode.addAll(newPreservedNodes);
+      // On creation, preservedNodesInRollbackMode can be an immutable list (for eg: Collections.singletonList(...),
+      // hence explicitly converting it here to ArrayList
+      List<String> res = new ArrayList<>(preservedNodesInRollbackMode);
+      res.addAll(newPreservedNodes);
+      preservedNodesInRollbackMode = res;
     }
   }
 
@@ -73,6 +82,7 @@ public class MergePlanCreationResponse implements AsyncCreatorResponse {
     mergeContext(other.getContextMap());
     mergeLayoutNodeInfo(other.getGraphLayoutResponse());
     addYamlUpdates(other.getYamlUpdates());
+    mergePreservedNodesInRollbackMode(other.getPreservedNodesInRollbackMode());
   }
 
   public void updateYamlInDependencies(String updatedYaml) {

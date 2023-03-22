@@ -94,7 +94,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
     assertThat(logFeedbackHistoryList.size()).isEqualTo(1);
     LogFeedbackHistory logFeedbackHistory = logFeedbackHistoryList.get(0);
     assertThat(logFeedbackHistory.getCreatedBy()).isEqualTo("test@harness.io");
-    assertThat(logFeedbackHistory.getUpdatedBy()).isNull();
+    assertThat(logFeedbackHistory.getUpdatedBy()).isEqualTo("test@harness.io");
     assertThat(getLogFeedback.getFeedbackId()).isEqualTo(createLogFeedback.getFeedbackId());
     assertThat(getLogFeedback.getFeedbackScore()).isEqualTo(logFeedback.getFeedbackScore());
     assertThat(getLogFeedback.getDescription()).isEqualTo(logFeedback.getDescription());
@@ -213,7 +213,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
     assertThat(logFeedbackHistoryList.size()).isEqualTo(2);
     LogFeedbackHistory logFeedbackHistory1 = logFeedbackHistoryList.get(0);
     assertThat(logFeedbackHistory1.getCreatedBy()).isEqualTo("test@harness.io");
-    assertThat(logFeedbackHistory1.getUpdatedBy()).isNull();
+    assertThat(logFeedbackHistory1.getUpdatedBy()).isEqualTo("test@harness.io");
 
     LogFeedbackHistory logFeedbackHistory2 = logFeedbackHistoryList.get(1);
     assertThat(logFeedbackHistory2.getCreatedBy()).isNull();
@@ -288,7 +288,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
 
     LogFeedbackHistory logFeedbackHistory1 = logFeedbackHistoryList.get(0);
     assertThat(logFeedbackHistory1.getCreatedBy()).isEqualTo("test@harness.io");
-    assertThat(logFeedbackHistory1.getUpdatedBy()).isNull();
+    assertThat(logFeedbackHistory1.getUpdatedBy()).isEqualTo("test@harness.io");
 
     LogFeedbackHistory logFeedbackHistory2 = logFeedbackHistoryList.get(1);
     assertThat(logFeedbackHistory2.getCreatedBy()).isNull();

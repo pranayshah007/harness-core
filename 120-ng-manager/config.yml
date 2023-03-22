@@ -483,9 +483,9 @@ debeziumConsumersConfigs:
     threads: ${DEBEZIUM_CONSUMER_THREADS:-2}
     batchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
   moduleLicensesStreaming:
-    topic: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_ngMongo.ng-harness.moduleLicenses}
-    threads: ${DEBEZIUM_CONSUMER_THREADS:-2}
-    batchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
+    topic: ${DEBEZIUM_CONSUMER_TOPIC_NAME_MODULE_LICENSES:-DEBEZIUM_ngMongo.ng-harness.moduleLicenses}
+    threads: ${DEBEZIUM_CONSUMER_THREADS_MODULE_LICENSES:-2}
+    batchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE_MODULE_LICENSES:-100}
 
 cdTsDbRetentionPeriodMonths: 7
 

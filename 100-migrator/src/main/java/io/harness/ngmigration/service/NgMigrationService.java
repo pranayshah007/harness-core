@@ -37,6 +37,7 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -59,7 +60,7 @@ import retrofit2.Response;
 
 @Slf4j
 public abstract class NgMigrationService {
-  private static final MediaType TEXT_PLAIN = MediaType.parse("text/plain");
+  public static final MediaType TEXT_PLAIN = MediaType.parse("text/plain");
   public static final ObjectMapper MIGRATION_DEFAULT_OBJECT_MAPPER =
       configureObjectMapperForNG(Jackson.newObjectMapper()).registerModule(new PipelineJacksonModule());
 
@@ -144,6 +145,7 @@ public abstract class NgMigrationService {
       return null;
     }
     MigrationContext migrationContext = MigrationContext.builder()
+                                            .accountId(inputDTO.getAccountIdentifier())
                                             .migratedEntities(migratedEntities)
                                             .entities(entities)
                                             .graph(graph)
@@ -190,7 +192,7 @@ public abstract class NgMigrationService {
     RequestBody name = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getName());
     RequestBody fileUsage = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getFileUsage());
     RequestBody type = RequestBody.create(TEXT_PLAIN, "FILE");
-    RequestBody parentIdentifier = RequestBody.create(TEXT_PLAIN, "Root");
+    RequestBody parentIdentifier = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getRootIdentifier());
     RequestBody mimeType = RequestBody.create(TEXT_PLAIN, "txt");
     RequestBody content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
 
@@ -213,5 +215,28 @@ public abstract class NgMigrationService {
           .build();
     }
     return handleResp(yamlFile, resp);
+  }
+
+  protected NGYamlFile getFolder(String name, String identifier, String projectIdentifier, String orgIdentifier) {
+    return NGYamlFile.builder()
+        .type(NGMigrationEntityType.FILE_STORE)
+        .filename(null)
+        .yaml(FileYamlDTO.builder()
+                  .identifier(identifier)
+                  .fileUsage("FOLDER")
+                  .name(name)
+                  .rootIdentifier("Root")
+                  .filePath("")
+                  .depth(0)
+                  .orgIdentifier(orgIdentifier)
+                  .projectIdentifier(projectIdentifier)
+                  .build())
+        .ngEntityDetail(NgEntityDetail.builder()
+                            .entityType(NGMigrationEntityType.FILE_STORE)
+                            .identifier(identifier)
+                            .orgIdentifier(orgIdentifier)
+                            .projectIdentifier(projectIdentifier)
+                            .build())
+        .build();
   }
 }

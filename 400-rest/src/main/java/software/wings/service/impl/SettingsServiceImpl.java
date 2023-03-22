@@ -1674,14 +1674,27 @@ public class SettingsServiceImpl implements SettingsService {
 
   @Override
   public SettingAttribute getByName(String accountId, String appId, String envId, String attributeName) {
-    return wingsPersistence.createQuery(SettingAttribute.class)
-        .filter(SettingAttributeKeys.accountId, accountId)
-        .field("appId")
-        .in(asList(appId, GLOBAL_APP_ID))
-        .field("envId")
-        .in(asList(envId, GLOBAL_ENV_ID))
-        .filter(SettingAttributeKeys.name, attributeName)
-        .get();
+    return getByNameAndCategory(accountId, appId, envId, attributeName, null);
+  }
+
+  @Override
+  public SettingAttribute getConnectorByName(String accountId, String appId, String attributeName) {
+    return getByNameAndCategory(accountId, appId, GLOBAL_ENV_ID, attributeName, SettingCategory.CONNECTOR);
+  }
+
+  private SettingAttribute getByNameAndCategory(
+      String accountId, String appId, String envId, String attributeName, SettingCategory category) {
+    final Query<SettingAttribute> query = wingsPersistence.createQuery(SettingAttribute.class)
+                                              .filter(SettingAttributeKeys.accountId, accountId)
+                                              .field(SettingAttributeKeys.appId)
+                                              .in(asList(appId, GLOBAL_APP_ID))
+                                              .field(SettingAttributeKeys.envId)
+                                              .in(asList(envId, GLOBAL_ENV_ID))
+                                              .filter(SettingAttributeKeys.name, attributeName);
+    if (category != null) {
+      query.filter(SettingAttributeKeys.category, category);
+    }
+    return query.get();
   }
 
   @Override

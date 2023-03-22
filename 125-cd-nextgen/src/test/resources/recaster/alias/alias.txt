@@ -731,7 +731,6 @@ io.harness.ngpipeline.artifact.bean.GoogleCloudStorageArtifactOutcome
 io.harness.ngpipeline.artifact.bean.GoogleCloudSourceArtifactOutcome
 io.harness.ngpipeline.pipeline.executions.beans.GoogleCloudStorageArtifactSummary
 io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome
-io.harness.cdng.provision.terraformcloud.output.TerraformCloudPlanOutput
 io.harness.cdng.provision.terraformcloud.params.TerraformCloudApplySpecParameters
 io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndApplySpecParameters
 io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndDestroySpecParameters
