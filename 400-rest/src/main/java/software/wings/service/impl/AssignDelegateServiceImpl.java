@@ -1209,7 +1209,9 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     if (delegate.isNg()) {
       DelegateGroup delegateGroup =
           delegateCache.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId());
-      List<String> tags = new ArrayList<>(delegateGroup.getTags());
+      Set<String> delegateTags =
+          (delegateGroup != null && delegateGroup.getTags() != null) ? delegateGroup.getTags() : new HashSet<>();
+      List<String> tags = new ArrayList<>(delegateTags);
       return Optional.of(tags);
     }
     return Optional.ofNullable(delegate.getTags());
