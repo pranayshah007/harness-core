@@ -660,6 +660,8 @@ public enum FeatureName {
   CDS_RANCHER_SUPPORT_NG("Enable Rancher support in NG.", HarnessTeam.CDP),
   PL_SELECT_SPECIFIC_SERVICE_ACCOUNT_IN_RESOURCE_GROUP(
       "Allow selection of specific service accounts in Resource group", HarnessTeam.PL),
+  SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
+      "Unnecessary restriction apps calls are not called from UI", HarnessTeam.SPG),
   CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG(
       "Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP);
 
