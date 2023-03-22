@@ -74,6 +74,7 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("backstageMasterUrl") private String backstageMasterUrl;
   @JsonProperty("backstagePodLabel") private String backstagePodLabel;
   @JsonProperty(PROVISION_MODULE_CONFIG) private ProvisionModuleConfig provisionModuleConfig;
+  @JsonProperty("idpServiceNamespace") private String idpServiceNamespace;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
   public static final String IDP_SPEC_PACKAGE = "io.harness.spec.server.idp.v1";
 

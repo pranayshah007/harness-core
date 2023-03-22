@@ -18,6 +18,7 @@ import io.harness.k8s.KubernetesHelperService;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
 
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -29,7 +30,6 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 

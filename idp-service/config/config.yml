@@ -131,3 +131,5 @@ backstagePodLabel: ""
 
 provisionModuleConfig:
   triggerPipelineUrl: ""
+
+idpServiceNamespace: ""

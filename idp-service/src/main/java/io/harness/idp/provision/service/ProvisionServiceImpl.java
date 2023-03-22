@@ -7,10 +7,13 @@
 package io.harness.idp.provision.service;
 
 import static io.harness.idp.provision.ProvisionConstants.ACCOUNT_ID;
+import static io.harness.idp.provision.ProvisionConstants.IDP_SERVICE_NAMESPACE;
 import static io.harness.idp.provision.ProvisionConstants.NAMESPACE;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
 import static io.harness.remote.client.CGRestUtils.getResponse;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.client.NgConnectorManagerClient;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
@@ -40,15 +43,28 @@ import okhttp3.internal.http2.ConnectionShutdownException;
 import okhttp3.internal.http2.StreamResetException;
 import org.springframework.dao.DuplicateKeyException;
 
+@OwnedBy(HarnessTeam.IDP)
 @Slf4j
 public class ProvisionServiceImpl implements ProvisionService {
-  @Inject @Named(PROVISION_MODULE_CONFIG) ProvisionModuleConfig provisionModuleConfig;
+  private final ProvisionModuleConfig provisionModuleConfig;
   private final Retry retry = buildRetryAndRegisterListeners();
   private final MediaType APPLICATION_JSON = MediaType.parse("application/json");
-  @Inject NgConnectorManagerClient ngConnectorManagerClient;
+  private final NgConnectorManagerClient ngConnectorManagerClient;
   private static final List<String> permissions =
       List.of("user_read", "user_update", "user_delete", "owner_read", "owner_update", "owner_delete", "all_create");
-  @Inject BackstagePermissionsService backstagePermissionsService;
+  private final BackstagePermissionsService backstagePermissionsService;
+  private final String idpServiceNamespace;
+
+  @Inject
+  public ProvisionServiceImpl(NgConnectorManagerClient ngConnectorManagerClient,
+      BackstagePermissionsService backstagePermissionsService,
+      @Named(PROVISION_MODULE_CONFIG) ProvisionModuleConfig provisionModuleConfig,
+      @Named("idpServiceNamespace") String idpServiceNamespace) {
+    this.ngConnectorManagerClient = ngConnectorManagerClient;
+    this.backstagePermissionsService = backstagePermissionsService;
+    this.provisionModuleConfig = provisionModuleConfig;
+    this.idpServiceNamespace = idpServiceNamespace;
+  }
 
   @Override
   public void triggerPipelineAndCreatePermissions(String accountIdentifier, String namespace) {
@@ -106,6 +122,7 @@ public class ProvisionServiceImpl implements ProvisionService {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(ACCOUNT_ID, accountIdentifier);
     jsonObject.put(NAMESPACE, namespace);
+    jsonObject.put(IDP_SERVICE_NAMESPACE, idpServiceNamespace);
 
     RequestBody requestBody = RequestBody.create(jsonObject.toString(), APPLICATION_JSON);
 

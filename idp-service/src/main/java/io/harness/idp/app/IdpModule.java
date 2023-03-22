@@ -96,6 +96,8 @@ import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.threading.ThreadPool;
 import io.harness.time.TimeModule;
 import io.harness.token.TokenClientModule;
+import io.harness.usergroupsng.UserGroupsNGClientModule;
+import io.harness.userng.UserNGClientModule;
 import io.harness.version.VersionModule;
 
 import com.google.common.collect.ImmutableList;
@@ -215,6 +217,10 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new BackstageResourceClientModule(
         appConfig.getBackstageHttpClientConfig(), appConfig.getBackstageServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new UserNGClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new UserGroupsNGClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
 
     bind(IdpConfiguration.class).toInstance(appConfig);
     install(PersistentLockModule.getInstance());
@@ -335,5 +341,12 @@ public class IdpModule extends AbstractModule {
   @Named("backstageServiceSecret")
   public String backstageServiceSecret() {
     return this.appConfig.getBackstageServiceSecret();
+  }
+
+  @Provides
+  @Singleton
+  @Named("idpServiceNamespace")
+  public String idpServiceNamespace() {
+    return this.appConfig.getIdpServiceNamespace();
   }
 }

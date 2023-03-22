@@ -1,6 +1,6 @@
 openapi: 3.0.3
 x-stoplight:
-  id: 9i33e8gca28nf
+  id: 9126byi2oelzs
 info:
   title: IDP
   version: '1.0'
@@ -542,6 +542,58 @@ paths:
       x-internal: true
       tags:
         - AppConfig
+  /v1/usergroups:
+    get:
+      summary: Get all usergroups
+      responses:
+        '200':
+          $ref: '#/components/responses/UserGroupResponse'
+      operationId: get-all-usergroups
+      x-internal: true
+      description: Get all usergroups
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      tags:
+        - UserGroupProxy
+  /v1/user:
+    parameters: []
+    post:
+      summary: Get all users
+      operationId: get-all-users
+      responses:
+        '200':
+          $ref: '#/components/responses/UserResponse'
+      tags:
+        - UserProxy
+      description: Get all users
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+  '/v1/usergroups/{user-group-id}':
+    parameters:
+      - $ref: '#/components/parameters/UserGroupId'
+    get:
+      summary: Get User Group
+      responses:
+        '200':
+          $ref: '#/components/responses/UserGroupMembersResponse'
+      operationId: get-user-group
+      x-internal: true
+      description: Get User Group
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - UserGroupProxy
 components:
   schemas:
     BackstageEnvVariable:
@@ -1069,6 +1121,123 @@ components:
           $ref: '#/components/schemas/AppConfig'
           x-stoplight:
             id: 7rhhzvrxp6grz
+    User:
+      title: User
+      x-stoplight:
+        id: tfmzozvm4ubdm
+      type: object
+      properties:
+        uuid:
+          type: string
+          x-stoplight:
+            id: q1ux7g82y95vg
+        name:
+          type: string
+          x-stoplight:
+            id: s7yimbi06xjpw
+        email:
+          type: string
+          x-stoplight:
+            id: lsckjx7ygsy3y
+      description: User Info
+    UserGroup:
+      title: UserGroup
+      x-stoplight:
+        id: 9iahni5wfff7h
+      type: object
+      description: User Group Info
+      properties:
+        userGroupDTO:
+          type: object
+          x-stoplight:
+            id: gs18fwdvirio5
+          properties:
+            identifier:
+              type: string
+              x-stoplight:
+                id: su1sj3tmdqnn5
+            name:
+              type: string
+              x-stoplight:
+                id: 6hv0b9le8sdsa
+    UserResponse:
+      title: UserResponse
+      x-stoplight:
+        id: 9vujbh46afgqt
+      type: object
+      description: User Response
+      properties:
+        data:
+          type: object
+          x-stoplight:
+            id: 9a5jrvpz3ip6u
+          properties:
+            content:
+              x-stoplight:
+                id: e6hlp5bqswjjs
+              type: object
+              properties:
+                user:
+                  x-stoplight:
+                    id: ebufspkwvhvyj
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/User'
+                    x-stoplight:
+                      id: tp6l077dypibc
+            totalPages:
+              type: integer
+              x-stoplight:
+                id: 6nsppz1z5qwom
+    UserGroupResponse:
+      title: UserGroupResponse
+      x-stoplight:
+        id: 5pj8prko1vm21
+      type: object
+      description: User Group Response
+      properties:
+        data:
+          type: object
+          x-stoplight:
+            id: 9a5jrvpz3ip6u
+          properties:
+            content:
+              x-stoplight:
+                id: e6hlp5bqswjjs
+              type: object
+              properties:
+                user:
+                  x-stoplight:
+                    id: ebufspkwvhvyj
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/UserGroup'
+                    x-stoplight:
+                      id: tp6l077dypibc
+            totalPages:
+              type: integer
+              x-stoplight:
+                id: 6nsppz1z5qwom
+    UserGroupMembersResponse:
+      title: UserGroupMembersResponse
+      x-stoplight:
+        id: 6cle2lqdtzy4u
+      type: object
+      description: User Group Response
+      properties:
+        data:
+          type: object
+          x-stoplight:
+            id: 9a5jrvpz3ip6u
+          properties:
+            users:
+              x-stoplight:
+                id: e6hlp5bqswjjs
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+                x-stoplight:
+                  id: k9evw60wzmy2y
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1142,6 +1311,13 @@ components:
       schema:
         type: string
       description: Layout Identifier
+    UserGroupId:
+      name: user-group-id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: User Group Identifier
     PluginId:
       name: plugin-id
       in: path
@@ -1369,6 +1545,33 @@ components:
           schema:
             type: object
             properties: {}
+    UserResponse:
+      description: Example response
+      content:
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/UserResponse'
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserResponse'
+    UserGroupResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserGroupResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/UserGroupResponse'
+    UserGroupMembersResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserGroupMembersResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/UserGroupMembersResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -1379,3 +1582,6 @@ tags:
   - name: BackstageEnvVariable
   - name: BackstagePermissions
   - name: LayoutProxy
+  - name: StatusInfo
+  - name: UserGroupProxy
+  - name: UserProxy
