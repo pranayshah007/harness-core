@@ -205,7 +205,7 @@ public class DelegateDisconnectDetectorIteratorTest extends WingsBaseTest {
         .thenReturn(Arrays.asList(delegate.getUuid()));
     when(assignDelegateService.getConnectedDelegateList(Arrays.asList(delegate.getUuid()), delegateTask))
         .thenReturn(Arrays.asList(delegate.getUuid()));
-    delegateTaskServiceClassic.processDelegateTask(delegateTask, QUEUED);
+    delegateTaskServiceClassic.processDelegateTaskV2(delegateTask, QUEUED);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     return task;
   }

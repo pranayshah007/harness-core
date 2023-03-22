@@ -192,7 +192,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     List<String> taskSelectors = Arrays.asList("testSelector");
 
     TaskId taskId1 = delegateServiceGrpcClient
-                         .submitTask(DelegateCallbackToken.newBuilder().setToken("token").build(),
+                         .submitTaskV2(DelegateCallbackToken.newBuilder().setToken("token").build(),
                              AccountId.newBuilder().setId(generateUuid()).build(),
                              TaskSetupAbstractions.newBuilder().putAllValues(setupAbstractions).build(),
                              TaskLogAbstractions.newBuilder().putAllValues(logAbstractions).build(),
@@ -202,11 +202,11 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                          .getTaskId();
     assertThat(taskId1).isNotNull();
     assertThat(taskId1.getId()).isNotBlank();
-    verify(delegateService).scheduleSyncTask(any(DelegateTask.class));
+    verify(delegateService).scheduleSyncTaskV2(any(DelegateTask.class));
 
     setupAbstractions.put("ng", "true");
     TaskId taskId1Ng = delegateServiceGrpcClient
-                           .submitTask(DelegateCallbackToken.newBuilder().setToken("token").build(),
+                           .submitTaskV2(DelegateCallbackToken.newBuilder().setToken("token").build(),
                                AccountId.newBuilder().setId(generateUuid()).build(),
                                TaskSetupAbstractions.newBuilder().putAllValues(setupAbstractions).build(),
                                TaskLogAbstractions.newBuilder().putAllValues(logAbstractions).build(),
@@ -216,10 +216,10 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                            .getTaskId();
     assertThat(taskId1Ng).isNotNull();
     assertThat(taskId1Ng.getId()).isNotBlank();
-    verify(delegateService, times(2)).scheduleSyncTask(any(DelegateTask.class));
+    verify(delegateService, times(2)).scheduleSyncTaskV2(any(DelegateTask.class));
 
     TaskId taskId2 = delegateServiceGrpcClient
-                         .submitTask(DelegateCallbackToken.newBuilder().setToken("token").build(),
+                         .submitTaskV2(DelegateCallbackToken.newBuilder().setToken("token").build(),
                              AccountId.newBuilder().setId(generateUuid()).build(),
                              TaskSetupAbstractions.newBuilder().putAllValues(new HashMap<>()).build(),
                              TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
@@ -229,11 +229,11 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                          .getTaskId();
     assertThat(taskId2).isNotNull();
     assertThat(taskId2.getId()).isNotBlank();
-    verify(delegateService).queueTask(any(DelegateTask.class));
+    verify(delegateService).queueTaskV2(any(DelegateTask.class));
 
     TaskId taskId3 =
         delegateServiceGrpcClient
-            .submitTask(DelegateCallbackToken.newBuilder().setToken("token").build(),
+            .submitTaskV2(DelegateCallbackToken.newBuilder().setToken("token").build(),
                 AccountId.newBuilder().setId(generateUuid()).build(), TaskSetupAbstractions.newBuilder().build(),
                 TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
                 builder.setMode(TaskMode.ASYNC).setParked(true).build(),
@@ -242,12 +242,12 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
             .getTaskId();
     assertThat(taskId3).isNotNull();
     assertThat(taskId3.getId()).isNotBlank();
-    verify(delegateTaskServiceClassic).processDelegateTask(any(DelegateTask.class), eq(Status.PARKED));
+    verify(delegateTaskServiceClassic).processDelegateTaskV2(any(DelegateTask.class), eq(Status.PARKED));
 
-    doThrow(InvalidRequestException.class).when(delegateService).scheduleSyncTask(any(DelegateTask.class));
+    doThrow(InvalidRequestException.class).when(delegateService).scheduleSyncTaskV2(any(DelegateTask.class));
     assertThatThrownBy(
         ()
-            -> delegateServiceGrpcClient.submitTask(DelegateCallbackToken.newBuilder().setToken("token").build(),
+            -> delegateServiceGrpcClient.submitTaskV2(DelegateCallbackToken.newBuilder().setToken("token").build(),
                 AccountId.newBuilder().setId(generateUuid()).build(),
                 TaskSetupAbstractions.newBuilder().putAllValues(setupAbstractions).build(),
                 TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
@@ -264,23 +264,23 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   public void testCancelTask() {
     String accountId = generateUuid();
     String taskId = generateUuid();
-    when(delegateTaskServiceClassic.abortTask(accountId, taskId))
+    when(delegateTaskServiceClassic.abortTaskV2(accountId, taskId))
         .thenReturn(null)
         .thenReturn(DelegateTask.builder().status(Status.STARTED).build());
 
-    TaskExecutionStage taskExecutionStage = delegateServiceGrpcClient.cancelTask(
+    TaskExecutionStage taskExecutionStage = delegateServiceGrpcClient.cancelTaskV2(
         AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build());
     assertThat(taskExecutionStage).isNotNull();
     assertThat(taskExecutionStage).isEqualTo(TaskExecutionStage.TYPE_UNSPECIFIED);
 
-    taskExecutionStage = delegateServiceGrpcClient.cancelTask(
+    taskExecutionStage = delegateServiceGrpcClient.cancelTaskV2(
         AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build());
     assertThat(taskExecutionStage).isNotNull();
     assertThat(taskExecutionStage).isEqualTo(TaskExecutionStage.EXECUTING);
 
-    doThrow(InvalidRequestException.class).when(delegateTaskServiceClassic).abortTask(accountId, taskId);
+    doThrow(InvalidRequestException.class).when(delegateTaskServiceClassic).abortTaskV2(accountId, taskId);
     assertThatThrownBy(()
-                           -> delegateServiceGrpcClient.cancelTask(AccountId.newBuilder().setId(accountId).build(),
+                           -> delegateServiceGrpcClient.cancelTaskV2(AccountId.newBuilder().setId(accountId).build(),
                                TaskId.newBuilder().setId(taskId).build()))
         .isInstanceOf(DelegateServiceDriverException.class)
         .hasMessage("Unexpected error occurred while cancelling task.");

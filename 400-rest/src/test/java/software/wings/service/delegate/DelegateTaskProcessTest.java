@@ -347,7 +347,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -389,7 +389,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -430,7 +430,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                               .build())
                                     .selectionLogsTrackingEnabled(true)
                                     .build();
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -472,7 +472,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                     .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, ENV_ID)
                                     .setupAbstraction(Cd1SetupFields.ENV_TYPE_FIELD, EnvironmentType.NON_PROD.name())
                                     .build();
-    delegateTaskServiceClassic.queueTask(delegateTask);
+    delegateTaskServiceClassic.queueTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -534,7 +534,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult2.getCriteria())))
         .thenReturn(of(connectionResult2));
 
-    delegateTaskServiceClassic.queueTask(delegateTask);
+    delegateTaskServiceClassic.queueTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -572,7 +572,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                       .build())
             .expiry(System.currentTimeMillis() + DELEGATE_QUEUE_TIMEOUT)
             .build();
-    delegateTaskServiceClassic.executeTask(delegateTask);
+    delegateTaskServiceClassic.executeTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
   }
@@ -624,7 +624,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.queueTask(delegateTask);
+    delegateTaskServiceClassic.queueTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -684,7 +684,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.queueTask(delegateTask);
+    delegateTaskServiceClassic.queueTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -714,7 +714,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                               .timeout(TimeUnit.MINUTES.toMillis(2))
                                               .build())
                                     .build();
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -755,7 +755,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                       .timeout(TimeUnit.MINUTES.toMillis(2))
                       .build())
             .build();
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -795,7 +795,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                               .timeout(TimeUnit.MINUTES.toMillis(2))
                                               .build())
                                     .build();
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -846,7 +846,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                               .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
                                               .build())
                                     .build();
-    delegateTaskServiceClassic.queueTask(delegateTask);
+    delegateTaskServiceClassic.queueTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
   }
@@ -888,7 +888,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -933,7 +933,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -972,7 +972,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -1023,7 +1023,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.executeTask(delegateTask);
+    delegateTaskServiceClassic.executeTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -1063,7 +1063,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
     thrown.expect(NoEligibleDelegatesInAccountException.class);
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
   }
@@ -1099,7 +1099,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
 
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
@@ -1141,7 +1141,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
   }
@@ -1184,7 +1184,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                               .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
                                               .build())
                                     .build();
-    delegateTaskServiceClassic.queueTask(delegateTask);
+    delegateTaskServiceClassic.queueTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
   }
@@ -1218,7 +1218,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                       .build())
             .expiry(System.currentTimeMillis() + DELEGATE_QUEUE_TIMEOUT)
             .build();
-    delegateTaskServiceClassic.executeTask(delegateTask);
+    delegateTaskServiceClassic.executeTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -1255,7 +1255,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                       .build())
             .expiry(System.currentTimeMillis() + DELEGATE_QUEUE_TIMEOUT)
             .build();
-    delegateTaskServiceClassic.executeTask(delegateTask);
+    delegateTaskServiceClassic.executeTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
@@ -1295,7 +1295,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
   }
 
   @Test
@@ -1328,7 +1328,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .build();
     when(delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), connectionResult.getCriteria())))
         .thenReturn(of(connectionResult));
-    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
   }

@@ -138,82 +138,6 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     }
   }
 
-  @Override
-  public void submitTask(SubmitTaskRequest request, StreamObserver<SubmitTaskResponse> responseObserver) {
-    try {
-      String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
-      TaskDetails taskDetails = request.getDetails();
-      Map<String, String> setupAbstractions = request.getSetupAbstractions().getValuesMap();
-      LinkedHashMap<String, String> logAbstractions =
-          request.getLogAbstractions() == null || request.getLogAbstractions().getValuesMap() == null
-          ? new LinkedHashMap<>()
-          : new LinkedHashMap<>(request.getLogAbstractions().getValuesMap());
-      List<ExecutionCapability> capabilities = request.getCapabilitiesList()
-                                                   .stream()
-                                                   .map(capability
-                                                       -> (ExecutionCapability) kryoSerializer.asInflatedObject(
-                                                           capability.getKryoCapability().toByteArray()))
-                                                   .collect(Collectors.toList());
-
-      if (isNotEmpty(request.getSelectorsList())) {
-        List<SelectorCapability> selectorCapabilities = request.getSelectorsList()
-                                                            .stream()
-                                                            .filter(s -> isNotEmpty(s.getSelector()))
-                                                            .map(this::toSelectorCapability)
-                                                            .collect(Collectors.toList());
-        capabilities.addAll(selectorCapabilities);
-      }
-
-      DelegateTaskBuilder taskBuilder =
-          DelegateTask.builder()
-              .uuid(taskId)
-              .driverId(request.hasCallbackToken() ? request.getCallbackToken().getToken() : null)
-              .waitId(taskId)
-              .accountId(request.getAccountId().getId())
-              .setupAbstractions(setupAbstractions)
-              .logStreamingAbstractions(logAbstractions)
-              .workflowExecutionId(setupAbstractions.get(DelegateTaskKeys.workflowExecutionId))
-              .executionCapabilities(capabilities)
-              .selectionLogsTrackingEnabled(request.getSelectionTrackingLogEnabled())
-              .eligibleToExecuteDelegateIds(new LinkedList<>(request.getEligibleToExecuteDelegateIdsList()))
-              .executeOnHarnessHostedDelegates(request.getExecuteOnHarnessHostedDelegates())
-              .emitEvent(request.getEmitEvent())
-              .stageId(request.getStageId())
-              .forceExecute(request.getForceExecute())
-              .data(createTaskData(taskDetails));
-
-      if (request.hasQueueTimeout()) {
-        taskBuilder.expiry(System.currentTimeMillis() + Durations.toMillis(request.getQueueTimeout()));
-      }
-
-      DelegateTask task = taskBuilder.build();
-
-      if (task.getData().isParked()) {
-        delegateTaskServiceClassic.processDelegateTask(task, DelegateTask.Status.PARKED);
-      } else {
-        if (task.getData().isAsync()) {
-          delegateService.queueTask(task);
-        } else {
-          delegateService.scheduleSyncTask(task);
-        }
-      }
-      responseObserver.onNext(SubmitTaskResponse.newBuilder()
-                                  .setTaskId(TaskId.newBuilder().setId(taskId).build())
-                                  .setTotalExpiry(Timestamps.fromMillis(task.getExpiry() + task.getData().getTimeout()))
-                                  .build());
-      responseObserver.onCompleted();
-
-    } catch (Exception ex) {
-      if (ex instanceof NoDelegatesException) {
-        log.warn("No delegate exception found while processing submit task request. reason {}",
-            ExceptionUtils.getMessage(ex));
-      } else {
-        log.error("Unexpected error occurred while processing submit task request.", ex);
-      }
-      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
-    }
-  }
-
   public void submitTaskV2(SubmitTaskRequest request, StreamObserver<SubmitTaskResponse> responseObserver) {
     try {
       String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
@@ -300,33 +224,6 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     }
   }
 
-  private TaskData createTaskData(TaskDetails taskDetails) {
-    Object[] parameters = null;
-    byte[] data;
-    SerializationFormat serializationFormat;
-    if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.KRYO_PARAMETERS)) {
-      serializationFormat = SerializationFormat.KRYO;
-      data = taskDetails.getKryoParameters().toByteArray();
-      parameters = new Object[] {kryoSerializer.asInflatedObject(data)};
-    } else if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.JSON_PARAMETERS)) {
-      serializationFormat = SerializationFormat.JSON;
-      data = taskDetails.getJsonParameters().toStringUtf8().getBytes(StandardCharsets.UTF_8);
-    } else {
-      throw new InvalidRequestException("Invalid task response type.");
-    }
-
-    return TaskData.builder()
-        .parked(taskDetails.getParked())
-        .async(taskDetails.getMode() == TaskMode.ASYNC)
-        .taskType(taskDetails.getType().getType())
-        .parameters(parameters)
-        .data(data)
-        .timeout(Durations.toMillis(taskDetails.getExecutionTimeout()))
-        .expressionFunctorToken((int) taskDetails.getExpressionFunctorToken())
-        .serializationFormat(serializationFormat)
-        .build();
-  }
-
   private TaskDataV2 createTaskDataV2(TaskDetails taskDetails) {
     Object[] parameters = null;
     byte[] data;
@@ -355,22 +252,6 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   }
 
   @Override
-  public void executeParkedTask(
-      ExecuteParkedTaskRequest request, StreamObserver<ExecuteParkedTaskResponse> responseObserver) {
-    try {
-      delegateTaskServiceClassic.queueParkedTask(request.getAccountId().getId(), request.getTaskId().getId());
-
-      responseObserver.onNext(ExecuteParkedTaskResponse.newBuilder()
-                                  .setTaskId(TaskId.newBuilder().setId(request.getTaskId().getId()).build())
-                                  .build());
-      responseObserver.onCompleted();
-    } catch (Exception ex) {
-      log.error("Unexpected error occurred while processing execute parked task request.", ex);
-      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
-    }
-  }
-
-  @Override
   public void fetchParkedTaskStatus(
       FetchParkedTaskStatusRequest request, StreamObserver<FetchParkedTaskStatusResponse> responseObserver) {
     try {
@@ -387,26 +268,6 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
       responseObserver.onCompleted();
     } catch (Exception ex) {
       log.error("Unexpected error occurred while processing fetch parked task status request.", ex);
-      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
-    }
-  }
-
-  @Override
-  public void sendTaskStatus(SendTaskStatusRequest request, StreamObserver<SendTaskStatusResponse> responseObserver) {
-    try {
-      DelegateTaskResponse delegateTaskResponse =
-          DelegateTaskResponse.builder()
-              .responseCode(DelegateTaskResponse.ResponseCode.OK)
-              .accountId(request.getAccountId().getId())
-              .response((DelegateResponseData) kryoSerializer.asInflatedObject(
-                  request.getTaskResponseData().getKryoResultsData().toByteArray()))
-              .build();
-      delegateTaskService.processDelegateResponse(
-          request.getAccountId().getId(), null, request.getTaskId().getId(), delegateTaskResponse);
-      responseObserver.onNext(SendTaskStatusResponse.newBuilder().setSuccess(true).build());
-      responseObserver.onCompleted();
-    } catch (Exception ex) {
-      log.error("Unexpected error occurred while processing send parked task status request.", ex);
       responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
     }
   }
@@ -432,22 +293,6 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   }
 
   @Override
-  public void sendTaskProgress(
-      SendTaskProgressRequest request, StreamObserver<SendTaskProgressResponse> responseObserver) {
-    try {
-      delegateTaskServiceClassic.publishTaskProgressResponse(request.getAccountId().getId(),
-          request.getCallbackToken().getToken(), request.getTaskId().getId(),
-          (DelegateProgressData) kryoSerializer.asInflatedObject(
-              request.getTaskResponseData().getKryoResultsData().toByteArray()));
-      responseObserver.onNext(SendTaskProgressResponse.newBuilder().setSuccess(true).build());
-      responseObserver.onCompleted();
-    } catch (Exception ex) {
-      log.error("Unexpected error occurred while processing send task progress status request.", ex);
-      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
-    }
-  }
-
-  @Override
   public void sendTaskProgressV2(
       SendTaskProgressRequest request, StreamObserver<SendTaskProgressResponse> responseObserver) {
     try {
@@ -459,29 +304,6 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
       responseObserver.onCompleted();
     } catch (Exception ex) {
       log.error("Unexpected error occurred while processing send task progress status request.", ex);
-      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
-    }
-  }
-
-  @Override
-  public void cancelTask(CancelTaskRequest request, StreamObserver<CancelTaskResponse> responseObserver) {
-    try {
-      DelegateTask preAbortedTask =
-          delegateTaskServiceClassic.abortTask(request.getAccountId().getId(), request.getTaskId().getId());
-      if (preAbortedTask != null) {
-        responseObserver.onNext(
-            CancelTaskResponse.newBuilder()
-                .setCanceledAtStage(DelegateTaskGrpcUtils.mapTaskStatusToTaskExecutionStage(preAbortedTask.getStatus()))
-                .build());
-        responseObserver.onCompleted();
-        return;
-      }
-
-      responseObserver.onNext(
-          CancelTaskResponse.newBuilder().setCanceledAtStage(TaskExecutionStage.TYPE_UNSPECIFIED).build());
-      responseObserver.onCompleted();
-    } catch (Exception ex) {
-      log.error("Unexpected error occurred while processing cancel task request.", ex);
       responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
     }
   }

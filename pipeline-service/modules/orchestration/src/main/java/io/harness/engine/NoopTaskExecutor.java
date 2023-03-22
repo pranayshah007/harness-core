@@ -37,10 +37,4 @@ public class NoopTaskExecutor implements TaskExecutor {
   public boolean abortTask(Map<String, String> setupAbstractions, String taskId) {
     return true;
   }
-
-  @Override
-  public <T extends ResponseData> T executeTask(Map<String, String> setupAbstractions, TaskRequest taskRequest)
-      throws InterruptedException {
-    return null;
-  }
 }

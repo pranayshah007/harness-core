@@ -55,31 +55,12 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
       throw new InvalidRequestException(check.getMessage());
     }
 
-    SubmitTaskResponse submitTaskResponse;
-    if (taskRequest.getUseReferenceFalseKryoSerializer()) {
-      submitTaskResponse = PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::submitTaskV2,
-          buildTaskRequestWithToken(taskRequest.getDelegateTaskRequest().getRequest()));
-    } else {
-      submitTaskResponse = PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::submitTask,
-          buildTaskRequestWithToken(taskRequest.getDelegateTaskRequest().getRequest()));
-    }
+    SubmitTaskResponse submitTaskResponse =
+        PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::submitTaskV2,
+            buildTaskRequestWithToken(taskRequest.getDelegateTaskRequest().getRequest()));
     delegateAsyncService.setupTimeoutForTask(submitTaskResponse.getTaskId().getId(),
         Timestamps.toMillis(submitTaskResponse.getTotalExpiry()), currentTimeMillis() + holdFor.toMillis());
     return submitTaskResponse.getTaskId().getId();
-  }
-
-  @Override
-  public <T extends ResponseData> T executeTask(Map<String, String> setupAbstractions, TaskRequest taskRequest) {
-    TaskRequestValidityCheck check = validateTaskRequest(taskRequest, TaskMode.SYNC);
-    if (!check.isValid()) {
-      throw new InvalidRequestException(check.getMessage());
-    }
-    SubmitTaskRequest submitTaskRequest = buildTaskRequestWithToken(taskRequest.getDelegateTaskRequest().getRequest());
-    SubmitTaskResponse submitTaskResponse =
-        PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::submitTask, submitTaskRequest);
-    return delegateSyncService.waitForTask(submitTaskResponse.getTaskId().getId(),
-        submitTaskRequest.getDetails().getType().getType(),
-        Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null);
   }
 
   private TaskRequestValidityCheck validateTaskRequest(TaskRequest taskRequest, TaskMode validMode) {
@@ -111,7 +92,8 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
   @Override
   public boolean abortTask(Map<String, String> setupAbstractions, String taskId) {
     try {
-      CancelTaskResponse response = PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::cancelTask,
+      CancelTaskResponse response = PmsGrpcClientUtils.retryAndProcessException(
+          delegateServiceBlockingStub::cancelTaskV2,
           CancelTaskRequest.newBuilder()
               .setAccountId(AccountId.newBuilder().setId(setupAbstractions.get(SetupAbstractionKeys.accountId)).build())
               .setTaskId(TaskId.newBuilder().setId(taskId).build())

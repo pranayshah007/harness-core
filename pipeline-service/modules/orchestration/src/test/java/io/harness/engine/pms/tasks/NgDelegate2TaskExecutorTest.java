@@ -114,7 +114,7 @@ public class NgDelegate2TaskExecutorTest extends CategoryTest {
                     .build())
             .build();
 
-    when(delegateServiceBlockingStub.submitTask(any()))
+    when(delegateServiceBlockingStub.submitTaskV2(any()))
         .thenReturn(SubmitTaskResponse.newBuilder()
                         .setTotalExpiry(Timestamp.newBuilder().setSeconds(30).build())
                         .setTaskId(TaskId.newBuilder().setId(taskId).build())
@@ -126,53 +126,11 @@ public class NgDelegate2TaskExecutorTest extends CategoryTest {
 
     assertThat(actualTaskId).isEqualTo(taskId);
 
-    verify(delegateServiceBlockingStub).submitTask(any());
+    verify(delegateServiceBlockingStub).submitTaskV2(any());
     verify(delegateAsyncService).setupTimeoutForTask(anyString(), anyLong(), anyLong());
     verify(tokenSupplier).get();
 
     verifyNoMoreInteractions(delegateSyncService);
-  }
-
-  @Test
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void shouldThrowInvalidRequestExceptionWhenExecuteTask() {
-    TaskRequest taskRequest =
-        TaskRequest.newBuilder()
-            .setDelegateTaskRequest(
-                DelegateTaskRequest.newBuilder()
-                    .setRequest(SubmitTaskRequest.newBuilder()
-                                    .setAccountId(AccountId.newBuilder().setId(generateUuid()).build())
-                                    .setDetails(TaskDetails.newBuilder().setMode(TaskMode.ASYNC).build())
-                                    .build())
-                    .build())
-            .build();
-
-    assertThatThrownBy(() -> ngDelegate2TaskExecutor.executeTask(new HashMap<>(), taskRequest))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining(String.format("DelegateTaskRequest Mode %s Not Supported", TaskMode.ASYNC));
-  }
-
-  @Test
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void shouldThrowInvalidRequestExceptionWhenExecuteTaskWithWrongTaskMode() {
-    TaskRequest taskRequest = TaskRequest.newBuilder().setSkipTaskRequest(SkipTaskRequest.newBuilder().build()).build();
-
-    assertThatThrownBy(() -> ngDelegate2TaskExecutor.executeTask(new HashMap<>(), taskRequest))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Task Request doesnt contain delegate Task Request");
-  }
-
-  @Test
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void shouldExecuteTask() {
-    TaskRequest taskRequest = TaskRequest.newBuilder().setSkipTaskRequest(SkipTaskRequest.newBuilder().build()).build();
-
-    assertThatThrownBy(() -> ngDelegate2TaskExecutor.executeTask(new HashMap<>(), taskRequest))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Task Request doesnt contain delegate Task Request");
   }
 
   @Test
@@ -192,7 +150,7 @@ public class NgDelegate2TaskExecutorTest extends CategoryTest {
                     .build())
             .build();
 
-    when(delegateServiceBlockingStub.submitTask(any()))
+    when(delegateServiceBlockingStub.submitTaskV2(any()))
         .thenReturn(SubmitTaskResponse.newBuilder()
                         .setTotalExpiry(Timestamp.newBuilder().setSeconds(30).build())
                         .setTaskId(TaskId.newBuilder().setId(taskId).build())
@@ -200,10 +158,7 @@ public class NgDelegate2TaskExecutorTest extends CategoryTest {
     when(delegateSyncService.waitForTask(anyString(), anyString(), any(), any())).thenReturn(new ResponseData() {});
     when(tokenSupplier.get()).thenReturn(DelegateCallbackToken.newBuilder().setToken(generateUuid()).build());
 
-    ResponseData responseData = ngDelegate2TaskExecutor.executeTask(new HashMap<>(), taskRequest);
-    assertThat(responseData).isNotNull();
-
-    verify(delegateServiceBlockingStub).submitTask(any());
+    verify(delegateServiceBlockingStub).submitTaskV2(any());
     verify(delegateSyncService).waitForTask(anyString(), anyString(), any(), any());
     verify(tokenSupplier).get();
     verifyNoMoreInteractions(delegateAsyncService);

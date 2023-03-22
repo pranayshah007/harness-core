@@ -94,7 +94,7 @@ public class DelegateTaskQueueServiceTest extends WingsBaseTest {
                                     .data(TaskData.builder().taskType(TaskType.INITIALIZATION_PHASE.name()).build())
                                     .eligibleToExecuteDelegateIds(new LinkedList<>(List.of(delegate.getUuid())))
                                     .build();
-    delegateTaskQueueService.acknowledgeAndProcessDelegateTask(
+    delegateTaskQueueService.acknowledgeAndProcessDelegateTaskV2(
         DelegateTaskDequeue.builder().delegateTask(delegateTask).build());
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();

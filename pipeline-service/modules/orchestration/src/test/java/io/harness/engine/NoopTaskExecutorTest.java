@@ -44,12 +44,4 @@ public class NoopTaskExecutorTest extends CategoryTest {
   public void testAbortTask() {
     assertThat(noopTaskExecutorWithANoopTest.abortTask(null, null)).isTrue();
   }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testExecuteTask() throws InterruptedException {
-    ResponseData responseData = noopTaskExecutorWithANoopTest.executeTask(null, null);
-    assertThat(responseData).isNull();
-  }
 }

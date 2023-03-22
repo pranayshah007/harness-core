@@ -19,7 +19,4 @@ public interface TaskExecutor {
   void expireTask(Map<String, String> setupAbstractions, String taskId);
 
   boolean abortTask(Map<String, String> setupAbstractions, String taskId);
-
-  <T extends ResponseData> T executeTask(Map<String, String> setupAbstractions, TaskRequest taskRequest)
-      throws InterruptedException;
 }

@@ -115,7 +115,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                          .build())
               .filter(this::isResourceAvailableToAssignTask)
               .collect(toList());
-      delegateTasksDequeueList.forEach(this::acknowledgeAndProcessDelegateTask);
+      delegateTasksDequeueList.forEach(this::acknowledgeAndProcessDelegateTaskV2);
       return true;
     } catch (IOException e) {
       log.error("Error while dequeue delegate task ", e);
@@ -185,28 +185,6 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
   }
 
   @VisibleForTesting
-  void acknowledgeAndProcessDelegateTask(DelegateTaskDequeue delegateTaskDequeue) {
-    try {
-      if (delegateTaskDequeue.getDelegateTask() != null) {
-        if (delegateTaskDequeue.getDelegateTask().getTaskDataV2() != null) {
-          acknowledgeAndProcessDelegateTaskV2(delegateTaskDequeue);
-        }
-        String itemId =
-            acknowledge(delegateTaskDequeue.getItemId(), delegateTaskDequeue.getDelegateTask().getAccountId());
-        log.info("Delegate task {} acknowledge with item id {} from Queue Service",
-            delegateTaskDequeue.getDelegateTask().getUuid(), itemId);
-        if (isNotEmpty(itemId)) {
-          String taskId =
-              delegateTaskServiceClassic.saveAndBroadcastDelegateTask(delegateTaskDequeue.getDelegateTask());
-          log.info("Queued task {} broadcasting to delegate.", taskId);
-        }
-      }
-    } catch (Exception e) {
-      log.error("Unable to acknowledge queue service on dequeue delegate task id {}, item Id {}",
-          delegateTaskDequeue.getDelegateTask().getUuid(), delegateTaskDequeue.getItemId(), e);
-    }
-  }
-  @VisibleForTesting
   void acknowledgeAndProcessDelegateTaskV2(DelegateTaskDequeue delegateTaskDequeue) {
     try {
       if (delegateTaskDequeue.getDelegateTask() != null) {
@@ -216,7 +194,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
             delegateTaskDequeue.getDelegateTask().getUuid(), itemId);
         if (isNotEmpty(itemId)) {
           String taskId =
-              delegateTaskServiceClassic.saveAndBroadcastDelegateTask(delegateTaskDequeue.getDelegateTask());
+              delegateTaskServiceClassic.saveAndBroadcastDelegateTaskV2(delegateTaskDequeue.getDelegateTask());
           log.info("Queued task {} broadcasting to delegate.", taskId);
         }
       }
