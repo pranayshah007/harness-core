@@ -33,6 +33,8 @@ public class BackstagePermissionsMapper {
         .userGroup(permissions.getUserGroup())
         .accountIdentifier(accountIdentifier)
         .id(permissions.getIdentifer())
+        .createdAt(permissions.getCreated())
+        .lastModifiedAt(permissions.getUpdated())
         .build();
   }
 }
