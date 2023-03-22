@@ -91,6 +91,15 @@ public interface NGClient {
       @Part("fileUsage") RequestBody fileUsage, @Part("type") RequestBody type,
       @Part("parentIdentifier") RequestBody parentIdentifier, @Part("mimeType") RequestBody mimeType);
 
+  @POST("file-store")
+  @Multipart
+  Call<ResponseDTO<FileDTO>> createFolder(@Header(X_API_KEY) String auth,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Part("name") RequestBody name,
+      @Part("identifier") RequestBody identifier, @Part("type") RequestBody type,
+      @Part("parentIdentifier") RequestBody parentIdentifier);
+
   @POST("variables")
   Call<ResponseDTO<ConnectorResponseDTO>> createVariable(@Header(X_API_KEY) String auth,
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body JsonNode variableRequestDTO);

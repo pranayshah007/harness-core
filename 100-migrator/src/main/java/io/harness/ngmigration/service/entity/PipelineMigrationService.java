@@ -350,6 +350,7 @@ public class PipelineMigrationService extends NgMigrationService {
                                               .build())
                       .build())
             .ngEntityDetail(NgEntityDetail.builder()
+                                .entityType(PIPELINE)
                                 .identifier(identifier)
                                 .orgIdentifier(orgIdentifier)
                                 .projectIdentifier(projectIdentifier)

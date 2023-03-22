@@ -575,6 +575,7 @@ pipelines {"name": "createdAt_1", "background": true} {"createdAt": 1}
 preferences {"name": "appId_1", "background": true} {"appId": 1}
 preferences {"name": "createdAt_1", "background": true} {"createdAt": 1}
 preferences {"name": "preference_index", "background": true} {"accountId": 1, "userId": 1, "name": 1}
+preferences {"name": "usergroupsId_shared", "background": true} {"accountId": 1, "userId": 1, "name": 1, "userGroupsIdToShare": 1}
 progressUpdate {"name": "correlation", "background": true} {"correlationId": 1, "createdAt": -1}
 progressUpdate {"name": "createdAt_1", "background": true} {"createdAt": 1}
 progressUpdate {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
