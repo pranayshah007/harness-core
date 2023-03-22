@@ -11,10 +11,10 @@ import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec.MonthlyCalenderSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec.WeeklyCalendarSpec;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.CalenderSLOTarget;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.MonthlyCalenderTarget;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.QuarterlyCalenderTarget;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.WeeklyCalenderTarget;
+import io.harness.cvng.servicelevelobjective.entities.CalenderSLOTarget;
+import io.harness.cvng.servicelevelobjective.entities.MonthlyCalenderTarget;
+import io.harness.cvng.servicelevelobjective.entities.QuarterlyCalenderTarget;
+import io.harness.cvng.servicelevelobjective.entities.WeeklyCalenderTarget;
 
 public class CalenderSLOTargetTransformer implements SLOTargetTransformer<CalenderSLOTarget, CalenderSLOTargetSpec> {
   @Override

@@ -141,27 +141,28 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
     Map<Instant, Integer> timeStampToTotalValue = new HashMap<>();
     getTimeStampToValueMaps(serviceLevelObjectivesDetailCompositeSLORecordMap, objectivesDetailSLIMissingDataTypeMap,
         timeStampToGoodValue, timeStampToBadValue, timeStampToTotalValue);
+    CompositeSLORecord sloRecord = null;
     for (Instant instant : ImmutableSortedSet.copyOf(timeStampToTotalValue.keySet())) {
       if (timeStampToTotalValue.get(instant).equals(serviceLevelObjectivesDetailCompositeSLORecordMap.size())) {
-        CompositeSLORecord sloRecord = sloRecordMap.get(instant);
+        sloRecord = sloRecordMap.get(instant);
         runningGoodCount += timeStampToGoodValue.getOrDefault(instant, 0.0);
         runningBadCount += timeStampToBadValue.getOrDefault(instant, 0.0);
-        if (Objects.nonNull(sloRecord)) {
-          sloRecord.setRunningGoodCount(runningGoodCount);
-          sloRecord.setRunningBadCount(runningBadCount);
-          sloRecord.setSloVersion(sloVersion);
-        } else {
-          sloRecord = CompositeSLORecord.builder()
-                          .runningBadCount(runningBadCount)
-                          .runningGoodCount(runningGoodCount)
-                          .sloId(verificationTaskId)
-                          .sloVersion(sloVersion)
-                          .verificationTaskId(verificationTaskId)
-                          .timestamp(instant)
-                          .build();
-        }
-        updateOrCreateSLORecords.add(sloRecord);
       }
+      if (Objects.nonNull(sloRecord)) {
+        sloRecord.setRunningGoodCount(runningGoodCount);
+        sloRecord.setRunningBadCount(runningBadCount);
+        sloRecord.setSloVersion(sloVersion);
+      } else {
+        sloRecord = CompositeSLORecord.builder()
+                        .runningBadCount(runningBadCount)
+                        .runningGoodCount(runningGoodCount)
+                        .sloId(verificationTaskId)
+                        .sloVersion(sloVersion)
+                        .verificationTaskId(verificationTaskId)
+                        .timestamp(instant)
+                        .build();
+      }
+      updateOrCreateSLORecords.add(sloRecord);
     }
     hPersistence.save(updateOrCreateSLORecords);
   }

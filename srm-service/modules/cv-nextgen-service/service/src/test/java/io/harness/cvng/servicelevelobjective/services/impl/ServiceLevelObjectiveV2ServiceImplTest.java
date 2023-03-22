@@ -85,12 +85,15 @@ import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObject
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
+import io.harness.cvng.servicelevelobjective.entities.SLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.cvng.servicelevelobjective.transformer.SLOTargetTransformerOldAndNew;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
@@ -115,6 +118,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -139,6 +143,8 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
 
   @Inject private OutboxService outboxService;
   @Inject private SLIRecordService sliRecordService;
+
+  @Inject private Map<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMap;
 
   private BuilderFactory builderFactory;
   ProjectParams projectParams;
@@ -270,6 +276,13 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+    SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
+                              .getSLOTarget(sloDTO.getSloTarget().getSpec());
+    assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
+    assertThat(serviceLevelObjective.getSloTarget())
+        .isEqualTo(SLOTargetTransformerOldAndNew.getOldSLOtargetFromNewSLOtarget(sloTarget));
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
     SimpleServiceLevelObjective simpleServiceLevelObjective =
         (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
@@ -305,6 +318,12 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThat(verificationTaskService.getCompositeSLOVerificationTaskId(
                    builderFactory.getContext().getAccountId(), compositeServiceLevelObjective.getUuid()))
         .isEqualTo(compositeServiceLevelObjective.getUuid());
+    serviceLevelObjective = serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+    sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
+                    .getSLOTarget(sloDTO.getSloTarget().getSpec());
+    assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
+    assertThat(serviceLevelObjective.getSloTarget())
+        .isEqualTo(SLOTargetTransformerOldAndNew.getOldSLOtargetFromNewSLOtarget(sloTarget));
   }
 
   @Test
