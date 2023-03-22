@@ -8,6 +8,9 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
+import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_EXECUTE;
+import static io.harness.ccm.rbac.CCMResources.GOVERNANCE_CONNECTOR;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_DELETE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_UPDATED;
@@ -20,6 +23,7 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.audittrails.events.RuleEnforcementCreateEvent;
@@ -39,6 +43,7 @@ import io.harness.ccm.views.helper.ExecutionDetailRequest;
 import io.harness.ccm.views.helper.ExecutionDetails;
 import io.harness.ccm.views.service.RuleEnforcementService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -70,6 +75,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TimeZone;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -187,6 +193,13 @@ public class GovernanceRuleEnforcementResource {
     }
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
     ruleEnforcementService.checkLimitsAndValidate(ruleEnforcement, governanceConfig);
+    Set<String> allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(
+        accountId, null, null, ruleEnforcement.getTargetAccountIdentifiers(), RULE_EXECUTE);
+
+    if (allowedAccountIds.size() != ruleEnforcement.getTargetAccountIdentifiers().size()) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, GOVERNANCE_CONNECTOR), WingsException.USER, null);
+    }
     ruleEnforcementService.save(ruleEnforcement);
 
     // Insert a record in dkron

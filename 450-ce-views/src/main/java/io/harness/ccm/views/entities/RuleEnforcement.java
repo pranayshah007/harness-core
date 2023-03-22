@@ -28,6 +28,7 @@ import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -59,6 +60,7 @@ public final class RuleEnforcement implements PersistentEntity, UuidAware, Creat
   @Schema(description = "executionSchedule") String executionSchedule;
   @Schema(description = "executionTimezone") String executionTimezone;
   @Schema(description = "targetAccounts") List<String> targetAccounts;
+  @Schema(description = "targetAccountIdentifiers") Set<String> targetAccountIdentifiers;
   @Schema(description = "targetRegions") List<String> targetRegions;
   @Schema(description = "isDryRun") Boolean isDryRun;
   @Schema(description = "deleted") Boolean deleted;
@@ -109,6 +111,7 @@ public final class RuleEnforcement implements PersistentEntity, UuidAware, Creat
         .targetAccounts(getTargetAccounts())
         .targetRegions(getTargetRegions())
         .isDryRun(getIsDryRun())
+        .targetAccountIdentifiers(getTargetAccountIdentifiers())
         .isEnabled(getIsEnabled())
         .deleted(getDeleted())
         .createdAt(getCreatedAt())
