@@ -267,7 +267,7 @@ public class DowntimeServiceImpl implements DowntimeService {
             projectParams, Collections.singletonList(identifier));
     if (!pastOrActiveInstances.isEmpty()) {
       throw new InvalidRequestException(String.format(
-          "Downtime with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can't be deleted, as it's SLI calculation has already started.",
+          "Downtime with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can't be deleted, as it has a a past/current instance of downtime, where deleting it can impact SLO adversely.",
           identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
     }
@@ -625,9 +625,7 @@ public class DowntimeServiceImpl implements DowntimeService {
         entityUnavailabilityStatusesService.getActiveOrFirstUpcomingInstance(projectParams, downtimeIdentifiers);
     Map<String, Integer> downtimeIdentifierToPastAndActiveInstancesCountMap = new HashMap<>();
     for (EntityUnavailabilityStatusesDTO dto : pastOrActiveInstances) {
-      String entityId = dto.getEntityId();
-      downtimeIdentifierToPastAndActiveInstancesCountMap.put(
-          entityId, downtimeIdentifierToPastAndActiveInstancesCountMap.getOrDefault(entityId, 0) + 1);
+      downtimeIdentifierToPastAndActiveInstancesCountMap.merge(dto.getEntityId(), 1, Integer::sum);
     }
 
     Map<String, EntityUnavailabilityStatusesDTO> downtimeIdentifierToInstancesDTOMap =

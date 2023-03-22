@@ -1393,6 +1393,7 @@ public class BuilderFactory {
         .tags(Collections.singletonList(NGTag.builder().key("key").value("value").build()))
         .desc("slo description")
         .sloTarget(RollingSLOTarget.builder().periodLengthDays(30).build())
+        .target(io.harness.cvng.servicelevelobjective.entities.RollingSLOTarget.builder().periodLengthDays(30).build())
         .sloTargetPercentage(80.0)
         .serviceLevelIndicators(Collections.singletonList("sloIdentifier_metric1"))
         .healthSourceIdentifier("healthSourceIdentifier")

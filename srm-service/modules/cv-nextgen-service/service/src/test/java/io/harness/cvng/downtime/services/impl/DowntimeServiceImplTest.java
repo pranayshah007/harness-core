@@ -425,7 +425,7 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(() -> downtimeService.delete(projectParams, oneTimeEndTimeBasedDowntimeDTO.getIdentifier()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "Downtime with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can't be deleted, as it's SLI calculation has already started.",
+            "Downtime with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can't be deleted, as it has a a past/current instance of downtime, where deleting it can impact SLO adversely.",
             oneTimeEndTimeBasedDowntimeDTO.getIdentifier(), projectParams.getAccountIdentifier(),
             projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
   }
@@ -448,7 +448,7 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(() -> downtimeService.delete(projectParams, recurringDowntimeDTO.getIdentifier()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "Downtime with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can't be deleted, as it's SLI calculation has already started.",
+            "Downtime with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can't be deleted, as it has a a past/current instance of downtime, where deleting it can impact SLO adversely.",
             recurringDowntimeDTO.getIdentifier(), projectParams.getAccountIdentifier(),
             projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
   }
