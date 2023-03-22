@@ -8,7 +8,6 @@
 package software.wings.scheduler;
 
 import static io.harness.rule.OwnerRule.UTKARSH;
-import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.alert.AlertType.InvalidKMS;

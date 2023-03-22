@@ -80,10 +80,8 @@ import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import software.wings.beans.AzureVaultConfig;
-import software.wings.beans.BaseVaultConfig;
 import software.wings.service.impl.security.GlobalEncryptDecryptClient;
 import software.wings.service.impl.security.NGEncryptorService;
 import software.wings.settings.SettingVariableTypes;
@@ -175,8 +173,6 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
     boolean deleted =
         ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
-    BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
-    assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
     assertThat(deleted).isEqualTo(true);
   }
 
@@ -214,8 +210,6 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
     boolean deleted =
         ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
-    BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
-    assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
     assertThat(deleted).isEqualTo(true);
   }
 

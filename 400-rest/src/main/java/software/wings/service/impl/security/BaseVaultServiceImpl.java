@@ -24,7 +24,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedDataParent;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.encryptors.managerproxy.ManagerEncryptorHelper;
 import io.harness.exception.SecretManagementException;
