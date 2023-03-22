@@ -188,6 +188,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     final FileModifyRequest fileModifyRequest =
         fileModifyRequestBuilder.setBlobId(Strings.nullToEmpty(gitFileDetails.getOldFileSha()))
             .setUseGitClient(useGitClient)
+            .setCommitId(Strings.nullToEmpty(gitFileDetails.getCommitId()))
             .build();
     UpdateFileResponse updateFileResponse =
         ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::updateFile, fileModifyRequest);
