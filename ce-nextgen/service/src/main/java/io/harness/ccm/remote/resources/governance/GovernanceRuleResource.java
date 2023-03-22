@@ -289,7 +289,7 @@ public class GovernanceRuleResource {
     return create(accountId, createRuleDTO);
   }
 
-  @POST
+  @GET
   @Path("listV2")
   @Timed
   @Consumes(MediaType.APPLICATION_JSON)
@@ -306,9 +306,7 @@ public class GovernanceRuleResource {
       })
   public List<ConnectorResponseDTO>
   listV2(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(
-          required = true, description = "Request body containing Rule uuid") @Valid CloneRuleDTO cloneRuleDTO) {
+      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
     List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
     PageResponse<ConnectorResponseDTO> response = null;
     ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
