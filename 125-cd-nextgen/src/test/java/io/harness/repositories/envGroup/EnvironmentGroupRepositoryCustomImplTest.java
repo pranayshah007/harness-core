@@ -27,6 +27,7 @@ import io.harness.rule.Owner;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Optional;
+import org.checkerframework.checker.units.qual.C;
 import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,6 +73,9 @@ public class EnvironmentGroupRepositoryCustomImplTest extends CDNGTestBase {
                                   .projectIdentifier(PRO_ID)
                                   .identifier("env2")
                                   .build());
+
+    // clean up before each test
+    environmentGroupRepositoryCustom.delete(new Criteria());
   }
 
   @Test
