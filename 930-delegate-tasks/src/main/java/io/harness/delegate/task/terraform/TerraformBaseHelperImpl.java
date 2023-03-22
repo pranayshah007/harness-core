@@ -84,6 +84,7 @@ import io.harness.logging.PlanHumanReadableOutputStream;
 import io.harness.logging.PlanJsonLogOutputStream;
 import io.harness.logging.PlanLogOutputStream;
 import io.harness.provision.TerraformPlanSummary;
+import io.harness.provision.model.TfConfigInspectVersion;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
@@ -832,8 +833,9 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   }
 
   public TerraformConfigInspectVersion getTerraformConfigInspectVersion(TerraformProvisionParameters parameters) {
-    if (parameters.getTerraformConfigInspectVersion() != null) {
-      return parameters.getTerraformConfigInspectVersion();
+    if (parameters.getTerraformConfigInspectVersion() != null
+        && TfConfigInspectVersion.V1_2.equals(parameters.getTerraformConfigInspectVersion())) {
+      return TerraformConfigInspectVersion.V1_2;
     } else if (parameters.isUseTfConfigInspectLatestVersion()) {
       return TerraformConfigInspectVersion.V1_1;
     } else {

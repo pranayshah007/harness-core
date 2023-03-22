@@ -61,6 +61,7 @@ import io.harness.limits.ActionType;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.limits.LimitEnforcementUtils;
 import io.harness.limits.checker.StaticLimitCheckerWithDecrement;
+import io.harness.provision.model.TfConfigInspectVersion;
 import io.harness.queue.QueuePublisher;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.validation.Create;
@@ -773,7 +774,7 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
             .useTfConfigInspectLatestVersion(
                 featureFlagService.isEnabled(TERRAFORM_CONFIG_INSPECT_VERSION_SELECTOR, accountId));
     if (featureFlagService.isEnabled(CDS_TERRAFORM_CONFIG_INSPECT_V1_2, accountId)) {
-      terraformProvisionParameters.terraformConfigInspectVersion(TerraformConfigInspectVersion.V1_2);
+      terraformProvisionParameters.terraformConfigInspectVersion(TfConfigInspectVersion.V1_2);
     }
 
     if (terraformSourceType.equals(TerraformSourceType.S3)) {
@@ -957,7 +958,7 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
                             .configFileAWSEncryptionDetails(awsS3EncryptionDetails)
                             .terraformConfigInspectVersion(
                                 featureFlagService.isEnabled(CDS_TERRAFORM_CONFIG_INSPECT_V1_2, accountId)
-                                    ? TerraformConfigInspectVersion.V1_2
+                                    ? TfConfigInspectVersion.V1_2
                                     : null)
                             .build()})
                     .timeout(TaskData.DEFAULT_SYNC_CALL_TIMEOUT)
