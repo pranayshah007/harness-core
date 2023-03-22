@@ -84,7 +84,6 @@ public class PlanCreatorServiceHelper {
             currentYaml, finalResponse.getYamlUpdates().getFqnToYamlMap());
         finalResponse.updateYamlInDependencies(updatedYaml);
       }
-      finalResponse.mergePreservedNodesInRollbackMode(response.getPreservedNodesInRollbackMode());
     }
     return dependencies.toBuilder()
         .setYaml(updatedYaml)
