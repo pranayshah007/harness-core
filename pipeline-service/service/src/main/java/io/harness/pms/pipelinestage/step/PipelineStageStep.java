@@ -15,10 +15,12 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.interrupts.Interrupt;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
@@ -69,6 +71,7 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
   @Inject private PMSExecutionService pmsExecutionService;
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject InterruptService interruptService;
+  @Inject private PlanExecutionMetadataService planExecutionMetadataService;
 
   @Override
   public Class<PipelineStageStepParameters> getStepParametersClass() {
@@ -130,6 +133,17 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
   }
 
   public PipelineStageInfo prepareParentStageInfo(Ambiance ambiance, PipelineStageStepParameters stepParameters) {
+    PlanExecutionMetadata planExecutionMetadata =
+        planExecutionMetadataService.findByPlanExecutionId(ambiance.getPlanExecutionId())
+            .orElseThrow(()
+                             -> new IllegalStateException(
+                                 "PlanExecution metadata null for planExecutionId " + ambiance.getPlanExecutionId()));
+
+    String triggerJsonPayload = "";
+    if (planExecutionMetadata.getTriggerJsonPayload() != null) {
+      triggerJsonPayload = planExecutionMetadata.getTriggerJsonPayload();
+    }
+
     return PipelineStageInfo.newBuilder()
         .setExecutionId(ambiance.getPlanExecutionId())
         .setStageNodeId(stepParameters.getStageNodeId())
@@ -138,7 +152,7 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
         .setIdentifier(ambiance.getMetadata().getPipelineIdentifier())
         .setProjectId(ambiance.getSetupAbstractions().get("projectIdentifier"))
         .setOrgId(ambiance.getSetupAbstractions().get("orgIdentifier"))
-        .setTriggerJsonPayload(stepParameters.getTriggerJsonPayload())
+        .setTriggerJsonPayload(triggerJsonPayload)
         .build();
   }
 

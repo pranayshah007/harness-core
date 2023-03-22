@@ -129,7 +129,7 @@ public class PipelineStageStepTest extends CategoryTest {
                             .build();
 
     PipelineStageStepParameters stepParameters =
-        PipelineStageStepParameters.builder().stageNodeId("stageNodeId").triggerJsonPayload("").build();
+        PipelineStageStepParameters.builder().stageNodeId("stageNodeId").build();
     PipelineStageInfo info = pipelineStageStep.prepareParentStageInfo(ambiance, stepParameters);
     assertThat(info.getHasParentPipeline()).isEqualTo(true);
     assertThat(info.getStageNodeId()).isEqualTo("stageNodeId");
@@ -177,7 +177,7 @@ public class PipelineStageStepTest extends CategoryTest {
                             .build();
 
     PipelineStageStepParameters stepParameters =
-        PipelineStageStepParameters.builder().stageNodeId("stageNodeId").triggerJsonPayload("").build();
+        PipelineStageStepParameters.builder().stageNodeId("stageNodeId").build();
 
     PipelineStageInfo info = pipelineStageStep.prepareParentStageInfo(ambiance, stepParameters);
     doReturn(PlanExecutionResponseDto.builder().planExecution(PlanExecution.builder().uuid("uuid").build()).build())

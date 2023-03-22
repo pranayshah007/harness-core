@@ -85,8 +85,8 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
         yamlField.getNode().getParentNode().getCurrJsonNode());
   }
 
-  public PipelineStageStepParameters getStepParameter(PipelineStageConfig config, YamlField pipelineInputs,
-      String stageNodeId, String childPipelineVersion, String triggerJsonPayload) {
+  public PipelineStageStepParameters getStepParameter(
+      PipelineStageConfig config, YamlField pipelineInputs, String stageNodeId, String childPipelineVersion) {
     return PipelineStageStepParameters.builder()
         .pipeline(config.getPipeline())
         .org(config.getOrg())
@@ -95,7 +95,6 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
         .inputSetReferences(config.getInputSetReferences())
         .outputs(ParameterField.createValueField(PipelineStageOutputs.getMapOfString(config.getOutputs())))
         .pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs, childPipelineVersion))
-        .triggerJsonPayload(triggerJsonPayload)
         .build();
   }
 
@@ -160,7 +159,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
                     .getField(YAMLFieldNameConstants.SPEC)
                     .getNode()
                     .getField(YAMLFieldNameConstants.INPUTS),
-                planNodeId, childPipelineEntity.get().getHarnessVersion(), ctx.getMetadata().getTriggerJsonPayload()))
+                planNodeId, childPipelineEntity.get().getHarnessVersion()))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
             .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
             .facilitatorObtainment(
