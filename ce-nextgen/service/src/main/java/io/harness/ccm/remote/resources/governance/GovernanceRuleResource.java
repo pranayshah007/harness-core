@@ -8,6 +8,10 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
+import static io.harness.ccm.rbac.CCMRbacPermissions.FOLDER_VIEW;
+import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_EXECUTE;
+import static io.harness.ccm.rbac.CCMResources.GOVERNANCE_CONNECTOR;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_DELETE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_UPDATED;
@@ -23,6 +27,7 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.audittrails.events.RuleCreateEvent;
@@ -36,6 +41,7 @@ import io.harness.ccm.views.dto.CreateRuleDTO;
 import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
 import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.dto.ListDTO;
+import io.harness.ccm.views.entities.CEViewFolder;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.RuleClone;
 import io.harness.ccm.views.entities.RuleEnforcement;
@@ -61,6 +67,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.filter.FilterType;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -102,6 +109,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -279,6 +287,63 @@ public class GovernanceRuleResource {
     newRule.setTags(existingRule.getTags());
     CreateRuleDTO createRuleDTO = CreateRuleDTO.builder().rule(newRule).build();
     return create(accountId, createRuleDTO);
+  }
+
+  @POST
+  @Path("listV2")
+  @Timed
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ExceptionMetered
+  @ApiOperation(value = "governanceListV2", nickname = "governanceListV2")
+  @LogAccountIdentifier
+  @Operation(operationId = "governanceListV2", description = "get connectors with governance enabled",
+      summary = "connectors with governance enabled",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "newly created rule", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public List<ConnectorResponseDTO>
+  listV2(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(
+          required = true, description = "Request body containing Rule uuid") @Valid CloneRuleDTO cloneRuleDTO) {
+    List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
+    PageResponse<ConnectorResponseDTO> response = null;
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
+        ConnectorFilterPropertiesDTO.builder()
+            .types(Arrays.asList(ConnectorType.CE_AWS))
+            .ccmConnectorFilter(
+                CcmConnectorFilter.builder().featuresEnabled(Arrays.asList(CEFeatures.GOVERNANCE)).build())
+            .build();
+    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
+    int page = 0;
+    int size = 100;
+
+    do {
+      response = NGRestUtils.getResponse(connectorResourceClient.listConnectors(
+          accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
+      if (response != null && isNotEmpty(response.getContent())) {
+        nextGenConnectorResponses.addAll(response.getContent());
+      }
+      page++;
+    } while (response != null && isNotEmpty(response.getContent()));
+
+    Set<String> allowedAccountIds = null;
+    List<ConnectorResponseDTO> connectorResponse = null;
+    if (nextGenConnectorResponses != null) {
+      allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
+          nextGenConnectorResponses.stream().map(e -> e.getConnector().getIdentifier()).collect(Collectors.toSet()),
+          RULE_EXECUTE);
+      for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
+        if (allowedAccountIds.contains(connector.getConnector().getIdentifier())) {
+          connectorResponse.add(connector);
+        }
+      }
+    }
+
+    return connectorResponse;
   }
 
   @PUT
@@ -553,6 +618,17 @@ public class GovernanceRuleResource {
         page++;
       } while (response != null && isNotEmpty(response.getContent()));
 
+      Set<String> allowedAccountIds = null;
+      if (nextGenConnectorResponses != null) {
+        allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
+            nextGenConnectorResponses.stream().map(e -> e.getConnector().getIdentifier()).collect(Collectors.toSet()),
+            RULE_EXECUTE);
+      }
+      if (allowedAccountIds.size() != nextGenConnectorResponses.size()) {
+        throw new NGAccessDeniedException(
+            String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, GOVERNANCE_CONNECTOR), WingsException.USER, null);
+      }
+
       log.info(
           "For rule enforcement setting {}: Got connector data: {}", ruleEnforcementUuid, nextGenConnectorResponses);
 
@@ -618,6 +694,7 @@ public class GovernanceRuleResource {
       if (isEmpty(accountId)) {
         throw new InvalidRequestException("Missing accountId");
       }
+      rbacHelper.checkAccountExecutePermission(accountId, null, null, governanceJobEnqueueDTO.getIdentifier());
       List<Rule> rulesList = governanceRuleService.list(accountId, Arrays.asList(governanceJobEnqueueDTO.getRuleId()));
       if (rulesList == null) {
         log.error("For rule id {}: no rules exists in mongo. Nothing to enqueue", governanceJobEnqueueDTO.getRuleId());

@@ -27,6 +27,7 @@ import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_DELETE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_ENFORCEMENT_CREATE_AND_EDIT;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_ENFORCEMENT_DELETE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_ENFORCEMENT_VIEW;
+import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_EXECUTE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_SET_CREATE_AND_EDIT;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_SET_DELETE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_SET_VIEW;
@@ -34,6 +35,7 @@ import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_VIEW;
 import static io.harness.ccm.rbac.CCMResources.COST_CATEGORY;
 import static io.harness.ccm.rbac.CCMResources.CURRENCY_PREFERENCE;
 import static io.harness.ccm.rbac.CCMResources.FOLDER;
+import static io.harness.ccm.rbac.CCMResources.GOVERNANCE_CONNECTOR;
 import static io.harness.ccm.rbac.CCMResources.GOVERNANCE_RULE;
 import static io.harness.ccm.rbac.CCMResources.GOVERNANCE_RULE_ENFORCEMENT;
 import static io.harness.ccm.rbac.CCMResources.GOVERNANCE_RULE_SET;
@@ -60,6 +62,7 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
   private static final String VIEW_PERMISSION = "View";
   private static final String EDIT_PERMISSION = "Create/Edit";
   private static final String DELETE_PERMISSION = "Delete";
+  private static final String EXECUTE_PERMISSION = "Execute";
   private static final String RESOURCE_COST_CATEGORY = "Cost Categories";
   public static final String RESOURCE_FOLDER = "Folders";
   private static final String RESOURCE_PERSPECTIVE = "Perspectives";
@@ -296,5 +299,41 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(GOVERNANCE_RULE_ENFORCEMENT, null), RULE_ENFORCEMENT_DELETE,
         String.format(PERMISSION_MISSING_MESSAGE, DELETE_PERMISSION, RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE));
+  }
+
+  @Override
+  public void checkAccountExecutePermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String accountId) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(GOVERNANCE_CONNECTOR, accountId), RULE_EXECUTE,
+        String.format(PERMISSION_MISSING_MESSAGE, EXECUTE_PERMISSION, GOVERNANCE_CONNECTOR));
+  }
+
+  @Override
+  public Set<String> checkAccountIdsGivenPermission(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, Set<String> accountIds, String permission) {
+    if (accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(GOVERNANCE_CONNECTOR, null), permission)) {
+      return accountIds;
+    }
+    List<PermissionCheckDTO> permissionCheckDTOList =
+        accountIds.stream()
+            .map(accountId
+                -> PermissionCheckDTO.builder()
+                       .resourceScope(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier))
+                       .resourceType(GOVERNANCE_CONNECTOR)
+                       .resourceIdentifier(accountId)
+                       .permission(permission)
+                       .build())
+            .collect(Collectors.toList());
+    List<AccessControlDTO> accessCheckResponseDTO =
+        accessControlClient.checkForAccess(permissionCheckDTOList).getAccessControlList();
+    if (accessCheckResponseDTO == null) {
+      return null;
+    }
+    return accessCheckResponseDTO.stream()
+        .filter(accessControlDTO -> accessControlDTO.isPermitted())
+        .map(accessControlDTO -> accessControlDTO.getResourceIdentifier())
+        .collect(Collectors.toSet());
   }
 }

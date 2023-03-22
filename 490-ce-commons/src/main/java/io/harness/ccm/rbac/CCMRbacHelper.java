@@ -59,4 +59,9 @@ public interface CCMRbacHelper {
   void checkRuleEnforcementViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkRuleEnforcementDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkRuleEnforcementEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  void checkAccountExecutePermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String ruleId);
+  Set<String> checkAccountIdsGivenPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Set<String> ruleIds, String permission);
 }
