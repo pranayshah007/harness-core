@@ -74,6 +74,7 @@ logging:
   loggers:
     org.glassfish.jersey: WARN
     allbegray.slack: WARN
+    org.redisson: TRACE
     org.glassfish.jersey.server.ServerRuntime.Responder: "OFF"
   appenders:
     - type: console
