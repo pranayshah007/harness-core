@@ -7,8 +7,12 @@
 
 package io.harness.serializer;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
 import com.esotericsoftware.kryo.Kryo;
 
+@OwnedBy(HarnessTeam.PIPELINE)
 public interface KryoCallback<T> {
   T execute(Kryo var1);
 }

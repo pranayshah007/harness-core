@@ -7,9 +7,13 @@
 
 package io.harness.serializer;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.util.Pool;
 
+@OwnedBy(HarnessTeam.PIPELINE)
 public abstract class KryoPoolImpl extends Pool<Kryo> {
   public KryoPoolImpl(boolean threadSafe, boolean softReferences) {
     super(threadSafe, softReferences);

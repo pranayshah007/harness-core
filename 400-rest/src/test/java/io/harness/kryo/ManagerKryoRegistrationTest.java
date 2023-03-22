@@ -62,7 +62,7 @@ public class ManagerKryoRegistrationTest extends CategoryTest {
     HKryo hKryo = new HKryo(resolver);
     exclusions.addAll(resolver.getClassRegistrations()
                           .values()
-                          .toArray()
+                          .toList()
                           .stream()
                           .map(reg -> reg.getType().getCanonicalName())
                           .collect(Collectors.toList()));
