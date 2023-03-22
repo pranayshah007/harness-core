@@ -719,22 +719,15 @@ public class ArtifactStepHelper {
     }
 
     YamlField primaryArtifactRef = primaryArtifactField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT_REF);
-    if (primaryArtifactRef == null) {
-      return yamlField;
-    }
 
     YamlField artifactSourcesField = primaryArtifactField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
-    String primaryArtifactRefValue = primaryArtifactRef.getNode().asText();
 
-    if (artifactSourcesField != null && artifactSourcesField.getNode().isArray() && primaryArtifactRefValue != null) {
-      if (EmptyPredicate.isEmpty(primaryArtifactRefValue)) {
-        throw new InvalidRequestException("Primary artifact ref cannot be empty");
-      }
-
+    if (artifactSourcesField != null && artifactSourcesField.getNode().isArray()) {
       ObjectNode artifactsNode = (ObjectNode) artifactsField.getNode().getCurrJsonNode();
       List<YamlNode> artifactSources = artifactSourcesField.getNode().asArray();
 
       ObjectNode primaryNode = null;
+      String primaryArtifactRefValue = null;
       // If there is only 1 artifact source, default to that
       if (artifactSources.size() == 1) {
         if (artifactSources.get(0).isObject()) {
@@ -742,6 +735,14 @@ public class ArtifactStepHelper {
           primaryNode.remove(YamlTypes.IDENTIFIER);
         }
       } else {
+        if (primaryArtifactRef == null) {
+          throw new InvalidRequestException("Primary artifact ref cannot be empty when multiple sources are present");
+        }
+        primaryArtifactRefValue = primaryArtifactRef.getNode().asText();
+        if (EmptyPredicate.isEmpty(primaryArtifactRefValue)) {
+          throw new InvalidRequestException("Primary artifact ref cannot be empty");
+        }
+
         primaryArtifactRefValue = resolvePrimaryArtifactRef(ambiance, primaryArtifactRefValue);
         if (NGExpressionUtils.isRuntimeOrExpressionField(primaryArtifactRefValue)) {
           throw new InvalidRequestException("Primary artifact ref cannot be runtime or expression inside service");

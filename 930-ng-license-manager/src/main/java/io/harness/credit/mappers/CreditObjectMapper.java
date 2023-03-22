@@ -4,9 +4,16 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
-package io.harness.licensing.utils;
+package io.harness.credit.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.credit.beans.credits.CreditDTO;
+import io.harness.credit.entities.Credit;
 
-@OwnedBy(HarnessTeam.PLG) public enum CreditStatus { ACTIVE, EXPIRED }
+@OwnedBy(HarnessTeam.GTM)
+public interface CreditObjectMapper<T extends Credit, K extends CreditDTO> {
+  K toDTO(T credit);
+
+  T toEntity(K creditDTO);
+}

@@ -26,10 +26,13 @@ public class MigrationContext {
   private Map<CgEntityId, NGYamlFile> migratedEntities;
   private Map<CgEntityId, Set<CgEntityId>> graph;
   private MigrationInputDTO inputDTO;
+  private String accountId;
 
-  public static MigrationContext newInstance(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public static MigrationContext newInstance(String accountId, MigrationInputDTO inputDTO,
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph,
+      Map<CgEntityId, NGYamlFile> migratedEntities) {
     return MigrationContext.builder()
+        .accountId(accountId)
         .inputDTO(inputDTO)
         .entities(entities)
         .graph(graph)

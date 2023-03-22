@@ -1106,11 +1106,14 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void registerNotificationTemplates(VerificationConfiguration configuration, Injector injector) {
     NotificationClient notificationClient = injector.getInstance(NotificationClient.class);
-    List<PredefinedTemplate> templates = new ArrayList<>(Arrays.asList(PredefinedTemplate.CVNG_SLO_SLACK,
-        PredefinedTemplate.CVNG_SLO_EMAIL, PredefinedTemplate.CVNG_SLO_PAGERDUTY, PredefinedTemplate.CVNG_SLO_MSTEAMS,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_EMAIL,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_PAGERDUTY, PredefinedTemplate.CVNG_MONITOREDSERVICE_MSTEAMS,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_EMAIL));
+    List<PredefinedTemplate> templates = new ArrayList<>(
+        Arrays.asList(PredefinedTemplate.CVNG_SLO_SIMPLE_SLACK, PredefinedTemplate.CVNG_SLO_SIMPLE_EMAIL,
+            PredefinedTemplate.CVNG_SLO_SIMPLE_PAGERDUTY, PredefinedTemplate.CVNG_SLO_SIMPLE_MSTEAMS,
+            PredefinedTemplate.CVNG_SLO_COMPOSITE_SLACK, PredefinedTemplate.CVNG_SLO_COMPOSITE_EMAIL,
+            PredefinedTemplate.CVNG_SLO_COMPOSITE_PAGERDUTY, PredefinedTemplate.CVNG_SLO_COMPOSITE_MSTEAMS,
+            PredefinedTemplate.CVNG_MONITOREDSERVICE_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_EMAIL,
+            PredefinedTemplate.CVNG_MONITOREDSERVICE_PAGERDUTY, PredefinedTemplate.CVNG_MONITOREDSERVICE_MSTEAMS,
+            PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_EMAIL));
 
     if (configuration.getShouldConfigureWithNotification()) {
       for (PredefinedTemplate template : templates) {
@@ -1143,9 +1146,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .semaphore(new Semaphore(5))
             .handler(notificationHandler)
             .schedulingType(REGULAR)
-            .filterExpander(query
-                -> query.and(query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.SIMPLE),
-                    query.criteria(ServiceLevelObjectiveV2Keys.notificationRuleRefs).exists()))
+            .filterExpander(query -> query.criteria(ServiceLevelObjectiveV2Keys.notificationRuleRefs).exists())
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();

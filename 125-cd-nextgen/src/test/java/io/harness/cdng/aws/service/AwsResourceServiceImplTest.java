@@ -8,6 +8,7 @@
 package io.harness.cdng.aws.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.VITALIE;
 
@@ -482,5 +483,30 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                            -> service.getCFparametersKeys("s3", "bar", true, "far", null, "cat", "baz",
                                mockIdentifierRef, "data", "corge", "abc", "efg", "hij"))
         .isInstanceOf(AwsCFException.class);
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testGetEKSClusterNames() {
+    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
+    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    BaseNGAccess mockAccess = BaseNGAccess.builder().build();
+    doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
+    List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
+    doReturn(encryptedDataDetails).when(serviceHelper).getAwsEncryptionDetails(any(), any());
+    ConnectorInfoDTO mockConnectorInfoDTO = mock(ConnectorInfoDTO.class);
+    doReturn(mockConnectorInfoDTO).when(gitHelper).getConnectorInfoDTO(any(), any());
+
+    AwsListClustersTaskResponse mockResponse = AwsListClustersTaskResponse.builder()
+                                                   .clusters(Arrays.asList("cluster"))
+                                                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                   .build();
+
+    doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
+    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
+
+    List<String> result = service.getEKSClusterNames(mockIdentifierRef, "org", "project");
+    assertThat(result.get(0).equals("cluster"));
   }
 }

@@ -77,6 +77,21 @@ public class InstanceSyncPerpetualTaskInfoServiceImpl implements InstanceSyncPer
   }
 
   @Override
+  public InstanceSyncPerpetualTaskInfoDTO updateDeploymentInfoListAndConnectorId(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO, String connectorIdentifier) {
+    Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
+                            .is(instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier())
+                            .and(InstanceSyncPerpetualTaskInfoKeys.id)
+                            .is(instanceSyncPerpetualTaskInfoDTO.getId());
+    Update update = new Update();
+    update.set(InstanceSyncPerpetualTaskInfoKeys.deploymentInfoDetailsList,
+        DeploymentInfoDetailsMapper.toDeploymentInfoDetailsEntityList(
+            instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()));
+    update.set(InstanceSyncPerpetualTaskInfoKeys.connectorIdentifier, connectorIdentifier);
+    return InstanceSyncPerpetualTaskInfoMapper.toDTO(instanceSyncPerpetualTaskInfoRepository.update(criteria, update));
+  }
+
+  @Override
   public boolean deleteAllInstanceSyncPTs(String accountIdentifier) {
     checkArgument(isNotEmpty(accountIdentifier), "accountId must be present");
     Criteria criteria = getCriteriaForDeletion(accountIdentifier);

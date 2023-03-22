@@ -2785,15 +2785,15 @@ public class DelegateServiceImpl implements DelegateService {
   public void unregister(final String accountId, final DelegateUnregisterRequest request) {
     final Delegate existingDelegate = getExistingDelegate(
         accountId, request.getHostName(), request.isNg(), request.getDelegateType(), request.getIpAddress());
-    String delegateId = existingDelegate.getUuid();
-    if (existingDelegate != null) {
-      log.info("Removing delegate instance {} from delegate {}", request.getHostName(), request.getDelegateId());
-      persistence.delete(existingDelegate);
-      sendUnregisterDelegateAuditEvent(existingDelegate, accountId);
-    } else {
+    if (existingDelegate == null) {
       log.warn("Delegate instance {} doesn't exist for {}, nothing to remove", request.getHostName(),
           request.getDelegateId());
+      return;
     }
+    String delegateId = existingDelegate.getUuid();
+    log.info("Removing delegate instance {} from delegate {}", request.getHostName(), request.getDelegateId());
+    persistence.delete(existingDelegate);
+    sendUnregisterDelegateAuditEvent(existingDelegate, accountId);
     delegateDao.delegateDisconnected(accountId, request.getDelegateId());
     onDelegateDisconnected(accountId, delegateId);
   }

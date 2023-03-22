@@ -6,8 +6,9 @@
  */
 package io.harness.credit.entities;
 
+import static io.harness.annotations.dev.HarnessTeam.GTM;
+
 import io.harness.annotations.StoreIn;
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.DbAliases;
 
@@ -18,7 +19,7 @@ import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)

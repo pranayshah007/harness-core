@@ -7,9 +7,9 @@
 
 package io.harness.changestreams.redisconsumers;
 
+import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.eventsframework.EventsFrameworkConstants.MODULE_LICENSES_REDIS_EVENT_CONSUMER;
 
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.changestreams.eventhandlers.ModuleLicensesChangeEventHandler;
 import io.harness.debezium.redisconsumer.DebeziumAbstractRedisConsumer;
@@ -23,7 +23,7 @@ import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 @Singleton
 public class ModuleLicensesRedisEventConsumer extends DebeziumAbstractRedisConsumer {
   @Inject

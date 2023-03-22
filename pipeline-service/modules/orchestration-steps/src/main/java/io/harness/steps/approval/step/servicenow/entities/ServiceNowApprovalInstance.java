@@ -19,6 +19,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.servicenow.ServiceNowFieldValueNG;
 import io.harness.servicenow.ServiceNowTicketTypeNG;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
 import io.harness.steps.approval.step.beans.ServiceNowChangeWindowSpecDTO;
@@ -28,7 +29,9 @@ import io.harness.steps.approval.step.servicenow.ServiceNowApprovalSpecParameter
 
 import dev.morphia.annotations.Entity;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -56,6 +59,7 @@ public class ServiceNowApprovalInstance extends ApprovalInstance {
   CriteriaSpecWrapperDTO rejectionCriteria;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   ServiceNowChangeWindowSpecDTO changeWindow;
+  Map<String, ServiceNowFieldValueNG> ticketFields;
 
   public static ServiceNowApprovalInstance fromStepParameters(Ambiance ambiance, StepElementParameters stepParameters) {
     if (stepParameters == null) {
@@ -94,6 +98,7 @@ public class ServiceNowApprovalInstance extends ApprovalInstance {
             .delegateSelectors(specParameters.getDelegateSelectors())
             .changeWindow(
                 ServiceNowChangeWindowSpecDTO.fromServiceNowChangeWindowSpec(specParameters.getChangeWindowSpec()))
+            .ticketFields(new HashMap<>())
             .build();
     instance.updateFromStepParameters(ambiance, stepParameters);
     return instance;

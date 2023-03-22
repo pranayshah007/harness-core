@@ -7,18 +7,23 @@
 
 package io.harness.idp.provision.service;
 
+import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
+
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.client.NgConnectorManagerClient;
+import io.harness.idp.settings.service.BackstagePermissionsService;
 import io.harness.remote.client.CGRestUtils;
+import io.harness.rule.Owner;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.spec.server.idp.v1.model.BackstagePermissions;
 
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,9 +38,13 @@ import org.mockito.MockitoAnnotations;
 public class ProvisionServiceImplTest {
   @InjectMocks private ProvisionServiceImpl provisionServiceImpl;
   @Mock NgConnectorManagerClient ngConnectorManagerClient;
+  @Mock BackstagePermissionsService backstagePermissionsService;
   private static final String ADMIN_USER_ID = "lv0euRhKRCyiXWzS7pOg6g";
   private static final String DEFAULT_USER_ID = "0osgWsTZRsSZ8RWfjLRkEg";
   private static final String ACCOUNT_ID = "123";
+  static final String TEST_USERGROUP = " ";
+  static final List<String> TEST_PERMISSIONS =
+      List.of("user_read", "user_update", "user_delete", "owner_read", "owner_update", "owner_delete", "all_create");
 
   @Before
   public void setUp() {
@@ -54,6 +63,17 @@ public class ProvisionServiceImplTest {
     verify(ngConnectorManagerClient, times(1)).isHarnessSupportUser(ADMIN_USER_ID);
     mockSecurityContext.close();
     mockRestUtils.close();
+  }
+
+  @Test
+  @Category(UnitTests.class)
+  @Owner(developers = SARTHAK_KASAT)
+  public void testCreateDefaultBackstagePermissions() {
+    BackstagePermissions backstagePermissions = new BackstagePermissions();
+    backstagePermissions.setUserGroup(TEST_USERGROUP);
+    backstagePermissions.setPermissions(TEST_PERMISSIONS);
+    provisionServiceImpl.createDefaultPermissions(ACCOUNT_ID);
+    verify(backstagePermissionsService).createPermissions(backstagePermissions, ACCOUNT_ID);
   }
 
   @Test

@@ -24,4 +24,6 @@ import lombok.NoArgsConstructor;
 public class YamlGenerationDetails {
   List<NGYamlFile> yamlFileList;
   List<NGSkipDetail> skipDetails;
+
+  List<SkippedExpressionDetail> skippedExpressions;
 }

@@ -227,6 +227,7 @@ import io.harness.delegate.task.artifacts.s3.S3ArtifactTaskNG;
 import io.harness.delegate.task.aws.AwsCodeCommitApiDelegateTask;
 import io.harness.delegate.task.aws.AwsCodeCommitDelegateTask;
 import io.harness.delegate.task.aws.AwsDelegateTask;
+import io.harness.delegate.task.aws.AwsEKSListClustersDelegateTaskNG;
 import io.harness.delegate.task.aws.S3FetchFilesTaskNG;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataTaskNG;
@@ -2176,6 +2177,9 @@ public class DelegateModule extends AbstractModule {
         .toInstance(AwsLambdaPrepareRollbackTask.class);
     mapBinder.addBinding(TaskType.AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG).toInstance(AwsLambdaRollbackTask.class);
     mapBinder.addBinding(TaskType.TAS_ROUTE_MAPPING).toInstance(TasRouteMappingTask.class);
+
+    // AWS EKS
+    mapBinder.addBinding(TaskType.AWS_EKS_LIST_CLUSTERS_TASK).toInstance(AwsEKSListClustersDelegateTaskNG.class);
   }
 
   private void registerSecretManagementBindings() {
