@@ -247,7 +247,12 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   protected Object evaluatePrefixCombinations(
       String expressionBlock, EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
     try {
-      if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_ENGINE_V2)) {
+      // Currently we use RefObjectSpecific only when the call is from PmsOutcomeServiceImpl or
+      // PmsSweepingOutputServiceImpl. We will use new functor if RefObjectSpecific is used because we need recast
+      // additions in our map.
+      if (!refObjectSpecific
+          && pmsFeatureFlagService.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_ENGINE_V2)) {
         String normalizedExpression = applyStaticAliases(expressionBlock);
         // Apply all the prefixes and return first one that evaluates successfully.
         List<String> finalExpressions =
