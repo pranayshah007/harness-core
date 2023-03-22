@@ -672,7 +672,10 @@ public enum FeatureName {
   SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
       "Unnecessary restriction apps calls are not called from UI", HarnessTeam.SPG),
   FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE),
-  CDS_SERVICENOW_TICKET_TYPE_V2("FF to use servicenow ticketTypesV2 endpoint", HarnessTeam.CDC);
+  CDS_SERVICENOW_TICKET_TYPE_V2("FF to use servicenow ticketTypesV2 endpoint", HarnessTeam.CDC),
+  CDS_TERRAFORM_CONFIG_INSPECT_V1_2(
+      "Enables usage of terraform-config-inspect v1.2 built from commit 7c9946b1df498f1b0634c7b33257790f01c819f3 of https://github.com/hashicorp/terraform-config-inspect and GO 1.19.6",
+      HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

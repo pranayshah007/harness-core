@@ -27,6 +27,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.clienttools.TerraformConfigInspectVersion;
+import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -73,7 +75,7 @@ public class TerraformInputVariablesObtainTaskTest extends WingsBaseTest {
   @Mock GitUtilsDelegate gitUtilsDelegate;
   @Mock EncryptionService encryptionService;
   @Mock TerraformConfigInspectService terraformConfigInspectService;
-
+  @Mock TerraformBaseHelper terraformBaseHelper;
   @Mock S3Utils s3UtilsDelegate;
   @Mock AwsS3HelperServiceDelegateImpl awsS3HelperServiceDelegate;
 
@@ -95,6 +97,7 @@ public class TerraformInputVariablesObtainTaskTest extends WingsBaseTest {
                      .scriptPath("")
                      .build();
     when(encryptionService.decrypt(any(), any(), eq(false))).thenReturn(null);
+    when(terraformBaseHelper.getTerraformConfigInspectVersion(any())).thenReturn(TerraformConfigInspectVersion.V1_0);
     mockStatic(FileUtils.class);
   }
 
@@ -106,8 +109,8 @@ public class TerraformInputVariablesObtainTaskTest extends WingsBaseTest {
     when(gitUtilsDelegate.cloneRepo(any(), any(), any())).thenReturn(GitOperationContext.builder().build());
     when(gitUtilsDelegate.resolveAbsoluteFilePath(any(), any())).thenReturn(moduleDir);
     when(FileUtils.listFiles(any(), any(), any())).thenReturn(Arrays.asList(new File(moduleDir)));
-
-    when(terraformConfigInspectService.parseFieldsUnderCategory(moduleDir, "variables", false))
+    when(terraformConfigInspectService.parseFieldsUnderCategory(
+             moduleDir, "variables", TerraformConfigInspectVersion.V1_0))
         .thenReturn(Arrays.asList("var_1", "var_2"));
 
     TerraformInputVariablesTaskResponse inputVariables = delegateRunnableTask.run(new Object[] {parameters});
@@ -143,8 +146,7 @@ public class TerraformInputVariablesObtainTaskTest extends WingsBaseTest {
     doReturn(null).when(encryptionService).decrypt(awsConfig, awsConfigEncryptionDetails, false);
     when(awsS3HelperServiceDelegate.downloadS3Directory(any(), any(), any())).thenReturn(true);
     when(FileUtils.listFiles(any(), any(), any())).thenReturn(Arrays.asList(new File(moduleDir)));
-    when(terraformConfigInspectService.parseFieldsUnderCategory(
-             any(String.class), any(String.class), any(Boolean.class)))
+    when(terraformConfigInspectService.parseFieldsUnderCategory(any(String.class), any(String.class), any()))
         .thenReturn(Arrays.asList("var_1", "var_2"));
 
     delegateRunnableTask.run(new Object[] {terraformProvisionParameters});

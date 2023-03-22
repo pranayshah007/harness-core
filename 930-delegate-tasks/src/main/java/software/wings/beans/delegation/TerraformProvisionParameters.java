@@ -20,6 +20,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.capability.ProcessExecutionCapabilityHelper;
+import io.harness.delegate.clienttools.TerraformConfigInspectVersion;
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.terraform.TerraformCommand;
@@ -122,6 +123,7 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
   private final AwsConfig configFilesAwsSourceConfig;
   private List<EncryptedDataDetail> configFileAWSEncryptionDetails;
   private final TfVarS3Source remoteS3BackendConfig;
+  private final TerraformConfigInspectVersion terraformConfigInspectVersion;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

@@ -64,6 +64,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConne
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.clienttools.TerraformConfigInspectVersion;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -101,6 +102,7 @@ import io.harness.terraform.request.TerraformRefreshCommandRequest;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
+import software.wings.beans.delegation.TerraformProvisionParameters;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -826,6 +828,16 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
       FileIo.waitForDirectoryToBeAccessibleOutOfProcess(scriptDir.getPath(), 10);
     } catch (Exception ex) {
       handleExceptionWhileCopyingConfigFiles(logCallback, baseDir, ExceptionMessageSanitizer.sanitizeException(ex));
+    }
+  }
+
+  public TerraformConfigInspectVersion getTerraformConfigInspectVersion(TerraformProvisionParameters parameters) {
+    if (parameters.getTerraformConfigInspectVersion() != null) {
+      return parameters.getTerraformConfigInspectVersion();
+    } else if (parameters.isUseTfConfigInspectLatestVersion()) {
+      return TerraformConfigInspectVersion.V1_1;
+    } else {
+      return TerraformConfigInspectVersion.V1_0;
     }
   }
 
