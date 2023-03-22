@@ -21,13 +21,10 @@ import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.datacollection.utils.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.FetchType;
-import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
-import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.ngmigration.beans.BaseProvidedInput;
-import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -42,6 +39,7 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.service.config.ManifestFileHandlerImpl;
 import io.harness.ngmigration.service.manifest.NgManifestFactory;
 import io.harness.ngmigration.service.manifest.NgManifestService;
 import io.harness.ngmigration.utils.CaseFormat;
@@ -53,10 +51,8 @@ import io.harness.serializer.JsonUtils;
 import software.wings.beans.Environment;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.Service;
-import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ManifestFile;
-import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -74,7 +70,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -227,64 +222,22 @@ public class ManifestMigrationService extends NgMigrationService {
 
   private List<NGYamlFile> getYamlFiles(MigrationContext migrationContext, ApplicationManifest applicationManifest,
       List<ManifestFile> manifestFiles, String envName, String serviceName) {
-    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     if (isEmpty(manifestFiles)) {
       return new ArrayList<>();
     }
-    StringBuilder prefixBuilder = new StringBuilder();
-    if (StringUtils.isNotBlank(envName)) {
-      prefixBuilder.append(envName).append(' ');
+    List<NGYamlFile> files = new ArrayList<>();
+    ManifestFileHandlerImpl manifestFileHandler =
+        new ManifestFileHandlerImpl(serviceName, envName, applicationManifest);
+    for (ManifestFile manifestFile : manifestFiles) {
+      files.add(NGYamlFile.builder()
+                    .type(NGMigrationEntityType.MANIFEST)
+                    .filename(null)
+                    .yaml(manifestFileHandler.getFileYamlDTO(migrationContext, manifestFile))
+                    .ngEntityDetail(manifestFileHandler.getNGEntityDetail(migrationContext, manifestFile))
+                    .cgBasicInfo(manifestFileHandler.getCgBasicInfo(manifestFile))
+                    .build());
     }
-    if (StringUtils.isNotBlank(serviceName)) {
-      prefixBuilder.append(serviceName).append(' ');
-    }
-    String prefix = prefixBuilder.toString();
-    String fileUsage = FileUsage.MANIFEST_FILE.name();
-    String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
-    String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
-    return manifestFiles.stream()
-        .map(manifestFile -> {
-          // TODO: Fix the identifier & name
-          String identifier = MigratorUtility.generateManifestIdentifier(
-              prefix + manifestFile.getFileName(), inputDTO.getIdentifierCaseFormat());
-          if (applicationManifest.getKind().equals(AppManifestKind.VALUES)) {
-            identifier = MigratorUtility.generateManifestIdentifier(
-                prefix + " ValuesOverride " + manifestFile.getFileName(), inputDTO.getIdentifierCaseFormat());
-          }
-          String name = identifier;
-          if (MigratorUtility.endsWithIgnoreCase(identifier, "yaml", "yml")) {
-            name = MigratorUtility.endsWithIgnoreCase(identifier, "yaml")
-                ? identifier.substring(0, identifier.length() - 4) + ".yaml"
-                : identifier.substring(0, identifier.length() - 3) + ".yml";
-          }
-          String content = (String) MigratorExpressionUtils.render(
-              migrationContext, manifestFile.getFileContent(), inputDTO.getCustomExpressions());
-          return NGYamlFile.builder()
-              .type(NGMigrationEntityType.MANIFEST)
-              .filename(null)
-              .yaml(FileYamlDTO.builder()
-                        .identifier(identifier)
-                        .fileUsage(fileUsage)
-                        .name(name)
-                        .content(content)
-                        .orgIdentifier(orgIdentifier)
-                        .projectIdentifier(projectIdentifier)
-                        .build())
-              .ngEntityDetail(NgEntityDetail.builder()
-                                  .identifier(identifier)
-                                  .orgIdentifier(orgIdentifier)
-                                  .projectIdentifier(projectIdentifier)
-                                  .build())
-              .cgBasicInfo(CgBasicInfo.builder()
-                               .accountId(applicationManifest.getAccountId())
-                               .appId(applicationManifest.getAppId())
-                               .id(applicationManifest.getUuid())
-                               .name(applicationManifest.getName())
-                               .type(NGMigrationEntityType.MANIFEST)
-                               .build())
-              .build();
-        })
-        .collect(Collectors.toList());
+    return files;
   }
 
   @Override

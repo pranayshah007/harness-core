@@ -84,6 +84,7 @@ public class GcpSecretMigrator implements SecretMigrator {
         MigratorUtility.generateIdentifier(gcpSecretsManagerConfig.getName(), inputDTO.getIdentifierCaseFormat()));
 
     NgEntityDetail gcpEntityDetail = NgEntityDetail.builder()
+                                         .entityType(NGMigrationEntityType.SECRET)
                                          .identifier(gcpSecretFileIdentifier)
                                          .orgIdentifier(orgIdentifier)
                                          .projectIdentifier(projectIdentifier)

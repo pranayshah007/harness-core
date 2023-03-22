@@ -240,9 +240,11 @@ public class ShellScriptStepMapperImpl extends StepMapper {
         map.put(key, value);
       }
     }
-    Map<String, String> stepVariables = CollectionUtils.emptyIfNull(graphNode.getTemplateVariables())
-                                            .stream()
-                                            .collect(Collectors.toMap(Variable::getName, Variable::getValue));
+    Map<String, String> stepVariables =
+        CollectionUtils.emptyIfNull(graphNode.getTemplateVariables())
+            .stream()
+            .filter(variable -> StringUtils.isNoneBlank(variable.getName(), variable.getValue()))
+            .collect(Collectors.toMap(Variable::getName, Variable::getValue));
     if (envVars instanceof ArrayNode) {
       for (JsonNode env : envVars) {
         String key = env.get("name").asText();
