@@ -9,7 +9,6 @@ package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
-import static io.harness.ccm.rbac.CCMRbacPermissions.FOLDER_VIEW;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_EXECUTE;
 import static io.harness.ccm.rbac.CCMResources.GOVERNANCE_CONNECTOR;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_CREATED;
@@ -41,7 +40,6 @@ import io.harness.ccm.views.dto.CreateRuleDTO;
 import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
 import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.dto.ListDTO;
-import io.harness.ccm.views.entities.CEViewFolder;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.RuleClone;
 import io.harness.ccm.views.entities.RuleEnforcement;
@@ -327,17 +325,19 @@ public class GovernanceRuleResource {
       }
       page++;
     } while (response != null && isNotEmpty(response.getContent()));
-
+    log.info("Allowed AccountIds {}", nextGenConnectorResponses);
     Set<String> allowedAccountIds = null;
     List<ConnectorResponseDTO> connectorResponse = null;
     if (nextGenConnectorResponses != null) {
+      List<ConnectorResponseDTO> connectorData = nextGenConnectorResponses;
       allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
-          nextGenConnectorResponses.stream().map(e -> e.getConnector().getIdentifier()).collect(Collectors.toSet()),
-          RULE_EXECUTE);
+          connectorData.stream().map(e -> e.getConnector().getIdentifier()).collect(Collectors.toSet()), RULE_EXECUTE);
+      log.info("Allowed AccountIds {}", allowedAccountIds);
       for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
         if (allowedAccountIds.contains(connector.getConnector().getIdentifier())) {
           connectorResponse.add(connector);
         }
+        log.info("Allowed AccountIds {}", connectorResponse);
       }
     }
 
