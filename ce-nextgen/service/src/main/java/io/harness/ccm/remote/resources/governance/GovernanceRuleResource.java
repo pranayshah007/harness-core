@@ -325,7 +325,6 @@ public class GovernanceRuleResource {
       }
       page++;
     } while (response != null && isNotEmpty(response.getContent()));
-    log.info("nextGenConnectorResponses {}", nextGenConnectorResponses);
     Set<String> allowedAccountIds = null;
     List<ConnectorResponseDTO> connectorResponse = new ArrayList<>();
     if (nextGenConnectorResponses != null) {
@@ -337,7 +336,6 @@ public class GovernanceRuleResource {
         if (allowedAccountIds.contains(connector.getConnector().getIdentifier())) {
           connectorResponse.add(connector);
         }
-        log.info("connectorResponse {}", connectorResponse);
       }
     }
 
