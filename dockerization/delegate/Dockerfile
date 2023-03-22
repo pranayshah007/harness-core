@@ -37,7 +37,7 @@ ENV INSTALL_CLIENT_TOOLS_IN_BACKGROUND=true
 ENV JAVA_HOME=/opt/java/openjdk/
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 ARG BASEURL=https://app.harness.io/public/shared/delegates
 ARG DELEGATEVERSION
 
