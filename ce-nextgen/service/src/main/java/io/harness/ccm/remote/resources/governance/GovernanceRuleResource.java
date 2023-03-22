@@ -325,19 +325,19 @@ public class GovernanceRuleResource {
       }
       page++;
     } while (response != null && isNotEmpty(response.getContent()));
-    log.info("Allowed AccountIds {}", nextGenConnectorResponses);
+    log.info("nextGenConnectorResponses {}", nextGenConnectorResponses);
     Set<String> allowedAccountIds = null;
-    List<ConnectorResponseDTO> connectorResponse = null;
+    List<ConnectorResponseDTO> connectorResponse = new ArrayList<>();
     if (nextGenConnectorResponses != null) {
-      List<ConnectorResponseDTO> connectorData = nextGenConnectorResponses;
       allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
-          connectorData.stream().map(e -> e.getConnector().getIdentifier()).collect(Collectors.toSet()), RULE_EXECUTE);
+          nextGenConnectorResponses.stream().map(e -> e.getConnector().getIdentifier()).collect(Collectors.toSet()),
+          RULE_EXECUTE);
       log.info("Allowed AccountIds {}", allowedAccountIds);
       for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
         if (allowedAccountIds.contains(connector.getConnector().getIdentifier())) {
           connectorResponse.add(connector);
         }
-        log.info("Allowed AccountIds {}", connectorResponse);
+        log.info("connectorResponse {}", connectorResponse);
       }
     }
 
