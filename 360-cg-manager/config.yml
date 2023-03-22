@@ -698,7 +698,7 @@ delegateQueueServiceConfig:
     enableQueueAndDequeue: true
     queueServiceClientConfig:
       httpClientConfig:
-        baseUrl: http://queue-service.del-4508.svc.cluster.local:9091/
+        baseUrl: http://queue-service.del-4515.svc.cluster.local:9091/
         connectTimeOutSeconds: 15
         readTimeOutSeconds: 15
       queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
