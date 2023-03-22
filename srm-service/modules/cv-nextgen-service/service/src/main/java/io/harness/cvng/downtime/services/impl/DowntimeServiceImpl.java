@@ -669,7 +669,7 @@ public class DowntimeServiceImpl implements DowntimeService {
                                  .getDowntimeDuration(downtime.getDowntimeDetails()))
                    .spec(getDowntimeSpecDTO(downtime.getType(), downtime.getDowntimeDetails(), downtime.getTimezone()))
                    .pastOrActiveInstancesCount(
-                       downtimeIdentifierToPastAndActiveInstancesCountMap.get(downtime.getIdentifier()))
+                       downtimeIdentifierToPastAndActiveInstancesCountMap.getOrDefault(downtime.getIdentifier(), 0))
                    .build())
         .collect(Collectors.toList());
   }
