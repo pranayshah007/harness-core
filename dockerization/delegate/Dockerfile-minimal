@@ -29,7 +29,7 @@ WORKDIR /opt/harness-delegate
 
 ARG TARGETARCH
 ARG BASEURL=https://app.harness.io/public/shared/delegates
-ARG DELEGATEVERSION=78708
+ARG DELEGATEVERSION=78709
 
 RUN mkdir -m 777 -p client-tools/scm/91e2a39c \
   && curl -s -L -o client-tools/scm/91e2a39c/scm https://app.harness.io/public/shared/tools/scm/release/91e2a39c/bin/linux/$TARGETARCH/scm \
