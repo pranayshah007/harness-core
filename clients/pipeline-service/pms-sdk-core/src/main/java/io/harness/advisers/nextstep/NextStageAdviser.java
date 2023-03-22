@@ -8,6 +8,7 @@
 package io.harness.advisers.nextstep;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 
 import io.harness.advisers.prb.OnFailPipelineRollbackOutput;
@@ -42,8 +43,9 @@ public class NextStageAdviser implements Adviser {
         kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
     AdviserResponse goToNextStageAdvise =
         AdviserResponse.newBuilder()
-            .setNextStepAdvise(
-                NextStepAdvise.newBuilder().setNextNodeId(nextStepAdviserParameters.getNextNodeId()).build())
+            .setNextStepAdvise(NextStepAdvise.newBuilder()
+                                   .setNextNodeId(emptyIfNull(nextStepAdviserParameters.getNextNodeId()))
+                                   .build())
             .setType(AdviseType.NEXT_STEP)
             .build();
     if (isRollbackMode(advisingEvent)) {
