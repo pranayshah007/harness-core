@@ -12,7 +12,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.retry.RetryStageInfo;
-import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
@@ -258,6 +257,7 @@ public class RollbackModeExecutionHelper {
     }
     // todo: remove the use of stage fqn here once fork and strategy are divided in sub categories of step and stage
     String stageFqn = planNode.getStageFqn();
-    return Arrays.asList(StepCategory.FORK, StepCategory.STRATEGY).contains(stepCategory);
+    return Arrays.asList(StepCategory.FORK, StepCategory.STRATEGY).contains(stepCategory)
+        && stageFqn.split("\\.").length < 3;
   }
 }
