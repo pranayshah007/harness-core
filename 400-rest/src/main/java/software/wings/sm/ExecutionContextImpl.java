@@ -42,6 +42,7 @@ import static org.apache.commons.lang3.StringUtils.join;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
+import io.harness.beans.FeatureName;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.beans.SweepingOutput;
 import io.harness.beans.SweepingOutputInstance;
@@ -967,7 +968,8 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
       }
     }
 
-    boolean adoptDelegateDecryption = false;
+    boolean adoptDelegateDecryption =
+        featureFlagService.isEnabled(FeatureName.SPG_ADOPT_DELEGATE_DECRYPTION_ON_SERVICE_VARIABLES, getAccountId());
     if (stateExecutionContext != null) {
       adoptDelegateDecryption = stateExecutionContext.isAdoptDelegateDecryption();
     }

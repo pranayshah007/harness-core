@@ -45,6 +45,8 @@ public enum FeatureName {
   SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS(
       "Flag to support deployment freeze exclusions. Depends on NEW_DEPLOYMENT_FREEZE", HarnessTeam.SPG),
   SPG_ENABLE_EMAIL_VALIDATION("Enable email validation in GraphQL approveOrRejectApprovals mutation", HarnessTeam.SPG),
+  SPG_ADOPT_DELEGATE_DECRYPTION_ON_SERVICE_VARIABLES(
+      "Enable to resolve expression using nested values from secret.getValue from service variables", HarnessTeam.SPG),
   DISABLE_HELM_REPO_YAML_CACHE(
       "Enable to create a temporary folder (based on execution id) to store repository.yaml file", HarnessTeam.CDP),
   DEPRECATE_K8S_STEADY_STATE_CHECK_STEP,
