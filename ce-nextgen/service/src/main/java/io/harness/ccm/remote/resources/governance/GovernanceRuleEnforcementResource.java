@@ -17,6 +17,7 @@ import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
 import static io.harness.ccm.remote.resources.TelemetryConstants.RULE_ENFORCEMENT_NAME;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
@@ -42,13 +43,22 @@ import io.harness.ccm.views.helper.EnforcementCountRequest;
 import io.harness.ccm.views.helper.ExecutionDetailRequest;
 import io.harness.ccm.views.helper.ExecutionDetails;
 import io.harness.ccm.views.service.RuleEnforcementService;
+import io.harness.connector.ConnectorFilterPropertiesDTO;
+import io.harness.connector.ConnectorResourceClient;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.delegate.beans.connector.CEFeatures;
+import io.harness.delegate.beans.connector.CcmConnectorFilter;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.filter.FilterType;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.remote.GovernanceConfig;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
@@ -70,6 +80,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -142,6 +154,7 @@ public class GovernanceRuleEnforcementResource {
   @Inject SchedulerClient schedulerClient;
   private final OutboxService outboxService;
   private final TransactionTemplate transactionTemplate;
+  @Inject ConnectorResourceClient connectorResourceClient;
   private static final RetryPolicy<Object> transactionRetryRule = DEFAULT_RETRY_POLICY;
   public static final String MALFORMED_ERROR = "Request payload is malformed";
   @Inject
@@ -194,15 +207,35 @@ public class GovernanceRuleEnforcementResource {
     }
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
     ruleEnforcementService.checkLimitsAndValidate(ruleEnforcement, governanceConfig);
-    if (ruleEnforcement.getTargetAccountIdentifiers() == null) {
-      throw new InvalidRequestException("You need to have valid accountId and Identifiers as part of payload");
-    }
-    Set<String> allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
-        ruleEnforcement.getTargetAccountIdentifiers().stream().collect(Collectors.toSet()), RULE_EXECUTE);
+    List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
+    PageResponse<ConnectorResponseDTO> response = null;
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
+        ConnectorFilterPropertiesDTO.builder()
+            .types(Arrays.asList(ConnectorType.CE_AWS))
+            .ccmConnectorFilter(CcmConnectorFilter.builder()
+                                    .featuresEnabled(Arrays.asList(CEFeatures.GOVERNANCE))
+                                    .awsAccountIds(ruleEnforcement.getTargetAccounts())
+                                    .build())
+            .build();
+    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
+    int page = 0;
+    int size = 100;
+    do {
+      response = NGRestUtils.getResponse(connectorResourceClient.listConnectors(
+          accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
+      if (response != null && isNotEmpty(response.getContent())) {
+        nextGenConnectorResponses.addAll(response.getContent());
+      }
+      page++;
+    } while (response != null && isNotEmpty(response.getContent()));
 
-    log.info("allowedAccountIds {}", allowedAccountIds);
-    log.info("getTargetAccountIdentifiers {}", ruleEnforcement.getTargetAccountIdentifiers());
-    if (allowedAccountIds.size() != ruleEnforcement.getTargetAccountIdentifiers().size()) {
+    Set<String> allowedAccountIds = null;
+    if (nextGenConnectorResponses != null) {
+      allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
+          nextGenConnectorResponses.stream().map(e -> e.getConnector().getIdentifier()).collect(Collectors.toSet()),
+          RULE_EXECUTE);
+    }
+    if (allowedAccountIds.size() != nextGenConnectorResponses.size()) {
       throw new NGAccessDeniedException(
           String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, GOVERNANCE_CONNECTOR), WingsException.USER, null);
     }
@@ -345,7 +378,38 @@ public class GovernanceRuleEnforcementResource {
     properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcement.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
+    PageResponse<ConnectorResponseDTO> response = null;
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
+        ConnectorFilterPropertiesDTO.builder()
+            .types(Arrays.asList(ConnectorType.CE_AWS))
+            .ccmConnectorFilter(CcmConnectorFilter.builder()
+                                    .featuresEnabled(Arrays.asList(CEFeatures.GOVERNANCE))
+                                    .awsAccountIds(ruleEnforcement.getTargetAccounts())
+                                    .build())
+            .build();
+    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
+    int page = 0;
+    int size = 100;
+    do {
+      response = NGRestUtils.getResponse(connectorResourceClient.listConnectors(
+          accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
+      if (response != null && isNotEmpty(response.getContent())) {
+        nextGenConnectorResponses.addAll(response.getContent());
+      }
+      page++;
+    } while (response != null && isNotEmpty(response.getContent()));
 
+    Set<String> allowedAccountIds = null;
+    if (nextGenConnectorResponses != null) {
+      allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
+          nextGenConnectorResponses.stream().map(e -> e.getConnector().getIdentifier()).collect(Collectors.toSet()),
+          RULE_EXECUTE);
+    }
+    if (allowedAccountIds.size() != nextGenConnectorResponses.size()) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, GOVERNANCE_CONNECTOR), WingsException.USER, null);
+    }
     // Update dkron if enforcement is toggled
     if (configuration.getGovernanceConfig().isUseDkron()
         && !Objects.equals(ruleEnforcementFromMongo.getIsEnabled(), ruleEnforcement.getIsEnabled())) {

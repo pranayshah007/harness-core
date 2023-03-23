@@ -168,7 +168,6 @@ public class GovernanceRuleResource {
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   public static final String MALFORMED_ERROR = "Request payload is malformed";
   private static final RetryPolicy<Object> transactionRetryRule = DEFAULT_RETRY_POLICY;
-
   @Inject
   public GovernanceRuleResource(GovernanceRuleService governanceRuleService,
       RuleEnforcementService ruleEnforcementService, RuleSetService ruleSetService,
@@ -615,13 +614,10 @@ public class GovernanceRuleResource {
       } while (response != null && isNotEmpty(response.getContent()));
 
       Set<String> allowedAccountIds = null;
-      if (nextGenConnectorResponses != null && ruleEnforcement.getTargetAccountIdentifiers() == null) {
+      if (nextGenConnectorResponses != null) {
         allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
             nextGenConnectorResponses.stream().map(e -> e.getConnector().getIdentifier()).collect(Collectors.toSet()),
             RULE_EXECUTE);
-      } else {
-        allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
-            ruleEnforcement.getTargetAccountIdentifiers().stream().collect(Collectors.toSet()), RULE_EXECUTE);
       }
       if (allowedAccountIds.size() != nextGenConnectorResponses.size()) {
         throw new NGAccessDeniedException(
