@@ -155,7 +155,7 @@ Official steps to install docker on mac: [docker.com](https://docs.docker.com/de
 
     In harness-core/360-cg-manager/config.yml set `searchEnabled` to `true`.
 
-    Run mongo in replica set:
+    Run mongo in replica set:  
 
     ```
     docker-compose -f <Directory to harness-core>/harness-core/docker-files/mongo-replicaset/docker-compose.yml up -d
