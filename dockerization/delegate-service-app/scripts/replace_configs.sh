@@ -533,3 +533,17 @@ fi
 if [[ "" != "$CLUSTER_NAME" ]]; then
   export CLUSTER_NAME; yq -i '.clusterName=env(CLUSTER_NAME)' $CONFIG_FILE
 fi
+
+## FF configs:
+replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
+replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
+replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
+replace_key_value cfClientConfig.analyticsEnabled "$CF_CLIENT_ANALYTICS_ENABLED"
+replace_key_value cfClientConfig.connectionTimeout "$CF_CLIENT_CONNECTION_TIMEOUT"
+replace_key_value cfClientConfig.readTimeout "$CF_CLIENT_READ_TIMEOUT"
+replace_key_value cfClientConfig.bufferSize "$CF_CLIENT_BUFFER_SIZE"
+replace_key_value cfClientConfig.retries "$CF_RETRIES"
+replace_key_value cfClientConfig.sleepInterval "$CF_SLEEP_INTERVAL"
+
+replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
+replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"

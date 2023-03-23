@@ -12,6 +12,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//419-delegate-service-app/src/main/java/io/harness/dms/configuration:module",
+         "//419-delegate-service-app/src/main/java/io/harness/dms/service:module",
+         "//419-delegate-service-app/src/main/java/io/harness/dms/client:module",
         "//420-delegate-service:module",
         "//920-delegate-service-beans:module",
         "//960-persistence:module",

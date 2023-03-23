@@ -7,8 +7,8 @@
 
 package io.harness.dms.app;
 
-import io.harness.delegate.resources.DelegateServiceVersionInfoResource;
 import io.harness.dms.health.DelegateServiceHealthResource;
+import io.harness.dms.resource.DelegateServiceVersionInfoResource;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
 
 import com.google.common.collect.ImmutableList;

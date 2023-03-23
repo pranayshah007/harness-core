@@ -14,7 +14,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.delegate.authenticator.DelegateTokenEncryptDecrypt;
+import io.harness.delegate.authenticator.DelegateSecretManager;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
@@ -60,14 +60,14 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   private static final String DEFAULT_TOKEN_NAME = "default_token";
   private final HPersistence persistence;
   private final OutboxService outboxService;
-  private final DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt;
+  private final DelegateSecretManager delegateSecretManager;
 
   @Inject
   public DelegateNgTokenServiceImpl(
-      HPersistence persistence, OutboxService outboxService, DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt) {
+      HPersistence persistence, OutboxService outboxService, DelegateSecretManager delegateSecretManager) {
     this.persistence = persistence;
     this.outboxService = outboxService;
-    this.delegateTokenEncryptDecrypt = delegateTokenEncryptDecrypt;
+    this.delegateSecretManager = delegateSecretManager;
   }
 
   @Override
@@ -88,7 +88,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
             .isNg(true)
             .status(DelegateTokenStatus.ACTIVE)
             .value(token)
-            .encryptedTokenId(delegateTokenEncryptDecrypt.encrypt(accountId, token, tokenIdentifier.trim()))
+            .encryptedTokenId(delegateSecretManager.encrypt(accountId, token, tokenIdentifier.trim()))
             .createdByNgUser(SourcePrincipalContextBuilder.getSourcePrincipal())
             .revokeAfter(revokeAfter)
             .build();
@@ -161,7 +161,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   public String getDelegateTokenValue(String accountId, String name) {
     DelegateToken delegateToken = matchNameTokenQuery(accountId, name).get();
     if (delegateToken != null) {
-      return delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken);
+      return delegateSecretManager.getDelegateTokenValue(delegateToken);
     }
     log.warn("Not able to find delegate token {} for account {} . Please verify manually.", name, accountId);
     return null;
@@ -273,7 +273,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
                                                                   .status(delegateToken.getStatus());
 
     if (includeTokenValue) {
-      delegateTokenDetailsBuilder.value(delegateTokenEncryptDecrypt.getBase64EncodedTokenValue(delegateToken));
+      delegateTokenDetailsBuilder.value(delegateSecretManager.getBase64EncodedTokenValue(delegateToken));
     }
 
     if (delegateToken.getOwner() != null) {

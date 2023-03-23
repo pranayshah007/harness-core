@@ -162,6 +162,13 @@ public class MongoPersistence implements HPersistence {
   private Map<String, AdvancedDatastore> datastoreMap;
   private Map<String, MongoClient> mongoClientMap;
   private final HarnessConnectionPoolListener harnessConnectionPoolListener;
+
+  private boolean overrideDelegateMigration = false;
+
+  public void setOverrideDelegateMigration(boolean overrideDelegateMigration) {
+    this.overrideDelegateMigration = overrideDelegateMigration;
+  }
+
   @Inject UserProvider userProvider;
 
   @Inject
@@ -236,6 +243,10 @@ public class MongoPersistence implements HPersistence {
   @Override
   public boolean isMigrationEnabled(String className) {
     try {
+      // This will be set in case of DMS.
+      if (overrideDelegateMigration) {
+        return true;
+      }
       return delegateMigrationFlagCache.get(className);
     } catch (ExecutionException e) {
       log.error("Exception occurred while checking for delegate migration flag for class {}.", className, e);

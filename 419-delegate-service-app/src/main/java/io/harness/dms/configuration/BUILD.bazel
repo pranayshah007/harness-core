@@ -19,6 +19,8 @@ java_library(
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_google_inject_guice",
         "@maven//:io_dropwizard_dropwizard_core",
+         "//940-feature-flag:module",
+          "//960-continuous-features:module",
     ],
 )
 
