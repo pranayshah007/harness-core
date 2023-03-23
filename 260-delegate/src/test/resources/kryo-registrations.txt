@@ -1946,6 +1946,7 @@
 97116:io.harness.servicenow.ServiceNowImportSetResponseNG
 97117:io.harness.servicenow.ServiceNowImportSetTransformMapResult
 97118:io.harness.servicenow.ServiceNowStagingTable
+97120:io.harness.servicenow.ServiceNowTicketTypeDTO
 98399:io.harness.delegate.task.helm.HelmCommandRequestNG
 98400:io.harness.helm.HelmCommandType
 98401:io.harness.delegate.task.helm.HelmInstallCommandRequestNG

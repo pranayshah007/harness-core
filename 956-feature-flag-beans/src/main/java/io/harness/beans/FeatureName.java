@@ -666,7 +666,8 @@ public enum FeatureName {
       "Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP),
   SPG_SERVICES_OVERVIEW_RBAC(
       "Applies RBAC on services overview page, only displays services which the user has access to read",
-      HarnessTeam.SPG);
+      HarnessTeam.SPG),
+  CDS_SERVICENOW_TICKET_TYPE_V2("FF to use servicenow ticketTypesV2 endpoint", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

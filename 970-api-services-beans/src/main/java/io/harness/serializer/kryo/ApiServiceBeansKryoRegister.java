@@ -130,6 +130,7 @@ import io.harness.servicenow.ServiceNowImportSetTransformMapResult;
 import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketNG;
+import io.harness.servicenow.ServiceNowTicketTypeDTO;
 import io.harness.shell.AccessType;
 import io.harness.shell.AuthenticationScheme;
 import io.harness.shell.CommandExecutionData;
@@ -463,6 +464,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(ServiceNowImportSetResponseNG.class, 97116);
     kryo.register(ServiceNowImportSetTransformMapResult.class, 97117);
     kryo.register(ServiceNowStagingTable.class, 97118);
+    kryo.register(ServiceNowTicketTypeDTO.class, 97120);
     kryo.register(AdfsAccessTokenResponse.class, 10000121);
     kryo.register(GitPollingWebhookData.class, 73001);
     kryo.register(MultivaluedHashMap.class, 73002);
