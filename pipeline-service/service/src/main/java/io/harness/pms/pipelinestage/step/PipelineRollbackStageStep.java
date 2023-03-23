@@ -13,7 +13,7 @@ import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
-import io.harness.plancreator.prb.PipelineRollbackStageSweepingOutput;
+import io.harness.plancreator.pipelinerollback.PipelineRollbackStageSweepingOutput;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;

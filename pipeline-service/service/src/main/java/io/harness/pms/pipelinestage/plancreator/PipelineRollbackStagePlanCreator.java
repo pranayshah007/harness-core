@@ -10,7 +10,7 @@ package io.harness.pms.pipelinestage.plancreator;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.prb.PipelineRollbackStageNode;
+import io.harness.plancreator.pipelinerollback.PipelineRollbackStageNode;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.GraphLayoutNode;

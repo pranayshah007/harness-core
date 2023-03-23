@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.plancreator.prb;
+package io.harness.plancreator.pipelinerollback;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 

@@ -7,7 +7,7 @@
 
 package io.harness.plancreator.stages;
 
-import io.harness.plancreator.prb.PipelineRollbackStageHelper;
+import io.harness.plancreator.pipelinerollback.PipelineRollbackStageHelper;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.EdgeLayoutList;

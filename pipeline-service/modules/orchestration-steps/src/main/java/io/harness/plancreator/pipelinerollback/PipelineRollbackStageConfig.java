@@ -1,4 +1,4 @@
-package io.harness.plancreator.prb;
+package io.harness.plancreator.pipelinerollback;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
