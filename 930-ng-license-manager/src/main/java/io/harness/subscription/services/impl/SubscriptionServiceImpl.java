@@ -214,6 +214,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     // create Subscription
     return StripeSubscriptionRequest.builder()
         .accountIdentifier(subscriptionRequest.getAccountIdentifier())
+        .customerEmail(subscriptionRequest.getCustomer().getBillingEmail())
         .moduleType(subscriptionRequest.getModuleType().toString())
         .customerId(customerId)
         .items(subscriptionItems)
