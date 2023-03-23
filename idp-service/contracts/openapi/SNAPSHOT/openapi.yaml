@@ -464,12 +464,13 @@ paths:
         - x-api-key: []
       tags:
         - AppConfig
+      description: ''
     parameters:
-      - schema:
-          type: string
-        name: plugin-id
+      - name: plugin-id
         in: path
         required: true
+        schema:
+          type: string
   /v1/plugins-info:
     get:
       summary: Get all plugins available
