@@ -69,6 +69,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
              TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
       String topic = delegateQueueServiceConfig.getTopic();
       String task = referenceFalseKryoSerializer.asString(delegateTask);
+      log.info("HQS: Serialized value task {}", task);
       EnqueueRequest enqueueRequest = EnqueueRequest.builder()
                                           .topic(topic)
                                           .payload(task)
@@ -97,6 +98,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                                           .topic(delegateQueueServiceConfig.getTopic())
                                           .build();
       List<DequeueResponse> dequeueResponses = hsqsClientService.dequeue(dequeueRequest);
+      log.info("HQS: Dequeueing task {}", dequeueResponses);
       List<DelegateTaskDequeue> delegateTasksDequeueList =
           Objects.requireNonNull(dequeueResponses)
               .stream()
@@ -109,6 +111,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                          .build())
               .filter(this::isResourceAvailableToAssignTask)
               .collect(toList());
+      log.info("HQS: Start acknowledging {}", delegateTasksDequeueList);
       delegateTasksDequeueList.forEach(this::acknowledgeAndProcessDelegateTask);
       return true;
     } catch (Exception e) {

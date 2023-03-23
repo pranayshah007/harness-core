@@ -2127,7 +2127,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
 
     if (featureFlagService.isEnabled(QUEUE_DELEGATE_TASK, accountId)
-        && !delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)) {
+        && delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)) {
+      log.info("HQS: Enqueue task");
       delegateTaskQueueService.enqueue(delegateTask);
     } else {
       persistence.save(delegateTask, delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTask.getUuid()));
