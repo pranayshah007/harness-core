@@ -257,6 +257,9 @@ public class RollbackModeExecutionHelper {
       return true;
     }
     // todo: once fork and strategy are divided in sub categories of step and stage, add that check as well
+    // parallel nodes and strategy nodes need to be plan nodes so that we don't take the advisor response from the
+    // previous execution. Previous execution's advisor response would be setting next step as something we dont want in
+    // rollback mode. We want the new advisors set in the Plan Node to be used
     return Arrays.asList(StepCategory.FORK, StepCategory.STRATEGY).contains(stepCategory);
   }
 }
