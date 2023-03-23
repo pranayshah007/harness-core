@@ -15,6 +15,7 @@ import static io.harness.polling.contracts.Type.AMAZON_S3;
 import static io.harness.polling.contracts.Type.AMI;
 import static io.harness.polling.contracts.Type.ARTIFACTORY;
 import static io.harness.polling.contracts.Type.AZURE_ARTIFACTS;
+import static io.harness.polling.contracts.Type.BAMBOO;
 import static io.harness.polling.contracts.Type.CUSTOM_ARTIFACT;
 import static io.harness.polling.contracts.Type.DOCKER_HUB;
 import static io.harness.polling.contracts.Type.ECR;
@@ -62,6 +63,7 @@ import io.harness.polling.bean.artifact.AMIArtifactInfo;
 import io.harness.polling.bean.artifact.AcrArtifactInfo;
 import io.harness.polling.bean.artifact.ArtifactoryRegistryArtifactInfo;
 import io.harness.polling.bean.artifact.AzureArtifactsInfo;
+import io.harness.polling.bean.artifact.BambooArtifactInfo;
 import io.harness.polling.bean.artifact.CustomArtifactInfo;
 import io.harness.polling.bean.artifact.DockerHubArtifactInfo;
 import io.harness.polling.bean.artifact.EcrArtifactInfo;
@@ -415,6 +417,10 @@ public class PollingResponseHandler {
       case AMI:
         polledResponseResultBuilder.name(((AMIArtifactInfo) artifactInfo).getVersion());
         polledResponseResultBuilder.type(AMI);
+        break;
+      case BAMBOO:
+        polledResponseResultBuilder.name(((BambooArtifactInfo) artifactInfo).getPlanKey());
+        polledResponseResultBuilder.type(BAMBOO);
         break;
       default:
         throw new InvalidRequestException("Unsupported Artifact Type " + artifactInfo.getType().getDisplayName());

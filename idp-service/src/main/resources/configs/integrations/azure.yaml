@@ -1,0 +1,3 @@
+azure:
+  - host: HOST_VALUE
+    token: ${AZURE_TOKEN}

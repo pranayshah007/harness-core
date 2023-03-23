@@ -34,7 +34,8 @@ public class AvailabilityRestrictionHandler implements RestrictionHandler {
       String accountIdentifier, long currentCount, ModuleType moduleType, Edition edition) {
     AvailabilityRestriction availabilityRestriction = (AvailabilityRestriction) restriction;
     if (!availabilityRestriction.getEnabled()) {
-      throw new FeatureNotSupportedException("Feature is not enabled");
+      throw new FeatureNotSupportedException(String.format(
+          "[%s] Feature is not enabled. Please contact Harness Support", featureRestrictionName.getDisplayName()));
     }
   }
 

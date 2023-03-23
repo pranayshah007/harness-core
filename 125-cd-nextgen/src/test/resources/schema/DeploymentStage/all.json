@@ -16165,6 +16165,30 @@
       "discriminator": "type",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TerraformCliOptionFlag": {
+      "type": "object",
+      "required": [
+        "commandType",
+        "flag"
+      ],
+      "properties": {
+        "commandType": {
+          "type": "string",
+          "enum": [
+            "INIT",
+            "WORKSPACE",
+            "REFRESH",
+            "PLAN",
+            "APPLY",
+            "DESTROY"
+          ]
+        },
+        "flag": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TerraformCloudApplySpec": {
       "allOf": [
         {
@@ -16251,6 +16275,12 @@
             "Destroy"
           ]
         },
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "configFiles": {
           "$ref": "#/definitions/TerraformConfigFilesWrapper"
         },
@@ -16295,6 +16325,12 @@
     "TerraformCloudCliStepConfiguration": {
       "type": "object",
       "properties": {
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "spec": {
           "$ref": "#/definitions/TerraformCloudCliExecutionData"
         }
@@ -17040,6 +17076,12 @@
             "Destroy"
           ]
         },
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "configFiles": {
           "$ref": "#/definitions/TerraformConfigFilesWrapper"
         },
@@ -17182,6 +17224,12 @@
             "provisionerIdentifier"
           ],
           "properties": {
+            "commandFlags": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TerraformCliOptionFlag"
+              }
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -17221,6 +17269,12 @@
         "type"
       ],
       "properties": {
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "skipRefreshCommand": {
           "oneOf": [
             {

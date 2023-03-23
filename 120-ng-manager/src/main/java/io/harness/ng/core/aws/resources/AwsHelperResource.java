@@ -24,6 +24,8 @@ import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.AwsListInstancesFilterDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -49,6 +51,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -75,6 +78,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AwsHelperResource {
   private final AwsResourceServiceImpl awsHelperService;
   private final InfrastructureEntityService infrastructureEntityService;
+  private final ArtifactResourceUtils artifactResourceUtils;
 
   @GET
   @Path("regions")
@@ -391,5 +395,69 @@ public class AwsHelperResource {
 
     return InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity)
         .getInfrastructureDefinitionConfig();
+  }
+
+  @GET
+  @Path("eks/clusters")
+  @ApiOperation(value = "Get EKS clusters list", nickname = "getEKSClusterNames")
+  public ResponseDTO<List<String>> getEKSClusterNames(@QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    Infrastructure spec = null;
+
+    if (isEmpty(awsConnectorRef)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+    if (isEmpty(awsConnectorRef) && spec != null) {
+      awsConnectorRef = spec.getConnectorReference().getValue();
+    }
+
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+
+    return ResponseDTO.newResponse(awsHelperService.getEKSClusterNames(connectorRef, orgIdentifier, projectIdentifier));
+  }
+
+  @POST
+  @Path("eks/clusters/v2")
+  @ApiOperation(value = "Get EKS clusters list with via expression resolution for eks connector",
+      nickname = "getEKSClusterNamesViaExpressionResolution")
+  public ResponseDTO<List<String>>
+  getEKSClusterNamesViaExpressionResolution(@QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId,
+      @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @NotNull @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @NotNull String runtimeInputYaml) {
+    Infrastructure spec = null;
+
+    if (isEmpty(awsConnectorRef)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+    if (isEmpty(awsConnectorRef) && spec != null) {
+      awsConnectorRef = spec.getConnectorReference().getValue();
+    }
+
+    awsConnectorRef = artifactResourceUtils.getResolvedConnectorId(accountIdentifier, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, awsConnectorRef, fqnPath, gitEntityBasicInfo);
+
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+
+    return ResponseDTO.newResponse(awsHelperService.getEKSClusterNames(connectorRef, orgIdentifier, projectIdentifier));
   }
 }

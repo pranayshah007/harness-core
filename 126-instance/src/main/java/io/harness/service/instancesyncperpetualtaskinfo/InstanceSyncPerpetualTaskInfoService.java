@@ -29,6 +29,9 @@ public interface InstanceSyncPerpetualTaskInfoService {
   InstanceSyncPerpetualTaskInfoDTO updateDeploymentInfoDetailsList(
       InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO);
 
+  InstanceSyncPerpetualTaskInfoDTO updateDeploymentInfoListAndConnectorId(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO, String connectorIdentifier);
+
   /**
    * Deletes all instance sync perpetual task info linked to a particular harness project.
    * @param accountIdentifier  the account id

@@ -124,7 +124,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
       throw new InvalidRequestException(String.format("Child pipeline does not exists %s ", config.getPipeline()));
     }
 
-    pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get());
+    pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get(), stageNode.getName());
     pipelineStageHelper.validateFailureStrategy(stageNode.getFailureStrategies());
 
     // TODO: remove this to enable Strategy support for Pipeline Stage

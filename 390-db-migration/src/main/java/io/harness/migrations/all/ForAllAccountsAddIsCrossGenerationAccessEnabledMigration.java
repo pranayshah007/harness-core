@@ -7,9 +7,10 @@
 
 package io.harness.migrations.all;
 
+import static io.harness.annotations.dev.HarnessTeam.GTM;
+
 import static software.wings.beans.Account.AccountKeys;
 
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.migrations.Migration;
@@ -28,7 +29,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 public class ForAllAccountsAddIsCrossGenerationAccessEnabledMigration implements Migration {
   @Inject private WingsPersistence wingsPersistence;
   @Inject private AccountService accountService;

@@ -9,6 +9,7 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_CONFIG_INSPECT_V1_2;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.TERRAFORM_CONFIG_INSPECT_VERSION_SELECTOR;
 import static io.harness.beans.FeatureName.VALIDATE_PROVISIONER_EXPRESSION;
@@ -59,6 +60,7 @@ import io.harness.limits.ActionType;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.limits.LimitEnforcementUtils;
 import io.harness.limits.checker.StaticLimitCheckerWithDecrement;
+import io.harness.provision.model.TfConfigInspectVersion;
 import io.harness.queue.QueuePublisher;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.validation.Create;
@@ -770,6 +772,9 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
             .scriptPath(terraformDirectory)
             .useTfConfigInspectLatestVersion(
                 featureFlagService.isEnabled(TERRAFORM_CONFIG_INSPECT_VERSION_SELECTOR, accountId));
+    if (featureFlagService.isEnabled(CDS_TERRAFORM_CONFIG_INSPECT_V1_2, accountId)) {
+      terraformProvisionParameters.terraformConfigInspectVersion(TfConfigInspectVersion.V1_2);
+    }
 
     if (terraformSourceType.equals(TerraformSourceType.S3)) {
       validateS3Config(awsConfigId, s3URI, scmSettingId);
@@ -950,6 +955,10 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
                             .configFilesS3URI(terraformInfrastructureProvisioner.getS3URI())
                             .configFilesAwsSourceConfig(awsS3SourceBucketConfig)
                             .configFileAWSEncryptionDetails(awsS3EncryptionDetails)
+                            .terraformConfigInspectVersion(
+                                featureFlagService.isEnabled(CDS_TERRAFORM_CONFIG_INSPECT_V1_2, accountId)
+                                    ? TfConfigInspectVersion.V1_2
+                                    : null)
                             .build()})
                     .timeout(TaskData.DEFAULT_SYNC_CALL_TIMEOUT)
                     .build())

@@ -48,6 +48,7 @@ import io.harness.servicenow.ServiceNowFieldNG;
 import io.harness.servicenow.ServiceNowImportSetResponseNG;
 import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
+import io.harness.servicenow.ServiceNowTicketTypeDTO;
 
 import software.wings.helpers.ext.servicenow.ServiceNowRestClient;
 
@@ -883,6 +884,89 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     }
     verify(secretDecryptionService, times(2)).decrypt(any(), any());
     verify(serviceNowRestClient, times(2)).getStagingTableList(anyString());
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetTicketTypesWithRetry() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    Retrofit retrofit = Mockito.mock(Retrofit.class);
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getTicketTypes(anyString())).thenReturn(mockCall);
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    when(mockCall.clone()).thenReturn(mockCall);
+    doThrow(new SocketTimeoutException())
+        .doReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowTicketTypeResponse.json", classLoader))
+        .when(mockCall)
+        .execute();
+    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
+    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+
+    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+    ServiceNowTaskNGResponse response =
+        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                         .action(ServiceNowActionNG.GET_TICKET_TYPES)
+                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                         .build(),
+            logStreamingTaskClient);
+    List<ServiceNowTicketTypeDTO> ticketTypes = response.getServiceNowTicketTypeList();
+    assertThat(response.getDelegateMetaInfo()).isNull();
+    assertThat(ticketTypes).hasSize(43);
+
+    assertThat(response.getTicket()).isNull();
+    assertThat(response.getServiceNowFieldNGList()).isNull();
+    assertThat(response.getServiceNowTemplateList()).isNull();
+    assertThat(response.getServiceNowImportSetResponseNG()).isNull();
+    assertThat(response.getServiceNowStagingTableList()).isNull();
+
+    verify(serviceNowRestClient).getTicketTypes(anyString());
+
+    verify(secretDecryptionService, times(1)).decrypt(any(), any());
+    verify(serviceNowRestClient, times(1)).getTicketTypes(anyString());
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetTicketTypesMissingACLWithRetry() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    Retrofit retrofit = Mockito.mock(Retrofit.class);
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getTicketTypes(anyString())).thenReturn(mockCall);
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    when(mockCall.clone()).thenReturn(mockCall);
+    doThrow(new SocketTimeoutException())
+        .doReturn(
+            getJsonNodeResponseFromJsonFile("servicenow/serviceNowTicketTypeMissingACLResponse.json", classLoader))
+        .when(mockCall)
+        .execute();
+    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
+    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+
+    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+    ServiceNowTaskNGResponse response =
+        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                         .action(ServiceNowActionNG.GET_TICKET_TYPES)
+                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                         .build(),
+            logStreamingTaskClient);
+    List<ServiceNowTicketTypeDTO> ticketTypes = response.getServiceNowTicketTypeList();
+    assertThat(response.getDelegateMetaInfo()).isNull();
+    assertThat(ticketTypes).hasSize(4);
+
+    assertThat(response.getTicket()).isNull();
+    assertThat(response.getServiceNowFieldNGList()).isNull();
+    assertThat(response.getServiceNowTemplateList()).isNull();
+    assertThat(response.getServiceNowImportSetResponseNG()).isNull();
+    assertThat(response.getServiceNowStagingTableList()).isNull();
+
+    verify(serviceNowRestClient).getTicketTypes(anyString());
+
+    verify(secretDecryptionService, times(1)).decrypt(any(), any());
+    verify(serviceNowRestClient, times(1)).getTicketTypes(anyString());
   }
 
   private Response<JsonNode> getJsonNodeResponseFromJsonFile(String filePath, ClassLoader classLoader)

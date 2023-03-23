@@ -19,12 +19,13 @@ import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.datacollection.utils.EmptyPredicate;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.ngmigration.beans.BaseProvidedInput;
+import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -70,6 +71,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -236,6 +238,7 @@ public class ManifestMigrationService extends NgMigrationService {
                     .ngEntityDetail(manifestFileHandler.getNGEntityDetail(migrationContext, manifestFile))
                     .cgBasicInfo(manifestFileHandler.getCgBasicInfo(manifestFile))
                     .build());
+      files.addAll(manifestFileHandler.getFolders(migrationContext, manifestFile));
     }
     return files;
   }
@@ -274,8 +277,12 @@ public class ManifestMigrationService extends NgMigrationService {
         entitySpec = JsonUtils.treeToValue(manifestInput.getSpec(), ManifestProvidedEntitySpec.class);
       }
       List<NGYamlFile> files = getYamlFilesForManifest(migrationContext, applicationManifest);
+      if (EmptyPredicate.isNotEmpty(files)) {
+        files = files.stream()
+                    .filter(file -> !"FOLDER".equalsIgnoreCase(((FileYamlDTO) file.getYaml()).getFileUsage()))
+                    .collect(Collectors.toList());
+      }
       NgManifestService ngManifestService = manifestFactory.getNgManifestService(applicationManifest, service);
-
       List<ManifestConfigWrapper> manifestConfigWrapper = ngManifestService.getManifestConfigWrapper(
           applicationManifest, entities, migratedEntities, entitySpec, files, identifierCaseFormat);
       ngManifests.addAll(manifestConfigWrapper);

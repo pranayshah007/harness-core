@@ -55,6 +55,10 @@ public abstract class LogSanitizer {
 
   protected String sanitizeLogInternal(String message, Set<String> secrets) {
     String sanitizedLogMessage = message;
+    if (isEmpty(sanitizedLogMessage)) {
+      return sanitizedLogMessage;
+    }
+
     if (!secrets.isEmpty()) {
       ArrayList<String> secretMasks = new ArrayList<>();
       ArrayList<String> secretValues = new ArrayList<>();
@@ -67,6 +71,8 @@ public abstract class LogSanitizer {
     }
 
     // JWT sanitization
-    return LogSanitizerHelper.sanitizeJWT(sanitizedLogMessage);
+    sanitizedLogMessage = LogSanitizerHelper.sanitizeJWT(sanitizedLogMessage);
+
+    return sanitizedLogMessage;
   }
 }

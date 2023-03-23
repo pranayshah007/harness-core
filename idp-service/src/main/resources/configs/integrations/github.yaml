@@ -1,0 +1,4 @@
+integrations:
+  'github':
+    - host: HOST_VALUE
+      token: ${GITHUB_TOKEN}

@@ -292,6 +292,7 @@ export DELEGATE_TYPE=SHELL_SCRIPT
 
 export HOSTNAME
 export CAPSULE_CACHE_DIR="$DIR/.cache"
+export DELEGATE_STORAGE_URL=http://localhost:8888
 
 # Strip JAVA_OPTS that is not recognized by JRE11
 WATCHER_JAVA_OPTS=${WATCHER_JAVA_OPTS//UseCGroupMemoryLimitForHeap/UseContainerSupport}

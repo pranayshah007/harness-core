@@ -107,6 +107,18 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
     }
 
     try {
+      updateTicketFieldsInApprovalInstance(serviceNowTaskNGResponse.getTicket(), instance);
+    } catch (Exception ex) {
+      logCallback.saveExecutionLog(
+          LogHelper.color(
+              String.format("Error while updating approval with serviceNow ticket fields: %s. Ignoring it...",
+                  ExceptionUtils.getMessage(ex)),
+              LogColor.Red),
+          LogLevel.WARN);
+      log.warn("Error while updating approval instance with serviceNow ticket fields", ex);
+    }
+
+    try {
       checkApprovalAndRejectionCriteriaAndWithinChangeWindow(serviceNowTaskNGResponse.getTicket(), instance,
           logCallback, instance.getApprovalCriteria(), instance.getRejectionCriteria());
     } catch (Exception ex) {
@@ -133,6 +145,12 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
   protected boolean evaluateWithinChangeWindow(TicketNG ticket, ApprovalInstance instance, NGLogCallback logCallback) {
     return ServiceNowCriteriaEvaluator.validateWithinChangeWindow(
         (ServiceNowTicketNG) ticket, (ServiceNowApprovalInstance) instance, logCallback);
+  }
+
+  @Override
+  protected void updateTicketFieldsInApprovalInstance(TicketNG ticket, ApprovalInstance instance) {
+    approvalInstanceService.updateTicketFieldsInServiceNowApprovalInstance(
+        (ServiceNowApprovalInstance) instance, (ServiceNowTicketNG) ticket);
   }
 
   @Override

@@ -132,3 +132,18 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 	})
 	return err
 }
+
+// Ping pings the store for readiness
+func (s *Store) Ping() error {
+	svc := s3.New(s.session)
+
+	// Check if the bucket exists
+	_, err := svc.HeadBucket(&s3.HeadBucketInput{
+		Bucket: aws.String(s.bucket),
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

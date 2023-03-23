@@ -7,10 +7,11 @@
 
 package software.wings.beans.accountdetails;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.GTM;
+
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 public class AccountDetailsConstants {
   public static final String RESOURCE_NAME = "Account Details";
   public static final String CROSS_GENERATION_ACCESS_UPDATED = "CrossGenerationAccessUpdated";

@@ -114,8 +114,13 @@ public abstract class AbstractApprovalCallback {
   }
 
   protected abstract boolean evaluateCriteria(TicketNG ticket, CriteriaSpecDTO criteriaSpec);
+
   protected boolean evaluateWithinChangeWindow(TicketNG ticket, ApprovalInstance instance, NGLogCallback logCallback) {
     // to add implementation, override this method in approval callback
     return true;
+  }
+
+  protected void updateTicketFieldsInApprovalInstance(TicketNG ticket, ApprovalInstance instance) {
+    // to add implementation, override this method in approval callback
   }
 }

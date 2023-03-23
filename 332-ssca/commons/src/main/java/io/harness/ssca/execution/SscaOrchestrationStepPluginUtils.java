@@ -34,6 +34,7 @@ public class SscaOrchestrationStepPluginUtils {
   public static final String ATTESTATION_PRIVATE_KEY = "COSIGN_PASSWORD";
   public static final String SSCA_CORE_URL = "SSCS_Core_Url";
   public static final String STEP_EXECUTION_ID = "STEP_EXECUTION_ID";
+  public static final String STEP_ID = "STEP_ID";
   public static final String DOCKER_USERNAME = "DOCKER_USERNAME";
   public static final String DOCKER_PASSW = "DOCKER_PASSWORD";
   public static final String DOCKER_REGISTRY = "DOCKER_REGISTRY";
@@ -48,6 +49,7 @@ public class SscaOrchestrationStepPluginUtils {
     envMap.put(SKIP_NORMALISATION, "true");
     envMap.put(SSCA_CORE_URL, envVariables.getSscaCoreUrl());
     envMap.put(STEP_EXECUTION_ID, envVariables.getStepExecutionId());
+    envMap.put(STEP_ID, envVariables.getStepIdentifier());
     return envMap;
   }
 

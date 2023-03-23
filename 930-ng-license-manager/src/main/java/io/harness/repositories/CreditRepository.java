@@ -7,8 +7,9 @@
 
 package io.harness.repositories;
 
+import static io.harness.annotations.dev.HarnessTeam.GTM;
+
 import io.harness.annotation.HarnessRepo;
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.credit.entities.Credit;
 
@@ -16,7 +17,7 @@ import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.transaction.annotation.Transactional;
 
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 @HarnessRepo
 @Transactional
 public interface CreditRepository extends CrudRepository<Credit, String> {
