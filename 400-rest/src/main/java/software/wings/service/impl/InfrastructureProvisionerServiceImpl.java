@@ -48,7 +48,6 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.clienttools.TerraformConfigInspectVersion;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
