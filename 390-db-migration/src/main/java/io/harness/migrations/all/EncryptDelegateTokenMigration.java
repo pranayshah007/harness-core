@@ -64,6 +64,8 @@ public class EncryptDelegateTokenMigration implements Migration {
                                      .field(DelegateTokenKeys.uuid)
                                      .in(updateList)
                                      .project(DelegateTokenKeys.accountId, true)
+                                     .project(DelegateTokenKeys.name, true)
+                                     .project(DelegateTokenKeys.owner, true)
                                      .project(DelegateTokenKeys.value, true);
     int count = 0;
     try (HIterator<DelegateToken> iterator = new HIterator<>(query.fetch())) {
