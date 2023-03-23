@@ -240,6 +240,7 @@ encryptedRecords {"name": "acctKmsIdx", "background": true} {"accountId": 1, "km
 encryptedRecords {"name": "acctNameIdx", "unique": true} {"accountId": 1, "name": 1, "ngMetadata.accountIdentifier": 1, "ngMetadata.orgIdentifier": 1, "ngMetadata.projectIdentifier": 1, "ngMetadata.identifier": 1}
 encryptedRecords {"name": "createdAt_1", "background": true} {"createdAt": 1}
 encryptedRecords {"name": "encryptionKey_1", "background": true} {"encryptionKey": 1}
+encryptedRecords {"name": "encryptionTypeNgMetadataGCPIteration", "background": true} {"encryptionType": 1, "ngMetadata": 1, "nextLocalToGcpKmsMigrationIteration": 1}
 encryptedRecords {"name": "keywords_1", "background": true} {"keywords": 1}
 encryptedRecords {"name": "name_1", "background": true} {"name": 1}
 encryptedRecords {"name": "nextAwsKmsToGcpKmsMigrationIteration_1", "background": true} {"nextAwsKmsToGcpKmsMigrationIteration": 1}
@@ -557,6 +558,7 @@ permits {"name": "expireAt_1", "background": true, "expireAfterSeconds": 0} {"ex
 permits {"name": "key_1", "unique": true} {"key": 1}
 perpetualTask {"name": "assignIterator", "background": true} {"state": 1, "assignAfterMs": 1, "assignIteration": 1}
 perpetualTask {"name": "assigned_delegate", "background": true} {"accountId": 1, "state": 1, "delegateId": 1}
+perpetualTask {"name": "clientContext_clientParams_infrastructureMappingId", "background": true, "sparse": true} {"clientContext.clientParams.infrastructureMappingId": 1}
 perpetualTask {"name": "delegateId_1", "background": true} {"delegateId": 1}
 perpetualTask {"name": "rebalanceIterator", "background": true} {"state": 1, "rebalanceIteration": 1}
 perpetualTask {"name": "state_assignIteration_assignAfterMs", "background": true} {"state": 1, "assignIteration": 1, "assignAfterMs": 1}
@@ -574,6 +576,7 @@ pipelines {"name": "createdAt_1", "background": true} {"createdAt": 1}
 preferences {"name": "appId_1", "background": true} {"appId": 1}
 preferences {"name": "createdAt_1", "background": true} {"createdAt": 1}
 preferences {"name": "preference_index", "background": true} {"accountId": 1, "userId": 1, "name": 1}
+preferences {"name": "usergroupsId_shared", "background": true} {"accountId": 1, "userId": 1, "name": 1, "userGroupsIdToShare": 1}
 progressUpdate {"name": "correlation", "background": true} {"correlationId": 1, "createdAt": -1}
 progressUpdate {"name": "createdAt_1", "background": true} {"createdAt": 1}
 progressUpdate {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
@@ -681,6 +684,7 @@ ssoSettings {"name": "nextIterations_1", "background": true} {"nextIterations": 
 ssoSettings {"name": "typeNextIterations", "background": true} {"type": 1, "nextIterations": 1}
 stateExecutionInstances {"name": "accountId_status_stateType", "background": true} {"accountId": 1, "status": 1, "stateType": 1}
 stateExecutionInstances {"name": "appIdExecutionIdStatus", "background": true} {"appId": 1, "executionUuid": 1, "status": 1}
+stateExecutionInstances {"name": "appId_createdAt", "background": true} {"appId": 1, "createdAt": 1}
 stateExecutionInstances {"name": "appId_endTs", "background": true} {"appId": 1, "endTs": 1}
 stateExecutionInstances {"name": "createdAt_1", "background": true} {"createdAt": 1}
 stateExecutionInstances {"name": "parentInstanceId_1", "background": true} {"parentInstanceId": 1}

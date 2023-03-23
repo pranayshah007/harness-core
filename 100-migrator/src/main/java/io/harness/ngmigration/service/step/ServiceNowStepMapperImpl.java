@@ -7,9 +7,11 @@
 
 package io.harness.ngmigration.service.step;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
+import static io.harness.ngmigration.utils.MigratorUtility.getSafeNotEmptyString;
 
-import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -78,7 +80,8 @@ public class ServiceNowStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     ServiceNowCreateUpdateState state = (ServiceNowCreateUpdateState) getState(graphNode);
     ServiceNowCreateUpdateParams params = state.getServiceNowCreateUpdateParams();
     switch (params.getAction()) {
@@ -144,19 +147,21 @@ public class ServiceNowStepMapperImpl extends StepMapper {
     Map<ServiceNowFields, String> fields = parameters.fetchFields();
     Map<String, String> additional = parameters.fetchAdditionalFields();
     List<ServiceNowField> ngFields = new ArrayList<>();
-    if (EmptyPredicate.isNotEmpty(fields)) {
-      fields.forEach((key, value)
-                         -> ngFields.add(ServiceNowField.builder()
-                                             .name(key.getJsonBodyName())
-                                             .value(ParameterField.createValueField(value))
-                                             .build()));
+    if (isNotEmpty(fields)) {
+      fields.forEach((key, value) -> {
+        ngFields.add(ServiceNowField.builder()
+                         .name(key.getJsonBodyName())
+                         .value(ParameterField.createValueField(getSafeNotEmptyString(value)))
+                         .build());
+      });
     }
 
-    if (EmptyPredicate.isNotEmpty(additional)) {
-      additional.forEach(
-          (key, value)
-              -> ngFields.add(
-                  ServiceNowField.builder().name(key).value(ParameterField.createValueField(value)).build()));
+    if (isNotEmpty(additional)) {
+      additional.forEach((key, value)
+                             -> ngFields.add(ServiceNowField.builder()
+                                                 .name(key)
+                                                 .value(ParameterField.createValueField(getSafeNotEmptyString(value)))
+                                                 .build()));
     }
 
     return ngFields;
@@ -166,15 +171,16 @@ public class ServiceNowStepMapperImpl extends StepMapper {
     ServiceNowCreateUpdateParams params = state.getServiceNowCreateUpdateParams();
     ServiceNowUpdateStepNode stepNode = new ServiceNowUpdateStepNode();
     baseSetup(state, stepNode, caseFormat);
-    ServiceNowUpdateStepInfo stepInfo = ServiceNowUpdateStepInfo.builder()
-                                            .connectorRef(RUNTIME_INPUT)
-                                            .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
-                                            .ticketType(ParameterField.createValueField(params.getTicketType()))
-                                            .ticketNumber(ParameterField.createValueField(params.getIssueNumber()))
-                                            .templateName(RUNTIME_INPUT)
-                                            .useServiceNowTemplate(ParameterField.createValueField(false))
-                                            .fields(getFields(params))
-                                            .build();
+    ServiceNowUpdateStepInfo stepInfo =
+        ServiceNowUpdateStepInfo.builder()
+            .connectorRef(RUNTIME_INPUT)
+            .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
+            .ticketType(ParameterField.createValueField(params.getTicketType()))
+            .ticketNumber(ParameterField.createValueField(getSafeNotEmptyString(params.getIssueNumber())))
+            .templateName(RUNTIME_INPUT)
+            .useServiceNowTemplate(ParameterField.createValueField(false))
+            .fields(getFields(params))
+            .build();
     stepNode.setServiceNowUpdateStepInfo(stepInfo);
     return stepNode;
   }

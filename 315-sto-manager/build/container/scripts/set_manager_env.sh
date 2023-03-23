@@ -14,6 +14,10 @@ if [[ -z "$PMS_SDK_SERVER_CONFIG_SECURE_PORT" ]]; then
    export PMS_SDK_SERVER_CONFIG_SECURE_PORT=14301
 fi
 
+if [[ -z "$SERVER_ADMIN_HTTPS_PORT" ]]; then
+   export SERVER_ADMIN_HTTPS_PORT=7072
+fi
+
 if [[ -z "$SERVER_APP_HTTPS_PORT" ]]; then
    export SERVER_APP_HTTPS_PORT=7172
 fi

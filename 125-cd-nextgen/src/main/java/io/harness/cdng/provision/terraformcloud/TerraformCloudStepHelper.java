@@ -9,10 +9,8 @@ package io.harness.cdng.provision.terraformcloud;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudConstants.TFC_DESTROY_PLAN_NAME_PREFIX_NG;
-import static io.harness.cdng.provision.terraformcloud.TerraformCloudConstants.TFC_OUTPUT_FORMAT;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudConstants.TFC_PLAN_NAME_PREFIX_NG;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.APPLY;
-import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_AND_APPLY;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_AND_DESTROY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -34,7 +32,6 @@ import io.harness.cdng.provision.terraform.executions.TerraformCloudPlanExecutio
 import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfig;
 import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfigDAL;
 import io.harness.cdng.provision.terraformcloud.executiondetails.TerraformCloudPlanExecutionDetailsService;
-import io.harness.cdng.provision.terraformcloud.output.TerraformCloudPlanOutput;
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudApplySpecParameters;
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndApplySpecParameters;
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndDestroySpecParameters;
@@ -51,10 +48,6 @@ import io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTask
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
-import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -70,6 +63,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -83,7 +77,6 @@ import org.apache.commons.io.IOUtils;
 @OwnedBy(CDP)
 public class TerraformCloudStepHelper {
   @Inject private CDStepHelper cdStepHelper;
-  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private TerraformCloudPlanExecutionDetailsService terraformCloudPlanExecutionDetailsService;
   @Inject private TerraformCloudConfigDAL terraformCloudConfigDAL;
   @Inject private FileServiceClientFactory fileService;
@@ -115,36 +108,15 @@ public class TerraformCloudStepHelper {
               .findFirst()
               .orElse(null);
     } else {
-      TerraformCloudPlanOutput savedTerraformCloudPlanOutput = getSavedTerraformCloudOutput(
-          getProvisionIdentifier(terraformCloudRunSpecParameters), PLAN.getDisplayName(), ambiance);
-
-      connectorConfigDTO =
-          cdStepHelper.getConnector(savedTerraformCloudPlanOutput.getTerraformCloudConnectorRef(), ambiance)
-              .getConnectorConfig();
+      RunDetails runDetails =
+          getPlanRunDetailsByProvisionerId(ambiance, getProvisionIdentifier(terraformCloudRunSpecParameters));
+      connectorConfigDTO = cdStepHelper.getConnector(runDetails.getConnectorRef(), ambiance).getConnectorConfig();
     }
     return (TerraformCloudConnectorDTO) connectorConfigDTO;
   }
 
   public TerraformCloudConnectorDTO getTerraformCloudConnectorWithRef(String connectorRef, Ambiance ambiance) {
     return (TerraformCloudConnectorDTO) cdStepHelper.getConnector(connectorRef, ambiance).getConnectorConfig();
-  }
-
-  public void saveTerraformCloudPlanOutput(
-      TerraformCloudPlanSpecParameters planSpecParameters, String runId, Ambiance ambiance) {
-    planSpecParameters.validate();
-
-    TerraformCloudPlanOutput terraformCloudPlanOutput =
-        TerraformCloudPlanOutput.builder()
-            .runId(runId)
-            .terraformCloudConnectorRef(
-                ParameterFieldHelper.getParameterFieldValue(planSpecParameters.getConnectorRef()))
-            .build();
-
-    String fullEntityId = generateFullIdentifier(
-        ParameterFieldHelper.getParameterFieldValue(planSpecParameters.getProvisionerIdentifier()), ambiance);
-    String outputName = format(TFC_OUTPUT_FORMAT, PLAN.getDisplayName(), fullEntityId);
-    executionSweepingOutputService.consume(
-        ambiance, outputName, terraformCloudPlanOutput, StepOutcomeGroup.STAGE.name());
   }
 
   public String getTerraformPlanName(PlanType planType, Ambiance ambiance, String provisionId) {
@@ -184,7 +156,7 @@ public class TerraformCloudStepHelper {
   }
 
   public void saveTerraformCloudPlanExecutionDetails(Ambiance ambiance, String planFileJsonId,
-      String policyCheckFileJsonId, String provisionerIdentifier, RunDetails runDetails) {
+      String policyCheckFileJsonId, String provisionerIdentifier, RunDetails runDetails, boolean canBeApplied) {
     TerraformCloudPlanExecutionDetails terraformPlanExecutionDetails =
         TerraformCloudPlanExecutionDetails.builder()
             .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
@@ -198,9 +170,16 @@ public class TerraformCloudStepHelper {
             .tfcPolicyChecksFileId(policyCheckFileJsonId)
             .tfcPolicyChecksFileBucket(FileBucket.TERRAFORM_CLOUD_POLICY_CHECKS.name())
             .runDetails(runDetails)
+            .canBeApplied(canBeApplied)
             .build();
 
     terraformCloudPlanExecutionDetailsService.save(terraformPlanExecutionDetails);
+  }
+
+  public void saveTerraformCloudPlanExecutionDetails(Ambiance ambiance, String planFileJsonId,
+      String policyCheckFileJsonId, String provisionerIdentifier, RunDetails runDetails) {
+    saveTerraformCloudPlanExecutionDetails(
+        ambiance, planFileJsonId, policyCheckFileJsonId, provisionerIdentifier, runDetails, false);
   }
 
   public void updateRunDetails(Ambiance ambiance, String runId) {
@@ -210,7 +189,7 @@ public class TerraformCloudStepHelper {
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
     Map<String, Object> updates = new HashMap<>();
     updates.put(TerraformCloudPlanExecutionDetailsKeys.runDetails, null);
-
+    updates.put(TerraformCloudPlanExecutionDetailsKeys.canBeApplied, false);
     terraformCloudPlanExecutionDetailsService.updateTerraformCloudPlanExecutionDetails(
         Scope.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build(),
         planExecutionId, runId, updates);
@@ -310,21 +289,8 @@ public class TerraformCloudStepHelper {
     waitNotifyEngine.waitForAllOn(NG_ORCHESTRATION, new TerraformCloudCleanupTaskNotifyCallback(), taskId);
   }
 
-  private TerraformCloudPlanOutput getSavedTerraformCloudOutput(
-      String provisionerIdentifier, String command, Ambiance ambiance) {
-    String fullEntityId = generateFullIdentifier(provisionerIdentifier, ambiance);
-    OptionalSweepingOutput output = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(format(TFC_OUTPUT_FORMAT, command, fullEntityId)));
-    if (!output.isFound()) {
-      throw new InvalidRequestException(
-          format("Did not find any Plan step for provisioner identifier: [%s]", provisionerIdentifier));
-    }
-
-    return (TerraformCloudPlanOutput) output.getOutput();
-  }
-
   public String getPlanRunId(String provisionerId, Ambiance ambiance) {
-    return getSavedTerraformCloudOutput(provisionerId, PLAN.getDisplayName(), ambiance).getRunId();
+    return getPlanRunDetailsByProvisionerId(ambiance, provisionerId).getRunId();
   }
 
   public Map<String, Object> parseTerraformOutputs(String terraformOutputString) {
@@ -358,9 +324,7 @@ public class TerraformCloudStepHelper {
           (TerraformCloudPlanAndDestroySpecParameters) spec;
       connectorRef = ParameterFieldHelper.getParameterFieldValue(planAndDestroySpecParameters.getConnectorRef());
     } else if (type == APPLY) {
-      TerraformCloudPlanOutput savedTerraformCloudPlanOutput =
-          getSavedTerraformCloudOutput(provisionIdentifier, PLAN.getDisplayName(), ambiance);
-      connectorRef = savedTerraformCloudPlanOutput.getTerraformCloudConnectorRef();
+      connectorRef = getPlanRunDetailsByProvisionerId(ambiance, provisionIdentifier).getConnectorRef();
     } else {
       throw new InvalidRequestException(format("Can't save Terraform Cloud Config for type: [%s]", type));
     }
@@ -374,5 +338,25 @@ public class TerraformCloudStepHelper {
                                                          .lastSuccessfulRun(lastSuccessfulRun)
                                                          .workspaceId(workspaceId)
                                                          .build());
+  }
+
+  private RunDetails getPlanRunDetailsByProvisionerId(Ambiance ambiance, String provisionerId) {
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+
+    return terraformCloudPlanExecutionDetailsService
+        .listAllPipelineTFCloudPlanExecutionDetails(
+            Scope.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build(),
+            planExecutionId)
+        .stream()
+        .filter(TerraformCloudPlanExecutionDetails::isCanBeApplied)
+        .filter(executionDetail -> executionDetail.getProvisionerId().equals(provisionerId))
+        .max(Comparator.comparing(TerraformCloudPlanExecutionDetails::getCreatedAt))
+        .orElseThrow(()
+                         -> new InvalidRequestException(
+                             format("Can't find Plan for provisioner id: [%s] that can be applied", provisionerId)))
+        .getRunDetails();
   }
 }

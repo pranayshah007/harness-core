@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -43,7 +44,8 @@ public class EmailStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     EmailState state = (EmailState) getState(graphNode);
     EmailStepNode emailStepNode = new EmailStepNode();
     baseSetup(graphNode, emailStepNode, context.getIdentifierCaseFormat());

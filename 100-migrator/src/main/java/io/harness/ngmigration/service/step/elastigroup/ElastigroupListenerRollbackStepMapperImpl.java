@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step.elastigroup;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -36,7 +37,8 @@ public class ElastigroupListenerRollbackStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     SpotInstListenerUpdateRollbackState state = (SpotInstListenerUpdateRollbackState) getState(graphNode);
 
     ElastigroupRollbackStepNode node = new ElastigroupRollbackStepNode();

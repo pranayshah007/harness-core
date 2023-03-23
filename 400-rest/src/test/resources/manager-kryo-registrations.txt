@@ -618,7 +618,7 @@
 5374:software.wings.delegatetasks.BambooTask.BambooExecutionResponse
 5375:software.wings.beans.HttpStateExecutionResponse
 5376:software.wings.service.impl.elk.ElkLogFetchRequest
-5377:software.wings.service.impl.ThirdPartyApiCallLog
+5377:software.wings.beans.dto.ThirdPartyApiCallLog
 5378:software.wings.beans.Variable
 5379:software.wings.beans.VariableType
 5380:software.wings.service.impl.aws.model.AwsRequest
@@ -2181,8 +2181,8 @@
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
 70003:io.harness.accesscontrol.acl.api.ResourceScope
 70004:io.harness.accesscontrol.NGAccessDeniedException
-71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
-71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
+71100:software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField
+71101:software.wings.beans.dto.ThirdPartyApiCallLog.FieldType
 71102:software.wings.beans.dto.Log
 71103:io.harness.logging.LogLevel
 71104:software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse
@@ -2323,6 +2323,7 @@
 97116:io.harness.servicenow.ServiceNowImportSetResponseNG
 97117:io.harness.servicenow.ServiceNowImportSetTransformMapResult
 97118:io.harness.servicenow.ServiceNowStagingTable
+97120:io.harness.servicenow.ServiceNowTicketTypeDTO
 98399:io.harness.delegate.task.helm.HelmCommandRequestNG
 98400:io.harness.helm.HelmCommandType
 98401:io.harness.delegate.task.helm.HelmInstallCommandRequestNG
@@ -2719,6 +2720,7 @@
 563534:io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig
 563535:io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability
 563536:io.harness.delegate.task.serverless.ServerlessS3ArtifactConfig
+563537:io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig
 573401:io.harness.delegate.task.gitcommon.GitTaskNGRequest
 573402:io.harness.delegate.task.gitcommon.GitTaskNGResponse
 573403:io.harness.delegate.task.gitcommon.GitFetchFilesResult
@@ -2939,6 +2941,7 @@
 878018:io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultAdviserParameters
 878019:io.harness.pms.sdk.core.execution.AsyncTimeoutResponseData
 878020:io.harness.pms.sdk.core.execution.async.AsyncProgressData
+878021:io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO
@@ -3035,6 +3038,7 @@
 5731609:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult
 
 9000312:software.wings.helpers.ext.nexus.NexusRepositories
+9000313:io.harness.provision.model.TfConfigInspectVersion
 9300122:io.harness.yaml.core.timeout.Timeout
 9300123:io.harness.beans.WebhookEncryptedSecretDTO
 9800001:io.harness.beans.RecasterMap
@@ -3125,9 +3129,7 @@
 10000303:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO
 10000304:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType
 10000305:io.harness.exception.TerraformCloudException
-
 10000401:io.harness.delegate.beans.executioncapability.AwsSamInstallationCapability
-
 10000450:io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO
 10000451:io.harness.delegate.beans.connector.jira.JiraAuthType
 10000452:io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO

@@ -23,6 +23,7 @@ import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.cimanager.stages.V1.IntegrationStageConfigImplV1;
 import io.harness.cimanager.stages.V1.IntegrationStageNodeV1;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -61,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -84,14 +86,22 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
     Optional<Object> optionalRegistry = ciPlanCreatorUtils.getDeserializedObjectFromDependency(
         ctx.getMetadata().getGlobalDependency(), YAMLFieldNameConstants.REGISTRY);
     Registry registry = (Registry) optionalRegistry.orElse(Registry.builder().build());
-    IntegrationStageStepParametersPMS params = IntegrationStageStepParametersPMS.builder()
-                                                   .infrastructure(infrastructure)
-                                                   .childNodeID(childrenNodeIds.get(0))
-                                                   .codeBase(codeBase)
-                                                   .triggerPayload(ctx.getTriggerPayload())
-                                                   .registry(registry)
-                                                   .cloneManually(ciPlanCreatorUtils.shouldCloneManually(ctx, codeBase))
-                                                   .build();
+
+    YamlField specField = Preconditions.checkNotNull(field.getNode().getField(YAMLFieldNameConstants.SPEC));
+    YamlField stepsField = Preconditions.checkNotNull(specField.getNode().getField(YAMLFieldNameConstants.STEPS));
+    List<YamlField> steps = CIPlanCreatorUtils.getStepYamlFields(stepsField);
+    List<ExecutionWrapperConfig> executionWrapperConfigs =
+        steps.stream().map(CIPlanCreatorUtils::getExecutionConfig).collect(Collectors.toList());
+    IntegrationStageStepParametersPMS params =
+        IntegrationStageStepParametersPMS.builder()
+            .stepIdentifiers(IntegrationStageStepParametersPMS.getStepIdentifiers(executionWrapperConfigs))
+            .infrastructure(infrastructure)
+            .childNodeID(childrenNodeIds.get(0))
+            .codeBase(codeBase)
+            .triggerPayload(ctx.getTriggerPayload())
+            .registry(registry)
+            .cloneManually(ciPlanCreatorUtils.shouldCloneManually(ctx, codeBase))
+            .build();
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stageNode.getUuid()))

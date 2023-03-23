@@ -8,10 +8,11 @@
 package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.CVConstants.DATA_COLLECTION_TIME_RANGE_FOR_SLI;
-import static io.harness.cvng.core.entities.DeploymentDataCollectionTask.MAX_RETRY_COUNT;
 
+import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.core.utils.DateTimeUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.time.Duration;
 import java.time.Instant;
@@ -25,12 +26,26 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class SLIDataCollectionTask extends DataCollectionTask {
   public static final Duration SLI_MAX_DATA_COLLECTION_DURATION = DATA_COLLECTION_TIME_RANGE_FOR_SLI;
+
+  @VisibleForTesting public static int MAX_RETRY_COUNT = 10;
+
   private static final List<Duration> RETRY_WAIT_DURATIONS =
       Lists.newArrayList(Duration.ofSeconds(5), Duration.ofSeconds(10), Duration.ofSeconds(60), Duration.ofMinutes(5),
           Duration.ofMinutes(15), Duration.ofHours(1), Duration.ofHours(3));
   @Override
   public boolean shouldCreateNextTask() {
     return true;
+  }
+
+  @Override
+  public boolean shouldHandlerCreateNextTask(Instant currentTime) {
+    boolean successConditionAndTaskNotCreatedWithInTwoMinutes =
+        Instant.ofEpochMilli(this.getLastUpdatedAt()).isBefore(currentTime.minus(Duration.ofMinutes(2)))
+        && this.getStatus().equals(DataCollectionExecutionStatus.SUCCESS);
+    boolean taskNotUpdatedinLast30MinutesAndCreatedAtleast4HoursAgo =
+        Instant.ofEpochMilli(this.getLastUpdatedAt()).isBefore(currentTime.minus(Duration.ofMinutes(30)))
+        && Instant.ofEpochMilli(this.getCreatedAt()).isBefore(currentTime.minus(Duration.ofHours(4)));
+    return successConditionAndTaskNotCreatedWithInTwoMinutes || taskNotUpdatedinLast30MinutesAndCreatedAtleast4HoursAgo;
   }
 
   @Override

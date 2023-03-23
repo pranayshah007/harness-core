@@ -13,20 +13,34 @@ import io.harness.k8s.K8sConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonRootName("exec")
 @OwnedBy(HarnessTeam.CDP)
 public class Exec {
   @JsonProperty(K8sConstants.KUBECFG_API_VERSION) private String apiVersion;
   @JsonProperty(K8sConstants.KUBECFG_ARGS) private List<String> args;
   @JsonProperty(K8sConstants.KUBECFG_COMMAND) private String command;
-  @JsonProperty(K8sConstants.KUBECFG_ENV) private String env;
-  @JsonProperty(K8sConstants.KUBECFG_INTERACTIVE_MODE) private String interactiveMode;
-  @JsonProperty(K8sConstants.KUBECFG_CLUSTER_INFO) private String provideClusterInfo;
+  @JsonProperty(K8sConstants.KUBECFG_ENV) private List<EnvVariables> env;
+  @JsonProperty(K8sConstants.KUBECFG_INTERACTIVE_MODE) private InteractiveMode interactiveMode;
+  @JsonProperty(K8sConstants.KUBECFG_CLUSTER_INFO) private boolean provideClusterInfo;
   @JsonProperty(K8sConstants.KUBECFG_INSTALL_HINT) private String installHint;
+
+  public static String getValueFromArgsList(List<String> args, String key) {
+    int keyIndex = args.indexOf(key);
+    if (keyIndex == -1 || keyIndex == args.size() - 1) {
+      return "";
+    }
+    return args.get(keyIndex + 1);
+  }
 }

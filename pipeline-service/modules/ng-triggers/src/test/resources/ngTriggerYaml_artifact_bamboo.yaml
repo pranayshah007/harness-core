@@ -1,0 +1,41 @@
+trigger:
+  name: first trigger
+  identifier: first_trigger
+  enabled: true
+  tags: {}
+  orgIdentifier: org
+  projectIdentifier: proj
+  pipelineIdentifier: pipeline
+  source:
+    type: Artifact
+    spec:
+      stageIdentifier: dev
+      artifactRef: primary
+      type: Bamboo
+      spec:
+        connectorRef: account.conn
+        planKey: test1
+        artifactPath:
+          - us-east-1
+        build: <+trigger.artifact.build>
+        eventConditions:
+          - key: build
+            operator: Regex
+            value: release.*
+  inputYaml: |
+    pipeline:
+        identifier: pipeline
+        stages:
+            - stage:
+                  identifier: dev
+                  type: Deployment
+                  spec:
+                      serviceConfig:
+                          serviceDefinition:
+                              type: Kubernetes
+                              spec:
+                                  artifacts:
+                                      primary:
+                                          type: Bamboo
+                                          spec:
+                                              tag: <+trigger.artifact.build>

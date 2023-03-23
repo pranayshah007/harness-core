@@ -15,6 +15,7 @@ import io.harness.cdng.k8s.K8sScaleStepInfo;
 import io.harness.cdng.k8s.K8sScaleStepNode;
 import io.harness.cdng.k8s.PercentageInstanceSelection;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -50,7 +51,8 @@ public class K8sScaleStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     K8sScale state = (K8sScale) getState(graphNode);
     K8sScaleStepNode k8sScaleStepNode = new K8sScaleStepNode();
     baseSetup(graphNode, k8sScaleStepNode, context.getIdentifierCaseFormat());

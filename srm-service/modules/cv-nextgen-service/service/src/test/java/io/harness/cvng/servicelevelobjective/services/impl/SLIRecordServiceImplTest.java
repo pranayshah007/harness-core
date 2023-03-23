@@ -12,7 +12,6 @@ import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.SKIP_DATA;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -31,7 +30,6 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
@@ -40,7 +38,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
-import dev.morphia.query.Sort;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -88,11 +85,11 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(10));
     List<SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, BAD);
     createData(startTime, sliStates);
-    SLIRecord lastRecord = getLastRecord(serviceLevelIndicator.getUuid());
+    SLIRecord lastRecord = sliRecordService.getLatestSLIRecord(serviceLevelIndicator.getUuid());
     assertThat(lastRecord.getRunningBadCount()).isEqualTo(5);
     assertThat(lastRecord.getRunningGoodCount()).isEqualTo(4);
     createData(startTime.plus(Duration.ofMinutes(10)), sliStates);
-    lastRecord = getLastRecord(serviceLevelIndicator.getUuid());
+    lastRecord = sliRecordService.getLatestSLIRecord(serviceLevelIndicator.getUuid());
     assertThat(lastRecord.getRunningBadCount()).isEqualTo(10);
     assertThat(lastRecord.getRunningGoodCount()).isEqualTo(8);
   }
@@ -104,13 +101,31 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(10));
     List<SLIState> sliStates = Arrays.asList(BAD, SKIP_DATA, GOOD, NO_DATA, GOOD, GOOD, BAD, SKIP_DATA, BAD, BAD);
     createData(startTime, sliStates);
-    SLIRecord lastRecord = getLastRecord(serviceLevelIndicator.getUuid());
+    SLIRecord lastRecord = sliRecordService.getLatestSLIRecord(serviceLevelIndicator.getUuid());
     assertThat(lastRecord.getRunningBadCount()).isEqualTo(4);
     assertThat(lastRecord.getRunningGoodCount()).isEqualTo(3);
     createData(startTime.plus(Duration.ofMinutes(10)), sliStates);
-    lastRecord = getLastRecord(serviceLevelIndicator.getUuid());
+    lastRecord = sliRecordService.getLatestSLIRecord(serviceLevelIndicator.getUuid());
     assertThat(lastRecord.getRunningBadCount()).isEqualTo(8);
     assertThat(lastRecord.getRunningGoodCount()).isEqualTo(6);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetSLIRecordsOfMinutes() {
+    Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(10));
+    List<SLIState> sliStates = Arrays.asList(BAD, SKIP_DATA, GOOD, NO_DATA, GOOD, GOOD, BAD, SKIP_DATA, BAD, BAD);
+    createData(startTime, sliStates);
+    List<SLIRecord> sliRecords = sliRecordService.getSLIRecordsOfMinutes(serviceLevelIndicator.getUuid(),
+        List.of(startTime, startTime.plus(2, ChronoUnit.MINUTES), startTime.plus(5, ChronoUnit.MINUTES)));
+    assertThat(sliRecords.size()).isEqualTo(3);
+    assertThat(sliRecords.get(0).getRunningBadCount()).isEqualTo(1);
+    assertThat(sliRecords.get(0).getRunningGoodCount()).isZero();
+    assertThat(sliRecords.get(1).getRunningBadCount()).isEqualTo(1);
+    assertThat(sliRecords.get(1).getRunningGoodCount()).isEqualTo(1);
+    assertThat(sliRecords.get(2).getRunningBadCount()).isEqualTo(1);
+    assertThat(sliRecords.get(2).getRunningGoodCount()).isEqualTo(3);
   }
   @Test
   @Owner(developers = DEEPAK_CHHIKARA)
@@ -120,14 +135,14 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     List<SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, BAD);
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
     sliRecordService.create(sliRecordParams, sliId, verificationTaskId, 0);
-    SLIRecord lastRecord = getLastRecord(sliId);
+    SLIRecord lastRecord = sliRecordService.getLatestSLIRecord(sliId);
     assertThat(lastRecord.getRunningBadCount()).isEqualTo(5);
     assertThat(lastRecord.getRunningGoodCount()).isEqualTo(4);
     assertThat(lastRecord.getSliVersion()).isZero();
     List<SLIState> updatedSliStates = Arrays.asList(GOOD, BAD, BAD, NO_DATA, GOOD, BAD, BAD, BAD, BAD, BAD);
     List<SLIRecordParam> updatedSliRecordParams = getSLIRecordParam(startTime, updatedSliStates);
     sliRecordService.create(updatedSliRecordParams, sliId, verificationTaskId, 1);
-    SLIRecord updatedLastRecord = getLastRecord(sliId);
+    SLIRecord updatedLastRecord = sliRecordService.getLatestSLIRecord(sliId);
     assertThat(updatedLastRecord.getRunningBadCount()).isEqualTo(7);
     assertThat(updatedLastRecord.getRunningGoodCount()).isEqualTo(2);
     assertThat(updatedLastRecord.getSliVersion()).isEqualTo(1);
@@ -141,7 +156,7 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     List<SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, BAD);
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
     sliRecordService.create(sliRecordParams, sliId, verificationTaskId, 0);
-    SLIRecord lastRecord = getLastRecord(sliId);
+    SLIRecord lastRecord = sliRecordService.getLatestSLIRecord(sliId);
     assertThat(lastRecord.getRunningBadCount()).isEqualTo(5);
     assertThat(lastRecord.getRunningGoodCount()).isEqualTo(4);
     assertThat(lastRecord.getSliVersion()).isZero();
@@ -149,7 +164,7 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     List<SLIState> updatedSliStates = Arrays.asList(BAD, BAD, BAD, BAD, BAD);
     List<SLIRecordParam> updatedSliRecordParams = getSLIRecordParam(updatedStartTime, updatedSliStates);
     sliRecordService.create(updatedSliRecordParams, sliId, verificationTaskId, 1);
-    SLIRecord updatedLastRecord = getLastRecord(sliId);
+    SLIRecord updatedLastRecord = sliRecordService.getLatestSLIRecord(sliId);
     assertThat(updatedLastRecord.getRunningBadCount()).isEqualTo(6);
     assertThat(updatedLastRecord.getRunningGoodCount()).isEqualTo(3);
     assertThat(updatedLastRecord.getSliVersion()).isEqualTo(1);
@@ -163,7 +178,7 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     List<SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, BAD);
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
     sliRecordService.create(sliRecordParams, sliId, verificationTaskId, 0);
-    SLIRecord lastRecord = getLastRecord(sliId);
+    SLIRecord lastRecord = sliRecordService.getLatestSLIRecord(sliId);
     assertThat(lastRecord.getRunningBadCount()).isEqualTo(5);
     assertThat(lastRecord.getRunningGoodCount()).isEqualTo(4);
     assertThat(lastRecord.getSliVersion()).isZero();
@@ -172,7 +187,7 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
         Arrays.asList(BAD, BAD, BAD, BAD, BAD, NO_DATA, NO_DATA, NO_DATA, NO_DATA, NO_DATA);
     List<SLIRecordParam> updatedSliRecordParams = getSLIRecordParam(updatedStartTime, updatedSliStates);
     sliRecordService.create(updatedSliRecordParams, sliId, verificationTaskId, 1);
-    SLIRecord updatedLastRecord = getLastRecord(sliId);
+    SLIRecord updatedLastRecord = sliRecordService.getLatestSLIRecord(sliId);
     assertThat(updatedLastRecord.getRunningBadCount()).isEqualTo(6);
     assertThat(updatedLastRecord.getRunningGoodCount()).isEqualTo(3);
     assertThat(updatedLastRecord.getSliVersion()).isEqualTo(1);
@@ -187,7 +202,7 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     List<SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, BAD);
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
     sliRecordService.create(sliRecordParams, sliId, verificationTaskId, 0);
-    SLIRecord lastRecord = getLastRecord(sliId);
+    SLIRecord lastRecord = sliRecordService.getLatestSLIRecord(sliId);
     assertThat(lastRecord.getRunningBadCount()).isEqualTo(5);
     assertThat(lastRecord.getRunningGoodCount()).isEqualTo(4);
     assertThat(lastRecord.getSliVersion()).isZero();
@@ -195,7 +210,7 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     List<SLIState> updatedSliStates = Arrays.asList(BAD, BAD, BAD, BAD, BAD, GOOD, BAD, GOOD, BAD, GOOD);
     List<SLIRecordParam> updatedSliRecordParams = getSLIRecordParam(updatedStartTime, updatedSliStates);
     sliRecordService.create(updatedSliRecordParams, sliId, verificationTaskId, 1);
-    SLIRecord updatedLastRecord = getLastRecord(sliId);
+    SLIRecord updatedLastRecord = sliRecordService.getLatestSLIRecord(sliId);
     assertThat(updatedLastRecord.getRunningBadCount()).isEqualTo(8);
     assertThat(updatedLastRecord.getRunningGoodCount()).isEqualTo(6);
     assertThat(updatedLastRecord.getSliVersion()).isEqualTo(1);
@@ -211,7 +226,7 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
     Instant endTime = sliRecordParams.get(sliRecordParams.size() - 1).getTimeStamp();
     sliRecordService.create(sliRecordParams, sliId, verificationTaskId, 0);
-    SLIRecord lastRecord = getLastRecord(sliId);
+    SLIRecord lastRecord = sliRecordService.getLatestSLIRecord(sliId);
     assertThat(lastRecord.getRunningBadCount()).isEqualTo(5);
     assertThat(lastRecord.getRunningGoodCount()).isEqualTo(4);
     assertThat(lastRecord.getSliVersion()).isZero();
@@ -227,7 +242,7 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
              updatedSliRecordParams.get(updatedSliRecordParams.size() - 1).getTimeStamp().plus(1, ChronoUnit.MINUTES)))
         .thenReturn(firstTimeResponse, secondTimeResponse);
     sliRecordService.create(updatedSliRecordParams, sliId, verificationTaskId, 1);
-    SLIRecord updatedLastRecord = getLastRecord(sliId);
+    SLIRecord updatedLastRecord = sliRecordService.getLatestSLIRecord(sliId);
     assertThat(updatedLastRecord.getRunningBadCount()).isEqualTo(8);
     assertThat(updatedLastRecord.getRunningGoodCount()).isEqualTo(6);
     assertThat(updatedLastRecord.getSliVersion()).isEqualTo(1);
@@ -258,12 +273,6 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
           SLIRecordParam.builder().sliState(sliState).timeStamp(startTime.plus(Duration.ofMinutes(i))).build());
     }
     return sliRecordParams;
-  }
-  private SLIRecord getLastRecord(String sliId) {
-    return hPersistence.createQuery(SLIRecord.class, excludeAuthority)
-        .filter(SLIRecordKeys.sliId, sliId)
-        .order(Sort.descending(SLIRecordKeys.timestamp))
-        .get();
   }
 
   private MonitoredService createMonitoredService() {

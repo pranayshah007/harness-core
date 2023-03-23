@@ -19,7 +19,7 @@ function check_file_present(){
 
 # function to check all field for Bug ticket
 function check_bug_ticket(){
-  if [ -z "$1" ]; then
+  if [ "$1" = "null" ]; then
     echo "ERROR: JIRA FIELD: bug resolution is empty" >> /tmp/error_fields
   fi
   if [ "$2" = "null" ]; then
@@ -86,27 +86,28 @@ then
   phase_injected="n/a"
 else
   bug_resolution=`echo "${jira_response}" | jq ".fields.customfield_10687" | tr -d '"'`
-  what_changed=`echo "${jira_response}" | jq ".fields.customfield_10763" | tr -d '"'`
+  what_changed=`echo "${jira_response}" | jq ".fields.customfield_10763[0].value" | tr -d '"'`
   ff_added=`echo "${jira_response}" | jq ".fields.customfield_10785.value" | tr -d '"'`
-  jira_resolved_as=`echo "${jira_response}" | jq ".fields.customfield_10709" | tr -d '"'`
-  phase_injected=`echo "${jira_response}" | jq ".fields.customfield_10748" | tr -d '"'`
+  jira_resolved_as=`echo "${jira_response}" | jq ".fields.customfield_10709.value" | tr -d '"'`
+  phase_injected=`echo "${jira_response}" | jq ".fields.customfield_10748.value" | tr -d '"'`
 fi
 
 # BT-1465 - Disallow PRs on issuetype question
-if [ $issuetype = "Question" ]; then
+if [ "${issuetype}" = "Question" ]; then
   echo "ERROR: Cannot commit code on Question issue type."
   exit 1
 fi
 
+# shellcheck disable=SC2076
 if [[ "${BRANCH_PREFIX}" = "release/"  && ( ${PRIORITY_LIST[*]} =~ "${prioritytype}" ) ]]
 then
   echo "ERROR: Hotfix merge to target branch: release/* is blocked unless it is P0 or P1."
 
   # check ticket fields
-  if [ $issuetype = "Story" ]; then
-    check_story_ticket $ff_added $what_changed
-  elif [ $issuetype = "Bug" ]; then
-    check_bug_ticket $bug_resolution $jira_resolved_as $phase_injected $what_changed
+  if [ "${issuetype}" = "Story" ]; then
+    check_story_ticket "${ff_added}" "${what_changed}"
+  elif [ "${issuetype}" = "Bug" ]; then
+    check_bug_ticket "${bug_resolution}" "${jira_resolved_as}" "${phase_injected}" "${what_changed}"
   fi
   exit 1
 fi
@@ -114,10 +115,10 @@ fi
 echo "issueType is ${issuetype}"
 echo "INFO: Checking JIRA STATUS OF issueType ${issuetype}"
 
-if [ $issuetype = "Bug" ]; then
-  check_bug_ticket $bug_resolution $jira_resolved_as $phase_injected $what_changed
-elif [ $issuetype = "Story" ]; then
-  check_story_ticket $ff_added $what_changed
+if [ "${issuetype}" = "Bug" ]; then
+  check_bug_ticket "${bug_resolution}" "${jira_resolved_as}" "${phase_injected}" "${what_changed}"
+elif [ "${issuetype}" = "Story" ]; then
+  check_story_ticket "${ff_added}" "${what_changed}"
 fi
 
 echo "JIRA Key is : $KEY is having all the mandatory details"

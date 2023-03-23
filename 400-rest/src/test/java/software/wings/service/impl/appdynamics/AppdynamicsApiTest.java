@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CV;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.RAGHU;
 
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,12 +41,12 @@ import software.wings.beans.AppDynamicsConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingCategory;
 import software.wings.beans.SyncTaskContext;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateLogService;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.delegatetasks.cv.RequestExecutor;
 import software.wings.helpers.ext.appdynamics.AppdynamicsRestClient;
 import software.wings.resources.AppdynamicsResource;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.appdynamics.AppdynamicsMetric.AppdynamicsMetricType;
 import software.wings.service.impl.newrelic.NewRelicApplication;
 import software.wings.service.intfc.appdynamics.AppdynamicsDelegateService;

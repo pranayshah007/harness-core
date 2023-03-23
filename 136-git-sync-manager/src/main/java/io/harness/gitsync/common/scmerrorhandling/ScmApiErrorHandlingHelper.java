@@ -10,6 +10,7 @@ package io.harness.gitsync.common.scmerrorhandling;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.beans.ScmApis;
@@ -33,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PL)
 public class ScmApiErrorHandlingHelper {
+  public final String DEFAULT_ERROR_MESSAGE = "Failed to perform GIT operation.";
   private static final Map<ConnectorType, Set<Integer>> failureErrorCodeExceptions =
       ImmutableMap.<ConnectorType, Set<Integer>>builder()
           .put(ConnectorType.AZURE_REPO, new HashSet<>(Collections.singletonList(203)))
@@ -43,6 +45,7 @@ public class ScmApiErrorHandlingHelper {
     if (errorMetadata == null) {
       errorMetadata = ErrorMetadata.builder().build();
     }
+    errorMessage = formatErrorMessage(errorMessage);
 
     ScmApiErrorHandler scmAPIErrorHandler = getScmAPIErrorHandler(scmAPI, connectorType, repoUrl);
     try {
@@ -54,12 +57,6 @@ public class ScmApiErrorHandlingHelper {
                                 .build());
       throw exception;
     }
-  }
-
-  public void processAndThrowError(
-      ScmApis scmAPI, ConnectorType connectorType, String repoUrl, int statusCode, String errorMessage) {
-    ScmApiErrorHandler scmAPIErrorHandler = getScmAPIErrorHandler(scmAPI, connectorType, repoUrl);
-    scmAPIErrorHandler.handleError(statusCode, errorMessage, ErrorMetadata.builder().build());
   }
 
   public boolean isFailureResponse(int statusCode, ConnectorType connectorType) {
@@ -77,5 +74,9 @@ public class ScmApiErrorHandlingHelper {
       return new DefaultScmApiErrorHandler();
     }
     return scmApiErrorHandler;
+  }
+
+  private String formatErrorMessage(String errorMessage) {
+    return EmptyPredicate.isEmpty(errorMessage) ? DEFAULT_ERROR_MESSAGE : errorMessage;
   }
 }

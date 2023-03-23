@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -26,4 +27,5 @@ public class OnboardingModuleConfig {
   String backstageLocationEntityAllHarnessEntitiesName;
   String backstageLocationEntityAllHarnessEntitiesDesc;
   List<String> sampleEntities;
+  Map<String, String> harnessCiCdAnnotation;
 }

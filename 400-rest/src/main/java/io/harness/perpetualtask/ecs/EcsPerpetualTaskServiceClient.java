@@ -14,10 +14,10 @@ import static java.util.Collections.singletonList;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.perpetualtask.PerpetualTaskClientBase;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
@@ -35,10 +35,9 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class EcsPerpetualTaskServiceClient implements PerpetualTaskServiceClient {
+public class EcsPerpetualTaskServiceClient extends PerpetualTaskClientBase implements PerpetualTaskServiceClient {
   @Inject private SecretManager secretManager;
   @Inject private SettingsService settingsService;
-  @Inject private KryoSerializer kryoSerializer;
 
   private static final String REGION = "region";
   private static final String SETTING_ID = "settingId";
@@ -46,7 +45,7 @@ public class EcsPerpetualTaskServiceClient implements PerpetualTaskServiceClient
   private static final String CLUSTER_ID = "clusterId";
 
   @Override
-  public EcsPerpetualTaskParams getTaskParams(PerpetualTaskClientContext clientContext) {
+  public EcsPerpetualTaskParams getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
     Map<String, String> clientParams = clientContext.getClientParams();
     log.info("Inside get task params for ecs perpetual task {} ", clientParams);
     String region = clientParams.get(REGION);
@@ -55,8 +54,9 @@ public class EcsPerpetualTaskServiceClient implements PerpetualTaskServiceClient
     String clusterId = clientParams.get(CLUSTER_ID);
 
     AwsConfig awsConfig = getAwsConfig(settingId);
-    ByteString awsConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(awsConfig));
-    ByteString encryptionDetailBytes = ByteString.copyFrom(kryoSerializer.asBytes(getEncryptionDetails(awsConfig)));
+    ByteString awsConfigBytes = ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(awsConfig));
+    ByteString encryptionDetailBytes =
+        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(getEncryptionDetails(awsConfig)));
 
     EcsPerpetualTaskParams ecsPerpetualTaskParams = EcsPerpetualTaskParams.newBuilder()
                                                         .setClusterName(clusterName)

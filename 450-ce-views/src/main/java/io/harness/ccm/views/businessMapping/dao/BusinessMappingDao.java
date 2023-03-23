@@ -8,18 +8,24 @@
 package io.harness.ccm.views.businessMapping.dao;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeValidate;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping.BusinessMappingKeys;
+import io.harness.ccm.views.businessMapping.entities.CostCategorySortType;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.BasicDBObject;
+import com.mongodb.client.model.Collation;
+import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
-import io.fabric8.utils.Lists;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +34,11 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(CE)
 public class BusinessMappingDao {
+  private static final String INSENSITIVE_SEARCH = "i";
+  private static final String LOCALE_EN = "en";
+  private static final String OPTIONS = "$options";
+  private static final String REGEX = "$regex";
+
   @Inject private HPersistence hPersistence;
 
   public BusinessMapping save(BusinessMapping businessMapping) {
@@ -85,10 +96,11 @@ public class BusinessMappingDao {
   }
 
   public boolean isNamePresent(String name, String accountId) {
-    return Lists.isNullOrEmpty(hPersistence.createQuery(BusinessMapping.class, excludeValidate)
-                                   .filter(BusinessMappingKeys.name, name)
-                                   .filter(BusinessMappingKeys.accountId, accountId)
-                                   .asList());
+    return hPersistence.createQuery(BusinessMapping.class, excludeValidate)
+               .filter(BusinessMappingKeys.name, name)
+               .filter(BusinessMappingKeys.accountId, accountId)
+               .count()
+        > 0;
   }
 
   public BusinessMapping get(String uuid) {
@@ -99,5 +111,33 @@ public class BusinessMappingDao {
 
   public List<BusinessMapping> findByAccountId(String accountId) {
     return hPersistence.createQuery(BusinessMapping.class).filter(BusinessMappingKeys.accountId, accountId).asList();
+  }
+
+  private Query<BusinessMapping> getQueryByAccountIdAndRegexName(String accountId, String searchKey) {
+    Query<BusinessMapping> query =
+        hPersistence.createQuery(BusinessMapping.class).filter(BusinessMappingKeys.accountId, accountId);
+
+    if (!isEmpty(searchKey)) {
+      BasicDBObject basicDBObject = new BasicDBObject(REGEX, searchKey);
+      basicDBObject.put(OPTIONS, INSENSITIVE_SEARCH);
+      query.filter(BusinessMappingKeys.name, basicDBObject);
+    }
+
+    return query;
+  }
+
+  public List<BusinessMapping> findByAccountIdAndRegexNameWithLimitAndOffsetAndOrder(String accountId, String searchKey,
+      CostCategorySortType sortType, CCMSortOrder sortOrder, int limit, int offset) {
+    final FindOptions options = new FindOptions();
+    options.collation(Collation.builder().locale(LOCALE_EN).build());
+    options.limit(limit);
+    options.skip(offset);
+    final Sort sort = sortOrder == CCMSortOrder.ASCENDING ? Sort.ascending(sortType.getColumnName())
+                                                          : Sort.descending(sortType.getColumnName());
+    return getQueryByAccountIdAndRegexName(accountId, searchKey).order(sort).asList(options);
+  }
+
+  public long getCountByAccountIdAndRegexName(String accountId, String searchKey) {
+    return getQueryByAccountIdAndRegexName(accountId, searchKey).count();
   }
 }

@@ -18,10 +18,10 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
+import software.wings.beans.dto.CVActivityLog;
+import software.wings.beans.dto.CVActivityLog.LogLevel;
 import software.wings.delegatetasks.DelegateCVActivityLogService;
 import software.wings.delegatetasks.DelegateLogService;
-import software.wings.verification.CVActivityLog;
-import software.wings.verification.CVActivityLog.LogLevel;
 
 import java.util.Arrays;
 import org.apache.commons.lang3.reflect.FieldUtils;

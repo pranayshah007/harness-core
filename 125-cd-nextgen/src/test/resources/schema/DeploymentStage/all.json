@@ -305,6 +305,10 @@
     },
     "AgentApplicationTargets": {
       "type": "object",
+      "required": [
+        "agentId",
+        "applicationName"
+      ],
       "properties": {
         "agentId": {
           "oneOf": [
@@ -321,10 +325,7 @@
         "applicationName": {
           "oneOf": [
             {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "type": "string"
             },
             {
               "type": "string",
@@ -468,7 +469,8 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "metadata": {
           "type": "string"
@@ -1287,7 +1289,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1501,7 +1503,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1651,7 +1653,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6247,7 +6249,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7862,7 +7864,9 @@
                   "type": "array",
                   "items": {
                     "type": "string"
-                  }
+                  },
+                  "maxItems": 2147483647,
+                  "minItems": 1
                 },
                 {
                   "type": "string",
@@ -8567,6 +8571,12 @@
         {
           "type": "object",
           "properties": {
+            "commandFlags": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/KustomizeManifestCommandFlag"
+              }
+            },
             "enableDeclarativeRollback": {
               "oneOf": [
                 {
@@ -8623,6 +8633,25 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "KustomizeManifestCommandFlag": {
+      "type": "object",
+      "required": [
+        "kustomizeCommandFlagType"
+      ],
+      "properties": {
+        "flag": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kustomizeCommandFlagType": {
+          "type": "string",
+          "enum": [
+            "Build"
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "KustomizePatchesManifest": {
@@ -10330,7 +10359,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        { }
+        {}
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [
@@ -11505,7 +11534,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -12771,7 +12800,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -14948,6 +14977,14 @@
     },
     "SyncOptions": {
       "type": "object",
+      "required": [
+        "applyOutOfSyncOnly",
+        "autoCreateNamespace",
+        "prunePropagationPolicy",
+        "pruneResourcesAtLast",
+        "replaceResources",
+        "skipSchemaValidation"
+      ],
       "properties": {
         "applyOutOfSyncOnly": {
           "oneOf": [
@@ -15012,11 +15049,18 @@
     },
     "SyncRetryStrategy": {
       "type": "object",
+      "required": [
+        "baseBackoffDuration",
+        "increaseBackoffByFactor",
+        "limit",
+        "maxBackoffDuration"
+      ],
       "properties": {
         "baseBackoffDuration": {
           "oneOf": [
             {
-              "type": "string"
+              "type": "string",
+              "pattern": "/^([\\d\\.]+[HMS])+$/i"
             },
             {
               "type": "string",
@@ -15029,7 +15073,8 @@
           "oneOf": [
             {
               "type": "integer",
-              "format": "int32"
+              "format": "int32",
+              "minimum": 0
             },
             {
               "type": "string"
@@ -15040,7 +15085,8 @@
           "oneOf": [
             {
               "type": "integer",
-              "format": "int32"
+              "format": "int32",
+              "minimum": 0
             },
             {
               "type": "string"
@@ -15050,7 +15096,8 @@
         "maxBackoffDuration": {
           "oneOf": [
             {
-              "type": "string"
+              "type": "string",
+              "pattern": "/^([\\d\\.]+[HMS])+$/i"
             },
             {
               "type": "string",
@@ -15069,6 +15116,13 @@
         },
         {
           "type": "object",
+          "required": [
+            "applyOnly",
+            "dryRun",
+            "forceApply",
+            "prune",
+            "syncOptions"
+          ],
           "properties": {
             "applicationsList": {
               "type": "array",
@@ -15235,7 +15289,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -16111,6 +16165,30 @@
       "discriminator": "type",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TerraformCliOptionFlag": {
+      "type": "object",
+      "required": [
+        "commandType",
+        "flag"
+      ],
+      "properties": {
+        "commandType": {
+          "type": "string",
+          "enum": [
+            "INIT",
+            "WORKSPACE",
+            "REFRESH",
+            "PLAN",
+            "APPLY",
+            "DESTROY"
+          ]
+        },
+        "flag": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TerraformCloudApplySpec": {
       "allOf": [
         {
@@ -16197,6 +16275,12 @@
             "Destroy"
           ]
         },
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "configFiles": {
           "$ref": "#/definitions/TerraformConfigFilesWrapper"
         },
@@ -16241,6 +16325,12 @@
     "TerraformCloudCliStepConfiguration": {
       "type": "object",
       "properties": {
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "spec": {
           "$ref": "#/definitions/TerraformCloudCliExecutionData"
         }
@@ -16986,6 +17076,12 @@
             "Destroy"
           ]
         },
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "configFiles": {
           "$ref": "#/definitions/TerraformConfigFilesWrapper"
         },
@@ -17128,6 +17224,12 @@
             "provisionerIdentifier"
           ],
           "properties": {
+            "commandFlags": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TerraformCliOptionFlag"
+              }
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -17167,6 +17269,12 @@
         "type"
       ],
       "properties": {
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "skipRefreshCommand": {
           "oneOf": [
             {

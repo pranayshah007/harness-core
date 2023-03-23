@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -42,6 +43,10 @@ import org.hibernate.validator.constraints.NotEmpty;
 @HarnessEntity(exportable = true)
 
 public abstract class Preference extends Base implements AccountAccess {
+  public Preference(String preferenceType) {
+    this.preferenceType = preferenceType;
+  }
+
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -50,17 +55,21 @@ public abstract class Preference extends Base implements AccountAccess {
                  .field(PreferenceKeys.userId)
                  .field(PreferenceKeys.name)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("usergroupsId_shared")
+                 .field(PreferenceKeys.accountId)
+                 .field(PreferenceKeys.userId)
+                 .field(PreferenceKeys.name)
+                 .field(PreferenceKeys.userGroupsIdToShare)
+                 .build())
         .build();
   }
 
   @NotEmpty private String name;
   @NotEmpty private String accountId;
   @NotEmpty private String userId;
+  @NotEmpty private Set<String> userGroupsIdToShare;
   private String preferenceType;
-
-  public Preference(String preferenceType) {
-    this.preferenceType = preferenceType;
-  }
 
   @UtilityClass
   public static final class PreferenceKeys {

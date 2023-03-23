@@ -20,6 +20,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -48,6 +49,8 @@ import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -195,6 +198,11 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                           .setAccountIdentifier("accountId")
                                           .setOrgIdentifier("orgId")
                                           .setProjectIdentifier("projId")
+                                          .setMetadata(ExecutionMetadata.newBuilder().setPrincipalInfo(
+                                              ExecutionPrincipalInfo.newBuilder()
+                                                  .setPrincipal("prinicipal")
+                                                  .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)
+                                                  .build()))
                                           .build()))
                                   .build();
     when(accessControlClient.hasAccess(any(ResourceScope.class), any(Resource.class), anyString())).thenReturn(false);
@@ -220,9 +228,16 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                           .setAccountIdentifier("accountId")
                                           .setOrgIdentifier("orgId")
                                           .setProjectIdentifier("projId")
+                                          .setMetadata(ExecutionMetadata.newBuilder().setPrincipalInfo(
+                                              ExecutionPrincipalInfo.newBuilder()
+                                                  .setPrincipal("prinicipal")
+                                                  .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)
+                                                  .build()))
                                           .build()))
                                   .build();
-    when(accessControlClient.hasAccess(any(ResourceScope.class), any(Resource.class), anyString())).thenReturn(true);
+    when(
+        accessControlClient.hasAccess(any(Principal.class), any(ResourceScope.class), any(Resource.class), anyString()))
+        .thenReturn(true);
     deploymentStagePMSPlanCreator.failIfProjectIsFrozen(ctx);
 
     verify(freezeEvaluateService, times(0)).getActiveFreezeEntities(anyString(), anyString(), anyString());

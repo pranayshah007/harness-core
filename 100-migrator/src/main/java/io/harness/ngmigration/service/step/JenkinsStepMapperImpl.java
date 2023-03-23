@@ -13,6 +13,7 @@ import io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterField;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterFieldType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -56,7 +57,8 @@ public class JenkinsStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     JenkinsState state = (JenkinsState) getState(graphNode);
     JenkinsBuildStepNode stepNode = new JenkinsBuildStepNode();
     baseSetup(graphNode, stepNode, context.getIdentifierCaseFormat());

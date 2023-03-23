@@ -35,11 +35,11 @@ import io.harness.time.Timestamp;
 
 import software.wings.beans.TaskType;
 import software.wings.beans.dto.NewRelicMetricDataRecord;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.cv.CVAWSAuthHeaderSigner;
 import software.wings.delegatetasks.cv.CVAWSS4SignerBase;
 import software.wings.delegatetasks.cv.RequestExecutor;
 import software.wings.helpers.ext.apm.APMRestClient;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.VerificationLogContext;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
 import software.wings.service.impl.analysis.AzureLogAnalyticsConnectionDetails;

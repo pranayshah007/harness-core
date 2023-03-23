@@ -24,6 +24,7 @@ import io.harness.events.FreezeEntityCreateEvent;
 import io.harness.events.FreezeEntityDeleteEvent;
 import io.harness.events.FreezeEntityUpdateEvent;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.freeze.beans.FreezeType;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
 
@@ -67,6 +68,9 @@ public class FreezeOutboxEventHandler implements OutboxEventHandler {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
     FreezeEntityCreateEvent freezeEntityCreateEvent =
         objectMapper.readValue(outboxEvent.getEventData(), FreezeEntityCreateEvent.class);
+    if (FreezeType.GLOBAL.equals(freezeEntityCreateEvent.getCreatedFreeze().getType())) {
+      return true;
+    }
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.CREATE)
                                 .module(ModuleType.CORE)

@@ -8,11 +8,13 @@
 package io.harness.gitsync.common.scmerrorhandling;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,6 +23,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.HintException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.beans.ScmApis;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
 import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketListRepoScmApiErrorHandler;
 import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketserver.BitbucketServerListRepoScmApiErrorHandler;
@@ -57,23 +60,14 @@ public class ScmApiErrorHandlingHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = BHAVYA)
+  @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
-  public void testProcessAndThrowErrorForListRepo() throws WingsException {
-    assertThatThrownBy(()
-                           -> ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_REPOSITORIES,
-                               ConnectorType.BITBUCKET, "https://bitbucket.com/", 403, "Not Authorised"))
-        .isInstanceOf(HintException.class);
-  }
-
-  @Test
-  @Owner(developers = BHAVYA)
-  @Category(UnitTests.class)
-  public void testProcessAndThrowErrorForListBranches() throws WingsException {
-    assertThatThrownBy(()
-                           -> ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_BRANCHES,
-                               ConnectorType.GITHUB, "https://github.com/", 404, "Repo Not Found"))
-        .isInstanceOf(HintException.class);
+  public void testProcessAndThrowErrorForEmptyMessage() throws WingsException {
+    Exception exception = assertThrows(HintException.class, () -> {
+      ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_BRANCHES, ConnectorType.GITHUB, "https://github.com/",
+          404, "", ErrorMetadata.builder().connectorRef("connectorRef").build());
+    });
+    assertEquals(ScmApiErrorHandlingHelper.DEFAULT_ERROR_MESSAGE, exception.getCause().getCause().getMessage());
   }
 
   @Test

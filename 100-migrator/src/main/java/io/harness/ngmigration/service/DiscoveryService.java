@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_FILE_NAME;
 import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_TEMP_DIR_PREFIX;
 
+import static software.wings.ngmigration.NGMigrationEntityType.DUMMY_HEAD;
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 
@@ -26,6 +27,7 @@ import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.SkippedExpressionDetail;
 import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -36,6 +38,7 @@ import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigratedDetails;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -282,6 +285,7 @@ public class DiscoveryService {
     // Sort such that we create secrets first then connectors and so on.
     MigratorUtility.sort(ngYamlFiles);
     SaveSummaryDTO summaryDTO = SaveSummaryDTO.builder()
+                                    .skippedExpressions(generationDetails.getSkippedExpressions())
                                     .errors(new ArrayList<>())
                                     .stats(new HashMap<>())
                                     .skipDetails(skipDetails)
@@ -393,6 +397,7 @@ public class DiscoveryService {
     // We'll first load the environment because infra depends on Environment
     entities.keySet()
         .stream()
+        .filter(id -> !DUMMY_HEAD.equals(id.getType()))
         .sorted(Comparator.comparing(id -> !ENVIRONMENT.equals(id.getType())))
         .forEach(cgEntityId -> {
           NGYamlFile yamlFile = migrationFactory.getMethod(cgEntityId.getType())
@@ -439,7 +444,24 @@ public class DiscoveryService {
       removeLeafNodes(leafTracker);
     }
 
-    return YamlGenerationDetails.builder().yamlFileList(files).skipDetails(skipDetails).build();
+    List<SkippedExpressionDetail> skippedExpressionDetails = new ArrayList<>();
+    for (NGYamlFile yamlFile : files) {
+      Set<String> skippedExpressions = MigratorExpressionUtils.getExpressions(yamlFile);
+      if (EmptyPredicate.isNotEmpty(skippedExpressions)) {
+        skippedExpressionDetails.add(SkippedExpressionDetail.builder()
+                                         .expressions(skippedExpressions)
+                                         .entityType(yamlFile.getNgEntityDetail().getEntityType())
+                                         .orgIdentifier(yamlFile.getNgEntityDetail().getOrgIdentifier())
+                                         .projectIdentifier(yamlFile.getNgEntityDetail().getProjectIdentifier())
+                                         .identifier(yamlFile.getNgEntityDetail().getIdentifier())
+                                         .build());
+      }
+    }
+    return YamlGenerationDetails.builder()
+        .yamlFileList(files)
+        .skippedExpressions(skippedExpressionDetails)
+        .skipDetails(skipDetails)
+        .build();
   }
 
   private MutableGraph getGraphViz(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph) {

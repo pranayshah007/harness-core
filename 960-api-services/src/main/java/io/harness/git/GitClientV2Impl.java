@@ -108,6 +108,7 @@ import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.CreateBranchCommand.SetupUpstreamMode;
 import org.eclipse.jgit.api.FetchCommand;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.LsRemoteCommand;
 import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.PushCommand;
@@ -261,13 +262,15 @@ public class GitClientV2Impl implements GitClientV2 {
     log.info(GIT_YAML_LOG_PREFIX + "cloning repo, Git repo directory :{}", gitRepoDirectory);
 
     CloneCommand cloneCommand = (CloneCommand) getAuthConfiguredCommand(Git.cloneRepository(), request);
-    try (Git git = cloneCommand.setURI(request.getRepoUrl())
-                       .setDirectory(new File(gitRepoDirectory))
-                       .setBranch(isEmpty(request.getBranch()) ? null : request.getBranch())
-                       // if set to <code>true</code> no branch will be checked out, after the clone.
-                       // This enhances performance of the clone command when there is no need for a checked out branch.
-                       .setNoCheckout(noCheckout)
-                       .call()) {
+    cloneCommand.setURI(request.getRepoUrl()).setDirectory(new File(gitRepoDirectory));
+    if (!request.isUnsureOrNonExistentBranch()) {
+      cloneCommand
+          .setBranch(isEmpty(request.getBranch()) ? null : request.getBranch())
+          // if set to <code>true</code> no branch will be checked out, after the clone.
+          // This enhances performance of the clone command when there is no need for a checked out branch.
+          .setNoCheckout(noCheckout);
+    }
+    try (Git git = cloneCommand.call()) {
     } catch (GitAPIException ex) {
       log.error(GIT_YAML_LOG_PREFIX + "Error in cloning repo: " + ExceptionSanitizer.sanitizeForLogging(ex));
       gitClientHelper.checkIfGitConnectivityIssue(ex);
@@ -279,12 +282,20 @@ public class GitClientV2Impl implements GitClientV2 {
     Git git = openGit(new File(gitClientHelper.getRepoDirectory(request)), request.getDisableUserGitConfig());
     try {
       if (isNotEmpty(request.getBranch())) {
-        git.checkout()
-            .setCreateBranch(true)
-            .setName(request.getBranch())
-            .setUpstreamMode(SetupUpstreamMode.TRACK)
-            .setStartPoint("origin/" + request.getBranch())
-            .call();
+        CheckoutCommand checkoutCommand = git.checkout();
+        checkoutCommand.setCreateBranch(true).setName(request.getBranch());
+        if (!request.isUnsureOrNonExistentBranch()) {
+          checkoutCommand.setUpstreamMode(SetupUpstreamMode.TRACK).setStartPoint("origin/" + request.getBranch());
+        } else {
+          List<Ref> refs = git.branchList().setListMode(ListBranchCommand.ListMode.REMOTE).call();
+          String startPoint = refs.stream()
+                                  .filter(ref -> ref.getName().contains("main") || ref.getName().contains("master"))
+                                  .findFirst()
+                                  .orElseGet(() -> refs.stream().findFirst().orElseThrow())
+                                  .getName();
+          checkoutCommand.setUpstreamMode(SetupUpstreamMode.NOTRACK).setStartPoint(startPoint);
+        }
+        checkoutCommand.call();
       }
 
     } catch (RefAlreadyExistsException refExIgnored) {

@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitops.models.Application;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -25,6 +26,6 @@ import org.codehaus.commons.nullanalysis.NotNull;
 @RecasterAlias("io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome")
 @Builder
 @OwnedBy(GITOPS)
-public class GitOpsLinkedAppsOutcome implements Outcome {
+public class GitOpsLinkedAppsOutcome implements Outcome, ExecutionSweepingOutput {
   @NotNull List<Application> apps;
 }

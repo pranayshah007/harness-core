@@ -86,6 +86,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -182,7 +183,7 @@ public class AwsLambdaTaskHelper {
     CreateFunctionRequest.Builder createFunctionRequestBuilder =
         parseYamlAsObject(awsLambdaManifestContent, CreateFunctionRequest.serializableBuilderClass());
 
-    CreateFunctionRequest createFunctionRequest = (CreateFunctionRequest) createFunctionRequestBuilder.build();
+    CreateFunctionRequest createFunctionRequest = createFunctionRequestBuilder.build();
 
     if (isEmpty(createFunctionRequest.functionName())) {
       logCallback.saveExecutionLog(
@@ -192,8 +193,7 @@ public class AwsLambdaTaskHelper {
 
     String functionName = createFunctionRequest.functionName();
 
-    GetFunctionRequest getFunctionRequest =
-        (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
+    GetFunctionRequest getFunctionRequest = GetFunctionRequest.builder().functionName(functionName).build();
 
     try {
       Optional<GetFunctionResponse> existingFunction =
@@ -224,7 +224,7 @@ public class AwsLambdaTaskHelper {
     }
   }
 
-  private void createOrUpdateAlias(List<String> awsLambdaAliasManifestContent, String functionName,
+  protected void createOrUpdateAlias(List<String> awsLambdaAliasManifestContent, String functionName,
       String functionVersion, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, LogCallback logCallback) {
     logCallback.saveExecutionLog(
         format("%nCreate or Update Aliases for function %s with version %s. %n", functionName, functionVersion),
@@ -233,8 +233,7 @@ public class AwsLambdaTaskHelper {
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(
         awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion());
 
-    ListAliasesRequest listAliasesRequest =
-        (ListAliasesRequest) ListAliasesRequest.builder().functionName(functionName).build();
+    ListAliasesRequest listAliasesRequest = ListAliasesRequest.builder().functionName(functionName).build();
 
     ListAliasesResponse listAliasesResponse = awsLambdaClient.listAliases(awsInternalConfig, listAliasesRequest);
 
@@ -248,7 +247,7 @@ public class AwsLambdaTaskHelper {
       CreateAliasRequest.Builder aliasRequestBuilder =
           parseYamlAsObject(aliasContent, CreateAliasRequest.serializableBuilderClass());
       CreateAliasRequest createAliasRequest =
-          (CreateAliasRequest) aliasRequestBuilder.functionName(functionName).functionVersion(functionVersion).build();
+          aliasRequestBuilder.functionName(functionName).functionVersion(functionVersion).build();
 
       String alias = createAliasRequest.name();
 
@@ -266,7 +265,7 @@ public class AwsLambdaTaskHelper {
                                          createAliasRequest.name(), functionName, functionVersion),
             LogLevel.INFO);
 
-        UpdateAliasRequest updateAliasRequest = (UpdateAliasRequest) UpdateAliasRequest.builder()
+        UpdateAliasRequest updateAliasRequest = UpdateAliasRequest.builder()
                                                     .name(alias)
                                                     .functionName(createAliasRequest.functionName())
                                                     .functionVersion(createAliasRequest.functionVersion())
@@ -289,8 +288,7 @@ public class AwsLambdaTaskHelper {
       List<String> awsLambdaFunctionAliasDefinitionContents) throws AwsLambdaException {
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = (AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig;
 
-    GetFunctionRequest getFunctionRequest =
-        (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
+    GetFunctionRequest getFunctionRequest = GetFunctionRequest.builder().functionName(functionName).build();
 
     Optional<GetFunctionResponse> existingFunctionOptional =
         getAwsLambdaFunctionFromAws(awsLambdaFunctionsInfraConfig, getFunctionRequest);
@@ -360,7 +358,7 @@ public class AwsLambdaTaskHelper {
     logCallback.saveExecutionLog(format("Successfully deployed lambda function: [%s]", functionName));
     logCallback.saveExecutionLog("=================");
 
-    return (CreateFunctionResponse) CreateFunctionResponse.builder()
+    return CreateFunctionResponse.builder()
         .functionName(updateFunctionConfigurationResponse.functionName())
         .functionArn(updateFunctionConfigurationResponse.functionArn())
         .runtime(updateFunctionConfigurationResponse.runtimeAsString())
@@ -395,7 +393,7 @@ public class AwsLambdaTaskHelper {
       UpdateFunctionCodeResponse updateFunctionCodeResponse =
           awsLambdaClient.updateFunctionCode(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
                                                  awsLambdaFunctionsInfraConfig.getRegion()),
-              (UpdateFunctionCodeRequest) updateFunctionCodeRequest.build());
+              updateFunctionCodeRequest.build());
       waitForFunctionToUpdate(functionName, awsLambdaFunctionsInfraConfig, logCallback);
 
       logCallback.saveExecutionLog(
@@ -413,7 +411,7 @@ public class AwsLambdaTaskHelper {
     UpdateFunctionCodeResponse updateFunctionCodeResponseDryRun =
         awsLambdaClient.updateFunctionCode(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
                                                awsLambdaFunctionsInfraConfig.getRegion()),
-            (UpdateFunctionCodeRequest) updateFunctionCodeRequest.dryRun(Boolean.TRUE).build());
+            updateFunctionCodeRequest.dryRun(Boolean.TRUE).build());
     return !updateFunctionCodeResponseDryRun.codeSha256().equals(existingFunctionCodeSha);
   }
 
@@ -619,8 +617,7 @@ public class AwsLambdaTaskHelper {
       LogCallback logCallback) throws AwsLambdaException {
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = (AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig;
 
-    GetFunctionRequest getFunctionRequest =
-        (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
+    GetFunctionRequest getFunctionRequest = GetFunctionRequest.builder().functionName(functionName).build();
 
     Optional<GetFunctionResponse> existingFunctionOptional =
         getAwsLambdaFunctionFromAws(awsLambdaFunctionsInfraConfig, getFunctionRequest);
@@ -634,14 +631,14 @@ public class AwsLambdaTaskHelper {
       try {
         return awsLambdaClient.deleteFunction(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
                                                   awsLambdaFunctionsInfraConfig.getRegion()),
-            (DeleteFunctionRequest) DeleteFunctionRequest.builder().functionName(functionName).build());
+            DeleteFunctionRequest.builder().functionName(functionName).build());
       } catch (Exception e) {
         throw new InvalidRequestException(e.getMessage());
       }
     }
   }
 
-  private CreateFunctionResponse createFunction(AwsLambdaArtifactConfig awsLambdaArtifactConfig,
+  protected CreateFunctionResponse createFunction(AwsLambdaArtifactConfig awsLambdaArtifactConfig,
       LogCallback logCallback, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig,
       CreateFunctionRequest.Builder createFunctionRequestBuilder, String functionName) throws IOException {
     CreateFunctionResponse createFunctionResponse;
@@ -663,7 +660,7 @@ public class AwsLambdaTaskHelper {
     createFunctionResponse =
         awsLambdaClient.createFunction(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
                                            awsLambdaFunctionsInfraConfig.getRegion()),
-            (CreateFunctionRequest) createFunctionRequestBuilder.build());
+            createFunctionRequestBuilder.build());
 
     logCallback.saveExecutionLog(format("Created Function: %s in region: %s %n", functionName,
         awsLambdaFunctionsInfraConfig.getRegion(), LogLevel.INFO));
@@ -701,7 +698,7 @@ public class AwsLambdaTaskHelper {
     logCallback.saveExecutionLog(format("Successfully deployed lambda function: [%s]", functionName));
     logCallback.saveExecutionLog("=================");
 
-    return (CreateFunctionResponse) CreateFunctionResponse.builder()
+    return CreateFunctionResponse.builder()
         .functionName(updateFunctionConfigurationResponse.functionName())
         .functionArn(updateFunctionConfigurationResponse.functionArn())
         .runtime(updateFunctionConfigurationResponse.runtimeAsString())
@@ -709,12 +706,12 @@ public class AwsLambdaTaskHelper {
         .build();
   }
 
-  private void updateFunctionCode(String functionCode, LogCallback logCallback,
+  protected void updateFunctionCode(String functionCode, LogCallback logCallback,
       AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, String functionName, String funcConfiguration)
       throws IOException {
     FunctionCodeLocation.Builder codeLocBuilder =
         parseYamlAsObject(functionCode, FunctionCodeLocation.serializableBuilderClass());
-    FunctionCodeLocation functionCodeLocation = (FunctionCodeLocation) codeLocBuilder.build();
+    FunctionCodeLocation functionCodeLocation = codeLocBuilder.build();
 
     UpdateFunctionCodeRequest updateFunctionCodeRequest = getUpdateFunctionCodeRequest(
         functionName, functionCodeLocation, funcConfiguration, logCallback, awsLambdaFunctionsInfraConfig);
@@ -730,15 +727,16 @@ public class AwsLambdaTaskHelper {
     logCallback.saveExecutionLog(format("Updated Function ARN: [%s]", updateFunctionCodeResponse.functionArn()));
   }
 
-  private UpdateFunctionCodeRequest getUpdateFunctionCodeRequest(String functionName, FunctionCodeLocation funcCodeLoc,
-      String functionConfiguration, LogCallback logCallback,
+  @VisibleForTesting
+  protected UpdateFunctionCodeRequest getUpdateFunctionCodeRequest(String functionName,
+      FunctionCodeLocation funcCodeLoc, String functionConfiguration, LogCallback logCallback,
       AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig) throws IOException {
     UpdateFunctionCodeRequest.Builder builder = UpdateFunctionCodeRequest.builder();
     builder.functionName(functionName);
     if (funcCodeLoc.repositoryType().equals("S3")) {
       // Fetch Existing function to get functions code location
       GetFunctionResponse function =
-          fetchExistingFunctionWithFunctioArn(functionConfiguration, awsLambdaFunctionsInfraConfig);
+          fetchExistingFunctionWithFunctionArn(functionConfiguration, awsLambdaFunctionsInfraConfig);
       builder.zipFile(awsLambdaTaskHelperBase.downloadArtifactZipAndPrepareSdkBytesForRollback(
           function.code().location(), logCallback));
     } else if (funcCodeLoc.repositoryType().equals("ECR")) {
@@ -748,17 +746,18 @@ public class AwsLambdaTaskHelper {
       log.warn(msg);
       throw new InvalidRequestException(msg);
     }
-    return (UpdateFunctionCodeRequest) builder.build();
+    return builder.build();
   }
 
-  private GetFunctionResponse fetchExistingFunctionWithFunctioArn(
+  @VisibleForTesting
+  protected GetFunctionResponse fetchExistingFunctionWithFunctionArn(
       String functionConfiguration, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig) {
     FunctionConfiguration.Builder funcConfigBuilder =
         parseYamlAsObject(functionConfiguration, FunctionConfiguration.serializableBuilderClass());
-    FunctionConfiguration funcConfigObj = (FunctionConfiguration) funcConfigBuilder.build();
+    FunctionConfiguration funcConfigObj = funcConfigBuilder.build();
 
     GetFunctionRequest getFunctionRequest =
-        (GetFunctionRequest) GetFunctionRequest.builder().functionName(funcConfigObj.functionArn()).build();
+        GetFunctionRequest.builder().functionName(funcConfigObj.functionArn()).build();
 
     Optional<GetFunctionResponse> existingFunctionOptional =
         getAwsLambdaFunctionFromAws(awsLambdaFunctionsInfraConfig, getFunctionRequest);
@@ -779,17 +778,16 @@ public class AwsLambdaTaskHelper {
     return awsLambdaClient.updateFunctionConfiguration(
         getAwsInternalConfig(
             awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion()),
-        (UpdateFunctionConfigurationRequest) updateFunctionConfigurationRequestBuilder.build());
+        updateFunctionConfigurationRequestBuilder.build());
   }
 
-  private PublishVersionResponse getPublishVersionResponse(LogCallback logCallback,
+  @VisibleForTesting
+  protected PublishVersionResponse getPublishVersionResponse(LogCallback logCallback,
       AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, String functionName, String codeSha256) {
     logCallback.saveExecutionLog("Publishing new version", INFO);
 
-    PublishVersionRequest publishVersionRequest = (PublishVersionRequest) PublishVersionRequest.builder()
-                                                      .functionName(functionName)
-                                                      .codeSha256(codeSha256)
-                                                      .build();
+    PublishVersionRequest publishVersionRequest =
+        PublishVersionRequest.builder().functionName(functionName).codeSha256(codeSha256).build();
 
     PublishVersionResponse publishVersionResponse =
         awsLambdaClient.publishVersion(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
@@ -845,9 +843,7 @@ public class AwsLambdaTaskHelper {
       HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(TIMEOUT_IN_SECONDS), () -> {
         while (true) {
           GetFunctionConfigurationRequest getFunctionConfigurationRequest =
-              (GetFunctionConfigurationRequest) GetFunctionConfigurationRequest.builder()
-                  .functionName(functionName)
-                  .build();
+              GetFunctionConfigurationRequest.builder().functionName(functionName).build();
           Optional<GetFunctionConfigurationResponse> result = awsLambdaClient.getFunctionConfiguration(
               getAwsInternalConfig(
                   awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion()),
@@ -879,10 +875,10 @@ public class AwsLambdaTaskHelper {
 
   public ListVersionsByFunctionResponse listVersionsByFunction(
       String functionName, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig) {
-    ListVersionsByFunctionResponse listVersionsByFunctionResult = null;
+    ListVersionsByFunctionResponse listVersionsByFunctionResult;
     try {
       ListVersionsByFunctionRequest listVersionsByFunctionRequest =
-          (ListVersionsByFunctionRequest) ListVersionsByFunctionRequest.builder().functionName(functionName).build();
+          ListVersionsByFunctionRequest.builder().functionName(functionName).build();
       listVersionsByFunctionResult = awsLambdaClient.listVersionsByFunction(
           getAwsInternalConfig(
               awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion()),
@@ -896,10 +892,9 @@ public class AwsLambdaTaskHelper {
 
   public ListAliasesResponse listAliases(
       String functionName, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig) {
-    ListAliasesResponse listAliasesResponse = null;
+    ListAliasesResponse listAliasesResponse;
     try {
-      ListAliasesRequest listAliasesRequest =
-          (ListAliasesRequest) ListAliasesRequest.builder().functionName(functionName).build();
+      ListAliasesRequest listAliasesRequest = ListAliasesRequest.builder().functionName(functionName).build();
       listAliasesResponse =
           awsLambdaClient.listAliases(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
                                           awsLambdaFunctionsInfraConfig.getRegion()),
@@ -913,10 +908,9 @@ public class AwsLambdaTaskHelper {
 
   public AwsLambdaFunctionWithActiveVersions getAwsLambdaFunctionWithActiveVersions(
       AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, String functionName) throws AwsLambdaException {
-    GetFunctionRequest getFunctionRequest =
-        (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
+    GetFunctionRequest getFunctionRequest = GetFunctionRequest.builder().functionName(functionName).build();
 
-    Optional<GetFunctionResponse> existingFunctionOptional = null;
+    Optional<GetFunctionResponse> existingFunctionOptional;
     try {
       existingFunctionOptional =
           awsLambdaClient.getFunction(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),

@@ -16,14 +16,18 @@ import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
+import io.harness.jira.JiraIssueNG;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.repositories.ApprovalInstanceRepository;
+import io.harness.servicenow.ServiceNowFieldValueNG;
+import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.misc.TicketNG;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
@@ -37,7 +41,11 @@ import io.harness.steps.approval.step.harness.beans.HarnessApprovalAction;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityRequestDTO;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.steps.approval.step.jira.beans.JiraApprovalResponseData;
+import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
+import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance.JiraApprovalInstanceKeys;
 import io.harness.steps.approval.step.servicenow.beans.ServiceNowApprovalResponseData;
+import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
+import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance.ServiceNowApprovalInstanceKeys;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -48,8 +56,10 @@ import com.mongodb.client.result.UpdateResult;
 import dev.morphia.mapping.Mapper;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -73,6 +83,8 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   private final PlanExecutionService planExecutionService;
   private final LogStreamingStepClientFactory logStreamingStepClientFactory;
   private static final int MAX_BATCH_SIZE = 500;
+  private static final String SERVICENOW_STATE_FIELD = "state";
+  private static final String JIRA_STATUS_FIELD = "Status";
   private static final Set<String> approvalStepSpecTypeConstants =
       new HashSet<>(Arrays.asList(StepSpecTypeConstants.HARNESS_APPROVAL, StepSpecTypeConstants.SERVICENOW_APPROVAL,
           StepSpecTypeConstants.JIRA_APPROVAL, StepSpecTypeConstants.CUSTOM_APPROVAL));
@@ -246,6 +258,78 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
       log.info("Successfully deleted {} approvalInstances based on nodeExecutionIds", deletedCount);
       return null;
     });
+  }
+
+  @Override
+  public void updateTicketFieldsInServiceNowApprovalInstance(
+      @NotNull ServiceNowApprovalInstance approvalInstance, @NotNull ServiceNowTicketNG ticketNG) {
+    if (ticketNG == null || ticketNG.getFields() == null || EmptyPredicate.isEmpty(ticketNG.getFields())) {
+      log.warn("Skipping updating ticket fields in ServiceNow approval instance as ticket fields are not present");
+      return;
+    }
+    Map<String, ServiceNowFieldValueNG> serviceNowTicketFields = ticketNG.getFields();
+    if (!serviceNowTicketFields.containsKey(SERVICENOW_STATE_FIELD)) {
+      log.warn("Skipping updating ticket fields in ServiceNow approval instance as {} field is not present",
+          SERVICENOW_STATE_FIELD);
+      return;
+    }
+    ServiceNowFieldValueNG stateFieldValue = serviceNowTicketFields.get(SERVICENOW_STATE_FIELD);
+
+    Map<String, ServiceNowFieldValueNG> updatedApprovalInstanceTicketFields;
+    if (isEmpty(approvalInstance.getTicketFields())) {
+      updatedApprovalInstanceTicketFields = new HashMap<>();
+      updatedApprovalInstanceTicketFields.put(SERVICENOW_STATE_FIELD, stateFieldValue);
+    } else if (approvalInstance.getTicketFields().containsKey(SERVICENOW_STATE_FIELD)
+        && approvalInstance.getTicketFields().get(SERVICENOW_STATE_FIELD).equals(stateFieldValue)) {
+      // updated value present in approval instance
+      return;
+    } else {
+      updatedApprovalInstanceTicketFields = approvalInstance.getTicketFields();
+      updatedApprovalInstanceTicketFields.put(SERVICENOW_STATE_FIELD, stateFieldValue);
+    }
+
+    Update update = new Update().set(ServiceNowApprovalInstanceKeys.ticketFields, updatedApprovalInstanceTicketFields);
+    // it only makes sense to update ticket fields for instances in waiting state
+    approvalInstanceRepository.updateFirst(
+        new Query(Criteria.where(Mapper.ID_KEY).is(approvalInstance.getId()))
+            .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING)),
+        update);
+  }
+
+  @Override
+  public void updateTicketFieldsInJiraApprovalInstance(
+      @NotNull JiraApprovalInstance approvalInstance, @NotNull JiraIssueNG ticketNG) {
+    if (ticketNG == null || ticketNG.getFields() == null || EmptyPredicate.isEmpty(ticketNG.getFields())) {
+      log.warn("Skipping updating ticket fields in Jira approval instance as ticket fields are not present");
+      return;
+    }
+    Map<String, Object> jiraTicketFields = ticketNG.getFields();
+    if (!jiraTicketFields.containsKey(JIRA_STATUS_FIELD)) {
+      log.warn(
+          "Skipping updating ticket fields in Jira approval instance as {} field is not present", JIRA_STATUS_FIELD);
+      return;
+    }
+    Object statusFieldValue = jiraTicketFields.get(JIRA_STATUS_FIELD);
+
+    Map<String, Object> updatedApprovalInstanceTicketFields;
+    if (isEmpty(approvalInstance.getTicketFields())) {
+      updatedApprovalInstanceTicketFields = new HashMap<>();
+      updatedApprovalInstanceTicketFields.put(JIRA_STATUS_FIELD, statusFieldValue);
+    } else if (approvalInstance.getTicketFields().containsKey(JIRA_STATUS_FIELD)
+        && approvalInstance.getTicketFields().get(JIRA_STATUS_FIELD).equals(statusFieldValue)) {
+      // updated value present in approval instance
+      return;
+    } else {
+      updatedApprovalInstanceTicketFields = approvalInstance.getTicketFields();
+      updatedApprovalInstanceTicketFields.put(JIRA_STATUS_FIELD, statusFieldValue);
+    }
+
+    Update update = new Update().set(JiraApprovalInstanceKeys.ticketFields, updatedApprovalInstanceTicketFields);
+    // it only makes sense to update ticket fields for instances in waiting state
+    approvalInstanceRepository.updateFirst(
+        new Query(Criteria.where(Mapper.ID_KEY).is(approvalInstance.getId()))
+            .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING)),
+        update);
   }
 
   @VisibleForTesting

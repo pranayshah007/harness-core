@@ -11,6 +11,7 @@ import io.harness.cdng.k8s.K8sApplyStepInfo;
 import io.harness.cdng.k8s.K8sApplyStepNode;
 import io.harness.data.structure.CompareUtils;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -47,7 +48,8 @@ public class K8sApplyStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     K8sApplyState state = (K8sApplyState) getState(graphNode);
     K8sApplyStepNode k8sApplyStepNode = new K8sApplyStepNode();
     baseSetup(state, k8sApplyStepNode, context.getIdentifierCaseFormat());

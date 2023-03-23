@@ -107,7 +107,7 @@ import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetServiceImpl;
 import io.harness.pms.opa.service.PMSOpaService;
 import io.harness.pms.opa.service.PMSOpaServiceImpl;
-import io.harness.pms.outbox.NodeExecutionOutboxEventHandler;
+import io.harness.pms.outbox.NodeExecutionOutboxEventPublisher;
 import io.harness.pms.outbox.PMSOutboxEventHandler;
 import io.harness.pms.outbox.PipelineOutboxEventHandler;
 import io.harness.pms.pipeline.PipelineResource;
@@ -184,6 +184,7 @@ import io.harness.service.DelegateServiceDriverModule;
 import io.harness.spec.server.pipeline.v1.InputSetsApi;
 import io.harness.spec.server.pipeline.v1.InputsApi;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
+import io.harness.ssca.client.SSCAServiceClientModule;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.custom.CustomApprovalHelperService;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
@@ -377,6 +378,7 @@ public class PipelineServiceModule extends AbstractModule {
     install(new VariableClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     install(new HsqsServiceClientModule(this.configuration.getQueueServiceClientConfig(), BEARER.getServiceId()));
+    install(new SSCAServiceClientModule(this.configuration.getSscaServiceConfig()));
 
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(PMSOutboxEventHandler.class);
@@ -495,7 +497,7 @@ public class PipelineServiceModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.PIPELINE).to(PipelineOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.INPUT_SET).to(PipelineOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.NODE_EXECUTION)
-        .to(NodeExecutionOutboxEventHandler.class);
+        .to(NodeExecutionOutboxEventPublisher.class);
   }
 
   private void registerEventsFrameworkMessageListeners() {
@@ -727,6 +729,21 @@ public class PipelineServiceModule extends AbstractModule {
         new ThreadFactoryBuilder().setNameFormat("JsonExpansionExecutorService-%d").build());
   }
 
+  /**
+   * To be used for async validations of Pipelines. Because pipeline fetch calls can be frequent, max pool size needs to
+   * be high
+   */
+  @Provides
+  @Singleton
+  @Named("PipelineAsyncValidationExecutorService")
+  public Executor pipelineAsyncValidationExecutorService() {
+    return ThreadPool.create(configuration.getPipelineAsyncValidationPoolConfig().getCorePoolSize(),
+        configuration.getPipelineAsyncValidationPoolConfig().getMaxPoolSize(),
+        configuration.getPipelineAsyncValidationPoolConfig().getIdleTime(),
+        configuration.getPipelineAsyncValidationPoolConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("PipelineAsyncValidationExecutorService-%d").build());
+  }
+
   @Provides
   @Singleton
   @Named("TelemetrySenderExecutor")
@@ -795,11 +812,5 @@ public class PipelineServiceModule extends AbstractModule {
   @Named("jsonExpansionRequestBatchSize")
   public Integer getjsonExpansionRequestBatchSize() {
     return configuration.getJsonExpansionBatchSize();
-  }
-
-  @Provides
-  @Singleton
-  public boolean getAllowDifferentReposForPipelineAndInputSets() {
-    return configuration.isAllowDifferentReposForPipelineAndInputSets();
   }
 }

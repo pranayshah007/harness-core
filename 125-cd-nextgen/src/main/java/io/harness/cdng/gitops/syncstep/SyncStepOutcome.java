@@ -12,9 +12,11 @@ import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitops.models.Application;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
+import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
 import org.codehaus.commons.nullanalysis.NotNull;
@@ -26,6 +28,6 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("SyncStepOutcome")
 @JsonTypeName("SyncStepOutcome")
 @RecasterAlias("io.harness.cdng.gitops.syncstep.SyncStepOutcome")
-public class SyncStepOutcome {
-  @NotNull List<Application> applications;
+public class SyncStepOutcome implements Outcome, ExecutionSweepingOutput {
+  @NotNull Set<Application> applications;
 }

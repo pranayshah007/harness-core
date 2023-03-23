@@ -59,6 +59,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.iterator.ValidationFailedTaskMessageHelper;
 import io.harness.persistence.HPersistence;
 import io.harness.service.dto.RetryDelegate;
 import io.harness.service.intfc.DelegateCache;
@@ -145,6 +146,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private DelegateCache delegateCache;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
+  @Inject private ValidationFailedTaskMessageHelper validationFailedTaskMessageHelper;
 
   @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
@@ -614,6 +616,9 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
               || !result.get().isValidated()) {
             matching = false;
             Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+            if (delegate == null) {
+              break;
+            }
             String delegateName =
                 isNotEmpty(delegate.getDelegateName()) ? delegate.getDelegateName() : delegate.getUuid();
             String noMatchError = String.format("No matching criteria %s found in delegate %s", criteria, delegateName);
@@ -803,6 +808,12 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
     String errorMessage = "Unknown";
 
+    if (isNotEmpty(delegateTask.getValidationCompleteDelegateIds())
+        && delegateTask.getValidationCompleteDelegateIds().containsAll(
+            delegateTask.getEligibleToExecuteDelegateIds())) {
+      errorMessage = validationFailedTaskMessageHelper.generateValidationError(delegateTask);
+      log.info("Failing task {} due to validation error, {}", delegateTask.getUuid(), errorMessage);
+    }
     List<DelegateSelectionLogParams> delegateSelectionLogs =
         delegateSelectionLogsService.fetchTaskSelectionLogs(delegateTask.getAccountId(), delegateTask.getUuid());
 
@@ -1209,7 +1220,9 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     if (delegate.isNg()) {
       DelegateGroup delegateGroup =
           delegateCache.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId());
-      List<String> tags = new ArrayList<>(delegateGroup.getTags());
+      Set<String> delegateTags =
+          (delegateGroup != null && delegateGroup.getTags() != null) ? delegateGroup.getTags() : new HashSet<>();
+      List<String> tags = new ArrayList<>(delegateTags);
       return Optional.of(tags);
     }
     return Optional.ofNullable(delegate.getTags());

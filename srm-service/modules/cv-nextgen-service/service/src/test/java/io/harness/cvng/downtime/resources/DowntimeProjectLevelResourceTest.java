@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
@@ -32,6 +33,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
@@ -141,6 +143,8 @@ public class DowntimeProjectLevelResourceTest extends CvNextGenTestBase {
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testDeleteDowntimeData() {
+    recurringDowntimeDTO.getSpec().getSpec().setStartTime(
+        CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().plus(1, ChronoUnit.HOURS).getEpochSecond());
     downtimeService.create(projectParams, recurringDowntimeDTO);
     Response response = RESOURCES.client()
                             .target(baseUrlWithIdentifier)

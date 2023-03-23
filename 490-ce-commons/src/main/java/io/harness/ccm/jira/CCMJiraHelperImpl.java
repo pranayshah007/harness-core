@@ -18,47 +18,63 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.task.jira.mappers.JiraRequestResponseMapper;
+import io.harness.exception.ExceptionUtils;
+import io.harness.exception.HttpResponseException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.jira.JiraClient;
 import io.harness.jira.JiraIssueNG;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.ng.core.DecryptableEntityWithEncryptionConsumers;
+import io.harness.ng.core.NGAccessWithEncryptionConsumer;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.SecretDecryptionService;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.ws.rs.NotFoundException;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class CCMJiraHelperImpl implements CCMJiraHelper {
   @Inject private ConnectorResourceClient connectorResourceClient;
-  @Inject @Named("PRIVILEGED") private SecretManagerClientService secretManagerClientService;
-  @Inject private SecretDecryptionService secretDecryptionService;
+  @Inject @Named("PRIVILEGED") private SecretNGManagerClient secretManagerClient;
+  private final ObjectMapper mapper = new ObjectMapper();
 
   @Override
   public JiraIssueNG createIssue(
       String accountId, String jiraConnectorRef, String projectKey, String issueType, Map<String, String> fields) {
-    IdentifierRef connectorRef = getIdentifierRef(jiraConnectorRef, accountId, "default", null);
-    JiraConnectorDTO jiraConnectorDTO = getConnector(connectorRef);
-    JiraClient jiraClient = getNGJiraClient(jiraConnectorDTO);
-    return jiraClient.createIssue(projectKey, issueType, fields, false, false, false);
+    try {
+      IdentifierRef connectorRef = getIdentifierRef(jiraConnectorRef, accountId, "default", null);
+      JiraConnectorDTO jiraConnectorDTO = getConnector(connectorRef);
+      JiraClient jiraClient = getNGJiraClient(jiraConnectorDTO);
+      return jiraClient.createIssue(projectKey, issueType, fields, false, false, false);
+    } catch (Exception e) {
+      throw new InvalidRequestException(getJiraException(e));
+    }
   }
 
   @Override
   public JiraIssueNG getIssue(String accountId, String jiraConnectorRef, String issueKey) {
-    IdentifierRef connectorRef = getIdentifierRef(jiraConnectorRef, accountId, "default", null);
-    JiraConnectorDTO jiraConnectorDTO = getConnector(connectorRef);
-    JiraClient jiraClient = getNGJiraClient(jiraConnectorDTO);
-    return jiraClient.getIssue(issueKey);
+    try {
+      IdentifierRef connectorRef = getIdentifierRef(jiraConnectorRef, accountId, "default", null);
+      JiraConnectorDTO jiraConnectorDTO = getConnector(connectorRef);
+      JiraClient jiraClient = getNGJiraClient(jiraConnectorDTO);
+      return jiraClient.getIssue(issueKey);
+    } catch (Exception e) {
+      throw new InvalidRequestException(getJiraException(e));
+    }
   }
 
   private JiraConnectorDTO getConnector(IdentifierRef jiraConnectorRef) {
@@ -82,7 +98,8 @@ public class CCMJiraHelperImpl implements CCMJiraHelper {
     // Get Encryption Details
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(jiraConnectorRef, connectorConfigDTO);
     // Decrypt connector using Encryption Details
-    decryptJiraConnectorDTO((JiraConnectorDTO) connectorConfigDTO, encryptionDetails);
+    connectorConfigDTO = decryptJiraConnectorDTO(
+        (JiraConnectorDTO) connectorConfigDTO, encryptionDetails, jiraConnectorRef.getAccountIdentifier());
     return (JiraConnectorDTO) connectorConfigDTO;
   }
 
@@ -95,16 +112,34 @@ public class CCMJiraHelperImpl implements CCMJiraHelper {
     JiraConnectorDTO jiraConnectorDTO = (JiraConnectorDTO) connectorConfigDTO;
     BaseNGAccess baseNGAccess = getBaseNGAccess(jiraConnectorRef);
     if (!isNull(jiraConnectorDTO.getAuth()) && !isNull(jiraConnectorDTO.getAuth().getCredentials())) {
-      return secretManagerClientService.getEncryptionDetails(baseNGAccess, jiraConnectorDTO.getAuth().getCredentials());
+      return NGRestUtils.getResponse(secretManagerClient.getEncryptionDetails(jiraConnectorRef.getAccountIdentifier(),
+          NGAccessWithEncryptionConsumer.builder()
+              .ngAccess(baseNGAccess)
+              .decryptableEntity(jiraConnectorDTO.getAuth().getCredentials())
+              .build()));
     }
-    return secretManagerClientService.getEncryptionDetails(baseNGAccess, jiraConnectorDTO);
+    return NGRestUtils.getResponse(secretManagerClient.getEncryptionDetails(jiraConnectorRef.getAccountIdentifier(),
+        NGAccessWithEncryptionConsumer.builder().ngAccess(baseNGAccess).decryptableEntity(connectorConfigDTO).build()));
   }
 
-  private void decryptJiraConnectorDTO(JiraConnectorDTO dto, List<EncryptedDataDetail> encryptionDetails) {
+  private JiraConnectorDTO decryptJiraConnectorDTO(
+      JiraConnectorDTO dto, List<EncryptedDataDetail> encryptionDetails, String accountIdentifier) {
     if (!isNull(dto.getAuth()) && !isNull(dto.getAuth().getCredentials())) {
-      secretDecryptionService.decrypt(dto.getAuth().getCredentials(), encryptionDetails);
+      JiraAuthCredentialsDTO decryptedEntity = (JiraAuthCredentialsDTO) NGRestUtils.getResponse(
+          secretManagerClient.decryptEncryptedDetails(DecryptableEntityWithEncryptionConsumers.builder()
+                                                          .decryptableEntity(dto.getAuth().getCredentials())
+                                                          .encryptedDataDetailList(encryptionDetails)
+                                                          .build(),
+              accountIdentifier));
+      dto.getAuth().setCredentials(decryptedEntity);
+      return dto;
     } else {
-      secretDecryptionService.decrypt(dto, encryptionDetails);
+      return (JiraConnectorDTO) NGRestUtils.getResponse(
+          secretManagerClient.decryptEncryptedDetails(DecryptableEntityWithEncryptionConsumers.builder()
+                                                          .decryptableEntity(dto)
+                                                          .encryptedDataDetailList(encryptionDetails)
+                                                          .build(),
+              accountIdentifier));
     }
   }
 
@@ -118,5 +153,33 @@ public class CCMJiraHelperImpl implements CCMJiraHelper {
 
   protected JiraClient getNGJiraClient(JiraConnectorDTO dto) {
     return new JiraClient(JiraRequestResponseMapper.toJiraInternalConfig(dto));
+  }
+
+  private String getJiraException(Exception e) {
+    if (e.getCause().getClass().equals(HttpResponseException.class)) {
+      String responseJson = ((HttpResponseException) e.getCause()).getResponseMessage();
+      try {
+        JiraHttpResponseException jiraException = mapper.readValue(responseJson, JiraHttpResponseException.class);
+        return jiraException.getErrors().getSummary();
+      } catch (Exception ex) {
+        return responseJson;
+      }
+    } else {
+      return ExceptionUtils.getMessage(e);
+    }
+  }
+
+  @Data
+  @NoArgsConstructor
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  private static class JiraHttpResponseException {
+    private Errors errors;
+
+    @Data
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class Errors {
+      public String summary;
+    }
   }
 }

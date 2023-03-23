@@ -7,25 +7,21 @@
 
 package io.harness.ngmigration.service.workflow;
 
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.utils.CaseFormat;
 
 import software.wings.beans.Workflow;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.service.impl.yaml.handler.workflow.RollingWorkflowYamlHandler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
-import java.util.Map;
 
 public class RollingWorkflowHandlerImpl extends WorkflowHandler {
   @Inject RollingWorkflowYamlHandler rollingWorkflowYamlHandler;
 
-  public JsonNode getTemplateSpec(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
-      Workflow workflow, CaseFormat caseFormat) {
+  public JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow, CaseFormat caseFormat) {
     return getDeploymentStageTemplateSpec(
-        WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow, caseFormat));
+        migrationContext, WorkflowMigrationContext.newInstance(migrationContext, workflow));
   }
 }

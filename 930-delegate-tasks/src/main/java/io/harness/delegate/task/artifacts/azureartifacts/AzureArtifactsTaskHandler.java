@@ -26,6 +26,7 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -68,7 +69,21 @@ public class AzureArtifactsTaskHandler extends DelegateArtifactTaskHandler<Azure
                    .collect(Collectors.toList());
     }
 
-    return ArtifactTaskExecutionResponse.builder().buildDetails(builds).build();
+    List<AzureArtifactsDelegateResponse> azureArtifactsDelegateResponseList = new ArrayList<>();
+
+    for (BuildDetails b : builds) {
+      AzureArtifactsDelegateResponse artifactDelegateResponse = AzureArtifactsDelegateResponse.builder()
+                                                                    .version(b.getNumber())
+                                                                    .sourceType(attributesRequest.getSourceType())
+                                                                    .build();
+
+      azureArtifactsDelegateResponseList.add(artifactDelegateResponse);
+    }
+
+    return ArtifactTaskExecutionResponse.builder()
+        .artifactDelegateResponses(azureArtifactsDelegateResponseList)
+        .buildDetails(builds)
+        .build();
   }
 
   @Override

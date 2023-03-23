@@ -52,6 +52,10 @@ public class PlanCreationResponseBlobHelper {
     if (planCreationResponse.getYamlUpdates() != null) {
       finalBlobResponseBuilder.setYamlUpdates(planCreationResponse.getYamlUpdates());
     }
+    if (planCreationResponse.getPreservedNodesInRollbackMode() != null) {
+      finalBlobResponseBuilder.addAllPreservedNodesInRollbackMode(
+          planCreationResponse.getPreservedNodesInRollbackMode());
+    }
     return finalBlobResponseBuilder.build();
   }
 }

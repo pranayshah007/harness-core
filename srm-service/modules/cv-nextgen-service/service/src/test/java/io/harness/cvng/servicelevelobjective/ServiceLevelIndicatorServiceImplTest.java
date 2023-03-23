@@ -419,8 +419,8 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
         .identifier("sliIndicator")
         .name("sliName")
         .type(SLIExecutionType.WINDOW)
-        .sliMissingDataType(SLIMissingDataType.GOOD)
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
+                  .sliMissingDataType(SLIMissingDataType.GOOD)
                   .type(SLIMetricType.RATIO)
                   .spec(RatioSLIMetricSpec.builder()
                             .eventType(RatioSLIMetricEventType.GOOD)
@@ -439,6 +439,7 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
         .name("sliName")
         .type(SLIExecutionType.WINDOW)
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
+                  .sliMissingDataType(SLIMissingDataType.GOOD)
                   .type(SLIMetricType.THRESHOLD)
                   .spec(ThresholdSLIMetricSpec.builder()
                             .metric1("metric1")
@@ -446,7 +447,6 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
                             .thresholdType(ThresholdType.GREATER_THAN)
                             .build())
                   .build())
-        .sliMissingDataType(SLIMissingDataType.GOOD)
         .build();
   }
 

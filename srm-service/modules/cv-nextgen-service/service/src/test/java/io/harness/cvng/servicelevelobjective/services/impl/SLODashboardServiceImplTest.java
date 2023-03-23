@@ -68,6 +68,7 @@ import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevel
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.Annotation;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
@@ -413,6 +414,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(monitoredServiceDTO2.getIdentifier());
     assertThat(sloDashboardWidget.getSloTargetType())
         .isEqualTo(compositeServiceLevelObjective.getSloTarget().getType());
+    assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(compositeServiceLevelObjective.getTarget().getType());
     assertThat(sloDashboardWidget.getCurrentPeriodLengthDays()).isEqualTo(30);
     assertThat(sloDashboardWidget.getCurrentPeriodStartTime())
         .isEqualTo(Instant.parse("2020-06-27T10:50:00Z").toEpochMilli());
@@ -502,6 +504,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getTags()).isEqualTo(serviceLevelObjectiveV2DTO.getTags());
     assertThat(sloDashboardWidget.getSloTargetType())
         .isEqualTo(compositeServiceLevelObjective.getSloTarget().getType());
+    assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(compositeServiceLevelObjective.getTarget().getType());
     List<MonitoredServiceDetail> monitoredServiceDetails = sloDashboardWidget.getMonitoredServiceDetails();
     assertThat(monitoredServiceDetails.size()).isEqualTo(2);
     MonitoredServiceDetail monitoredServiceDetail = monitoredServiceDetails.get(0);
@@ -940,7 +943,12 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec();
-    simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).setSliMissingDataType(SLIMissingDataType.BAD);
+    WindowBasedServiceLevelIndicatorSpec serviceLevelIndicatorSpec =
+        (WindowBasedServiceLevelIndicatorSpec) simpleServiceLevelObjectiveSpec.getServiceLevelIndicators()
+            .get(0)
+            .getSpec();
+    serviceLevelIndicatorSpec.setSliMissingDataType(SLIMissingDataType.BAD);
+    simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).setSpec(serviceLevelIndicatorSpec);
     simpleServiceLevelObjectiveSpec.setMonitoredServiceRef(monitoredServiceIdentifier + '1');
     serviceLevelObjectiveV2DTO2.setSpec(simpleServiceLevelObjectiveSpec);
     serviceLevelObjectiveV2DTO2.setName("new three");
@@ -1268,7 +1276,12 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec();
-    simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).setSliMissingDataType(SLIMissingDataType.BAD);
+    WindowBasedServiceLevelIndicatorSpec serviceLevelIndicatorSpec =
+        (WindowBasedServiceLevelIndicatorSpec) simpleServiceLevelObjectiveSpec.getServiceLevelIndicators()
+            .get(0)
+            .getSpec();
+    serviceLevelIndicatorSpec.setSliMissingDataType(SLIMissingDataType.BAD);
+    simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).setSpec(serviceLevelIndicatorSpec);
     simpleServiceLevelObjectiveSpec.setMonitoredServiceRef(monitoredServiceIdentifier + '1');
     serviceLevelObjectiveV2DTO2.setSpec(simpleServiceLevelObjectiveSpec);
     serviceLevelObjectiveV2DTO2.setName("new three");
@@ -1400,7 +1413,12 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec();
-    simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).setSliMissingDataType(SLIMissingDataType.BAD);
+    WindowBasedServiceLevelIndicatorSpec serviceLevelIndicatorSpec =
+        (WindowBasedServiceLevelIndicatorSpec) simpleServiceLevelObjectiveSpec.getServiceLevelIndicators()
+            .get(0)
+            .getSpec();
+    serviceLevelIndicatorSpec.setSliMissingDataType(SLIMissingDataType.BAD);
+    simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).setSpec(serviceLevelIndicatorSpec);
     simpleServiceLevelObjectiveSpec.setMonitoredServiceRef(monitoredServiceIdentifier + '1');
     serviceLevelObjectiveV2DTO2.setSpec(simpleServiceLevelObjectiveSpec);
     serviceLevelObjectiveV2DTO2.setName("new three");

@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
+
 import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
 import static java.util.stream.Collectors.counting;
@@ -153,9 +155,10 @@ public class TemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    MigrationContext context = MigrationContext.newInstance(inputDTO, entities, graph, migratedEntities);
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     Template template = (Template) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, template.getName());
     String identifier = MigratorUtility.generateIdentifierDefaultName(
@@ -164,11 +167,11 @@ public class TemplateMigrationService extends NgMigrationService {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     String description = StringUtils.isBlank(template.getDescription()) ? "" : template.getDescription();
-    MigratorExpressionUtils.render(
-        entities, migratedEntities, template, inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
+    MigratorExpressionUtils.render(migrationContext, template, inputDTO.getCustomExpressions());
 
     NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(template);
-    JsonNode spec = ngTemplateService.getNgTemplateConfigSpec(context, template, orgIdentifier, projectIdentifier);
+    JsonNode spec =
+        ngTemplateService.getNgTemplateConfigSpec(migrationContext, template, orgIdentifier, projectIdentifier);
     if (ngTemplateService.isMigrationSupported() && spec != null) {
       List<NGYamlFile> files = new ArrayList<>();
       NGYamlFile ngYamlFile =
@@ -188,6 +191,7 @@ public class TemplateMigrationService extends NgMigrationService {
                                                 .build())
                         .build())
               .ngEntityDetail(NgEntityDetail.builder()
+                                  .entityType(TEMPLATE)
                                   .identifier(identifier)
                                   .orgIdentifier(orgIdentifier)
                                   .projectIdentifier(projectIdentifier)
@@ -206,8 +210,17 @@ public class TemplateMigrationService extends NgMigrationService {
     if (TemplateType.CUSTOM_DEPLOYMENT_TYPE.name().equals(template.getType())) {
       return configSpec;
     } else {
-      return JsonUtils.asTree(ImmutableMap.of("spec", configSpec, "type",
-          ngTemplateService.getNgTemplateStepName(template), "timeout", ngTemplateService.getTimeoutString(template)));
+      return JsonUtils.asTree(ImmutableMap.<String, Object>builder()
+                                  .put("spec", configSpec)
+                                  .put("type", ngTemplateService.getNgTemplateStepName(template))
+                                  .put("timeout", ngTemplateService.getTimeoutString(template))
+                                  .put("failureStrategies", RUNTIME_INPUT)
+                                  .put("when",
+                                      ImmutableMap.<String, String>builder()
+                                          .put("stageStatus", "Success")
+                                          .put("condition", RUNTIME_INPUT)
+                                          .build())
+                                  .build());
     }
   }
 

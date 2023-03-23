@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS SERVICE_LEVEL_OBJECTIVE (
                                                        SLITYPE TEXT,
                                                        PERIODTYPE TEXT,
                                                        SLOPERCENTAGE DECIMAL,
-                                                       TOTALERRORBUDGET INTEGER
+                                                       TOTALERRORBUDGET INTEGER,
                                                        SERVICE TEXT,
                                                        ENV TEXT,
     CONSTRAINT SERVICE_LEVEL_OBJECTIVE_UNIQUE_RECORD_INDEX UNIQUE(ACCOUNTID,ORGID,PROJECTID,SLOID)

@@ -26,6 +26,7 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.ejb.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ClassUtils;
@@ -87,8 +88,7 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
     if (shouldUseExpandedJsonFunctor(ambiance)) {
       Criteria criteria = Criteria.where("planExecutionId").is(ambiance.getPlanExecutionId());
       Query query = new Query(criteria);
-      expressions.forEach(expression
-          -> query.fields().include(String.format("%s.", PlanExpansionConstants.EXPANDED_JSON) + expression));
+      expressions.forEach(expression -> query.fields().include(expression));
       PlanExecutionExpansion planExecutionExpansion = planExecutionExpansionRepository.find(query);
       if (planExecutionExpansion == null) {
         return null;
@@ -133,5 +133,10 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
 
   private boolean shouldUseExpandedJsonFunctor(Ambiance ambiance) {
     return pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_ENGINE_V2);
+  }
+
+  @Override
+  public void deleteAllExpansions(Set<String> planExecutionIds) {
+    planExecutionExpansionRepository.deleteAllExpansions(planExecutionIds);
   }
 }

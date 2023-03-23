@@ -18,8 +18,10 @@ import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.AuthenticationInfo;
 import io.harness.audit.streaming.outgoing.Author;
 import io.harness.audit.streaming.outgoing.HttpRequestInfo;
+import io.harness.audit.streaming.outgoing.HttpRequestInfo.HttpRequestInfoBuilder;
 import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.audit.streaming.outgoing.Principal;
+import io.harness.audit.streaming.outgoing.Principal.PrincipalBuilder;
 import io.harness.audit.streaming.outgoing.Resource;
 import io.harness.audit.streaming.outgoing.ResourceScope;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
@@ -64,7 +66,7 @@ public class AuditEventMapper {
     if (auditEvent.getHttpRequestInfo() == null && auditEvent.getRequestMetadata() == null) {
       return null;
     }
-    HttpRequestInfo.HttpRequestInfoBuilder httpRequestInfoBuilder = HttpRequestInfo.builder();
+    HttpRequestInfoBuilder httpRequestInfoBuilder = HttpRequestInfo.builder();
     if (auditEvent.getHttpRequestInfo() != null) {
       httpRequestInfoBuilder.requestMethod(auditEvent.getHttpRequestInfo().getRequestMethod());
     }
@@ -75,8 +77,7 @@ public class AuditEventMapper {
   }
 
   private Principal getPrincipal(AuthenticationInfo authenticationInfo) {
-    Principal.PrincipalBuilder principalBuilder =
-        Principal.builder().type(authenticationInfo.getPrincipal().getType().name());
+    PrincipalBuilder principalBuilder = Principal.builder().type(authenticationInfo.getPrincipal().getType().name());
     if (authenticationInfo.getPrincipal().getType().equals(PrincipalType.USER)) {
       principalBuilder.email(authenticationInfo.getPrincipal().getIdentifier());
     }

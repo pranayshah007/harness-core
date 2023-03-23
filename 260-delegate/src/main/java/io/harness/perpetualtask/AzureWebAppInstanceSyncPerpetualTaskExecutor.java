@@ -38,6 +38,7 @@ import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -51,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AzureWebAppInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private AzureAppServiceService azureAppServiceService;
   @Inject private AzureConnectorMapper azureConnectorMapper;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -98,7 +99,7 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutor implements PerpetualTa
         .subscriptionId(azureWebAppDeploymentRelease.getSubscriptionId())
         .resourceGroupName(azureWebAppDeploymentRelease.getResourceGroupName())
         .slotName(azureWebAppDeploymentRelease.getSlotName())
-        .azureWebAppInfraDelegateConfig((AzureWebAppInfraDelegateConfig) kryoSerializer.asObject(
+        .azureWebAppInfraDelegateConfig((AzureWebAppInfraDelegateConfig) referenceFalseKryoSerializer.asObject(
             azureWebAppDeploymentRelease.getAzureWebAppInfraDelegateConfig().toByteArray()))
         .build();
   }

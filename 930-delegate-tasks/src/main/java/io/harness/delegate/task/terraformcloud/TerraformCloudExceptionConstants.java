@@ -19,6 +19,7 @@ public final class TerraformCloudExceptionConstants {
     public static final String PLEASE_CHECK_TFC_CONFIG = "Please check Terraform Cloud configuration";
     public static final String PLEASE_CHECK_POLICY = "Please check status of policy check: %s";
     public static final String PLEASE_CHECK_RUN = "Please check status of run: %s";
+    public static final String PLEASE_CHECK_PLAN_STATUS = "Please check status of plan: %s";
     public static final String POLICY_OVERRIDE_HINT =
         "To override policies select option [ Continue on Soft-Mandatory Policy evaluation result ] in step configuration";
   }

@@ -45,6 +45,7 @@ message PlanCreationBlobResponse {
   GraphLayoutInfo graphLayoutInfo = 5;
   Dependencies deps = 6;
   YamlUpdates yamlUpdates = 7;
+  repeated string preservedNodesInRollbackMode = 8;
 }
 
 message GraphLayoutInfo {

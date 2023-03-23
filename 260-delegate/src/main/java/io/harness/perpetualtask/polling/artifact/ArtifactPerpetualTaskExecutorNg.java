@@ -43,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ArtifactPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   private final KryoSerializer kryoSerializer;
+  private final KryoSerializer referenceFalseKryoSerializer;
   private final ArtifactRepositoryServiceImpl artifactRepositoryService;
   private final PollingResponsePublisher pollingResponsePublisher;
 
@@ -55,8 +56,8 @@ public class ArtifactPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
     ArtifactCollectionTaskParamsNg taskParams = getTaskParams(params);
     String pollingDocId = taskParams.getPollingDocId();
     String perpetualTaskId = taskId.getId();
-    ArtifactTaskParameters artifactTaskParameters =
-        (ArtifactTaskParameters) kryoSerializer.asObject(taskParams.getArtifactCollectionParams().toByteArray());
+    ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) referenceFalseKryoSerializer.asObject(
+        taskParams.getArtifactCollectionParams().toByteArray());
     ArtifactsCollectionCache artifactsCollectionCache = cache.get(pollingDocId, id -> new ArtifactsCollectionCache());
 
     Instant startTime = Instant.now();

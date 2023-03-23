@@ -15,6 +15,7 @@ import io.harness.delegate.task.artifacts.ami.AMIArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsTaskHandler;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactTaskHandler;
@@ -73,6 +74,8 @@ public class ArtifactCollectionServiceRegistryNg {
         return AMIArtifactTaskHandler.class;
       case GOOGLE_CLOUD_STORAGE_ARTIFACT:
         return GoogleCloudStorageArtifactTaskHandler.class;
+      case BAMBOO:
+        return BambooArtifactTaskHandler.class;
       default:
         throw new InvalidRequestException("Unknown artifact source type: " + artifactSourceType);
     }

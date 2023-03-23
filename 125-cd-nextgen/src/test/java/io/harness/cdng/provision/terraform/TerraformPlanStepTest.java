@@ -26,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.manifest.yaml.TerraformCommandFlagType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
@@ -71,6 +72,7 @@ import io.harness.steps.TaskRequestsUtils;
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
@@ -198,6 +200,11 @@ public class TerraformPlanStepTest extends CategoryTest {
         TerraformStepDataGenerator.generateStepPlanFile(StoreConfigType.GITHUB, gitStoreConfigFiles, gitStoreVarFiles);
 
     planStepParameters.getConfiguration().skipTerraformRefresh.setValue(true);
+    planStepParameters.getConfiguration().setCliOptionFlags(
+        List.of(TerraformCliOptionFlag.builder()
+                    .commandType(TerraformCommandFlagType.APPLY)
+                    .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                    .build()));
 
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
                                     .gitAuthType(GitAuthType.HTTP)
@@ -227,6 +234,12 @@ public class TerraformPlanStepTest extends CategoryTest {
     doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
         .when(terraformStepHelper)
         .getEnvironmentVariablesMap(any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("APPLY", "-lock-timeout=0s"); }
+    })
+        .when(terraformStepHelper)
+        .getTerraformCliFlags(any());
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -242,6 +255,7 @@ public class TerraformPlanStepTest extends CategoryTest {
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.PLAN);
     assertThat(taskParameters.getPlanName()).isEqualTo("planName");
     assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
+    assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test
@@ -265,6 +279,11 @@ public class TerraformPlanStepTest extends CategoryTest {
             .build();
     TerraformPlanStepParameters planStepParameters =
         TerraformStepDataGenerator.generateStepPlanFile(StoreConfigType.GITHUB, gitStoreConfigFiles, gitStoreVarFiles);
+    planStepParameters.getConfiguration().setCliOptionFlags(
+        List.of(TerraformCliOptionFlag.builder()
+                    .commandType(TerraformCommandFlagType.APPLY)
+                    .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                    .build()));
 
     planStepParameters.configuration.isTerraformCloudCli.setValue(true);
 
@@ -296,6 +315,12 @@ public class TerraformPlanStepTest extends CategoryTest {
     doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
         .when(terraformStepHelper)
         .getEnvironmentVariablesMap(any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("APPLY", "-lock-timeout=0s"); }
+    })
+        .when(terraformStepHelper)
+        .getTerraformCliFlags(any());
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -314,6 +339,7 @@ public class TerraformPlanStepTest extends CategoryTest {
     assertThat(taskParameters.getWorkspace()).isNull();
     assertThat(taskParameters.isTerraformCloudCli()).isTrue();
     assertThat(taskParameters.isSkipTerraformRefresh()).isFalse();
+    assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test

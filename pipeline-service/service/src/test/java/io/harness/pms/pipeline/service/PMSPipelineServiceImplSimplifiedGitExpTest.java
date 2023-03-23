@@ -38,6 +38,7 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.manage.GlobalContextManager;
+import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -47,6 +48,8 @@ import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHe
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.yaml.PipelineVersion;
+import io.harness.project.remote.ProjectClient;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
 import io.harness.yaml.validator.InvalidYamlException;
@@ -57,6 +60,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -71,6 +76,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private EntitySetupUsageClient entitySetupUsageClient;
   @Mock private PipelineAsyncValidationService pipelineAsyncValidationService;
   @Mock private PipelineValidationService pipelineValidationService;
+  @Mock private ProjectClient projectClient;
 
   String accountIdentifier = "acc";
   String orgIdentifier = "org";
@@ -84,7 +90,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     pipelineService =
         new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper, pmsPipelineTemplateHelper, null,
             null, gitSyncSdkService, null, null, null, new NoopPipelineSettingServiceImpl(), entitySetupUsageClient,
-            pipelineAsyncValidationService, pipelineValidationService);
+            pipelineAsyncValidationService, pipelineValidationService, projectClient);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)
@@ -115,7 +121,10 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
         .when(pipelineServiceHelper)
         .updatePipelineInfo(pipelineToSave, PipelineVersion.V0);
     doReturn(pipelineEntitySaved).when(pipelineRepository).save(pipelineToSaveWithUpdatedInfo);
-
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
+    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+        .thenReturn(projDTOCall);
     PipelineEntity pipelineEntity =
         pipelineService.validateAndCreatePipeline(pipelineToSave, false).getPipelineEntity();
     assertThat(pipelineEntity).isEqualTo(pipelineEntitySaved);
@@ -146,6 +155,10 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
         .updatePipelineInfo(pipelineToSave, PipelineVersion.V0);
     doReturn(pipelineEntitySaved).when(pipelineRepository).save(pipelineToSaveWithUpdatedInfo);
 
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
+    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+        .thenReturn(projDTOCall);
     PipelineEntity pipelineEntity =
         pipelineService.validateAndCreatePipeline(pipelineToSave, false).getPipelineEntity();
     assertThat(pipelineEntity).isEqualTo(pipelineEntitySaved);
@@ -170,6 +183,10 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
         .when(pipelineServiceHelper)
         .resolveTemplatesAndValidatePipeline(eq(pipelineToSave), anyBoolean(), anyBoolean());
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
+    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+        .thenReturn(projDTOCall);
     PipelineCRUDResult pipelineCRUDResult = pipelineService.validateAndCreatePipeline(pipelineToSave, true);
     assertThat(pipelineCRUDResult.getPipelineEntity()).isNull();
     assertThat(pipelineCRUDResult.getGovernanceMetadata().getDeny()).isTrue();
@@ -192,6 +209,10 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     doThrow(new InvalidYamlException("msg", null, pipelineYaml))
         .when(pipelineServiceHelper)
         .resolveTemplatesAndValidatePipeline(eq(pipelineToSave), anyBoolean(), anyBoolean());
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
+    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+        .thenReturn(projDTOCall);
     assertThatThrownBy(() -> pipelineService.validateAndCreatePipeline(pipelineToSave, true))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage("msg");
@@ -215,6 +236,10 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
         .updatePipelineInfo(pipelineToSave, PipelineVersion.V0);
     doThrow(new HintException("this is a hint")).when(pipelineRepository).save(pipelineToSaveWithUpdatedInfo);
 
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
+    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+        .thenReturn(projDTOCall);
     assertThatThrownBy(() -> pipelineService.validateAndCreatePipeline(pipelineToSave, true))
         .isInstanceOf(HintException.class)
         .hasMessage("this is a hint");
@@ -236,6 +261,10 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     doReturn(Optional.of(pipelineEntity))
         .when(pipelineRepository)
         .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false, false);
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
+    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+        .thenReturn(projDTOCall);
     Optional<PipelineEntity> optionalPipelineEntity =
         pipelineService.getAndValidatePipeline(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();

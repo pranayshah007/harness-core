@@ -9,6 +9,7 @@ batchJobScheduledData {"name": "accountId_batchJobType_validRun_endAt", "backgro
 batchJobScheduledData {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 budgetGroups {"name": "accountId_1", "background": true} {"accountId": 1}
 budgets {"name": "accountId_1", "background": true} {"accountId": 1}
+businessMapping {"name": "accountId_name", "background": true} {"accountId": 1, "name": 1}
 cache {"name": "accountId_1", "background": true} {"accountId": 1}
 cache {"name": "unique_commutative", "unique": true} {"_id": 1, "contextValue": 1}
 cache {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}

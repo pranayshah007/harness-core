@@ -304,6 +304,10 @@ public class PipelineExecutor {
 
     if (info != null) {
       execArgs.setMetadata(execArgs.getMetadata().toBuilder().setPipelineStageInfo(info).build());
+
+      // Need to set triggerJsonPayload from parent to child to resolve trigger expression in child
+      execArgs.setPlanExecutionMetadata(
+          execArgs.getPlanExecutionMetadata().withTriggerJsonPayload(info.getTriggerJsonPayload()));
     }
     return getPlanExecutionResponseDto(accountId, orgIdentifier, projectIdentifier, useV2, pipelineEntity, execArgs);
   }

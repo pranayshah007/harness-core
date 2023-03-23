@@ -18,6 +18,7 @@ import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import io.harness.connector.ConnectorDTO;
 import io.harness.delegate.beans.connector.newrelic.NewRelicConnectorDTO;
 import io.harness.http.HttpHeaderConfig;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -45,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NewRelicDeploymentMarkerStepMapperImpl extends StepMapper {
   private static final String URL_FORMAT = "%sv2/applications/%s/deployments.json";
+
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.HTTP;
@@ -70,6 +72,7 @@ public class NewRelicDeploymentMarkerStepMapperImpl extends StepMapper {
 
     return references;
   }
+
   private String getXApiKey(Map<CgEntityId, NGYamlFile> migratedEntities, String analysisServerConfigId) {
     Optional<NewRelicConnectorDTO> connector = getConnector(migratedEntities, analysisServerConfigId);
     if (connector.isPresent()) {
@@ -110,7 +113,8 @@ public class NewRelicDeploymentMarkerStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     NewRelicDeploymentMarkerState state = (NewRelicDeploymentMarkerState) getState(graphNode);
     Map<CgEntityId, NGYamlFile> migratedEntities = context.getMigratedEntities();
     String baseUrl = getBaseUrl(state, migratedEntities);
@@ -134,6 +138,7 @@ public class NewRelicDeploymentMarkerStepMapperImpl extends StepMapper {
     httpStepNode.setHttpStepInfo(httpStepInfo);
     return httpStepNode;
   }
+
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     NewRelicDeploymentMarkerState state1 = (NewRelicDeploymentMarkerState) getState(stepYaml1);

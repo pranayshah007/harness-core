@@ -7,6 +7,9 @@
 
 package io.harness.ccm.views.businessMapping.entities;
 
+import static io.harness.annotations.dev.HarnessTeam.CE;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.dto.Reference;
 
 import com.google.cloud.Timestamp;
@@ -17,6 +20,7 @@ import lombok.Value;
 
 @Value
 @Builder
+@OwnedBy(CE)
 public class SharedCostParameters {
   double totalCost;
   double numberOfEntities;

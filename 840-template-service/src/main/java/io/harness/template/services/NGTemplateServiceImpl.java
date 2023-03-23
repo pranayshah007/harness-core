@@ -45,6 +45,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
+import io.harness.exception.ngexception.TemplateAlreadyExistsException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
@@ -181,7 +182,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     if (isNewTemplate
         && validateIsNewTemplateIdentifier(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
             templateEntity.getProjectIdentifier(), templateEntity.getIdentifier())) {
-      throw new InvalidRequestException(String.format(
+      throw new TemplateAlreadyExistsException(String.format(
           "The template with identifier %s already exists in account %s, org %s, project %s, if you want to create a new version %s of this template then use save as new version option from the given template or if you want to create a new Template then use a different identifier.",
           templateEntity.getIdentifier(), templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
           templateEntity.getProjectIdentifier(), templateEntity.getVersionLabel()));
