@@ -30,6 +30,6 @@ public interface NGVariable extends Visitable {
   String getName();
   String getDescription();
   boolean isRequired();
-
+  @JsonIgnore @ApiModelProperty(hidden = true) ParameterField<?> fetchValue();
   @JsonIgnore @ApiModelProperty(hidden = true) ParameterField<?> getCurrentValue();
 }

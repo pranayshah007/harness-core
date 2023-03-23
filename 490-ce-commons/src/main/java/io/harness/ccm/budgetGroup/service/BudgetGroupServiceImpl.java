@@ -66,6 +66,7 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     validateParentOfChildEntities(budgetGroup, areChildEntitiesBudgetGroups, childEntityIds);
 
     // Saving budget group
+    budgetGroup.setParentBudgetGroupId(null);
     updateBudgetGroupBreakdown(budgetGroup);
     updateBudgetGroupAmount(budgetGroup);
     updateBudgetGroupCosts(budgetGroup);
@@ -87,6 +88,7 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
   public void update(String uuid, String accountId, BudgetGroup budgetGroup) {
     BudgetGroup oldBudgetGroup = budgetGroupDao.get(uuid, accountId);
     budgetGroup.setUuid(uuid);
+    budgetGroup.setParentBudgetGroupId(oldBudgetGroup.getParentBudgetGroupId());
     BudgetGroupUtils.validateBudgetGroup(
         budgetGroup, budgetGroupDao.list(budgetGroup.getAccountId(), budgetGroup.getName()));
 
@@ -110,6 +112,7 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     updateBudgetGroupCosts(budgetGroup);
     updateBudgetGroupEndTime(budgetGroup);
     updateBudgetGroupHistory(budgetGroup, budgetGroup.getAccountId());
+    updateBudgetGroupParent(budgetGroup);
     budgetGroupDao.update(uuid, accountId, budgetGroup);
     cascadeBudgetGroupAmount(budgetGroup);
 
@@ -151,16 +154,21 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
 
     if (budgetGroup.getParentBudgetGroupId() != null) {
       BudgetGroup parentBudgetGroup = budgetGroupDao.get(budgetGroup.getParentBudgetGroupId(), accountId);
-      BudgetGroupChildEntityDTO deletedChildEntity = parentBudgetGroup.getChildEntities()
-                                                         .stream()
-                                                         .filter(childEntity -> childEntity.getId().equals(uuid))
-                                                         .collect(Collectors.toList())
-                                                         .get(0);
-      parentBudgetGroup = updateProportionsOnDeletion(deletedChildEntity, parentBudgetGroup);
-      parentBudgetGroup = BudgetGroupUtils.updateBudgetGroupAmountOnChildEntityDeletion(parentBudgetGroup, budgetGroup);
-      updateCostsOfParentBudgetGroupsOnEntityDeletion(parentBudgetGroup);
-      BudgetGroup rootBudgetGroup = getRootBudgetGroup(budgetGroup);
-      cascadeBudgetGroupAmount(rootBudgetGroup);
+      if (parentBudgetGroup.getChildEntities() != null && parentBudgetGroup.getChildEntities().size() > 1) {
+        BudgetGroupChildEntityDTO deletedChildEntity = parentBudgetGroup.getChildEntities()
+                                                           .stream()
+                                                           .filter(childEntity -> childEntity.getId().equals(uuid))
+                                                           .collect(Collectors.toList())
+                                                           .get(0);
+        parentBudgetGroup = updateProportionsOnDeletion(deletedChildEntity, parentBudgetGroup);
+        parentBudgetGroup =
+            BudgetGroupUtils.updateBudgetGroupAmountOnChildEntityDeletion(parentBudgetGroup, budgetGroup);
+        updateCostsOfParentBudgetGroupsOnEntityDeletion(parentBudgetGroup);
+        BudgetGroup rootBudgetGroup = getRootBudgetGroup(budgetGroup);
+        cascadeBudgetGroupAmount(rootBudgetGroup);
+      } else {
+        delete(budgetGroup.getParentBudgetGroupId(), accountId);
+      }
     }
     return budgetGroupDao.delete(uuid, accountId);
   }
@@ -637,5 +645,15 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
       }
     }
     return flattenedChildList;
+  }
+
+  private void updateBudgetGroupParent(BudgetGroup budgetGroup) {
+    if (budgetGroup.getParentBudgetGroupId() != null) {
+      BudgetGroup parentBudgetGroup =
+          budgetGroupDao.get(budgetGroup.getParentBudgetGroupId(), budgetGroup.getAccountId());
+      if (parentBudgetGroup == null) {
+        budgetGroup.setParentBudgetGroupId(null);
+      }
+    }
   }
 }

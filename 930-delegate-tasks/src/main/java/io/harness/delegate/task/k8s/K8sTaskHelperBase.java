@@ -28,6 +28,8 @@ import static io.harness.k8s.kubectl.AbstractExecutable.getPrintableCommand;
 import static io.harness.k8s.kubectl.Utils.encloseWithQuotesIfNeeded;
 import static io.harness.k8s.kubectl.Utils.parseLatestRevisionNumberFromRolloutHistory;
 import static io.harness.k8s.manifest.ManifestHelper.getFirstLoadBalancerService;
+import static io.harness.k8s.manifest.ManifestHelper.kustomizeFileNameYaml;
+import static io.harness.k8s.manifest.ManifestHelper.kustomizeFileNameYml;
 import static io.harness.k8s.manifest.ManifestHelper.validateValuesFileContents;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
 import static io.harness.k8s.manifest.ManifestHelper.yaml_file_extension;
@@ -277,8 +279,6 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 @OwnedBy(CDP)
 public class K8sTaskHelperBase {
   public static final Set<String> openshiftResources = ImmutableSet.of("Route");
-  public static final String kustomizeFileNameYaml = "kustomization.yaml";
-  public static final String kustomizeFileNameYml = "kustomization.yml";
   public static final String patchFieldName = "patchesStrategicMerge";
   public static final String patchYaml = "patches-%d.yaml";
   public static final String kustomizePatchesDirPrefix = "kustomizePatches-";
@@ -303,6 +303,7 @@ public class K8sTaskHelperBase {
   @Inject private CustomManifestService customManifestService;
   @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
   @Inject private K8sReleaseHandlerFactory releaseHandlerFactory;
+  @Inject private K8sTaskManifestValidator k8sTaskManifestValidator;
 
   private DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator();
 
@@ -2462,6 +2463,8 @@ public class K8sTaskHelperBase {
 
     switch (manifestType) {
       case K8S_MANIFEST:
+        k8sTaskManifestValidator.checkFilesPartOfManifest(
+            manifestFilesDirectory, filesList, K8sTaskManifestValidator.IS_YAML_FILE);
         List<FileData> manifestFiles = readFilesFromDirectory(manifestFilesDirectory, filesList, executionLogCallback);
         if (skipRendering) {
           return manifestFiles;
@@ -2992,6 +2995,8 @@ public class K8sTaskHelperBase {
           ProcessResult processResult =
               executeShellCommand(manifestFilesDirectory, helmTemplateCommand, logErrorStream, timeoutInMillis);
           if (processResult.getExitValue() != 0) {
+            k8sTaskManifestValidator.checkFilePartOfManifest(
+                manifestFilesDirectory, chartFile, K8sTaskManifestValidator.IS_HELM_TEMPLATE_FILE);
             throw NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.MANIFEST_RENDER_ERROR_HELM,
                 format(KubernetesExceptionExplanation.MANIFEST_RENDER_ERROR_HELM, errorCaptureStream.toString(),
                     helmTemplateCommand),

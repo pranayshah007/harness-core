@@ -10,6 +10,7 @@ package software.wings.service.impl;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.eraro.ErrorCode.NOT_ACCOUNT_MGR_NOR_HAS_ALL_APP_ACCESS;
 import static io.harness.eraro.ErrorCode.USER_NOT_AUTHORIZED_DUE_TO_USAGE_RESTRICTIONS;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.RAMA;
@@ -1349,6 +1350,30 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
     boolean hasAccess = usageRestrictionsService.hasAccess(
         ACCOUNT_ID, true, null, null, true, usageRestrictions, null, null, null, false);
     assertThat(hasAccess).isFalse();
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void shouldReturnAppSvcMap() {
+    String appId = "appId1";
+    String svcId1 = "svcId1";
+    String scvId2 = "svcId2";
+    Map<Action, Set<String>> svcPermissions = new HashMap<>();
+    svcPermissions.put(Action.READ, new HashSet<>(List.of(svcId1)));
+    svcPermissions.put(Action.CREATE, new HashSet<>(List.of(scvId2)));
+    Map<String, AppPermissionSummary> appPermissionMap = new HashMap<>();
+    AppPermissionSummary appPermissionSummary =
+        AppPermissionSummary.builder().servicePermissions(svcPermissions).build();
+    appPermissionMap.put(appId, appPermissionSummary);
+    UserPermissionInfo userPermissionInfo =
+        UserPermissionInfo.builder().appPermissionMapInternal(appPermissionMap).build();
+    Map<String, Set<String>> appSvcMapFromUserPermissions =
+        usageRestrictionsService.getAppSvcMapFromUserPermissions(ACCOUNT_ID, userPermissionInfo, Action.READ);
+    assertThat(appSvcMapFromUserPermissions).isNotNull();
+    assertThat(appSvcMapFromUserPermissions).containsKey(appId);
+    assertThat(appSvcMapFromUserPermissions.get(appId)).contains(svcId1);
+    assertThat(appSvcMapFromUserPermissions.get(appId)).doesNotContain(scvId2);
   }
 
   private UsageRestrictions getUsageRestrictionsWithAllAppsAndEnvTypes(Set<String> envFilters) {

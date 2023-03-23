@@ -131,7 +131,7 @@ public class ContainerDeploymentDelegateBaseHelper {
       GcpConnectorCredentialDTO gcpCredentials = gcpK8sInfraDelegateConfig.getGcpConnectorDTO().getCredential();
       return gkeClusterHelper.getCluster(getGcpServiceAccountKeyFileContent(gcpCredentials),
           gcpCredentials.getGcpCredentialType() == INHERIT_FROM_DELEGATE, gcpK8sInfraDelegateConfig.getCluster(),
-          gcpK8sInfraDelegateConfig.getNamespace());
+          gcpK8sInfraDelegateConfig.getNamespace(), logCallback);
     } else if (clusterConfigDTO instanceof AzureK8sInfraDelegateConfig) {
       try (LazyAutoCloseableWorkingDirectory workingDirectory =
                new LazyAutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_AUTH_CERT_DIR_PATH)) {
@@ -147,7 +147,7 @@ public class ContainerDeploymentDelegateBaseHelper {
                 .useClusterAdminCredentials(azureK8sInfraDelegateConfig.isUseClusterAdminCredentials())
                 .certificateWorkingDirectory(workingDirectory)
                 .build();
-        return azureAsyncTaskHelper.getClusterConfig(azureConfigContext);
+        return azureAsyncTaskHelper.getClusterConfig(azureConfigContext, logCallback);
       } catch (IOException ioe) {
         throw NestedExceptionUtils.hintWithExplanationException("Failed to authenticate with Azure",
             "Please check you Azure connector configuration or delegate filesystem permissions.",

@@ -182,7 +182,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
       return Optional.of(savedEntity);
     }
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
-      String branch = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepoURL());
+      String branch = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
       if (loadFromFallbackBranch) {
         savedEntity = fetchRemoteEntityWithFallBackBranch(
             accountId, orgIdentifier, projectIdentifier, savedEntity, branch, loadFromCache);

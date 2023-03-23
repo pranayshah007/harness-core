@@ -148,7 +148,7 @@ public class FreezeRBACHelperTest extends CategoryTest {
     SecurityContextBuilder.setContext(userPrincipal);
     when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     when(accessControlClient.hasAccess(any(), any(), any(), any())).thenReturn(true);
-    assertThat(FreezeRBACHelper.checkIfUserHasFreezeOverrideAccessWithPrincipal(
+    assertThat(FreezeRBACHelper.checkIfUserHasFreezeOverrideAccessWithoutPrincipal(
                    ngFeatureFlagHelperService, "accountId", "projectId", "orgId", accessControlClient))
         .isEqualTo(true);
   }

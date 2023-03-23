@@ -7,8 +7,14 @@
 
 package io.harness.ci.integrationstage;
 
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.beans.execution.BranchWebhookEvent;
+import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.Repository;
+import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
@@ -32,6 +38,7 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.rule.Owner;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
@@ -241,5 +248,41 @@ public class IntegrationStageUtilsTest {
     String actualUrl =
         IntegrationStageUtils.retrieveGenericGitConnectorURL("repo", GitConnectionType.PROJECT, accountUrl);
     assertThat(actualUrl).isEqualTo(accountUrl + "_git/repo");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testIsURLSame() {
+    assertThat(
+        IntegrationStageUtils.isURLSame(
+            WebhookExecutionSource.builder()
+                .webhookEvent(
+                    BranchWebhookEvent.builder()
+                        .repository(Repository.builder().httpURL("https://github.com/devkimittal/harness-core").build())
+                        .build())
+                .build(),
+            "https://github.com/devkimittal/harness-core"))
+        .isTrue();
+    assertThat(
+        IntegrationStageUtils.isURLSame(
+            WebhookExecutionSource.builder()
+                .webhookEvent(
+                    BranchWebhookEvent.builder()
+                        .repository(Repository.builder().httpURL("https://github.com/devkimittal/harness-core").build())
+                        .build())
+                .build(),
+            "https://github.com/Devkimittal/Harness-core"))
+        .isTrue();
+    assertThat(
+        IntegrationStageUtils.isURLSame(
+            WebhookExecutionSource.builder()
+                .webhookEvent(
+                    PRWebhookEvent.builder()
+                        .repository(Repository.builder().httpURL("https://github.com/devkimittal/harness-core").build())
+                        .build())
+                .build(),
+            "https://github.com/Devkimittal/Harness-core"))
+        .isTrue();
   }
 }

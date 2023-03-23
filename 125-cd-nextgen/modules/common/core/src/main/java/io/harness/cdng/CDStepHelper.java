@@ -985,9 +985,14 @@ public class CDStepHelper {
     return UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress);
   }
 
-  @Nonnull
   public DelegateTaskRequest mapTaskRequestToDelegateTaskRequest(
       TaskRequest taskRequest, TaskData taskData, Set<String> taskSelectors) {
+    return mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, taskSelectors, "", false);
+  }
+
+  @Nonnull
+  public DelegateTaskRequest mapTaskRequestToDelegateTaskRequest(TaskRequest taskRequest, TaskData taskData,
+      Set<String> taskSelectors, String baseLogKey, boolean shouldSkipOpenStream) {
     final SubmitTaskRequest submitTaskRequest = taskRequest.getDelegateTaskRequest().getRequest();
     return DelegateTaskRequest.builder()
         .taskParameters((TaskParameters) taskData.getParameters()[0])
@@ -1004,6 +1009,8 @@ public class CDStepHelper {
         .executeOnHarnessHostedDelegates(submitTaskRequest.getExecuteOnHarnessHostedDelegates())
         .emitEvent(submitTaskRequest.getEmitEvent())
         .stageId(submitTaskRequest.getStageId())
+        .baseLogKey(baseLogKey)
+        .shouldSkipOpenStream(shouldSkipOpenStream)
         .build();
   }
 }

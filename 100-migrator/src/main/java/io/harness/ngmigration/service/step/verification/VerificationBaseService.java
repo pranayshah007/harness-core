@@ -15,6 +15,7 @@ import io.harness.cvng.core.beans.CVVerifyStepNode;
 import io.harness.cvng.core.beans.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -36,7 +37,7 @@ public abstract class VerificationBaseService extends StepMapper {
     return StepSpecTypeConstants.VERIFY;
   }
 
-  protected AbstractStepNode getVerifySpec(GraphNode graphNode) {
+  protected AbstractStepNode getVerifySpec(GraphNode graphNode, CaseFormat identifierCaseFormat) {
     State baseState = getState(graphNode);
     ParameterField<String> sensitivity = MigratorUtility.RUNTIME_INPUT;
     ParameterField<String> duration = MigratorUtility.RUNTIME_INPUT;
@@ -53,7 +54,7 @@ public abstract class VerificationBaseService extends StepMapper {
     }
 
     CVVerifyStepNode verifyStepNode = new CVVerifyStepNode();
-    baseSetup(graphNode, verifyStepNode);
+    baseSetup(graphNode, verifyStepNode, identifierCaseFormat);
     verifyStepNode.setVerifyStepInfo(CVNGStepInfo.builder()
                                          .spec(AutoVerificationJobSpec.builder()
                                                    .sensitivity(sensitivity)

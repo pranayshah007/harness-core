@@ -401,12 +401,22 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     String taskName = artifactStepHelper.getArtifactStepTaskType(artifactConfig).getDisplayName() + ": "
         + taskParameters.getArtifactTaskType().getDisplayName();
 
+    boolean withLogs = false;
+    String baseLogKey = "";
+    boolean shouldSkipOpenStream = false;
+    if (ArtifactSourceType.CUSTOM_ARTIFACT.equals(artifactConfig.getSourceType())) {
+      withLogs = true;
+      shouldSkipOpenStream = true;
+      baseLogKey = logCallback.getLogBaseKey();
+    }
+
     TaskRequest taskRequest =
         TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
-            TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), false, taskName, delegateSelectors);
+            TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), withLogs, taskName, delegateSelectors);
 
-    final DelegateTaskRequest delegateTaskRequest = cdStepHelper.mapTaskRequestToDelegateTaskRequest(
-        taskRequest, taskData, delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()));
+    final DelegateTaskRequest delegateTaskRequest = cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest,
+        taskData, delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()), baseLogKey,
+        shouldSkipOpenStream);
 
     return delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
   }

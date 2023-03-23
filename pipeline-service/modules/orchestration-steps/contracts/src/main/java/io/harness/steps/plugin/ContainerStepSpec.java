@@ -16,6 +16,7 @@ public interface ContainerStepSpec {
   void setIdentifier(String identifier);
   ContainerStepInfra getInfrastructure();
   @JsonIgnore String getIdentifier();
+  @JsonIgnore String getName();
 
   @JsonIgnore ContainerStepType getType();
 }

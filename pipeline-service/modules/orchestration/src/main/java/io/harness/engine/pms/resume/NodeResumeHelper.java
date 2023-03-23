@@ -75,6 +75,7 @@ public class NodeResumeHelper {
                                                 .failureInfo(ce.getFailureInfo())
                                                 .stepOutcomeRefs(refMap.get(ce.getUuid()))
                                                 .adviserResponse(ce.getAdviserResponse())
+                                                .nodeExecutionEndTs(ce.getEndTs())
                                                 .build();
         byteResponseMap.put(ce.getUuid(),
             ResponseDataProto.newBuilder()

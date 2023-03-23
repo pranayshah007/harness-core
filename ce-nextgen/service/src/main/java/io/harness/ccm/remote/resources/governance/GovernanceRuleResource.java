@@ -220,7 +220,7 @@ public class GovernanceRuleResource {
     GovernanceRuleFilter governancePolicyFilter = GovernanceRuleFilter.builder().build();
     RuleList ruleList = governanceRuleService.list(governancePolicyFilter);
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
-    if (ruleList.getRule().size() >= governanceConfig.getPolicyPerAccountLimit()) {
+    if (ruleList.getRules().size() >= governanceConfig.getPolicyPerAccountLimit()) {
       throw new InvalidRequestException("You have exceeded the limit for rules creation");
     }
     // TO DO: Handle this for custom rules and git connectors
@@ -447,13 +447,17 @@ public class GovernanceRuleResource {
   public ResponseDTO<RuleList>
   listRule(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(required = true, description = "Request body containing rule object") @Valid ListDTO listDTO) {
+      @RequestBody(required = true, description = "Request body containing rule object") @Valid ListDTO listDTO,
+      @Parameter(description = "Search by Rule name pattern") @QueryParam("RuleNamePattern") String ruleNamePattern) {
     rbacHelper.checkRuleViewPermission(accountId, null, null);
     GovernanceRuleFilter query;
     if (listDTO == null) {
       query = GovernanceRuleFilter.builder().build();
     } else {
       query = listDTO.getGovernanceRuleFilter();
+    }
+    if (ruleNamePattern != null) {
+      query.setSearch(ruleNamePattern);
     }
     query.setAccountId(accountId);
     return ResponseDTO.newResponse(governanceRuleService.list(query));

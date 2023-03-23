@@ -45,7 +45,9 @@ import io.harness.beans.Scope;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
 import io.harness.cdng.artifact.utils.ArtifactSourceTemplateHelper;
+import io.harness.cdng.hooks.ServiceHookAction;
 import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
+import io.harness.cdng.manifest.yaml.kinds.KustomizeCommandFlagType;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
@@ -65,6 +67,7 @@ import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
@@ -84,6 +87,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
@@ -91,6 +95,7 @@ import io.harness.utils.PageUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -106,6 +111,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -187,6 +193,8 @@ public class ServiceResourceV2 {
   public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE =
       "List of Service Identifiers for the entities, maximum size of list is 1000.";
   private static final int MAX_LIMIT = 1000;
+  private static final Set<String> allowedServiceSpecs =
+      ImmutableSet.of(ServiceSpecType.NATIVE_HELM, ServiceSpecType.KUBERNETES);
 
   @GET
   @Path("{serviceIdentifier}")
@@ -449,6 +457,45 @@ public class ServiceResourceV2 {
     });
     return ResponseDTO.newResponse(getNGPageResponse(
         serviceEntities.map(entity -> ServiceElementMapper.toResponseWrapper(entity, includeVersionInfo))));
+  }
+
+  @GET
+  @Hidden
+  @Path("/list/all-services")
+  @ApiOperation(value = "Get all services list", nickname = "getAllServicesList")
+  @Operation(operationId = "getAllServicesList",
+      summary = "Get all services list across organizations and projects within account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of all Services across organizations and projects within account")
+      },
+      hidden = true)
+  @InternalApi
+  @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_view")
+  public ResponseDTO<PageResponse<ServiceResponse>>
+  getAllServicesList(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
+      @Parameter(description = NGResourceFilterConstants.SEARCH_TERM) @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") @Max(1000) int size,
+      @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SORT) List<String> sort) {
+    Criteria criteria = ServiceFilterHelper.createCriteriaForListingAllServices(
+        accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, false);
+
+    Pageable pageRequest = isEmpty(sort)
+        ? PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ServiceEntityKeys.createdAt))
+        : PageUtils.getPageRequest(page, size, sort);
+    Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
+    return ResponseDTO.newResponse(getNGPageResponse(serviceEntities.map(ServiceElementMapper::toResponseWrapper)));
   }
 
   @GET
@@ -819,6 +866,24 @@ public class ServiceResourceV2 {
     return ResponseDTO.newResponse(k8sCmdFlags);
   }
 
+  @GET
+  @Path("/hooks/actions")
+  @ApiOperation(value = "Get Available Service Hook Actions", nickname = "hookActions")
+  @Operation(operationId = "hookActions", summary = "Retrieving the list of actions available for service hooks",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of actions available for service hooks")
+      })
+  public ResponseDTO<Set<ServiceHookAction>>
+  getServiceHookActions(@QueryParam("serviceSpecType") @NotNull String serviceSpecType) {
+    if (allowedServiceSpecs.contains(serviceSpecType)) {
+      return ResponseDTO.newResponse(Set.of(ServiceHookAction.values()));
+    }
+    throw new InvalidRequestException(
+        format("Service with type: [%s] does not support service hooks", serviceSpecType));
+  }
+
   @Hidden
   public ServiceEntity updateArtifactoryRegistryUrlIfEmpty(
       ServiceEntity serviceEntity, String accountId, String orgIdentifier, String projectIdentifier) {
@@ -999,5 +1064,19 @@ public class ServiceResourceV2 {
       throw new InvalidRequestException(
           "No request body sent in the API. Following field is required: identifier. Other optional fields: name, orgIdentifier, projectIdentifier, tags, description, version");
     }
+  }
+
+  @GET
+  @Path("kustomize/command-flags")
+  @ApiOperation(value = "Get Command flags for kustomize", nickname = "kustomizeCmdFlags")
+  @Operation(operationId = "kustomizeCmdFlags", summary = "Retrieving the list of Kustomize Command Flags",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of Kustomize Command Flags")
+      })
+  public ResponseDTO<Set<KustomizeCommandFlagType>>
+  getKustomizeCommandFlags() {
+    return ResponseDTO.newResponse(new HashSet<>(Arrays.asList(KustomizeCommandFlagType.values())));
   }
 }

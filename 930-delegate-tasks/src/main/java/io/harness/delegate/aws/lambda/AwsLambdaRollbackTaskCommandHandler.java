@@ -17,7 +17,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.exception.AwsLambdaException;
 import io.harness.delegate.task.aws.lambda.AwsLambda;
 import io.harness.delegate.task.aws.lambda.AwsLambdaTaskHelper;
@@ -48,15 +47,15 @@ public class AwsLambdaRollbackTaskCommandHandler {
 
   public AwsLambdaRollbackResponse executeTaskInternal(AwsLambdaCommandRequest awsLambdaCommandRequest,
       ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
-    if (!(awsLambdaCommandRequest instanceof AwsLambdaCommandRequest)) {
+    if (!(awsLambdaCommandRequest instanceof AwsLambdaRollbackRequest)) {
       throw new InvalidArgumentsException(Pair.of("awsLambdaCommandRequest",
           "Must be instance of "
-              + "AwsLambdaCommandRequest"));
+              + "AwsLambdaRollbackRequest"));
     }
 
     AwsLambdaRollbackRequest awsLambdaRollbackRequest = (AwsLambdaRollbackRequest) awsLambdaCommandRequest;
 
-    LogCallback executionLogCallback = new NGDelegateLogCallback(
+    LogCallback executionLogCallback = awsLambdaTaskHelper.getLogCallback(
         iLogStreamingTaskClient, AwsLambdaCommandUnitConstants.rollback.toString(), true, commandUnitsProgress);
 
     try {

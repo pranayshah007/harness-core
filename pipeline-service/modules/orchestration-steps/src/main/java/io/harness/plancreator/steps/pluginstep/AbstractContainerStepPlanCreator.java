@@ -7,8 +7,13 @@
 
 package io.harness.plancreator.steps.pluginstep;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
+
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
@@ -42,6 +47,7 @@ import io.harness.utils.TimeoutUtils;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -50,7 +56,6 @@ import java.util.Map;
 import java.util.Set;
 
 public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStepNode> extends ChildrenPlanCreator<T> {
-  public static final String CONTAINER_STEP_GROUP = "Container Step Group";
   @Inject KryoSerializer kryoSerializer;
 
   @Override public abstract Map<String, Set<String>> getSupportedTypes();
@@ -69,9 +74,17 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
     ByteString advisorParametersInitStep = ByteString.copyFrom(
         kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(stepNodeId).build()));
 
-    PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForField(
-        initStepNodeId, getStepParameters(config, ctx), advisorParametersInitStep);
-    PlanNode stepPlanNode = createPlanForStep(stepNodeId, getStepParameters(config, ctx));
+    StepParameters stepParameters = getStepParameters(config, ctx);
+    if (stepParameters instanceof StepElementParameters) {
+      StepElementParameters stepElementParameters = (StepElementParameters) stepParameters;
+      if (stepElementParameters.getSpec() instanceof ContainerStepSpec) {
+        ((ContainerStepSpec) stepElementParameters.getSpec()).setName(config.getName());
+        ((ContainerStepSpec) stepElementParameters.getSpec()).setIdentifier(config.getIdentifier());
+      }
+    }
+    PlanNode initPlanNode =
+        InitContainerStepPlanCreater.createPlanForField(initStepNodeId, stepParameters, advisorParametersInitStep);
+    PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters);
 
     planCreationResponseMap.put(
         initPlanNode.getUuid(), PlanCreationResponse.builder().node(initPlanNode.getUuid(), initPlanNode).build());
@@ -87,7 +100,7 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, T config, List<String> childrenNodeIds) {
     config.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, config.getIdentifier()));
-    config.setName(CONTAINER_STEP_GROUP);
+    config.setName(config.getName());
 
     StepGroupStepParameters stepGroupStepParameters =
         StepGroupStepParameters.builder()
@@ -111,7 +124,8 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
-        .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField()))
+        .adviserObtainments(getAdviserObtainmentFromMetaData(
+            ctx.getCurrentField(), StrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField())))
         .timeoutObtainment(
             SdkTimeoutObtainment.builder()
                 .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
@@ -141,18 +155,25 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
   private void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx, String uuid,
       String name, String identifier, LinkedHashMap<String, PlanCreationResponse> responseMap) {
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, uuid, name, identifier, responseMap,
-        new HashMap<>(), getAdviserObtainmentFromMetaData(ctx.getCurrentField()));
+        new HashMap<>(), getAdviserObtainmentFromMetaData(ctx.getCurrentField(), false), false);
   }
 
-  private List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField) {
+  private List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField, boolean checkForStrategy) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
+    if (checkForStrategy) {
+      return adviserObtainments;
+    }
+
     addNextStepAdviser(currentField, adviserObtainments);
     return adviserObtainments;
   }
 
   private void addNextStepAdviser(YamlField currentField, List<AdviserObtainment> adviserObtainments) {
+    if (currentField.checkIfParentIsParallel(STEPS)) {
+      return;
+    }
     YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(
-        currentField.getName(), Collections.singletonList(YAMLFieldNameConstants.STEP));
+        currentField.getName(), Arrays.asList(YAMLFieldNameConstants.STEP, PARALLEL, STEP_GROUP));
     if (siblingField != null && siblingField.getNode().getUuid() != null) {
       adviserObtainments.add(
           AdviserObtainment.newBuilder()
@@ -161,14 +182,5 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
                   NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
               .build());
     }
-  }
-
-  @Override
-  public PlanCreationResponse createPlanForField(PlanCreationContext ctx, T field) {
-    if (field.getStepSpecType() instanceof ContainerStepSpec) {
-      ((ContainerStepSpec) field.getStepSpecType()).setName(field.getName());
-      ((ContainerStepSpec) field.getStepSpecType()).setIdentifier(field.getIdentifier());
-    }
-    return super.createPlanForField(ctx, field);
   }
 }

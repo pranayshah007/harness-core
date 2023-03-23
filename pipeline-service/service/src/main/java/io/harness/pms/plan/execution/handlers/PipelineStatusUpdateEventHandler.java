@@ -24,6 +24,7 @@ import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.notification.orchestration.helpers.AbortInfoHelper;
 import io.harness.pms.pipeline.observer.OrchestrationObserverUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
@@ -45,17 +46,18 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
   private final PlanExecutionService planExecutionService;
   private final PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   private OrchestrationEventEmitter eventEmitter;
-
   private WaitNotifyEngine waitNotifyEngine;
+  private AbortInfoHelper abortInfoHelper;
 
   @Inject
   public PipelineStatusUpdateEventHandler(PlanExecutionService planExecutionService,
       PmsExecutionSummaryRepository pmsExecutionSummaryRepository, OrchestrationEventEmitter eventEmitter,
-      WaitNotifyEngine waitNotifyEngine) {
+      WaitNotifyEngine waitNotifyEngine, AbortInfoHelper abortInfoHelper) {
     this.planExecutionService = planExecutionService;
     this.pmsExecutionSummaryRepository = pmsExecutionSummaryRepository;
     this.eventEmitter = eventEmitter;
     this.waitNotifyEngine = waitNotifyEngine;
+    this.abortInfoHelper = abortInfoHelper;
   }
 
   @Override
@@ -69,6 +71,9 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
 
     update.set(PlanExecutionSummaryKeys.internalStatus, planExecution.getStatus());
     update.set(PlanExecutionSummaryKeys.status, status);
+    if (status == ExecutionStatus.ABORTED) {
+      update.set(PlanExecutionSummaryKeys.abortedBy, abortInfoHelper.fetchAbortedByInfoFromInterrupts(planExecutionId));
+    }
     if (StatusUtils.isFinalStatus(status.getEngineStatus())) {
       update.set(PlanExecutionSummaryKeys.endTs, planExecution.getEndTs());
     }

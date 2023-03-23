@@ -68,7 +68,7 @@ public class BigQueryDataResponseServiceImpl implements DataResponseService {
         viewsQueryHelper.createBusinessMappingGroupBy(sharedCostBusinessMapping);
     final List<QLCEViewFilterWrapper> modifiedFilters =
         viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid());
-    final SelectQuery query = viewBillingServiceHelper.getQuery(modifiedFilters, businessMappingGroupBy,
+    final SelectQuery query = viewBillingServiceHelper.getQuery(modifiedFilters, groupBy, businessMappingGroupBy,
         aggregateFunction, Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMapping,
         Collections.emptyList());
     final TableResult result = getTableResultWithLimitAndOffset(bigQuery, query);

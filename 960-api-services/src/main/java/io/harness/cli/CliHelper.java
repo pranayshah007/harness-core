@@ -65,26 +65,17 @@ public class CliHelper {
                                           .redirectOutput(logOutputStream)
                                           .redirectError(errorLogOutputStream);
 
-    // When the thread is interrupted, process executor calls the process destroy method. Process destroy calls sigterm
-    // but doesn't wait for the process to be terminated. Since the process is not yet terminated, we don't wait for the
-    // process gracefully shutdown and interrupting (killing) the current thread. Once the current thread is killed, we
-    // suspect that there is a monitor (probably JVM) that forces process destroy.
-
     if (secondsToWaitForGracefulShutdown > 0) {
-      processExecutor.stopper(process -> {
-        // Since Process destroy doesn't wait for process to terminate after invoking, sigterm will close all existing
-        // (stdin, stdout, stderr) streams, and if process during shutdown writes to these streams, process
-        // will automatically fail with 141 exit code (which means sigpipe error). Instead of rely on process destroy,
-        // we rely on ProcessHandle destroy which invokes sigterm without closing the stream.
-        ProcessHandle.of(process.pid()).ifPresentOrElse(ProcessHandle::destroy, process::destroy);
-        try {
-          process.waitFor(secondsToWaitForGracefulShutdown, TimeUnit.SECONDS);
-          process.destroyForcibly();
-        } catch (InterruptedException e) {
-          process.destroyForcibly();
-          Thread.currentThread().interrupt();
-        }
-      });
+      // When the thread is interrupted, process executor calls the process destroy method. Process destroy calls
+      // sigterm but doesn't wait for the process to be terminated. Since the process is not yet terminated, we don't
+      // wait for the process gracefully shutdown and interrupting (killing) the current thread. Once the current thread
+      // is killed, we suspect that there is a monitor (probably JVM) that forces process destroy.
+
+      // Since Process destroy doesn't wait for process to terminate after invoking, sigterm will close all existing
+      // (stdin, stdout, stderr) streams, and if process during shutdown writes to these streams, process
+      // will automatically fail with 141 exit code (which means sigpipe error). Instead of rely on process destroy,
+      // we rely on ProcessHandle destroy which invokes sigterm without closing the stream.
+      processExecutor.stopper(new GracefulProcessStopper(secondsToWaitForGracefulShutdown));
     }
 
     ProcessResult processResult = processExecutor.execute();

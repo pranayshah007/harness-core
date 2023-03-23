@@ -146,8 +146,8 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     log.info("oEntitlementResult=[{}]", entitlements);
     String dimension = entitlements.getEntitlements().get(0).getDimension();
     Integer orderQuantity = getOrderQuantity(dimension);
-    log.info("Dimension:", dimension);
-    log.info("Order Quantity:", orderQuantity);
+    log.info("Dimension=[{}]", dimension);
+    log.info("Order Quantity=[{}]", orderQuantity);
 
     Date expirationDate = entitlements.getEntitlements().get(0).getExpirationDate();
     String licenseType = getLicenseType(dimension);
@@ -176,7 +176,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
                         .productCode(productCode)
                         .licenseType(licenseType)
                         .build();
-      log.info("New MarketPlace:", marketPlace);
+      log.info("New MarketPlace=[{}]", marketPlace);
       wingsPersistence.save(marketPlace);
     }
 
@@ -205,7 +205,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
        */
 
       UserInvite userInvite = userService.createUserInviteForMarketPlace();
-      log.info("New User Invite:", userInvite);
+      log.info("New User Invite=[{}]", userInvite);
 
       String marketPlaceToken = getMarketPlaceToken(marketPlace, userInvite);
 
@@ -216,7 +216,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       } catch (URISyntaxException e) {
         throw new WingsException(e);
       }
-      log.info("Redirect URL:", redirectUrl);
+      log.info("Redirect URL=[{}]", redirectUrl);
 
       return Response.seeOther(redirectUrl).build();
 

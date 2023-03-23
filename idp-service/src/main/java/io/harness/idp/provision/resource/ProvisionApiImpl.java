@@ -37,14 +37,15 @@ public class ProvisionApiImpl implements ProvisionApi {
       provisionService.checkUserAuthorization();
       NamespaceEntity namespaceEntity = namespaceService.saveAccountIdNamespace(accountIdentifier);
       NamespaceInfo namespaceInfo = NamespaceMapper.toDTO(namespaceEntity);
-      provisionService.triggerPipeline(namespaceInfo.getAccountIdentifier(), namespaceInfo.getNamespace());
+      provisionService.triggerPipelineAndCreatePermissions(
+          namespaceInfo.getAccountIdentifier(), namespaceInfo.getNamespace());
       return Response.status(Response.Status.CREATED).entity(namespaceInfo).build();
     } catch (DuplicateKeyException e) {
       String logMessage = String.format("Namespace already created for given account Id - %s", accountIdentifier);
-      log.error(logMessage);
-      return Response.status(Response.Status.CONFLICT)
-          .entity(ResponseMessage.builder().message(logMessage).build())
-          .build();
+      log.info(logMessage);
+      NamespaceInfo namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
+      provisionService.triggerPipelineAndCreatePermissions(accountIdentifier, namespaceInfo.getNamespace());
+      return Response.status(Response.Status.CREATED).entity(namespaceInfo).build();
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())

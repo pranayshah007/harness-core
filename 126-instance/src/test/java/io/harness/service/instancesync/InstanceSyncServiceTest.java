@@ -7,6 +7,7 @@
 
 package io.harness.service.instancesync;
 
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static junit.framework.TestCase.assertEquals;
@@ -29,6 +30,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.K8sInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -42,6 +46,7 @@ import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
+import io.harness.entities.InstanceSyncPerpetualTaskMappingService;
 import io.harness.entities.InstanceType;
 import io.harness.helper.InstanceSyncHelper;
 import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringService;
@@ -133,7 +138,9 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
   @Mock private DeploymentSummaryService deploymentSummaryService;
   @Mock private InstanceSyncServiceUtils instanceSyncServiceUtils;
   @Mock private InstanceSyncMonitoringService instanceSyncMonitoringService;
+  @Mock private InstanceSyncPerpetualTaskMappingService instanceSyncPerpetualTaskMappingService;
   @Mock private AccountClient accountClient;
+  @Mock private ConnectorService connectorService;
 
   @Before
   public void setUp() throws Exception {
@@ -142,9 +149,9 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     InstanceSyncHelper instanceSyncHelper = new InstanceSyncHelper(instanceSyncPerpetualTaskInfoService,
         instanceSyncPerpetualTaskService, serviceEntityService, environmentService);
     instanceSyncService = new InstanceSyncServiceImpl(persistentLocker, instanceSyncPerpetualTaskService,
-        instanceSyncPerpetualTaskInfoService, instanceSyncHandlerFactoryService, infrastructureMappingService,
-        instanceService, deploymentSummaryService, instanceSyncHelper, instanceSyncServiceUtils,
-        instanceSyncMonitoringService, accountClient);
+        instanceSyncPerpetualTaskInfoService, instanceSyncPerpetualTaskMappingService,
+        instanceSyncHandlerFactoryService, infrastructureMappingService, instanceService, deploymentSummaryService,
+        instanceSyncHelper, connectorService, instanceSyncServiceUtils, instanceSyncMonitoringService, accountClient);
 
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .name(TEST_SERVICE_NAME)
@@ -198,6 +205,47 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     instanceSyncService.processInstanceSyncForNewDeployment(deploymentEvent);
 
     // Verify 1 instance is added. Delete and Update are never called
+    verify(instanceSyncServiceUtils).processInstances(instancesToBeModifiedCaptor.capture());
+    Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified = instancesToBeModifiedCaptor.getValue();
+    assertEquals(0, instancesToBeModified.get(OperationsOnInstances.DELETE).size());
+    assertEquals(0, instancesToBeModified.get(OperationsOnInstances.UPDATE).size());
+    assertEquals(1, instancesToBeModified.get(OperationsOnInstances.ADD).size());
+    InstanceDTO instanceToBeAdded = instancesToBeModified.get(OperationsOnInstances.ADD).get(0);
+    assertEquals(TEST_INSTANCESYNC_KEY1, instanceToBeAdded.getInstanceKey());
+    assertEquals(TEST_INFRA_MAPPING_ID, instanceToBeAdded.getInfrastructureMappingId());
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testProcessInstanceSyncForNewDeploymentForInstanceSyncV2() {
+    // Construct method param - DeploymentEvent
+    DeploymentSummaryDTO deploymentSummaryDTO = getMockDeploymentSummary(TEST_INFRA_KEY1, TEST_POD_NAME1);
+    DeploymentEvent deploymentEvent = new DeploymentEvent(deploymentSummaryDTO, null, null);
+
+    // Mock methods
+    when(instanceSyncPerpetualTaskService.createPerpetualTask(any(), any(), any(), any()))
+        .thenReturn(PERPETUAL_TASK_ID);
+    when(instanceSyncPerpetualTaskService.isInstanceSyncV2Enabled()).thenReturn(true);
+    when(instanceSyncPerpetualTaskService.createPerpetualTaskV2()).thenReturn("perpetualTaskId");
+    when(connectorService.getByRef(any(), any(), any(), anyString()))
+        .thenReturn(Optional.ofNullable(
+            ConnectorResponseDTO.builder()
+                .connector(ConnectorInfoDTO.builder().orgIdentifier("orgId").projectIdentifier("projectId").build())
+                .build()));
+    when(deploymentSummaryService.getLatestByInstanceKey(
+             TEST_RELEASE_NAME1, deploymentSummaryDTO.getInfrastructureMapping()))
+        .thenReturn(Optional.of(deploymentSummaryDTO));
+    when(instanceSyncPerpetualTaskInfoService.save(any()))
+        .thenReturn(getMockInstanceSyncPerpetualTaskInfo(TEST_RELEASE_NAME1));
+    when(instanceSyncServiceUtils.getSyncKeyToInstancesFromServerMap(any(), any()))
+        .thenReturn(mockSyncKeyToInstancesFromServerMap(deploymentSummaryDTO.getServerInstanceInfoList().get(0)));
+    when(instanceSyncServiceUtils.initMapForTrackingFinalListOfInstances()).thenReturn(initInstancesToBeModified());
+
+    instanceSyncService.processInstanceSyncForNewDeployment(deploymentEvent);
+
+    // Verify 1 instance is added. Delete and Update are never called
+    verify(instanceSyncPerpetualTaskMappingService, times(1)).save(any());
     verify(instanceSyncServiceUtils).processInstances(instancesToBeModifiedCaptor.capture());
     Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified = instancesToBeModifiedCaptor.getValue();
     assertEquals(0, instancesToBeModified.get(OperationsOnInstances.DELETE).size());

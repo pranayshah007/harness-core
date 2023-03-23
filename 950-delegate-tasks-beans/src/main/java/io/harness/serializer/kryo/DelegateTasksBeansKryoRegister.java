@@ -757,6 +757,7 @@ import io.harness.delegate.task.jira.JiraTaskNGResponse;
 import io.harness.delegate.task.k8s.AzureK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.DeleteResourcesType;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
+import io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sApplyRequest;
@@ -816,6 +817,7 @@ import io.harness.delegate.task.pcf.request.CfInstanceSyncRequest;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG;
+import io.harness.delegate.task.pcf.request.CfRouteMappingRequestNG;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequest;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
@@ -833,6 +835,7 @@ import io.harness.delegate.task.pcf.response.CfInstanceSyncResponse;
 import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG;
+import io.harness.delegate.task.pcf.response.CfRouteMappingResponseNG;
 import io.harness.delegate.task.pcf.response.CfRouteUpdateCommandResponse;
 import io.harness.delegate.task.pcf.response.CfSetupCommandResponse;
 import io.harness.delegate.task.pcf.response.CfSwapRouteCommandResponseNG;
@@ -2045,6 +2048,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ServerlessEcrArtifactConfig.class, 563534);
     kryo.register(AwsCliInstallationCapability.class, 563535);
     kryo.register(ServerlessS3ArtifactConfig.class, 563536);
+    kryo.register(EksK8sInfraDelegateConfig.class, 563537);
     kryo.register(LdapTestResponse.Status.class, 5500);
     kryo.register(LdapGroupSettings.class, 5498);
     kryo.register(LdapTestResponse.class, 5499);
@@ -2407,6 +2411,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerraformCloudWorkspacesTaskResponse.class, 680006);
     kryo.register(TerraformCloudCommandUnit.class, 680007);
     kryo.register(PlanType.class, 680008);
+    kryo.register(BambooBuildTaskNGResponse.class, 229305);
     kryo.register(TerraformCloudRunTaskResponse.class, 680009);
     kryo.register(RollbackType.class, 680010);
     kryo.register(TerraformCloudRollbackTaskResponse.class, 680011);
@@ -2430,8 +2435,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerraformCloudGetWorkspacesTaskParams.class, 680029);
     kryo.register(TerraformCloudRollbackTaskParams.class, 680030);
     kryo.register(TerraformCloudValidationTaskParams.class, 680031);
-    kryo.register(BambooBuildTaskNGResponse.class, 229305);
-
     kryo.register(AwsSamInstallationCapability.class, 10000401);
     kryo.register(AwsLambdaDeployRequest.class, 10000502);
     kryo.register(AwsLambdaDeployResponse.class, 10000503);
@@ -2451,5 +2454,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsLambdaJenkinsArtifactConfig.class, 10000517);
     kryo.register(AwsLambdaArtifactoryArtifactConfig.class, 10000518);
     kryo.register(AwsLambdaCustomArtifactConfig.class, 10000519);
+    kryo.register(CfRouteMappingRequestNG.class, 10000520);
+    kryo.register(CfRouteMappingResponseNG.class, 10000521);
   }
 }

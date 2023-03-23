@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
@@ -35,7 +36,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
 import io.harness.ci.executionplan.CIExecutionTestBase;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.pipeline.executions.beans.CIBuildCommit;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;

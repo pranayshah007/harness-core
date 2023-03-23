@@ -196,6 +196,12 @@ public class PipelineExecutionSummaryCd extends TableImpl<PipelineExecutionSumma
       createField(DSL.name("is_revert_execution"),
           SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field("false", SQLDataType.BOOLEAN)), this, "");
 
+  /**
+   * The column <code>public.pipeline_execution_summary_cd.triggered_by_id</code>.
+   */
+  public final TableField<PipelineExecutionSummaryCdRecord, String> TRIGGERED_BY_ID =
+      createField(DSL.name("triggered_by_id"), SQLDataType.CLOB, this, "");
+
   private PipelineExecutionSummaryCd(Name alias, Table<PipelineExecutionSummaryCdRecord> aliased) {
     this(alias, aliased, null);
   }

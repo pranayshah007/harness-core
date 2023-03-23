@@ -53,8 +53,6 @@ public class CEClusterDao {
     return hPersistence.createQuery(CECluster.class)
         .field(CEClusterKeys.accountId)
         .equal(accountId)
-        .project(CEClusterKeys.uuid, true)
-        .project(CEClusterKeys.clusterName, true)
         .asList()
         .stream()
         .collect(Collectors.toMap(CECluster::getUuid, Function.identity()));

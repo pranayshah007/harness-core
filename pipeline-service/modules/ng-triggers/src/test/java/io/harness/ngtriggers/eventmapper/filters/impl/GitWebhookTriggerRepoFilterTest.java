@@ -111,6 +111,12 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
                                               .link("https://org.visualstudio.com/test/_git/test")
                                               .build();
 
+  private static Repository repository7 = Repository.builder()
+                                              .httpURL("http://gitlab.gitlab/venkat/sample.git")
+                                              .sshURL("git@gitlab.gitlab:venkat/sample.git")
+                                              .link("http://gitlab.gitlab/venkat/sample.git")
+                                              .build();
+
   static {
     TriggerDetails details1 =
         TriggerDetails.builder()
@@ -498,6 +504,16 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
     HashSet<String> urls = filter.getUrls(repository1, "Github");
     assertThat(urls).containsExactlyInAnyOrder("https://github.com/owner1/repo1.git", "https://github.com/owner1/repo1",
         "git@github.com:owner1/repo1.git", "git@github.com:owner1/repo1", "https://github.com/owner1/repo1/b");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetUrlsForHttp() {
+    HashSet<String> urls = filter.getUrls(repository7, "Gitlab");
+    assertThat(urls).containsExactlyInAnyOrder("https://gitlab.gitlab/venkat/sample.git",
+        "https://gitlab.gitlab/venkat/sample", "git@gitlab.gitlab:venkat/sample.git", "git@gitlab.gitlab:venkat/sample",
+        "http://gitlab.gitlab/venkat/sample.git");
   }
 
   @Test

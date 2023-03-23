@@ -9,6 +9,7 @@ package io.harness.cvng.notification.utils;
 
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Singleton;
@@ -55,6 +56,13 @@ public class NotificationRuleCommonUtils {
   public static String getNotificationTemplateId(
       NotificationRuleType notificationRuleType, CVNGNotificationChannelType notificationChannelType) {
     return String.format("cvng_%s_%s", notificationRuleType.getTemplateSuffixIdentifier().toLowerCase(),
+        notificationChannelType.getTemplateSuffixIdentifier().toLowerCase());
+  }
+
+  public static String getNotificationTemplateId(NotificationRuleType notificationRuleType,
+      ServiceLevelObjectiveType serviceLevelObjectiveType, CVNGNotificationChannelType notificationChannelType) {
+    return String.format("cvng_%s_%s_%s", notificationRuleType.getTemplateSuffixIdentifier().toLowerCase(),
+        serviceLevelObjectiveType.toString().toLowerCase(),
         notificationChannelType.getTemplateSuffixIdentifier().toLowerCase());
   }
 }

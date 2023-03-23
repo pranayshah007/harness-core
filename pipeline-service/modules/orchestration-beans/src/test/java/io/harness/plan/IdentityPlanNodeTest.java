@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
+import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
@@ -27,6 +28,7 @@ import org.junit.experimental.categories.Category;
 public class IdentityPlanNodeTest {
   StepType TEST_STEP_TYPE = StepType.newBuilder().setType("TEST_STEP_PLAN").setStepCategory(StepCategory.STEP).build();
   StepType PMS_IDENTITY = StepType.newBuilder().setType("PMS_IDENTITY").build();
+
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
@@ -39,6 +41,7 @@ public class IdentityPlanNodeTest {
             .stepType(TEST_STEP_TYPE)
             .adviserObtainment(
                 AdviserObtainment.newBuilder().setType(AdviserType.newBuilder().setType("NEXT_STEP").build()).build())
+            .skipGraphType(SkipType.NOOP)
             .build();
     IdentityPlanNode identityPlanNodeExpected = IdentityPlanNode.builder()
                                                     .uuid("uuid")
@@ -46,9 +49,22 @@ public class IdentityPlanNodeTest {
                                                     .identifier("test")
                                                     .name("Test Node")
                                                     .stepType(PMS_IDENTITY)
+                                                    .skipGraphType(SkipType.NOOP)
                                                     .build();
     IdentityPlanNode identityPlanNodeActual =
         IdentityPlanNode.mapPlanNodeToIdentityNode(planNode, PMS_IDENTITY, "originalNodeExecutionId");
     assertThat(identityPlanNodeExpected).isEqualTo(identityPlanNodeActual);
+
+    IdentityPlanNode identityPlanNodeWithAlwaysSkipGraph =
+        IdentityPlanNode.mapPlanNodeToIdentityNode(planNode, PMS_IDENTITY, "originalNodeExecutionId", true);
+    identityPlanNodeExpected = IdentityPlanNode.builder()
+                                   .uuid("uuid")
+                                   .originalNodeExecutionId("originalNodeExecutionId")
+                                   .identifier("test")
+                                   .name("Test Node")
+                                   .stepType(PMS_IDENTITY)
+                                   .skipGraphType(SkipType.SKIP_NODE)
+                                   .build();
+    assertThat(identityPlanNodeExpected).isEqualTo(identityPlanNodeWithAlwaysSkipGraph);
   }
 }

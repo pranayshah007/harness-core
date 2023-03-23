@@ -51,4 +51,6 @@ public class ArtifactTaskExecutionResponse {
   CommandExecutionStatus status;
   String errorMessage;
   Map<String, String> plans;
+  List<String> nexusGroupIds;
+  List<String> nexusArtifactIds;
 }

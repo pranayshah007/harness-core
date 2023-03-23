@@ -20,6 +20,7 @@ import io.harness.app.impl.STOYamlSchemaServiceImpl;
 import io.harness.app.intfc.STOYamlSchemaService;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.cache.NoOpCache;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
@@ -29,7 +30,6 @@ import io.harness.ci.beans.entities.EncryptedDataDetails;
 import io.harness.ci.buildstate.SecretDecryptorViaNg;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.license.impl.CILicenseServiceImpl;
 import io.harness.ci.logserviceclient.CILogServiceClientModule;
 import io.harness.ci.tiserviceclient.TIServiceClientModule;
@@ -60,6 +60,7 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
+import io.harness.opaclient.OpaClientModule;
 import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
@@ -248,6 +249,8 @@ public class STOManagerServiceModule extends AbstractModule {
         stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId()));
     install(PersistentLockModule.getInstance());
 
+    install(new OpaClientModule(stoManagerConfiguration.getOpaClientConfig(),
+        stoManagerConfiguration.getPolicyManagerSecret(), STO_MANAGER.getServiceId()));
     install(new AbstractManagerGrpcClientModule() {
       @Override
       public ManagerGrpcClientModule.Config config() {

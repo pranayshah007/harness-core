@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.governance.GovernanceMetadata;
-import io.harness.manage.ManagedExecutorService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
@@ -26,24 +25,31 @@ import io.harness.repositories.pipeline.validation.async.PipelineValidationEvent
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import java.util.concurrent.Executor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
 @Singleton
-@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(PIPELINE)
 public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidationService {
-  PipelineValidationEventRepository pipelineValidationEventRepository;
-  PMSPipelineTemplateHelper pipelineTemplateHelper;
-  PipelineGovernanceService pipelineGovernanceService;
-  final ExecutorService executorService = new ManagedExecutorService(Executors.newFixedThreadPool(1));
+  private final PipelineValidationEventRepository pipelineValidationEventRepository;
+  private final Executor executor;
+  private final PMSPipelineTemplateHelper pipelineTemplateHelper;
+  private final PipelineGovernanceService pipelineGovernanceService;
+
+  @Inject
+  public PipelineAsyncValidationServiceImpl(PipelineValidationEventRepository pipelineValidationEventRepository,
+      @Named("PipelineAsyncValidationExecutorService") Executor executor,
+      PMSPipelineTemplateHelper pipelineTemplateHelper, PipelineGovernanceService pipelineGovernanceService) {
+    this.pipelineValidationEventRepository = pipelineValidationEventRepository;
+    this.executor = executor;
+    this.pipelineTemplateHelper = pipelineTemplateHelper;
+    this.pipelineGovernanceService = pipelineGovernanceService;
+  }
 
   @Override
   public PipelineValidationEvent startEvent(
@@ -61,13 +67,8 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
     PipelineValidationEvent savedPipelineValidationEvent =
         pipelineValidationEventRepository.save(pipelineValidationEvent);
 
-    executorService.submit(PipelineAsyncValidationHandler.builder()
-                               .validationEvent(savedPipelineValidationEvent)
-                               .loadFromCache(loadFromCache)
-                               .validationService(this)
-                               .pipelineTemplateHelper(pipelineTemplateHelper)
-                               .pipelineGovernanceService(pipelineGovernanceService)
-                               .build());
+    executor.execute(new PipelineAsyncValidationHandler(
+        savedPipelineValidationEvent, loadFromCache, this, pipelineTemplateHelper, pipelineGovernanceService));
     return savedPipelineValidationEvent;
   }
 

@@ -42,6 +42,9 @@ import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.OpenTaskDetails;
+import io.harness.ng.overview.dto.PipelineExecutionCountInfo;
+import io.harness.ng.overview.dto.ServiceArtifactExecutionDetail;
+import io.harness.ng.overview.dto.ServiceArtifactExecutionDetail.ServiceArtifactExecutionDetailBuilder;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.rule.Owner;
@@ -74,12 +77,21 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
   private final String ENVIRONMENT_NAME_1 = "envN1";
   private final String ENVIRONMENT_NAME_2 = "envN2";
   private final String INFRASTRUCTURE_1 = "infra1";
-  private final String DISPLAY_NAME_1 = "display:1";
-  private final String DISPLAY_NAME_2 = "display:2";
+  private final String DISPLAY_NAME_1 = "display1:1";
+  private final String DISPLAY_NAME_2 = "display2:2";
   private final String ACCOUNT_ID = "accountID";
   private final String ORG_ID = "orgId";
   private final String PROJECT_ID = "projectId";
   private final String SERVICE_ID = "serviceId";
+  private final String SERVICE_NAME = "serviceName";
+  private final String SERVICE_ID_2 = "org.serviceId2";
+  private final String SERVICE_NAME_2 = "serviceName2";
+  private final String TAG_1 = "1";
+  private final String TAG_2 = "2";
+  private final String ARTIFACT_PATH_1 = "display1";
+  private final String ARTIFACT_PATH_2 = "display2";
+  private final String SUCCESS = "SUCCESS";
+  private final String FAILED = "FAILED";
   private static final String PIPELINE_1 = "pipeline1";
   private static final String PIPELINE_2 = "pipeline2";
   private static final String PIPELINE_EXECUTION_1 = "pipelineExecution1";
@@ -726,6 +738,52 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     verify(serviceEntityServiceImpl).getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
   }
 
+  private List<ServiceArtifactExecutionDetail> getServiceArtifactExecutionDetailList() {
+    List<ServiceArtifactExecutionDetail> serviceArtifactExecutionDetailList = new ArrayList<>();
+    ServiceArtifactExecutionDetailBuilder serviceArtifactExecutionDetailBuilder =
+        ServiceArtifactExecutionDetail.builder()
+            .accountId(ACCOUNT_ID)
+            .orgId(ORG_ID)
+            .projectId(PROJECT_ID)
+            .serviceRef(SERVICE_ID)
+            .serviceName(SERVICE_NAME)
+            .artifactTag(TAG_1)
+            .artifactPath(ARTIFACT_PATH_1)
+            .artifactDisplayName(DISPLAY_NAME_1)
+            .serviceStartTime(7l)
+            .pipelineExecutionSummaryCDId("7");
+    serviceArtifactExecutionDetailList.add(serviceArtifactExecutionDetailBuilder.build());
+    serviceArtifactExecutionDetailList.add(serviceArtifactExecutionDetailBuilder.artifactDisplayName(null)
+                                               .serviceStartTime(6l)
+                                               .pipelineExecutionSummaryCDId("6")
+                                               .build());
+    serviceArtifactExecutionDetailList.add(
+        serviceArtifactExecutionDetailBuilder.serviceStartTime(5l).pipelineExecutionSummaryCDId("6").build());
+    serviceArtifactExecutionDetailList.add(serviceArtifactExecutionDetailBuilder.artifactDisplayName(DISPLAY_NAME_2)
+                                               .artifactTag(TAG_2)
+                                               .artifactPath(ARTIFACT_PATH_2)
+                                               .serviceStartTime(4l)
+                                               .pipelineExecutionSummaryCDId("6")
+                                               .build());
+    serviceArtifactExecutionDetailList.add(serviceArtifactExecutionDetailBuilder.serviceRef(SERVICE_ID_2)
+                                               .serviceName(SERVICE_NAME_2)
+                                               .artifactDisplayName(DISPLAY_NAME_2)
+                                               .artifactTag(TAG_2)
+                                               .artifactPath(ARTIFACT_PATH_2)
+                                               .serviceStartTime(3l)
+                                               .pipelineExecutionSummaryCDId("4")
+                                               .build());
+    return serviceArtifactExecutionDetailList;
+  }
+
+  private Map<String, String> getExecutionStatusMap() {
+    Map<String, String> statusMap = new HashMap<>();
+    statusMap.put("7", SUCCESS);
+    statusMap.put("6", FAILED);
+    statusMap.put("4", FAILED);
+    return statusMap;
+  }
+
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
@@ -1149,5 +1207,73 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     assertThat(openTaskDetails).isEqualTo(openTaskDetailsResult);
     verify(cdOverviewDashboardService1).getPipelineExecutionIdFromServiceInfraInfo(query);
     verify(cdOverviewDashboardService1).getPipelineExecutionDetails(pipelineExecutionIdList, STATUS_LIST);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getPipelineExecutionCountInfo() {
+    CDOverviewDashboardServiceImpl cdOverviewDashboardService1 = spy(cdOverviewDashboardService);
+    List<ServiceArtifactExecutionDetail> serviceArtifactExecutionDetailList = getServiceArtifactExecutionDetailList();
+    Map<String, String> statusMap = getExecutionStatusMap();
+    String queryExecutionIdAndArtifactDetails =
+        "select accountid, orgidentifier, projectidentifier, service_id, service_name, artifact_display_name, artifact_image, tag, pipeline_execution_summary_cd_id, service_startts from service_infra_info where accountid = 'accountID' and orgidentifier = 'orgId' and projectidentifier = 'projectId' and service_id is not null and service_startts >= 1 and service_startts <= 3 and service_id = 'serviceId' and artifact_display_name = 'display1:1' and artifact_image = 'display1' and tag = '1'";
+    String queryGetPipelineExecutionStatusMap =
+        "select id, status from pipeline_execution_summary_cd where accountid = 'accountID' and orgidentifier = 'orgId' and projectidentifier = 'projectId' and id = any (?) and status = 'SUCCESS'";
+    doReturn(serviceArtifactExecutionDetailList)
+        .when(cdOverviewDashboardService1)
+        .getExecutionIdAndArtifactDetails(queryExecutionIdAndArtifactDetails);
+    doReturn(statusMap)
+        .when(cdOverviewDashboardService1)
+        .getPipelineExecutionStatusMap(
+            statusMap.keySet().stream().collect(Collectors.toList()), queryGetPipelineExecutionStatusMap);
+    PipelineExecutionCountInfo pipelineExecutionCountInfoResult =
+        cdOverviewDashboardService1.getPipelineExecutionCountInfo(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, 1l, 3l, ARTIFACT_PATH_1, TAG_1, DISPLAY_NAME_1, SUCCESS);
+    PipelineExecutionCountInfo.CountGroupedOnStatus countGroupedOnStatus1 =
+        PipelineExecutionCountInfo.CountGroupedOnStatus.builder().count(1l).status(SUCCESS).build();
+    PipelineExecutionCountInfo.CountGroupedOnStatus countGroupedOnStatus2 =
+        PipelineExecutionCountInfo.CountGroupedOnStatus.builder().count(1l).status(FAILED).build();
+    PipelineExecutionCountInfo.CountGroupedOnArtifact countGroupedOnArtifact1 =
+        PipelineExecutionCountInfo.CountGroupedOnArtifact.builder()
+            .count(2l)
+            .artifact(DISPLAY_NAME_1)
+            .artifactVersion(TAG_1)
+            .artifactPath(ARTIFACT_PATH_1)
+            .executionCountGroupedOnStatusList(Arrays.asList(countGroupedOnStatus1, countGroupedOnStatus2))
+            .build();
+    PipelineExecutionCountInfo.CountGroupedOnArtifact countGroupedOnArtifact2 =
+        PipelineExecutionCountInfo.CountGroupedOnArtifact.builder()
+            .count(1l)
+            .artifact(DISPLAY_NAME_2)
+            .artifactVersion(TAG_2)
+            .artifactPath(ARTIFACT_PATH_2)
+            .executionCountGroupedOnStatusList(Arrays.asList(countGroupedOnStatus2))
+            .build();
+    PipelineExecutionCountInfo.CountGroupedOnService countGroupedOnService1 =
+        PipelineExecutionCountInfo.CountGroupedOnService.builder()
+            .count(2l)
+            .executionCountGroupedOnStatusList(Arrays.asList(countGroupedOnStatus1, countGroupedOnStatus2))
+            .serviceReference("accountID/orgId/projectId/serviceId")
+            .serviceName("serviceName")
+            .executionCountGroupedOnArtifactList(Arrays.asList(countGroupedOnArtifact2, countGroupedOnArtifact1))
+            .build();
+    PipelineExecutionCountInfo.CountGroupedOnService countGroupedOnService2 =
+        PipelineExecutionCountInfo.CountGroupedOnService.builder()
+            .count(1l)
+            .executionCountGroupedOnStatusList(Arrays.asList(countGroupedOnStatus2))
+            .serviceReference("accountID/orgId/serviceId2")
+            .serviceName("serviceName2")
+            .executionCountGroupedOnArtifactList(Arrays.asList(countGroupedOnArtifact2))
+            .build();
+    PipelineExecutionCountInfo pipelineExecutionCountInfo =
+        PipelineExecutionCountInfo.builder()
+            .executionCountGroupedOnServiceList(Arrays.asList(countGroupedOnService1, countGroupedOnService2))
+            .build();
+    assertThat(pipelineExecutionCountInfo).isEqualTo(pipelineExecutionCountInfoResult);
+    verify(cdOverviewDashboardService1)
+        .getPipelineExecutionStatusMap(
+            statusMap.keySet().stream().collect(Collectors.toList()), queryGetPipelineExecutionStatusMap);
+    verify(cdOverviewDashboardService1).getExecutionIdAndArtifactDetails(queryExecutionIdAndArtifactDetails);
   }
 }

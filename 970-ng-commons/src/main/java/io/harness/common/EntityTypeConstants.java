@@ -83,6 +83,7 @@ public interface EntityTypeConstants {
   String SECURITY = "Security";
   String AQUA_TRIVY = "AquaTrivy";
   String AWS_ECR = "AWSECR";
+  String AWS_SECURITY_HUB = "AWSSecurityHub";
   String BANDIT = "Bandit";
   String BLACKDUCK = "BlackDuck";
   String BRAKEMAN = "Brakeman";
@@ -193,7 +194,6 @@ public interface EntityTypeConstants {
   String CONTAINER_STEP = "Container";
   String IACM_TERRAFORM_PLAN = "IACMTerraformPlan";
   String IACM_TEMPLATE = "IACMTemplate";
-
   String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
   String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
@@ -225,4 +225,6 @@ public interface EntityTypeConstants {
   String SSCA_ORCHESTRATION = "SscaOrchestration";
 
   String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
+  String CD_SSCA_ORCHESTRATION = "CdSscaOrchestration";
+  String TAS_ROUTE_MAPPING = "TasRouteMapping";
 }

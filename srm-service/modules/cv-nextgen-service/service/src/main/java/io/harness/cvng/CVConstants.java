@@ -47,6 +47,7 @@ public interface CVConstants {
   String DATA_SOURCE_TYPE = "type";
   String SLO_SPEC = "type";
   String DOWNTIME_SPEC_TYPE = "type";
+  String SECONDARY_EVENTS_TYPE = "type";
 
   String RULE_TYPE = "type";
 
@@ -72,6 +73,7 @@ public interface CVConstants {
   String SLI_TYPE_PARAM_MESSAGE = "For filtering on the basis of SLI types";
   String TARGET_TYPE_PARAM_MESSAGE = "For filtering on the basis of target types";
   String ERROR_BUDGET_RISK_PARAM_MESSAGE = "For filtering on the basis of error budget risks";
+  String VERIFICATION_TASK_ID = "verificationTaskId";
 
   String ENVIRONMENT = System.getenv("ENV") == null ? "localhost" : System.getenv("ENV");
   Set<String> LEARNING_ENGINE_TASKS_METRIC_LIST = Collections.unmodifiableSet(

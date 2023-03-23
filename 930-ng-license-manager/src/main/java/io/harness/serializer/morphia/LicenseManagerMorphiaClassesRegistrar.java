@@ -7,11 +7,14 @@
 
 package io.harness.serializer.morphia;
 
+import io.harness.credit.entities.CICredit;
+import io.harness.credit.entities.Credit;
 import io.harness.licensing.entities.modules.CDModuleLicense;
 import io.harness.licensing.entities.modules.CEModuleLicense;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.CIModuleLicense;
 import io.harness.licensing.entities.modules.ChaosModuleLicense;
+import io.harness.licensing.entities.modules.IACMModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.licensing.entities.modules.SRMModuleLicense;
 import io.harness.licensing.entities.modules.STOModuleLicense;
@@ -35,6 +38,9 @@ public class LicenseManagerMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(ChaosModuleLicense.class);
     set.add(StripeCustomer.class);
     set.add(SubscriptionDetail.class);
+    set.add(IACMModuleLicense.class);
+    set.add(Credit.class);
+    set.add(CICredit.class);
   }
 
   @Override

@@ -31,6 +31,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.ArtifactoryStorageConfigDTO;
 import io.harness.cdng.manifest.yaml.GitStoreConfigDTO;
 import io.harness.cdng.manifest.yaml.GithubStoreDTO;
+import io.harness.cdng.manifest.yaml.TerraformCommandFlagType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -64,6 +65,7 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
@@ -190,6 +192,11 @@ public class TerraformDestroyStepTest extends CategoryTest {
         StoreConfigType.GITHUB, gitStoreConfigFiles, gitStoreVarFiles);
 
     destroyStepParameters.getConfiguration().getIsSkipTerraformRefresh().setValue(true);
+    destroyStepParameters.getConfiguration().setCliOptions(
+        List.of(TerraformCliOptionFlag.builder()
+                    .commandType(TerraformCommandFlagType.APPLY)
+                    .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                    .build()));
 
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
                                     .gitAuthType(GitAuthType.HTTP)
@@ -210,6 +217,12 @@ public class TerraformDestroyStepTest extends CategoryTest {
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("APPLY", "-lock-timeout=0s"); }
+    })
+        .when(terraformStepHelper)
+        .getTerraformCliFlags(any());
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -225,6 +238,7 @@ public class TerraformDestroyStepTest extends CategoryTest {
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.DESTROY);
     assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
+    assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test
@@ -250,6 +264,11 @@ public class TerraformDestroyStepTest extends CategoryTest {
         StoreConfigType.GITHUB, gitStoreConfigFiles, gitStoreVarFiles);
 
     destroyStepParameters.getConfiguration().getSpec().isTerraformCloudCli.setValue(true);
+    destroyStepParameters.getConfiguration().setCliOptions(
+        List.of(TerraformCliOptionFlag.builder()
+                    .commandType(TerraformCommandFlagType.APPLY)
+                    .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                    .build()));
 
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
                                     .gitAuthType(GitAuthType.HTTP)
@@ -270,6 +289,12 @@ public class TerraformDestroyStepTest extends CategoryTest {
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("APPLY", "-lock-timeout=0s"); }
+    })
+        .when(terraformStepHelper)
+        .getTerraformCliFlags(any());
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -288,6 +313,7 @@ public class TerraformDestroyStepTest extends CategoryTest {
     assertThat(taskParameters.getWorkspace()).isNull();
     assertThat(taskParameters.isTerraformCloudCli()).isTrue();
     assertThat(taskParameters.isSkipTerraformRefresh()).isFalse();
+    assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test
@@ -338,6 +364,10 @@ public class TerraformDestroyStepTest extends CategoryTest {
             .provisionerIdentifier(ParameterField.createValueField("Id"))
             .configuration(TerraformStepConfigurationParameters.builder()
                                .type(TerraformStepConfigurationType.INHERIT_FROM_PLAN)
+                               .commandFlags(List.of(TerraformCliOptionFlag.builder()
+                                                         .commandType(TerraformCommandFlagType.APPLY)
+                                                         .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                                                         .build()))
                                .build())
             .build();
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
@@ -359,6 +389,12 @@ public class TerraformDestroyStepTest extends CategoryTest {
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("APPLY", "-lock-timeout=0s"); }
+    })
+        .when(terraformStepHelper)
+        .getTerraformCliFlags(any());
 
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
@@ -378,6 +414,7 @@ public class TerraformDestroyStepTest extends CategoryTest {
     TerraformTaskNGParameters taskParameters =
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.DESTROY);
+    assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test
@@ -434,6 +471,10 @@ public class TerraformDestroyStepTest extends CategoryTest {
             .configuration(TerraformStepConfigurationParameters.builder()
                                .type(TerraformStepConfigurationType.INHERIT_FROM_APPLY)
                                .skipTerraformRefresh(ParameterField.createValueField(true))
+                               .commandFlags(List.of(TerraformCliOptionFlag.builder()
+                                                         .commandType(TerraformCommandFlagType.APPLY)
+                                                         .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                                                         .build()))
                                .build())
             .build();
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
@@ -455,6 +496,12 @@ public class TerraformDestroyStepTest extends CategoryTest {
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("APPLY", "-lock-timeout=0s"); }
+    })
+        .when(terraformStepHelper)
+        .getTerraformCliFlags(any());
 
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
@@ -476,6 +523,7 @@ public class TerraformDestroyStepTest extends CategoryTest {
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.DESTROY);
     assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
+    assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test

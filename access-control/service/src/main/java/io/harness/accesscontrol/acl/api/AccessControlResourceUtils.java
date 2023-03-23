@@ -23,16 +23,14 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.PL)
 public class AccessControlResourceUtils {
   public static boolean serviceContextAndOnlyServicePrincipalInBody(
-      io.harness.security.dto.Principal principalInContext, Principal principalToCheckPermissions,
-      boolean allowDifferentPrincipalInTokenAndBody) {
+      io.harness.security.dto.Principal principalInContext, Principal principalToCheckPermissions) {
     Optional<io.harness.security.dto.Principal> serviceCall =
         Optional.ofNullable(principalInContext).filter(x -> SERVICE.equals(x.getType()));
 
     return serviceCall.isPresent()
         && (principalToCheckPermissions == null
             || Objects.equals(serviceCall.get().getName(), principalToCheckPermissions.getPrincipalIdentifier())
-            || (allowDifferentPrincipalInTokenAndBody
-                && PrincipalType.SERVICE.equals(principalToCheckPermissions.getPrincipalType())));
+            || PrincipalType.SERVICE.equals(principalToCheckPermissions.getPrincipalType()));
   }
 
   private static boolean userContextAndDifferentPrincipalInBody(
@@ -61,14 +59,13 @@ public class AccessControlResourceUtils {
         .build();
   }
 
-  public static boolean checkPreconditions(io.harness.security.dto.Principal contextPrincipal,
-      Principal principalToCheckPermissionsFor, boolean allowDifferentPrincipalInTokenAndBody) {
+  public static boolean checkPreconditions(
+      io.harness.security.dto.Principal contextPrincipal, Principal principalToCheckPermissionsFor) {
     boolean validContext = checkForValidContext(contextPrincipal);
     if (!validContext) {
       return false;
     }
-    if (serviceContextAndOnlyServicePrincipalInBody(
-            contextPrincipal, principalToCheckPermissionsFor, allowDifferentPrincipalInTokenAndBody)) {
+    if (serviceContextAndOnlyServicePrincipalInBody(contextPrincipal, principalToCheckPermissionsFor)) {
       return true;
     }
     if (userContextAndDifferentPrincipalInBody(contextPrincipal, principalToCheckPermissionsFor)) {

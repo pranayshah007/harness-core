@@ -360,7 +360,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 91e2a39c
+scmVersion: ef2d02fb
 
 ngAuthUIEnabled: false
 
@@ -748,7 +748,7 @@ dataReconciliation:
 
 disableDelegateMgmtInManager: false
 
-enableRedisForDelegateService: false
+enableRedisForDelegateService: ${ENABLE_REDIS_DELEGATE_SERVICE:-false}
 
 secretsConfiguration:
   secretResolutionEnabled: false

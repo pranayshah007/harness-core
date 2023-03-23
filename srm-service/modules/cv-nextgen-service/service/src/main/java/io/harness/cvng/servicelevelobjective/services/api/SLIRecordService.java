@@ -16,6 +16,8 @@ import java.util.List;
 public interface SLIRecordService {
   void create(List<SLIRecordParam> sliRecordList, String sliId, String verificationTaskId, int sliVersion);
   void delete(List<String> sliIds);
+
+  List<SLIRecord> getSLIRecordsOfMinutes(String sliId, List<Instant> minutes);
   List<SLIRecord> getLatestCountSLIRecords(String sliId, int count);
   List<SLIRecord> getSLIRecordsForLookBackDuration(String sliId, long lookBackDuration);
   double getErrorBudgetBurnRate(String sliId, long lookBackDuration, int totalErrorBudgetMinutes);

@@ -349,6 +349,57 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
     return appEnvMap;
   }
 
+  @Override
+  public Map<String, Set<String>> getAppSvcMapFromUserPermissions(
+      String accountId, UserPermissionInfo userPermissionInfo, Action action) {
+    Map<String, Set<String>> appSvcMap = new HashMap<>();
+
+    Map<String, AppPermissionSummary> appPermissionMap = userPermissionInfo.getAppPermissionMapInternal();
+
+    if (isEmpty(appPermissionMap)) {
+      return appSvcMap;
+    }
+
+    Set<Entry<String, AppPermissionSummary>> entrySet = appPermissionMap.entrySet();
+
+    if (isEmpty(entrySet)) {
+      return appSvcMap;
+    }
+
+    entrySet.forEach(appPermission -> {
+      String appId = appPermission.getKey();
+
+      // Multimap is deliberately not used since we want to be able to insert the key with null values.
+      Set<String> svcSet = appSvcMap.get(appId);
+      if (svcSet == null) {
+        svcSet = new HashSet<>();
+        appSvcMap.put(appId, svcSet);
+      }
+
+      Set<String> svcSetFinal = svcSet;
+      AppPermissionSummary appPermissionSummary = appPermission.getValue();
+
+      if (appPermissionSummary == null) {
+        return;
+      }
+
+      Map<Action, Set<String>> svcPermissions = appPermissionSummary.getServicePermissions();
+      if (isEmpty(svcPermissions)) {
+        return;
+      }
+
+      Set<String> svcPermissionSet = svcPermissions.get(action);
+
+      if (isEmpty(svcPermissionSet)) {
+        return;
+      }
+
+      svcSetFinal.addAll(svcPermissionSet);
+    });
+
+    return appSvcMap;
+  }
+
   private boolean hasUsageRestrictionsForNewApp(Set<AppEnvRestriction> appEnvRestrictions) {
     if (isEmpty(appEnvRestrictions)) {
       return false;

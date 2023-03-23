@@ -23,6 +23,7 @@ import software.wings.security.UserThreadLocal;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.PreferenceService;
+import software.wings.service.intfc.UserGroupService;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -50,6 +51,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Scope(ResourceType.PREFERENCE)
 public class PreferenceResource {
   private PreferenceService prefService;
+
+  @Inject private UserGroupService userGroupService;
 
   @Inject
   public PreferenceResource(PreferenceService prefService) {

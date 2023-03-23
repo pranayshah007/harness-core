@@ -23,6 +23,7 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -72,7 +73,6 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -229,9 +229,17 @@ public class AppMigrationService extends NgMigrationService {
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
     return discover(appService.get(entityId));
   }
+
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
       TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    MigrationContext migrationContext = MigrationContext.builder()
+                                            .entities(Collections.emptyMap())
+                                            .migratedEntities(Collections.emptyMap())
+                                            .graph(Collections.emptyMap())
+                                            .inputDTO(inputDTO)
+                                            .accountId(inputDTO.getAccountIdentifier())
+                                            .build();
     Application application = appService.getApplicationWithDefaults(yamlFile.getCgBasicInfo().getAppId());
 
     if (EmptyPredicate.isEmpty(application.getDefaults())) {
@@ -246,16 +254,17 @@ public class AppMigrationService extends NgMigrationService {
     for (Map.Entry<String, String> entry : application.getDefaults().entrySet()) {
       String name = entry.getKey();
       String value = entry.getValue();
-      Map<String, String> variableSpec = ImmutableMap.<String, String>builder()
-                                             .put("valueType", "FIXED")
-                                             .put("fixedValue",
-                                                 (String) MigratorExpressionUtils.render(new HashMap<>(),
-                                                     new HashMap<>(), value, inputDTO.getCustomExpressions()))
-                                             .build();
+      Map<String, String> variableSpec =
+          ImmutableMap.<String, String>builder()
+              .put("valueType", "FIXED")
+              .put("fixedValue",
+                  (String) MigratorExpressionUtils.render(migrationContext, value, inputDTO.getCustomExpressions()))
+              .build();
       Map<String, Object> variable =
           ImmutableMap.<String, Object>builder()
               .put(YAMLFieldNameConstants.NAME, name)
-              .put(YAMLFieldNameConstants.IDENTIFIER, MigratorUtility.generateIdentifier(name))
+              .put(YAMLFieldNameConstants.IDENTIFIER,
+                  MigratorUtility.generateIdentifier(name, inputDTO.getIdentifierCaseFormat()))
               .put(YAMLFieldNameConstants.ORG_IDENTIFIER, orgIdentifier)
               .put(YAMLFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifier)
               .put(YAMLFieldNameConstants.TYPE, "String")
@@ -277,11 +286,13 @@ public class AppMigrationService extends NgMigrationService {
         .build();
   }
 
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     Application application = (Application) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, application.getName());
-    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String identifier = MigratorUtility.generateIdentifierDefaultName(
+        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
     String projectIdentifier = MigratorUtility.getProjectIdentifier(PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(PROJECT, inputDTO);
     return YamlGenerationDetails.builder()

@@ -68,7 +68,8 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
 
     if (k8sInfraDelegateConfig instanceof DirectK8sInfraDelegateConfig) {
       capabilities.addAll(K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ((DirectK8sInfraDelegateConfig) k8sInfraDelegateConfig).getKubernetesClusterConfigDTO(), maskingEvaluator));
+          ((DirectK8sInfraDelegateConfig) k8sInfraDelegateConfig).getKubernetesClusterConfigDTO(), maskingEvaluator,
+          k8sInfraDelegateConfig.useSocketCapability()));
     }
 
     if (k8sInfraDelegateConfig instanceof GcpK8sInfraDelegateConfig) {
@@ -79,6 +80,11 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
     if (k8sInfraDelegateConfig instanceof AzureK8sInfraDelegateConfig) {
       capabilities.addAll(AzureCapabilityHelper.fetchRequiredExecutionCapabilities(
           ((AzureK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAzureConnectorDTO(), maskingEvaluator));
+    }
+
+    if (k8sInfraDelegateConfig instanceof EksK8sInfraDelegateConfig) {
+      capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+          ((EksK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAwsConnectorDTO(), maskingEvaluator));
     }
 
     if (getManifestDelegateConfig() != null) {

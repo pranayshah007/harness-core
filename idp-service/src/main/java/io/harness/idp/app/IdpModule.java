@@ -15,15 +15,16 @@ import io.harness.AccessControlClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.client.NgConnectorManagerClientModule;
-import io.harness.clients.BackstageCatalogResourceClientModule;
+import io.harness.clients.BackstageResourceClientModule;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
-import io.harness.idp.config.service.AppConfigService;
-import io.harness.idp.config.service.AppConfigServiceImpl;
+import io.harness.idp.configmanager.resource.AppConfigApiImpl;
+import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.service.ConfigManagerServiceImpl;
 import io.harness.idp.events.EventsFrameworkModule;
 import io.harness.idp.events.eventlisteners.eventhandler.EntityCrudStreamListener;
-import io.harness.idp.gitintegration.factory.ConnectorProcessorFactory;
+import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.gitintegration.service.GitIntegrationServiceImpl;
 import io.harness.idp.k8s.client.K8sApiClient;
@@ -32,14 +33,18 @@ import io.harness.idp.namespace.resource.AccountInfoApiImpl;
 import io.harness.idp.namespace.resource.NamespaceApiImpl;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.namespace.service.NamespaceServiceImpl;
-import io.harness.idp.onboarding.OnboardingModuleConfig;
+import io.harness.idp.onboarding.config.OnboardingModuleConfig;
 import io.harness.idp.onboarding.resources.OnboardingResourceApiImpl;
 import io.harness.idp.onboarding.services.OnboardingService;
 import io.harness.idp.onboarding.services.impl.OnboardingServiceImpl;
+import io.harness.idp.plugin.resources.PluginInfoApiImpl;
+import io.harness.idp.plugin.services.PluginInfoService;
+import io.harness.idp.plugin.services.PluginInfoServiceImpl;
 import io.harness.idp.provision.ProvisionModuleConfig;
 import io.harness.idp.provision.resource.ProvisionApiImpl;
 import io.harness.idp.provision.service.ProvisionService;
 import io.harness.idp.provision.service.ProvisionServiceImpl;
+import io.harness.idp.proxy.layout.LayoutProxyApiImpl;
 import io.harness.idp.secret.resources.EnvironmentSecretApiImpl;
 import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.idp.secret.service.EnvironmentSecretServiceImpl;
@@ -52,6 +57,7 @@ import io.harness.idp.status.k8s.PodHealthCheck;
 import io.harness.idp.status.resources.StatusInfoApiImpl;
 import io.harness.idp.status.service.StatusInfoService;
 import io.harness.idp.status.service.StatusInfoServiceImpl;
+import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
@@ -69,10 +75,13 @@ import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.ServiceResourceClientModule;
 import io.harness.spec.server.idp.v1.AccountInfoApi;
+import io.harness.spec.server.idp.v1.AppConfigApi;
 import io.harness.spec.server.idp.v1.BackstagePermissionsApi;
 import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
+import io.harness.spec.server.idp.v1.LayoutProxyApi;
 import io.harness.spec.server.idp.v1.NamespaceApi;
 import io.harness.spec.server.idp.v1.OnboardingResourceApi;
+import io.harness.spec.server.idp.v1.PluginInfoApi;
 import io.harness.spec.server.idp.v1.ProvisionApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.threading.ThreadPool;
@@ -93,6 +102,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.converter.Converter;
@@ -192,7 +202,7 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ServiceResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
-    install(new BackstageCatalogResourceClientModule(
+    install(new BackstageResourceClientModule(
         appConfig.getBackstageHttpClientConfig(), appConfig.getBackstageServiceSecret(), IDP_SERVICE.getServiceId()));
 
     bind(IdpConfiguration.class).toInstance(appConfig);
@@ -205,7 +215,7 @@ public class IdpModule extends AbstractModule {
                 .setPriority(Thread.MIN_PRIORITY)
                 .build()));
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
-    bind(AppConfigService.class).to(AppConfigServiceImpl.class);
+    bind(ConfigManagerService.class).to(ConfigManagerServiceImpl.class);
     bind(EnvironmentSecretService.class).to(EnvironmentSecretServiceImpl.class);
     bind(StatusInfoService.class).to(StatusInfoServiceImpl.class);
     bind(BackstagePermissionsService.class).to(BackstagePermissionsServiceImpl.class);
@@ -219,12 +229,19 @@ public class IdpModule extends AbstractModule {
     bind(MessageListener.class).annotatedWith(Names.named(ENTITY_CRUD)).to(EntityCrudStreamListener.class);
     bind(ConnectorProcessorFactory.class);
     bind(NamespaceApi.class).to(NamespaceApiImpl.class);
+    bind(AppConfigApi.class).to(AppConfigApiImpl.class);
     bind(AccountInfoApi.class).to(AccountInfoApiImpl.class);
     bind(ProvisionApi.class).to(ProvisionApiImpl.class);
     bind(ProvisionService.class).to(ProvisionServiceImpl.class);
     bind(OnboardingResourceApi.class).to(OnboardingResourceApiImpl.class);
     bind(OnboardingService.class).to(OnboardingServiceImpl.class);
     bind(GitClientV2.class).to(GitClientV2Impl.class);
+    bind(LayoutProxyApi.class).to(LayoutProxyApiImpl.class);
+    bind(PluginInfoApi.class).to(PluginInfoApiImpl.class);
+    bind(PluginInfoService.class).to(PluginInfoServiceImpl.class);
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("envSecretSyncer"))
+        .toInstance(new ManagedScheduledExecutorService("EnvSecretSyncer"));
   }
 
   @Provides
@@ -267,8 +284,22 @@ public class IdpModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("backstagePodLabel")
+  public String backstagePodLabel() {
+    return this.appConfig.getBackstagePodLabel();
+  }
+
+  @Provides
+  @Singleton
   @Named(PROVISION_MODULE_CONFIG)
   public ProvisionModuleConfig provisionModuleConfig() {
     return this.appConfig.getProvisionModuleConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("backstageServiceSecret")
+  public String backstageServiceSecret() {
+    return this.appConfig.getBackstageServiceSecret();
   }
 }

@@ -45,6 +45,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -88,8 +90,8 @@ public class GoogleFunctionsDeployStep
       googleFunctionDeployRequestBuilder.updateFieldMaskContent(
           googleFunctionsDeployStepParameters.getUpdateFieldMask().getValue());
     }
-    return googleFunctionsHelper.queueTask(
-        stepParameters, googleFunctionDeployRequestBuilder.build(), ambiance, googleFunctionsStepPassThroughData, true);
+    return googleFunctionsHelper.queueTask(stepParameters, googleFunctionDeployRequestBuilder.build(), ambiance,
+        googleFunctionsStepPassThroughData, true, TaskType.GOOGLE_FUNCTION_DEPLOY_TASK);
   }
 
   @Override

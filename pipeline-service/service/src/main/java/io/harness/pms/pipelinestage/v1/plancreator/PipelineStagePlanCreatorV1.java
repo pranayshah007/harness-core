@@ -124,7 +124,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
       throw new InvalidRequestException(String.format("Child pipeline does not exists %s ", configNode.getPipeline()));
     }
 
-    pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get());
+    pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get(), stageNode.getName());
     // Validate the failure-strategies once failure-strategies are supported with simplified YAML.
     //    pipelineStageHelper.validateFailureStrategy(stageNode.getFailureStrategies());
 

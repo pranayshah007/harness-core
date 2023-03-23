@@ -12,6 +12,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 import static io.harness.ssca.SscaBeansRegistrar.sscaStepPaletteSteps;
 
+import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.StepSpecTypeConstants;
@@ -72,14 +73,17 @@ import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
 import io.harness.filters.ParallelGenericFilterJsonCreator;
+import io.harness.filters.StepGroupPmsFilterJsonCreator;
 import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.NGStageStepsPlanCreator;
+import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
 import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
 import io.harness.plancreator.strategy.v1.StrategyConfigPlanCreatorV1;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
+import io.harness.pms.sdk.core.pipeline.variables.StepGroupVariableCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
 import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
@@ -115,6 +119,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     List<PartialPlanCreator<?>> planCreators = new LinkedList<>();
     planCreators.add(new IntegrationStagePMSPlanCreatorV2());
     planCreators.add(new CIPMSStepPlanCreator());
+    planCreators.add(new StepGroupPMSPlanCreator());
     planCreators.add(new RunStepPlanCreator());
     planCreators.add(new BackgroundStepPlanCreator());
     planCreators.add(new RunTestStepPlanCreator());
@@ -164,6 +169,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     List<FilterJsonCreator> filterJsonCreators = new ArrayList<>();
     filterJsonCreators.add(new CIPMSStepFilterJsonCreator());
     filterJsonCreators.add(new CIStepFilterJsonCreatorV2());
+    filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
     filterJsonCreators.add(new CIStageFilterJsonCreatorV2());
     filterJsonCreators.add(new STOStepFilterJsonCreatorV2());
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
@@ -179,6 +185,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
   public List<VariableCreator> getVariableCreators() {
     List<VariableCreator> variableCreators = new ArrayList<>();
     variableCreators.add(new CIStageVariableCreator());
+    variableCreators.add(new StepGroupVariableCreator());
     variableCreators.add(new ExecutionVariableCreator());
     variableCreators.add(new CIStepVariableCreator());
     variableCreators.add(new RunStepVariableCreator());
@@ -353,7 +360,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(actionStepInfo);
     stepInfos.add(bitriseStepInfo);
 
-    stepInfos.addAll(STOStepType.getStepInfos());
+    stepInfos.addAll(STOStepType.getStepInfos(ModuleType.CI));
 
     stepInfos.addAll(sscaStepPaletteSteps);
 

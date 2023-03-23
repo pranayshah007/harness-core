@@ -74,6 +74,7 @@ import io.harness.ng.core.events.UserGroupDeleteEvent;
 import io.harness.ng.core.events.UserGroupUpdateEvent;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.entities.UserGroup.UserGroupKeys;
+import io.harness.ng.core.user.entities.UserMetadata;
 import io.harness.ng.core.user.remote.dto.LastAdminCheckFilter;
 import io.harness.ng.core.user.remote.dto.UserFilter;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
@@ -116,6 +117,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -275,18 +277,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   @Override
   public List<String> getUserIds(List<String> emails) {
-    return ngUserService.getUserMetadataByEmails(emails)
-        .stream()
-        .map(userMetadataDTO -> userMetadataDTO.getUuid())
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  public List<String> getUserEmails(List<String> uuids) {
-    return ngUserService.getUserMetadata(uuids)
-        .stream()
-        .map(userMetadataDTO -> userMetadataDTO.getEmail())
-        .collect(Collectors.toList());
+    return ngUserService.getUserIdsByEmails(emails);
   }
 
   @Override
@@ -432,15 +423,15 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public List<UserMetadataDTO> getUsersInUserGroup(Scope scope, String userGroupIdentifier) {
+  public CloseableIterator<UserMetadata> getUsersInUserGroup(Scope scope, String userGroupIdentifier) {
     Optional<UserGroup> userGroupOptional =
         get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
     if (!userGroupOptional.isPresent()) {
-      return new ArrayList<>();
+      return null;
     }
     Set<String> userGroupMemberIds = new HashSet<>(userGroupOptional.get().getUsers());
 
-    return ngUserService.getUserMetadata(new ArrayList<>(userGroupMemberIds));
+    return ngUserService.streamUserMetadata(new ArrayList<>(userGroupMemberIds));
   }
 
   @Override

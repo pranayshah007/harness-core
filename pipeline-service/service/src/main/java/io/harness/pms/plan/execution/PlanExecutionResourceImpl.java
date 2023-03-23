@@ -352,6 +352,9 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<List<StageExecutionResponse>> getStagesExecutionList(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
     Optional<PipelineEntity> optionalPipelineEntity =
         pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
     if (!optionalPipelineEntity.isPresent()) {

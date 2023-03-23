@@ -14,6 +14,8 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackParameters;
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserWithRollback;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
 import io.harness.advisers.retry.RetryAdviserRollbackParameters;
 import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
@@ -39,6 +41,8 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExecutionMode;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
@@ -112,6 +116,9 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
     // Adds a strategy field as dependency if present.
     addStrategyFieldDependencyIfPresent(ctx, stepElement, dependenciesNodeMap, metadataMap);
+
+    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
+    ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
     // Swap the nodeUUid with the strategy node if present
     PlanNode stepPlanNode =
         PlanNode.builder()
@@ -128,8 +135,9 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
                                        .build())
             .adviserObtainments(adviserObtainmentFromMetaData)
             .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
-            .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
-                                                : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
+            .whenCondition(isStepInsideRollback
+                    ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen(), executionMode)
+                    : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()
                     .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
@@ -274,11 +282,12 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
                   .build());
           break;
         case PIPELINE_ROLLBACK:
-          rollbackParameters = PlanCreatorUtilsCommon.getRollbackParameters(
-              currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
-          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
-                                        .build());
+          OnFailPipelineRollbackParameters onFailPipelineRollbackParameters =
+              GenericPlanCreatorUtils.buildOnFailPipelineRollbackParameters(failureTypes);
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(OnFailPipelineRollbackAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(onFailPipelineRollbackParameters)))
+                  .build());
           break;
         case MARK_AS_FAILURE:
           adviserObtainmentList.add(

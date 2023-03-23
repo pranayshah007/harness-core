@@ -209,6 +209,7 @@ import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.channelDetails.CVNGEmailChannelSpec;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannel;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
+import io.harness.cvng.servicelevelobjective.beans.AnnotationDTO;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
@@ -284,6 +285,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -571,6 +573,7 @@ public class BuilderFactory {
 
   public DatadogLogCVConfigBuilder datadogLogCVConfigBuilder() {
     return DatadogLogCVConfig.builder()
+        .uuid(UUID.randomUUID().toString())
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
@@ -1067,6 +1070,29 @@ public class BuilderFactory {
         .eventEndTime(clock.instant().toEpochMilli());
   }
 
+  public InternalChangeActivityBuilder getInternalChangeActivity_CEBuilder() {
+    return InternalChangeActivity.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceParams().getMonitoredServiceIdentifier())
+        .eventTime(clock.instant())
+        .changeSourceIdentifier("changeSourceID")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .type(ActivityType.CHAOS_EXPERIMENT)
+        .activityType(ActivityType.CHAOS_EXPERIMENT)
+        .updatedBy("user")
+        .internalChangeEvent(
+            InternalChangeEvent.builder()
+                .changeEventDetailsLink(
+                    DeepLink.builder().action(DeepLink.Action.FETCH_DIFF_DATA).url("changeEventDetails").build())
+                .internalLinkToEntity(
+                    DeepLink.builder().action(DeepLink.Action.REDIRECT_URL).url("internalUrl").build())
+                .eventDescriptions(Arrays.asList("eventDesc1", "eventDesc2"))
+                .build())
+        .eventEndTime(clock.instant().toEpochMilli());
+  }
+
   public CustomChangeActivityBuilder getCustomChangeActivity(ChangeSourceType customChangeSourceType) {
     return CustomChangeActivity.builder()
         .accountId(context.getAccountId())
@@ -1390,6 +1416,7 @@ public class BuilderFactory {
         .tags(Collections.singletonList(NGTag.builder().key("key").value("value").build()))
         .desc("slo description")
         .sloTarget(RollingSLOTarget.builder().periodLengthDays(30).build())
+        .target(io.harness.cvng.servicelevelobjective.entities.RollingSLOTarget.builder().periodLengthDays(30).build())
         .sloTargetPercentage(80.0)
         .serviceLevelIndicators(Collections.singletonList("sloIdentifier_metric1"))
         .healthSourceIdentifier("healthSourceIdentifier")
@@ -1623,6 +1650,7 @@ public class BuilderFactory {
         .baselineVerificationJobInstanceId(generateUuid())
         .duration(RuntimeParameter.builder().value("15m").build());
   }
+
   public static class BuilderFactoryBuilder {
     public BuilderFactory build() {
       BuilderFactory builder = unsafeBuild();
@@ -1970,6 +1998,20 @@ public class BuilderFactory {
         .endTime(endTime)
         .projectIdentifier(context.getProjectIdentifier())
         .orgIdentifier(context.getOrgIdentifier())
+        .build();
+  }
+
+  public AnnotationDTO getAnnotationDTO() {
+    long startTime =
+        CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond() + Duration.ofMinutes(1).toSeconds();
+    long endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    return AnnotationDTO.builder()
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .message("Errors spiked")
+        .startTime(startTime)
+        .endTime(endTime)
+        .sloIdentifier("sloIdentifier")
         .build();
   }
 

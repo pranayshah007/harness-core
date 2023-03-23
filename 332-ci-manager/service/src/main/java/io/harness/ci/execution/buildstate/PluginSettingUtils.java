@@ -91,6 +91,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
 import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
+import io.harness.ssca.execution.SscaOrchestrationStepPluginUtils;
 import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
@@ -156,6 +157,7 @@ public class PluginSettingUtils {
   public static final String PLUGIN_DOCKER_REGISTRY = "PLUGIN_DOCKER_REGISTRY";
   @Inject private CodebaseUtils codebaseUtils;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
 
   public Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
       long timeout, Ambiance ambiance, Type infraType, boolean isMandatory) {
@@ -187,8 +189,8 @@ public class PluginSettingUtils {
       case GIT_CLONE:
         return getGitCloneStepInfoEnvVariables((GitCloneStepInfo) stepInfo, ambiance, identifier);
       case SSCA_ORCHESTRATION:
-        return SscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
-            (SscaOrchestrationStepInfo) stepInfo, identifier);
+        return sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
+            (SscaOrchestrationStepInfo) stepInfo, identifier, ambiance);
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
     }
@@ -245,11 +247,12 @@ public class PluginSettingUtils {
         return map;
       case SECURITY:
       case DOCKER:
-      case SSCA_ORCHESTRATION:
         map.put(EnvVariableEnum.DOCKER_USERNAME, PLUGIN_USERNAME);
         map.put(EnvVariableEnum.DOCKER_PASSWORD, PLUGIN_PASSW);
         map.put(EnvVariableEnum.DOCKER_REGISTRY, PLUGIN_REGISTRY);
         return map;
+      case SSCA_ORCHESTRATION:
+        return SscaOrchestrationStepPluginUtils.getConnectorSecretEnvMap();
       case UPLOAD_ARTIFACTORY:
         map.put(EnvVariableEnum.ARTIFACTORY_ENDPOINT, PLUGIN_URL);
         map.put(EnvVariableEnum.ARTIFACTORY_USERNAME, PLUGIN_USERNAME);
@@ -257,7 +260,7 @@ public class PluginSettingUtils {
         return map;
       case GIT_CLONE:
         return map;
-      case IACM_TERRAFORM_PLAN:
+      case IACM_TERRAFORM:
         map.put(EnvVariableEnum.AWS_ACCESS_KEY, PLUGIN_ACCESS_KEY);
         map.put(EnvVariableEnum.AWS_SECRET_KEY, PLUGIN_SECRET_KEY);
         map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, PLUGIN_ASSUME_ROLE);

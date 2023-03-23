@@ -23,6 +23,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.impl.CIYamlSchemaServiceImpl;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.cache.CICacheManagementService;
 import io.harness.cache.CICacheManagementServiceImpl;
 import io.harness.callback.DelegateCallback;
@@ -38,7 +39,6 @@ import io.harness.ci.execution.queue.CIInitTaskMessageProcessor;
 import io.harness.ci.execution.queue.CIInitTaskMessageProcessorImpl;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.license.impl.CILicenseServiceImpl;
 import io.harness.ci.logserviceclient.CILogServiceClientModule;
 import io.harness.ci.tiserviceclient.TIServiceClientModule;
@@ -78,6 +78,7 @@ import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.opaclient.OpaClientModule;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
@@ -88,6 +89,7 @@ import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ScmServiceClient;
+import io.harness.ssca.client.SSCAServiceClientModule;
 import io.harness.stoserviceclient.STOServiceClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
@@ -308,6 +310,8 @@ public class CIManagerServiceModule extends AbstractModule {
     install(new TokenClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
     install(PersistentLockModule.getInstance());
+    install(new OpaClientModule(ciManagerConfiguration.getOpaClientConfig(),
+        ciManagerConfiguration.getPolicyManagerSecret(), CI_MANAGER.getServiceId()));
 
     install(new AbstractManagerGrpcClientModule() {
       @Override
@@ -337,6 +341,7 @@ public class CIManagerServiceModule extends AbstractModule {
         ciManagerConfiguration.getManagerServiceSecret(), CI_MANAGER.getServiceId()));
     install(new TIServiceClientModule(ciManagerConfiguration.getTiServiceConfig()));
     install(new STOServiceClientModule(ciManagerConfiguration.getStoServiceConfig()));
+    install(new SSCAServiceClientModule(ciManagerConfiguration.getSscaServiceConfig()));
     install(new IACMServiceClientModule(ciManagerConfiguration.getIacmServiceConfig()));
     install(new AccountClientModule(ciManagerConfiguration.getManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.toString()));

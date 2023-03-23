@@ -491,7 +491,27 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
         serviceOverrideService.get(ACCOUNT_ID, e5.getOrgIdentifier(), null, e5.getEnvironmentRef(), e5.getServiceRef()))
         .isNotPresent();
   }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testCreateServiceOverridesWithEmptyValuedStringVariables() throws IOException {
+    String filename = "serviceOverridesWithEmptyValuedVariables.yaml";
+    String yaml = readFile(filename);
 
+    NGServiceOverridesEntity serviceOverridesEntity = NGServiceOverridesEntity.builder()
+                                                          .accountId(ACCOUNT_ID)
+                                                          .orgIdentifier(ORG_IDENTIFIER)
+                                                          .projectIdentifier(PROJECT_IDENTIFIER)
+                                                          .environmentRef(ENV_REF)
+                                                          .serviceRef(SERVICE_REF)
+                                                          .yaml(yaml)
+                                                          .build();
+
+    assertThatThrownBy(() -> serviceOverrideService.validateOverrideValues(serviceOverridesEntity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(String.format(
+            "values not provided for 3 variable overrides var1 var2 var3 in service ref: [%s]", SERVICE_REF));
+  }
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {

@@ -16,12 +16,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.spy;
 
 import io.harness.CategoryTest;
 import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.cli.CliResponse;
+import io.harness.delegate.task.k8s.K8sTaskManifestValidator;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
@@ -43,14 +43,16 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 public class KustomizeTaskHelperTest extends CategoryTest {
   @Mock KustomizeClient kustomizeClient;
   @Mock LogCallback logCallback;
   @Mock KustomizeClientFactory kustomizeClientFactory;
+  @Mock K8sTaskManifestValidator k8sTaskManifestValidator;
 
   @InjectMocks KustomizeTaskHelper kustomizeTaskHelper;
-  KustomizeTaskHelper spyKustomizeTaskHelper = spy(new KustomizeTaskHelper());
+  @Spy @InjectMocks KustomizeTaskHelper spyKustomizeTaskHelper;
 
   @Before
   public void setUp() {

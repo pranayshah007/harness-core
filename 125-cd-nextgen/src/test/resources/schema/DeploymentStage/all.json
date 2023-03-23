@@ -305,6 +305,10 @@
     },
     "AgentApplicationTargets": {
       "type": "object",
+      "required": [
+        "agentId",
+        "applicationName"
+      ],
       "properties": {
         "agentId": {
           "oneOf": [
@@ -321,10 +325,7 @@
         "applicationName": {
           "oneOf": [
             {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "type": "string"
             },
             {
               "type": "string",
@@ -468,7 +469,8 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "metadata": {
           "type": "string"
@@ -1287,7 +1289,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1501,7 +1503,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1651,7 +1653,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6247,7 +6249,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7862,7 +7864,9 @@
                   "type": "array",
                   "items": {
                     "type": "string"
-                  }
+                  },
+                  "maxItems": 2147483647,
+                  "minItems": 1
                 },
                 {
                   "type": "string",
@@ -8547,7 +8551,14 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {
+            "hooks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ServiceHookWrapper"
+              }
+            }
+          }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8560,6 +8571,12 @@
         {
           "type": "object",
           "properties": {
+            "commandFlags": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/KustomizeManifestCommandFlag"
+              }
+            },
             "enableDeclarativeRollback": {
               "oneOf": [
                 {
@@ -8616,6 +8633,25 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "KustomizeManifestCommandFlag": {
+      "type": "object",
+      "required": [
+        "kustomizeCommandFlagType"
+      ],
+      "properties": {
+        "flag": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kustomizeCommandFlagType": {
+          "type": "string",
+          "enum": [
+            "Build"
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "KustomizePatchesManifest": {
@@ -9422,7 +9458,14 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {
+            "hooks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ServiceHookWrapper"
+              }
+            }
+          }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -10316,7 +10359,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        { }
+        {}
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [
@@ -11491,7 +11534,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -11804,6 +11847,307 @@
               }
             }
           }
+        }
+      ]
+    },
+    "ServiceHook": {
+      "type": "object",
+      "required": [
+        "identifier",
+        "store",
+        "storeType"
+      ],
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "FetchFiles",
+              "TemplateManifest",
+              "SteadyStateCheck"
+            ]
+          }
+        },
+        "identifier": {
+          "type": "string"
+        },
+        "storeType": {
+          "type": "string",
+          "enum": [
+            "Inline"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "Artifactory"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/ArtifactoryStoreConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "AzureRepo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/AzureRepoStore"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "Bitbucket"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/BitbucketStore"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "CustomRemote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/CustomRemoteStoreConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "Gcs"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/GcsStoreConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "Git"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/GitStore"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "GitLab"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/GitLabStore"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "Github"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/GithubStore"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "Harness"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/HarnessStore"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "Http"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/HttpStoreConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "InheritFromManifest"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/InheritFromManifestStoreConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "Inline"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/InlineStoreConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "OciHelmChart"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/OciHelmChartConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "S3"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/S3StoreConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "S3Url"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "store": {
+                "$ref": "#/definitions/S3UrlStoreConfig"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ServiceHookWrapper": {
+      "type": "object",
+      "properties": {
+        "postHook": {
+          "$ref": "#/definitions/ServiceHook"
+        },
+        "preHook": {
+          "$ref": "#/definitions/ServiceHook"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "preHook"
+              ]
+            },
+            {
+              "required": [
+                "postHook"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -12456,7 +12800,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -13787,6 +14131,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "RouteMapping"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasRouteMappingStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "ServerlessAwsLambdaDeploy"
               }
             }
@@ -14617,6 +14977,14 @@
     },
     "SyncOptions": {
       "type": "object",
+      "required": [
+        "applyOutOfSyncOnly",
+        "autoCreateNamespace",
+        "prunePropagationPolicy",
+        "pruneResourcesAtLast",
+        "replaceResources",
+        "skipSchemaValidation"
+      ],
       "properties": {
         "applyOutOfSyncOnly": {
           "oneOf": [
@@ -14639,15 +15007,11 @@
           ]
         },
         "prunePropagationPolicy": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
+          "type": "string",
+          "enum": [
+            "foreground",
+            "background",
+            "orphan"
           ]
         },
         "pruneResourcesAtLast": {
@@ -14685,50 +15049,60 @@
     },
     "SyncRetryStrategy": {
       "type": "object",
+      "required": [
+        "baseBackoffDuration",
+        "increaseBackoffByFactor",
+        "limit",
+        "maxBackoffDuration"
+      ],
       "properties": {
+        "baseBackoffDuration": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "/^([\\d\\.]+[HMS])+$/i"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "increaseBackoffByFactor": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
         "limit": {
           "oneOf": [
             {
               "type": "integer",
-              "format": "int32"
+              "format": "int32",
+              "minimum": 0
             },
             {
               "type": "string"
             }
           ]
         },
-        "maxRetryBackoffDuration": {
+        "maxBackoffDuration": {
           "oneOf": [
             {
-              "type": "string"
+              "type": "string",
+              "pattern": "/^([\\d\\.]+[HMS])+$/i"
             },
             {
               "type": "string",
               "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
-            }
-          ]
-        },
-        "retryBackoffBaseDuration": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
-        },
-        "waitAfterRetryFactor": {
-          "oneOf": [
-            {
-              "type": "integer",
-              "format": "int32"
-            },
-            {
-              "type": "string"
             }
           ]
         }
@@ -14742,6 +15116,13 @@
         },
         {
           "type": "object",
+          "required": [
+            "applyOnly",
+            "dryRun",
+            "forceApply",
+            "prune",
+            "syncOptions"
+          ],
           "properties": {
             "applicationsList": {
               "type": "array",
@@ -14908,7 +15289,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -15514,6 +15895,65 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TasRouteMappingStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "appName",
+            "routeType",
+            "routes"
+          ],
+          "properties": {
+            "appName": {
+              "type": "string",
+              "minLength": 1
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "routeType": {
+              "type": "string",
+              "enum": [
+                "Map",
+                "UnMap"
+              ]
+            },
+            "routes": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TasSwapRollbackStepInfo": {
       "allOf": [
         {
@@ -15725,6 +16165,30 @@
       "discriminator": "type",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TerraformCliOptionFlag": {
+      "type": "object",
+      "required": [
+        "commandType",
+        "flag"
+      ],
+      "properties": {
+        "commandType": {
+          "type": "string",
+          "enum": [
+            "INIT",
+            "WORKSPACE",
+            "REFRESH",
+            "PLAN",
+            "APPLY",
+            "DESTROY"
+          ]
+        },
+        "flag": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TerraformCloudApplySpec": {
       "allOf": [
         {
@@ -15811,6 +16275,12 @@
             "Destroy"
           ]
         },
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "configFiles": {
           "$ref": "#/definitions/TerraformConfigFilesWrapper"
         },
@@ -15855,6 +16325,12 @@
     "TerraformCloudCliStepConfiguration": {
       "type": "object",
       "properties": {
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "spec": {
           "$ref": "#/definitions/TerraformCloudCliExecutionData"
         }
@@ -16600,6 +17076,12 @@
             "Destroy"
           ]
         },
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "configFiles": {
           "$ref": "#/definitions/TerraformConfigFilesWrapper"
         },
@@ -16742,6 +17224,12 @@
             "provisionerIdentifier"
           ],
           "properties": {
+            "commandFlags": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TerraformCliOptionFlag"
+              }
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -16781,6 +17269,12 @@
         "type"
       ],
       "properties": {
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformCliOptionFlag"
+          }
+        },
         "skipRefreshCommand": {
           "oneOf": [
             {

@@ -18,7 +18,7 @@ import static io.harness.NGConstants.RESOURCE_TYPE;
 import static io.harness.NGConstants.VALUE;
 import static io.harness.NGConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.PL_JPMC_SCIM_REQUIREMENTS;
+import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -177,7 +177,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       result = removeUsersNotinNG(result, accountId);
     }
     // now add the groups for these users
-    if (ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS)) {
+    if (ngFeatureFlagHelperService.isEnabled(accountId, PL_NEW_SCIM_STANDARDS)) {
       for (ScimUser scimUser : result.getResources()) {
         log.info("NGSCIM: adding user groups data for each of the user {}, in account {} for search user",
             scimUser.getId(), accountId);
@@ -426,7 +426,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
     userResource.setDisplayName(user.getName());
     userResource.setExternalId(user.getExternalId());
 
-    boolean isJpmcFfOn = ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS);
+    boolean isJpmcFfOn = ngFeatureFlagHelperService.isEnabled(accountId, PL_NEW_SCIM_STANDARDS);
 
     // @Todo - Check with Ujjawal on this if we need GIVEN_NAME & FAMILY_NAME
     Map<String, String> nameMap = new HashMap<String, String>() {

@@ -193,7 +193,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
             .googleFunctionInfraConfig(getInfraConfig(infrastructureOutcome, ambiance))
             .googleFunctionDeployManifestContent(googleFunctionsStepPassThroughData.getManifestContent());
     return queueTask(stepParameters, googleFunctionPrepareRollbackRequestBuilder.build(), ambiance,
-        googleFunctionsStepPassThroughData, false);
+        googleFunctionsStepPassThroughData, false, TaskType.GOOGLE_FUNCTION_PREPARE_ROLLBACK_TASK);
   }
 
   public TaskChainResponse executeNextLink(GoogleFunctionsStepExecutor googleFunctionsStepExecutor, Ambiance ambiance,
@@ -251,6 +251,8 @@ public class GoogleFunctionsHelper extends CDStepHelper {
         .runtime(function.getRuntime())
         .environment(function.getEnvironment())
         .state(function.getState())
+        .url(function.getUrl())
+        .source(function.getSource())
         .build();
   }
 
@@ -464,15 +466,14 @@ public class GoogleFunctionsHelper extends CDStepHelper {
 
   public TaskChainResponse queueTask(StepElementParameters stepElementParameters,
       GoogleFunctionCommandRequest googleFunctionCommandRequest, Ambiance ambiance, PassThroughData passThroughData,
-      boolean isChainEnd) {
+      boolean isChainEnd, TaskType taskType) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {googleFunctionCommandRequest})
-                            .taskType(TaskType.GOOGLE_FUNCTION_COMMAND_TASK.name())
+                            .taskType(taskType.name())
                             .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
                             .async(true)
                             .build();
-    String taskName =
-        TaskType.GOOGLE_FUNCTION_COMMAND_TASK.getDisplayName() + " : " + googleFunctionCommandRequest.getCommandName();
+    String taskName = taskType.getDisplayName() + " : " + googleFunctionCommandRequest.getCommandName();
     GoogleFunctionsSpecParameters googleFunctionsSpecParameters =
         (GoogleFunctionsSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,

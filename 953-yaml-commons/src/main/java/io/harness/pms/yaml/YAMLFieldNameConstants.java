@@ -63,6 +63,7 @@ public class YAMLFieldNameConstants {
   public final String SECRET = "secret";
   public final String CODEBASE_CONNECTOR_REF = "ciCodebase.connectorRef";
   public final String USE_ROLLBACK_STRATEGY = "useRollbackStrategy";
+  public final String USE_PIPELINE_ROLLBACK_STRATEGY = "usePipelineRollbackStrategy";
   public final String FAILED_CHILDREN_OUTPUT = "failedChildrenOutput";
   public final String COMMAND = "Command";
 

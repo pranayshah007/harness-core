@@ -14,5 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 public interface ContainerCommandUnitConstants {
   String InitContainer = "Initialize";
   String ContainerStep = "Container Step";
+  String SscaOrchestrationStep = "Ssca Orchestration Step";
   String CleanContainer = "Cleanup";
 }

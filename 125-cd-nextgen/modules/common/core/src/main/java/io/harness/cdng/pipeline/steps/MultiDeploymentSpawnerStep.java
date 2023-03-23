@@ -184,7 +184,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
     if (servicesMap.isEmpty()) {
       // This case is when the deployment is of type single service multiple environment/infras
-      publishSvcEnvCount(ambiance, 1, environmentsMapList.size());
+      publishSvcEnvCount(ambiance, 1, MultiDeploymentSpawnerUtils.getEnvCount(environmentsMapList));
       return getChildrenExecutionResponseForMultiEnvironment(
           stepParameters, children, environmentsMapList, childNodeId);
     }
@@ -218,7 +218,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
     }
 
-    publishSvcEnvCount(ambiance, servicesMap.size(), environmentsMapList.size());
+    publishSvcEnvCount(ambiance, servicesMap.size(), MultiDeploymentSpawnerUtils.getEnvCount(environmentsMapList));
 
     boolean isServiceParallel = stepParameters.getServices() != null
         && shouldDeployInParallel(stepParameters.getServices().getServicesMetadata());

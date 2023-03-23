@@ -14,6 +14,7 @@ import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -118,7 +119,7 @@ public class InputSetsApiImpl implements InputSetsApi {
           .build();
     }
     if (!optionalInputSetEntity.isPresent()) {
-      throw new InvalidRequestException(
+      throw new EntityNotFoundException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSet));
     }
     InputSetResponseBody inputSetResponse = inputSetsApiUtils.getInputSetResponse(optionalInputSetEntity.get());
@@ -172,7 +173,7 @@ public class InputSetsApiImpl implements InputSetsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
-  public Response inputSetMoveConfig(
+  public Response inputSetsMoveConfig(
       String org, String project, String inputSet, @Valid InputSetMoveConfigRequestBody requestBody, String account) {
     if (requestBody == null) {
       throw new InvalidRequestException("InputSet MoveConfig request body must not be null.");

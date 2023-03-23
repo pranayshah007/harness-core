@@ -223,6 +223,13 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
           request.getLogAbstractions() == null || request.getLogAbstractions().getValuesMap() == null
           ? new LinkedHashMap<>()
           : new LinkedHashMap<>(request.getLogAbstractions().getValuesMap());
+      String baseLogKey = "";
+      boolean shouldSkipOpenStream = false;
+      if (request.getLogAbstractions() != null) {
+        baseLogKey =
+            request.getLogAbstractions().getBaseLogKey() == null ? "" : request.getLogAbstractions().getBaseLogKey();
+        shouldSkipOpenStream = request.getLogAbstractions().getShouldSkipOpenStream();
+      }
       List<ExecutionCapability> capabilities =
           request.getCapabilitiesList()
               .stream()
@@ -256,6 +263,8 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
               .emitEvent(request.getEmitEvent())
               .stageId(request.getStageId())
               .forceExecute(request.getForceExecute())
+              .baseLogKey(baseLogKey)
+              .shouldSkipOpenStream(shouldSkipOpenStream)
               .taskDataV2(createTaskDataV2(taskDetails));
 
       if (request.hasQueueTimeout()) {

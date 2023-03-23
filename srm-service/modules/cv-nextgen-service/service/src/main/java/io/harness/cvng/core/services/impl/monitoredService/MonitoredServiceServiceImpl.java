@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -1778,6 +1778,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     List<String> notificationRuleRefs = monitoredService.getNotificationRuleRefs()
                                             .stream()
                                             .filter(ref -> ref.isEligible(clock.instant(), COOL_OFF_DURATION))
+                                            .filter(ref -> ref.isEnabled())
                                             .map(NotificationRuleRef::getNotificationRuleRef)
                                             .collect(Collectors.toList());
     return notificationRuleService.getEntities(projectParams, notificationRuleRefs);
@@ -2070,8 +2071,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       try {
         notificationData = errorTrackingService.getNotificationData(monitoredService.getOrgIdentifier(),
             monitoredService.getAccountId(), monitoredService.getProjectIdentifier(),
-            monitoredService.getServiceIdentifier(), environmentId, codeErrorCondition.getErrorTrackingEventTypes(),
-            notificationRule.getUuid());
+            monitoredService.getServiceIdentifier(), environmentId, codeErrorCondition.getErrorTrackingEventStatus(),
+            codeErrorCondition.getErrorTrackingEventTypes(), notificationRule.getUuid());
       } catch (Exception e) {
         log.error("Error connecting to the ErrorTracking Event Summary API.", e);
       }
@@ -2080,7 +2081,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
                  NotificationRuleConditionType.CODE_ERRORS))
                 .getBaseLinkUrl(monitoredService.getAccountId());
-        templateDataMap.putAll(getCodeErrorTemplateData(notificationData, baseLinkUrl));
+        templateDataMap.putAll(
+            getCodeErrorTemplateData(codeErrorCondition.getErrorTrackingEventStatus(), notificationData, baseLinkUrl));
         templateDataMap.put(
             NOTIFICATION_URL, buildMonitoredServiceConfigurationTabUrl(baseLinkUrl, monitoredServiceParams));
         templateDataMap.put(NOTIFICATION_NAME, notificationRule.getName());

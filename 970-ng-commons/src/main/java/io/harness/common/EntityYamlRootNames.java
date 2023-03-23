@@ -98,6 +98,7 @@ public class EntityYamlRootNames {
 
   public static final String AQUA_TRIVY = "AquaTrivy";
   public static final String AWS_ECR = "AWSECR";
+  public static final String AWS_SECURITY_HUB = "AWSSecurityHub";
   public static final String BANDIT = "Bandit";
   public static final String BLACKDUCK = "BlackDuck";
   public static final String BRAKEMAN = "Brakeman";
@@ -193,7 +194,6 @@ public class EntityYamlRootNames {
   public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
   public static final String IACM_TERRAFORM_PLAN = "IACMTerraformPlan";
   public static final String IACM_TEMPLATE = "IACMTemplate";
-
   public static final String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   public static final String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
   public static final String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
@@ -230,4 +230,5 @@ public class EntityYamlRootNames {
   public static final String AWS_SAM_ROLLBACK = "AwsSamRollback";
 
   public static final String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
+  public static final String TAS_ROUTE_MAPPING = "TasRouteMapping";
 }
