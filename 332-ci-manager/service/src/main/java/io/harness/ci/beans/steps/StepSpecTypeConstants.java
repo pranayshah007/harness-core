@@ -38,4 +38,7 @@ public interface StepSpecTypeConstants {
   String SECURITY_STAGE = "SecurityTests";
   String CI_STAGE_V2 = "ci";
   String IACM_TERRAFORM_PLAN = "IACMTerraformPlan";
+
+  String SSCA_Orchestration = "SSCAOrchestrate";
+  String SSCA_Enforcement = "SSCAEnforce";
 }

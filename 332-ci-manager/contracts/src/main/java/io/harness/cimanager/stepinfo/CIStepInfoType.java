@@ -7,11 +7,11 @@
 
 package io.harness.beans.steps;
 
-import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_LITE_ENGINE;
-import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_MANAGER;
-
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
+
+import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_LITE_ENGINE;
+import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_MANAGER;
 
 public enum CIStepInfoType {
   BUILD(CI_LITE_ENGINE, "Build"),
@@ -76,9 +76,11 @@ public enum CIStepInfoType {
   PLUGIN_V1(CI_LITE_ENGINE, "plugin"),
   IACM(CI_LITE_ENGINE, "IACM"),
   IACM_TERRAFORM_PLAN(CI_LITE_ENGINE, "IACMTerraformPlan"),
-  BACKGROUND_V1(CI_LITE_ENGINE, "background");
+  BACKGROUND_V1(CI_LITE_ENGINE, "background"),
+  SSCAOrchestrate(CI_LITE_ENGINE, "SSCAOrchestrate"),
+  SSCAEnforce(CI_LITE_ENGINE, "SSCAEnforce");
 
-  @Getter private final CIStepExecEnvironment ciStepExecEnvironment;
+    @Getter private final CIStepExecEnvironment ciStepExecEnvironment;
   private final String displayName;
 
   @JsonValue

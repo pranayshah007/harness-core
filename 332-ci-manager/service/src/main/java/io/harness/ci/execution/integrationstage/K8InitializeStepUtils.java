@@ -297,6 +297,8 @@ public class K8InitializeStepUtils {
       case ECR:
       case ACR:
       case GCR:
+      case SSCAOrchestrate:
+      case SSCAEnforce:
       case SAVE_CACHE_S3:
       case RESTORE_CACHE_S3:
       case RESTORE_CACHE_GCS:
@@ -399,6 +401,8 @@ public class K8InitializeStepUtils {
         case ECR:
         case ACR:
         case GCR:
+        case SSCAOrchestrate:
+        case SSCAEnforce:
         case DOCKER:
           envVarMap.put("container", "docker");
           break;
@@ -1018,6 +1022,8 @@ public class K8InitializeStepUtils {
       case GCR:
       case ECR:
       case ACR:
+      case SSCAOrchestrate:
+      case SSCAEnforce:
       case DOCKER:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
@@ -1066,6 +1072,8 @@ public class K8InitializeStepUtils {
       case GCR:
       case ECR:
       case ACR:
+      case SSCAOrchestrate:
+      case SSCAEnforce:
       case DOCKER:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
@@ -1267,6 +1275,8 @@ public class K8InitializeStepUtils {
       case DOCKER:
       case ECR:
       case ACR:
+      case SSCAOrchestrate:
+      case SSCAEnforce:
       case GCR:
       case SAVE_CACHE_S3:
       case RESTORE_CACHE_S3:

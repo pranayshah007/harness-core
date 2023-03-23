@@ -221,6 +221,8 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
             .buildAndPushDockerRegistryConfig(StepImageConfig.builder().image("bpdr:1.2.3").build())
             .buildAndPushACRConfig(StepImageConfig.builder().image("bpacr:1.2.3").build())
             .buildAndPushECRConfig(StepImageConfig.builder().image("bpecr:1.2.3").build())
+                .sscsOrchestrateConfig(StepImageConfig.builder().image("bpacr:1.2.3").build())
+                .sscsEnforceConfig(StepImageConfig.builder().image("bpacr:1.2.3").build())
             .buildAndPushGCRConfig(StepImageConfig.builder().image("bpgcr:1.2.3").build())
             .gcsUploadConfig(StepImageConfig.builder().image("gcsupload:1.2.3").build())
             .s3UploadConfig(StepImageConfig.builder().image("s3upload:1.2.3").build())

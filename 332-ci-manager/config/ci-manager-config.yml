@@ -103,7 +103,7 @@ scmConnectionConfig:
 
 logServiceConfig:
   internalUrl: ""
-  baseUrl: https://qa.harness.io/log-service/
+  baseUrl: https://eb38-2401-4900-1f25-4cf5-949b-771c-3ece-3566.in.ngrok.io
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
 
 tiServiceConfig:
@@ -164,10 +164,10 @@ ciExecutionServiceConfig:
     overrideConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
-  delegateServiceEndpointVariableValue: "delegate-service:8080"
+  delegateServiceEndpointVariableValue: "0.tcp.in.ngrok.io:19208"
   addonImage: harness/ci-addon:1.16.4
   liteEngineImage: harness/ci-lite-engine:1.16.4
-  isLocal: false
+  isLocal: true
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
@@ -235,6 +235,14 @@ ciExecutionServiceConfig:
       image: plugins/kaniko-acr:1.7.0
       entrypoint:
         - /kaniko/kaniko-acr
+    sscsOrchestrateConfig:
+      image: harness/ssca-plugin:normalisation
+      entrypoint:
+        - /bin/ssca-plugin
+    sscsEnforceConfig:
+      image: harness/ssca-plugin:normalisation
+      entrypoint:
+        - /bin/ssca-plugin
     gcsUploadConfig:
       image: plugins/gcs:1.3.0
       entrypoint:
@@ -314,7 +322,7 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
+shouldConfigureWithPMS: true
 
 enableDashboardTimescale: false
 

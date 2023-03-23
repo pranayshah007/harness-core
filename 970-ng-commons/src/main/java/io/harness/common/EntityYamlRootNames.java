@@ -219,4 +219,6 @@ public class EntityYamlRootNames {
   public static final String K8S_DRY_RUN_MANIFEST = "K8sDryRun";
   public static final String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
   public static final String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
+  public static final String SSCA_ORCHESTRATE = "SSCAOrchestrate";
+  public static final String SSCA_ENFORCE = "SSCAEnforce";
 }

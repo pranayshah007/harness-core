@@ -573,6 +573,8 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
       case DOCKER:
       case ECR:
       case ACR:
+      case SSCAOrchestrate:
+      case SSCAEnforce:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
       case UPLOAD_S3:

@@ -14,26 +14,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.StepSpecTypeConstants;
-import io.harness.ci.creator.variables.ActionStepVariableCreator;
-import io.harness.ci.creator.variables.ArtifactoryUploadStepVariableCreator;
-import io.harness.ci.creator.variables.BackgroundStepVariableCreator;
-import io.harness.ci.creator.variables.BuildAndPushACRStepVariableCreator;
-import io.harness.ci.creator.variables.BuildAndPushECRStepVariableCreator;
-import io.harness.ci.creator.variables.BuildAndPushGCRStepVariableCreator;
-import io.harness.ci.creator.variables.CIStageVariableCreator;
-import io.harness.ci.creator.variables.CIStepVariableCreator;
-import io.harness.ci.creator.variables.DockerStepVariableCreator;
-import io.harness.ci.creator.variables.GCSUploadStepVariableCreator;
-import io.harness.ci.creator.variables.GitCloneStepVariableCreator;
-import io.harness.ci.creator.variables.PluginStepVariableCreator;
-import io.harness.ci.creator.variables.RestoreCacheGCSStepVariableCreator;
-import io.harness.ci.creator.variables.RestoreCacheS3StepVariableCreator;
-import io.harness.ci.creator.variables.RunStepVariableCreator;
-import io.harness.ci.creator.variables.RunTestStepVariableCreator;
-import io.harness.ci.creator.variables.S3UploadStepVariableCreator;
-import io.harness.ci.creator.variables.SaveCacheGCSStepVariableCreator;
-import io.harness.ci.creator.variables.SaveCacheS3StepVariableCreator;
-import io.harness.ci.creator.variables.SecurityStepVariableCreator;
+import io.harness.ci.creator.variables.*;
 import io.harness.ci.plan.creator.filter.CIStageFilterJsonCreatorV2;
 import io.harness.ci.plan.creator.stage.IntegrationStagePMSPlanCreatorV2;
 import io.harness.ci.plan.creator.stage.V3.IntegrationStagePMSPlanCreatorV3;
@@ -41,26 +22,7 @@ import io.harness.ci.plan.creator.step.CIPMSStepFilterJsonCreator;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreator;
 import io.harness.ci.plan.creator.step.CIStepFilterJsonCreatorV2;
 import io.harness.ci.plan.creator.steps.CIStepsPlanCreator;
-import io.harness.ci.plancreator.ActionStepPlanCreator;
-import io.harness.ci.plancreator.ArtifactoryUploadStepPlanCreator;
-import io.harness.ci.plancreator.BackgroundStepPlanCreator;
-import io.harness.ci.plancreator.BitriseStepPlanCreator;
-import io.harness.ci.plancreator.BuildAndPushACRStepPlanCreator;
-import io.harness.ci.plancreator.BuildAndPushECRStepPlanCreator;
-import io.harness.ci.plancreator.BuildAndPushGCRStepPlanCreator;
-import io.harness.ci.plancreator.DockerStepPlanCreator;
-import io.harness.ci.plancreator.GCSUploadStepPlanCreator;
-import io.harness.ci.plancreator.GitCloneStepPlanCreator;
-import io.harness.ci.plancreator.InitializeStepPlanCreator;
-import io.harness.ci.plancreator.PluginStepPlanCreator;
-import io.harness.ci.plancreator.RestoreCacheGCSStepPlanCreator;
-import io.harness.ci.plancreator.RestoreCacheS3StepPlanCreator;
-import io.harness.ci.plancreator.RunStepPlanCreator;
-import io.harness.ci.plancreator.RunTestStepPlanCreator;
-import io.harness.ci.plancreator.S3UploadStepPlanCreator;
-import io.harness.ci.plancreator.SaveCacheGCSStepPlanCreator;
-import io.harness.ci.plancreator.SaveCacheS3StepPlanCreator;
-import io.harness.ci.plancreator.SecurityStepPlanCreator;
+import io.harness.ci.plancreator.*;
 import io.harness.ci.plancreator.V1.BackgroundStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.PluginStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.RunStepPlanCreatorV1;
@@ -129,6 +91,8 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new InitializeStepPlanCreator());
     planCreators.add(new ActionStepPlanCreator());
     planCreators.add(new BitriseStepPlanCreator());
+    planCreators.add(new SSCAOrchestrateStepPlanCreator());
+    planCreators.add(new SSCAEnforceStepPlanCreator());
 
     // add V1 plan creators
     planCreators.add(new IntegrationStagePMSPlanCreatorV3());
@@ -181,6 +145,8 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     variableCreators.add(new GitCloneStepVariableCreator());
     variableCreators.add(new ActionStepVariableCreator());
     variableCreators.add(new StrategyVariableCreator());
+    variableCreators.add(new SSCAOrchestrateStepVariableCreator());
+    variableCreators.add(new SSCAEnforceStepVariableCreator());
     variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS)));
     variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));
 
@@ -237,6 +203,22 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                  .setType(StepSpecTypeConstants.SAVE_CACHE_S3)
                                  .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                  .build();
+
+    StepInfo sscaOrchestrate = StepInfo.newBuilder()
+            .setName("SSCA SBOM Orchestrator")
+            .setType(StepSpecTypeConstants.SSCA_Orchestration)
+            //.setFeatureFlag(FeatureName.SECURITY.name())
+            //.setFeatureRestrictionName(FeatureRestrictionName.SECURITY.name())
+            .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("SSCA").build())
+            .build();
+
+    StepInfo sscaEnforce = StepInfo.newBuilder()
+            .setName("SSCA Enforce")
+            .setType(StepSpecTypeConstants.SSCA_Enforcement)
+            //.setFeatureFlag(FeatureName.SECURITY.name())
+            //.setFeatureRestrictionName(FeatureRestrictionName.SECURITY.name())
+            .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("SSCA").build())
+            .build();
 
     StepInfo saveCacheToGCS = StepInfo.newBuilder()
                                   .setName("Save Cache to GCS")
@@ -331,6 +313,8 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(saveCacheToS3);
     stepInfos.add(actionStepInfo);
     stepInfos.add(bitriseStepInfo);
+    stepInfos.add(sscaOrchestrate);
+    stepInfos.add(sscaEnforce);
 
     return stepInfos;
   }

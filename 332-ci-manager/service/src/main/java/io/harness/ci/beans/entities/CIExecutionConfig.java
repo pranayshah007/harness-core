@@ -53,6 +53,8 @@ public class CIExecutionConfig implements PersistentEntity, UuidAware, CreatedAt
   @NotBlank String artifactoryUploadTag;
   @NotBlank String cacheGCSTag;
   @NotBlank String cacheS3Tag;
+  @NotBlank String sscaOrchestrationImage;
+  @NotBlank String sscaEnforcementImage;
   VmImageConfig vmImageConfig;
   @SchemaIgnore private long createdAt;
 }

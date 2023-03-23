@@ -13,26 +13,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.CIStepInfo;
-import io.harness.beans.steps.nodes.ActionStepNode;
-import io.harness.beans.steps.nodes.ArtifactoryUploadNode;
-import io.harness.beans.steps.nodes.BackgroundStepNode;
-import io.harness.beans.steps.nodes.BitriseStepNode;
-import io.harness.beans.steps.nodes.BuildAndPushACRNode;
-import io.harness.beans.steps.nodes.BuildAndPushDockerNode;
-import io.harness.beans.steps.nodes.BuildAndPushECRNode;
-import io.harness.beans.steps.nodes.BuildAndPushGCRNode;
-import io.harness.beans.steps.nodes.GCSUploadNode;
-import io.harness.beans.steps.nodes.GitCloneStepNode;
-import io.harness.beans.steps.nodes.PluginStepNode;
-import io.harness.beans.steps.nodes.RestoreCacheGCSNode;
-import io.harness.beans.steps.nodes.RestoreCacheS3Node;
-import io.harness.beans.steps.nodes.RunStepNode;
-import io.harness.beans.steps.nodes.RunTestStepNode;
-import io.harness.beans.steps.nodes.S3UploadNode;
-import io.harness.beans.steps.nodes.SaveCacheGCSNode;
-import io.harness.beans.steps.nodes.SaveCacheS3Node;
-import io.harness.beans.steps.nodes.SecurityNode;
+import io.harness.beans.steps.nodes.*;
 import io.harness.ci.serializer.morphia.CIExecutionMorphiaRegistrar;
+import io.harness.ci.states.SSCAOrchestrateStep;
 import io.harness.cimanager.serializer.CIContractsKryoRegistrar;
 import io.harness.cimanager.serializer.CIContractsMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
@@ -336,5 +319,27 @@ public class CiBeansRegistrars {
                    .availableAtAccountLevel(false)
                    .clazz(BitriseStepNode.class)
                    .build())
-          .build();
+              .add(YamlSchemaRootClass.builder()
+                      .entityType(EntityType.SSCA_ORCHESTRATE)
+                      .availableAtProjectLevel(true)
+                      .availableAtOrgLevel(false)
+                      .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                              .modulesSupported(Collections.singletonList(ModuleType.CI))
+                              .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                              .build())
+                      .availableAtAccountLevel(false)
+                      .clazz(SSCAOrchestrateStepNode.class)
+                      .build())
+              .add(YamlSchemaRootClass.builder()
+                      .entityType(EntityType.SSCA_ENFORCE)
+                      .availableAtProjectLevel(true)
+                      .availableAtOrgLevel(false)
+                      .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                              .modulesSupported(Collections.singletonList(ModuleType.CI))
+                              .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                              .build())
+                      .availableAtAccountLevel(false)
+                      .clazz(SSCAEnforceStepNode.class)
+                      .build())
+              .build();
 }

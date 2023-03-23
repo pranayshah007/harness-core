@@ -822,6 +822,8 @@ public class IntegrationStageUtils {
         case GCR:
         case ACR:
         case SAVE_CACHE_S3:
+        case SSCAOrchestrate:
+        case SSCAEnforce:
         case RESTORE_CACHE_S3:
         case RESTORE_CACHE_GCS:
         case SAVE_CACHE_GCS:

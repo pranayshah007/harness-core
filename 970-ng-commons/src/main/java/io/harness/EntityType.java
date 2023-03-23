@@ -534,7 +534,11 @@ public enum EntityType {
       IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT),
   @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK)
   GOOGLE_CLOUD_FUNCTIONS_ROLLBACK(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK,
-      IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK);
+      IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.SSCAOrchestrate)
+  SSCA_ORCHESTRATE(ModuleType.CI, EntityTypeConstants.SSCAOrchestrate, IdentifierRef.class, EntityYamlRootNames.SSCA_ORCHESTRATE),
+  @JsonProperty(EntityTypeConstants.SSCAEnforce)
+  SSCA_ENFORCE(ModuleType.CI, EntityTypeConstants.SSCAEnforce, IdentifierRef.class, EntityYamlRootNames.SSCA_ENFORCE);
 
   private final ModuleType moduleType;
   String yamlName;

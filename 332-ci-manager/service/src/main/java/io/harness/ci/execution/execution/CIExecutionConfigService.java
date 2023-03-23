@@ -124,6 +124,12 @@ public class CIExecutionConfigService {
       case SECURITY:
         executionConfig.setSecurityImage(value);
         break;
+      case SSCS_Orchestrate:
+        executionConfig.setSscaOrchestrationImage(value);
+        break;
+      case SSCS_Enforce:
+        executionConfig.setSscaEnforcementImage(value);
+        break;
       default:
         throw new BadRequestException(String.format("Field %s does not exist for infra type: K8", field));
     }
@@ -253,6 +259,12 @@ public class CIExecutionConfigService {
     }
     if (Strings.isNotBlank(overriddenConfig.getSecurityTag())) {
       defaultConfig.setSecurityTag(overriddenConfig.getSecurityTag());
+    }
+    if (Strings.isNotBlank(overriddenConfig.getSscaOrchestrateTag())) {
+      defaultConfig.setSscaOrchestrateTag(overriddenConfig.getSscaOrchestrateTag());
+    }
+    if (Strings.isNotBlank(overriddenConfig.getSscaEnforceTag())) {
+      defaultConfig.setSscaEnforceTag(overriddenConfig.getSscaEnforceTag());
     }
   }
 
@@ -464,6 +476,16 @@ public class CIExecutionConfigService {
           image = ciExecutionConfig.getGitCloneImage();
         }
         break;
+      case SSCAOrchestrate:
+        if (Strings.isNotBlank(ciExecutionConfig.getSscaOrchestrationImage())) {
+          image = ciExecutionConfig.getSscaOrchestrationImage();
+        }
+        break;
+      case SSCAEnforce:
+        if (Strings.isNotBlank(ciExecutionConfig.getSscaEnforcementImage())) {
+          image = ciExecutionConfig.getSscaEnforcementImage();
+        }
+        break;
       default:
         throw new BadRequestException("Unexpected value: " + stepInfoType);
     }
@@ -501,6 +523,10 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getArtifactoryUploadConfig();
       case GIT_CLONE:
         return ciExecutionServiceConfig.getStepConfig().getGitCloneConfig();
+      case SSCAOrchestrate:
+        return ciExecutionServiceConfig.getStepConfig().getSscsOrchestrateConfig();
+      case SSCAEnforce:
+        return ciExecutionServiceConfig.getStepConfig().getSscsEnforceConfig();
       default:
         throw new BadRequestException("Unexpected value: " + stepInfoType);
     }

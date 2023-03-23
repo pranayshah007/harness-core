@@ -11,25 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.steps.stepinfo.ACRStepInfo;
-import io.harness.beans.steps.stepinfo.ActionStepInfo;
-import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
-import io.harness.beans.steps.stepinfo.BitriseStepInfo;
-import io.harness.beans.steps.stepinfo.DockerStepInfo;
-import io.harness.beans.steps.stepinfo.ECRStepInfo;
-import io.harness.beans.steps.stepinfo.GCRStepInfo;
-import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
-import io.harness.beans.steps.stepinfo.PluginStepInfo;
-import io.harness.beans.steps.stepinfo.RestoreCacheGCSStepInfo;
-import io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo;
-import io.harness.beans.steps.stepinfo.RunStepInfo;
-import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
-import io.harness.beans.steps.stepinfo.SaveCacheGCSStepInfo;
-import io.harness.beans.steps.stepinfo.SaveCacheS3StepInfo;
-import io.harness.beans.steps.stepinfo.SecurityStepInfo;
-import io.harness.beans.steps.stepinfo.UploadToArtifactoryStepInfo;
-import io.harness.beans.steps.stepinfo.UploadToGCSStepInfo;
-import io.harness.beans.steps.stepinfo.UploadToS3StepInfo;
+import io.harness.beans.steps.stepinfo.*;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
@@ -45,7 +27,7 @@ import java.util.List;
               SecurityStepInfo.class, RestoreCacheGCSStepInfo.class, RestoreCacheS3StepInfo.class, RunStepInfo.class,
               SaveCacheGCSStepInfo.class, SaveCacheS3StepInfo.class, UploadToGCSStepInfo.class,
               UploadToS3StepInfo.class, UploadToArtifactoryStepInfo.class, RunTestsStepInfo.class, ACRStepInfo.class,
-              GitCloneStepInfo.class, BackgroundStepInfo.class, ActionStepInfo.class, BitriseStepInfo.class})
+              GitCloneStepInfo.class, BackgroundStepInfo.class, ActionStepInfo.class, BitriseStepInfo.class, SSCAEnforceStepInfo.class, SSCAOrchestrateStepInfo.class})
 @OwnedBy(CI)
 public interface CIStepInfo extends StepSpecType, WithStepElementParameters, SpecParameters {
   int MIN_RETRY = 0;

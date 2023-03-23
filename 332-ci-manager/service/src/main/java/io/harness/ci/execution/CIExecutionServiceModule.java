@@ -11,26 +11,7 @@ import io.harness.CIBeansModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
-import io.harness.beans.steps.nodes.ActionStepNode;
-import io.harness.beans.steps.nodes.ArtifactoryUploadNode;
-import io.harness.beans.steps.nodes.BackgroundStepNode;
-import io.harness.beans.steps.nodes.BitriseStepNode;
-import io.harness.beans.steps.nodes.BuildAndPushACRNode;
-import io.harness.beans.steps.nodes.BuildAndPushDockerNode;
-import io.harness.beans.steps.nodes.BuildAndPushECRNode;
-import io.harness.beans.steps.nodes.BuildAndPushGCRNode;
-import io.harness.beans.steps.nodes.GCSUploadNode;
-import io.harness.beans.steps.nodes.GitCloneStepNode;
-import io.harness.beans.steps.nodes.InitializeStepNode;
-import io.harness.beans.steps.nodes.PluginStepNode;
-import io.harness.beans.steps.nodes.RestoreCacheGCSNode;
-import io.harness.beans.steps.nodes.RestoreCacheS3Node;
-import io.harness.beans.steps.nodes.RunStepNode;
-import io.harness.beans.steps.nodes.RunTestStepNode;
-import io.harness.beans.steps.nodes.S3UploadNode;
-import io.harness.beans.steps.nodes.SaveCacheGCSNode;
-import io.harness.beans.steps.nodes.SaveCacheS3Node;
-import io.harness.beans.steps.nodes.SecurityNode;
+import io.harness.beans.steps.nodes.*;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
@@ -86,6 +67,8 @@ public class CIExecutionServiceModule extends AbstractModule {
       add(InitializeStepNode.class);
       add(ActionStepNode.class);
       add(BitriseStepNode.class);
+      add(SSCAEnforceStepNode.class);
+      add(SSCAOrchestrateStepNode.class);
     }
   };
   @Inject
