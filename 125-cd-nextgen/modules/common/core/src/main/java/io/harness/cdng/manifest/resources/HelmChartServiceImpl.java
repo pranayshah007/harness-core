@@ -35,7 +35,6 @@ import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
-import io.harness.delegate.AccountId;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -178,15 +177,6 @@ public class HelmChartServiceImpl implements HelmChartService {
                                 .taskSetupAbstractions(abstractions)
                                 .taskSelectors(getDelegateSelectors(storeDelegateConfig))
                                 .build();
-    }
-
-    io.harness.delegate.TaskType taskType = io.harness.delegate.TaskType.newBuilder().setType(taskTypeName).build();
-    AccountId accountIdentifier = AccountId.newBuilder().setId(delegateTaskRequest.getAccountId()).build();
-    boolean taskTypeSupported = delegateServiceGrpcClient.isTaskTypeSupported(accountIdentifier, taskType);
-    if (!taskTypeSupported) {
-      throw new InvalidRequestException(
-          format("None of available delegates supports %s task. Please upgrade your delegates to latest version.",
-              taskTypeName));
     }
 
     DelegateResponseData delegateResponseData = null;
