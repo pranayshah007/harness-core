@@ -82,23 +82,6 @@ public class RollbackModeExecutionHelper {
                          // the Metadata for the original execution
   }
 
-  /**
-   * This is to reverse the stages in the processed yaml
-   * Original->
-   * pipeline:
-   *   stages:
-   *   - stage:
-   *       identifier: s1
-   *  - stage:
-   *       identifier: s2
-   * Transformed->
-   * pipeline:
-   *   stages:
-   *   - stage:
-   *       identifier: s2
-   *   - stage:
-   *       identifier: s1
-   */
   String transformProcessedYaml(String processedYaml, ExecutionMode executionMode, String originalPlanExecutionId) {
     switch (executionMode) {
       case PIPELINE_ROLLBACK:
@@ -112,6 +95,26 @@ public class RollbackModeExecutionHelper {
     }
   }
 
+  /**
+   * This is to reverse the stages in the processed yaml, and remove stages that were not run in the original execution
+   * Original->
+   * pipeline:
+   *   stages:
+   *   - stage:
+   *       identifier: s1
+   *  - stage:
+   *       identifier: s2
+   *  - stage:
+   *       identifier: s3
+   * Lets say s3 was not run.
+   * Transformed->
+   * pipeline:
+   *   stages:
+   *   - stage:
+   *       identifier: s2
+   *   - stage:
+   *       identifier: s1
+   */
   String transformProcessedYamlForPipelineRollbackMode(String processedYaml, String originalPlanExecutionId) {
     List<String> executedStages = nodeExecutionService.getStageDetailFromPlanExecutionId(originalPlanExecutionId)
                                       .stream()
@@ -144,6 +147,23 @@ public class RollbackModeExecutionHelper {
     return YamlUtils.write(pipelineNode).replace("---\n", "");
   }
 
+  /**
+   * This is to reverse the stages in the processed yaml
+   * Original->
+   * pipeline:
+   *   stages:
+   *   - stage:
+   *       identifier: s1
+   *  - stage:
+   *       identifier: s2
+   * Transformed->
+   * pipeline:
+   *   stages:
+   *   - stage:
+   *       identifier: s2
+   *   - stage:
+   *       identifier: s1
+   */
   String transformProcessedYamlForPostExecutionRollbackMode(String processedYaml) {
     JsonNode pipelineNode;
     try {
