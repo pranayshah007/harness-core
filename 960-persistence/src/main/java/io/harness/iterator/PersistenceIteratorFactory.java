@@ -13,6 +13,7 @@ import static io.harness.iterator.PersistenceIterator.ProcessMode.PUMP;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.REDIS_BATCH;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR_SKIP_MISSED;
+import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.config.WorkersConfiguration;
@@ -45,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class PersistenceIteratorFactory {
   private static final SecureRandom random = new SecureRandom();
+  private static final String ITERATOR_PREFIX_NAME = "Iterator-";
 
   @Inject Injector injector;
 
@@ -98,7 +100,7 @@ public final class PersistenceIteratorFactory {
       return null;
     }
 
-    String iteratorName = "Iterator-" + options.name;
+    String iteratorName = ITERATOR_PREFIX_NAME + options.name;
     ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(
         options.poolSize, new ThreadFactoryBuilder().setNameFormat(iteratorName).build());
     log.info(getWorkerEnabledLog(cls.getName()));
@@ -145,7 +147,7 @@ public final class PersistenceIteratorFactory {
       return null;
     }
 
-    String iteratorName = "Iterator-" + options.name;
+    String iteratorName = ITERATOR_PREFIX_NAME + options.name;
 
     // Create the worker thread pool that will process the docs.
     ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(
@@ -167,11 +169,52 @@ public final class PersistenceIteratorFactory {
             .redisModeBatchSize(options.getBatchSize())
             .redisLockTimeout(options.getLockTimeout())
             .persistentLocker(injector.getInstance(Key.get(PersistentLocker.class)))
+            .schedulingType(REGULAR)
             .build();
     injector.injectMembers(iterator);
 
     // Start the main executor
     mainExecutor.submit(() -> iterator.redisBatchProcess());
+
+    return iterator;
+  }
+
+  public <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator<T>
+  createRedisBatchIteratorIrregularSchedulingWithDedicatedThreadPool(
+      RedisBatchExecutorOptions options, Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
+    if (!workersConfiguration.confirmWorkerIsActive(cls)) {
+      log.info(getWorkerDisabledLog(cls.getName()));
+      return null;
+    }
+
+    String iteratorName = ITERATOR_PREFIX_NAME + options.name;
+
+    // Create the worker thread pool that will process the docs.
+    ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(
+        options.poolSize, new ThreadFactoryBuilder().setNameFormat(iteratorName).build());
+    log.info(getWorkerEnabledLog(cls.getName()));
+
+    // Create the main executor thread that carries out the Redis
+    // lock acquisition and fetching / updating docs with Mongo.
+    ExecutorService mainExecutor =
+        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(iteratorName + "-Main").build());
+
+    MongoPersistenceIterator<T, F> iterator =
+        builder.mode(REDIS_BATCH)
+            .executorService(mainExecutor)
+            .workerThreadPoolExecutor(executor)
+            .semaphore(new Semaphore(options.poolSize))
+            .iteratorName(options.name)
+            .threadPoolIntervalInSeconds(options.interval)
+            .redisModeBatchSize(options.getBatchSize())
+            .redisLockTimeout(options.getLockTimeout())
+            .persistentLocker(injector.getInstance(Key.get(PersistentLocker.class)))
+            .schedulingType(IRREGULAR_SKIP_MISSED)
+            .build();
+    injector.injectMembers(iterator);
+
+    // Start the main executor
+    mainExecutor.submit(() -> iterator.redisBatchProcessIrregularScheduling());
 
     return iterator;
   }

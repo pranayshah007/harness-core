@@ -14,6 +14,7 @@ import io.harness.mongo.iterator.BulkWriteOpsResults;
 import io.harness.mongo.iterator.filter.FilterExpander;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -26,4 +27,6 @@ public interface PersistenceProvider<T extends PersistentIterable, F extends Fil
   Iterator<T> obtainNextInstances(Class<T> clazz, String fieldName, F filterExpander, int limit);
   BulkWriteOpsResults bulkWriteDocumentsMatchingIds(
       Class<T> clazz, List<String> ids, String fieldName, long base, Duration targetInterval);
+  BulkWriteOpsResults bulkUpdateAndRemoveOpsMatchingDocIds(
+      Class<T> clazz, HashMap<String, List<Long>> idsAndIterations, String fieldName, long throttled);
 }

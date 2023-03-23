@@ -7,6 +7,7 @@
 
 package io.harness.mongo.iterator.provider;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.Switch.unhandled;
 
 import static java.lang.System.currentTimeMillis;
@@ -32,7 +33,9 @@ import dev.morphia.query.UpdateOperations;
 import dev.morphia.query.UpdateOpsImpl;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.bson.types.ObjectId;
 
 @Singleton
@@ -156,6 +159,68 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
       Query<T> findQuery = persistence.createQuery(clazz);
       findQuery.criteria("_id").in(objectIds);
       bulkWriteOperation.find(findQuery.getQueryObject()).update(((UpdateOpsImpl) updateOperations).getOps());
+    }
+
+    // 4. Execute the Bulk write operation and return the results.
+    BulkWriteResult bulkWriteResult = bulkWriteOperation.execute();
+    return BulkWriteOpsResults.builder()
+        .operationAcknowledged(bulkWriteResult.isAcknowledged())
+        .matchedCount(bulkWriteResult.getMatchedCount())
+        .modifiedCount(bulkWriteResult.getModifiedCount())
+        .build();
+  }
+
+  @Override
+  public BulkWriteOpsResults bulkUpdateAndRemoveOpsMatchingDocIds(
+      Class<T> clazz, HashMap<String, List<Long>> idsAndIterations, String fieldName, long throttled) {
+    // 1. Create an update operation to remove all the values less than throttled
+    UpdateOperations<T> updateOperationRemove = persistence.createUpdateOperations(clazz);
+    updateOperationRemove.removeAll(fieldName, new BasicDBObject(FilterOperator.LESS_THAN_OR_EQUAL.val(), throttled));
+
+    // 2. Initialize an unordered bulk operation
+    DBCollection collection = persistence.getCollection(clazz);
+    BulkWriteOperation bulkWriteOperation = collection.initializeUnorderedBulkOperation();
+
+    // 3. Create find query.
+    /* The Mongo documents will have '_id' field of type ObjectId if Mongo assigned the id.
+       It will have '_id' field of type String if the document was inserted manually.
+       Thus, check if the given id is of type ObjectId or String and prepare find queries accordingly.
+     */
+    List<String> stringIds = new ArrayList<>();
+    List<ObjectId> objectIds = new ArrayList<>();
+
+    for (Map.Entry<String, List<Long>> entry : idsAndIterations.entrySet()) {
+      String id = entry.getKey();
+      List<Long> iterations = entry.getValue();
+
+      Query<T> findQuery = persistence.createQuery(clazz);
+      findQuery.criteria("_id").equal(id);
+      if (isNotEmpty(iterations)) {
+        // Add the update operation to update the next iterations
+        UpdateOperations<T> operations = persistence.createUpdateOperations(clazz).set(fieldName, iterations);
+        bulkWriteOperation.find(findQuery.getQueryObject()).update(((UpdateOpsImpl) operations).getOps());
+      }
+
+      if (ObjectId.isValid(id)) {
+        objectIds.add(new ObjectId(id));
+      } else {
+        stringIds.add(id);
+      }
+    }
+
+    // 3a. Create a find query to match String Ids
+    if (!stringIds.isEmpty()) {
+      Query<T> findQuery = persistence.createQuery(clazz);
+      findQuery.criteria("_id").in(stringIds);
+      // Add the remove operation to remove all values less than throttled
+      bulkWriteOperation.find(findQuery.getQueryObject()).update(((UpdateOpsImpl) updateOperationRemove).getOps());
+    }
+
+    // 3b. Create a find query to match Object Ids
+    if (!objectIds.isEmpty()) {
+      Query<T> findQuery = persistence.createQuery(clazz);
+      findQuery.criteria("_id").in(objectIds);
+      bulkWriteOperation.find(findQuery.getQueryObject()).update(((UpdateOpsImpl) updateOperationRemove).getOps());
     }
 
     // 4. Execute the Bulk write operation and return the results.

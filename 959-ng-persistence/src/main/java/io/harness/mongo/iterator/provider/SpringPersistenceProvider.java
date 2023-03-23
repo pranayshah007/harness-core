@@ -8,6 +8,7 @@
 package io.harness.mongo.iterator.provider;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.Switch.unhandled;
 
 import static java.lang.System.currentTimeMillis;
@@ -19,11 +20,14 @@ import io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.bulk.BulkWriteResult;
 import dev.morphia.query.FilterOperator;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import org.bson.types.ObjectId;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
@@ -165,7 +169,64 @@ public class SpringPersistenceProvider<T extends PersistentIterable>
     }
 
     // 4. Execute the Bulk write operation and return the results.
-    com.mongodb.bulk.BulkWriteResult bulkWriteResult = bulkOps.execute();
+    BulkWriteResult bulkWriteResult = bulkOps.execute();
+    return BulkWriteOpsResults.builder()
+        .operationAcknowledged(bulkWriteResult.wasAcknowledged())
+        .matchedCount(bulkWriteResult.getMatchedCount())
+        .modifiedCount(bulkWriteResult.getModifiedCount())
+        .build();
+  }
+
+  @Override
+  public BulkWriteOpsResults bulkUpdateAndRemoveOpsMatchingDocIds(
+      Class<T> clazz, HashMap<String, List<Long>> idsAndIterations, String fieldName, long throttled) {
+    // 1. Create an update operation to set the given field with given value
+    Update updateOpsRemove = new Update();
+    updateOpsRemove.pull(fieldName, new BasicDBObject(FilterOperator.LESS_THAN_OR_EQUAL.val(), throttled));
+
+    // 2. Initialize an unordered bulk operation
+    BulkOperations bulkOps = persistence.bulkOps(BulkOperations.BulkMode.UNORDERED, clazz);
+
+    // 3. Create find query.
+    /* The Mongo documents will have '_id' field of type ObjectId if Mongo assigned the id.
+       It will have '_id' field of type String if the document was inserted manually.
+       Thus, check if the given id is of type ObjectId or String and prepare find queries accordingly.
+     */
+    List<String> stringIds = new ArrayList<>();
+    List<ObjectId> objectIds = new ArrayList<>();
+
+    for (Map.Entry<String, List<Long>> entry : idsAndIterations.entrySet()) {
+      String id = entry.getKey();
+      List<Long> iterations = entry.getValue();
+
+      if (isNotEmpty(iterations)) {
+        // Add the update operation to update the next iterations
+        Update update = new Update();
+        update.set(fieldName, iterations);
+        persistence.updateFirst(new Query(Criteria.where("_id").is(id)), update, clazz);
+      }
+
+      if (ObjectId.isValid(id)) {
+        objectIds.add(new ObjectId(id));
+      } else {
+        stringIds.add(id);
+      }
+    }
+
+    // 3a. Create a find query to match String Ids
+    if (!stringIds.isEmpty()) {
+      Query query = new Query(Criteria.where("_id").in(stringIds));
+      bulkOps.updateMulti(query, updateOpsRemove);
+    }
+
+    // 3b. Create a find query to match Object Ids
+    if (!objectIds.isEmpty()) {
+      Query query = new Query(Criteria.where("_id").in(objectIds));
+      bulkOps.updateMulti(query, updateOpsRemove);
+    }
+
+    // 4. Execute the Bulk write operation and return the results.
+    BulkWriteResult bulkWriteResult = bulkOps.execute();
     return BulkWriteOpsResults.builder()
         .operationAcknowledged(bulkWriteResult.wasAcknowledged())
         .matchedCount(bulkWriteResult.getMatchedCount())

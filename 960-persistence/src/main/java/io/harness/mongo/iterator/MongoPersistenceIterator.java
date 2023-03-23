@@ -45,6 +45,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -112,6 +113,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         executorService.submit(this::process);
         break;
       case LOOP:
+      case REDIS_BATCH:
         notifyAll();
         break;
       default:
@@ -288,7 +290,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   }
 
   /**
-   * Process method for Redis Batch mode iterator.
+   * Process method for Redis Batch mode iterator with regular scheduling.
    *
    *  1. Update the batch-size by finding a limit which will take into account the number
    *     of docs still not processed in the jobQ which ensures that the Q doesn't overflow.
@@ -370,10 +372,104 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         log.debug("Redis Batch Iterator Mode - time to carryout the entire processing is {}", processTime);
       }
 
-      // If there were no docs available then sleep for
+      // If there were no docs available then wait for
       // the configured threadPool interval duration.
       if (docIds.isEmpty()) {
-        sleep(threadPoolIntervalInSeconds);
+        synchronized (this) {
+          try {
+            wait(threadPoolIntervalInSeconds.toMillis());
+          } catch (InterruptedException exception) {
+            log.error("Thread interrupted while waiting");
+            Thread.currentThread().interrupt();
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Process method for Redis Batch mode iterator with irregular scheduling.
+   *
+   *  1. The working is similar to redisBatchProcess().
+   *  2. In irregular scheduling multiple nextIteration values are updated
+   *     and the nextIteration values less than computed throttle value
+   *     are removed.
+   */
+  public void redisBatchProcessIrregularScheduling() {
+    while (true) {
+      // Check if iterators should run or not.
+      if (!shouldProcess()) {
+        sleep(ofSeconds(1));
+        continue;
+      }
+
+      long throttled = currentTimeMillis() + (throttleInterval == null ? 0 : throttleInterval.toMillis());
+
+      // Compute a limit value that takes into account the number of unprocessed
+      // docs in the jobQ to ensure that the Q doesn't overflow.
+      int limit = Math.min(redisModeBatchSize, redisModeBatchSize - workerThreadPoolExecutor.getQueue().size());
+
+      if (limit <= 0) {
+        // The Queue is full, so try after sometime
+        log.warn("The worker Q for {} iterator is full, pausing for 5 seconds", iteratorName);
+        sleep(ofSeconds(REDIS_BATCH_PAUSE_DURATION));
+        continue;
+      }
+
+      long totalTimeStart = currentTimeMillis();
+      long startTime = currentTimeMillis();
+
+      AcquiredLock acquiredLock = null;
+      long processTime = 0;
+      HashMap<String, List<Long>> docIdsAndIterations = new HashMap<>();
+      try {
+        // Acquire the distributed lock
+        acquiredLock = acquireLock();
+
+        processTime = currentTimeMillis() - startTime;
+        log.debug("Redis Batch Iterator Mode - time to acquire Redis lock {}", processTime);
+
+        startTime = currentTimeMillis();
+        Iterator<T> docItr = persistenceProvider.obtainNextInstances(clazz, fieldName, filterExpander, limit);
+        processTime = currentTimeMillis() - startTime;
+        log.debug("Redis Batch Iterator Mode - time to acquire {} docs is {}", limit, processTime);
+
+        // Iterate over the fetched documents - submit it to workers and prepare bulkWrite operations
+        while (docItr.hasNext()) {
+          T entity = docItr.next();
+          Long nextIteration = entity.obtainNextIteration(fieldName);
+          List<Long> nextIterations =
+              ((PersistentIrregularIterable) entity)
+                  .recalculateNextIterations(fieldName, schedulingType == IRREGULAR_SKIP_MISSED, throttled);
+          docIdsAndIterations.put(entity.getUuid(), nextIterations);
+          // Don't process this entity if it's nextIteration is not yet set.
+          if (nextIteration == null) {
+            continue;
+          }
+          submitEntityForProcessingWithoutWait(entity);
+        }
+
+        // Update the documents next iterations field
+        updateDocumentNextIterations(docIdsAndIterations, throttled);
+      } finally {
+        // Release the distributed lock - acquiredLock cannot be null
+        releaseLock(acquiredLock);
+
+        processTime = currentTimeMillis() - totalTimeStart;
+        log.debug("Redis Batch Iterator Mode - time to carryout the entire processing is {}", processTime);
+      }
+
+      // If there were no docs available then sleep for
+      // the configured threadPool interval duration.
+      if (docIdsAndIterations.isEmpty()) {
+        synchronized (this) {
+          try {
+            wait(threadPoolIntervalInSeconds.toMillis());
+          } catch (InterruptedException exception) {
+            log.error("Thread interrupted while waiting");
+            Thread.currentThread().interrupt();
+          }
+        }
       }
     }
   }
@@ -504,6 +600,42 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
       long processTime = currentTimeMillis() - startTime;
       log.debug(
           "Redis Batch Iterator Mode - time to carryout bulk write for {} docs is {}", docIds.size(), processTime);
+
+      // Do not do any further time-consuming processing here because
+      // the distributed lock has to be released in the finally block for safety.
+
+      // Check if all documents were found
+      if (size != writeResults.getMatchedCount()) {
+        log.warn("All documents not found - exp {} found {} ", size, writeResults.getMatchedCount());
+      }
+      // Check if all the writes went through
+      if (size != writeResults.getModifiedCount()) {
+        log.warn("All updates for the field {} did not go through - exp {} modified {} ", fieldName, size,
+            writeResults.getModifiedCount());
+      }
+    } catch (RuntimeException ex) {
+      log.error("Failed to find and update documents due to exception {} ", ex);
+    }
+  }
+
+  /**
+   * Method to carryout bulk find and update operation.
+   * @param docIdsAndIterations Map of document Ids to its nextIterations
+   */
+  private void updateDocumentNextIterations(HashMap<String, List<Long>> docIdsAndIterations, long throttled) {
+    // If the docIds list is empty then return
+    if (docIdsAndIterations.isEmpty()) {
+      return;
+    }
+
+    int size = docIdsAndIterations.size();
+    try {
+      long startTime = currentTimeMillis();
+      BulkWriteOpsResults writeResults =
+          persistenceProvider.bulkUpdateAndRemoveOpsMatchingDocIds(clazz, docIdsAndIterations, fieldName, throttled);
+      long processTime = currentTimeMillis() - startTime;
+      log.debug("Redis Batch Iterator Mode - time to carryout bulk write for {} docs is {}", docIdsAndIterations.size(),
+          processTime);
 
       // Do not do any further time-consuming processing here because
       // the distributed lock has to be released in the finally block for safety.
