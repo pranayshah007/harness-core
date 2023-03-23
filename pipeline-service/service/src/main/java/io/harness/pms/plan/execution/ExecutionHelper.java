@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
+import static io.harness.utils.ExecutionModeUtils.isRollbackMode;
 
 import static java.lang.String.format;
 
@@ -501,10 +502,6 @@ public class ExecutionHelper {
           plan, previousExecutionId, resp.getPreservedNodesInRollbackModeList(), executionMode);
     }
     return plan;
-  }
-
-  boolean isRollbackMode(ExecutionMode executionMode) {
-    return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
   }
 
   public PlanExecution startExecutionV2(String accountId, String orgIdentifier, String projectIdentifier,
