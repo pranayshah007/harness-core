@@ -14,6 +14,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.exception.ConnectException;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmInternalServerErrorException;
 import io.harness.exception.UnexpectedException;
@@ -53,7 +54,8 @@ public class ScmDelegateClientImpl implements ScmDelegateClient {
           log.error("Error while communicating with the scm service. Retry count is {}", retryCount, e);
           if (e.getStatus().getCode().equals(Status.Code.UNAVAILABLE)) {
             if (++retryCount > 20) {
-              throw new UnexpectedException("Faced Internal Server Error. Please contact Harness Support Team", e);
+              throw new InternalServerErrorException(
+                  "Faced Internal Server Error. Please check if correct certificates are installed in the delegate", e);
             }
             Thread.sleep(100);
           } else {

@@ -17,4 +17,5 @@ public class SCMExceptionExplanations {
       + "2. Repo does not exist or has been deleted\n"
       + "3. Credentials are invalid or have expired";
   public static final String EXCEPTION_MESSAGE_INVALID_CONTENT = "The file content might be invalid.";
+  public static final String EXCEPTION_INTERNAL_SERVER_ERROR = "Delegate is not able to connect with scm provider";
 }

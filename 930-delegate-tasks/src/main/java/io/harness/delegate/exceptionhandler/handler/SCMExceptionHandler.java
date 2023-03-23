@@ -51,6 +51,10 @@ public class SCMExceptionHandler implements ExceptionHandler {
         return NestedExceptionUtils.hintWithExplanationException(SCMExceptionHints.SCM_GIT_PROVIDER_ERROR,
             SCMExceptionExplanations.EXCEPTION_MESSAGE_INVALID_CONTENT,
             new InvalidRequestException(scmException.getMessage(), scmException, USER));
+      case SCM_INTERNAL_SERVER_ERROR:
+        return NestedExceptionUtils.hintWithExplanationException(SCMExceptionHints.SCM_INTERNAL_SERVER_ERROR,
+            SCMExceptionExplanations.EXCEPTION_INTERNAL_SERVER_ERROR,
+            new InvalidRequestException(scmException.getMessage(), USER));
       default:
         return new InvalidRequestException(exception.getMessage(), USER);
     }

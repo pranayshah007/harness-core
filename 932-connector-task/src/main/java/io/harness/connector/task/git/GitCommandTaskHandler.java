@@ -43,6 +43,7 @@ import io.harness.delegate.beans.git.GitCommandExecutionResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ExplanationException;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.runtime.SCMRuntimeException;
@@ -140,8 +141,13 @@ public class GitCommandTaskHandler {
       }
     } catch (InvalidRequestException e) {
       throw SCMRuntimeException.builder().message(e.getMessage()).errorCode(ErrorCode.INVALID_REQUEST).build();
+    } catch (InternalServerErrorException e) {
+      throw SCMRuntimeException.builder()
+          .message(e.getMessage())
+          .errorCode(ErrorCode.SCM_INTERNAL_SERVER_ERROR)
+          .build();
     } catch (Exception e) {
-      throw SCMRuntimeException.builder().message(e.getMessage()).errorCode(ErrorCode.UNEXPECTED).cause(e).build();
+      throw SCMRuntimeException.builder().message(e.getMessage()).errorCode(ErrorCode.UNEXPECTED).build();
     }
     if (reposResponse != null && reposResponse.getStatus() > 300) {
       String errorMessage = reposResponse.getError();
