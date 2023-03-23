@@ -30,6 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class PipelineRollbackStageHelper {
+  public final String PIPELINE_ROLLBACK_STAGE_NAME = "Pipeline Rollback Stage";
+
   public void addPipelineRollbackStageDependency(
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField stagesField) {
     JsonNode prbStageJsonNode = buildPipelineRollbackStageJsonNode();
@@ -49,7 +51,7 @@ public class PipelineRollbackStageHelper {
 
   JsonNode buildPipelineRollbackStageJsonNode() {
     String stageInnerYAML = "stage:\n"
-        + "  name: Pipeline Rollback Stage\n"
+        + "  name: " + PIPELINE_ROLLBACK_STAGE_NAME + "\n"
         + "  identifier: prb-" + generateUuid() + "\n"
         + "  type: PipelineRollback\n"
         + "  spec: {}\n";

@@ -19,6 +19,7 @@ import io.harness.execution.PlanExecutionMetadata;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.Plan;
+import io.harness.plancreator.pipelinerollback.PipelineRollbackStageHelper;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
@@ -112,11 +113,12 @@ public class RollbackModeExecutionHelper {
   }
 
   String transformProcessedYamlForPipelineRollbackMode(String processedYaml, String originalPlanExecutionId) {
-    List<String> executedStages = nodeExecutionService.getStageDetailFromPlanExecutionId(originalPlanExecutionId)
-                                      .stream()
-                                      .filter(info -> !info.getName().equals("Pipeline Rollback Stage"))
-                                      .map(RetryStageInfo::getIdentifier)
-                                      .collect(Collectors.toList());
+    List<String> executedStages =
+        nodeExecutionService.getStageDetailFromPlanExecutionId(originalPlanExecutionId)
+            .stream()
+            .filter(info -> !info.getName().equals(PipelineRollbackStageHelper.PIPELINE_ROLLBACK_STAGE_NAME))
+            .map(RetryStageInfo::getIdentifier)
+            .collect(Collectors.toList());
 
     JsonNode pipelineNode;
     try {
