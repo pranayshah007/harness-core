@@ -7,13 +7,11 @@
 
 package io.harness.auditevent.streaming.services.impl;
 
-import static io.harness.audit.entities.AuditEvent.AuditEventKeys.ACCOUNT_IDENTIFIER_KEY;
+import static io.harness.audit.entities.AuditEvent.AuditEventKeys;
 import static io.harness.auditevent.streaming.beans.BatchStatus.FAILED;
 import static io.harness.auditevent.streaming.beans.BatchStatus.IN_PROGRESS;
 import static io.harness.auditevent.streaming.beans.BatchStatus.READY;
 import static io.harness.auditevent.streaming.beans.BatchStatus.SUCCESS;
-import static io.harness.auditevent.streaming.entities.StreamingBatch.StreamingBatchKeys.accountIdentifier;
-import static io.harness.auditevent.streaming.entities.StreamingBatch.StreamingBatchKeys.streamingDestinationIdentifier;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO.TypeEnum.AWS_S3;
 
@@ -26,7 +24,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
 import io.harness.CategoryTest;
-import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.auditevent.streaming.AuditEventRepository;
@@ -263,15 +260,15 @@ public class StreamingBatchServiceImplTest extends CategoryTest {
     int expectedSize = 2;
     assertThat(document).hasSize(expectedSize);
     assertThat(document).containsExactlyInAnyOrderEntriesOf(
-        Map.ofEntries(Map.entry(accountIdentifier, ACCOUNT_IDENTIFIER),
-            Map.entry(streamingDestinationIdentifier, STREAMING_DESTINATION_IDENTIFIER)));
+        Map.ofEntries(Map.entry(StreamingBatchKeys.accountIdentifier, ACCOUNT_IDENTIFIER),
+            Map.entry(StreamingBatchKeys.streamingDestinationIdentifier, STREAMING_DESTINATION_IDENTIFIER)));
   }
 
   private void assertAuditRecordsCountCriteria(StreamingBatch expectedStreamingBatch, Criteria criteria) {
     Document document = criteria.getCriteriaObject();
-    assertThat(document).containsEntry(ACCOUNT_IDENTIFIER_KEY, ACCOUNT_IDENTIFIER);
-    assertThat(document).containsKey(AuditEvent.AuditEventKeys.createdAt);
-    Document createdAtDocument = (Document) document.get(AuditEvent.AuditEventKeys.createdAt);
+    assertThat(document).containsEntry(AuditEventKeys.ACCOUNT_IDENTIFIER_KEY, ACCOUNT_IDENTIFIER);
+    assertThat(document).containsKey(AuditEventKeys.createdAt);
+    Document createdAtDocument = (Document) document.get(AuditEventKeys.createdAt);
     assertThat(createdAtDocument)
         .containsExactlyInAnyOrderEntriesOf(Map.ofEntries(Map.entry("$gt", expectedStreamingBatch.getStartTime()),
             Map.entry("$lte", expectedStreamingBatch.getEndTime())));

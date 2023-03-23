@@ -338,3 +338,4 @@ io.harness.ssca.beans.stepnode.SscaOrchestrationStepNode
 io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo
 io.harness.beans.stages.IACMStageConfigImplV1
 io.harness.beans.stages.IACMStageNodeV1
+io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput

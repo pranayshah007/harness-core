@@ -1946,6 +1946,7 @@
 97116:io.harness.servicenow.ServiceNowImportSetResponseNG
 97117:io.harness.servicenow.ServiceNowImportSetTransformMapResult
 97118:io.harness.servicenow.ServiceNowStagingTable
+97120:io.harness.servicenow.ServiceNowTicketTypeDTO
 98399:io.harness.delegate.task.helm.HelmCommandRequestNG
 98400:io.harness.helm.HelmCommandType
 98401:io.harness.delegate.task.helm.HelmInstallCommandRequestNG
@@ -2615,7 +2616,6 @@
 980100:software.wings.beans.infrastructure.instance.info.K8sPodInfo
 980101:software.wings.beans.infrastructure.instance.info.K8sContainerInfo
 1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
-
 5731600:io.harness.aws.beans.AsgLoadBalancerConfig
 5731601:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackRequest
 5731602:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse

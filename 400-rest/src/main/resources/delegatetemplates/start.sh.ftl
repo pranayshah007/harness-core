@@ -185,6 +185,7 @@ export DELEGATE_TYPE=${delegateType}
 
 export HOSTNAME
 export CAPSULE_CACHE_DIR="$DIR/.cache"
+export DELEGATE_STORAGE_URL=${delegateStorageUrl}
 
 # Strip JAVA_OPTS that is not recognized by JRE11
 <#noparse>

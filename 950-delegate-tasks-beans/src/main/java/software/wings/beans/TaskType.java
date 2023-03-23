@@ -479,7 +479,8 @@ public enum TaskType {
   TERRAFORM_TASK_NG_V4(TaskGroup.TERRAFORM_NG, "Terraform Task NG V4"),
   TERRAFORM_CLOUD_CLEANUP_TASK_NG(TaskGroup.TERRAFORM_CLOUD, "Terraform Cloud Cleanup Task"),
   OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG(TaskGroup.HELM, "Task to query OCI Helm Docker API List Tags"),
-  TAS_ROUTE_MAPPING(TaskGroup.TAS, "Tas Route Mapping task");
+  TAS_ROUTE_MAPPING(TaskGroup.TAS, "Tas Route Mapping task"),
+  AWS_EKS_LIST_CLUSTERS_TASK(TaskGroup.AWS, "AWS EKS List Clusters Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

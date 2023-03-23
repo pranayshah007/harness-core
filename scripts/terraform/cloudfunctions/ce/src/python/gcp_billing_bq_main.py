@@ -861,13 +861,18 @@ def syncDataset(jsonData):
         # keeping this 3 days for currency customers also
         # only tables other than gcp_billing_export require to be updated with current month currency factors
         # Sync past 3 days only. Specify columns here explicitely.
+
+        # check whether the raw billing table is standard_export or detailed_export
+        isBillingExportDetailed = check_if_billing_export_is_detailed(jsonData)
         query = """  DELETE FROM `%s` 
                 WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL 10 DAY) and DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 3 DAY); 
-            INSERT INTO `%s` (billing_account_id,service,sku,usage_start_time,usage_end_time,project,labels,system_labels,location,export_time,cost,currency,currency_conversion_rate,usage,credits,invoice,cost_type,adjustment_info)
-                SELECT billing_account_id,service,sku,usage_start_time,usage_end_time,project,labels,system_labels,location,export_time,cost,currency,currency_conversion_rate,usage,credits,invoice,cost_type,adjustment_info 
+            INSERT INTO `%s` (billing_account_id, %s service,sku,usage_start_time,usage_end_time,project,labels,system_labels,location,export_time,cost,currency,currency_conversion_rate,usage,credits,invoice,cost_type,adjustment_info)
+                SELECT billing_account_id, %s service,sku,usage_start_time,usage_end_time,project,labels,system_labels,location,export_time,cost,currency,currency_conversion_rate,usage,credits,invoice,cost_type,adjustment_info 
                 FROM `%s.%s.%s`
                 WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL 10 DAY) AND DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 3 DAY);
         """ % (destination, jsonData["gcpBillingExportTablePartitionColumnName"], destination,
+               "resource," if isBillingExportDetailed else "",
+               "resource," if isBillingExportDetailed else "",
                jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"])
 
         # Configure the query job.

@@ -7,6 +7,7 @@
 
 package io.harness.k8s.model;
 
+import static io.harness.k8s.model.KubernetesClusterAuthType.EXEC_OAUTH;
 import static io.harness.k8s.model.KubernetesClusterAuthType.GCP_OAUTH;
 
 import io.harness.k8s.model.kubeconfig.Exec;
@@ -77,7 +78,7 @@ public class KubernetesConfig {
   }
 
   public Optional<String> getGcpAccountKeyFileContent() {
-    if (GCP_OAUTH != authType) {
+    if (GCP_OAUTH != authType && EXEC_OAUTH != authType) {
       return Optional.empty();
     }
     if (!(serviceAccountTokenSupplier instanceof GcpAccessTokenSupplier)) {

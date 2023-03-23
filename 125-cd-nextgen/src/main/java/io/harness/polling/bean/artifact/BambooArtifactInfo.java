@@ -25,7 +25,7 @@ import lombok.Value;
 public class BambooArtifactInfo implements ArtifactInfo {
   String connectorRef;
   String planKey;
-  List<String> artifactPath;
+  List<String> artifactPaths;
 
   @Override
   public ArtifactSourceType getType() {
@@ -37,7 +37,7 @@ public class BambooArtifactInfo implements ArtifactInfo {
     return BambooArtifactConfig.builder()
         .connectorRef(ParameterField.<String>builder().value(connectorRef).build())
         .planKey(ParameterField.<String>builder().value(planKey).build())
-        .artifactPaths(ParameterField.<List<String>>builder().value(artifactPath).build())
+        .artifactPaths(ParameterField.<List<String>>builder().value(artifactPaths).build())
         .build();
   }
 }

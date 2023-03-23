@@ -7,11 +7,11 @@
 
 package software.wings.beans.accountdetails.events;
 
+import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.audit.ResourceTypeConstants.NG_ACCOUNT_DETAILS;
 
 import static software.wings.beans.accountdetails.AccountDetailsConstants.RESOURCE_NAME;
 
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.event.Event;
 import io.harness.ng.core.AccountScope;
@@ -25,7 +25,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 @SuperBuilder
 @Getter
 @NoArgsConstructor

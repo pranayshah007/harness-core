@@ -182,6 +182,7 @@ public interface K8sConstants {
   String CANARY_WORKLOAD_SUFFIX_NAME = "canary";
   String CANARY_WORKLOAD_SUFFIX_NAME_WITH_SEPARATOR = "-" + CANARY_WORKLOAD_SUFFIX_NAME;
 
+  String API_VERSION = "client.authentication.k8s.io/v1beta1";
   String KUBECFG_EXEC = "exec";
   String KUBECFG_API_VERSION = "apiVersion";
   String KUBECFG_COMMAND = "command";
@@ -195,4 +196,26 @@ public interface K8sConstants {
 
   String AZURE_AUTH_PLUGIN_BINARY = "kubelogin";
   String GCP_AUTH_PLUGIN_BINARY = "gke-gcloud-auth-plugin";
+
+  String GCP_AUTH_PLUGIN_INSTALL_HINT = "gke-gcloud-auth-plugin is required to authenticate to the current cluster.\n"
+      + "It can be installed on the delegate using following command from:\n"
+      + "https://cloud.google.com/sdk/docs/install#rpm\n"
+      + "\n"
+      + "tee -a /etc/yum.repos.d/google-cloud-sdk.repo << EOM\n"
+      + "[google-cloud-cli]\n"
+      + "name=Google Cloud CLI\n"
+      + "baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el8-x86_64\n"
+      + "enabled=1\n"
+      + "gpgcheck=1\n"
+      + "repo_gpgcheck=0\n"
+      + "gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg\n"
+      + "EOM\n"
+      + "\n"
+      + "// Download gke-gcloud-auth-plugin\n"
+      + "microdnf install google-cloud-cli\n"
+      + "microdnf install google-cloud-cli-gke-gcloud-auth-plugin\n"
+      + "\n"
+      + "// USE_GKE_GCLOUD_AUTH_PLUGIN=True for kubernetes version <1.26\n"
+      + "echo \"export USE_GKE_GCLOUD_AUTH_PLUGIN=True\" >> ~/.bashrc\n"
+      + "source ~/.bashrc\n";
 }
