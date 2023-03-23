@@ -81,7 +81,7 @@ public class ManifestOutcomeValidator {
 
   private void validateHelmChartManifest(HelmChartManifestOutcome helmChartManifest, boolean allowExpression) {
     String manifestStoreKind = helmChartManifest.getStore().getKind();
-    if (!ManifestStoreType.isInGitSubset(manifestStoreKind)) {
+    if (ManifestStoreType.isInStorageRepository(manifestStoreKind)) {
       if (!hasValue(helmChartManifest.getChartName(), allowExpression)) {
         throw new InvalidArgumentsException(
             Pair.of("chartName", format("required for %s store type", manifestStoreKind)));
@@ -94,7 +94,7 @@ public class ManifestOutcomeValidator {
     }
 
     if (hasValue(helmChartManifest.getChartVersion(), allowExpression)) {
-      if (ManifestStoreType.isInGitSubset(manifestStoreKind)) {
+      if (!ManifestStoreType.isInStorageRepository(manifestStoreKind)) {
         throw new InvalidArgumentsException(
             Pair.of("chartVersion", format("not allowed for %s store", manifestStoreKind)));
       }

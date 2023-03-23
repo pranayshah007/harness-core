@@ -25,4 +25,5 @@ public class SBOMArtifactResponse {
   Artifact artifact;
   SbomDetails sbom;
   AttestationDetails attestation;
+  String stepExecutionId;
 }

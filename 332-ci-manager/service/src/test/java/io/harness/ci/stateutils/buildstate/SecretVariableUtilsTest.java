@@ -8,6 +8,7 @@
 package io.harness.ci.stateutils.buildstate;
 
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -39,7 +40,9 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -154,5 +157,63 @@ public class SecretVariableUtilsTest extends CIExecutionTestBase {
         .isInstanceOf(CIStageExecutionUserException.class);
     assertThatThrownBy(() -> secretUtils.getSecretVariableDetails(ngAccess, secretVariableFile))
         .isInstanceOf(CIStageExecutionException.class);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldCallGetSecret() throws IOException {
+    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
+    ResponseDTO<SecretResponseWrapper> responseDTO = ResponseDTO.newResponse(
+        SecretResponseWrapper.builder().secret(SecretDTOV2.builder().type(SecretType.SecretText).build()).build());
+
+    when(getSecretCall.execute()).thenReturn(Response.success(responseDTO));
+    when(secretNGManagerClient.getSecret(eq(TEXT_SECRET_ID), eq(ACCOUNT_ID), eq(null), eq(null)))
+        .thenReturn(getSecretCall);
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(Collections.singletonList(EncryptedDataDetail.builder().build()));
+
+    SecretVariableDetails secretVariableDetails =
+        secretUtils.getSecretVariableDetailsWithScope(ngAccess, secretVariableText);
+    assertThat(secretVariableDetails)
+        .isEqualTo(SecretVariableDetails.builder()
+                       .secretVariableDTO(
+                           SecretVariableDTO.builder()
+                               .type(SecretVariableDTO.Type.TEXT)
+                               .name("HARNESS_account_" + TEXT_SECRET)
+                               .secret(SecretRefData.builder().identifier(TEXT_SECRET_ID).scope(Scope.ACCOUNT).build())
+                               .build())
+                       .encryptedDataDetailList(Collections.singletonList(EncryptedDataDetail.builder().build()))
+                       .build());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldNotCallGetSecret() {
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(Collections.singletonList(EncryptedDataDetail.builder().build()));
+
+    List<String> secrets =
+        Arrays.asList("hashicorpvault://LocalVault/foo/bar/mysecret#mykey", "awssecretsmanager://exampleAWS/example",
+            "azurevault://exampleAzureKeyVault/example", "gcpsecretsmanager://exampleGCP/example");
+
+    secrets.forEach(s -> {
+      secretVariableText.setName(s);
+      secretVariableText.setValue(
+          ParameterField.createValueField(SecretRefData.builder().identifier(s).scope(Scope.ACCOUNT).build()));
+      SecretVariableDetails secretVariableDetails =
+          secretUtils.getSecretVariableDetailsWithScope(ngAccess, secretVariableText);
+      assertThat(secretVariableDetails)
+          .isEqualTo(
+              SecretVariableDetails.builder()
+                  .secretVariableDTO(SecretVariableDTO.builder()
+                                         .type(SecretVariableDTO.Type.TEXT)
+                                         .name("HARNESS_account_" + s)
+                                         .secret(SecretRefData.builder().identifier(s).scope(Scope.ACCOUNT).build())
+                                         .build())
+                  .encryptedDataDetailList(Collections.singletonList(EncryptedDataDetail.builder().build()))
+                  .build());
+    });
   }
 }

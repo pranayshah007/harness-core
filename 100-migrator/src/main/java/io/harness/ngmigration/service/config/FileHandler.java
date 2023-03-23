@@ -11,12 +11,15 @@ import io.harness.encryption.Scope;
 import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntityType;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 public abstract class FileHandler<T> {
@@ -28,7 +31,7 @@ public abstract class FileHandler<T> {
     this.envName = envName;
   }
 
-  public String getRootIdentifier(MigrationContext context) {
+  public String getRootIdentifier(MigrationContext context, T entity) {
     MigrationInputDTO inputDTO = context.getInputDTO();
     String rootIdentifier = "Root";
     if (StringUtils.isNotBlank(serviceName) && StringUtils.isBlank(envName)) {
@@ -87,12 +90,16 @@ public abstract class FileHandler<T> {
         .fileUsage(getFileUsage())
         .name(getName(context, entity))
         .content(getContent(context, entity))
-        .rootIdentifier(getRootIdentifier(context))
+        .rootIdentifier(getRootIdentifier(context, entity))
         .filePath(getFilePath(context, entity))
         .depth(Integer.MAX_VALUE)
         .orgIdentifier(getOrgIdentifier(context))
         .projectIdentifier(getProjectIdentifier(context))
         .build();
+  }
+
+  public List<NGYamlFile> getFolders(MigrationContext context, T entity) {
+    return new ArrayList<>();
   }
 
   public abstract CgBasicInfo getCgBasicInfo(T entity);

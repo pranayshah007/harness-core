@@ -50,10 +50,9 @@ public class SscaGenericStep extends AbstractStepExecutable {
     }
 
     String stageIdentifier = stageLevel.get().getIdentifier();
-    Call<SBOMArtifactResponse> call =
-        sscaServiceClient.getArtifactInfo(AmbianceUtils.getPipelineExecutionIdentifier(ambiance), stageIdentifier,
-            stepIdentifier, AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-            AmbianceUtils.getProjectIdentifier(ambiance));
+    Call<SBOMArtifactResponse> call = sscaServiceClient.getArtifactInfo(AmbianceUtils.obtainCurrentRuntimeId(ambiance),
+        stageIdentifier, stepIdentifier, AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+        AmbianceUtils.getProjectIdentifier(ambiance));
 
     Response<SBOMArtifactResponse> response = null;
     try {
@@ -77,6 +76,7 @@ public class SscaGenericStep extends AbstractStepExecutable {
                                                  .isSbomAttested(sbomArtifactResponse.getAttestation().isAttested())
                                                  .sbomName(sbomArtifactResponse.getSbom().getName())
                                                  .sbomUrl(sbomArtifactResponse.getSbom().getUrl())
+                                                 .stepExecutionId(sbomArtifactResponse.getStepExecutionId())
                                                  .build())
                                        .build());
   }
@@ -91,12 +91,14 @@ public class SscaGenericStep extends AbstractStepExecutable {
       SscaArtifactMetadata sscaArtifactMetadata = (SscaArtifactMetadata) artifactMetadata.getSpec();
       if (sscaArtifactMetadata != null) {
         stepArtifactsBuilder.publishedSbomArtifact(PublishedSbomArtifact.builder()
+                                                       .id(sscaArtifactMetadata.getId())
                                                        .url(sscaArtifactMetadata.getRegistryUrl())
                                                        .digest(sscaArtifactMetadata.getDigest())
                                                        .imageName(sscaArtifactMetadata.getImageName())
                                                        .isSbomAttested(sscaArtifactMetadata.isSbomAttested())
                                                        .sbomName(sscaArtifactMetadata.getSbomName())
                                                        .sbomUrl(sscaArtifactMetadata.getSbomUrl())
+                                                       .stepExecutionId(sscaArtifactMetadata.getStepExecutionId())
                                                        .build());
       }
     }

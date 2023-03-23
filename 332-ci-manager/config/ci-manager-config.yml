@@ -281,13 +281,13 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.4.9
+      image: plugins/cache:1.5.2
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.4.9
+      image: plugins/cache:1.5.2
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
@@ -307,8 +307,8 @@ ciExecutionServiceConfig:
       s3Upload: plugins/s3:1.2.0
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.2.0
-      cacheGCS: plugins/cache:1.4.9
-      cacheS3: plugins/cache:1.4.9
+      cacheGCS: plugins/cache:1.5.2
+      cacheS3: plugins/cache:1.5.2
       sscaOrchestration: harness/ssca-plugin:latest
 
 pmsSdkExecutionPoolConfig:

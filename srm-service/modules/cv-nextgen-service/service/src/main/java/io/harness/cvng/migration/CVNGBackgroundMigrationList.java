@@ -40,6 +40,7 @@ import io.harness.cvng.migration.list.DeleteSLISLOMigration;
 import io.harness.cvng.migration.list.EnableExistingCVConfigs;
 import io.harness.cvng.migration.list.FixOrchestratorStatusMigration;
 import io.harness.cvng.migration.list.FixRuntimeParamInCanaryBlueGreenVerificationJob;
+import io.harness.cvng.migration.list.MigrateSLOTargetInSLOV2;
 import io.harness.cvng.migration.list.NewRelicCustomPackForExistingProjects;
 import io.harness.cvng.migration.list.NoOppMigration;
 import io.harness.cvng.migration.list.PrometheusConnectorAuthenticationPerpetualTaskMigration;
@@ -128,6 +129,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(56, CVConfigPopulateUuidForThresholds.class))
         .add(Pair.of(57, UpdateTagsInServiceLevelObjectiveV2.class))
         .add(Pair.of(58, UpdateELKCVConfigToNextGenCVConfig.class))
+        .add(Pair.of(59, MigrateSLOTargetInSLOV2.class))
         .build();
   }
 }

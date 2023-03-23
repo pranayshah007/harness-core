@@ -7,7 +7,7 @@
 
 package io.harness.licensing.migrations.licenses;
 
-import static io.harness.annotations.dev.HarnessTeam.PLG;
+import static io.harness.annotations.dev.HarnessTeam.GTM;
 
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,7 +24,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.util.CloseableIterator;
 
 @Slf4j
-@OwnedBy(PLG)
+@OwnedBy(GTM)
 public class ModuleLicenseMigration implements NGMigration {
   @Inject MongoTemplate mongoTemplate;
 

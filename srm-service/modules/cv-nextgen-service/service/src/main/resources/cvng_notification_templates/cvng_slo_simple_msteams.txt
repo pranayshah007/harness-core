@@ -4,7 +4,7 @@
   "summary": "Harness SRM",
   "sections": [
     {
-      "activityTitle": "SLO: ${SLO_NAME} ${HEADER_MESSAGE} ${SERVICE_NAME} service",
+      "activityTitle": "SLO: ${SLO_NAME} ${HEADER_MESSAGE} for ${SERVICE_NAME} service",
       "activitySubtitle": "Trigger ${TRIGGER_MESSAGE}. Incident occurred ${START_DATE}",
       "facts": [
               {

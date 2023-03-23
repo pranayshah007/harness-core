@@ -21,5 +21,6 @@ public class OrchestrationStepEnvVariables {
   String sbomGenerationFormat;
   String sbomSource;
   String stepExecutionId;
+  String stepIdentifier;
   String sscaCoreUrl;
 }

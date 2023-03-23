@@ -161,6 +161,37 @@ public class SecretSpecBuilderTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldConvertCustomSecretVariablesWithInvalidChar() {
+    SecretVariableDetails secretVariableDetails =
+        SecretVariableDetails.builder()
+            .secretVariableDTO(SecretVariableDTO.builder()
+                                   .name("abc//#-")
+                                   .type(SecretVariableDTO.Type.TEXT)
+                                   .secret(SecretRefData.builder()
+                                               .decryptedValue("pass".toCharArray())
+                                               .identifier("secret_id")
+                                               .scope(Scope.ACCOUNT)
+                                               .build())
+                                   .build())
+            .encryptedDataDetailList(singletonList(
+                EncryptedDataDetail.builder()
+                    .encryptedData(EncryptedRecordData.builder().encryptionType(EncryptionType.KMS).build())
+                    .build()))
+            .build();
+    when(secretDecryptor.decrypt(
+             secretVariableDetails.getSecretVariableDTO(), secretVariableDetails.getEncryptedDataDetailList()))
+        .thenReturn(secretVariableDetails.getSecretVariableDTO());
+    Map<String, SecretVariableDTO> cache = new HashMap<>();
+    Map<String, SecretParams> decryptedSecrets =
+        secretSpecBuilder.decryptCustomSecretVariables(singletonList(secretVariableDetails), cache);
+    assertThat(decryptedSecrets.get("abc____").getValue()).isEqualTo(encodeBase64("pass"));
+    assertThat(decryptedSecrets.get("abc____").getSecretKey()).isEqualTo(SECRET_KEY + "abc____");
+    assertThat(decryptedSecrets.get("abc____").getType()).isEqualTo(TEXT);
+  }
+
+  @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
   public void shouldConvertCustomSecretFile() {

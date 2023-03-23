@@ -665,7 +665,9 @@ public enum ErrorCode {
   CLUSTER_CREDENTIALS_NOT_FOUND,
   SCM_API_ERROR,
   INTERNAL_SERVER_ERROR(Status.INTERNAL_SERVER_ERROR),
-  SCM_FORBIDDEN;
+
+  SCM_FORBIDDEN,
+  AWS_EKS_ERROR;
 
   private Status status = BAD_REQUEST;
   private String description;

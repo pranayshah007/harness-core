@@ -7,14 +7,13 @@
 
 package io.harness.auditevent.streaming.services.impl;
 
-import static io.harness.audit.entities.AuditEvent.AuditEventKeys.ACCOUNT_IDENTIFIER_KEY;
-import static io.harness.audit.entities.AuditEvent.AuditEventKeys.createdAt;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.JOB_START_TIME_PARAMETER_KEY;
 import static io.harness.auditevent.streaming.beans.BatchStatus.FAILED;
 import static io.harness.auditevent.streaming.beans.BatchStatus.IN_PROGRESS;
 import static io.harness.auditevent.streaming.beans.BatchStatus.SUCCESS;
 
 import io.harness.audit.entities.AuditEvent;
+import io.harness.audit.entities.AuditEvent.AuditEventKeys;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.auditevent.streaming.AuditEventRepository;
@@ -76,7 +75,7 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
       return streamingBatch;
     }
     MongoCursor<Document> auditEventMongoCursor = auditEventRepository.loadAuditEvents(
-        getCriteriaToFetchAuditEvents(streamingBatch, streamingDestination), Sorts.ascending(createdAt));
+        getCriteriaToFetchAuditEvents(streamingBatch, streamingDestination), Sorts.ascending(AuditEventKeys.createdAt));
     if (!auditEventMongoCursor.hasNext()) {
       log.info(getFullLogMessage("No more records found.", streamingBatch));
       streamingBatch.setLastStreamedAt(System.currentTimeMillis());
@@ -132,9 +131,9 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
     long startTime = (streamingBatch.getLastSuccessfulRecordTimestamp() != null)
         ? streamingBatch.getLastSuccessfulRecordTimestamp()
         : streamingBatch.getStartTime();
-    return Criteria.where(ACCOUNT_IDENTIFIER_KEY)
+    return Criteria.where(AuditEventKeys.ACCOUNT_IDENTIFIER_KEY)
         .is(streamingDestination.getAccountIdentifier())
-        .and(createdAt)
+        .and(AuditEventKeys.createdAt)
         .gt(startTime)
         .lte(streamingBatch.getEndTime());
   }

@@ -28,6 +28,7 @@ import static io.harness.persistence.HQuery.excludeAuthorityCount;
 import static io.harness.utils.Misc.generateSecretKey;
 import static io.harness.validation.Validator.notNullCheck;
 
+import static software.wings.beans.Account.DEFAULT_SESSION_TIMEOUT_IN_MINUTES;
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 import static software.wings.beans.Base.ID_KEY2;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -100,6 +101,7 @@ import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.OauthProviderType;
 import io.harness.ng.core.dto.AccountDTO;
+import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.outbox.OutboxEvent;
@@ -762,6 +764,20 @@ public class AccountServiceImpl implements AccountService {
     update(account);
   }
 
+  @Override
+  public Integer getSessionTimeoutInMinutes(String accountId) {
+    Query<Account> getQuery = wingsPersistence.createQuery(Account.class).filter(ID_KEY2, accountId);
+    return Optional.ofNullable(getQuery.get().getSessionTimeOutInMinutes()).orElse(DEFAULT_SESSION_TIMEOUT_IN_MINUTES);
+  }
+
+  @Override
+  public void setSessionTimeoutInMinutes(
+      String accountId, @NotNull @Valid SessionTimeoutSettings sessionTimeoutSettings) {
+    Account account = get(accountId);
+    account.setSessionTimeOutInMinutes(sessionTimeoutSettings.getSessionTimeOutInMinutes());
+    update(account);
+  }
+
   /**
    * Takes a valid account name and checks database for duplicates, if duplicate exists appends
    * "-x" (where x is a random number between 1000 and 9999) to the name and repeats the process until it generates a
@@ -998,6 +1014,10 @@ public class AccountServiceImpl implements AccountService {
             .set("whitelistedDomains", account.getWhitelistedDomains())
             .set("smpAccount", account.isSmpAccount())
             .set("isProductLed", account.isProductLed());
+
+    if (null != account.getSessionTimeOutInMinutes()) {
+      updateOperations.set(AccountKeys.sessionTimeOutInMinutes, account.getSessionTimeOutInMinutes());
+    }
 
     if (null != account.getLicenseInfo()) {
       updateOperations.set(AccountKeys.licenseInfo, account.getLicenseInfo());

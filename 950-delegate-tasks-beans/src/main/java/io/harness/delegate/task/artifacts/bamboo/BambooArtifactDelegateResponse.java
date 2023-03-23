@@ -35,4 +35,10 @@ public class BambooArtifactDelegateResponse extends ArtifactDelegateResponse {
     this.planKey = planKey;
     this.artifactPath = artifactPath;
   }
+
+  @Override
+  public String describe() {
+    return "type: " + (getSourceType() != null ? getSourceType().getDisplayName() : null) + "\nplanKey: " + getPlanKey()
+        + "\nartifactPath: " + getArtifactPath() + "\nbuild: " + getBuild();
+  }
 }

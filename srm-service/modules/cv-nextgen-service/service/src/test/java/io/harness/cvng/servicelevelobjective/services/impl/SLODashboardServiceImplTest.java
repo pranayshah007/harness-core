@@ -413,6 +413,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(monitoredServiceDTO2.getIdentifier());
     assertThat(sloDashboardWidget.getSloTargetType())
         .isEqualTo(compositeServiceLevelObjective.getSloTarget().getType());
+    assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(compositeServiceLevelObjective.getTarget().getType());
     assertThat(sloDashboardWidget.getCurrentPeriodLengthDays()).isEqualTo(30);
     assertThat(sloDashboardWidget.getCurrentPeriodStartTime())
         .isEqualTo(Instant.parse("2020-06-27T10:50:00Z").toEpochMilli());
@@ -502,6 +503,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getTags()).isEqualTo(serviceLevelObjectiveV2DTO.getTags());
     assertThat(sloDashboardWidget.getSloTargetType())
         .isEqualTo(compositeServiceLevelObjective.getSloTarget().getType());
+    assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(compositeServiceLevelObjective.getTarget().getType());
     List<MonitoredServiceDetail> monitoredServiceDetails = sloDashboardWidget.getMonitoredServiceDetails();
     assertThat(monitoredServiceDetails.size()).isEqualTo(2);
     MonitoredServiceDetail monitoredServiceDetail = monitoredServiceDetails.get(0);
