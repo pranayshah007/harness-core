@@ -2117,14 +2117,15 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       broadcastHelper.broadcastNewDelegateTaskAsyncV2(delegateTask);
       return;
     }
+    log.info("DTQ: start enqueue task {}", delegateTask.getUuid());
+    delegateTaskQueueService.enqueue(delegateTask);
 
-    if (!delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)) {
-      log.info("DTQ: start enqueue task {}", delegateTask.getUuid());
-      delegateTaskQueueService.enqueue(delegateTask);
+    /*if (!delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)) {
+
     } else {
       persistence.save(delegateTask);
       broadcastHelper.broadcastNewDelegateTaskAsyncV2(delegateTask);
-    }
+    }*/
   }
 
   @Override
