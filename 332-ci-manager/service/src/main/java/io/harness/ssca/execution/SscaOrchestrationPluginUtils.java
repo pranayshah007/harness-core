@@ -54,6 +54,7 @@ public class SscaOrchestrationPluginUtils {
                                                      .sbomSource(sbomSource)
                                                      .sscaCoreUrl(sscaServiceUtils.getSscaServiceConfig().getBaseUrl())
                                                      .stepExecutionId(runtimeId)
+                                                     .stepIdentifier(identifier)
                                                      .build();
     return SscaOrchestrationStepPluginUtils.getSScaOrchestrationStepEnvVariables(envVariables);
   }
