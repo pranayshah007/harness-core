@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
-import io.harness.engine.executions.retry.RetryStageInfo;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
@@ -117,7 +116,7 @@ public class RollbackModeExecutionHelper {
     List<String> executedStages = nodeExecutionService.getStageDetailFromPlanExecutionId(originalPlanExecutionId)
                                       .stream()
                                       .filter(info -> !info.getName().equals(PIPELINE_ROLLBACK_STAGE_NAME))
-                                      .map(RetryStageInfo::getIdentifier)
+                                      .map(info -> info.getIdentifier())
                                       .collect(Collectors.toList());
 
     JsonNode pipelineNode;
