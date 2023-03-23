@@ -655,13 +655,14 @@ public class StateMachineExecutor implements StateInspectionListener {
 
       handleResponse(context, executionResponse);
     } catch (StateExecutionInstanceUpdateException exception) {
-      log.error("Exception occurred while updating state execution instance : {}", exception);
+      log.error(
+          format("Exception occurred while updating state execution instance : %s", stateExecutionInstance), exception);
     } catch (WingsException exception) {
       ex = exception;
-      log.error("Exception occurred while starting state execution : {}", exception);
+      log.error(format("Exception occurred while starting state execution : %s", stateExecutionInstance), exception);
     } catch (Exception exception) {
       ex = new WingsException(exception);
-      log.error("Exception occurred while starting state execution : {}", ex);
+      log.error(format("Exception occurred while starting state execution : %s", stateExecutionInstance), ex);
     }
 
     if (ex != null) {
@@ -1181,7 +1182,7 @@ public class StateMachineExecutor implements StateInspectionListener {
 
     if (nextState == null) {
       throw new StateMachineIssueException(
-          String.format("The advice suggests as next state %s, that is not in state machine: %s.",
+          format("The advice suggests as next state %s, that is not in state machine: %s.",
               executionEventAdvice.getNextStateName(), executionEventAdvice.getNextChildStateMachineId()),
           ErrorCode.STATE_MACHINE_ISSUE);
     }
@@ -1502,7 +1503,7 @@ public class StateMachineExecutor implements StateInspectionListener {
 
     if (nextState == null) {
       throw new StateMachineIssueException(
-          String.format("The advice suggests as next state %s, that is not in state machine: %s.",
+          format("The advice suggests as next state %s, that is not in state machine: %s.",
               executionEventAdvice.getNextStateName(), executionEventAdvice.getNextChildStateMachineId()),
           ErrorCode.STATE_MACHINE_ISSUE);
     }
@@ -2787,7 +2788,7 @@ public class StateMachineExecutor implements StateInspectionListener {
       MapperUtils.mapObject(source, target);
     } catch (MappingException e) {
       // CHANGE LOG PRIORITY TO A LOWER VALUE AS WE FOUND THE ROOT CAUSE
-      log.warn(String.format("Got model mapping exception during map the stateParams <%s> to state <%s>", source,
+      log.warn(format("Got model mapping exception during map the stateParams <%s> to state <%s>", source,
                    ToStringBuilder.reflectionToString(target)),
           e);
 
@@ -2803,7 +2804,7 @@ public class StateMachineExecutor implements StateInspectionListener {
         MapperUtils.mapObject(sanitizeEntry(entry), target);
 
       } catch (MappingException e1) {
-        log.error(String.format("Failure on entry <%s> to the same target", entry), e1);
+        log.error(format("Failure on entry <%s> to the same target", entry), e1);
 
         // IF IGNORE FF IS ENABLED, LOG AND KEEP THE EXECUTION.
         if (featureFlagService.isNotEnabled(FeatureName.SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE, accountId)) {
@@ -2856,10 +2857,9 @@ public class StateMachineExecutor implements StateInspectionListener {
         }
 
       } catch (ClassCastException e) {
-        log.warn(
-            String.format("Unable to cast [%s] to expected type [java.util.List]", entry.getValue().getClass()), e);
+        log.warn(format("Unable to cast [%s] to expected type [java.util.List]", entry.getValue().getClass()), e);
       } catch (RuntimeException e) {
-        log.warn(String.format("Unable to sanitize field [%s]", TEMPLATE_VARIABLE_ENTRY), e);
+        log.warn(format("Unable to sanitize field [%s]", TEMPLATE_VARIABLE_ENTRY), e);
       }
     }
     return null;
