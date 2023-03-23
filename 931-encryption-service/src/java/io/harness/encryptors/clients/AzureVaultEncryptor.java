@@ -344,20 +344,11 @@ public class AzureVaultEncryptor implements VaultEncryptor {
     }
   }
   private SecretClient getAzureVaultSecretsClient(AzureVaultConfig azureVaultConfig) {
-    if (BooleanUtils.isTrue(azureVaultConfig.getUseManagedIdentity())) {
-      DefaultAzureCredential defaultCredential =
-          new DefaultAzureCredentialBuilder().managedIdentityClientId("<MANAGED_IDENTITY_CLIENT_ID>").build();
-
-      return new SecretClientBuilder()
-          .vaultUrl("https://{YOUR_VAULT_NAME}.vault.azure.net")
-          .credential(defaultCredential)
-          .buildClient();
-    } else {
-      return KeyVaultAuthenticator.getSecretsClient(azureVaultConfig.getVaultName(),
-          KeyVaultAuthenticator.getAzureHttpPipeline(azureVaultConfig.getClientId(), azureVaultConfig.getSecretKey(),
-              azureVaultConfig.getTenantId(), azureVaultConfig.getSubscription(),
-              azureVaultConfig.getAzureEnvironmentType()),
-          azureVaultConfig.getAzureEnvironmentType());
-    }
+    return KeyVaultAuthenticator.getSecretsClient(azureVaultConfig.getVaultName(),
+        KeyVaultAuthenticator.getAzureHttpPipeline(azureVaultConfig.getClientId(), azureVaultConfig.getSecretKey(),
+            azureVaultConfig.getTenantId(), azureVaultConfig.getSubscription(),
+            azureVaultConfig.getAzureEnvironmentType(), azureVaultConfig.getUseManagedIdentity(),
+            azureVaultConfig.getAzureManagedIdentityType(), azureVaultConfig.getManagedClientId()),
+        azureVaultConfig.getAzureEnvironmentType());
   }
 }

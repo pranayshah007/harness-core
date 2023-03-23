@@ -31,6 +31,7 @@ import com.azure.security.keyvault.secrets.SecretClient;
 import com.azure.security.keyvault.secrets.SecretClientBuilder;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.BooleanUtils;
 
 @OwnedBy(PL)
 @UtilityClass
@@ -85,10 +86,16 @@ public class KeyVaultAuthenticator {
   }
 
   public static HttpPipeline getAzureHttpPipeline(String clientId, String clientKey, String tenantId,
-      String subscriptionId, AzureEnvironmentType azureEnvironmentType) {
+      String subscriptionId, AzureEnvironmentType azureEnvironmentType, Boolean useManagedIdentity,
+      AzureManagedIdentityType azureManagedIdentityType, String managedClientId) {
     HttpClient httpClient = AzureUtils.getAzureHttpClient();
-    TokenCredential tokenCredential =
-        getAuthenticationTokenCredentials(clientId, clientKey, tenantId, httpClient, azureEnvironmentType);
+    TokenCredential tokenCredential = null;
+    if (BooleanUtils.isTrue(useManagedIdentity)) {
+      tokenCredential = KeyVaultAuthenticator.getManagedIdentityCredentials(managedClientId, azureManagedIdentityType);
+    } else {
+      tokenCredential =
+          getAuthenticationTokenCredentials(clientId, clientKey, tenantId, httpClient, azureEnvironmentType);
+    }
     AzureProfile azureProfile = getAzureProfile(tenantId, subscriptionId, azureEnvironmentType);
     RetryPolicy retryPolicy =
         AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions()));
