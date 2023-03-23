@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackParameters;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
-import io.harness.advisers.prb.OnFailPipelineRollbackParameters;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
 import io.harness.advisers.retry.RetryAdviserRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.RollbackStrategy;

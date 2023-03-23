@@ -1,4 +1,4 @@
-package io.harness.advisers.prb;
+package io.harness.advisers.pipelinerollback;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
@@ -15,7 +15,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("onFailPipelineRollbackOutput")
 @JsonTypeName("onFailPipelineRollbackOutput")
 @OwnedBy(HarnessTeam.CDC)
-@RecasterAlias("io.harness.advisers.prb.OnFailPipelineRollbackOutput")
+@RecasterAlias("io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput")
 public class OnFailPipelineRollbackOutput implements ExecutionSweepingOutput {
   boolean shouldStartPipelineRollback;
 }

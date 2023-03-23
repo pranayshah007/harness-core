@@ -1,4 +1,4 @@
-package io.harness.advisers.prb;
+package io.harness.advisers.pipelinerollback;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 

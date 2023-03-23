@@ -14,7 +14,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
-import io.harness.advisers.prb.OnFailPipelineRollbackParameters;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.commons.RepairActionCode;

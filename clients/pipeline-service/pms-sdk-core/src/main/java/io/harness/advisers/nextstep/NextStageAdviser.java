@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 
-import io.harness.advisers.prb.OnFailPipelineRollbackOutput;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;

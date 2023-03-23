@@ -18,8 +18,8 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
-import io.harness.advisers.prb.OnFailPipelineRollbackAdviser;
-import io.harness.advisers.prb.OnFailPipelineRollbackParameters;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParametersBuilder;
