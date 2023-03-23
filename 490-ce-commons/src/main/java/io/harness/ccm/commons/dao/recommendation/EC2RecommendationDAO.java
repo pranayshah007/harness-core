@@ -33,6 +33,7 @@ import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -101,7 +102,9 @@ public class EC2RecommendationDAO {
             .set(EC2RecommendationKeys.currentMaxMemory, ec2Recommendation.getCurrentMaxMemory())
             .set(EC2RecommendationKeys.currentMonthlyCost, ec2Recommendation.getCurrentMonthlyCost())
             .set(EC2RecommendationKeys.currencyCode, ec2Recommendation.getCurrencyCode())
-            .set(EC2RecommendationKeys.recommendationInfo, ec2Recommendation.getRecommendationInfo())
+            .set(EC2RecommendationKeys.recommendationInfo,
+                ec2Recommendation.getRecommendationInfo() == null ? Collections.emptyList()
+                                                                  : ec2Recommendation.getRecommendationInfo())
             .set(EC2RecommendationKeys.expectedSaving, ec2Recommendation.getExpectedSaving())
             .set(EC2RecommendationKeys.rightsizingType, ec2Recommendation.getRightsizingType())
             .set(EC2RecommendationKeys.lastUpdatedTime, ec2Recommendation.getLastUpdatedTime());
