@@ -253,6 +253,11 @@ public class RollbackModeExecutionHelper {
 
   boolean isStageOrAncestorOfSomeStage(Node planNode) {
     StepCategory stepCategory = planNode.getStepCategory();
-    return Arrays.asList(StepCategory.PIPELINE, StepCategory.STAGES, StepCategory.STAGE).contains(stepCategory);
+    if (Arrays.asList(StepCategory.PIPELINE, StepCategory.STAGES, StepCategory.STAGE).contains(stepCategory)) {
+      return true;
+    }
+    // todo: remove the use of stage fqn here once fork and strategy are divided in sub categories of step and stage
+    String stageFqn = planNode.getStageFqn();
+    return Arrays.asList(StepCategory.FORK, StepCategory.STRATEGY).contains(stepCategory);
   }
 }
