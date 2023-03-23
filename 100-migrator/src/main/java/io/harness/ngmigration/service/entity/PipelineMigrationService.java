@@ -350,6 +350,7 @@ public class PipelineMigrationService extends NgMigrationService {
                                               .build())
                       .build())
             .ngEntityDetail(NgEntityDetail.builder()
+                                .entityType(PIPELINE)
                                 .identifier(identifier)
                                 .orgIdentifier(orgIdentifier)
                                 .projectIdentifier(projectIdentifier)
@@ -380,7 +381,7 @@ public class PipelineMigrationService extends NgMigrationService {
         ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(stepNode)).build();
 
     ApprovalStageNode approvalStageNode = new ApprovalStageNode();
-    approvalStageNode.setName(stageElement.getName());
+    approvalStageNode.setName(MigratorUtility.generateName(stageElement.getName()));
     approvalStageNode.setIdentifier(MigratorUtility.generateIdentifier(stageElement.getName(), caseFormat));
     approvalStageNode.setApprovalStageConfig(
         ApprovalStageConfig.builder()
@@ -545,7 +546,7 @@ public class PipelineMigrationService extends NgMigrationService {
                                                     .org(pipelineConfig.getOrgIdentifier())
                                                     .build();
       PipelineStageNode stageNode = new PipelineStageNode();
-      stageNode.setName(stageElement.getName());
+      stageNode.setName(MigratorUtility.generateName(stageElement.getName()));
       stageNode.setIdentifier(MigratorUtility.generateIdentifier(stageElement.getName(), caseFormat));
       stageNode.setDescription(ParameterField.createValueField(""));
       stageNode.setPipelineStageConfig(pipelineStageConfig);
@@ -626,7 +627,7 @@ public class PipelineMigrationService extends NgMigrationService {
     templateLinkConfig.setTemplateInputs(templateInputs);
 
     TemplateStageNode templateStageNode = new TemplateStageNode();
-    templateStageNode.setName(stageElement.getName());
+    templateStageNode.setName(MigratorUtility.generateName(stageElement.getName()));
     templateStageNode.setIdentifier(MigratorUtility.generateIdentifier(stageElement.getName(), caseFormat));
     templateStageNode.setDescription("");
     templateStageNode.setTemplate(templateLinkConfig);

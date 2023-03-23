@@ -83,6 +83,7 @@ import io.harness.gitsync.gitfileactivity.impl.GitSyncServiceImpl;
 import io.harness.gitsync.gitfileactivity.service.GitSyncService;
 import io.harness.gitsync.gitsyncerror.impl.GitSyncErrorServiceImpl;
 import io.harness.gitsync.gitsyncerror.service.GitSyncErrorService;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.persistence.HPersistence;
@@ -101,6 +102,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @OwnedBy(DX)
 public class GitSyncModule extends AbstractModule {
@@ -205,9 +207,10 @@ public class GitSyncModule extends AbstractModule {
   @Provides
   @Singleton
   @Named(GITX_BACKGROUND_CACHE_UPDATE_EXECUTOR_NAME)
-  public ExecutorService orchestrationEventExecutorService() {
-    return ThreadPool.create(
-        gitServiceConfiguration.getGitServiceCacheConfiguration().getBackgroundUpdateThreadPoolConfig(),
-        new ThreadFactoryBuilder().setNameFormat("GitxCachingBackgroundUpdateThread-%d").build());
+  public ExecutorService backgroundCacheUpdateExecutorService() {
+    return new ManagedExecutorService(ThreadPool.create(
+        gitServiceConfiguration.getGitServiceCacheConfiguration().getBackgroundUpdateThreadPoolConfig(), 1,
+        new ThreadFactoryBuilder().setNameFormat("GitxCachingBackgroundUpdateThread-%d").build(),
+        new ThreadPoolExecutor.AbortPolicy()));
   }
 }

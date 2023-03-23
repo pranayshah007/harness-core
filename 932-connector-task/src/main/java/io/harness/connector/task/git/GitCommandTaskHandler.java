@@ -10,6 +10,7 @@ package io.harness.connector.task.git;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.scm.github.GithubApiAccessType.GITHUB_APP;
 import static io.harness.delegate.beans.git.GitCommandExecutionResponse.GitCommandStatus.SUCCESS;
+import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.impl.ScmResponseStatusUtils.convertScmStatusCodeToErrorCode;
 import static io.harness.impl.ScmResponseStatusUtils.formatErrorMessage;
@@ -167,8 +168,10 @@ public class GitCommandTaskHandler {
     GithubAppSpecDTO apiAccessDTO = (GithubAppSpecDTO) apiAccess.getSpec();
     try {
       gitHubService.getToken(GithubAppConfig.builder()
-                                 .appId(apiAccessDTO.getApplicationId())
-                                 .installationId(apiAccessDTO.getInstallationId())
+                                 .appId(getSecretAsStringFromPlainTextOrSecretRef(
+                                     apiAccessDTO.getApplicationId(), apiAccessDTO.getApplicationIdRef()))
+                                 .installationId(getSecretAsStringFromPlainTextOrSecretRef(
+                                     apiAccessDTO.getInstallationId(), apiAccessDTO.getInstallationIdRef()))
                                  .privateKey(String.valueOf(apiAccessDTO.getPrivateKeyRef().getDecryptedValue()))
                                  .githubUrl(GitClientHelper.getGithubApiURL(gitHubConnector.getUrl()))
                                  .build());

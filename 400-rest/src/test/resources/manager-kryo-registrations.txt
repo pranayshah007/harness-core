@@ -2719,6 +2719,7 @@
 563534:io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig
 563535:io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability
 563536:io.harness.delegate.task.serverless.ServerlessS3ArtifactConfig
+563537:io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig
 573401:io.harness.delegate.task.gitcommon.GitTaskNGRequest
 573402:io.harness.delegate.task.gitcommon.GitTaskNGResponse
 573403:io.harness.delegate.task.gitcommon.GitFetchFilesResult

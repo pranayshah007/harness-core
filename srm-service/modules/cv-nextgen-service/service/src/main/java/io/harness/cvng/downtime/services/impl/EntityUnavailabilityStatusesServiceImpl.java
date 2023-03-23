@@ -95,6 +95,16 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
   }
 
   @Override
+  public List<EntityUnavailabilityStatusesDTO> getPastAndActiveDowntimeInstances(
+      ProjectParams projectParams, List<String> entityIds) {
+    List<EntityUnavailabilityStatuses> entityUnavailabilityStatuses =
+        getPastOrActiveDowntimeInstancesQuery(projectParams, entityIds).asList();
+    return entityUnavailabilityStatuses.stream()
+        .map(status -> statusesEntityAndDTOTransformer.getDto(status))
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public EntityUnavailabilityStatuses getInstanceById(String uuid) {
     return hPersistence.get(EntityUnavailabilityStatuses.class, uuid);
   }
@@ -264,6 +274,21 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
         .filter(EntityUnavailabilityStatusesKeys.orgIdentifier, projectParams.getOrgIdentifier())
         .filter(EntityUnavailabilityStatusesKeys.projectIdentifier, projectParams.getProjectIdentifier())
         .field(EntityUnavailabilityStatusesKeys.endTime)
+        .lessThanOrEq(clock.millis() / 1000)
+        .order(Sort.descending(EntityUnavailabilityStatusesKeys.endTime));
+  }
+
+  private Query<EntityUnavailabilityStatuses> getPastOrActiveDowntimeInstancesQuery(
+      ProjectParams projectParams, List<String> entityIds) {
+    return hPersistence.createQuery(EntityUnavailabilityStatuses.class)
+        .disableValidation()
+        .filter(EntityUnavailabilityStatusesKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.entityType, EntityType.MAINTENANCE_WINDOW)
+        .field(EntityUnavailabilityStatusesKeys.entityIdentifier)
+        .in(entityIds)
+        .field(EntityUnavailabilityStatusesKeys.startTime)
         .lessThanOrEq(clock.millis() / 1000)
         .order(Sort.descending(EntityUnavailabilityStatusesKeys.endTime));
   }

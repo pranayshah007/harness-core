@@ -10,6 +10,7 @@ package io.harness.pms.redisConsumer;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventHandler.DebeziumAbstractRedisEventHandler;
+import io.harness.pms.pipeline.TriggerType;
 import io.harness.pms.plan.execution.PipelineExecutionSummaryKeys;
 import io.harness.timescaledb.Tables;
 
@@ -82,16 +83,29 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends DebeziumAbstra
                 .asText());
       }
       if (node.get(PipelineExecutionSummaryKeys.executionTriggerInfo).get(PipelineExecutionSummaryKeys.triggeredBy)
-              != null
-          && node.get(PipelineExecutionSummaryKeys.executionTriggerInfo)
-                  .get(PipelineExecutionSummaryKeys.triggeredBy)
-                  .get(PipelineExecutionSummaryKeys.executionTriggerInfoIdentifier)
-              != null) {
-        record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_AUTHOR_ID,
-            node.get(PipelineExecutionSummaryKeys.executionTriggerInfo)
-                .get(PipelineExecutionSummaryKeys.triggeredBy)
-                .get(PipelineExecutionSummaryKeys.executionTriggerInfoIdentifier)
-                .asText());
+          != null) {
+        JsonNode triggeredByNode =
+            node.get(PipelineExecutionSummaryKeys.executionTriggerInfo).get(PipelineExecutionSummaryKeys.triggeredBy);
+        if (triggeredByNode.get(PipelineExecutionSummaryKeys.executionTriggerInfoIdentifier) != null) {
+          record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_AUTHOR_ID,
+              triggeredByNode.get(PipelineExecutionSummaryKeys.executionTriggerInfoIdentifier).asText());
+        }
+        if (node.get(PipelineExecutionSummaryKeys.executionTriggerInfo).get(PipelineExecutionSummaryKeys.triggerType)
+            != null) {
+          if (TriggerType.MANUAL.toString().equals(node.get(PipelineExecutionSummaryKeys.executionTriggerInfo)
+                                                       .get(PipelineExecutionSummaryKeys.triggerType)
+                                                       .asText())) {
+            if (triggeredByNode.get(PipelineExecutionSummaryKeys.uuid) != null) {
+              record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.TRIGGERED_BY_ID,
+                  triggeredByNode.get(PipelineExecutionSummaryKeys.uuid).asText());
+            }
+          } else {
+            if (triggeredByNode.get(PipelineExecutionSummaryKeys.executionTriggerInfoIdentifier) != null) {
+              record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.TRIGGERED_BY_ID,
+                  triggeredByNode.get(PipelineExecutionSummaryKeys.executionTriggerInfoIdentifier).asText());
+            }
+          }
+        }
       }
     }
 

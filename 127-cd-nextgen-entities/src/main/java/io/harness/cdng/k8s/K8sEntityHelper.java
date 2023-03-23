@@ -15,6 +15,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.AZURE;
 import static io.harness.delegate.beans.connector.ConnectorType.GCP;
 import static io.harness.delegate.beans.connector.ConnectorType.KUBERNETES_CLUSTER;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AWS;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
@@ -27,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -44,6 +46,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsD
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.task.k8s.AzureK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
+import io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.exception.InvalidArgumentsException;
@@ -201,6 +204,18 @@ public class K8sEntityHelper {
               .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
               .useClusterAdminCredentials(k8sAzureInfrastructure.getUseClusterAdminCredentials() != null
                   && k8sAzureInfrastructure.getUseClusterAdminCredentials())
+              .build();
+
+        case KUBERNETES_AWS:
+          K8sAwsInfrastructureOutcome k8sAwsInfrastructure = (K8sAwsInfrastructureOutcome) infrastructure;
+          KubernetesHelperService.validateNamespace(k8sAwsInfrastructure.getNamespace());
+          KubernetesHelperService.validateCluster(k8sAwsInfrastructure.getCluster());
+
+          return EksK8sInfraDelegateConfig.builder()
+              .namespace(k8sAwsInfrastructure.getNamespace())
+              .cluster(k8sAwsInfrastructure.getCluster())
+              .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
+              .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
               .build();
 
         default:

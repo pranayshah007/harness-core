@@ -13,14 +13,18 @@ import static io.harness.rule.OwnerRule.BOOPESH;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
@@ -28,9 +32,11 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.services.ProjectService;
+import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
@@ -47,6 +53,9 @@ public class UserResourceTest extends CategoryTest {
   private static final String ACCOUNT = "account";
   @Mock private NgUserService ngUserService;
   @Mock private ProjectService projectService;
+
+  @Mock private AccessControlClient accessControlClient;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Spy @Inject @InjectMocks private UserResource userResource;
 
   @Before
@@ -81,5 +90,19 @@ public class UserResourceTest extends CategoryTest {
     Optional<UserInfo> userInfo = Optional.ofNullable(UserInfo.builder().externallyManaged(true).uuid(userId).build());
     doReturn(userInfo).when(ngUserService).getUserById(userId);
     userResource.removeUser(userId, ACCOUNT, null, null);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testDeleteCGUserWhenAllScopeInNGIsDeleted() {
+    String userId = randomAlphabetic(10);
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), anyString());
+    doReturn(true).when(ngUserService).removeUserFromScope(anyString(), any(), any(), any());
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(ACCOUNT, FeatureName.PL_USER_DELETION_V2);
+    doReturn(false).when(ngUserService).isUserAtScope(anyString(), any());
+    userResource.removeUser(userId, ACCOUNT, null, null);
+    verify(userResource).removeUserInternal(userId, ACCOUNT, null, null, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+    verify(ngUserService).removeUser(userId, ACCOUNT);
   }
 }

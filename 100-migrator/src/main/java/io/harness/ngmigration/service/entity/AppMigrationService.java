@@ -238,6 +238,7 @@ public class AppMigrationService extends NgMigrationService {
                                             .migratedEntities(Collections.emptyMap())
                                             .graph(Collections.emptyMap())
                                             .inputDTO(inputDTO)
+                                            .accountId(inputDTO.getAccountIdentifier())
                                             .build();
     Application application = appService.getApplicationWithDefaults(yamlFile.getCgBasicInfo().getAppId());
 

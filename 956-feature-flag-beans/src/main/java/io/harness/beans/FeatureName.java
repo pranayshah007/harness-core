@@ -7,6 +7,8 @@
 
 package io.harness.beans;
 
+import static io.harness.annotations.dev.HarnessTeam.GTM;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag.Scope;
@@ -363,9 +365,13 @@ public enum FeatureName {
   REMOVE_USERGROUP_CHECK(
       "Customers started facing NPE due to migration of usergroup reference, removed null check behind FF - ticket ID - CDS-39770, CG",
       HarnessTeam.SPG),
+  STO_STEP_PALETTE_Q1_2023(
+      "Enable following steps for STO: AWSECR, AWSSecurityHub, Brakeman, CustomIngest, OWASP, Nikto, Nmap, Metasploit, Veracode, Prowler",
+      HarnessTeam.STO),
 
-  STO_STEP_PALETTE_V1("Enable first iteration of individual steps for STO", HarnessTeam.STO),
-  STO_STEP_PALETTE_V2("Enable second iteration of individual steps for STO", HarnessTeam.STO),
+  DONT_ENABLE_STO_STEP_PALETTE_V3(
+      "Enable the rest of STO Steps Q2 2023 and beyond, NOT READY for use in PRODUCTION", HarnessTeam.STO),
+
   STO_JIRA_INTEGRATION("Enable Jira integration for STO", HarnessTeam.STO),
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
   SPOT_ELASTIGROUP_NG("Enables Spot Elastigroup implementation on NG", HarnessTeam.CDP),
@@ -572,7 +578,6 @@ public enum FeatureName {
   CIE_HOSTED_VMS_WINDOWS("FF for enabling hosted builds for windows amd64", HarnessTeam.CI),
   CD_TRIGGER_CATALOG_API_ENABLED("Enable support for pipeline/api/triggers/catalog API in UI", HarnessTeam.CDC),
   K8S_DRY_RUN_NG("Enable K8s Dry Run Step in NG", HarnessTeam.CDP),
-  CDS_SERVICENOW_ADFS_AUTH("ADFS auth support for servicenow connector", HarnessTeam.CDC),
   CDP_SKIP_DEFAULT_VALUES_YAML_NG(
       "Skip adding the default values file as an override if it doesn't contain any expressions in case of helm chart manifest for NG",
       HarnessTeam.CDP),
@@ -642,12 +647,14 @@ public enum FeatureName {
   SRM_LOG_FEEDBACK_ENABLE_UI("Enable FE for Log feedback", HarnessTeam.CV),
   PL_MIGRATE_SECRETS_FROM_LOCAL_TO_GCP_KMS_PROD3(
       "Allow migration of secrets from local to gcpKms in ng prod3", HarnessTeam.PL),
-  CDS_MANIFEST_LAST_STEP("Show last step of the manifest directly when user is editing manifest", HarnessTeam.CDP),
+  CDS_SERVICE_CONFIG_LAST_STEP(
+      "Allows landing users on the last step of manifest/artifact/config files, if these configs are in edit mode",
+      HarnessTeam.CDP),
   CHAOS_SRM_EVENT(
       "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS),
   PIE_DEPRECATE_PAUSE_INTERRUPT_NG("Deprecate Pause and Resume interrupts in NG", HarnessTeam.PIPELINE),
   PIE_EXECUTION_AUDIT_EVENTS("Enables audits events for PipelineExecution.", HarnessTeam.PIPELINE),
-  PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", HarnessTeam.PLG),
+  PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", GTM),
   CDS_SERVICE_OVERRIDES_2_0("Revamped experience service and environment overrides in NG", HarnessTeam.CDC),
   CDS_USE_OLD_SERVICE_V1("Feature flag to use service v1. NG_SVC_ENV_REDESIGN will be deprecated", HarnessTeam.CDC),
   CDS_PROPAGATE_STAGE_TEMPLATE("Allow user to propagate service in a templatized stage in pipeline", HarnessTeam.CDC),
@@ -656,7 +663,15 @@ public enum FeatureName {
   NG_CDS_NATIVE_EKS_SUPPORT("Enable native EKS support for K8s/Native Helm Infrastructures", HarnessTeam.CDP),
   CDS_RANCHER_SUPPORT_NG("Enable Rancher support in NG.", HarnessTeam.CDP),
   PL_SELECT_SPECIFIC_SERVICE_ACCOUNT_IN_RESOURCE_GROUP(
-      "Allow selection of specific service accounts in Resource group", HarnessTeam.PL);
+      "Allow selection of specific service accounts in Resource group", HarnessTeam.PL),
+  SPG_SERVICES_OVERVIEW_RBAC(
+      "Applies RBAC on services overview page, only displays services which the user has access to read",
+      HarnessTeam.SPG),
+  CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG(
+      "Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP),
+  SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
+      "Unnecessary restriction apps calls are not called from UI", HarnessTeam.SPG),
+  FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE);
 
   @Deprecated
   FeatureName() {

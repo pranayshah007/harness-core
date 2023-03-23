@@ -32,7 +32,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
-import io.harness.steps.plugin.ContainerStepInfo;
 import io.harness.steps.plugin.ContainerStepOutcome;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
@@ -51,8 +50,7 @@ public class ContainerStepExecutionResponseHelper {
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private KryoSerializer referenceFalseKryoSerializer;
 
-  public StepResponse handleAsyncResponseInternal(
-      Ambiance ambiance, ContainerStepInfo stepParameters, Map<String, ResponseData> responseDataMap) {
+  public StepResponse handleAsyncResponseInternal(Ambiance ambiance, Map<String, ResponseData> responseDataMap) {
     // If any of the responses are in serialized format, deserialize them
     for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
       entry.setValue(serializedResponseDataHelper.deserialize(entry.getValue()));
@@ -63,11 +61,10 @@ public class ContainerStepExecutionResponseHelper {
     }
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
     log.info("Received response for step {}", stepIdentifier);
-    return handleK8AsyncResponse(ambiance, stepParameters, responseDataMap);
+    return handleK8AsyncResponse(ambiance, responseDataMap);
   }
 
-  private StepResponse handleK8AsyncResponse(
-      Ambiance ambiance, ContainerStepInfo stepParameters, Map<String, ResponseData> responseDataMap) {
+  private StepResponse handleK8AsyncResponse(Ambiance ambiance, Map<String, ResponseData> responseDataMap) {
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
     log.info("Received response for step {}", stepIdentifier);
 

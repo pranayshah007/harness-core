@@ -78,6 +78,7 @@ java_library(
         "//srm-service/modules/cv-nextgen-service/contracts/delegate:module",
         "@maven//:com_amazonaws_aws_java_sdk_applicationautoscaling",
         "@maven//:com_amazonaws_aws_java_sdk_cloudwatch",
+        "@maven//:com_amazonaws_aws_java_sdk_eks",
         "@maven//:com_amazonaws_aws_java_sdk_elasticloadbalancing",
         "@maven//:com_amazonaws_aws_java_sdk_elasticloadbalancingv2",
         "@maven//:com_amazonaws_aws_java_sdk_route53",

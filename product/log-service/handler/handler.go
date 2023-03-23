@@ -47,9 +47,9 @@ func Handler(stream stream.Stream, store store.Store, config config.Config, ngCl
 			sr := chi.NewRouter()
 			// Validate the incoming request with a global secret and return info only if the
 			// match is successful. This endpoint should be only accessible from the Harness side.
-			if !config.Auth.DisableAuth {
-				sr.Use(TokenGenerationMiddleware(config, false, ngClient))
-			}
+			// if !config.Auth.DisableAuth {
+			// 	sr.Use(TokenGenerationMiddleware(config, false, ngClient))
+			// }
 
 			sr.Get("/stream", HandleInfo(stream))
 
@@ -66,6 +66,7 @@ func Handler(stream stream.Stream, store store.Store, config config.Config, ngCl
 
 			return sr
 		}())
+		r.Mount("/info/debug/getheap", pprof.Handler("heap"))
 	}
 
 	// Log stream endpoints

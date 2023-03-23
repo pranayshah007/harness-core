@@ -83,6 +83,7 @@ public interface EntityTypeConstants {
   String SECURITY = "Security";
   String AQUA_TRIVY = "AquaTrivy";
   String AWS_ECR = "AWSECR";
+  String AWS_SECURITY_HUB = "AWSSecurityHub";
   String BANDIT = "Bandit";
   String BLACKDUCK = "BlackDuck";
   String BRAKEMAN = "Brakeman";

@@ -97,7 +97,6 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -496,7 +495,7 @@ public class ExecutionHelper {
     }
     if (executionMode.equals(ExecutionMode.POST_EXECUTION_ROLLBACK)) {
       return rollbackModeExecutionHelper.transformPlanForRollbackMode(
-          plan, previousExecutionId, Collections.emptyList(), executionMode);
+          plan, previousExecutionId, resp.getPreservedNodesInRollbackModeList(), executionMode);
     }
     return plan;
   }

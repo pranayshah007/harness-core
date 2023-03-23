@@ -39,10 +39,10 @@ import com.google.inject.name.Named;
 import java.net.URL;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
@@ -60,7 +60,7 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
     long startTime = currentInstant.getEpochSecond();
     long startTimeInMillis = startTime * 1000;
     String startDate = new Date(startTime * 1000).toString();
-    Long endTime = currentInstant.plus(2, ChronoUnit.HOURS).toEpochMilli();
+    Long endTime = currentInstant.toEpochMilli();
     String vanityUrl = getVanityUrl(projectParams.getAccountIdentifier());
     String baseUrl = getBaseUrl(getPortalUrl(), vanityUrl);
 
@@ -69,13 +69,17 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
         nextGenService.getOrganization(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier());
     ProjectDTO projectDTO = nextGenService.getProject(
         projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier());
-    ServiceResponseDTO serviceResponseDTO = nextGenService.getService(projectParams.getAccountIdentifier(),
-        projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), serviceIdentifier);
+    ServiceResponseDTO serviceResponseDTO = null;
+    if (serviceIdentifier != null) {
+      serviceResponseDTO = nextGenService.getService(projectParams.getAccountIdentifier(),
+          projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), serviceIdentifier);
+    }
+    String serviceName = Objects.isNull(serviceResponseDTO) ? null : serviceResponseDTO.getName();
 
     return new HashMap<String, String>() {
       {
         put(COLOR, THEME_COLOR);
-        put(SERVICE_NAME, serviceResponseDTO.getName());
+        put(SERVICE_NAME, serviceName);
         put(ACCOUNT_NAME, accountDTO.getName());
         put(ORG_NAME, organizationDTO.getName());
         put(PROJECT_NAME, projectDTO.getName());

@@ -49,6 +49,7 @@ import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.OpenTaskDetails;
+import io.harness.ng.overview.dto.PipelineExecutionCountInfo;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfoV2;
@@ -578,5 +579,26 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getOpenTasks(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, startInterval));
+  }
+
+  @GET
+  @Path("/getPipelineExecutionCount")
+  @ApiOperation(value = "Get pipeline execution count for a service grouped on artifact and status",
+      nickname = "getPipelineExecutionCount")
+  @Hidden
+  public ResponseDTO<PipelineExecutionCountInfo>
+  getPipelineExecutionCount(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
+      @QueryParam(NGResourceFilterConstants.START_TIME) Long startInterval,
+      @QueryParam(NGResourceFilterConstants.END_TIME) Long endInterval,
+      @QueryParam(NGCommonEntityConstants.ARTIFACT_PATH) String artifactPath,
+      @QueryParam(NGCommonEntityConstants.ARTIFACT_VERSION) String artifactVersion,
+      @QueryParam(NGCommonEntityConstants.ARTIFACT) String artifact,
+      @QueryParam(NGCommonEntityConstants.STATUS) String status) {
+    return ResponseDTO.newResponse(
+        cdOverviewDashboardService.getPipelineExecutionCountInfo(accountIdentifier, orgIdentifier, projectIdentifier,
+            serviceId, startInterval, endInterval, artifactPath, artifactVersion, artifact, status));
   }
 }

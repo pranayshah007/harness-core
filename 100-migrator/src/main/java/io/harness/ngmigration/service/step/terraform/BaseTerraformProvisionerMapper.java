@@ -337,7 +337,7 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
           .build();
     }
     TerraformInfrastructureProvisioner provisioner = (TerraformInfrastructureProvisioner) node.getEntity();
-    String path = StringUtils.isNotBlank(provisioner.getPath()) ? provisioner.getPath() : "./";
+    String path = StringUtils.isNotBlank(provisioner.getPath()) ? provisioner.getPath() : "/";
     if (StringUtils.isNotBlank(provisioner.getSourceRepoBranch())) {
       storeBuilder.gitFetchType(FetchType.BRANCH);
       storeBuilder.branch(ParameterField.createValueField(provisioner.getSourceRepoBranch()));

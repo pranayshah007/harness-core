@@ -5,19 +5,24 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 package io.harness.idp.configmanager.service;
-
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
 
 import java.util.Map;
 
+@OwnedBy(HarnessTeam.IDP)
 public interface ConfigManagerService {
   Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier);
   public AppConfig getPluginConfig(String accountIdentifier, String pluginId);
 
-  public AppConfig savePluginConfig(AppConfigRequest appConfigRequest, String accountIdentifier);
+  AppConfig savePluginConfig(AppConfigRequest appConfigRequest, String accountIdentifier);
 
-  public AppConfig updatePluginConfig(AppConfigRequest appConfigRequest, String accountIdentifier);
+  AppConfig updatePluginConfig(AppConfigRequest appConfigRequest, String accountIdentifier);
 
-  public AppConfig togglePlugin(String accountIdentifier, String pluginName, Boolean isEnabled);
+  AppConfig togglePlugin(String accountIdentifier, String pluginName, Boolean isEnabled);
+
+  MergedAppConfigEntity mergeAndSaveAppConfig(String accountIdentifier) throws Exception;
 }

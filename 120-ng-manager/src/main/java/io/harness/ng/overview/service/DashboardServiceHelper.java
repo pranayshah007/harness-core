@@ -19,6 +19,8 @@ import io.harness.ng.overview.dto.ArtifactInstanceDetails;
 import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
+import io.harness.ng.overview.dto.PipelineExecutionCountInfo;
+import io.harness.ng.overview.dto.ServiceArtifactExecutionDetail;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -36,6 +38,21 @@ import org.apache.commons.lang3.tuple.Pair;
 
 @UtilityClass
 public class DashboardServiceHelper {
+  private static final String SERVICE_INFRA_INFO = "service_infra_info";
+  private static final String PIPELINE_EXECUTION_SUMMARY_CD_ID = "pipeline_execution_summary_cd_id";
+  private static final String ARTIFACT_DISPLAY_NAME = "artifact_display_name";
+  private static final String ARTIFACT_IMAGE = "artifact_image";
+  private static final String TAG = "tag";
+  private static final String ACCOUNT_ID = "accountid";
+  private static final String ORG_ID = "orgidentifier";
+  private static final String PROJECT_ID = "projectidentifier";
+  private static final String SERVICE_ID = "service_id";
+  private static final String SERVICE_NAME = "service_name";
+  private static final String SERVICE_STARTTS = "service_startts";
+  private static final String ID = "id";
+  private static final String PIPELINE_EXECUTION_SUMMARY_CD = "pipeline_execution_summary_cd";
+  private static final String STATUS = "status";
+
   public InstanceGroupedByEnvironmentList getInstanceGroupedByEnvironmentListHelper(
       List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList, boolean isGitOps) {
     // nested map - environmentId, environmentType, infrastructureId, displayName, (count, lastDeployedAt)
@@ -596,5 +613,243 @@ public class DashboardServiceHelper {
     return String.format(
         "select pipeline_execution_summary_cd_id from service_infra_info where accountid = '%s' and orgidentifier = '%s' and projectidentifier = '%s' and service_id = '%s' and service_startts > %s",
         accountId, orgId, projectId, serviceId, startInterval);
+  }
+
+  public String queryToFetchExecutionIdAndArtifactDetails(String accountId, String orgId, String projectId,
+      String serviceRef, long startInterval, long endInterval, String artifactPath, String artifactVersion,
+      String artifact) {
+    String query = String.format(
+        "select %s, %s, %s, %s, %s, %s, %s, %s, %s, %s from %s where %s and %s is not null and %s >= %s and %s <= %s",
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, SERVICE_NAME, ARTIFACT_DISPLAY_NAME, ARTIFACT_IMAGE, TAG,
+        PIPELINE_EXECUTION_SUMMARY_CD_ID, SERVICE_STARTTS, SERVICE_INFRA_INFO,
+        getScopeEqualityCriteria(accountId, orgId, projectId), SERVICE_ID, SERVICE_STARTTS, startInterval,
+        SERVICE_STARTTS, endInterval);
+    if (serviceRef != null) {
+      query = query + String.format(" and %s = '%s'", SERVICE_ID, serviceRef);
+    }
+    if (artifact != null) {
+      query = query + String.format(" and %s = '%s'", ARTIFACT_DISPLAY_NAME, artifact);
+    }
+    if (artifactPath != null) {
+      query = query + String.format(" and %s = '%s'", ARTIFACT_IMAGE, artifactPath);
+    }
+    if (artifactVersion != null) {
+      query = query + String.format(" and %s = '%s'", TAG, artifactVersion);
+    }
+    return query;
+  }
+
+  public String queryToFetchStatusOfExecution(String accountId, String orgId, String projectId, String status) {
+    String query = String.format("select %s, %s from %s where %s and %s = any (?)", ID, STATUS,
+        PIPELINE_EXECUTION_SUMMARY_CD, getScopeEqualityCriteria(accountId, orgId, projectId), ID);
+    if (status != null) {
+      query = query + String.format(" and %s = '%s'", STATUS, status);
+    }
+    return query;
+  }
+
+  public String getArtifactPathFromDisplayName(String displayName) {
+    if (EmptyPredicate.isNotEmpty(displayName)) {
+      String[] res = displayName.split(":");
+      int count = res.length;
+      if (count > 1) {
+        return res[0];
+      }
+    }
+    return null;
+  }
+
+  public String getTagFromDisplayName(String displayName) {
+    if (EmptyPredicate.isNotEmpty(displayName)) {
+      String[] res = displayName.split(":");
+      int count = res.length;
+      if (count > 1) {
+        return res[1];
+      } else if (count == 1) {
+        return res[0];
+      }
+    }
+    return displayName;
+  }
+
+  public String getDisplayNameFromArtifact(String artifactPath, String buildId) {
+    if (EmptyPredicate.isEmpty(artifactPath)) {
+      return buildId;
+    }
+    return String.format("%s:%s", artifactPath, buildId);
+  }
+
+  public String getScopeEqualityCriteria(String accountId, String orgId, String projectId) {
+    if (projectId != null) {
+      return String.format(
+          "%s = '%s' and %s = '%s' and %s = '%s'", ACCOUNT_ID, accountId, ORG_ID, orgId, PROJECT_ID, projectId);
+    } else if (orgId != null) {
+      return String.format("%s = '%s' and %s = '%s'", ACCOUNT_ID, accountId, ORG_ID, orgId);
+    } else {
+      return String.format("%s = '%s'", ACCOUNT_ID, accountId);
+    }
+  }
+
+  public PipelineExecutionCountInfo getPipelineExecutionCountInfoHelper(
+      List<ServiceArtifactExecutionDetail> serviceArtifactExecutionDetailList, Map<String, String> statusMap) {
+    sortServiceArtifactExecutionDetail(serviceArtifactExecutionDetailList);
+    Map<String, Map<String, ServiceArtifactExecutionDetail>> serviceArtifactExecutionDetailMap = new HashMap<>();
+    Map<String, Map<String, Set<String>>> artifactExecutionMap = new HashMap<>();
+    Map<String, String> serviceRefToNameMap = new HashMap<>();
+    Map<String, Set<String>> serviceExecutionMap = new HashMap<>();
+
+    constructServiceToExecutionIdListMap(serviceArtifactExecutionDetailList, serviceArtifactExecutionDetailMap,
+        artifactExecutionMap, serviceRefToNameMap, serviceExecutionMap);
+
+    return getCountGroupedOnServiceList(
+        artifactExecutionMap, statusMap, serviceArtifactExecutionDetailMap, serviceRefToNameMap, serviceExecutionMap);
+  }
+
+  private void sortServiceArtifactExecutionDetail(
+      List<ServiceArtifactExecutionDetail> serviceArtifactExecutionDetailList) {
+    Collections.sort(serviceArtifactExecutionDetailList, new Comparator<ServiceArtifactExecutionDetail>() {
+      public int compare(ServiceArtifactExecutionDetail o1, ServiceArtifactExecutionDetail o2) {
+        Long o1Time = o1.getServiceStartTime();
+        Long o2Time = o2.getServiceStartTime();
+        if (o2Time == null && o1Time == null) {
+          return 0;
+        } else if (o2Time == null) {
+          return -1;
+        } else if (o1Time == null) {
+          return 1;
+        } else {
+          return (int) (o2Time - o1Time);
+        }
+      }
+    });
+  }
+
+  private PipelineExecutionCountInfo getCountGroupedOnServiceList(
+      Map<String, Map<String, Set<String>>> artifactExecutionMap, Map<String, String> statusMap,
+      Map<String, Map<String, ServiceArtifactExecutionDetail>> serviceArtifactExecutionDetailMap,
+      Map<String, String> serviceRefToNameMap, Map<String, Set<String>> serviceExecutionMap) {
+    List<PipelineExecutionCountInfo.CountGroupedOnService> countGroupedOnServiceList = new ArrayList<>();
+    for (Map.Entry<String, Map<String, Set<String>>> entry : artifactExecutionMap.entrySet()) {
+      String serviceRef = entry.getKey();
+      String serviceName = serviceRefToNameMap.get(serviceRef);
+      List<PipelineExecutionCountInfo.CountGroupedOnArtifact> countGroupedOnArtifactList =
+          getCountGroupedOnArtifactList(entry.getValue(), statusMap, serviceArtifactExecutionDetailMap, serviceRef);
+      if (EmptyPredicate.isEmpty(countGroupedOnArtifactList)) {
+        continue;
+      }
+      Pair<Long, List<PipelineExecutionCountInfo.CountGroupedOnStatus>> countInfo =
+          getCountGroupedOnStatusList(serviceExecutionMap.get(serviceRef), statusMap);
+      PipelineExecutionCountInfo.CountGroupedOnService countGroupedOnService =
+          PipelineExecutionCountInfo.CountGroupedOnService.builder()
+              .serviceReference(serviceRef)
+              .serviceName(serviceName)
+              .count(countInfo.getKey())
+              .executionCountGroupedOnStatusList(countInfo.getValue())
+              .executionCountGroupedOnArtifactList(countGroupedOnArtifactList)
+              .build();
+      countGroupedOnServiceList.add(countGroupedOnService);
+    }
+    return PipelineExecutionCountInfo.builder().executionCountGroupedOnServiceList(countGroupedOnServiceList).build();
+  }
+
+  private List<PipelineExecutionCountInfo.CountGroupedOnArtifact> getCountGroupedOnArtifactList(
+      Map<String, Set<String>> artifactToExecutionIdMap, Map<String, String> statusMap,
+      Map<String, Map<String, ServiceArtifactExecutionDetail>> serviceArtifactExecutionDetailMap, String serviceRef) {
+    List<PipelineExecutionCountInfo.CountGroupedOnArtifact> countGroupedOnArtifactList = new ArrayList<>();
+    for (Map.Entry<String, Set<String>> entry1 : artifactToExecutionIdMap.entrySet()) {
+      String artifact = entry1.getKey();
+      ServiceArtifactExecutionDetail serviceArtifactExecutionDetail =
+          serviceArtifactExecutionDetailMap.get(serviceRef).get(artifact);
+      Pair<Long, List<PipelineExecutionCountInfo.CountGroupedOnStatus>> countInfo =
+          getCountGroupedOnStatusList(entry1.getValue(), statusMap);
+      List<PipelineExecutionCountInfo.CountGroupedOnStatus> countGroupedOnStatusList = countInfo.getValue();
+      if (EmptyPredicate.isEmpty(countGroupedOnStatusList)) {
+        continue;
+      }
+      PipelineExecutionCountInfo.CountGroupedOnArtifact countGroupedOnArtifact =
+          PipelineExecutionCountInfo.CountGroupedOnArtifact.builder()
+              .artifactPath(serviceArtifactExecutionDetail.getArtifactPath())
+              .artifactVersion(serviceArtifactExecutionDetail.getArtifactTag())
+              .artifact(serviceArtifactExecutionDetail.getArtifactDisplayName())
+              .count(countInfo.getKey())
+              .executionCountGroupedOnStatusList(countGroupedOnStatusList)
+              .build();
+      countGroupedOnArtifactList.add(countGroupedOnArtifact);
+    }
+    return countGroupedOnArtifactList;
+  }
+
+  private Pair<Long, List<PipelineExecutionCountInfo.CountGroupedOnStatus>> getCountGroupedOnStatusList(
+      Set<String> executionIdList, Map<String, String> statusMap) {
+    Map<String, Long> statusCountMap = new HashMap<>();
+    Long totalExecution = 0L;
+    for (String executionId : executionIdList) {
+      if (!statusMap.containsKey(executionId)) {
+        continue;
+      }
+      totalExecution++;
+      String status = statusMap.get(executionId);
+      Long count = statusCountMap.get(status);
+      if (count == null) {
+        statusCountMap.put(status, 1L);
+      } else {
+        statusCountMap.put(status, count + 1);
+      }
+    }
+    List<PipelineExecutionCountInfo.CountGroupedOnStatus> countGroupedOnStatusList = new ArrayList<>();
+    for (Map.Entry<String, Long> entry : statusCountMap.entrySet()) {
+      countGroupedOnStatusList.add(PipelineExecutionCountInfo.CountGroupedOnStatus.builder()
+                                       .status(entry.getKey())
+                                       .count(entry.getValue())
+                                       .build());
+    }
+    return MutablePair.of(totalExecution, countGroupedOnStatusList);
+  }
+
+  private void constructServiceToExecutionIdListMap(
+      List<ServiceArtifactExecutionDetail> serviceArtifactExecutionDetailList,
+      Map<String, Map<String, ServiceArtifactExecutionDetail>> serviceArtifactExecutionDetailMap,
+      Map<String, Map<String, Set<String>>> artifactExecutionMap, Map<String, String> serviceRefToNameMap,
+      Map<String, Set<String>> serviceExecutionMap) {
+    serviceArtifactExecutionDetailList.forEach(serviceArtifactExecutionDetail -> {
+      String accountId = serviceArtifactExecutionDetail.getAccountId();
+      String orgId = serviceArtifactExecutionDetail.getOrgId();
+      String projectId = serviceArtifactExecutionDetail.getProjectId();
+      String serviceRef = serviceArtifactExecutionDetail.getServiceRef();
+      IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgId, projectId);
+      serviceRef = identifierRef.getFullyQualifiedName();
+      serviceRefToNameMap.putIfAbsent(serviceRef, serviceArtifactExecutionDetail.getServiceName());
+      String artifactPath = serviceArtifactExecutionDetail.getArtifactPath();
+      String artifactTag = serviceArtifactExecutionDetail.getArtifactTag();
+      String artifactDisplayName = serviceArtifactExecutionDetail.getArtifactDisplayName();
+      String pipelineExecutionId = serviceArtifactExecutionDetail.getPipelineExecutionSummaryCDId();
+      if (artifactDisplayName == null) {
+        artifactDisplayName = getDisplayNameFromArtifact(artifactPath, artifactTag);
+      }
+      artifactExecutionMap.putIfAbsent(serviceRef, new HashMap<>());
+      artifactExecutionMap.get(serviceRef).putIfAbsent(artifactDisplayName, new HashSet<>());
+      artifactExecutionMap.get(serviceRef).get(artifactDisplayName).add(pipelineExecutionId);
+      serviceExecutionMap.putIfAbsent(serviceRef, new HashSet<>());
+      serviceExecutionMap.get(serviceRef).add(pipelineExecutionId);
+      serviceArtifactExecutionDetailMap.putIfAbsent(serviceRef, new HashMap<>());
+      serviceArtifactExecutionDetailMap.get(serviceRef)
+          .putIfAbsent(artifactDisplayName, serviceArtifactExecutionDetail);
+    });
+  }
+
+  public Long checkForDefaultEndInterval(Long endInterval) {
+    if (endInterval == null) {
+      // taking current time as default endInterval
+      return System.currentTimeMillis();
+    }
+    return endInterval;
+  }
+
+  public Long checkForDefaultStartInterval(Long startInterval) {
+    if (startInterval == null) {
+      // taking 30 days interval as default
+      return System.currentTimeMillis() - 2592000000L;
+    }
+    return startInterval;
   }
 }

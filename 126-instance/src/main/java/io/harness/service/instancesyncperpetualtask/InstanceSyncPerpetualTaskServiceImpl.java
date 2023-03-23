@@ -114,4 +114,11 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
     return perpetualTaskServiceRegister.getInstanceSyncPerpetualService(
         abstractInstanceSyncHandler.getPerpetualTaskType());
   }
+
+  public boolean isInstanceSyncV2Enabled() {
+    return false;
+  }
+  public String createPerpetualTaskV2() {
+    return null;
+  }
 }

@@ -264,6 +264,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
                                 .filename(String.format("environment/%s/%s.yaml", environment.getAppId(), name))
                                 .yaml(environmentConfig)
                                 .ngEntityDetail(NgEntityDetail.builder()
+                                                    .entityType(NGMigrationEntityType.ENVIRONMENT)
                                                     .identifier(identifier)
                                                     .orgIdentifier(inputDTO.getOrgIdentifier())
                                                     .projectIdentifier(inputDTO.getProjectIdentifier())
@@ -272,8 +273,8 @@ public class EnvironmentMigrationService extends NgMigrationService {
                                 .cgBasicInfo(environment.getCgBasicInfo())
                                 .build();
     files.add(ngYamlFile);
-
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
+    files.add(getFolder(name, identifier, projectIdentifier, orgIdentifier));
     return YamlGenerationDetails.builder().yamlFileList(files).build();
   }
 

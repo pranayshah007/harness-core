@@ -34,7 +34,7 @@ public class SecretTextSpecDTO extends SecretSpecDTO {
   @Schema(description = "This has details to specify if the secret value is inline or referenced.")
   @NotNull
   private ValueType valueType;
-  @Schema(description = "Value of the Secret") private String value;
+  @Schema(description = "Value of the Secret [Required]") private String value;
   @Schema(description = "Additional metadata for the secret") private AdditionalMetadata additionalMetadata;
 
   @Override

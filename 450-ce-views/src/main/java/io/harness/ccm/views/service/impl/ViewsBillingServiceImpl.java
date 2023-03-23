@@ -1242,9 +1242,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       final boolean groupByCurrentBusinessMapping =
           groupByBusinessMappingId != null && groupByBusinessMappingId.equals(sharedCostBusinessMapping.getUuid());
       SelectQuery query = viewBillingServiceHelper.getQuery(
-          viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()), updatedGroupBy,
-          aggregateFunction, sort, cloudProviderTableName, queryParams, sharedCostBusinessMappings.get(0),
-          Collections.emptyList());
+          viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()), groupBy,
+          updatedGroupBy, aggregateFunction, sort, cloudProviderTableName, queryParams,
+          sharedCostBusinessMappings.get(0), Collections.emptyList());
       QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
       TableResult result;
       try {
@@ -1380,7 +1380,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       List<QLCEViewGroupBy> businessMappingGroupBy =
           viewsQueryHelper.createBusinessMappingGroupBy(sharedCostBusinessMapping);
       SelectQuery query = viewBillingServiceHelper.getQuery(
-          viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()),
+          viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()), groupBy,
           businessMappingGroupBy, aggregateFunction, sort, cloudProviderTableName, queryParams,
           sharedCostBusinessMapping, Collections.emptyList());
       TableResult result = getTableResultWithLimitAndOffset(bigQuery, query, limit, offset);
