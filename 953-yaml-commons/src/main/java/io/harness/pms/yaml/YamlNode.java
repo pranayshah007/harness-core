@@ -221,7 +221,6 @@ public class YamlNode implements Visitable {
       } else {
         throw new YamlException(String.format("Incorrect index path (%s) on array node", lastName));
       }
-
     } else {
       ObjectNode objectNode = (ObjectNode) curr;
       objectNode.set(lastName, newNode);
