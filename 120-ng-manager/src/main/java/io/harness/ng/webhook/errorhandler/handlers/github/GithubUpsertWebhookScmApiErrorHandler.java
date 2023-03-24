@@ -7,11 +7,12 @@
 
 package io.harness.ng.webhook.errorhandler.handlers.github;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
-import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.ng.webhook.errorhandler.dtos.ErrorMetadata;
 import io.harness.ng.webhook.errorhandler.handlers.ScmApiErrorHandler;
@@ -40,7 +41,11 @@ public class GithubUpsertWebhookScmApiErrorHandler implements ScmApiErrorHandler
         throw new ScmBadRequestException("Please check if the secret provided for webhook is valid. " + errorMessage);
       default:
         log.error(String.format("Error while performing upsert operation: [%s: %s]", statusCode, errorMessage));
-        throw new ScmUnexpectedException(errorMessage);
+        if (isEmpty(errorMessage)) {
+          throw new ScmBadRequestException("Error while performing upsert operation.");
+        } else {
+          throw new ScmBadRequestException(errorMessage);
+        }
     }
   }
 }

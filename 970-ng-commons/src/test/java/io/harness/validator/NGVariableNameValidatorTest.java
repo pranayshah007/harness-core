@@ -42,8 +42,9 @@ public class NGVariableNameValidatorTest extends CategoryTest {
 
   @Before
   public void setUp() {
-    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-    validator = factory.getValidator();
+    try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
+      validator = factory.getValidator();
+    }
   }
 
   @Test
@@ -91,6 +92,10 @@ public class NGVariableNameValidatorTest extends CategoryTest {
         assertTrue("name : " + name, violationsCount > 0);
       }
     }
+
+    // value with DOT
+    int violationsCount = validator.validate(EntityNameValidatorTestStructure.builder().name("a.b").build()).size();
+    assertEquals(violationsCount, 0);
   }
 
   private static String generateRandomAsciiString() {

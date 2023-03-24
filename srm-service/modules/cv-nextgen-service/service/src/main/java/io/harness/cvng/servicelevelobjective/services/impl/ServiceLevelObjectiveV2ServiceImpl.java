@@ -45,6 +45,7 @@ import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
@@ -70,6 +71,7 @@ import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveKeys;
@@ -555,6 +557,18 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   }
 
   @Override
+  public List<AbstractServiceLevelObjective> getWithChildResource(
+      ProjectParams projectParams, List<String> identifiers) {
+    boolean childResourceFilter = false;
+    if (projectParams.getOrgIdentifier() == null && projectParams.getProjectIdentifier() == null) {
+      childResourceFilter = true;
+    }
+    Filter filter = Filter.builder().identifiers(identifiers).childResource(childResourceFilter).build();
+
+    return get(projectParams, filter);
+  }
+
+  @Override
   public List<AbstractServiceLevelObjective> getByMonitoredServiceIdentifier(
       ProjectParams projectParams, String monitoredServiceIdentifier) {
     return get(projectParams, Filter.builder().monitoredServiceIdentifier(monitoredServiceIdentifier).build());
@@ -630,6 +644,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                         sloTargetTypeSLOTargetTransformerMap.get(filter.getSloTargetFilterDTO().getType())
                             .getSLOTarget(filter.getSloTargetFilterDTO().getSpec()))
                     : null)
+            .sliEvaluationType(filter.getEvaluationType())
             .childResource(filter.isChildResource())
             .build());
   }
@@ -776,6 +791,86 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     }
     updateNotificationRuleRefInSLO(
         projectParams, serviceLevelObjective, new ArrayList<>(notificationRuleRefsWithChange));
+  }
+
+  @Override
+  public Map<AbstractServiceLevelObjective, SLIEvaluationType> getEvaluationType(
+      ProjectParams projectParams, List<AbstractServiceLevelObjective> serviceLevelObjectiveList) {
+    List<String> sliIdentifierList = new ArrayList<>();
+    Map<String, SimpleServiceLevelObjective> sloIdentifierToEntityMap = new HashMap<>();
+
+    List<SimpleServiceLevelObjective> simpleServiceLevelObjectiveList =
+        getSimpleServiceLevelObjective(projectParams, serviceLevelObjectiveList);
+    simpleServiceLevelObjectiveList.forEach(simpleServiceLevelObjective -> {
+      sloIdentifierToEntityMap.put(simpleServiceLevelObjective.getIdentifier(), simpleServiceLevelObjective);
+      sliIdentifierList.add(simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
+    });
+
+    Map<String, ServiceLevelIndicator> sliIdentifierToEntityMap =
+        getSLIIdentifierToEntityMap(projectParams, sliIdentifierList);
+
+    return serviceLevelObjectiveList.stream().collect(Collectors.toMap(Function.identity(),
+        serviceLevelObjective
+        -> getEvaluationType(serviceLevelObjective, sliIdentifierToEntityMap, sloIdentifierToEntityMap)));
+  }
+
+  private List<SimpleServiceLevelObjective> getSimpleServiceLevelObjective(
+      ProjectParams projectParams, List<AbstractServiceLevelObjective> serviceLevelObjectiveList) {
+    Set<String> compositeServiceLevelObjectiveRefSet = new HashSet<>();
+    List<SimpleServiceLevelObjective> simpleServiceLevelObjectiveList = new ArrayList<>();
+    serviceLevelObjectiveList.forEach(serviceLevelObjective -> {
+      if (serviceLevelObjective.getType() == ServiceLevelObjectiveType.COMPOSITE) {
+        CompositeServiceLevelObjective compositeServiceLevelObjective =
+            (CompositeServiceLevelObjective) serviceLevelObjective;
+        compositeServiceLevelObjectiveRefSet.add(
+            compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0).getServiceLevelObjectiveRef());
+      } else {
+        simpleServiceLevelObjectiveList.add((SimpleServiceLevelObjective) serviceLevelObjective);
+      }
+    });
+    List<AbstractServiceLevelObjective> referredSLOList = new ArrayList<>();
+    if (isNotEmpty(compositeServiceLevelObjectiveRefSet)) {
+      referredSLOList = getWithChildResource(projectParams, new ArrayList<>(compositeServiceLevelObjectiveRefSet));
+    }
+    referredSLOList.forEach(slo -> simpleServiceLevelObjectiveList.add((SimpleServiceLevelObjective) slo));
+    return simpleServiceLevelObjectiveList;
+  }
+
+  private Map<String, ServiceLevelIndicator> getSLIIdentifierToEntityMap(
+      ProjectParams projectParams, List<String> sliIdentifierList) {
+    Query<ServiceLevelIndicator> query =
+        hPersistence.createQuery(ServiceLevelIndicator.class)
+            .filter(ServiceLevelIndicatorKeys.accountId, projectParams.getAccountIdentifier());
+    if (projectParams.getOrgIdentifier() != null && projectParams.getProjectIdentifier() != null) {
+      query = query.filter(ServiceLevelIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier())
+                  .filter(ServiceLevelIndicatorKeys.projectIdentifier, projectParams.getProjectIdentifier());
+    }
+    List<ServiceLevelIndicator> serviceLevelIndicatorList =
+        query.field(ServiceLevelIndicatorKeys.identifier).in(sliIdentifierList).asList();
+
+    return serviceLevelIndicatorList.stream().collect(
+        Collectors.toMap(ServiceLevelIndicator::getIdentifier, Function.identity()));
+  }
+
+  private SLIEvaluationType getEvaluationType(AbstractServiceLevelObjective serviceLevelObjective,
+      Map<String, ServiceLevelIndicator> sliIdentifierToEntityMap,
+      Map<String, SimpleServiceLevelObjective> sloIdentifierToEntityMap) {
+    if (serviceLevelObjective.getType() == ServiceLevelObjectiveType.SIMPLE) {
+      return getEvaluationType((SimpleServiceLevelObjective) serviceLevelObjective, sliIdentifierToEntityMap);
+    } else {
+      SimpleServiceLevelObjective referredSimpleSLO =
+          sloIdentifierToEntityMap.get(((CompositeServiceLevelObjective) serviceLevelObjective)
+                                           .getServiceLevelObjectivesDetails()
+                                           .get(0)
+                                           .getServiceLevelObjectiveRef());
+      return getEvaluationType(referredSimpleSLO, sliIdentifierToEntityMap);
+    }
+  }
+
+  private SLIEvaluationType getEvaluationType(
+      SimpleServiceLevelObjective serviceLevelObjective, Map<String, ServiceLevelIndicator> sliIdentifierToEntityMap) {
+    return sliIdentifierToEntityMap.get(serviceLevelObjective.getServiceLevelIndicators().get(0))
+        .getSLIEvaluationType();
   }
 
   @VisibleForTesting
@@ -1095,6 +1190,15 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
               .filter(slo -> filter.getErrorBudgetRisks().contains(sloIdToRiskMap.get(slo.getIdentifier())))
               .collect(Collectors.toList());
     }
+    if (filter.sliEvaluationType != null) {
+      Map<AbstractServiceLevelObjective, SLIEvaluationType> serviceLevelObjectiveSLIEvaluationTypeMap =
+          getEvaluationType(projectParams, serviceLevelObjectiveList);
+      serviceLevelObjectiveList =
+          serviceLevelObjectiveList.stream()
+              .filter(serviceLevelObjective
+                  -> serviceLevelObjectiveSLIEvaluationTypeMap.get(serviceLevelObjective) == filter.sliEvaluationType)
+              .collect(Collectors.toList());
+    }
     List<String> accessibleProjects =
         nextGenService.listAccessibleProjects(projectParams.getAccountIdentifier())
             .stream()
@@ -1181,6 +1285,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     String searchFilter;
     ServiceLevelObjective.SLOTarget sloTarget;
     ServiceLevelObjectiveType sloType;
+    SLIEvaluationType sliEvaluationType;
     boolean childResource;
   }
 }

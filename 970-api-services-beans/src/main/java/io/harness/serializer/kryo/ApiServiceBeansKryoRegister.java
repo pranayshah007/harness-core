@@ -111,6 +111,7 @@ import io.harness.pcf.model.ManifestType;
 import io.harness.provision.TfVarScriptRepositorySource;
 import io.harness.provision.TfVarSource;
 import io.harness.provision.TfVarSource.TfVarSourceType;
+import io.harness.provision.model.TfConfigInspectVersion;
 import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedDataParams;
@@ -482,5 +483,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(WebhookSecretData.class, 80312);
     kryo.register(AMITagsResponse.class, 81001);
     kryo.register(NexusRepositories.class, 9000312);
+    kryo.register(TfConfigInspectVersion.class, 9000313);
   }
 }

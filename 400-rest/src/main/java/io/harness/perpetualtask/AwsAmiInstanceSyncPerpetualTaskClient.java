@@ -23,7 +23,6 @@ import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
 import io.harness.perpetualtask.instancesync.AwsAmiInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsAmiInfrastructureMapping;
 import software.wings.beans.AwsConfig;
@@ -48,20 +47,21 @@ import lombok.experimental.FieldDefaults;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(CDP)
-public class AwsAmiInstanceSyncPerpetualTaskClient implements PerpetualTaskServiceClient {
+public class AwsAmiInstanceSyncPerpetualTaskClient
+    extends PerpetualTaskClientBase implements PerpetualTaskServiceClient {
   public static final String ASG_NAME = "asgName";
   @Inject SecretManager secretManager;
   @Inject SettingsService settingsService;
   @Inject InfrastructureMappingService infraMappingService;
-  @Inject private KryoSerializer kryoSerializer;
 
   @Override
-  public Message getTaskParams(PerpetualTaskClientContext clientContext) {
+  public Message getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
     final PerpetualTaskData perpetualTaskData = getPerpetualTaskData(clientContext);
 
-    ByteString configBytes = ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getAwsConfig()));
+    ByteString configBytes =
+        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(perpetualTaskData.getAwsConfig()));
     ByteString encryptedConfigBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getEncryptedDataDetails()));
+        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(perpetualTaskData.getEncryptedDataDetails()));
 
     return AwsAmiInstanceSyncPerpetualTaskParams.newBuilder()
         .setRegion(perpetualTaskData.getRegion())

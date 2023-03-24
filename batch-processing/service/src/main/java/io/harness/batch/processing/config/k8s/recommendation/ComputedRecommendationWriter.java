@@ -67,7 +67,7 @@ class ComputedRecommendationWriter implements ItemWriter<K8sWorkloadRecommendati
   private static final int cpuScale = 3;
   private static final int memoryScale = 1;
   private static final int costScale = 3;
-  private static final Set<Integer> requiredPercentiles = ImmutableSet.of(50, 80, 90, 95, 99);
+  private static final Set<Integer> requiredPercentiles = ImmutableSet.of(50, 80, 90, 95, 99, 100);
   private static final String PERCENTILE_KEY = "p%d";
 
   private final WorkloadRecommendationDao workloadRecommendationDao;

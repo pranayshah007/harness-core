@@ -26,6 +26,14 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class ConfigManagerUtils {
+  private static final String GITHUB_CONFIG_FILE = "configs/integrations/github.yaml";
+  private static final String GITHUB_APP_CONFIG_FILE = "configs/integrations/github-app.yaml";
+
+  private static final String GITLAB_CONFIG_FILE = "configs/integrations/gitlab.yaml";
+
+  private static final String BITBUCKET_CONFIG_FILE = "configs/integrations/bitbucket.yaml";
+
+  private static final String AZURE_CONFIG_FILE = "configs/integrations/azure.yaml";
   public String readFile(String filename) {
     ClassLoader classLoader = ClassLoader.getSystemClassLoader();
     try {
@@ -46,5 +54,22 @@ public class ConfigManagerUtils {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     JsonNode jsonNode = mapper.readTree(yamlString);
     return jsonNode;
+  }
+
+  public String getIntegrationConfigBasedOnConnectorType(String connectorType) {
+    switch (connectorType) {
+      case "Github":
+        return readFile(GITHUB_CONFIG_FILE);
+      case "Github_App":
+        return readFile(GITHUB_APP_CONFIG_FILE);
+      case "Gitlab":
+        return readFile(GITLAB_CONFIG_FILE);
+      case "AzureRepo":
+        return readFile(AZURE_CONFIG_FILE);
+      case "Bitbucket":
+        return readFile(BITBUCKET_CONFIG_FILE);
+      default:
+        return null;
+    }
   }
 }

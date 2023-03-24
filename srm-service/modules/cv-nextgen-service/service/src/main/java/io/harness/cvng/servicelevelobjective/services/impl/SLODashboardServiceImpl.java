@@ -24,6 +24,7 @@ import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
@@ -96,6 +97,9 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     PageResponse<AbstractServiceLevelObjective> sloPageResponse =
         serviceLevelObjectiveV2Service.getSLOForListView(projectParams, filter, pageParams);
 
+    Map<AbstractServiceLevelObjective, SLIEvaluationType> serviceLevelObjectiveSLIEvaluationTypeMap =
+        serviceLevelObjectiveV2Service.getEvaluationType(projectParams, sloPageResponse.getContent());
+
     Set<String> monitoredServiceIdentifiers =
         sloPageResponse.getContent()
             .stream()
@@ -163,7 +167,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
             .stream()
             .map(sloResponse
                 -> getSLOListView(projectParams, sloResponse, scopedMonitoredServiceIdentifierToDTOMap,
-                    scopedSloIdentifierToHealthIndicatorMap, userJourneyIdentifierToNameMap))
+                    scopedSloIdentifierToHealthIndicatorMap, userJourneyIdentifierToNameMap,
+                    serviceLevelObjectiveSLIEvaluationTypeMap))
             .collect(Collectors.toList());
 
     return PageResponse.<SLOHealthListView>builder()
@@ -593,7 +598,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   private SLOHealthListView getSLOListView(ProjectParams projectParams, AbstractServiceLevelObjective slo,
       Map<String, MonitoredServiceDTO> scopedMonitoredServiceIdentifierToDTOMap,
       Map<String, SLOHealthIndicator> scopedSloIdentifierToHealthIndicatorMap,
-      Map<String, String> userJourneyIdentifierToNameMap) {
+      Map<String, String> userJourneyIdentifierToNameMap,
+      Map<AbstractServiceLevelObjective, SLIEvaluationType> serviceLevelObjectiveSLIEvaluationTypeMap) {
     LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), slo.getZoneOffset());
     List<SLOErrorBudgetResetDTO> errorBudgetResetDTOS =
         sloErrorBudgetResetService.getErrorBudgetResets(projectParams, slo.getIdentifier());
@@ -621,7 +627,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           getProjectName(projectParams.getAccountIdentifier(), slo.getOrgIdentifier(), slo.getProjectIdentifier());
       String orgName = getOrgName(projectParams.getAccountIdentifier(), slo.getOrgIdentifier());
       return SLOHealthListView
-          .getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator)
+          .getSLOHealthListViewBuilder(
+              slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator, serviceLevelObjectiveSLIEvaluationTypeMap)
           .monitoredServiceIdentifier(monitoredService.getIdentifier())
           .monitoredServiceName(monitoredService.getName())
           .environmentIdentifier(monitoredService.getEnvironmentRef())
@@ -644,7 +651,9 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           .build();
     }
 
-    return SLOHealthListView.getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator)
+    return SLOHealthListView
+        .getSLOHealthListViewBuilder(
+            slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator, serviceLevelObjectiveSLIEvaluationTypeMap)
         .build();
   }
 

@@ -132,7 +132,7 @@ public class TriggerExecutionHelper {
   private final PmsFeatureFlagHelper featureFlagService;
 
   public PlanExecution resolveRuntimeInputAndSubmitExecutionReques(
-      TriggerDetails triggerDetails, TriggerPayload triggerPayload) {
+      TriggerDetails triggerDetails, TriggerPayload triggerPayload, String runTimeInputYaml) {
     String executionTag = generateExecutionTagForEvent(triggerDetails, triggerPayload);
     TriggeredBy embeddedUser =
         generateTriggerdBy(executionTag, triggerDetails.getNgTriggerEntity(), triggerPayload, null);
@@ -140,11 +140,11 @@ public class TriggerExecutionHelper {
     TriggerType triggerType = findTriggerType(triggerPayload);
     ExecutionTriggerInfo triggerInfo =
         ExecutionTriggerInfo.newBuilder().setTriggerType(triggerType).setTriggeredBy(embeddedUser).build();
-    return createPlanExecution(triggerDetails, triggerPayload, null, executionTag, triggerInfo, null);
+    return createPlanExecution(triggerDetails, triggerPayload, null, executionTag, triggerInfo, null, runTimeInputYaml);
   }
 
   public PlanExecution resolveRuntimeInputAndSubmitExecutionRequest(TriggerDetails triggerDetails,
-      TriggerPayload triggerPayload, TriggerWebhookEvent triggerWebhookEvent, String payload) {
+      TriggerPayload triggerPayload, TriggerWebhookEvent triggerWebhookEvent, String payload, String runTimeInputYaml) {
     String executionTagForGitEvent = generateExecutionTagForEvent(triggerDetails, triggerPayload);
     TriggeredBy embeddedUser = generateTriggerdBy(
         executionTagForGitEvent, triggerDetails.getNgTriggerEntity(), triggerPayload, triggerWebhookEvent.getUuid());
@@ -152,14 +152,14 @@ public class TriggerExecutionHelper {
     TriggerType triggerType = findTriggerType(triggerPayload);
     ExecutionTriggerInfo triggerInfo =
         ExecutionTriggerInfo.newBuilder().setTriggerType(triggerType).setTriggeredBy(embeddedUser).build();
-    return createPlanExecution(
-        triggerDetails, triggerPayload, payload, executionTagForGitEvent, triggerInfo, triggerWebhookEvent);
+    return createPlanExecution(triggerDetails, triggerPayload, payload, executionTagForGitEvent, triggerInfo,
+        triggerWebhookEvent, runTimeInputYaml);
   }
 
   // Todo: Check if we can merge some logic with ExecutionHelper
   private PlanExecution createPlanExecution(TriggerDetails triggerDetails, TriggerPayload triggerPayload,
       String payload, String executionTagForGitEvent, ExecutionTriggerInfo triggerInfo,
-      TriggerWebhookEvent triggerWebhookEvent) {
+      TriggerWebhookEvent triggerWebhookEvent, String runtimeInputYaml) {
     try {
       NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
       Optional<PipelineEntity> pipelineEntityToExecute;
@@ -231,15 +231,6 @@ public class TriggerExecutionHelper {
             branch, pipelineEntityToExecute.get().getRepo(), pipelineEntityToExecute.get().getFilePath());
       }
       PipelineEntity pipelineEntity = pipelineEntityToExecute.get();
-
-      String runtimeInputYaml = null;
-      if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())
-          && isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
-          && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
-        runtimeInputYaml = triggerDetails.getNgTriggerConfigV2().getInputYaml();
-      } else {
-        runtimeInputYaml = fetchInputSetYAML(triggerDetails, triggerWebhookEvent);
-      }
 
       final String executionId = generateUuid();
       ExecutionMetadata.Builder executionMetaDataBuilder =

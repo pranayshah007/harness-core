@@ -11,6 +11,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 import io.harness.idp.configmanager.mappers.AppConfigMapper;
@@ -56,15 +57,16 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   @Override
   public Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier) {
-    List<AppConfigEntity> allPluginConfig = appConfigRepository.findAllByAccountIdentifier(accountIdentifier);
+    List<AppConfigEntity> allPluginConfig =
+        appConfigRepository.findAllByAccountIdentifierAndConfigType(accountIdentifier, ConfigType.PLUGIN);
     return allPluginConfig.stream().collect(
-        Collectors.toMap(AppConfigEntity::getPluginId, AppConfigEntity::getEnabled));
+        Collectors.toMap(AppConfigEntity::getConfigId, AppConfigEntity::getEnabled));
   }
 
   @Override
   public AppConfig getPluginConfig(String accountIdentifier, String pluginId) {
-    Optional<AppConfigEntity> pluginConfig =
-        appConfigRepository.findByAccountIdentifierAndPluginId(accountIdentifier, pluginId);
+    Optional<AppConfigEntity> pluginConfig = appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(
+        accountIdentifier, pluginId, ConfigType.PLUGIN);
     if (pluginConfig.isEmpty()) {
       return null;
     }
@@ -72,30 +74,34 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public AppConfig savePluginConfig(AppConfigRequest appConfigRequest, String accountIdentifier) {
-    AppConfig appConfig = appConfigRequest.getAppConfig();
+  public AppConfig saveConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType) {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
+    appConfigEntity.setConfigType(configType);
     appConfigEntity.setEnabledDisabledAt(System.currentTimeMillis());
     AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
     return AppConfigMapper.toDTO(insertedData);
   }
 
   @Override
-  public AppConfig updatePluginConfig(AppConfigRequest appConfigRequest, String accountIdentifier) {
+  public AppConfig updateConfigForAccount(
+      AppConfigRequest appConfigRequest, String accountIdentifier, ConfigType configType) {
     AppConfig appConfig = appConfigRequest.getAppConfig();
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
-    AppConfigEntity updatedData = appConfigRepository.updateConfig(appConfigEntity);
+    appConfigEntity.setConfigType(configType);
+    AppConfigEntity updatedData = appConfigRepository.updateConfig(appConfigEntity, configType);
     if (updatedData == null) {
-      throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, appConfig.getPluginId(), accountIdentifier));
+      throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, appConfig.getConfigId(), accountIdentifier));
     }
     return AppConfigMapper.toDTO(updatedData);
   }
 
   @Override
-  public AppConfig togglePlugin(String accountIdentifier, String pluginName, Boolean isEnabled) {
-    AppConfigEntity updatedData = appConfigRepository.updatePluginEnablement(accountIdentifier, pluginName, isEnabled);
+  public AppConfig toggleConfigForAccount(
+      String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType) {
+    AppConfigEntity updatedData =
+        appConfigRepository.updateConfigEnablement(accountIdentifier, configId, isEnabled, configType);
     if (updatedData == null) {
-      throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, pluginName, accountIdentifier));
+      throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, configId, accountIdentifier));
     }
     return AppConfigMapper.toDTO(updatedData);
   }
@@ -123,17 +129,17 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   private String mergeAllAppConfigsForAccount(String accountIdentifier) throws Exception {
-    List<String> enabledPluginConfigs = getAllEnabledPluginConfigs(accountIdentifier);
+    List<String> enabledPluginConfigs = getAllEnabledConfigs(accountIdentifier);
     return mergeAppConfigs(enabledPluginConfigs);
   }
 
-  private List<String> getAllEnabledPluginConfigs(String accountIdentifier) {
-    List<AppConfigEntity> allEnabledPluginEntity =
+  private List<String> getAllEnabledConfigs(String accountIdentifier) {
+    List<AppConfigEntity> allEnabledConfigEntity =
         appConfigRepository.findAllByAccountIdentifierAndEnabled(accountIdentifier, true);
-    if (allEnabledPluginEntity.isEmpty()) {
+    if (allEnabledConfigEntity.isEmpty()) {
       throw new InvalidRequestException(format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
     }
-    return allEnabledPluginEntity.stream().map(entity -> entity.getConfigs()).collect(Collectors.toList());
+    return allEnabledConfigEntity.stream().map(entity -> entity.getConfigs()).collect(Collectors.toList());
   }
   private void updateConfigMap(String accountIdentifier, String appConfigYamlData) {
     Map<String, String> data = new HashMap<>();

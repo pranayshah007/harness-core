@@ -2628,6 +2628,7 @@
 5731609:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult
 
 9000312:software.wings.helpers.ext.nexus.NexusRepositories
+9000313:io.harness.provision.model.TfConfigInspectVersion
 9300122:io.harness.yaml.core.timeout.Timeout
 9300123:io.harness.beans.WebhookEncryptedSecretDTO
 9800001:io.harness.beans.RecasterMap
