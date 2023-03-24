@@ -95,7 +95,9 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                                           .batchSize(100)
                                           .consumerName(delegateQueueServiceConfig.getTopic())
                                           .topic(delegateQueueServiceConfig.getTopic())
+                                          .maxWaitDuration(100)
                                           .build();
+
       List<DequeueResponse> dequeueResponses = hsqsClientService.dequeue(dequeueRequest);
       List<DelegateTaskDequeue> delegateTasksDequeueList =
           Objects.requireNonNull(dequeueResponses)
@@ -124,8 +126,13 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
   @Override
   public String acknowledge(String itemId, String accountId) {
     try {
-      AckResponse response = hsqsClientService.ack(
-          AckRequest.builder().itemId(itemId).topic(delegateQueueServiceConfig.getTopic()).subTopic(accountId).build());
+      AckResponse response = hsqsClientService.ack(AckRequest.builder()
+                                                       .itemId(itemId)
+                                                       .topic(delegateQueueServiceConfig.getTopic())
+                                                       .consumerName(delegateQueueServiceConfig.getTopic())
+                                                       .subTopic(accountId)
+                                                       .build());
+
       return Objects.requireNonNull(response).getItemId();
     } catch (Exception e) {
       log.error("Error while acknowledging delegate task ", e);
@@ -161,7 +168,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     List<Delegate> delegateList = getDelegatesList(delegateTask.getEligibleToExecuteDelegateIds(), accountId);
     Optional<List<String>> filteredDelegateList =
         delegateSelectionCheckForTask.perform(delegateList, taskType, accountId);
-    if (filteredDelegateList.isEmpty() || isNotEmpty(filteredDelegateList.get())) {
+    if (filteredDelegateList.isEmpty() || isEmpty(filteredDelegateList.get())) {
       return false;
     }
     delegateTask.setEligibleToExecuteDelegateIds(new LinkedList<>(filteredDelegateList.get()));

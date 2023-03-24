@@ -278,6 +278,7 @@ public class DelegateCacheImpl implements DelegateCache {
   public Set<String> getAbortedTaskList(String accountId) {
     if (!enableRedisForDelegateService) {
       log.info("enableRedisForDelegateService flag is false");
+      return Collections.emptySet();
     }
     return abortedTaskListCache.get(accountId) != null ? abortedTaskListCache.get(accountId) : Collections.emptySet();
   }
@@ -286,6 +287,7 @@ public class DelegateCacheImpl implements DelegateCache {
   public void addToAbortedTaskList(String accountId, Set<String> abortedTaskList) {
     if (!enableRedisForDelegateService) {
       log.info("enableRedisForDelegateService flag is false");
+      return;
     }
     abortedTaskListCache.putIfAbsent(accountId, abortedTaskList);
   }
@@ -294,6 +296,7 @@ public class DelegateCacheImpl implements DelegateCache {
   public void removeFromAbortedTaskList(String accountId, String delegateTaskId) {
     if (!enableRedisForDelegateService) {
       log.info("enableRedisForDelegateService flag is false");
+      return;
     }
     if (abortedTaskListCache.get(accountId) != null) {
       abortedTaskListCache.get(accountId).remove(delegateTaskId);

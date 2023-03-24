@@ -701,7 +701,7 @@ delegateQueueServiceConfig:
         baseUrl: http://queue-service.del-4515.svc.cluster.local:9091/
         connectTimeOutSeconds: 15
         readTimeOutSeconds: 15
-      queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+      queueServiceSecret: vhtftr5486786764563452fhtfthffuygiogyuyryr543432453
       envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
 
 iteratorsConfig:
@@ -751,7 +751,7 @@ dataReconciliation:
 
 disableDelegateMgmtInManager: false
 
-enableRedisForDelegateService: ${ENABLE_REDIS_DELEGATE_SERVICE:-false}
+enableRedisForDelegateService: true
 
 secretsConfiguration:
   secretResolutionEnabled: false
