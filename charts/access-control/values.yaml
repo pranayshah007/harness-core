@@ -11,13 +11,13 @@ global:
     tls:
       enabled: true
       secretName: ''
-    istio:
-      enabled: false
-      gateway:
-        create: false
-      virtualService:
-        gateways:
-        hosts:
+  istio:
+    enabled: false
+    gateway:
+      create: false
+    virtualService:
+      gateways:
+      hosts:
   imagePullSecrets: []
 
 replicaCount: 1
