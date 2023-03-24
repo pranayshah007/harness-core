@@ -198,9 +198,9 @@ public class GraphDataServiceImpl implements GraphDataService {
     List<SLODashboardWidget.Point> errorBudgetBurndown = new ArrayList<>();
     double errorBudgetRemainingPercentage = 100;
     double sliStatusPercentage = 0;
-    int errorBudgetRemaining = totalErrorBudgetMinutes;
-    int badCountTillRangeEndTime = 0;
-    int badCountTillRangeStartTime = 0;
+    long errorBudgetRemaining = totalErrorBudgetMinutes;
+    long badCountTillRangeEndTime = 0;
+    long badCountTillRangeStartTime = 0;
     boolean getBadCountTillRangeStartTime = true;
     boolean isCalculatingSLI = false;
     if (!sliRecords.isEmpty()) {

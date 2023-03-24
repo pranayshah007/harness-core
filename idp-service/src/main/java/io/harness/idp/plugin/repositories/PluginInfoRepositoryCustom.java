@@ -7,4 +7,8 @@
 
 package io.harness.idp.plugin.repositories;
 
-public interface PluginInfoRepositoryCustom {}
+import io.harness.idp.plugin.beans.PluginInfoEntity;
+
+public interface PluginInfoRepositoryCustom {
+  PluginInfoEntity saveOrUpdate(PluginInfoEntity pluginInfoEntity);
+}

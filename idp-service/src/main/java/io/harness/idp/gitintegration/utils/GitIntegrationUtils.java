@@ -16,27 +16,30 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class GitIntegrationUtils {
   private static final String PATH_SEPARATOR_FOR_URL = "/";
-  public EnvironmentSecret getEnvironmentSecret(SecretManagerClientService ngSecretService, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String tokenSecretIdentifier, String connectorIdentifier,
-      String tokenType) {
-    EnvironmentSecret environmentSecret = new EnvironmentSecret();
-    environmentSecret.secretIdentifier(tokenSecretIdentifier);
+
+  public BackstageEnvSecretVariable getBackstageEnvSecretVariable(String tokenSecretIdentifier, String tokenType) {
+    BackstageEnvSecretVariable environmentSecret = new BackstageEnvSecretVariable();
+    environmentSecret.harnessSecretIdentifier(tokenSecretIdentifier);
     environmentSecret.setEnvName(tokenType);
+    return environmentSecret;
+  }
+
+  public String decryptSecret(SecretManagerClientService ngSecretService, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String tokenSecretIdentifier, String connectorIdentifier) {
     DecryptedSecretValue decryptedSecretValue = ngSecretService.getDecryptedSecretValue(
         accountIdentifier, orgIdentifier, projectIdentifier, tokenSecretIdentifier);
     if (decryptedSecretValue == null) {
       throw new InvalidRequestException(String.format(
           "Secret not found for identifier : [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
     }
-    environmentSecret.setDecryptedValue(decryptedSecretValue.getDecryptedValue());
-    return environmentSecret;
+    return decryptedSecretValue.getDecryptedValue();
   }
 
   public String getHostForConnector(ConnectorInfoDTO connectorInfoDTO, ConnectorType connectorType) {

@@ -26,6 +26,7 @@ import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
@@ -155,11 +156,24 @@ public class PipelineExecutor {
   // todo: check if we need to take notifyOnlyUser and isDebug
   public PlanExecution startPostExecutionRollback(
       String accountId, String orgIdentifier, String projectIdentifier, String originalExecutionId) {
+    return startRollbackModeExecution(
+        accountId, orgIdentifier, projectIdentifier, originalExecutionId, ExecutionMode.POST_EXECUTION_ROLLBACK);
+  }
+
+  public PlanExecution startPipelineRollback(
+      String accountId, String orgIdentifier, String projectIdentifier, String originalExecutionId) {
+    return startRollbackModeExecution(
+        accountId, orgIdentifier, projectIdentifier, originalExecutionId, ExecutionMode.PIPELINE_ROLLBACK);
+  }
+
+  PlanExecution startRollbackModeExecution(String accountId, String orgIdentifier, String projectIdentifier,
+      String originalExecutionId, ExecutionMode executionMode) {
     String executionId = generateUuid();
     ExecutionTriggerInfo triggerInfo = executionHelper.buildTriggerInfo(null);
     ExecutionMetadata originalExecutionMetadata = planExecutionService.get(originalExecutionId).getMetadata();
-    ExecutionMetadata executionMetadata = rollbackModeExecutionHelper.transformExecutionMetadata(
-        originalExecutionMetadata, executionId, triggerInfo, accountId, orgIdentifier, projectIdentifier);
+    ExecutionMetadata executionMetadata =
+        rollbackModeExecutionHelper.transformExecutionMetadata(originalExecutionMetadata, executionId, triggerInfo,
+            accountId, orgIdentifier, projectIdentifier, executionMode);
 
     Optional<PlanExecutionMetadata> optPlanExecutionMetadata =
         planExecutionMetadataService.findByPlanExecutionId(originalExecutionId);
@@ -167,8 +181,8 @@ public class PipelineExecutor {
       return null;
     }
     PlanExecutionMetadata originalPlanExecutionMetadata = optPlanExecutionMetadata.get();
-    PlanExecutionMetadata planExecutionMetadata =
-        rollbackModeExecutionHelper.transformPlanExecutionMetadata(originalPlanExecutionMetadata, executionId);
+    PlanExecutionMetadata planExecutionMetadata = rollbackModeExecutionHelper.transformPlanExecutionMetadata(
+        originalPlanExecutionMetadata, executionId, executionMode);
     return executionHelper.startExecution(accountId, orgIdentifier, projectIdentifier, executionMetadata,
         planExecutionMetadata, false, null, originalExecutionId, null);
   }

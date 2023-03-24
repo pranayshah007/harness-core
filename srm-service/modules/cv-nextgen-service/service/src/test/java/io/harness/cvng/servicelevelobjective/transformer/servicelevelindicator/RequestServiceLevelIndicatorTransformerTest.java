@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicator;
@@ -38,7 +38,7 @@ public class RequestServiceLevelIndicatorTransformerTest extends CvNextGenTestBa
     builderFactory = BuilderFactory.getDefault();
     requestServiceLevelIndicatorTransformer =
         (RequestServiceLevelIndicatorTransformer) serviceLevelIndicatorFQDITransformerMapBinder.get(
-            SLIExecutionType.REQUEST.name());
+            SLIEvaluationType.REQUEST.name());
   }
 
   @Test
@@ -51,7 +51,7 @@ public class RequestServiceLevelIndicatorTransformerTest extends CvNextGenTestBa
     assertThat(requestServiceLevelIndicator.getEventType()).isEqualTo(RatioSLIMetricEventType.GOOD);
     assertThat(requestServiceLevelIndicator.getMetric1()).isEqualTo("Errors per Minute");
     assertThat(requestServiceLevelIndicator.getMetric2()).isEqualTo("Calls per Minute");
-    assertThat(requestServiceLevelIndicator.getSLIExecutionType()).isEqualTo(SLIExecutionType.REQUEST);
+    assertThat(requestServiceLevelIndicator.getSLIEvaluationType()).isEqualTo(SLIEvaluationType.REQUEST);
     assertThat(requestServiceLevelIndicator.getSLIMetricType()).isEqualTo(null);
     assertThat(requestServiceLevelIndicator.getHealthSourceIdentifier()).isEqualTo("healthSourceIdentifier");
     assertThat(requestServiceLevelIndicator.getMonitoredServiceIdentifier()).isEqualTo("monitoredServiceIdentifier");

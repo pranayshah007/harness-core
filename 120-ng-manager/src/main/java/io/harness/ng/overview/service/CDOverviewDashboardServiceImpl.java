@@ -24,6 +24,7 @@ import io.harness.cd.NGPipelineSummaryCDConstants;
 import io.harness.cd.NGServiceConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.event.timeseries.processor.utils.DateUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.models.ActiveServiceInstanceInfoV2;
 import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
@@ -1362,7 +1363,10 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       String projectIdentifier, String serviceId, Long startInterval, Long endInterval, String artifactPath,
       String artifactVersion, String artifact, String status) {
     endInterval = DashboardServiceHelper.checkForDefaultEndInterval(endInterval);
-    startInterval = DashboardServiceHelper.checkForDefaultStartInterval(startInterval);
+    startInterval = DashboardServiceHelper.checkForDefaultStartInterval(startInterval, endInterval);
+    if (!DashboardServiceHelper.validateDuration(startInterval, endInterval)) {
+      throw new InvalidRequestException("startTime and endTime interval should be less than 6 months");
+    }
     String queryArtifactDetails =
         DashboardServiceHelper.queryToFetchExecutionIdAndArtifactDetails(accountIdentifier, orgIdentifier,
             projectIdentifier, serviceId, startInterval, endInterval, artifactPath, artifactVersion, artifact);

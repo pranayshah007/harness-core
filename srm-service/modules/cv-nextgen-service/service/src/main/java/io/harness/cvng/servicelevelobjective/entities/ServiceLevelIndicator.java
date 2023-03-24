@@ -16,7 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.core.utils.DateTimeUtils;
-import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.iterator.PersistentRegularIterable;
@@ -74,7 +74,7 @@ public abstract class ServiceLevelIndicator
   private String healthSourceIdentifier;
   private String monitoredServiceIdentifier;
   private boolean enabled;
-  private SLIExecutionType sliExecutionType;
+  private SLIEvaluationType sliEvaluationType;
   private SLIMetricType sliMetricType;
   private SLIMissingDataType sliMissingDataType;
   private int version;
@@ -86,16 +86,16 @@ public abstract class ServiceLevelIndicator
     return tags;
   }
 
-  public static String getEvaluationAndMetricType(SLIExecutionType sliExecutionType, SLIMetricType sliMetricType) {
+  public static String getEvaluationAndMetricType(SLIEvaluationType sliEvaluationType, SLIMetricType sliMetricType) {
     if (sliMetricType != null) {
-      return sliExecutionType.name() + "_" + sliMetricType.name();
+      return sliEvaluationType.name() + "_" + sliMetricType.name();
     }
-    return sliExecutionType.name();
+    return sliEvaluationType.name();
   }
 
   public abstract SLIMetricType getSLIMetricType();
 
-  public abstract SLIExecutionType getSLIExecutionType();
+  public abstract SLIEvaluationType getSLIEvaluationType();
 
   public abstract List<String> getMetricNames();
 

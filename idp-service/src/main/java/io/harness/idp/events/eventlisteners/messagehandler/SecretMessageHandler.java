@@ -13,8 +13,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.events.eventlisteners.utility.EventListenerLogger;
-import io.harness.idp.secret.service.EnvironmentSecretService;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.IDP)
 public class SecretMessageHandler implements EventMessageHandler {
   private static final String ACCOUNT_ID = "accountId";
-  private EnvironmentSecretService environmentSecretService;
+  private BackstageEnvVariableService backstageEnvVariableService;
 
   @Override
   public void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) {
@@ -34,7 +34,7 @@ public class SecretMessageHandler implements EventMessageHandler {
     String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
     switch (action) {
       case UPDATE_ACTION:
-        environmentSecretService.processSecretUpdate(entityChangeDTO);
+        backstageEnvVariableService.processSecretUpdate(entityChangeDTO);
         break;
       default:
         log.info("ACTION - {} is not to be handled by IDP secret event handler", action);

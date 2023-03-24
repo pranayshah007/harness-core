@@ -41,6 +41,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -77,6 +78,8 @@ public class GitPollingPerpetualTaskExecutorNgTest extends DelegateTestBase {
   private PerpetualTaskId perpetualTaskId;
   private String polling_doc_id;
   @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+
   @Mock private GitPollingServiceImpl gitPollingService;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
@@ -84,9 +87,9 @@ public class GitPollingPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Before
   public void setup() {
     PollingResponsePublisher pollingResponsePublisher =
-        new PollingResponsePublisher(kryoSerializer, delegateAgentManagerClient);
-    gitPollingPerpetualTaskExecutorNg =
-        new GitPollingPerpetualTaskExecutorNg(kryoSerializer, gitPollingService, pollingResponsePublisher);
+        new PollingResponsePublisher(kryoSerializer, referenceFalseKryoSerializer, delegateAgentManagerClient);
+    gitPollingPerpetualTaskExecutorNg = new GitPollingPerpetualTaskExecutorNg(
+        kryoSerializer, referenceFalseKryoSerializer, gitPollingService, pollingResponsePublisher);
     perpetualTaskId = PerpetualTaskId.newBuilder().setId(UUIDGenerator.generateUuid()).build();
     polling_doc_id = UUIDGenerator.generateUuid();
   }
@@ -101,7 +104,7 @@ public class GitPollingPerpetualTaskExecutorNgTest extends DelegateTestBase {
     verify(gitPollingService).getWebhookRecentDeliveryEvents(any(GitPollingTaskParameters.class));
 
     ArgumentCaptor<RequestBody> captor = ArgumentCaptor.forClass(RequestBody.class);
-    verify(delegateAgentManagerClient).publishPollingResult(anyString(), anyString(), captor.capture());
+    verify(delegateAgentManagerClient).publishPollingResultV2(anyString(), anyString(), captor.capture());
 
     Buffer bufferedSink = new Buffer();
     captor.getValue().writeTo(bufferedSink);
@@ -131,7 +134,7 @@ public class GitPollingPerpetualTaskExecutorNgTest extends DelegateTestBase {
     PerpetualTaskExecutionParams executionParams =
         PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
 
-    when(delegateAgentManagerClient.publishPollingResult(anyString(), anyString(), any(RequestBody.class)))
+    when(delegateAgentManagerClient.publishPollingResultV2(anyString(), anyString(), any(RequestBody.class)))
         .thenReturn(call);
     Mockito.when(call.execute())
         .thenReturn(throwErrorWhilePublishing

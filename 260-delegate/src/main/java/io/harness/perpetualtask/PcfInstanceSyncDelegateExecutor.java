@@ -30,6 +30,7 @@ import software.wings.service.InstanceSyncConstants;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import java.time.Instant;
 import java.util.List;
@@ -43,7 +44,7 @@ import org.eclipse.jetty.server.Response;
 public class PcfInstanceSyncDelegateExecutor implements PerpetualTaskExecutor {
   @Inject PcfDelegateTaskHelper pcfDelegateTaskHelper;
   @Inject DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -58,12 +59,12 @@ public class PcfInstanceSyncDelegateExecutor implements PerpetualTaskExecutor {
     String space = instanceSyncParams.getSpace();
 
     CfInternalConfig cfInternalConfig =
-        (CfInternalConfig) kryoSerializer.asObject(instanceSyncParams.getPcfConfig().toByteArray());
+        (CfInternalConfig) referenceFalseKryoSerializer.asObject(instanceSyncParams.getPcfConfig().toByteArray());
 
     ByteString encryptedData = instanceSyncParams.getEncryptedData();
 
     List<EncryptedDataDetail> encryptedDataDetailList =
-        (List<EncryptedDataDetail>) kryoSerializer.asObject(encryptedData.toByteArray());
+        (List<EncryptedDataDetail>) referenceFalseKryoSerializer.asObject(encryptedData.toByteArray());
 
     CfInstanceSyncRequest cfInstanceSyncRequest = CfInstanceSyncRequest.builder()
                                                       .pcfConfig(cfInternalConfig)
@@ -94,7 +95,7 @@ public class PcfInstanceSyncDelegateExecutor implements PerpetualTaskExecutor {
             : cfInstanceSyncResponse.getInstanceIndices().size();
         log.info("Found {} number of instances pcf deployment", instanceSize);
       }
-      execute(delegateAgentManagerClient.publishInstanceSyncResult(
+      execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
           taskId.getId(), cfInternalConfig.getAccountId(), cfCommandExecutionResponse));
     } catch (Exception ex) {
       log.error(
