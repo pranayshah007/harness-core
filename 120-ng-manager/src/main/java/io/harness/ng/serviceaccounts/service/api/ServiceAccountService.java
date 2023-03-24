@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ServiceAccountFilterDTO;
 import io.harness.ng.serviceaccounts.dto.ServiceAccountAggregateDTO;
+import io.harness.ng.serviceaccounts.entities.ServiceAccount;
 import io.harness.serviceaccount.ServiceAccountDTO;
 
 import java.util.List;
@@ -22,7 +23,7 @@ import org.springframework.data.domain.Pageable;
 public interface ServiceAccountService {
   ServiceAccountDTO createServiceAccount(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, ServiceAccountDTO requestDTO);
-  List<ServiceAccountDTO> listServiceAccounts(
+  List<ServiceAccount> listServiceAccounts(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> identifiers);
   ServiceAccountDTO updateServiceAccount(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String identifier, ServiceAccountDTO requestDTO);
@@ -38,4 +39,6 @@ public interface ServiceAccountService {
   ServiceAccountAggregateDTO getServiceAccountAggregateDTO(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
   Long countServiceAccounts(String accountIdentifier);
+
+  List<ServiceAccount> getPermittedServiceAccounts(List<ServiceAccount> serviceAccounts);
 }
