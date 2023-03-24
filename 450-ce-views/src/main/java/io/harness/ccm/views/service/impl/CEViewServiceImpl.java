@@ -18,6 +18,7 @@ import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.views.dao.CEReportScheduleDao;
 import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.dao.CEViewFolderDao;
+import io.harness.ccm.views.dto.CEViewShortHand;
 import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.dto.LinkedPerspectives;
 import io.harness.ccm.views.dto.LinkedPerspectives.LinkedPerspectivesBuilder;
@@ -374,6 +375,21 @@ public class CEViewServiceImpl implements CEViewService {
   @Override
   public List<CEView> getAllViews(String accountId) {
     return ceViewDao.list(accountId);
+  }
+
+  @Override
+  public List<CEViewShortHand> getAllViewsShortHand(String accountId) {
+    List<CEView> viewList = getAllViews(accountId);
+    List<CEViewShortHand> viewShortHandList = new ArrayList<>();
+    for (CEView view : viewList) {
+      viewShortHandList.add(CEViewShortHand.builder()
+                                .uuid(view.getUuid())
+                                .accountId(view.getAccountId())
+                                .name(view.getName())
+                                .folderId(view.getFolderId())
+                                .build());
+    }
+    return viewShortHandList;
   }
 
   private List<QLCEView> getQLCEViewsFromCEViews(

@@ -949,7 +949,7 @@ components:
           updated: -9223372036854776000
           accountIdentifier: string
       properties:
-        pluginId:
+        configId:
           type: string
           x-stoplight:
             id: 4c46nx9p25z4g

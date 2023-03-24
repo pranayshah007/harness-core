@@ -37,6 +37,7 @@ import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -51,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 public class SpotinstPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject protected SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
   @Inject private SpotNgConfigMapper ngConfigMapper;
 
@@ -86,9 +87,9 @@ public class SpotinstPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
 
   private Map<String, Set<String>> getInstanceIdsMap(SpotinstAmiInstanceSyncPerpetualTaskParamsNg taskParams) {
     SpotConnectorDTO spotConnectorDTO =
-        (SpotConnectorDTO) kryoSerializer.asObject(taskParams.getSpotinstConfig().toByteArray());
-    List<EncryptedDataDetail> encryptionDetails =
-        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getSpotinstEncryptedData().toByteArray());
+        (SpotConnectorDTO) referenceFalseKryoSerializer.asObject(taskParams.getSpotinstConfig().toByteArray());
+    List<EncryptedDataDetail> encryptionDetails = (List<EncryptedDataDetail>) referenceFalseKryoSerializer.asObject(
+        taskParams.getSpotinstEncryptedData().toByteArray());
     SpotConfig spotConfig = ngConfigMapper.mapSpotConfigWithDecryption(spotConnectorDTO, encryptionDetails);
     String spotAccountId = spotConfig.getCredential().getSpotAccountId();
     String appTokenId = spotConfig.getCredential().getAppTokenId();

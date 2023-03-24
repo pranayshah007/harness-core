@@ -42,6 +42,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -71,7 +72,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
   private static final String PERPETUAL_TASK_ID = "perpetualTaskId";
   private static final String ACCOUNT_ID = "accountId";
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Mock private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
   @Mock private K8sTaskHelperBase k8sTaskHelperBase;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -83,7 +84,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
 
   @Before
   public void setUp() throws IOException {
-    on(k8sInstanceSyncPerpetualTaskExecutor).set("kryoSerializer", kryoSerializer);
+    on(k8sInstanceSyncPerpetualTaskExecutor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
     doReturn(call)
         .when(delegateAgentManagerClient)
         .processInstanceSyncNGResult(anyString(), anyString(), perpetualTaskResponseCaptor.capture());
@@ -263,7 +264,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
             .build();
 
     return K8sDeploymentRelease.newBuilder()
-        .setK8SInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(k8sInfraDelegateConfig)))
+        .setK8SInfraDelegateConfig(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(k8sInfraDelegateConfig)))
         .addAllNamespaces(namespaces)
         .setReleaseName(releaseName)
         .build();

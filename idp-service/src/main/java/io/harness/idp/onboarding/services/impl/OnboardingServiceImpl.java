@@ -239,7 +239,7 @@ public class OnboardingServiceImpl implements OnboardingService {
           -> registerLocationInBackstage(
               accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, Collections.singletonList(sampleEntity)));
 
-      createCatalogInfraConnectorSecretInBackstageK8S(accountIdentifier, catalogConnectorInfo);
+      createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo);
 
       saveStatusInfo(accountIdentifier, StatusType.ONBOARDING.name(), StatusInfo.CurrentStatusEnum.COMPLETED,
           STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED);
@@ -631,12 +631,10 @@ public class OnboardingServiceImpl implements OnboardingService {
     }
   }
 
-  private void createCatalogInfraConnectorSecretInBackstageK8S(
+  private void createCatalogInfraConnectorInBackstageK8S(
       String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo) {
     try {
-      gitIntegrationService.createConnectorSecretsEnvVariable(accountIdentifier, null, null,
-          catalogConnectorInfo.getInfraConnector().getIdentifier(),
-          ConnectorType.fromString(catalogConnectorInfo.getInfraConnector().getType()));
+      gitIntegrationService.createConnectorInBackstage(accountIdentifier, catalogConnectorInfo);
     } catch (Exception e) {
       log.error("Unable to create infra connector secrets in backstage k8s, ex = {}", e.getMessage(), e);
     }

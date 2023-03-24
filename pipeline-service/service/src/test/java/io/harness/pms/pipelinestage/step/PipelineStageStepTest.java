@@ -22,10 +22,12 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.interrupts.Interrupt;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
@@ -79,6 +81,8 @@ public class PipelineStageStepTest extends CategoryTest {
   @Mock ExecutionSweepingOutputService sweepingOutputService;
   @Mock NodeExecutionService nodeExecutionService;
   @Mock InterruptService interruptService;
+
+  @Mock PlanExecutionMetadataService planExecutionMetadataService;
   @InjectMocks PipelineStageStep pipelineStageStep;
 
   String planExecutionId = "planExecutionId";
@@ -128,6 +132,9 @@ public class PipelineStageStepTest extends CategoryTest {
                             .setMetadata(ExecutionMetadata.newBuilder().setRunSequence(40).build())
                             .build();
 
+    doReturn(Optional.of(PlanExecutionMetadata.builder().triggerJsonPayload("trigger").build()))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(ambiance.getPlanExecutionId());
     PipelineStageStepParameters stepParameters =
         PipelineStageStepParameters.builder().stageNodeId("stageNodeId").build();
     PipelineStageInfo info = pipelineStageStep.prepareParentStageInfo(ambiance, stepParameters);
@@ -137,6 +144,7 @@ public class PipelineStageStepTest extends CategoryTest {
     assertThat(info.getProjectId()).isEqualTo(projectId);
     assertThat(info.getOrgId()).isEqualTo(ordId);
     assertThat(info.getRunSequence()).isEqualTo(40);
+    assertThat(info.getTriggerJsonPayload()).isEqualTo("trigger");
   }
 
   @Test
@@ -176,6 +184,9 @@ public class PipelineStageStepTest extends CategoryTest {
                             .setMetadata(ExecutionMetadata.newBuilder().setRunSequence(40).build())
                             .build();
 
+    doReturn(Optional.of(PlanExecutionMetadata.builder().triggerJsonPayload("").build()))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(ambiance.getPlanExecutionId());
     PipelineStageStepParameters stepParameters =
         PipelineStageStepParameters.builder().stageNodeId("stageNodeId").build();
 

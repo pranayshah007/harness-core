@@ -24,9 +24,9 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-@JsonTypeName("External")
+@JsonTypeName("CustomIngest")
 @JsonIgnoreProperties(ignoreUnknown = true)
-@TypeAlias("externalStepInfo")
+@TypeAlias("customIngestStepInfo")
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.CustomIngestStepInfo")
 public class CustomIngestStepInfo extends STOGenericStepInfo {
