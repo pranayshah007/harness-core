@@ -20,6 +20,7 @@ import io.harness.ngmigration.service.entity.DummyMigrationService;
 import io.harness.ngmigration.service.entity.EcsServiceSpecMigrationService;
 import io.harness.ngmigration.service.entity.ElastigroupConfigurationMigrationService;
 import io.harness.ngmigration.service.entity.EnvironmentMigrationService;
+import io.harness.ngmigration.service.entity.FileStoreMigrationService;
 import io.harness.ngmigration.service.entity.InfraMigrationService;
 import io.harness.ngmigration.service.entity.InfraProvisionerMigrationService;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
@@ -66,6 +67,7 @@ public class NgMigrationFactory {
   @Inject TriggerMigrationService triggerMigrationService;
   @Inject SecretManagerTemplateMigrationService secretManagerTemplateMigrationService;
   @Inject UserGroupMigrationService userGroupMigrationService;
+  @Inject FileStoreMigrationService fileStoreMigrationService;
 
   public NgMigrationService getMethod(NGMigrationEntityType type) {
     switch (type) {
@@ -119,6 +121,8 @@ public class NgMigrationFactory {
         return secretManagerTemplateMigrationService;
       case USER_GROUP:
         return userGroupMigrationService;
+      case FILE_STORE:
+        return fileStoreMigrationService;
       default:
         throw new IllegalStateException();
     }

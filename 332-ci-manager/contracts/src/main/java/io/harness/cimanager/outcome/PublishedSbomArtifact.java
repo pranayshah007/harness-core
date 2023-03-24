@@ -21,11 +21,13 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("publishedSbomArtifact")
 @RecasterAlias("io.harness.beans.execution.PublishedSbomArtifact")
 public class PublishedSbomArtifact {
+  String id;
   String url;
   String imageName;
   String tag;
   String digest;
   String sbomName;
   String sbomUrl;
+  String stepExecutionId;
   boolean isSbomAttested;
 }

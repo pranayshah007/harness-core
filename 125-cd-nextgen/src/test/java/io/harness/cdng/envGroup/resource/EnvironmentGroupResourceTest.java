@@ -9,10 +9,12 @@ package io.harness.cdng.envGroup.resource;
 
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -47,6 +49,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -66,7 +69,7 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
   @Mock private EnvironmentGroupService environmentGroupService;
   @Mock private EnvironmentService environmentService;
   @Mock private AccessControlClient accessControlClient;
-
+  @Mock private EnvironmentGroupRbacHelper environmentGroupRbacHelper;
   @Mock private NGFeatureFlagHelperService featureFlagHelperService;
 
   @InjectMocks private EnvironmentGroupResource environmentGroupResource;
@@ -210,6 +213,10 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
     doReturn(new PageImpl<>(envGroupEntityList))
         .when(environmentGroupService)
         .list(criteria, pageRequest, PRO_ID, ORG_ID, ACC_ID);
+    doReturn(new PageImpl<>(envGroupEntityList))
+        .when(environmentGroupService)
+        .list(criteria, Pageable.unpaged(), PRO_ID, ORG_ID, ACC_ID);
+    doReturn(envGroupEntityList).when(environmentGroupRbacHelper).getPermittedEnvironmentGroupList(any());
     ResponseDTO<PageResponse<EnvironmentGroupResponse>> pageResponseResponseDTO =
         environmentGroupResource.listEnvironmentGroup(
             ACC_ID, ORG_ID, PRO_ID, null, searchTerm, 0, 1, null, filterIdentifier, null, null, false);
@@ -226,6 +233,34 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
         ACC_ID, ORG_ID, PRO_ID, null, searchTerm, 0, 1, null, filterIdentifier, null, null, false);
     assertThat(pageResponseResponseDTO).isNotNull();
     assertThat(pageResponseResponseDTO.getData().getPageItemCount()).isEqualTo(1L);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testListApiForUserWithoutAccess() {
+    String searchTerm = "searchTerm";
+    String filterIdentifier = "filterIdentifier";
+    List<EnvironmentGroupEntity> envGroupEntityList = Arrays.asList(getEntity());
+    Pageable pageRequest = PageUtils.getPageRequest(
+        0, 1, null, Sort.by(Sort.Direction.DESC, EnvironmentGroupEntity.EnvironmentGroupKeys.lastModifiedAt));
+    Criteria criteria = new Criteria();
+
+    // case1: without envGroupIds
+    doReturn(criteria)
+        .when(environmentGroupService)
+        .formCriteria(ACC_ID, ORG_ID, PRO_ID, false, searchTerm, filterIdentifier, null, false);
+    doReturn(new PageImpl<>(envGroupEntityList))
+        .when(environmentGroupService)
+        .list(criteria, pageRequest, PRO_ID, ORG_ID, ACC_ID);
+    doReturn(new PageImpl<>(envGroupEntityList))
+        .when(environmentGroupService)
+        .list(criteria, Pageable.unpaged(), PRO_ID, ORG_ID, ACC_ID);
+    doReturn(Collections.emptyList()).when(environmentGroupRbacHelper).getPermittedEnvironmentGroupList(any());
+    ResponseDTO<PageResponse<EnvironmentGroupResponse>> pageResponseResponseDTO =
+        environmentGroupResource.listEnvironmentGroup(
+            ACC_ID, ORG_ID, PRO_ID, null, searchTerm, 0, 1, null, filterIdentifier, null, null, false);
+    assertThat(pageResponseResponseDTO).isNotNull();
+    assertThat(pageResponseResponseDTO.getData().getPageItemCount()).isEqualTo(0L);
   }
 
   @Test

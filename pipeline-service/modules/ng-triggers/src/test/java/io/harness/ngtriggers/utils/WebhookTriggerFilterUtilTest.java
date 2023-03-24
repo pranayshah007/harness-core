@@ -192,6 +192,17 @@ public class WebhookTriggerFilterUtilTest extends CategoryTest {
     webhookPayloadDataBuilder.webhookEvent(prWebhookEventBuilder.baseAttributes(baseAttributesBuilder.build()).build())
         .build();
     assertThat(checkIfActionMatches(webhookPayloadDataBuilder.build(), webhookTriggerSpec)).isTrue();
+
+    githubPRActions.clear();
+    assertThat(checkIfActionMatches(webhookPayloadDataBuilder.build(), webhookTriggerSpec)).isTrue();
+
+    githubPRActions.add(GithubPRAction.EDIT);
+    assertThat(checkIfActionMatches(webhookPayloadDataBuilder.build(), webhookTriggerSpec)).isFalse();
+
+    baseAttributesBuilder.action("update");
+    webhookPayloadDataBuilder.webhookEvent(prWebhookEventBuilder.baseAttributes(baseAttributesBuilder.build()).build())
+        .build();
+    assertThat(checkIfActionMatches(webhookPayloadDataBuilder.build(), webhookTriggerSpec)).isTrue();
   }
 
   @Test

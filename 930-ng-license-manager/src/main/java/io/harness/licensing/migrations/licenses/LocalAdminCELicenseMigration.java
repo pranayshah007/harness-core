@@ -6,7 +6,7 @@
  */
 package io.harness.licensing.migrations.licenses;
 
-import static io.harness.annotations.dev.HarnessTeam.PLG;
+import static io.harness.annotations.dev.HarnessTeam.GTM;
 
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Slf4j
-@OwnedBy(PLG)
+@OwnedBy(GTM)
 public class LocalAdminCELicenseMigration implements NGMigration {
   @Inject MongoTemplate mongoTemplate;
   private final String ADMIN_ACCOUNT_IDENTIFIER = "kmpySmUISimoRrJL6NL73w";

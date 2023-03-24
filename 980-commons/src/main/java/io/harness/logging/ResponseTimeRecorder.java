@@ -27,6 +27,6 @@ public class ResponseTimeRecorder implements AutoCloseable {
 
   @Override
   public void close() {
-    log.info(message + ": TIME TAKEN (ms) : ", currentTimeMillis() - startTime);
+    log.info(message + ": TIME TAKEN (ms) : {}", currentTimeMillis() - startTime);
   }
 }

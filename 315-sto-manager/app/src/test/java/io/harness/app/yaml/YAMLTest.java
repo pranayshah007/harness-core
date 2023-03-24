@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ALEKSANDAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.app.impl.STOManagerTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
@@ -24,6 +25,7 @@ public class YAMLTest extends STOManagerTestBase {
   @Test
   @Owner(developers = ALEKSANDAR)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void getPipelineYAML() {
     YAML yaml = YAML.builder().pipelineYAML(yamlString).build();
     assertThat(yaml.getPipelineYAML()).isEqualTo(yamlString);

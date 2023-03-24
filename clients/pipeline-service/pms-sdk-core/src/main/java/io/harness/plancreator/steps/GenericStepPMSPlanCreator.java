@@ -18,6 +18,8 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParametersBuilder;
@@ -287,10 +289,12 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
               failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention, currentField));
           break;
         case PIPELINE_ROLLBACK:
-          rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
-          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
-                                        .build());
+          OnFailPipelineRollbackParameters onFailPipelineRollbackParameters =
+              GenericPlanCreatorUtils.buildOnFailPipelineRollbackParameters(failureTypes);
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(OnFailPipelineRollbackAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(onFailPipelineRollbackParameters)))
+                  .build());
           break;
         case MARK_AS_FAILURE:
           adviserObtainmentList.add(

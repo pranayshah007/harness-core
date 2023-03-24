@@ -2323,6 +2323,7 @@
 97116:io.harness.servicenow.ServiceNowImportSetResponseNG
 97117:io.harness.servicenow.ServiceNowImportSetTransformMapResult
 97118:io.harness.servicenow.ServiceNowStagingTable
+97120:io.harness.servicenow.ServiceNowTicketTypeDTO
 98399:io.harness.delegate.task.helm.HelmCommandRequestNG
 98400:io.harness.helm.HelmCommandType
 98401:io.harness.delegate.task.helm.HelmInstallCommandRequestNG
@@ -2940,6 +2941,7 @@
 878018:io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultAdviserParameters
 878019:io.harness.pms.sdk.core.execution.AsyncTimeoutResponseData
 878020:io.harness.pms.sdk.core.execution.async.AsyncProgressData
+878021:io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO
@@ -3126,9 +3128,7 @@
 10000303:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO
 10000304:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType
 10000305:io.harness.exception.TerraformCloudException
-
 10000401:io.harness.delegate.beans.executioncapability.AwsSamInstallationCapability
-
 10000450:io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO
 10000451:io.harness.delegate.beans.connector.jira.JiraAuthType
 10000452:io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO

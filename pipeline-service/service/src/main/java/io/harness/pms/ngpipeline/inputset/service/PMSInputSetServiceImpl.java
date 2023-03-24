@@ -23,6 +23,7 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.DuplicateFileImportException;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
@@ -95,7 +96,6 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Inject private PMSPipelineService pipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
   @Inject private InputSetsApiUtils inputSetsApiUtils;
-  @Inject private boolean allowDifferentReposForPipelineAndInputSets;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
@@ -115,9 +115,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
           pipelineService.getPipelineMetadata(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),
               inputSetEntity.getProjectIdentifier(), inputSetEntity.getPipelineIdentifier(), false, true);
       InputSetValidationHelper.checkForPipelineStoreType(pipelineEntityMetadata);
-      if (allowDifferentReposForPipelineAndInputSets) {
-        validateInputSetSetting(inputSetEntity, pipelineEntityMetadata);
-      }
+      validateInputSetSetting(inputSetEntity, pipelineEntityMetadata);
     }
 
     try {
@@ -148,7 +146,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, identifier, deleted, loadFromFallbackBranch, loadFromCache);
     if (optionalInputSetEntity.isEmpty()) {
-      throw new InvalidRequestException(
+      throw new EntityNotFoundException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier));
     }
 

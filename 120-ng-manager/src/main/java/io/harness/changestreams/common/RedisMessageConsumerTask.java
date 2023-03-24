@@ -7,10 +7,11 @@
 
 package io.harness.changestreams.common;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.GTM;
+
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 public interface RedisMessageConsumerTask extends Runnable {
   void shutDown();
 }

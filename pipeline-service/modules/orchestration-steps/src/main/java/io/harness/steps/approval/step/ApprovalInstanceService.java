@@ -12,11 +12,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.execution.NodeExecution;
+import io.harness.jira.JiraIssueNG;
+import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.misc.TicketNG;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityRequestDTO;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
+import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
+import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
 
 import java.util.List;
 import java.util.Set;
@@ -55,4 +59,9 @@ public interface ApprovalInstanceService {
 
   boolean isNodeExecutionOfApprovalStepType(NodeExecution nodeExecution);
   void deleteByNodeExecutionIds(@NotNull Set<String> nodeExecutionIds);
+
+  void updateTicketFieldsInServiceNowApprovalInstance(
+      @NotNull ServiceNowApprovalInstance approvalInstance, @NotNull ServiceNowTicketNG ticketNG);
+  void updateTicketFieldsInJiraApprovalInstance(
+      @NotNull JiraApprovalInstance approvalInstance, @NotNull JiraIssueNG ticketNG);
 }

@@ -282,15 +282,17 @@ public class BusinessMappingServiceImpl implements BusinessMappingService {
   }
 
   private void modifyBusinessMapping(final BusinessMapping businessMapping) {
-    if (Objects.nonNull(businessMapping.getCostTargets())) {
-      businessMapping.getCostTargets().forEach(costTarget
-          -> awsAccountFieldHelper.mergeAwsAccountNameInAccountRules(
-              costTarget.getRules(), businessMapping.getAccountId()));
-    }
-    if (Objects.nonNull(businessMapping.getSharedCosts())) {
-      businessMapping.getSharedCosts().forEach(sharedCost
-          -> awsAccountFieldHelper.mergeAwsAccountNameInAccountRules(
-              sharedCost.getRules(), businessMapping.getAccountId()));
+    if (businessMapping != null) {
+      if (Objects.nonNull(businessMapping.getCostTargets())) {
+        businessMapping.getCostTargets().forEach(costTarget
+            -> awsAccountFieldHelper.mergeAwsAccountNameInAccountRules(
+                costTarget.getRules(), businessMapping.getAccountId()));
+      }
+      if (Objects.nonNull(businessMapping.getSharedCosts())) {
+        businessMapping.getSharedCosts().forEach(sharedCost
+            -> awsAccountFieldHelper.mergeAwsAccountNameInAccountRules(
+                sharedCost.getRules(), businessMapping.getAccountId()));
+      }
     }
   }
 }

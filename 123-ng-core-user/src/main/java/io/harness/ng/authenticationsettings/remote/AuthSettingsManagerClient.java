@@ -13,6 +13,7 @@ import io.harness.delegate.beans.ldap.LDAPTestAuthenticationRequest;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.ng.core.account.AuthenticationMechanism;
+import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
 import io.harness.rest.RestResponse;
 import io.harness.serializer.kryo.KryoRequest;
@@ -59,6 +60,9 @@ public interface AuthSettingsManagerClient {
 
   @GET(API_PREFIX + "accounts/two-factor-enabled")
   Call<RestResponse<Boolean>> twoFactorEnabled(@Query("accountId") @NotEmpty String accountId);
+
+  @GET(API_PREFIX + "accounts/session-timeout-account-level")
+  Call<RestResponse<Integer>> getSessionTimeoutAtAccountLevel(@Query("accountId") @NotEmpty String accountId);
 
   @POST(API_PREFIX + "sso/oauth-settings-upload")
   Call<RestResponse<SSOConfig>> uploadOauthSettings(
@@ -109,6 +113,10 @@ public interface AuthSettingsManagerClient {
   @PUT(API_PREFIX + "user/two-factor-admin-override-settings")
   Call<RestResponse<Boolean>> setTwoFactorAuthAtAccountLevel(@Query("accountId") @NotEmpty String accountId,
       @Body TwoFactorAdminOverrideSettings twoFactorAdminOverrideSettings);
+
+  @PUT(API_PREFIX + "accounts/session-timeout-account-level")
+  Call<RestResponse<Boolean>> setSessionTimeoutAtAccountLevel(
+      @Query("accountId") @NotEmpty String accountId, @Body SessionTimeoutSettings sessionTimeoutSettings);
 
   @GET(API_PREFIX + "login-settings/username-password/password-strength-policy")
   Call<RestResponse<PasswordStrengthPolicy>> getPasswordStrengthSettings(@Query("accountId") String accountIdentifier);

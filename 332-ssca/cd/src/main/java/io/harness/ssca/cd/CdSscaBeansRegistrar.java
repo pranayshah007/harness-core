@@ -33,7 +33,7 @@ public class CdSscaBeansRegistrar {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .namespace(SchemaNamespaceConstants.PMS)
                                            .modulesSupported(ImmutableList.of(ModuleType.CD))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .featureFlags(Collections.singletonList(FeatureName.SSCA_ENABLED.name()))

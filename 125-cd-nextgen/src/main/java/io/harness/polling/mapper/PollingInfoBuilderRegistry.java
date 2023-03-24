@@ -14,6 +14,7 @@ import io.harness.polling.mapper.artifact.AMIArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.AcrArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.ArtifactoryRegistryArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.AzureArtifactsInfoBuilder;
+import io.harness.polling.mapper.artifact.BambooArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.CustomArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.DockerHubArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.EcrArtifactInfoBuilder;
@@ -65,6 +66,7 @@ public class PollingInfoBuilderRegistry {
     registeredPollingInfoBuilders.put(Type.AZURE_ARTIFACTS, AzureArtifactsInfoBuilder.class);
     registeredPollingInfoBuilders.put(Type.AMI, AMIArtifactInfoBuilder.class);
     registeredPollingInfoBuilders.put(Type.GOOGLE_CLOUD_STORAGE_ARTIFACT, GoogleCloudStorageInfoBuilder.class);
+    registeredPollingInfoBuilders.put(Type.BAMBOO, BambooArtifactInfoBuilder.class);
   }
 
   public Optional<PollingInfoBuilder> getPollingInfoBuilder(Type type) {

@@ -509,7 +509,7 @@ paths:
           $ref: '#/components/responses/InputSetMoveConfigResponseBody'
       tags:
         - Input Sets
-      x-internal: true
+      x-internal: false
 components:
   schemas:
     GitDetails:

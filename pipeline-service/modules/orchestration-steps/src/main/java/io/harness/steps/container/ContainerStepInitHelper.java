@@ -97,6 +97,7 @@ public class ContainerStepInitHelper {
   @Inject K8sPodInitUtils k8sPodInitUtils;
   @Inject SecretUtils secretUtils;
   @Inject PluginExecutionConfigHelper pluginExecutionConfigHelper;
+  @Inject PluginUtils pluginUtils;
 
   public CIK8InitializeTaskParams getK8InitializeTaskParams(
       ContainerStepSpec containerStepInfo, Ambiance ambiance, String logPrefix) {
@@ -347,8 +348,8 @@ public class ContainerStepInitHelper {
     Set<Integer> usedPorts = new HashSet<>();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
 
-    ContainerDefinitionInfo stepCtrDefinitionInfos =
-        createStepContainerDefinitions(initializeStepInfo, portFinder, AmbianceUtils.getAccountId(ambiance), os);
+    ContainerDefinitionInfo stepCtrDefinitionInfos = createStepContainerDefinitions(
+        initializeStepInfo, portFinder, AmbianceUtils.getAccountId(ambiance), os, ambiance);
 
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     containerDefinitionInfos.add(stepCtrDefinitionInfos);
@@ -381,27 +382,28 @@ public class ContainerStepInitHelper {
   }
 
   private ContainerDefinitionInfo createStepContainerDefinitions(
-      ContainerStepSpec containerStepInfo, PortFinder portFinder, String accountId, OSType os) {
+      ContainerStepSpec containerStepInfo, PortFinder portFinder, String accountId, OSType os, Ambiance ambiance) {
     switch (containerStepInfo.getType()) {
       case RUN_CONTAINER:
         return createStepContainerDefinition((ContainerStepInfo) containerStepInfo, portFinder, accountId, os);
       case CD_SSCA_ORCHESTRATION:
-        return createPluginStepContainerDefinition((PluginStep) containerStepInfo, portFinder, accountId, os);
+        return createPluginStepContainerDefinition((PluginStep) containerStepInfo, portFinder, accountId, os, ambiance);
       default:
         throw new ContainerStepExecutionException("Container step initialization not handled");
     }
   }
 
   private ContainerDefinitionInfo createPluginStepContainerDefinition(
-      PluginStep pluginStep, PortFinder portFinder, String accountId, OSType os) {
+      PluginStep pluginStep, PortFinder portFinder, String accountId, OSType os, Ambiance ambiance) {
     Integer port = portFinder.getNextPort();
 
     String identifier = pluginStep.getIdentifier().replace("_", "");
     String containerName = format("%s%s", STEP_PREFIX, identifier).toLowerCase();
 
-    Map<String, String> envMap = new HashMap<>(PluginUtils.getPluginCompatibleEnvVariables(pluginStep, identifier));
+    Map<String, String> envMap =
+        new HashMap<>(pluginUtils.getPluginCompatibleEnvVariables(pluginStep, identifier, ambiance));
     Map<String, SecretNGVariable> secretNGVariableMap =
-        new HashMap<>(PluginUtils.getPluginCompatibleSecretVars(pluginStep));
+        new HashMap<>(pluginUtils.getPluginCompatibleSecretVars(pluginStep));
 
     return ContainerDefinitionInfo.builder()
         .name(containerName)

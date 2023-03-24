@@ -1,0 +1,21 @@
+pipeline:
+  name: pipeline
+  identifier: pipeline
+  stages:
+    - stage:
+        name: dev
+        identifier: dev
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                artifacts:
+                  primary:
+                    type: Bamboo
+                    spec:
+                      connectorRef: <+input>
+                      artifactPaths: <+input>
+                      planKey: <+input>
+                      build: <+input>

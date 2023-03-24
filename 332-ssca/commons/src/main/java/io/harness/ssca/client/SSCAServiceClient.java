@@ -19,8 +19,8 @@ import retrofit2.http.Query;
 
 @OwnedBy(HarnessTeam.SSCA)
 public interface SSCAServiceClient {
-  @GET(SSCACommonEndpointConstants.SSCA_SERVICE_ARTIFACT_ENDPOINT + "{pipelineExecutionId}/{stageId}/{stepId}")
-  Call<SBOMArtifactResponse> getArtifactInfo(@Path("pipelineExecutionId") String pipelineExecutionId,
+  @GET(SSCACommonEndpointConstants.SSCA_SERVICE_ARTIFACT_ENDPOINT + "{stepExecutionId}/{stageId}/{stepId}")
+  Call<SBOMArtifactResponse> getArtifactInfo(@Path("stepExecutionId") String stepExecutionId,
       @Path("stageId") String stageId, @Path("stepId") String stepId,
       @Query("accountIdentifier") String accountIdentifier, @Query("orgIdentifier") String orgIdentifier,
       @Query("projectIdentifier") String projectIdentifier);

@@ -7,7 +7,8 @@
 
 package io.harness.changestreams.eventhandlers;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.GTM;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventHandler.DebeziumAbstractRedisEventHandler;
 import io.harness.timescaledb.Tables;
@@ -21,7 +22,7 @@ import org.jooq.Record;
 import org.jooq.exception.DataAccessException;
 
 @Slf4j
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 public class ModuleLicensesChangeEventHandler extends DebeziumAbstractRedisEventHandler {
   @Inject private DSLContext dsl;
 

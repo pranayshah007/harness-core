@@ -25,7 +25,9 @@ import io.harness.steps.approval.step.jira.JiraApprovalOutcome;
 import io.harness.steps.approval.step.jira.JiraApprovalSpecParameters;
 
 import dev.morphia.annotations.Entity;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -52,6 +54,7 @@ public class JiraApprovalInstance extends ApprovalInstance {
   @NotNull CriteriaSpecWrapperDTO approvalCriteria;
   CriteriaSpecWrapperDTO rejectionCriteria;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+  Map<String, Object> ticketFields;
 
   public static JiraApprovalInstance fromStepParameters(Ambiance ambiance, StepElementParameters stepParameters) {
     if (stepParameters == null) {
@@ -84,6 +87,7 @@ public class JiraApprovalInstance extends ApprovalInstance {
             .delegateSelectors(specParameters.getDelegateSelectors())
             .issueType(issueType)
             .projectKey(projectKey)
+            .ticketFields(new HashMap<>())
             .build();
     instance.updateFromStepParameters(ambiance, stepParameters);
     return instance;

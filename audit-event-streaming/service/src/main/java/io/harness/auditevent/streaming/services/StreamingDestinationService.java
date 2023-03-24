@@ -15,5 +15,5 @@ import java.util.List;
 public interface StreamingDestinationService {
   List<StreamingDestination> list(String accountIdentifier, StreamingDestinationFilterProperties filterProperties);
   void disableStreamingDestination(StreamingDestination streamingDestination);
-  public List<String> distinctAccounts();
+  List<String> distinctAccounts();
 }

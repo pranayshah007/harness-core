@@ -213,7 +213,7 @@ public class TemplateMergeServiceHelper {
         log.error("Template yaml provided does not have spec in it.");
         throw new NGTemplateException("Template yaml provided does not have spec in it.");
       }
-      String templateInputsYamlWithSpec = RuntimeInputFormHelper.createTemplateFromYaml(templateSpec);
+      String templateInputsYamlWithSpec = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(templateSpec);
       if (isEmpty(templateInputsYamlWithSpec)) {
         return templateInputsYamlWithSpec;
       }

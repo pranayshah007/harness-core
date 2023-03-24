@@ -28,4 +28,8 @@ public interface InstanceSyncPerpetualTaskService {
       List<DeploymentInfoDTO> deploymentInfoDTOList, InfrastructureOutcome infrastructureOutcome);
 
   void deletePerpetualTask(String accountIdentifier, String perpetualTaskId);
+
+  boolean isInstanceSyncV2Enabled();
+
+  String createPerpetualTaskV2();
 }

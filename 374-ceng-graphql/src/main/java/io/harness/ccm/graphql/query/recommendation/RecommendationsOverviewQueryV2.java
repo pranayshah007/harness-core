@@ -322,20 +322,22 @@ public class RecommendationsOverviewQueryV2 {
     final List<ViewRule> viewRuleList = new ArrayList<>();
     if (Objects.nonNull(businessMappingId)) {
       final BusinessMapping businessMapping = businessMappingService.get(businessMappingId, accountId);
-      if (Objects.nonNull(businessMapping.getCostTargets())) {
-        businessMapping.getCostTargets().forEach(costTarget -> {
-          if (Objects.nonNull(costTarget) && !Lists.isNullOrEmpty(costTarget.getRules())) {
-            viewRuleList.addAll(getUpdatedBusinessMappingViewRules(
-                costTarget.getName(), costTarget.getRules(), viewIdOperator, values));
-          }
-        });
-      }
-      if (Objects.nonNull(businessMapping.getSharedCosts())) {
-        businessMapping.getSharedCosts().forEach(sharedCost -> {
-          if (Objects.nonNull(sharedCost) && !Lists.isNullOrEmpty(sharedCost.getRules())) {
-            viewRuleList.addAll(sharedCost.getRules());
-          }
-        });
+      if (businessMapping != null) {
+        if (Objects.nonNull(businessMapping.getCostTargets())) {
+          businessMapping.getCostTargets().forEach(costTarget -> {
+            if (Objects.nonNull(costTarget) && !Lists.isNullOrEmpty(costTarget.getRules())) {
+              viewRuleList.addAll(getUpdatedBusinessMappingViewRules(
+                  costTarget.getName(), costTarget.getRules(), viewIdOperator, values));
+            }
+          });
+        }
+        if (Objects.nonNull(businessMapping.getSharedCosts())) {
+          businessMapping.getSharedCosts().forEach(sharedCost -> {
+            if (Objects.nonNull(sharedCost) && !Lists.isNullOrEmpty(sharedCost.getRules())) {
+              viewRuleList.addAll(sharedCost.getRules());
+            }
+          });
+        }
       }
     }
     return viewRuleList;

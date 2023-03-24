@@ -1,5 +1,5 @@
 {
-    "text" : "*Harness SRM*\n*SLO: <${URL}|${SLO_NAME}> ${HEADER_MESSAGE} <${MONITORED_SERVICE_URL}|${SERVICE_NAME}> service*\n",
+    "text" : "*Harness SRM*\n*SLO: <${URL}|${SLO_NAME}> ${HEADER_MESSAGE}*\n",
     "attachments" : [
         {
           "color" : "${COLOR}",
