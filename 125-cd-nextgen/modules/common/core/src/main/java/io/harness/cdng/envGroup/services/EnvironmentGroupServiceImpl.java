@@ -7,7 +7,6 @@
 
 package io.harness.cdng.envGroup.services;
 
-import static io.harness.beans.FeatureName.CDS_FORCE_DELETE_ENTITIES;
 import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT;
@@ -455,10 +454,9 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
     }
   }
   private boolean isForceDeleteEnabled(String accountIdentifier) {
-    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
     boolean isForceDeleteEnabledBySettings =
         isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
+    return isForceDeleteEnabledBySettings;
   }
 
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
@@ -466,11 +464,6 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
                             .getResponse(settingsClient.getSetting(
                                 SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
                             .getValue());
-  }
-
-  protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(
-        accountClient.isFeatureFlagEnabled(CDS_FORCE_DELETE_ENTITIES.name(), accountIdentifier));
   }
 
   protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
