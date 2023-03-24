@@ -26,6 +26,7 @@ import software.wings.service.intfc.aws.delegate.AwsAsgHelperServiceDelegate;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +38,7 @@ import org.eclipse.jetty.server.Response;
 public class AwsAmiInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
   @Inject private AwsAsgHelperServiceDelegate awsAsgHelperServiceDelegate;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -49,17 +50,18 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExe
     final AwsAmiInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AwsAmiInstanceSyncPerpetualTaskParams.class);
 
-    final AwsConfig awsConfig = (AwsConfig) kryoSerializer.asObject(taskParams.getAwsConfig().toByteArray());
+    final AwsConfig awsConfig =
+        (AwsConfig) referenceFalseKryoSerializer.asObject(taskParams.getAwsConfig().toByteArray());
 
     @SuppressWarnings("unchecked")
     final List<EncryptedDataDetail> encryptedDataDetails =
-        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getEncryptedData().toByteArray());
+        (List<EncryptedDataDetail>) referenceFalseKryoSerializer.asObject(taskParams.getEncryptedData().toByteArray());
 
     final AwsAsgListInstancesResponse awsResponse = getAwsResponse(taskParams, awsConfig, encryptedDataDetails);
 
     try {
-      execute(
-          delegateAgentManagerClient.publishInstanceSyncResult(taskId.getId(), awsConfig.getAccountId(), awsResponse));
+      execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
+          taskId.getId(), awsConfig.getAccountId(), awsResponse));
     } catch (Exception e) {
       log.error(
           String.format("Failed to publish instance sync result for aws ami. asgName [%s] and PerpetualTaskId [%s]",

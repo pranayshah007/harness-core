@@ -16,7 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public enum TerraformConfigInspectVersion implements ClientToolVersion {
   V1_0("v1.0"),
-  V1_1("v1.1");
+  V1_1("v1.1"),
+  V1_2("v1.2");
 
   private final String version;
 }

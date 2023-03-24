@@ -30,6 +30,7 @@ import io.harness.perpetualtask.instancesync.GoogleFunctionInstanceSyncPerpetual
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,7 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 public class GoogleFunctionInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private GoogleFunctionTaskHelperBase googleFunctionTaskHelperBase;
 
@@ -93,7 +94,7 @@ public class GoogleFunctionInstanceSyncPerpetualTaskExecutor implements Perpetua
   private GoogleFunctionDeploymentReleaseData toGoogleFunctionDeploymentReleaseData(
       GoogleFunctionDeploymentRelease googleFunctionDeploymentRelease) {
     return GoogleFunctionDeploymentReleaseData.builder()
-        .googleFunctionInfraConfig((GoogleFunctionInfraConfig) kryoSerializer.asObject(
+        .googleFunctionInfraConfig((GoogleFunctionInfraConfig) referenceFalseKryoSerializer.asObject(
             googleFunctionDeploymentRelease.getGoogleFunctionsInfraConfig().toByteArray()))
         .function(googleFunctionDeploymentRelease.getFunction())
         .region(googleFunctionDeploymentRelease.getRegion())

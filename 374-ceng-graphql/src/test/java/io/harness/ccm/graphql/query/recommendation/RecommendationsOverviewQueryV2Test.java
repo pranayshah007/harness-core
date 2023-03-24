@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.offset;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,6 +38,8 @@ import io.harness.ccm.graphql.dto.recommendation.RecommendationDetailsDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationItemDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationsDTO;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
+import io.harness.ccm.rbac.CCMRbacHelper;
+import io.harness.ccm.views.dto.CEViewShortHand;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewField;
@@ -89,6 +92,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   private static final String NAMESPACE = "namespace";
   private static final String ID = "id0";
   private static final String PERSPECTIVE_ID = "perspectiveId";
+  private static final String PERSPECTIVE_NAME = "perspectiveName";
 
   private static final K8sRecommendationFilterDTO defaultFilter = K8sRecommendationFilterDTO.builder()
                                                                       .limit(GraphQLUtils.DEFAULT_LIMIT)
@@ -106,6 +110,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   @Mock private BigQueryHelper bigQueryHelper;
   @Mock private ViewParametersHelper viewParametersHelper;
   @InjectMocks private RecommendationsOverviewQueryV2 overviewQuery;
+  private CCMRbacHelper rbacHelper = mock(CCMRbacHelper.class);
 
   @Before
   public void setUp() throws Exception {
@@ -124,6 +129,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(recommendationService.listAll(
              eq(ACCOUNT_ID), any(Condition.class), eq(GraphQLUtils.DEFAULT_OFFSET), eq(GraphQLUtils.DEFAULT_LIMIT)))
         .thenReturn(Collections.emptyList());
+    when(rbacHelper.hasPerspectiveViewOnAllResources(any(), any(), any())).thenReturn(false);
 
     RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
     Mockito.doReturn(allowedMockedRecommendations(null))
@@ -417,6 +423,10 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
         .build();
   }
 
+  private CEViewShortHand createCEViewShortHand() {
+    return CEViewShortHand.builder().uuid(PERSPECTIVE_ID).name(PERSPECTIVE_NAME).build();
+  }
+
   private static ViewCondition createViewCondition(String fieldId, ViewIdOperator operator) {
     return ViewIdCondition.builder()
         .viewField(ViewField.builder()
@@ -445,9 +455,10 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(recommendationService.getFilterStats(eq(ACCOUNT_ID), any(), eq(columns), eq(CE_RECOMMENDATIONS)))
         .thenReturn(actualResponse);
     RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
-    Mockito.doReturn(Collections.singletonList(createCEView(null, null)))
+    Mockito.doReturn(Collections.singletonList(createCEViewShortHand()))
         .when(overviewQueryV2)
         .getAllowedPerspectives(any());
+    when(rbacHelper.hasPerspectiveViewOnAllResources(any(), any(), any())).thenReturn(true);
     Mockito.doReturn(emptyList()).when(overviewQueryV2).getPerspectiveRuleList(any());
 
     List<FilterStatsDTO> result =
@@ -475,9 +486,10 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(recommendationService.getFilterStats(eq(ACCOUNT_ID), any(), eq(columns), eq(CE_RECOMMENDATIONS)))
         .thenReturn(actualResponse);
     RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
-    Mockito.doReturn(Collections.singletonList(createCEView(null, null)))
+    Mockito.doReturn(Collections.singletonList(createCEViewShortHand()))
         .when(overviewQueryV2)
         .getAllowedPerspectives(any());
+    when(rbacHelper.hasPerspectiveViewOnAllResources(any(), any(), any())).thenReturn(true);
     Mockito.doReturn(emptyList()).when(overviewQueryV2).getPerspectiveRuleList(any());
 
     K8sRecommendationFilterDTO filter = K8sRecommendationFilterDTO.builder()
@@ -522,9 +534,12 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(recommendationService.getStats(eq(ACCOUNT_ID), any()))
         .thenReturn(RecommendationOverviewStats.builder().totalMonthlyCost(100D).totalMonthlySaving(100D).build());
     RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
-    Mockito.doReturn(Collections.singletonList(createCEView(null, null)))
+    Mockito.doReturn(Collections.singletonList(createCEViewShortHand()))
         .when(overviewQueryV2)
         .getAllowedPerspectives(any());
+    Mockito.doReturn(allowedMockedRecommendations(new ArrayList<>(List.of("id0", "id1"))))
+        .when(overviewQueryV2)
+        .listAllowedRecommendationsIdAndPerspectives(any());
     Mockito.doReturn(emptyList()).when(overviewQueryV2).getPerspectiveRuleList(any());
 
     RecommendationOverviewStats stats =
@@ -574,13 +589,14 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
         .recommendationDetails(null)
         .resourceType(resourceType)
         .perspectiveId(PERSPECTIVE_ID)
+        .perspectiveName(PERSPECTIVE_NAME)
         .build();
   }
 
-  private HashMap<String, CEView> allowedMockedRecommendations(List<String> anomalieIds) {
-    HashMap<String, CEView> allowedRecommendations = new HashMap<>();
+  private HashMap<String, CEViewShortHand> allowedMockedRecommendations(List<String> anomalieIds) {
+    HashMap<String, CEViewShortHand> allowedRecommendations = new HashMap<>();
     if (!Lists.isNullOrEmpty(anomalieIds)) {
-      anomalieIds.forEach(anomalyId -> allowedRecommendations.put(anomalyId, createCEView(null, null)));
+      anomalieIds.forEach(anomalyId -> allowedRecommendations.put(anomalyId, createCEViewShortHand()));
     }
     return allowedRecommendations;
   }

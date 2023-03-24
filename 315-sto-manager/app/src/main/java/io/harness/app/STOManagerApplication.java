@@ -8,6 +8,7 @@
 package io.harness.app;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
+import static io.harness.authorization.AuthorizationServiceHeader.STO_MANAGER;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
@@ -57,7 +58,6 @@ import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEvent
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
-import io.harness.queue.QueueController;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.resource.VersionInfoResource;
@@ -89,7 +89,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -233,24 +232,6 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
       }
     });
 
-    // Inject QueueController required by DelegateAsyncServiceImpl
-    modules.add(new AbstractModule() {
-      @Override
-      protected void configure() {
-        bind(QueueController.class).toInstance(new QueueController() {
-          @Override
-          public boolean isPrimary() {
-            return true;
-          }
-
-          @Override
-          public boolean isNotPrimary() {
-            return false;
-          }
-        });
-      }
-    });
-
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -268,7 +249,8 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
 
     modules.add(new CIPersistenceModule());
     addGuiceValidationModule(modules);
-    modules.add(new STOManagerServiceModule(configuration));
+    modules.add(new CIManagerServiceModule(STO_MANAGER, "sto", configuration));
+    modules.add(new STOManagerServiceModule());
     modules.add(new CacheModule(configuration.getCacheConfig()));
 
     modules.add(YamlSdkModule.getInstance());

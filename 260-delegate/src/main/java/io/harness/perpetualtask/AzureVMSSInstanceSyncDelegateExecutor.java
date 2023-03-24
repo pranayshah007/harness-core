@@ -25,6 +25,7 @@ import software.wings.delegatetasks.azure.taskhandler.AzureVMSSSyncTaskHandler;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,7 @@ import org.eclipse.jetty.server.Response;
 public class AzureVMSSInstanceSyncDelegateExecutor implements PerpetualTaskExecutor {
   @Inject private EncryptionService encryptionService;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private AzureVMSSSyncTaskHandler azureVMSSSyncTaskHandler;
 
   @Override
@@ -47,12 +48,13 @@ public class AzureVMSSInstanceSyncDelegateExecutor implements PerpetualTaskExecu
     AzureVmssInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AzureVmssInstanceSyncPerpetualTaskParams.class);
     software.wings.beans.AzureConfig azureConfig =
-        (software.wings.beans.AzureConfig) kryoSerializer.asObject(taskParams.getAzureConfig().toByteArray());
+        (software.wings.beans.AzureConfig) referenceFalseKryoSerializer.asObject(
+            taskParams.getAzureConfig().toByteArray());
     AzureVMSSTaskExecutionResponse azureVMSSTaskExecutionResponse = executeSyncTask(taskParams, azureConfig);
     try {
       log.info("Publish instance sync result to manager for VMSS id {} and perpetual task {}", taskParams.getVmssId(),
           taskId.getId());
-      execute(delegateAgentManagerClient.publishInstanceSyncResult(
+      execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
           taskId.getId(), azureConfig.getAccountId(), azureVMSSTaskExecutionResponse));
     } catch (Exception ex) {
       log.error("Failed to publish the instance sync collection result to manager for VMSS id {} and perpetual task {}",
@@ -76,8 +78,8 @@ public class AzureVMSSInstanceSyncDelegateExecutor implements PerpetualTaskExecu
 
   private AzureVMSSTaskExecutionResponse executeSyncTask(
       AzureVmssInstanceSyncPerpetualTaskParams taskParams, software.wings.beans.AzureConfig azureConfig) {
-    List<EncryptedDataDetail> encryptedDataDetails =
-        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getAzureEncryptedData().toByteArray());
+    List<EncryptedDataDetail> encryptedDataDetails = (List<EncryptedDataDetail>) referenceFalseKryoSerializer.asObject(
+        taskParams.getAzureEncryptedData().toByteArray());
     encryptionService.decrypt(azureConfig, encryptedDataDetails, true);
     AzureVMSSListVMDataParameters parameters = AzureVMSSListVMDataParameters.builder()
                                                    .subscriptionId(taskParams.getSubscriptionId())

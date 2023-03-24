@@ -1143,7 +1143,10 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     String sliIndicator = serviceLevelIndicator.getUuid();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
-    serviceLevelIndicatorDTO1.setSliMissingDataType(SLIMissingDataType.BAD);
+    WindowBasedServiceLevelIndicatorSpec serviceLevelIndicatorSpec =
+        (WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec();
+    serviceLevelIndicatorSpec.setSliMissingDataType(SLIMissingDataType.BAD);
+    serviceLevelIndicatorDTO1.setSpec(serviceLevelIndicatorSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =

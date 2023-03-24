@@ -21,6 +21,7 @@ public interface CCMRbacHelper {
 
   void checkPerspectiveViewPermission(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  boolean hasPerspectiveViewOnAllResources(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkPerspectiveEditPermission(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
   void checkPerspectiveDeletePermission(

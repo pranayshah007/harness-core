@@ -986,6 +986,9 @@ public class CVServiceModule extends AbstractModule {
     activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.FEATURE_FLAG)
         .to(InternalChangeActivityUpdatableEntity.class)
         .in(Scopes.SINGLETON);
+    activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.CHAOS_EXPERIMENT)
+        .to(InternalChangeActivityUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
     activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.CUSTOM_DEPLOY)
         .to(CustomChangeActivityUpdatableEntity.class)
         .in(Scopes.SINGLETON);
@@ -1017,6 +1020,9 @@ public class CVServiceModule extends AbstractModule {
         .to(DeploymentActivityUpdateHandler.class)
         .in(Scopes.SINGLETON);
     activityUpdateHandlerMapBinder.addBinding(ActivityType.FEATURE_FLAG)
+        .to(InternalChangeActivityUpdateHandler.class)
+        .in(Scopes.SINGLETON);
+    activityUpdateHandlerMapBinder.addBinding(ActivityType.CHAOS_EXPERIMENT)
         .to(InternalChangeActivityUpdateHandler.class)
         .in(Scopes.SINGLETON);
     activityUpdateHandlerMapBinder.addBinding(ActivityType.CUSTOM_DEPLOY)
@@ -1092,6 +1098,9 @@ public class CVServiceModule extends AbstractModule {
         .to(HarnessCDCurrentGenChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
     changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_FF)
+        .to(InternalChangeEventTransformer.class)
+        .in(Scopes.SINGLETON);
+    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_CE)
         .to(InternalChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
     changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.CUSTOM_DEPLOY)

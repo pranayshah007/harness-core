@@ -5,11 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.helpers.k8s.releasehistory;
+package io.harness.delegate.task.k8s.k8sbase;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandlerImpl;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

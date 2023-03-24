@@ -112,7 +112,7 @@ func Handler(stream stream.Stream, store store.Store, config config.Config, ngCl
 	// Readiness check
 	r.Mount("/ready/healthz", func() http.Handler {
 		sr := chi.NewRouter()
-		sr.Get("/", HandlePing(stream))
+		sr.Get("/", HandlePing(stream, store))
 
 		return sr
 	}())

@@ -27,6 +27,7 @@ import software.wings.delegatetasks.azure.appservice.webapp.taskhandler.AzureWeb
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +38,7 @@ import org.eclipse.jetty.server.Response;
 public class AzureWebAppInstanceSyncDelegateExecutor implements PerpetualTaskExecutor {
   @Inject private EncryptionService encryptionService;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private AzureWebAppListWebAppInstancesTaskHandler listWebAppInstancesTaskHandler;
 
   @Override
@@ -50,13 +51,14 @@ public class AzureWebAppInstanceSyncDelegateExecutor implements PerpetualTaskExe
     AzureWebAppInstanceSyncPerpetualProtoTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AzureWebAppInstanceSyncPerpetualProtoTaskParams.class);
     software.wings.beans.AzureConfig azureConfig =
-        (software.wings.beans.AzureConfig) kryoSerializer.asObject(taskParams.getAzureConfig().toByteArray());
+        (software.wings.beans.AzureConfig) referenceFalseKryoSerializer.asObject(
+            taskParams.getAzureConfig().toByteArray());
     AzureTaskExecutionResponse azureTaskExecutionResponse = executeSyncTask(taskParams, azureConfig);
     try {
       log.info(
           "Publish instance sync result to manager for Web App app name: {}, slot name: {} and perpetual task id: {}",
           taskParams.getAppName(), taskParams.getSlotName(), taskId.getId());
-      execute(delegateAgentManagerClient.publishInstanceSyncResult(
+      execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
           taskId.getId(), azureConfig.getAccountId(), azureTaskExecutionResponse));
     } catch (Exception ex) {
       log.error(
@@ -68,8 +70,8 @@ public class AzureWebAppInstanceSyncDelegateExecutor implements PerpetualTaskExe
 
   private AzureTaskExecutionResponse executeSyncTask(
       AzureWebAppInstanceSyncPerpetualProtoTaskParams taskParams, software.wings.beans.AzureConfig azureConfig) {
-    List<EncryptedDataDetail> encryptedDataDetails =
-        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getAzureEncryptedData().toByteArray());
+    List<EncryptedDataDetail> encryptedDataDetails = (List<EncryptedDataDetail>) referenceFalseKryoSerializer.asObject(
+        taskParams.getAzureEncryptedData().toByteArray());
     encryptionService.decrypt(azureConfig, encryptedDataDetails, true);
 
     AzureAppServiceTaskParameters parameters = AzureWebAppListWebAppInstancesParameters.builder()

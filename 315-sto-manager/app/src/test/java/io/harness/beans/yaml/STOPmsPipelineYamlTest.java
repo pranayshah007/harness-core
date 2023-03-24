@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.SERGEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.harness.STOBeansTestBase;
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.SecurityStageNode;
 import io.harness.beans.steps.nodes.SecurityNode;
@@ -37,7 +37,7 @@ import org.junit.experimental.categories.Category;
 
 @Slf4j
 @OwnedBy(STO)
-public class STOPmsPipelineYamlTest extends STOBeansTestBase {
+public class STOPmsPipelineYamlTest extends CategoryTest {
   @Test
   @Owner(developers = SERGEY)
   @Category(UnitTests.class)

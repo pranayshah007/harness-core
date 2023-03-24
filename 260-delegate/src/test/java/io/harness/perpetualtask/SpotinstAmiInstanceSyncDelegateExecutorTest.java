@@ -45,6 +45,7 @@ import software.wings.service.intfc.security.EncryptionService;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.time.Instant;
@@ -71,12 +72,13 @@ public class SpotinstAmiInstanceSyncDelegateExecutorTest extends DelegateTestBas
   @InjectMocks private SpotinstAmiInstanceSyncDelegateExecutor executor;
 
   @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Before
   public void setUp() {
-    on(executor).set("kryoSerializer", kryoSerializer);
-    when(
-        delegateAgentManagerClient.publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class)))
+    on(executor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
+    when(delegateAgentManagerClient.publishInstanceSyncResultV2(
+             anyString(), anyString(), any(DelegateResponseData.class)))
         .thenReturn(call);
   }
 
@@ -105,7 +107,7 @@ public class SpotinstAmiInstanceSyncDelegateExecutorTest extends DelegateTestBas
     verify(taskHandler, times(1))
         .executeTask(any(SpotInstTaskParameters.class), any(SpotInstConfig.class), any(AwsConfig.class));
     verify(delegateAgentManagerClient, times(1))
-        .publishInstanceSyncResult(eq("task-id"), eq("accountId"), argumentCaptor.capture());
+        .publishInstanceSyncResultV2(eq("task-id"), eq("accountId"), argumentCaptor.capture());
     SpotInstTaskExecutionResponse sentTaskExecutionResponse = argumentCaptor.getValue();
 
     assertThat(perpetualTaskResponse.getResponseCode()).isEqualTo(Response.SC_OK);
@@ -140,7 +142,7 @@ public class SpotinstAmiInstanceSyncDelegateExecutorTest extends DelegateTestBas
     verify(taskHandler, times(1))
         .executeTask(any(SpotInstTaskParameters.class), any(SpotInstConfig.class), any(AwsConfig.class));
     verify(delegateAgentManagerClient, times(1))
-        .publishInstanceSyncResult(eq("task-id"), eq("accountId"), argumentCaptor.capture());
+        .publishInstanceSyncResultV2(eq("task-id"), eq("accountId"), argumentCaptor.capture());
     SpotInstTaskExecutionResponse sentTaskExecutionResponse = argumentCaptor.getValue();
 
     assertThat(perpetualTaskResponse.getResponseMessage()).isEqualTo("Unable to list instances");
@@ -166,7 +168,7 @@ public class SpotinstAmiInstanceSyncDelegateExecutorTest extends DelegateTestBas
     verify(taskHandler, times(1))
         .executeTask(any(SpotInstTaskParameters.class), any(SpotInstConfig.class), any(AwsConfig.class));
     verify(delegateAgentManagerClient, times(1))
-        .publishInstanceSyncResult(eq("task-id"), eq("accountId"), argumentCaptor.capture());
+        .publishInstanceSyncResultV2(eq("task-id"), eq("accountId"), argumentCaptor.capture());
     SpotInstTaskExecutionResponse sentTaskExecutionResponse = argumentCaptor.getValue();
 
     assertThat(perpetualTaskResponse.getResponseMessage()).isEqualTo("Unable to fetch instance list");
@@ -176,11 +178,12 @@ public class SpotinstAmiInstanceSyncDelegateExecutorTest extends DelegateTestBas
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString awsConfigBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
-    ByteString spotinstConfigBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(SpotInstConfig.builder().accountId("accountId").build()));
-    ByteString awsEncryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
-    ByteString spotinstEncryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
+    ByteString spotinstConfigBytes = ByteString.copyFrom(
+        referenceFalseKryoSerializer.asBytes(SpotInstConfig.builder().accountId("accountId").build()));
+    ByteString awsEncryptionDetailsBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(new ArrayList<>()));
+    ByteString spotinstEncryptionDetailsBytes =
+        ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(new ArrayList<>()));
 
     SpotinstAmiInstanceSyncPerpetualTaskParams taskParams =
         SpotinstAmiInstanceSyncPerpetualTaskParams.newBuilder()
