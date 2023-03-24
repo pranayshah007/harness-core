@@ -309,7 +309,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String environmentIdentifier,
       Long version, boolean forceDelete) {
-    if (forceDelete) {
+    if (forceDelete && !isForceDeleteEnabled(accountId)) {
       throw new InvalidRequestException(
           format("Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountId),
           USER);
@@ -847,9 +847,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return environmentRepository.getEnvironmentIdentifiers(accountIdentifier, orgIdentifier, projectIdentifier);
   }
   private boolean isForceDeleteEnabled(String accountIdentifier) {
-    boolean isForceDeleteEnabledBySettings =
-        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    return isForceDeleteEnabledBySettings;
+    return isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
   }
 
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {

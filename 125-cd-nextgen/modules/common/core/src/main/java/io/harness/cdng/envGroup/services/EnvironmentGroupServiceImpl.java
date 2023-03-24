@@ -454,9 +454,7 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
     }
   }
   private boolean isForceDeleteEnabled(String accountIdentifier) {
-    boolean isForceDeleteEnabledBySettings =
-        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    return isForceDeleteEnabledBySettings;
+    return isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
   }
 
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {

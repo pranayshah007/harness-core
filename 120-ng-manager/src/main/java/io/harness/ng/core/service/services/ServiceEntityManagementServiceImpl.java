@@ -69,9 +69,7 @@ public class ServiceEntityManagementServiceImpl implements ServiceEntityManageme
     return success;
   }
   private boolean isForceDeleteEnabled(String accountIdentifier) {
-    boolean isForceDeleteEnabledBySettings =
-        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    return isForceDeleteEnabledBySettings;
+    return isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
   }
 
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {

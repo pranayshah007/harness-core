@@ -537,9 +537,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         comments, canDeleteStableTemplate, stableTemplate, forceDelete);
   }
   private boolean isForceDeleteEnabled(String accountIdentifier) {
-    boolean isForceDeleteEnabledBySettings =
-        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    return isForceDeleteEnabledBySettings;
+    return isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
   }
   @VisibleForTesting
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
