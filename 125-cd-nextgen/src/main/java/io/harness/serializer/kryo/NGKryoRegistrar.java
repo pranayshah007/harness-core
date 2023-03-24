@@ -47,6 +47,10 @@ import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.HelmDeployStepParams;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
 import io.harness.cdng.helm.rollback.HelmRollbackStepParams;
+import io.harness.cdng.hooks.ServiceHookAction;
+import io.harness.cdng.hooks.ServiceHookType;
+import io.harness.cdng.hooks.steps.ServiceHookStepParameters;
+import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.infra.InfraSectionStepParameters;
 import io.harness.cdng.infra.InfraUseFromStage;
 import io.harness.cdng.infra.InfrastructureDef;
@@ -81,6 +85,7 @@ import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.steps.ManifestStepParameters;
+import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.beans.RollbackNode;
@@ -290,5 +295,11 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(SyncStepOutcome.class, 12665);
     kryo.register(TasRouteMappingStepInfo.class, 12666);
     kryo.register(TasRouteMappingStepParameters.class, 12667);
+
+    kryo.register(ServiceHookStepParameters.class, 12669);
+    kryo.register(ServiceHooksOutcome.class, 12670);
+    kryo.register(ServiceHookAction.class, 12671);
+    kryo.register(InlineStoreConfig.class, 12672);
+    kryo.register(ServiceHookType.class, 12673);
   }
 }

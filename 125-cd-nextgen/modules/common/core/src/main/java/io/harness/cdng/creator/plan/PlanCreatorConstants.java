@@ -39,6 +39,7 @@ public class PlanCreatorConstants {
   public final String APPLICATION_SETTINGS = "applicationSettings";
   public final String CONNECTION_STRINGS = "connectionStrings";
   public final String ELASTIGROUP_SERVICE_SETTINGS_NODE = "elastigroupService";
+  public final String SERVICE_HOOKS_NODE_NAME = "ServiceHooks";
 
   // DependencyMetadata constants
   public final String PRIMARY_STEP_PARAMETERS = "primaryStepParameters";
@@ -47,6 +48,7 @@ public class PlanCreatorConstants {
   public final String SIDECAR_STEP_PARAMETERS = "sideCarsStepParameters";
   public final String MANIFEST_STEP_PARAMETER = "manifestStepParameters";
   public final String CONFIG_FILE_STEP_PARAMETER = "configFileStepParameters";
+  public final String SERVICE_HOOK_STEP_PARAMETER = "serviceHookStepParameters";
   public final String STARTUP_COMMAND_STEP_PARAMETER = "startupCommandStepParameters";
   public final String APPLICATION_SETTINGS_STEP_PARAMETER = "applicationSettingsStepParameters";
   public final String CONNECTION_STRINGS_STEP_PARAMETER = "connectionStringsStepParameters";

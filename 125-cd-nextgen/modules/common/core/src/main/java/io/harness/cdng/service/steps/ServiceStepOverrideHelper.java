@@ -27,11 +27,15 @@ import io.harness.cdng.azure.webapp.steps.NgAppSettingsSweepingOutput;
 import io.harness.cdng.azure.webapp.steps.NgConnectionStringsSweepingOutput;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.configfile.steps.NgConfigFilesMetadataSweepingOutput;
+import io.harness.cdng.hooks.ServiceHookWrapper;
+import io.harness.cdng.hooks.steps.NgServiceHooksMetadataSweepingOutput;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.WebAppSpec;
+import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
@@ -241,6 +245,34 @@ public class ServiceStepOverrideHelper {
         ambiance, configFilesSweepingOutputName, configFileSweepingOutput, StepCategory.STAGE.name());
   }
 
+  public void prepareAndSaveFinalServiceHooksMetadataToSweepingOutput(@NonNull NGServiceConfig serviceV2Config,
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig, Ambiance ambiance,
+      String configFilesSweepingOutputName) {
+    NGServiceV2InfoConfig ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
+    if (ngServiceV2InfoConfig == null) {
+      throw new InvalidRequestException("No service configuration found in the service");
+    }
+    List<ServiceHookWrapper> finalServiceHooks;
+    // Processing envGroups. EnvironmentConfig and serviceOverrideConfig is null for envGroup. GitOps Flow
+    ServiceSpec serviceSpec = serviceV2Config.getNgServiceV2InfoConfig().getServiceDefinition().getServiceSpec();
+    final Map<String, ServiceHookWrapper> serviceHooks = getServiceHooks(serviceSpec);
+    Map<String, ServiceHookWrapper> finalServiceHooksMap = new HashMap<>();
+    finalServiceHooksMap.putAll(serviceHooks);
+    finalServiceHooks = new ArrayList<>(finalServiceHooksMap.values());
+
+    final NgServiceHooksMetadataSweepingOutput serviceHooksSweepingOutput =
+        NgServiceHooksMetadataSweepingOutput.builder()
+            .finalServiceHooks(finalServiceHooks)
+            .serviceIdentifier(ngServiceV2InfoConfig.getIdentifier())
+            .environmentIdentifier(
+                ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
+                    ? StringUtils.EMPTY
+                    : ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier())
+            .build();
+    sweepingOutputService.consume(
+        ambiance, configFilesSweepingOutputName, serviceHooksSweepingOutput, StepCategory.STAGE.name());
+  }
+
   public void prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(@NonNull NGServiceConfig serviceV2Config,
       NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig, Ambiance ambiance,
       String configFilesSweepingOutputName) {
@@ -398,6 +430,25 @@ public class ServiceStepOverrideHelper {
       return serviceV2Config.getServiceDefinition().getServiceSpec().getConfigFiles().stream().collect(Collectors.toMap(
           configFileWrapper -> configFileWrapper.getConfigFile().getIdentifier(), Function.identity()));
     }
+    return emptyMap();
+  }
+
+  private static Map<String, ServiceHookWrapper> getServiceHooks(ServiceSpec serviceSpec) {
+    if (serviceSpec instanceof KubernetesServiceSpec)
+      if (isNotEmpty(((KubernetesServiceSpec) serviceSpec).getServiceHooks())) {
+        return ((KubernetesServiceSpec) serviceSpec)
+            .getServiceHooks()
+            .stream()
+            .collect(Collectors.toMap(serviceHookWrapper -> {
+              String identifier;
+              if (serviceHookWrapper.getPreHook() == null) {
+                identifier = serviceHookWrapper.getPostHook().getIdentifier();
+              } else {
+                identifier = serviceHookWrapper.getPreHook().getIdentifier();
+              }
+              return identifier;
+            }, Function.identity()));
+      }
     return emptyMap();
   }
 

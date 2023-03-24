@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -37,6 +38,7 @@ public class ServiceOutcomeHelper {
         .artifactResults(getArtifactsOutcome(ambiance, outcomeService))
         .manifestResults(getManifestsOutcome(ambiance, outcomeService))
         .configFileResults(getConfigFilesOutcome(ambiance, outcomeService))
+        .serviceHookResults(getServiceHooksOutcome(ambiance, outcomeService))
         .build();
   }
 
@@ -49,6 +51,7 @@ public class ServiceOutcomeHelper {
         .artifactResults(getArtifactsOutcome(ambiance, outcomeService))
         .manifestResults(getManifestsOutcome(ambiance, outcomeService))
         .configFileResults(getConfigFilesOutcome(ambiance, outcomeService))
+        .serviceHookResults(getServiceHooksOutcome(ambiance, outcomeService))
         .build();
   }
 
@@ -96,5 +99,14 @@ public class ServiceOutcomeHelper {
       return null;
     }
     return (ConfigFilesOutcome) optionalOutcome.getOutcome();
+  }
+
+  private ServiceHooksOutcome getServiceHooksOutcome(Ambiance ambiance, OutcomeService outcomeService) {
+    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE_HOOKS));
+    if (!optionalOutcome.isFound()) {
+      return null;
+    }
+    return (ServiceHooksOutcome) optionalOutcome.getOutcome();
   }
 }

@@ -45,7 +45,7 @@ public class NativeHelmServiceSpec implements ServiceSpec, Visitable {
   ArtifactListConfig artifacts;
   List<ManifestConfigWrapper> manifests;
   List<ConfigFileWrapper> configFiles;
-  List<ServiceHookWrapper> hooks;
+  List<ServiceHookWrapper> serviceHooks;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
@@ -70,8 +70,8 @@ public class NativeHelmServiceSpec implements ServiceSpec, Visitable {
       configFiles.forEach(configFile -> children.add("configFiles", configFile));
     }
 
-    if (EmptyPredicate.isNotEmpty(hooks)) {
-      hooks.forEach(hook -> children.add("hooks", hook));
+    if (EmptyPredicate.isNotEmpty(serviceHooks)) {
+      serviceHooks.forEach(hook -> children.add("serviceHooks", hook));
     }
 
     return children;

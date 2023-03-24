@@ -71,6 +71,9 @@ import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStep;
 import io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
+import io.harness.cdng.hooks.steps.IndividualServiceHookStep;
+import io.harness.cdng.hooks.steps.ServiceHooksStep;
+import io.harness.cdng.hooks.steps.ServiceHooksStepV2;
 import io.harness.cdng.infra.steps.EnvironmentStep;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
@@ -291,6 +294,10 @@ public class NgStepRegistrar {
     engineSteps.put(AwsSamDeployStep.STEP_TYPE, AwsSamDeployStep.class);
     engineSteps.put(AwsSamRollbackStep.STEP_TYPE, AwsSamRollbackStep.class);
 
+    // Service Hooks
+    engineSteps.put(IndividualServiceHookStep.STEP_TYPE, IndividualServiceHookStep.class);
+    engineSteps.put(ServiceHooksStep.STEP_TYPE, ServiceHooksStep.class);
+    engineSteps.put(ServiceHooksStepV2.STEP_TYPE, ServiceHooksStepV2.class);
     return engineSteps;
   }
 }

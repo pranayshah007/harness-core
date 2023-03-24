@@ -18,12 +18,15 @@ import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
+import io.harness.cdng.service.beans.KubernetesServiceSpec;
+import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.steps.ServiceDefinitionStep;
 import io.harness.cdng.service.steps.ServiceDefinitionStepParameters;
 import io.harness.cdng.service.steps.ServiceSpecStep;
 import io.harness.cdng.service.steps.ServiceSpecStepParameters;
 import io.harness.cdng.utilities.ConfigFileUtility;
+import io.harness.cdng.utilities.ServiceHookUtility;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
@@ -115,7 +118,7 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
   private void addChildrenForServiceV1(
       Map<String, PlanCreationResponse> planCreationResponseMap, YamlNode serviceConfigNode) throws IOException {
     ServiceConfig serviceConfig = YamlUtils.read(serviceConfigNode.toString(), ServiceConfig.class);
-
+    ServiceSpec serviceSpec = serviceConfig.getServiceDefinition().getServiceSpec();
     List<String> serviceSpecChildrenIds = new ArrayList<>();
     boolean createPlanForArtifacts =
         ServiceDefinitionPlanCreatorHelper.validateCreatePlanNodeForArtifacts(serviceConfig);
@@ -135,6 +138,14 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
       String configFilesPlanNodeId =
           addDependenciesForConfigFiles(serviceConfigNode, planCreationResponseMap, serviceConfig);
       serviceSpecChildrenIds.add(configFilesPlanNodeId);
+    }
+
+    if (serviceSpec instanceof KubernetesServiceSpec || serviceSpec instanceof NativeHelmServiceSpec) {
+      if (serviceSpec instanceof KubernetesServiceSpec) {
+        String serviceHooksPlanNodeId =
+            addDependenciesForServiceHook(serviceConfigNode, planCreationResponseMap, serviceConfig);
+        serviceSpecChildrenIds.add(serviceHooksPlanNodeId);
+      }
     }
 
     if (serviceConfig.getServiceDefinition().getServiceSpec() instanceof AzureWebAppServiceSpec) {
@@ -220,6 +231,32 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
     }
     planCreationResponseMap.put(configFilesPlanNodeId, configFilesPlanCreationResponse.build());
     return configFilesPlanNodeId;
+  }
+
+  String addDependenciesForServiceHook(YamlNode serviceConfigNode,
+      Map<String, PlanCreationResponse> planCreationResponseMap, ServiceConfig serviceConfig) {
+    YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
+    boolean isUseFromStage = serviceConfig.getUseFromStage() != null;
+    YamlField serviceHooksYamlField =
+        ServiceHookUtility.fetchServiceHooksYamlFieldAndSetYamlUpdates(serviceConfigNode, isUseFromStage, yamlUpdates);
+    String serviceHooksPlanNodeId = "serviceHooks-" + UUIDGenerator.generateUuid();
+
+    Map<String, ByteString> metadataDependency =
+        ServiceDefinitionPlanCreatorHelper.prepareMetadata(serviceHooksPlanNodeId, serviceConfig, kryoSerializer);
+    Map<String, YamlField> dependenciesMap = new HashMap<>();
+    dependenciesMap.put(serviceHooksPlanNodeId, serviceHooksYamlField);
+
+    PlanCreationResponseBuilder serviceHooksPlanCreationResponse = PlanCreationResponse.builder().dependencies(
+        DependenciesUtils.toDependenciesProto(dependenciesMap)
+            .toBuilder()
+            .putDependencyMetadata(
+                serviceHooksPlanNodeId, Dependency.newBuilder().putAllMetadata(metadataDependency).build())
+            .build());
+    if (yamlUpdates.getFqnToYamlCount() > 0) {
+      serviceHooksPlanCreationResponse.yamlUpdates(yamlUpdates.build());
+    }
+    planCreationResponseMap.put(serviceHooksPlanNodeId, serviceHooksPlanCreationResponse.build());
+    return serviceHooksPlanNodeId;
   }
 
   boolean shouldCreatePlanNodeForConfigFiles(ServiceConfig actualServiceConfig) {

@@ -20,6 +20,7 @@ import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
+import io.harness.cdng.hooks.ServiceHookWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
@@ -88,6 +89,15 @@ public class ServiceDefinitionPlanCreatorHelper {
     metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(planNodeId)));
     metadataDependency.put(
         YamlTypes.CONFIG_FILES, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(finalConfigFiles)));
+    return metadataDependency;
+  }
+
+  public Map<String, ByteString> prepareMetadataServiceHooksV2(
+      String planNodeId, List<ServiceHookWrapper> finalServiceHooks, KryoSerializer kryoSerializer) {
+    Map<String, ByteString> metadataDependency = new HashMap<>();
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(planNodeId)));
+    metadataDependency.put(
+        YamlTypes.SERVICE_HOOKS, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(finalServiceHooks)));
     return metadataDependency;
   }
 
