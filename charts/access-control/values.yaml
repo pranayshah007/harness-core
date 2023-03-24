@@ -1,0 +1,135 @@
+# Default values for access-control
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  ha: false
+  imagePullSecrets: []
+
+replicaCount: 1
+maxSurge: 1
+maxUnavailable: 0
+
+config:
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  LOGGING_LEVEL: INFO
+  EVENTS_CONFIG_USE_SENTINEL: true
+  EVENTS_CONFIG_SENTINEL_MASTER_NAME: harness-redis
+  EVENTS_CONFIG_REDIS_SENTINELS:
+  LOCK_CONFIG_USE_SENTINEL: true
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
+  LOCK_CONFIG_REDIS_SENTINELS:
+  RESOURCE_GROUP_ITERATOR_ENABLED: true
+  RESOURCE_GROUP_ITERATOR_INTERVAL: 3600
+  USER_GROUP_ITERATOR_ENABLED: true
+  USER_GROUP_ITERATOR_INTERVAL: 3600
+  USER_ITERATOR_ENABLED: true
+  USER_ITERATOR_INTERVAL: 3600
+  SERVICEACCOUNT_ITERATOR_ENABLED: true
+  SERVICEACCOUNT_ITERATOR_INTERVAL: 3600
+  SUPPORTPREFERENCE_ITERATOR_ENABLED: true
+  SUPPORTPREFERENCE_ITERATOR_INTERVAL: 600
+  SCOPE_ITERATOR_ENABLED: true
+  SCOPE_ITERATOR_INTERVAL: 3600
+  RESOURCE_GROUP_CLIENT_BASE_URL:
+  USER_CLIENT_BASE_URL:
+  USER_GROUP_CLIENT_BASE_URL:
+  SERVICEACCOUNT_CLIENT_BASE_URL:
+  ACCOUNT_CLIENT_BASE_URL:
+  FEATURE_FLAG_CLIENT_BASE_URL:
+  PROJECT_CLIENT_BASE_URL:
+  OFFSET_FLUSH_INTERVAL_MS: 10000
+  MONGODB_SSL_ENABLED: false
+  AGGREGATOR_ENABLED: true
+  ENABLE_AUTH: true
+  ACCESS_CONTROL_PREFERENCE_ENABLED: true
+  NOTIFICATION_SLACK_WEBHOOK_URL:
+  NOTIFICATION_ENVIRONMENT: ONPREM
+  ENABLE_ACCESS_CONTROL: false
+  ACCESS_CONTROL_SERVICE_BASE_URL:
+  ENABLE_AUDIT: true
+  AUDIT_CLIENT_BASE_URL:
+  DISTRIBUTED_LOCK_IMPLEMENTATION: REDIS
+  GOOGLE_APPLICATION_CREDENTIALS: /opt/harness/monitoring/stackdriver.json
+  MEMORY: 512
+secrets:
+  IDENTITY_SERVICE_SECRET: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
+  MONGODB_USER: admin
+
+image:
+  registry: docker.io
+  repository: harness/accesscontrol-service-signed
+  pullPolicy: IfNotPresent
+  tag: "76000"
+  digest: ""
+  imagePullSecrets: []
+
+waitForInitContainer:
+  image:
+    registry: docker.io
+    repository: harness/helm-init-container
+    pullPolicy: IfNotPresent
+    tag: "latest"
+    digest: ""
+    imagePullSecrets: []
+
+mongoSecrets:
+  userName:
+    name: harness-secrets
+    key: mongodbUsername
+  password:
+    name: mongodb-replicaset-chart
+    key: mongodb-root-password
+
+slackWebhookURL: ""
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "harness-default"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  runAsUser: 65534
+  runAsNonRoot: true
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 9006
+
+resources:
+  limits:
+    cpu: 0.5
+    memory: 8192Mi
+  requests:
+    cpu: 0.5
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
