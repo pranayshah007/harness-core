@@ -93,7 +93,6 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void shouldForceDeleteServiceInstances() {
-    doReturn(true).when(serviceEntityManagementService).isForceDeleteFFEnabled(accountIdentifier);
     doReturn(true).when(serviceEntityManagementService).isNgSettingsFFEnabled(accountIdentifier);
     doReturn(true).when(serviceEntityManagementService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
     List<InstanceDTO> instanceDTOList = new ArrayList<>();
@@ -112,9 +111,8 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void shouldForceDeleteServiceInstanceFalse() {
-    doReturn(false).when(serviceEntityManagementService).isForceDeleteFFEnabled(accountIdentifier);
     doReturn(true).when(serviceEntityManagementService).isNgSettingsFFEnabled(accountIdentifier);
-    doReturn(true).when(serviceEntityManagementService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    doReturn(false).when(serviceEntityManagementService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
     List<InstanceDTO> instanceDTOList = new ArrayList<>();
     instanceDTOList.add(getInstance());
     instanceDTOList.add(getInstance());
