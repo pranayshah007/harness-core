@@ -181,8 +181,8 @@ public class GovernanceRuleResourceTest extends CategoryTest {
                           .targetRegions(Collections.singletonList(REGION))
                           .targetAccounts(Collections.singletonList(ACCOUNT_ID))
                           .build();
-    ruleEnforcementManagement = new GovernanceRuleEnforcementResource(
-        ruleEnforcementService, telemetryReporter, transactionTemplate, outboxService, configuration, rbacHelper);
+    ruleEnforcementManagement = new GovernanceRuleEnforcementResource(ruleEnforcementService, telemetryReporter,
+        transactionTemplate, outboxService, configuration, rbacHelper, governanceRuleService);
     when(ruleEnforcementService.listId(ACCOUNT_ID, UUIDENF, false)).thenReturn(ruleEnforcement);
   }
 
