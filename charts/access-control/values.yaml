@@ -3,6 +3,21 @@
 # Declare variables to be passed into your templates.
 global:
   ha: false
+  ingress:
+    enabled: false
+    className: harness
+    hosts:
+      - my-host.example.org
+    tls:
+      enabled: true
+      secretName: ''
+    istio:
+      enabled: false
+      gateway:
+        create: false
+      virtualService:
+        gateways:
+        hosts:
   imagePullSecrets: []
 
 replicaCount: 1
