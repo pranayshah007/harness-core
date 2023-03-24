@@ -7,7 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.beans.slotargetspec;
 
-import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 
@@ -31,7 +31,7 @@ public class RequestBasedServiceLevelIndicatorSpec extends ServiceLevelIndicator
   @NotNull String metric2;
 
   @Override
-  public SLIExecutionType getType() {
-    return SLIExecutionType.REQUEST;
+  public SLIEvaluationType getType() {
+    return SLIEvaluationType.REQUEST;
   }
 }

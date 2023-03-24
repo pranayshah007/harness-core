@@ -228,7 +228,7 @@ public class ApplicationManifestYamlHandlerTest extends YamlHandlerTestBase {
                                             .withValue(GitConfig.builder().build())
                                             .build();
     when(settingsService.get(CONNECTOR_ID)).thenReturn(settingAttribute);
-    when(settingsService.getByName(ACCOUNT_ID, APP_ID, CONNECTOR_NAME)).thenReturn(settingAttribute);
+    when(settingsService.getConnectorByName(ACCOUNT_ID, APP_ID, CONNECTOR_NAME)).thenReturn(settingAttribute);
 
     when(featureFlagService.isEnabled(FeatureName.CUSTOM_MANIFEST, ACCOUNT_ID)).thenReturn(true);
   }

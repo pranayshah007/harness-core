@@ -163,6 +163,7 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
               .newApplicationDetails(response.getNewApplicationInfo())
               .manifestsPackage(tasExecutionPassThroughData.getTasManifestsPackage())
               .cfAppNamePrefix(tasExecutionPassThroughData.getApplicationName())
+              .instanceCountType(tasBasicAppSetupStepParameters.getTasInstanceCountType())
               .build(),
           StepCategory.STEP.name());
       TasSetupVariablesOutcomeBuilder tasSetupVariablesOutcome =

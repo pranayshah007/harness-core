@@ -104,18 +104,25 @@ public class FailureStrategiesUtils {
   }
 
   public void validateRetryFailureAction(RetryFailureActionConfig retryAction) {
-    ParameterField<Integer> retryCount = retryAction.getSpecConfig().getRetryCount();
     if (retryAction.getSpecConfig() == null) {
       throw new InvalidRequestException("Retry Spec cannot be null or empty");
+    }
+
+    ParameterField<Integer> retryCount = retryAction.getSpecConfig().getRetryCount();
+    if (retryCount.getValue() == null) {
+      throw new InvalidRequestException("Retry Count cannot be null or empty");
+    }
+    if (retryAction.getSpecConfig().getRetryIntervals().getValue() == null) {
+      throw new InvalidRequestException("Retry Interval cannot be null or empty");
+    }
+    if (retryAction.getSpecConfig().getOnRetryFailure() == null) {
+      throw new InvalidRequestException("Retry Action cannot be null or empty");
     }
     if (retryCount.isExpression()) {
       throw new InvalidRequestException("RetryCount fixed value is not given.");
     }
     if (retryAction.getSpecConfig().getRetryIntervals().isExpression()) {
       throw new InvalidRequestException("RetryIntervals cannot be expression/runtime input. Please give values.");
-    }
-    if (retryAction.getSpecConfig().getOnRetryFailure() == null) {
-      throw new InvalidRequestException("Retry Action cannot be null or empty");
     }
     FailureStrategyActionConfig actionUnderRetry = retryAction.getSpecConfig().getOnRetryFailure().getAction();
 
@@ -133,6 +140,21 @@ public class FailureStrategiesUtils {
   }
 
   public void validateManualInterventionFailureAction(ManualInterventionFailureActionConfig actionConfig) {
+    if (actionConfig.getSpecConfig() == null) {
+      throw new InvalidRequestException("ManualIntervention Spec cannot be null or empty.");
+    }
+    if (actionConfig.getSpecConfig().getOnTimeout() == null) {
+      throw new InvalidRequestException("Action onTimeout of ManualIntervention cannot be null or empty.");
+    }
+    if (actionConfig.getSpecConfig().getTimeout().getValue() == null) {
+      throw new InvalidRequestException(
+          "Timeout period for ManualIntervention cannot be null or empty. Please give values");
+    }
+    if (actionConfig.getSpecConfig().getTimeout().isExpression()) {
+      throw new InvalidRequestException(
+          "Timeout period for ManualIntervention cannot be expression/runtime input. Please give values.");
+    }
+
     FailureStrategyActionConfig actionUnderManualIntervention = actionConfig.getSpecConfig().getOnTimeout().getAction();
     if (actionUnderManualIntervention.getType().equals(NGFailureActionType.MANUAL_INTERVENTION)) {
       throw new InvalidRequestException("Manual Action cannot be applied as PostTimeOut Action");

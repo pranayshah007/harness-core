@@ -304,7 +304,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String COMMANDS = "Commands";
   private static final String ELASTIGROUP = "Elastigroup";
   private static final String TAS = "TAS";
-  private static final String ASG = "AutoScalingGroup";
+  private static final String ASG = "AWS Auto Scaling Group";
   private static final String AWS_LAMBDA = "AwsLambda";
 
   private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
@@ -1165,7 +1165,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo asgCanaryDeploy =
         StepInfo.newBuilder()
-            .setName("Asg Canary Deploy")
+            .setName("ASG Canary Deploy")
             .setType(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
@@ -1173,7 +1173,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo asgCanaryDelete =
         StepInfo.newBuilder()
-            .setName("Asg Canary Delete")
+            .setName("ASG Canary Delete")
             .setType(StepSpecTypeConstants.ASG_CANARY_DELETE)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
@@ -1236,7 +1236,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo asgRollingDeploy =
         StepInfo.newBuilder()
-            .setName("Asg Rolling Deploy")
+            .setName("ASG Rolling Deploy")
             .setType(StepSpecTypeConstants.ASG_ROLLING_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
@@ -1244,7 +1244,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo asgRollingRollback =
         StepInfo.newBuilder()
-            .setName("Asg Rolling Rollback")
+            .setName("ASG Rolling Rollback")
             .setType(StepSpecTypeConstants.ASG_ROLLING_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
@@ -1252,7 +1252,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo asgBlueGreenDeploy =
         StepInfo.newBuilder()
-            .setName("Asg Blue Green Deploy")
+            .setName("ASG Blue Green Deploy")
             .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
@@ -1260,7 +1260,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo asgBlueGreenRollback =
         StepInfo.newBuilder()
-            .setName("Asg Blue Green Rollback")
+            .setName("ASG Blue Green Rollback")
             .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
@@ -1296,7 +1296,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo asgBlueGreenSwapService =
         StepInfo.newBuilder()
-            .setName("Asg Blue Green Swap Service")
+            .setName("ASG Blue Green Swap Service")
             .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())

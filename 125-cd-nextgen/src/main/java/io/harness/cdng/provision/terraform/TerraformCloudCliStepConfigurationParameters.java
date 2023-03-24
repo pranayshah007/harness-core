@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -25,6 +26,7 @@ public class TerraformCloudCliStepConfigurationParameters implements TerraformSt
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
 
   TerraformExecutionDataParameters spec;
+  List<TerraformCliOptionFlag> commandFlags;
 
   @Override
   public TerraformCloudCliStepConfigurationType getType() {
@@ -45,5 +47,15 @@ public class TerraformCloudCliStepConfigurationParameters implements TerraformSt
   public ParameterField<Boolean> getIsSkipTerraformRefresh() {
     // always false for cloud CLI
     return ParameterField.createValueField(false);
+  }
+
+  @Override
+  public List<TerraformCliOptionFlag> getCliOptions() {
+    return commandFlags;
+  }
+
+  @Override
+  public void setCliOptions(List<TerraformCliOptionFlag> cliOptionFlags) {
+    this.commandFlags = cliOptionFlags;
   }
 }

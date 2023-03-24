@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.clienttools.TerraformConfigInspectVersion;
 import io.harness.git.model.GitBaseRequest;
 import io.harness.logging.LogCallback;
 import io.harness.logging.PlanLogOutputStream;
@@ -21,6 +22,8 @@ import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.terraform.TerraformStepResponse;
 import io.harness.terraform.request.TerraformExecuteStepRequest;
+
+import software.wings.beans.delegation.TerraformProvisionParameters;
 
 import java.io.File;
 import java.io.IOException;
@@ -104,4 +107,6 @@ public interface TerraformBaseHelper {
 
   TerraformPlanSummary generateTerraformPlanSummary(
       int exitCode, LogCallback logCallback, PlanLogOutputStream planLogOutputStream);
+
+  TerraformConfigInspectVersion getTerraformConfigInspectVersion(TerraformProvisionParameters parameters);
 }

@@ -87,6 +87,22 @@ public class ServiceNowResource {
   }
 
   @GET
+  @Path("ticketTypesV2")
+  @ApiOperation(value = "Get serviceNow ticket types V2", nickname = "getServiceNowTicketTypesV2")
+  public ResponseDTO<List<ServiceNowTicketTypeDTO>> getTicketTypesV2(
+      @NotNull @QueryParam("connectorRef") String serviceNowConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgId,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectId,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(serviceNowConnectorRef, accountId, orgId, projectId);
+    List<ServiceNowTicketTypeDTO> ticketTypesList =
+        serviceNowResourceService.getTicketTypesV2(connectorRef, orgId, projectId);
+    return ResponseDTO.newResponse(ticketTypesList);
+  }
+
+  @GET
   @Path("createMetadata")
   @ApiOperation(value = "Get ServiceNow issue create metadata", nickname = "getServiceNowIssueCreateMetadata")
   public ResponseDTO<List<ServiceNowFieldNG>> getIssueCreateMetadata(

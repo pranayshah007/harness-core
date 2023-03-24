@@ -39,5 +39,4 @@ public class AzureConfigContext {
   private AzureOSType azureOSType;
   private AzureHostConnectionType azureHostConnectionType;
   private Map<String, String> tags;
-  private boolean shouldUseExecFormat;
 }

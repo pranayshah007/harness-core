@@ -7,6 +7,7 @@
 
 package software.wings.beans.accountdetails.outbox;
 
+import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.KAPIL;
 
@@ -15,7 +16,6 @@ import static software.wings.beans.accountdetails.AccountDetailsConstants.DEFAUL
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.category.element.UnitTests;
@@ -39,7 +39,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 public class AccountDetailsOutboxEventHandlerTest extends WingsBaseTest {
   @Inject private AccountDetailsOutboxEventHandler accountDetailsOutboxEventHandler;
 

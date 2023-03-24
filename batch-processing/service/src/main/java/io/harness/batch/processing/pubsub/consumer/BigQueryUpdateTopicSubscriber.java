@@ -18,6 +18,9 @@ import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingHistoryS
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 
+import software.wings.beans.Account;
+import software.wings.service.intfc.instance.CloudToHarnessMappingService;
+
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.rpc.AlreadyExistsException;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -29,8 +32,11 @@ import com.google.inject.Singleton;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import com.google.pubsub.v1.Subscription;
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.helpers.MessageFormatter;
 
@@ -48,6 +54,7 @@ public class BigQueryUpdateTopicSubscriber {
   @Inject BusinessMappingService businessMappingService;
   @Inject BusinessMappingHistoryService businessMappingHistoryService;
   @Inject ViewsQueryBuilder viewsQueryBuilder;
+  @Inject CloudToHarnessMappingService cloudToHarnessMappingService;
   Subscriber subscriber;
 
   public void subscribeAsync() throws IOException {
@@ -82,11 +89,15 @@ public class BigQueryUpdateTopicSubscriber {
       }
     }
 
+    // Get list of accounts in the current cluster
+    List<Account> ceEnabledAccounts = cloudToHarnessMappingService.getCeEnabledAccounts();
+    Set<String> accountsInCluster = ceEnabledAccounts.stream().map(Account::getUuid).collect(Collectors.toSet());
+
     ProjectSubscriptionName projectSubscriptionName = ProjectSubscriptionName.of(gcpProjectId, gcpSubscriptionName);
     subscriber = Subscriber
                      .newBuilder(projectSubscriptionName,
-                         new BigQueryUpdateMessageReceiver(
-                             bigQueryHelper, bigQueryHelperService, businessMappingHistoryService, viewsQueryBuilder))
+                         new BigQueryUpdateMessageReceiver(bigQueryHelper, bigQueryHelperService,
+                             businessMappingHistoryService, viewsQueryBuilder, accountsInCluster))
                      .setCredentialsProvider(credentialsProvider)
                      .build();
 

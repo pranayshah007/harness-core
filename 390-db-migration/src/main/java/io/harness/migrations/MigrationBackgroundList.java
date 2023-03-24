@@ -152,6 +152,7 @@ import io.harness.migrations.all.UpdateAccountEncryptionClassNames;
 import io.harness.migrations.all.UpdateCorruptedEmptyClusterNameInstanceStatsMigration;
 import io.harness.migrations.all.UpdateCorruptedInstanceStatsMigration;
 import io.harness.migrations.all.UpdateInstanceInfoWithLastArtifactIdMigration;
+import io.harness.migrations.all.UpdateIsCrossGenerationAccessEnabledForAllAccountsMigration;
 import io.harness.migrations.all.UpdateNameInAwsInfrastructureMappingMigration;
 import io.harness.migrations.all.UpdateStaleDefaultAccountIds;
 import io.harness.migrations.all.UpdateWorkflowExecutionAccountId;
@@ -421,6 +422,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(243, ApiKeyLocalToKMSMigration.class))
         .add(Pair.of(244, ForAllAccountsAddIsCrossGenerationAccessEnabledMigration.class))
         .add(Pair.of(245, EncryptDelegateTokenMigration.class))
+        .add(Pair.of(246, UpdateIsCrossGenerationAccessEnabledForAllAccountsMigration.class))
         .build();
   }
 }

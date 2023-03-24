@@ -183,3 +183,4 @@ io.harness.plancreator.policy.PolicyConfig
 io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig
 io.harness.ssca.cd.beans.stepnode.SscaOrchestrationStepNode
 io.harness.ssca.cd.beans.stepinfo.CdSscaOrchestrationStepInfo
+io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput

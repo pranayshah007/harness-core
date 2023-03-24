@@ -9,8 +9,11 @@ package io.harness.ccm.views.service;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.RuleList;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResponseDTO;
 
 import java.util.List;
+import java.util.Set;
 
 public interface GovernanceRuleService {
   boolean save(Rule policy);
@@ -24,4 +27,6 @@ public interface GovernanceRuleService {
   void customRuleLimit(String accountId);
   void custodianValidate(Rule rule);
   void validateAWSSchema(Rule rule);
+  Set<ConnectorInfoDTO> getConnectorResponse(String accountId, Set<String> targetAccounts);
+  List<ConnectorResponseDTO> getAWSConnectorWithTargetAccounts(List<String> accounts, String accountId);
 }

@@ -296,7 +296,7 @@ public class AppDynamicsResourceTest extends CvNextGenTestBase {
         .isEqualTo(builderFactory.getClock().instant().minus(Duration.ofHours(1)).toEpochMilli());
     assertThat(appdynamicsMetricDataResponse.getEndTime())
         .isEqualTo(builderFactory.getClock().instant().toEpochMilli());
-    assertThat(appdynamicsMetricDataResponse.getDataPoints().size()).isEqualTo(5);
+    assertThat(appdynamicsMetricDataResponse.getDataPoints().size()).isEqualTo(6);
     assertThat(appdynamicsMetricDataResponse.getDataPoints().get(0).getTimestamp()).isEqualTo(1595760660000L);
     assertThat(appdynamicsMetricDataResponse.getDataPoints().get(0).getValue()).isEqualTo(233.0);
   }
@@ -360,7 +360,7 @@ public class AppDynamicsResourceTest extends CvNextGenTestBase {
         .isEqualTo(builderFactory.getClock().instant().minus(Duration.ofHours(1)).toEpochMilli());
     assertThat(appdynamicsMetricDataResponse.getEndTime())
         .isEqualTo(builderFactory.getClock().instant().toEpochMilli());
-    assertThat(appdynamicsMetricDataResponse.getDataPoints().size()).isEqualTo(5);
+    assertThat(appdynamicsMetricDataResponse.getDataPoints().size()).isEqualTo(6);
     assertThat(appdynamicsMetricDataResponse.getDataPoints().get(0).getTimestamp()).isEqualTo(1595760660000L);
     assertThat(appdynamicsMetricDataResponse.getDataPoints().get(0).getValue()).isEqualTo(233.0);
   }

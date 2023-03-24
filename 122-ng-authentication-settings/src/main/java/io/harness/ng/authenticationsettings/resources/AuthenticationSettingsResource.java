@@ -27,6 +27,7 @@ import io.harness.ng.authenticationsettings.impl.AuthenticationSettingsService;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
+import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
 import io.harness.rest.RestResponse;
 import io.harness.stream.BoundedInputStream;
@@ -474,6 +475,29 @@ public class AuthenticationSettingsResource {
         ResourceScope.of(accountIdentifier, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     boolean response =
         authenticationSettingsService.setTwoFactorAuthAtAccountLevel(accountIdentifier, twoFactorAdminOverrideSettings);
+    return new RestResponse<>(response);
+  }
+
+  @PUT
+  @Path("/session-timeout-account-level")
+  @ApiOperation(value = "Set account level session timeout", nickname = "setSessionTimeoutAtAccountLevel")
+  @Operation(operationId = "setSessionTimeoutAtAccountLevel", summary = "Set session timeout at account level",
+      description = "Sets session timeout of all users for the given Account ID.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Successfully configured session timeout for an account")
+      })
+  public RestResponse<Boolean>
+  setSessionTimeoutAtAccountLevel(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                                      "accountIdentifier") @NotNull String accountIdentifier,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
+          description = "Information about the session timeout for all users of this account in minutes.") @NotNull
+      @Valid SessionTimeoutSettings sessionTimeoutSettings) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
+    boolean response =
+        authenticationSettingsService.setSessionTimeoutAtAccountLevel(accountIdentifier, sessionTimeoutSettings);
     return new RestResponse<>(response);
   }
 }

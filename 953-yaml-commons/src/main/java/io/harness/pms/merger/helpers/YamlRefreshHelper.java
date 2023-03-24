@@ -65,7 +65,8 @@ public class YamlRefreshHelper {
     ObjectNode dummySourceNodeSpecNode = mapper.createObjectNode();
     dummySourceNodeSpecNode.set(DUMMY_NODE, sourceNode);
     String dummySourceNodeSpecYaml = convertToYaml(dummySourceNodeSpecNode);
-    String sourceNodeInputSetFormatYaml = RuntimeInputFormHelper.createTemplateFromYaml(dummySourceNodeSpecYaml);
+    String sourceNodeInputSetFormatYaml =
+        RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(dummySourceNodeSpecYaml);
 
     // if there are no runtime inputs in source node, return null
     if (sourceNodeInputSetFormatYaml == null) {

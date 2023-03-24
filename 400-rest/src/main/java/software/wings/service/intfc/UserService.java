@@ -673,4 +673,6 @@ public interface UserService extends OwnedByAccount {
       String userId, int pageIndex, int pageSize, String searchTerm);
 
   boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
+
+  void removeAllUserGroupsFromUser(User user, String accountId);
 }

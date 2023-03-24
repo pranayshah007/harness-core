@@ -53,7 +53,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("projects")
 @TypeAlias("projects")
 @ChangeDataCapture(table = "projects", dataStore = "ng-harness", fields = {}, handler = "Projects")
-@ChangeDataCapture(table = "tags_info", dataStore = "ng-harness", fields = {}, handler = "TagsInfoCD")
 @ChangeDataCapture(table = "tags_info_ng", dataStore = "ng-harness", fields = {}, handler = "TagsInfoNGCD")
 public class Project implements PersistentEntity, NGAccountAccess {
   public static List<MongoIndex> mongoIndexes() {

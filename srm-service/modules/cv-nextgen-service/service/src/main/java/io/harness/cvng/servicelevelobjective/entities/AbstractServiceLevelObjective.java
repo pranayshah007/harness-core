@@ -75,6 +75,9 @@ public abstract class AbstractServiceLevelObjective
   List<String> userJourneyIdentifiers;
   List<NotificationRuleRef> notificationRuleRefs;
   @NotNull ServiceLevelObjective.SLOTarget sloTarget;
+
+  SLOTarget target;
+
   private boolean enabled;
   private long lastUpdatedAt;
   private long createdAt;

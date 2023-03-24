@@ -10,17 +10,23 @@ package io.harness.ssca.cd.beans.stepinfo;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.ssca.beans.SscaConstants;
+import io.harness.ssca.beans.source.ImageSbomSource;
+import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -36,7 +42,8 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias(SscaConstants.CD_SSCA_ORCHESTRATION_STEP_NODE)
 @OwnedBy(HarnessTeam.SSCA)
 @RecasterAlias("io.harness.ssca.cd.beans.stepinfo.CdSscaOrchestrationStepInfo")
-public class CdSscaOrchestrationStepInfo extends CdSscaOrchestrationBaseStepInfo implements PMSStepInfo {
+public class CdSscaOrchestrationStepInfo
+    extends CdSscaOrchestrationBaseStepInfo implements PMSStepInfo, WithConnectorRef {
   @VariableExpression(skipVariableExpression = true) public static final int DEFAULT_RETRY = 1;
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -62,5 +69,14 @@ public class CdSscaOrchestrationStepInfo extends CdSscaOrchestrationBaseStepInfo
         .attestation(this.attestation)
         .infrastructure(this.infrastructure)
         .build();
+  }
+
+  @Override
+  public Map<String, ParameterField<String>> extractConnectorRefs() {
+    Map<String, ParameterField<String>> connectorMap = new HashMap<>();
+    if (source != null && SbomSourceType.IMAGE.equals(source.getType())) {
+      connectorMap.put("source.spec.connector", ((ImageSbomSource) source.getSbomSourceSpec()).getConnector());
+    }
+    return connectorMap;
   }
 }

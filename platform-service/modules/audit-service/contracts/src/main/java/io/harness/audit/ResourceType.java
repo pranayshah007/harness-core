@@ -19,7 +19,6 @@ public enum ResourceType {
   RESOURCE_GROUP(ResourceTypeConstants.RESOURCE_GROUP),
   USER(ResourceTypeConstants.USER),
   ROLE(ResourceTypeConstants.ROLE),
-  ROLE_ASSIGNMENT(ResourceTypeConstants.ROLE_ASSIGNMENT),
   PIPELINE(ResourceTypeConstants.PIPELINE),
   TRIGGER(ResourceTypeConstants.TRIGGER),
   TEMPLATE(ResourceTypeConstants.TEMPLATE),

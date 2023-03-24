@@ -44,6 +44,7 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.exception.AwsAutoScaleException;
 import io.harness.exception.AwsCFException;
 import io.harness.exception.AwsECSException;
+import io.harness.exception.AwsEKSException;
 import io.harness.exception.AwsIAMRolesException;
 import io.harness.exception.AwsInstanceException;
 import io.harness.exception.AwsLoadBalancerException;
@@ -89,6 +90,7 @@ public class AwsResourceServiceImpl implements AwsResourceService {
   private static final String yamlResourceFilePath = "aws/aws.yaml";
   @Inject private AwsResourceServiceHelper serviceHelper;
   @Inject private GitResourceServiceHelper gitResourceServiceHelper;
+  private static final String EKS_GET_CLUSTERS_EXCEPTION_MESSAGE = "Failed to get AWS EKS clusters";
 
   @Override
   public List<String> getCapabilities() {
@@ -548,5 +550,33 @@ public class AwsResourceServiceImpl implements AwsResourceService {
       throw new AwsLoadBalancerException("Failed to get aws elastic load balancer listener rules");
     }
     return response.getListenerRulesArn();
+  }
+
+  public List<String> getEKSClusterNames(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier) {
+    BaseNGAccess access =
+        serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+
+    AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
+    List<EncryptedDataDetail> encryptedData = serviceHelper.getAwsEncryptionDetails(awsConnector, access);
+    AwsTaskParams awsTaskParams =
+        AwsTaskParams.builder().awsConnector(awsConnector).encryptionDetails(encryptedData).build();
+
+    DelegateResponseData responseData =
+        serviceHelper.getResponseData(access, awsTaskParams, TaskType.AWS_EKS_LIST_CLUSTERS_TASK.name());
+    return getEKSClusterNamesFromResponse(responseData);
+  }
+
+  private List<String> getEKSClusterNamesFromResponse(DelegateResponseData responseData) {
+    if (responseData instanceof ErrorNotifyResponseData) {
+      ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
+      throw new AwsEKSException(
+          String.format("%s: %s", EKS_GET_CLUSTERS_EXCEPTION_MESSAGE, errorNotifyResponseData.getErrorMessage()));
+    }
+    AwsListClustersTaskResponse response = (AwsListClustersTaskResponse) responseData;
+    if (response.getCommandExecutionStatus() != SUCCESS) {
+      throw new AwsEKSException(EKS_GET_CLUSTERS_EXCEPTION_MESSAGE);
+    }
+    return response.getClusters();
   }
 }

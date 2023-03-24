@@ -30,6 +30,7 @@ import io.harness.ng.authenticationsettings.dtos.mechanisms.UsernamePasswordSett
 import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.api.UserGroupService;
+import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
 
 import software.wings.beans.loginSettings.LoginSettings;
@@ -73,12 +74,14 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     log.info("NGAuthSettings list for accountId {}: {}", accountIdentifier, settingsList);
 
     boolean twoFactorEnabled = getResponse(managerClient.twoFactorEnabled(accountIdentifier));
+    Integer sessionTimeoutInMinutes = getResponse(managerClient.getSessionTimeoutAtAccountLevel(accountIdentifier));
 
     return AuthenticationSettingsResponse.builder()
         .whitelistedDomains(whitelistedDomains)
         .ngAuthSettings(settingsList)
         .authenticationMechanism(ssoConfig.getAuthenticationMechanism())
         .twoFactorEnabled(twoFactorEnabled)
+        .sessionTimeoutInMinutes(sessionTimeoutInMinutes)
         .build();
   }
 
@@ -260,6 +263,12 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
   public LoginTypeResponse getSAMLLoginTest(@NotNull @AccountIdentifier String accountIdentifier) {
     return getResponse(managerClient.getSAMLLoginTest(accountIdentifier));
+  }
+
+  @Override
+  public boolean setSessionTimeoutAtAccountLevel(
+      @AccountIdentifier String accountIdentifier, SessionTimeoutSettings sessionTimeoutSettings) {
+    return getResponse(managerClient.setSessionTimeoutAtAccountLevel(accountIdentifier, sessionTimeoutSettings));
   }
 
   @Override

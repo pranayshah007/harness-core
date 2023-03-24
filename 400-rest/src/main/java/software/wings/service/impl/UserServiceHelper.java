@@ -38,7 +38,7 @@ public class UserServiceHelper {
     if (accountService.isNextGenEnabled(accountId) && isUserPartOfDeletedAccount(user, accountId)) {
       Boolean userMembershipCheck =
           NGRestUtils.getResponse(userMembershipClient.isUserInScope(user.getUuid(), accountId, null, null));
-      log.info("User {} is {} of nextgen in account {}", user.getUuid(),
+      log.info("User {} is {} part of nextgen in account {}", user.getUuid(),
           Boolean.TRUE.equals(userMembershipCheck) ? "" : "not", accountId);
       if (Boolean.TRUE.equals(userMembershipCheck)) {
         return true;

@@ -37,6 +37,7 @@ import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTask
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,7 +58,8 @@ public class NativeHelmInstanceSyncPerpetualTaskExcecutor implements PerpetualTa
   private static final int DEFAULT_STEADY_STATE_TIMEOUT = 5;
   private static final String SUCCESS_RESPONSE_MSG = "success";
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+
   @Inject private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -107,10 +109,10 @@ public class NativeHelmInstanceSyncPerpetualTaskExcecutor implements PerpetualTa
     return NativeHelmDeploymentReleaseData.builder()
         .releaseName(nativeHelmDeploymentRelease.getReleaseName())
         .namespaces(new LinkedHashSet<>(nativeHelmDeploymentRelease.getNamespacesList()))
-        .k8sInfraDelegateConfig((K8sInfraDelegateConfig) kryoSerializer.asObject(
+        .k8sInfraDelegateConfig((K8sInfraDelegateConfig) referenceFalseKryoSerializer.asObject(
             nativeHelmDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()))
-        .helmChartInfo(
-            (HelmChartInfo) kryoSerializer.asObject(nativeHelmDeploymentRelease.getHelmChartInfo().toByteArray()))
+        .helmChartInfo((HelmChartInfo) referenceFalseKryoSerializer.asObject(
+            nativeHelmDeploymentRelease.getHelmChartInfo().toByteArray()))
         .build();
   }
 

@@ -57,7 +57,7 @@ public class GitFileConfigHelperServiceTest extends WingsBaseTest {
     SettingAttribute setting = aSettingAttribute().withUuid("uuid").build();
     GitFileConfig gitFileConfig = getBaseGitFileConfig();
 
-    doReturn(setting).when(settingsService).getByName(ACCOUNT_ID, APP_ID, gitFileConfig.getConnectorName());
+    doReturn(setting).when(settingsService).getConnectorByName(ACCOUNT_ID, APP_ID, gitFileConfig.getConnectorName());
     GitFileConfig newGitFileConfig = configHelperService.getGitFileConfigFromYaml(ACCOUNT_ID, APP_ID, gitFileConfig);
     assertThat(newGitFileConfig.getConnectorId()).isEqualTo(setting.getUuid());
     assertThat(newGitFileConfig.getConnectorName()).isNull();

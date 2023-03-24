@@ -76,6 +76,7 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(ServiceNowUpdateStep.STEP_TYPE, ServiceNowUpdateStep.class);
     engineSteps.put(ServiceNowImportSetStep.STEP_TYPE, ServiceNowImportSetStep.class);
     engineSteps.put(StagesStep.STEP_TYPE, StagesStep.class);
+    engineSteps.put(StagesStep.DEPRECATED_STEP_TYPE, StagesStep.class);
     engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
 
     // Feature Flag

@@ -10,6 +10,7 @@ package io.harness.idp.plugin.services;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.common.Constants;
 import io.harness.idp.common.FileUtils;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
@@ -20,6 +21,8 @@ import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
 import io.harness.spec.server.idp.v1.model.PluginInfo;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PluginInfoServiceImpl implements PluginInfoService {
   private static final String CONFIGS_FOLER = "configs/";
+  private static final String SCHEMA_FOLER = "schemas/";
   private static final String YAML_EXT = ".yaml";
   private PluginInfoRepository pluginInfoRepository;
   private ConfigManagerService configManagerService;
@@ -57,7 +61,27 @@ public class PluginInfoServiceImpl implements PluginInfoService {
       throw new InvalidRequestException(String.format("Plugin Info not found for pluginId [%s]", identifier));
     }
     AppConfig appConfig = configManagerService.getPluginConfig(harnessAccount, identifier);
-    String staticConfig = FileUtils.readFile(CONFIGS_FOLER, identifier, YAML_EXT);
-    return PluginDetailedInfoMapper.toDTO(pluginInfoEntity.get(), appConfig, staticConfig);
+    return PluginDetailedInfoMapper.toDTO(pluginInfoEntity.get(), appConfig);
+  }
+
+  @Override
+  public void saveAllPluginInfo() {
+    Constants.pluginIds.forEach(id -> {
+      try {
+        savePluginInfo(id);
+      } catch (Exception e) {
+        String errorMessage = String.format("Error occurred while saving plugin details for pluginId: [%s]", id);
+        log.error(errorMessage, e);
+      }
+    });
+  }
+
+  public void savePluginInfo(String identifier) throws Exception {
+    String schema = FileUtils.readFile(SCHEMA_FOLER, identifier, YAML_EXT);
+    String config = FileUtils.readFile(CONFIGS_FOLER, identifier, YAML_EXT);
+    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+    PluginInfoEntity pluginInfoEntity = objectMapper.readValue(schema, PluginInfoEntity.class);
+    pluginInfoEntity.setConfig(config);
+    pluginInfoRepository.saveOrUpdate(pluginInfoEntity);
   }
 }

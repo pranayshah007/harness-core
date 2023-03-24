@@ -15,6 +15,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureKubernetesClient;
 import io.harness.azure.model.AzureConfig;
+import io.harness.azure.model.AzureKubeconfigFormat;
 import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.NestedExceptionUtils;
 
@@ -45,7 +46,8 @@ public class AzureKubernetesClientImpl extends AzureClient implements AzureKuber
 
   @Override
   public String getClusterCredentials(AzureConfig azureConfig, String accessToken, String subscriptionId,
-      String resourceGroup, String aksClusterName, boolean shouldGetAdminCredentials) {
+      String resourceGroup, String aksClusterName, boolean shouldGetAdminCredentials,
+      AzureKubeconfigFormat azureKubeconfigFormat) {
     log.info(format(
         "Fetching cluster credentials [subscription: %s] [resourceGroup: %s] [aksClusterName: %s] [credentials: %s]",
         subscriptionId, resourceGroup, aksClusterName, shouldGetAdminCredentials ? "admin" : "user"));
@@ -59,7 +61,8 @@ public class AzureKubernetesClientImpl extends AzureClient implements AzureKuber
                       .listClusterAdminCredential(accessToken, subscriptionId, resourceGroup, aksClusterName);
       } else {
         request = getAzureKubernetesRestClient(azureConfig.getAzureEnvironmentType())
-                      .listClusterUserCredential(accessToken, subscriptionId, resourceGroup, aksClusterName);
+                      .listClusterUserCredential(
+                          accessToken, subscriptionId, resourceGroup, aksClusterName, azureKubeconfigFormat.getName());
       }
 
       Response<AksClusterCredentials> response = request.execute();

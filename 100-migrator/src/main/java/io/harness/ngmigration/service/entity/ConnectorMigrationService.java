@@ -198,6 +198,7 @@ public class ConnectorMigrationService extends NgMigrationService {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     NgEntityDetail ngEntityDetail = NgEntityDetail.builder()
+                                        .entityType(CONNECTOR)
                                         .identifier(identifier)
                                         .orgIdentifier(orgIdentifier)
                                         .projectIdentifier(projectIdentifier)
@@ -214,6 +215,7 @@ public class ConnectorMigrationService extends NgMigrationService {
         projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
         orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
         ngEntityDetail = NgEntityDetail.builder()
+                             .entityType(NGMigrationEntityType.SECRET)
                              .identifier(identifier)
                              .orgIdentifier(orgIdentifier)
                              .projectIdentifier(projectIdentifier)

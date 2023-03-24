@@ -138,7 +138,7 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
       ExecutionLogCallback executionLogCallback =
           k8sTaskHelper.getExecutionLogCallback(k8sBlueGreenDeployTaskParameters, FetchFiles);
       executionLogCallback.saveExecutionLog(
-          color("\nStarting Kubernetes Blue-Greeen Deployment", LogColor.White, LogWeight.Bold));
+          color("\nStarting Kubernetes Blue-Green Deployment", LogColor.White, LogWeight.Bold));
 
       success = k8sTaskHelper.fetchManifestFilesAndWriteToDirectory(
           k8sBlueGreenDeployTaskParameters.getK8sDelegateManifestConfig(),

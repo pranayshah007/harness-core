@@ -98,12 +98,15 @@ public class EntityYamlRootNames {
 
   public static final String AQUA_TRIVY = "AquaTrivy";
   public static final String AWS_ECR = "AWSECR";
+  public static final String AWS_SECURITY_HUB = "AWSSecurityHub";
   public static final String BANDIT = "Bandit";
   public static final String BLACKDUCK = "BlackDuck";
   public static final String BRAKEMAN = "Brakeman";
   public static final String BURP = "Burp";
   public static final String CHECKMARX = "Checkmarx";
   public static final String CLAIR = "Clair";
+
+  public static final String CUSTOM_INGEST = "CustomIngest";
   public static final String DATA_THEOREM = "DataTheorem";
   public static final String DOCKER_CONTENT_TRUST = "DockerContentTrust";
   public static final String EXTERNAL = "External";

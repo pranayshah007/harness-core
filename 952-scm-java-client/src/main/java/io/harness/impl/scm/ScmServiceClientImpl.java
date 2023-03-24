@@ -194,10 +194,16 @@ public class ScmServiceClientImpl implements ScmServiceClient {
 
     if (ScmResponseStatusUtils.isSuccessResponse(updateFileResponse.getStatus())
         && isEmpty(updateFileResponse.getCommitId())) {
-      // In case commit id is empty for any reason, we treat this as an error case even if file got updated on git
-      return UpdateFileResponse.newBuilder()
-          .setStatus(Constants.SCM_INTERNAL_SERVER_ERROR_CODE)
-          .setError(Constants.SCM_INTERNAL_SERVER_ERROR_MESSAGE)
+      GetLatestCommitOnFileResponse getLatestCommitOnFileResponse = getLatestCommitOnFile(
+          scmConnector, scmBlockingStub, gitFileDetails.getBranch(), gitFileDetails.getFilePath());
+      if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
+        return UpdateFileResponse.newBuilder()
+            .setStatus(Constants.HTTP_BAD_REQUEST_STATUS_CODE)
+            .setError(getLatestCommitOnFileResponse.getError())
+            .build();
+      }
+      return UpdateFileResponse.newBuilder(updateFileResponse)
+          .setCommitId(getLatestCommitOnFileResponse.getCommitId())
           .build();
     }
     return updateFileResponse;

@@ -7,14 +7,15 @@
 
 package io.harness.ng.core.migration.timescale;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.GTM;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.timescale.NGAbstractTimeScaleMigration;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 public class CreateModuleLicensesTable extends NGAbstractTimeScaleMigration {
   public static final String MODULE_LICENSES_TABLE_SQL_FILE = "timescale/create_module_licenses_table.sql";
 
