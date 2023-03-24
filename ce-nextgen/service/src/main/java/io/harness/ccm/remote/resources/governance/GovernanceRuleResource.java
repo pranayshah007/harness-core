@@ -663,6 +663,7 @@ public class GovernanceRuleResource {
       if (isEmpty(accountId)) {
         throw new InvalidRequestException("Missing accountId");
       }
+      rbacHelper.checkAccountExecutePermission(accountId, null, null, governanceJobEnqueueDTO.getIdentifier());
       List<Rule> rulesList = governanceRuleService.list(accountId, Arrays.asList(governanceJobEnqueueDTO.getRuleId()));
       if (rulesList == null) {
         log.error("For rule id {}: no rules exists in mongo. Nothing to enqueue", governanceJobEnqueueDTO.getRuleId());
