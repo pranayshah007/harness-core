@@ -12,6 +12,7 @@ import static io.harness.remote.client.NGRestUtils.getGeneralResponse;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
+import io.harness.ng.core.usergroups.filter.UserGroupFilterType;
 import io.harness.spec.server.idp.v1.UserGroupProxyApi;
 import io.harness.usergroupsng.remote.UserGroupsNGClient;
 
@@ -29,16 +30,17 @@ public class UserGroupProxyApiImpl implements UserGroupProxyApi {
 
   @IdpServiceAuthIfHasApiKey
   @Override
-  public Response getAllUsergroups(String harnessAccount, Integer page, Integer limit) {
+  public Response getAllUsergroups(String harnessAccount, Integer page, Integer limit, String filterType) {
     Object entity = getGeneralResponse(userGroupsNGClient.getUserGroupAggregateList(
-        harnessAccount, null, null, page, limit, null, null, null, null, 6));
+        harnessAccount, null, null, page, limit, null, null, null, UserGroupFilterType.valueOf(filterType), 6));
     return Response.ok(entity).build();
   }
 
   @IdpServiceAuthIfHasApiKey
   @Override
   public Response getUserGroup(String userGroupId, String harnessAccount) {
-    Object entity = getGeneralResponse(userGroupsNGClient.getUserGroupAggregate(harnessAccount, null, null, null));
+    Object entity =
+        getGeneralResponse(userGroupsNGClient.getUserGroupAggregate(userGroupId, harnessAccount, null, null));
     return Response.ok(entity).build();
   }
 }

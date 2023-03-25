@@ -10,6 +10,7 @@ package io.harness.usergroupsng.remote;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserGroupAggregateDTO;
 import io.harness.ng.core.usergroups.filter.UserGroupFilterType;
@@ -22,11 +23,10 @@ import retrofit2.http.Query;
 
 @OwnedBy(HarnessTeam.PL)
 public interface UserGroupsNGClient {
-  String USER_GROUPS_API = "aggregate/acl/usergroups/";
-  String USER_GROUP_IDENTIFIER_PATH = "{identifier}";
+  String USER_GROUPS_API = "aggregate/acl/usergroups";
 
   @GET(USER_GROUPS_API)
-  Call<ResponseDTO<UserGroupAggregateDTO>> getUserGroupAggregateList(
+  Call<ResponseDTO<PageResponse<UserGroupAggregateDTO>>> getUserGroupAggregateList(
       @Query(value = "accountIdentifier") String accountIdentifier,
       @Query(value = "orgIdentifier") String orgIdentifier,
       @Query(value = "projectIdentifier") String projectIdentifier, @Query(value = "pageIndex") int pageIndex,
@@ -34,7 +34,7 @@ public interface UserGroupsNGClient {
       @Query(value = "pageToken") String pageToken, @Query(value = "searchTerm") String searchTerm,
       @Query(value = "filterType") UserGroupFilterType filterType, @Query(value = "userSize") int userSize);
 
-  @GET(USER_GROUPS_API + USER_GROUP_IDENTIFIER_PATH)
+  @GET(USER_GROUPS_API + "/{identifier}")
   Call<ResponseDTO<UserGroupAggregateDTO>> getUserGroupAggregate(@Path(value = "identifier") String identifier,
       @Query(value = "accountIdentifier") String accountIdentifier,
       @Query(value = "orgIdentifier") String orgIdentifier,

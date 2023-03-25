@@ -542,23 +542,6 @@ paths:
       x-internal: true
       tags:
         - AppConfig
-  /v1/usergroups:
-    get:
-      summary: Get all usergroups
-      responses:
-        '200':
-          $ref: '#/components/responses/UserGroupResponse'
-      operationId: get-all-usergroups
-      x-internal: true
-      description: Get all usergroups
-      security:
-        - x-api-key: []
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Limit'
-      tags:
-        - UserGroupProxy
   /v1/user:
     parameters: []
     post:
@@ -577,9 +560,33 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
-  '/v1/usergroups/{user-group-id}':
+  /v1/user-groups:
+    get:
+      summary: Get all usergroups
+      responses:
+        '200':
+          $ref: '#/components/responses/UserGroupResponse'
+      operationId: get-all-usergroups
+      x-internal: true
+      description: Get all usergroups
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/FilterType'
+      tags:
+        - UserGroupProxy
+    parameters: []
+  '/v1/user-groups/{user-group-id}':
     parameters:
-      - $ref: '#/components/parameters/UserGroupId'
+      - name: user-group-id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: User Group Identifier
     get:
       summary: Get User Group
       responses:
@@ -1342,6 +1349,17 @@ components:
       schema:
         type: boolean
       description: flag for checking enablement/disablement
+    FilterType:
+      name: filter-type
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - INCLUDE_INHERITED_GROUPS
+          - EXCLUDE_INHERITED_GROUPS
+          - INCLUDE_CHILD_SCOPE_GROUPS
+      description: Filter user group
   requestBodies:
     BackstageEnvVariableRequest:
       content:

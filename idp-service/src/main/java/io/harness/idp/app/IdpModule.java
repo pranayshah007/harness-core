@@ -54,6 +54,8 @@ import io.harness.idp.provision.resource.ProvisionApiImpl;
 import io.harness.idp.provision.service.ProvisionService;
 import io.harness.idp.provision.service.ProvisionServiceImpl;
 import io.harness.idp.proxy.layout.LayoutProxyApiImpl;
+import io.harness.idp.proxy.user.UserProxyApiImpl;
+import io.harness.idp.proxy.usergroup.UserGroupProxyApiImpl;
 import io.harness.idp.serializer.IdpServiceRegistrars;
 import io.harness.idp.settings.resources.BackstagePermissionsApiImpl;
 import io.harness.idp.settings.service.BackstagePermissionsService;
@@ -93,6 +95,8 @@ import io.harness.spec.server.idp.v1.OnboardingResourceApi;
 import io.harness.spec.server.idp.v1.PluginInfoApi;
 import io.harness.spec.server.idp.v1.ProvisionApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
+import io.harness.spec.server.idp.v1.UserGroupProxyApi;
+import io.harness.spec.server.idp.v1.UserProxyApi;
 import io.harness.threading.ThreadPool;
 import io.harness.time.TimeModule;
 import io.harness.token.TokenClientModule;
@@ -257,6 +261,8 @@ public class IdpModule extends AbstractModule {
     bind(OnboardingService.class).to(OnboardingServiceImpl.class);
     bind(GitClientV2.class).to(GitClientV2Impl.class);
     bind(LayoutProxyApi.class).to(LayoutProxyApiImpl.class);
+    bind(UserProxyApi.class).to(UserProxyApiImpl.class);
+    bind(UserGroupProxyApi.class).to(UserGroupProxyApiImpl.class);
     bind(PluginInfoApi.class).to(PluginInfoApiImpl.class);
     bind(PluginInfoService.class).to(PluginInfoServiceImpl.class);
     bind(ScheduledExecutorService.class)
