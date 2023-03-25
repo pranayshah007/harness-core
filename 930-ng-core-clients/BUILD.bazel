@@ -22,7 +22,6 @@ java_library(
         "//954-connector-beans:module",
         "//955-setup-usage-sdk:module",
         "//960-ng-core-beans:module",
-        #        "//960-ng-core-beans/src/main/java/io/harness/ng/core/usergroups/dto:module",
         "//960-persistence:module",
         "//970-api-services-beans:module",
         "//970-ng-commons:module",
