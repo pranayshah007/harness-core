@@ -5,6 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.shell.ssh.xfer;
+package io.harness.shell.ssh.connection;
 
-public class ScpCommandData {}
+import lombok.Getter;
+
+@Getter
+public class SftpCommandData {
+  private String directory;
+  private String fileName;
+  private boolean cleanup;
+}

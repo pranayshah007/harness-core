@@ -5,11 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.shell.ssh;
+package io.harness.shell.ssh.agent.jsch;
+
+import io.harness.shell.ssh.agent.SshClient;
 
 import com.jcraft.jsch.Session;
+import lombok.Builder;
+import lombok.Getter;
 
-public class HJschClientImpl extends HSshClient {
+@Builder
+@Getter
+public class JschClient extends SshClient {
   private Session session;
   @Override
   public void close() throws Exception {

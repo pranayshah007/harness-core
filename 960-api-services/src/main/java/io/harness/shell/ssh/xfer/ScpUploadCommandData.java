@@ -5,17 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.shell.ssh.connection;
+package io.harness.shell.ssh.xfer;
 
-import io.harness.logging.CommandExecutionStatus;
+import io.harness.shell.AbstractScriptExecutor.FileProvider;
 
 import lombok.Builder;
 import lombok.Getter;
 
 @Builder
 @Getter
-public class ExecResponse {
-  private StringBuffer response;
-  private int exitCode;
-  private CommandExecutionStatus status;
+public class ScpUploadCommandData {
+  private String remoteFilePath;
+  private FileProvider fileProvider;
 }

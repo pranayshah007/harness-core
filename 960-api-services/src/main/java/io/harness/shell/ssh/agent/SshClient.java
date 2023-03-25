@@ -5,17 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.shell.ssh.connection;
+package io.harness.shell.ssh.agent;
 
-import io.harness.logging.CommandExecutionStatus;
+import lombok.extern.slf4j.Slf4j;
 
-import lombok.Builder;
-import lombok.Getter;
-
-@Builder
-@Getter
-public class ExecResponse {
-  private StringBuffer response;
-  private int exitCode;
-  private CommandExecutionStatus status;
-}
+@Slf4j
+public abstract class SshClient implements AutoCloseable {}
