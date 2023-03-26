@@ -18,6 +18,7 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.NodeType;
+import io.harness.plancreator.pipelinerollback.PipelineRollbackStageHelper;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -229,7 +230,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE) {
       updateRequired = updateIdentityStageOrStrategyNodes(planExecutionId, update) || updateRequired;
     }
-    if (OrchestrationUtils.isPipelineRollbackStage(nodeExecution)) {
+    if (PipelineRollbackStageHelper.isPipelineRollbackStage(nodeExecution)) {
       String previousStagePlanNodeId = nodeExecutionService.get(nodeExecution.getPreviousId()).getNodeId();
       ExecutionSummaryUpdateUtils.updateNextIdOfStageBeforePipelineRollback(
           update, nodeExecution.getNodeId(), previousStagePlanNodeId);

@@ -10,7 +10,6 @@ package io.harness.engine.utils;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.EngineExpressionEvaluator;
@@ -71,10 +70,6 @@ public class OrchestrationUtils {
     }
     return currentStepType.getStepCategory() == StepCategory.FORK
         && parentStepType.getStepCategory() == StepCategory.STAGES;
-  }
-
-  public static boolean isPipelineRollbackStage(NodeExecution nodeExecution) {
-    return nodeExecution.getStepType().getType().equals(OrchestrationStepTypes.PIPELINE_ROLLBACK_STAGE);
   }
 
   public static boolean isPipelineNode(NodeExecution nodeExecution) {
