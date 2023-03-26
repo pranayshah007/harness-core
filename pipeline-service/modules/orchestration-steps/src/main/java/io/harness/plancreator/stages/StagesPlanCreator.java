@@ -31,6 +31,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StagesStep;
 import io.harness.steps.common.NGSectionStepParameters;
+import io.harness.utils.ExecutionModeUtils;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -65,15 +66,10 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
     }
     PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
     ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
-    if (isNotRollbackMode(executionMode)) {
+    if (!ExecutionModeUtils.isRollbackMode(executionMode)) {
       PipelineRollbackStageHelper.addPipelineRollbackStageDependency(responseMap, ctx.getCurrentField());
     }
     return responseMap;
-  }
-
-  boolean isNotRollbackMode(ExecutionMode executionMode) {
-    return !(
-        executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK);
   }
 
   @Override
