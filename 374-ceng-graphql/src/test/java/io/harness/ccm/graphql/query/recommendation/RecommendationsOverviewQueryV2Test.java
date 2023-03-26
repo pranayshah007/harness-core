@@ -327,7 +327,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(viewService.get(eq(PERSPECTIVE_ID))).thenReturn(null);
 
     RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
-    Mockito.doReturn(allowedMockedRecommendations(null))
+    Mockito.doReturn(allowedMockedRecommendations(new ArrayList<>(List.of("id0"))))
         .when(overviewQueryV2)
         .listAllowedRecommendationsIdAndPerspectives(any());
 

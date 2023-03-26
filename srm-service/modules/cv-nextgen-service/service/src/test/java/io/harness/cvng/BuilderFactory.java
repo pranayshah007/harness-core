@@ -211,7 +211,7 @@ import io.harness.cvng.notification.channelDetails.CVNGNotificationChannel;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationDTO;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
-import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
@@ -285,6 +285,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -524,7 +525,7 @@ public class BuilderFactory {
         .metricPack(
             MetricPack.builder()
                 .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
-                .metrics(Collections.singleton(
+                .metrics(Set.of(
                     MetricPack.MetricDefinition.builder()
                         .identifier("identifier")
                         .type(TimeSeriesMetricType.OTHER)
@@ -540,11 +541,31 @@ public class BuilderFactory {
                                                       .criteria(TimeSeriesThresholdCriteria.builder().build())
                                                       .action(IGNORE)
                                                       .build()))
+                        .build(),
+                    MetricPack.MetricDefinition.builder()
+                        .identifier("zero metric identifier")
+                        .type(TimeSeriesMetricType.OTHER)
+                        .name("zero metric")
+                        .thresholds(Arrays.asList(TimeSeriesThreshold.builder()
+                                                      .uuid("thresholdId")
+                                                      .metricPackIdentifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
+                                                      .metricType(TimeSeriesMetricType.OTHER)
+                                                      .metricGroupName("*")
+                                                      .metricType(TimeSeriesMetricType.OTHER)
+                                                      .metricIdentifier("zero metric identifier")
+                                                      .deviationType(DeviationType.HIGHER_IS_RISKY)
+                                                      .criteria(TimeSeriesThresholdCriteria.builder().build())
+                                                      .action(IGNORE)
+                                                      .build()))
                         .build()))
                 .dataCollectionDsl("dsl")
                 .build())
         .metricInfos(
-            Arrays.asList(AppDynamicsCVConfig.MetricInfo.builder().identifier("identifier").metricName("name").build()))
+            Arrays.asList(AppDynamicsCVConfig.MetricInfo.builder().identifier("identifier").metricName("name").build(),
+                AppDynamicsCVConfig.MetricInfo.builder()
+                    .identifier("zero metric identifier")
+                    .metricName("zero metric")
+                    .build()))
         .applicationName(generateUuid())
         .tierName("tier-name")
         .connectorIdentifier("AppDynamics Connector")
@@ -1367,6 +1388,38 @@ public class BuilderFactory {
         .userJourneyRefs(Collections.singletonList("userJourney"));
   }
 
+  public ServiceLevelObjectiveV2DTOBuilder getSimpleRequestServiceLevelObjectiveV2DTOBuilder() {
+    return ServiceLevelObjectiveV2DTO.builder()
+        .type(ServiceLevelObjectiveType.SIMPLE)
+        .projectIdentifier(context.getProjectIdentifier())
+        .orgIdentifier(context.getOrgIdentifier())
+        .identifier("sloIdentifier")
+        .name("sloName")
+        .tags(new HashMap<String, String>() {
+          {
+            put("tag1", "value1");
+            put("tag2", "");
+          }
+        })
+        .description("slo description")
+        .sloTarget(SLOTargetDTO.builder()
+                       .type(SLOTargetType.ROLLING)
+                       .sloTargetPercentage(80.0)
+                       .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
+                       .build())
+        .spec(SimpleServiceLevelObjectiveSpec.builder()
+                  .serviceLevelIndicators(Collections.singletonList(getRequestServiceLevelIndicatorDTOBuilder()
+                                                                        .name(generateUuid())
+                                                                        .identifier(generateUuid())
+                                                                        .build()))
+                  .healthSourceRef("healthSourceIdentifier")
+                  .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
+                  .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
+                  .build())
+        .notificationRuleRefs(Collections.emptyList())
+        .userJourneyRefs(Collections.singletonList("userJourney"));
+  }
+
   public ServiceLevelObjectiveV2DTOBuilder getCompositeServiceLevelObjectiveV2DTOBuilder() {
     return ServiceLevelObjectiveV2DTO.builder()
         .type(ServiceLevelObjectiveType.COMPOSITE)
@@ -1440,7 +1493,7 @@ public class BuilderFactory {
 
   public ServiceLevelIndicatorDTO getServiceLevelIndicatorDTOBuilder() {
     return ServiceLevelIndicatorDTO.builder()
-        .type(SLIExecutionType.WINDOW)
+        .type(SLIEvaluationType.WINDOW)
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .sliMissingDataType(SLIMissingDataType.GOOD)
                   .type(SLIMetricType.RATIO)
@@ -1495,7 +1548,7 @@ public class BuilderFactory {
 
   public ServiceLevelIndicatorDTOBuilder getThresholdServiceLevelIndicatorDTOBuilder() {
     return ServiceLevelIndicatorDTO.builder()
-        .type(SLIExecutionType.WINDOW)
+        .type(SLIEvaluationType.WINDOW)
         .healthSourceRef("healthSourceIdentifier")
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .sliMissingDataType(SLIMissingDataType.GOOD)
@@ -1510,7 +1563,7 @@ public class BuilderFactory {
 
   public ServiceLevelIndicatorDTOBuilder getRatioServiceLevelIndicatorDTOBuilder() {
     return ServiceLevelIndicatorDTO.builder()
-        .type(SLIExecutionType.WINDOW)
+        .type(SLIEvaluationType.WINDOW)
         .healthSourceRef("healthSourceIdentifier")
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .sliMissingDataType(SLIMissingDataType.GOOD)
@@ -1529,7 +1582,7 @@ public class BuilderFactory {
     return ServiceLevelIndicatorDTO.builder()
         .name("name")
         .identifier("identifier")
-        .type(SLIExecutionType.REQUEST)
+        .type(SLIEvaluationType.REQUEST)
         .spec(RequestBasedServiceLevelIndicatorSpec.builder()
                   .metric1("Errors per Minute")
                   .metric2("Calls per Minute")
@@ -1541,13 +1594,13 @@ public class BuilderFactory {
     return ThresholdSLIMetricSpec.builder()
         .metric1("metric1")
         .thresholdType(ThresholdType.GREATER_THAN_EQUAL_TO)
-        .thresholdValue(100.0);
+        .thresholdValue(500.0);
   }
 
   public RatioSLIMetricSpecBuilder getRatioSLIMetricSpecBuilder() {
     return RatioSLIMetricSpec.builder()
         .thresholdType(ThresholdType.GREATER_THAN)
-        .thresholdValue(20.0)
+        .thresholdValue(100.0)
         .eventType(RatioSLIMetricEventType.GOOD)
         .metric1("metric1")
         .metric2("metric2");

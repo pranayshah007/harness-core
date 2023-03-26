@@ -15,4 +15,5 @@ import java.util.List;
 public interface PluginInfoService {
   List<PluginInfo> getAllPluginsInfo(String harnessAccount);
   PluginDetailedInfo getPluginDetailedInfo(String identifier, String harnessAccount);
+  void saveAllPluginInfo();
 }

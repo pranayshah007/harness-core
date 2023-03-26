@@ -1655,6 +1655,21 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGet_IdentifierList() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    ProjectParams accountProjectParams =
+        ProjectParams.builder().accountIdentifier(projectParams.getAccountIdentifier()).build();
+    List<AbstractServiceLevelObjective> serviceLevelObjectiveList = serviceLevelObjectiveV2Service.getWithChildResource(
+        accountProjectParams, Collections.singletonList(sloDTO.getIdentifier()));
+    assertThat(serviceLevelObjectiveList.size()).isEqualTo(1);
+    assertThat(serviceLevelObjectiveList.get(0).getIdentifier()).isEqualTo(sloDTO.getIdentifier());
+  }
+
+  @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testGet_OnUserJourneyFilter() {
@@ -2405,6 +2420,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                    .size())
         .isEqualTo(0);
   }
+
   private ServiceLevelObjectiveV2DTO createSLOBuilder() {
     return builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
   }
@@ -2430,8 +2446,19 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     List<SLIRecordParam> sliRecordParams = new ArrayList<>();
     for (int i = 0; i < sliStates.size(); i++) {
       SLIRecord.SLIState sliState = sliStates.get(i);
-      sliRecordParams.add(
-          SLIRecordParam.builder().sliState(sliState).timeStamp(startTime.plus(Duration.ofMinutes(i))).build());
+      long goodCount = 0;
+      long badCount = 0;
+      if (sliState == GOOD) {
+        goodCount++;
+      } else if (sliState == BAD) {
+        badCount++;
+      }
+      sliRecordParams.add(SLIRecordParam.builder()
+                              .sliState(sliState)
+                              .timeStamp(startTime.plus(Duration.ofMinutes(i)))
+                              .goodEventCount(goodCount)
+                              .badEventCount(badCount)
+                              .build());
     }
     return sliRecordParams;
   }

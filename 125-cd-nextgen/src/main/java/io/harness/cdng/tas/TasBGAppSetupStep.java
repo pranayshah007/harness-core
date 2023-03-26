@@ -170,6 +170,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
               .inActiveApplicationDetails(response.getInActiveApplicationInfo())
               .cfAppNamePrefix(tasExecutionPassThroughData.getApplicationName())
               .isBlueGreen(true)
+              .instanceCountType(tasBGAppSetupStepParameters.getTasInstanceCountType())
               .build(),
           StepCategory.STEP.name());
 

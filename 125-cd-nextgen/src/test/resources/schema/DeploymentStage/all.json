@@ -15320,6 +15320,16 @@
                 }
               ]
             },
+            "ignoreInstanceCountManifest": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "newAppInstances": {
               "$ref": "#/definitions/TasInstanceSelectionWrapper"
             },

@@ -354,7 +354,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
         .fetchExpandedPipelineJSONFromYaml(pipelineEntityV1.getAccountId(), pipelineEntityV1.getOrgIdentifier(),
             pipelineEntityV1.getProjectIdentifier(), pipelineEntityV1.getYaml(), true);
     triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
-        triggerDetails, payloadBuilder.build(), triggerWebhookEvent, null);
+        triggerDetails, payloadBuilder.build(), triggerWebhookEvent, null, null);
   }
 
   private void assertTriggerBy(TriggeredBy triggeredBy) {

@@ -43,7 +43,9 @@ import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
+import io.harness.cvng.servicelevelobjective.beans.SLIValue;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
@@ -60,6 +62,7 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorS
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.datacollection.entity.TimeSeriesRecord;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.persistence.HPersistence;
 import io.harness.serializer.JsonUtils;
 
@@ -141,8 +144,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                        .timeStamp(Instant.ofEpochMilli(timeSeriesRecord.getTimestamp()))
                        .build(),
                 Collectors.toList())));
-    List<SLIAnalyseResponse> sliAnalyseResponses = sliDataProcessorService.process(sliAnalyseRequest,
-        ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec(), startTime, endTime);
+    List<SLIAnalyseResponse> sliAnalyseResponses =
+        sliDataProcessorService.process(sliAnalyseRequest, serviceLevelIndicatorDTO, startTime, endTime);
     sliAnalyseResponses.sort(Comparator.comparing(SLIAnalyseResponse::getTimeStamp));
     final SLIAnalyseResponse initialSLIResponse = sliAnalyseResponses.get(0);
 
@@ -155,14 +158,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                     .map(sliAnalyseResponse
                         -> DataPoints.builder()
                                .timeStamp(sliAnalyseResponse.getTimeStamp().toEpochMilli())
-                               .value(((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec())
-                                          .getSliMissingDataType()
-                                          .calculateSLIValue(sliAnalyseResponse.getRunningGoodCount(),
-                                              sliAnalyseResponse.getRunningBadCount(),
-                                              Duration.between(initialSLIResponse.getTimeStamp(),
-                                                          sliAnalyseResponse.getTimeStamp())
-                                                      .toMinutes()
-                                                  + 1)
+                               .value(getSLIValue(serviceLevelIndicatorDTO, sliAnalyseResponse, initialSLIResponse)
                                           .sliPercentage())
                                .build())
                     .collect(Collectors.toList()))
@@ -193,6 +189,25 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         .metricPercentageGraph(
             getMetricPercentageGraph(timeSeriesRecords, metricIdentifiers, startTime, endTime, ratioSLIMetricEventType))
         .build();
+  }
+
+  private SLIValue getSLIValue(ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, SLIAnalyseResponse sliAnalyseResponse,
+      SLIAnalyseResponse initialSLIResponse) {
+    if (serviceLevelIndicatorDTO.getType() == SLIEvaluationType.WINDOW) {
+      return ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec())
+          .getSliMissingDataType()
+          .calculateSLIValue(sliAnalyseResponse.getRunningGoodCount(), sliAnalyseResponse.getRunningBadCount(),
+              Duration.between(initialSLIResponse.getTimeStamp(), sliAnalyseResponse.getTimeStamp()).toMinutes() + 1);
+    } else if (serviceLevelIndicatorDTO.getType() == SLIEvaluationType.REQUEST) {
+      return SLIValue.builder()
+          .goodCount(sliAnalyseResponse.getRunningGoodCount())
+          .badCount(sliAnalyseResponse.getRunningBadCount())
+          .total(sliAnalyseResponse.getRunningGoodCount() + sliAnalyseResponse.getRunningBadCount())
+          .build();
+    } else {
+      throw new InvalidArgumentsException(
+          String.format("Invalid Service Level Indicator Type %s", serviceLevelIndicatorDTO.getType()));
+    }
   }
 
   private List<CVConfig> getCvConfigs(
@@ -533,12 +548,12 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
       if (record.getMetricIdentifier().equals(metricIdentifiers.get(1))) {
         long timestamp = record.getTimestamp();
         if (metric1ValuesMap.containsKey(timestamp)) {
-          double ratio;
-          if (eventType.equals(RatioSLIMetricEventType.GOOD)) {
-            ratio = metric1ValuesMap.get(timestamp) * 100 / record.getMetricValue();
-          } else {
-            ratio = (1 - (metric1ValuesMap.get(timestamp) / record.getMetricValue())) * 100;
+          double metricValue1 = metric1ValuesMap.get(timestamp);
+          double metricValue2 = record.getMetricValue();
+          if (Objects.isNull(metricValue1) || Objects.isNull(metricValue2) || metricValue2 == 0) {
+            continue;
           }
+          double ratio = eventType.computeSLIMetricValue(metricValue1, metricValue2);
           dataPoints.add(DataPoints.builder().timeStamp(timestamp).value(ratio).build());
         }
       }

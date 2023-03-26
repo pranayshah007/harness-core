@@ -589,6 +589,15 @@ public class CEViewServiceImpl implements CEViewService {
     }
   }
 
+  public String getSampleFolderId(String accountId) {
+    CEViewFolder sampleFolder = ceViewFolderDao.getSampleFolder(accountId);
+    if (sampleFolder == null) {
+      return ceViewFolderDao.createDefaultOrSampleFolder(accountId, ViewType.SAMPLE);
+    } else {
+      return sampleFolder.getUuid();
+    }
+  }
+
   @Override
   public boolean setFolderId(
       CEView ceView, Set<String> allowedFolderIds, List<CEViewFolder> ceViewFolders, String defaultFolderId) {

@@ -845,11 +845,20 @@ public class DashboardServiceHelper {
     return endInterval;
   }
 
-  public Long checkForDefaultStartInterval(Long startInterval) {
+  public Long checkForDefaultStartInterval(Long startInterval, Long endInterval) {
     if (startInterval == null) {
       // taking 30 days interval as default
-      return System.currentTimeMillis() - 2592000000L;
+      return endInterval - 2592000000L;
     }
     return startInterval;
+  }
+
+  public boolean validateDuration(Long startInterval, Long endInterval) {
+    long duration = endInterval - startInterval;
+    long durationSixMonths = 15552000000l;
+    if (duration > durationSixMonths) {
+      return false;
+    }
+    return true;
   }
 }

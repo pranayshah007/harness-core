@@ -56,10 +56,10 @@ public class ModuleVersionResource implements ModuleVersionsApi {
   @ExceptionMetered
   @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public Response listModuleVersions(Integer page, Integer limit) {
-    PageRequest<ModuleVersionInfo> modulesversionPageRequest =
+    PageRequest<ModuleVersionInfo> moduleVersionInfoPageRequest =
         aPageRequest().withOffset(String.valueOf(page)).withLimit(String.valueOf(limit)).build();
     PageResponse<ModuleVersionInfo> pageResponse =
-        moduleVersionInfoService.getCurrentVersionOfAllModules(modulesversionPageRequest);
+        moduleVersionInfoService.getCurrentVersionOfAllModules(moduleVersionInfoPageRequest);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
         ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotal(), page, limit);

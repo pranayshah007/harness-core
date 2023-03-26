@@ -10,6 +10,7 @@ package io.harness.idp.app;
 import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
+import static io.harness.lock.DistributedLockImplementation.MONGO;
 
 import io.harness.AccessControlClientModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,6 +23,14 @@ import io.harness.git.GitClientV2Impl;
 import io.harness.idp.configmanager.resource.AppConfigApiImpl;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.service.ConfigManagerServiceImpl;
+import io.harness.idp.envvariable.beans.entity.BackstageEnvConfigVariableEntity.BackstageEnvConfigVariableMapper;
+import io.harness.idp.envvariable.beans.entity.BackstageEnvSecretVariableEntity.BackstageEnvSecretVariableMapper;
+import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity;
+import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.BackstageEnvVariableMapper;
+import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableType;
+import io.harness.idp.envvariable.resources.BackstageEnvVariableApiImpl;
+import io.harness.idp.envvariable.service.BackstageEnvVariableService;
+import io.harness.idp.envvariable.service.BackstageEnvVariableServiceImpl;
 import io.harness.idp.events.EventsFrameworkModule;
 import io.harness.idp.events.eventlisteners.eventhandler.EntityCrudStreamListener;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
@@ -45,9 +54,6 @@ import io.harness.idp.provision.resource.ProvisionApiImpl;
 import io.harness.idp.provision.service.ProvisionService;
 import io.harness.idp.provision.service.ProvisionServiceImpl;
 import io.harness.idp.proxy.layout.LayoutProxyApiImpl;
-import io.harness.idp.secret.resources.EnvironmentSecretApiImpl;
-import io.harness.idp.secret.service.EnvironmentSecretService;
-import io.harness.idp.secret.service.EnvironmentSecretServiceImpl;
 import io.harness.idp.serializer.IdpServiceRegistrars;
 import io.harness.idp.settings.resources.BackstagePermissionsApiImpl;
 import io.harness.idp.settings.service.BackstagePermissionsService;
@@ -57,6 +63,8 @@ import io.harness.idp.status.k8s.PodHealthCheck;
 import io.harness.idp.status.resources.StatusInfoApiImpl;
 import io.harness.idp.status.service.StatusInfoService;
 import io.harness.idp.status.service.StatusInfoServiceImpl;
+import io.harness.lock.DistributedLockImplementation;
+import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
@@ -70,14 +78,15 @@ import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
+import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ClientMode;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.ServiceResourceClientModule;
 import io.harness.spec.server.idp.v1.AccountInfoApi;
 import io.harness.spec.server.idp.v1.AppConfigApi;
+import io.harness.spec.server.idp.v1.BackstageEnvVariableApi;
 import io.harness.spec.server.idp.v1.BackstagePermissionsApi;
-import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
 import io.harness.spec.server.idp.v1.LayoutProxyApi;
 import io.harness.spec.server.idp.v1.NamespaceApi;
 import io.harness.spec.server.idp.v1.OnboardingResourceApi;
@@ -85,6 +94,7 @@ import io.harness.spec.server.idp.v1.PluginInfoApi;
 import io.harness.spec.server.idp.v1.ProvisionApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.threading.ThreadPool;
+import io.harness.time.TimeModule;
 import io.harness.token.TokenClientModule;
 import io.harness.version.VersionModule;
 
@@ -95,6 +105,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
@@ -206,9 +217,12 @@ public class IdpModule extends AbstractModule {
         appConfig.getBackstageHttpClientConfig(), appConfig.getBackstageServiceSecret(), IDP_SERVICE.getServiceId()));
 
     bind(IdpConfiguration.class).toInstance(appConfig);
+    install(PersistentLockModule.getInstance());
+    install(TimeModule.getInstance());
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
     // serve health checks. If it's being used for other tasks also, max pool size should be increased.
     bind(ExecutorService.class)
+        .annotatedWith(Names.named("idpServiceExecutor"))
         .toInstance(ThreadPool.create(1, 2, 5, TimeUnit.SECONDS,
             new ThreadFactoryBuilder()
                 .setNameFormat("default-idp-service-executor-%d")
@@ -216,12 +230,12 @@ public class IdpModule extends AbstractModule {
                 .build()));
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(ConfigManagerService.class).to(ConfigManagerServiceImpl.class);
-    bind(EnvironmentSecretService.class).to(EnvironmentSecretServiceImpl.class);
+    bind(BackstageEnvVariableService.class).to(BackstageEnvVariableServiceImpl.class);
     bind(StatusInfoService.class).to(StatusInfoServiceImpl.class);
     bind(BackstagePermissionsService.class).to(BackstagePermissionsServiceImpl.class);
     bind(NamespaceService.class).to(NamespaceServiceImpl.class);
     bind(GitIntegrationService.class).to(GitIntegrationServiceImpl.class);
-    bind(EnvironmentSecretApi.class).to(EnvironmentSecretApiImpl.class);
+    bind(BackstageEnvVariableApi.class).to(BackstageEnvVariableApiImpl.class);
     bind(StatusInfoApi.class).to(StatusInfoApiImpl.class);
     bind(BackstagePermissionsApi.class).to(BackstagePermissionsApiImpl.class);
     bind(K8sClient.class).to(K8sApiClient.class);
@@ -240,8 +254,15 @@ public class IdpModule extends AbstractModule {
     bind(PluginInfoApi.class).to(PluginInfoApiImpl.class);
     bind(PluginInfoService.class).to(PluginInfoServiceImpl.class);
     bind(ScheduledExecutorService.class)
-        .annotatedWith(Names.named("envSecretSyncer"))
-        .toInstance(new ManagedScheduledExecutorService("EnvSecretSyncer"));
+        .annotatedWith(Names.named("backstageEnvVariableSyncer"))
+        .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));
+
+    MapBinder<BackstageEnvVariableType, BackstageEnvVariableMapper> backstageEnvVariableMapBinder =
+        MapBinder.newMapBinder(binder(), BackstageEnvVariableType.class, BackstageEnvVariableMapper.class);
+    backstageEnvVariableMapBinder.addBinding(BackstageEnvVariableType.CONFIG)
+        .to(BackstageEnvConfigVariableMapper.class);
+    backstageEnvVariableMapBinder.addBinding(BackstageEnvVariableType.SECRET)
+        .to(BackstageEnvSecretVariableMapper.class);
   }
 
   @Provides
@@ -252,6 +273,19 @@ public class IdpModule extends AbstractModule {
 
   private void registerRequiredBindings() {
     requireBinding(HPersistence.class);
+  }
+
+  @Provides
+  @Named("lock")
+  @Singleton
+  RedisConfig redisConfig() {
+    return appConfig.getRedisLockConfig();
+  }
+
+  @Provides
+  @Singleton
+  DistributedLockImplementation distributedLockImplementation() {
+    return appConfig.getDistributedLockImplementation() == null ? MONGO : appConfig.getDistributedLockImplementation();
   }
 
   @Provides
