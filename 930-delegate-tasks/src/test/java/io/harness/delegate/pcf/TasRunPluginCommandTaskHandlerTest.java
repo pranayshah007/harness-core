@@ -7,6 +7,7 @@
 
 package io.harness.delegate.pcf;
 
+import static io.harness.pcf.model.PcfConstants.PCF_ARTIFACT_DOWNLOAD_DIR_PATH;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -112,6 +113,9 @@ public class TasRunPluginCommandTaskHandlerTest extends CategoryTest {
     assertThat(pcfRunPluginScriptRequestData.getWorkingDirectory()).isNotNull();
     assertThat(pcfRunPluginScriptRequestData.getFinalScriptString())
         .isEqualTo("cf create-service " + pcfRunPluginScriptRequestData.getWorkingDirectory() + "/manifest.yml");
+    assertThat(pcfRunPluginScriptRequestData.getCfRequestConfig()).isNotNull();
+    assertThat(pcfRunPluginScriptRequestData.getCfRequestConfig().getCfHomeDirPath())
+        .contains(PCF_ARTIFACT_DOWNLOAD_DIR_PATH);
 
     verify(tasRunPluginCommandTaskHandler, times(1))
         .saveFilesInWorkingDirectoryStringContent(

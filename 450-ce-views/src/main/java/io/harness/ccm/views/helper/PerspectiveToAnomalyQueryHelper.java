@@ -55,7 +55,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class PerspectiveToAnomalyQueryHelper {
   @Inject ViewsQueryBuilder viewsQueryBuilder;
   @Inject BusinessMappingService businessMappingService;
@@ -299,9 +301,11 @@ public class PerspectiveToAnomalyQueryHelper {
                               .idFilter(viewsQueryBuilder.mapConditionToFilter((ViewIdCondition) condition))
                               .build());
         }
+        log.info("ruleFilters: {}", ruleFilters);
         convertedRuleFilters.add(convertFilters(ruleFilters));
       }
     }
+    log.info("convertedRuleFilters: {}", convertedRuleFilters);
 
     return convertedRuleFilters;
   }

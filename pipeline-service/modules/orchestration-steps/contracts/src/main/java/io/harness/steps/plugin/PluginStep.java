@@ -9,6 +9,9 @@ package io.harness.steps.plugin;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.yaml.ParameterField;
 
 @OwnedBy(HarnessTeam.SSCA)
-public interface PluginStep extends ContainerStepSpec {}
+public interface PluginStep extends ContainerStepSpec {
+  ParameterField<String> getConnectorRef();
+}

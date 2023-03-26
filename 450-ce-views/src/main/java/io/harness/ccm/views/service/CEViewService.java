@@ -52,6 +52,7 @@ public interface CEViewService {
   Map<String, String> getPerspectiveIdToNameMapping(String accountId, List<String> perspectiveIds);
 
   String getDefaultFolderId(String accountId);
+  String getSampleFolderId(String accountId);
   boolean setFolderId(
       CEView ceView, Set<String> allowedFolderIds, List<CEViewFolder> ceViewFolders, String defaultFolderId);
 }

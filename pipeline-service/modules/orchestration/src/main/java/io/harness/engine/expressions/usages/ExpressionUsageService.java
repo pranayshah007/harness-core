@@ -10,7 +10,13 @@ package io.harness.engine.expressions.usages;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.Map;
+import java.util.Set;
+
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface ExpressionUsageService {
   ExpressionUsagesEntity save(ExpressionUsagesEntity entity);
+  boolean doesExpressionUsagesEntityExists(String pipelineIdentifier, String accountId, String orgId, String projectId);
+  ExpressionUsagesEntity upsertExpressions(String pipelineIdentifier, String accountId, String orgId, String projectId,
+      Map<ExpressionCategory, Set<ExpressionMetadata>> expressionUsages);
 }

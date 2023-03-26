@@ -454,6 +454,9 @@ public class PipelineMigrationService extends NgMigrationService {
         Workflow workflow = (Workflow) entities.get(workflowEntityId).getEntity();
         CanaryOrchestrationWorkflow orchestrationWorkflow =
             (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+        if (EmptyPredicate.isEmpty(orchestrationWorkflow.getWorkflowPhases())) {
+          continue;
+        }
         WorkflowPhase workflowPhase = orchestrationWorkflow.getWorkflowPhases().get(0);
         String serviceExpression = getExpression(workflowPhase, "serviceId");
         String env = workflow.getEnvId();

@@ -13,8 +13,14 @@ import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.expressions.usages.ExpressionUsagesEntity;
 
+import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 
 @OwnedBy(PIPELINE)
 @HarnessRepo
-public interface ExpressionUsagesRepository extends CrudRepository<ExpressionUsagesEntity, String> {}
+public interface ExpressionUsagesRepository extends CrudRepository<ExpressionUsagesEntity, String> {
+  Optional<ExpressionUsagesEntity> findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifier(
+      String pipelineId, String accountId, String orgId, String projectId);
+  Boolean existsByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifier(
+      String pipelineId, String accountId, String orgId, String projectId);
+}

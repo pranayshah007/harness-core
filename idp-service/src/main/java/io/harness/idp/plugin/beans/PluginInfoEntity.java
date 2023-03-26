@@ -19,12 +19,14 @@ import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
 @StoreIn(DbAliases.IDP)
+@FieldNameConstants(innerTypeName = "PluginInfoEntityKeys")
 @Entity(value = "pluginInfo", noClassnameStored = true)
 @Document("pluginInfo")
 @Persistent
@@ -39,5 +41,5 @@ public class PluginInfoEntity implements PersistentEntity {
   private String source;
   private String config;
   private String iconUrl;
-  private String imageUrl;
+  private Object layout;
 }

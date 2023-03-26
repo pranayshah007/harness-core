@@ -26,11 +26,14 @@ import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimMultiValuedObject;
 import io.harness.scim.service.ScimGroupService;
 
+import software.wings.beans.Event;
 import software.wings.beans.User;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.dl.WingsPersistence;
+import software.wings.service.impl.AuditServiceHelper;
 import software.wings.service.intfc.UserGroupService;
+import software.wings.service.intfc.UserService;
 
 import com.google.inject.Inject;
 import dev.morphia.query.FindOptions;
@@ -46,6 +49,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 
@@ -55,6 +59,8 @@ import org.apache.logging.log4j.util.Strings;
 public class ScimGroupServiceImpl implements ScimGroupService {
   @Inject private UserGroupService userGroupService;
   @Inject private WingsPersistence wingsPersistence;
+  @Inject private AuditServiceHelper auditServiceHelper;
+  @Inject private UserService userService;
 
   private static final String EXC_MSG_GROUP_DOESNT_EXIST = "Group does not exist";
   private static final String DISPLAY_NAME = "displayName";
@@ -146,9 +152,14 @@ public class ScimGroupServiceImpl implements ScimGroupService {
     UpdateOperations<UserGroup> updateOperations = wingsPersistence.createUpdateOperations(UserGroup.class);
     updateDisplayName(scimGroup, userGroup, updateOperations);
     log.info("SCIM: SCIM Group {} is being synced, for accountId {}", scimGroup.getDisplayName(), accountId);
+    Set<String> newMemberIds = new HashSet<>(getMembersOfUserGroup(scimGroup));
+    Set<String> existingMemberIds =
+        isEmpty(userGroup.getMemberIds()) ? new HashSet<>() : new HashSet<>(userGroup.getMemberIds());
     updateMembers(scimGroup, updateOperations, accountId);
-
     wingsPersistence.update(userGroup, updateOperations);
+    auditUserGroupUpdates(groupId, accountId, userGroup, SetUtils.difference(newMemberIds, existingMemberIds),
+        SetUtils.difference(existingMemberIds, newMemberIds), "PUT");
+
     log.info("SCIM: Update group call successful accountId {}, groupId  {}, group resource: {}", accountId, groupId,
         scimGroup);
     return Response.status(Status.OK).entity(scimGroup).build();
@@ -213,6 +224,8 @@ public class ScimGroupServiceImpl implements ScimGroupService {
         isNotEmpty(existingGroup.getMemberIds()) ? existingGroup.getMemberIds() : new ArrayList<>();
     Set<String> newMemberIds = new HashSet<>(existingMemberIds);
     String newGroupName = null;
+    Set<String> memberIdsToBeAdded = null;
+    Set<String> memberIdsToBeRemoved = null;
 
     for (PatchOperation patchOperation : patchRequest.getOperations()) {
       Set<String> userIdsFromOperation = getUserIdsFromOperation(patchOperation, accountId, groupId);
@@ -227,12 +240,15 @@ public class ScimGroupServiceImpl implements ScimGroupService {
         }
         case ADD:
         case ADD_OKTA: {
+          Set<String> originalMemberIds = new HashSet<>(newMemberIds);
           updateNewMemberIds(userIdsFromOperation, newMemberIds, accountId);
+          memberIdsToBeAdded = SetUtils.difference(newMemberIds, originalMemberIds);
           break;
         }
         case REMOVE:
         case REMOVE_OKTA: {
           newMemberIds.removeAll(userIdsFromOperation);
+          memberIdsToBeRemoved = userIdsFromOperation;
           break;
         }
         default: {
@@ -256,6 +272,7 @@ public class ScimGroupServiceImpl implements ScimGroupService {
     if (updateGroup) {
       updateOperations.set(UserGroupKeys.importedByScim, true);
       wingsPersistence.update(existingGroup, updateOperations);
+      auditUserGroupUpdates(groupId, accountId, existingGroup, memberIdsToBeAdded, memberIdsToBeRemoved, "PATCH");
     }
     return Response.status(Status.NO_CONTENT).build();
   }
@@ -400,5 +417,37 @@ public class ScimGroupServiceImpl implements ScimGroupService {
       });
     }
     return newMemberIds;
+  }
+
+  private void auditUserGroupUpdates(String groupId, String accountId, UserGroup userGroup,
+      Set<String> memberIdsToBeAdded, Set<String> memberIdsToBeRemoved, String operation) {
+    UserGroup updatedUserGroup = userGroupService.get(accountId, groupId);
+
+    log.info(
+        "SCIM_AUDITS_{}: auditing user group updates for group {} in account {} with memberIdsTobeAdded: {}, memberIdsToBeRemoved: {}",
+        operation, groupId, accountId, getStringBuilderForMemberIds(memberIdsToBeAdded).toString(),
+        getStringBuilderForMemberIds(memberIdsToBeRemoved).toString());
+    auditServiceHelper.reportForAuditingUsingAccountId(
+        userGroup.getAccountId(), userGroup, updatedUserGroup, Event.Type.UPDATE);
+    if (isNotEmpty(memberIdsToBeAdded)) {
+      memberIdsToBeAdded.forEach(userId -> {
+        User user = userService.get(userId);
+        auditServiceHelper.reportForAuditingUsingAccountId(userGroup.getAccountId(), null, user, Event.Type.ADD);
+      });
+    }
+    if (isNotEmpty(memberIdsToBeRemoved)) {
+      memberIdsToBeRemoved.forEach(userId -> {
+        User user = userService.get(userId);
+        auditServiceHelper.reportForAuditingUsingAccountId(userGroup.getAccountId(), null, user, Event.Type.REMOVE);
+      });
+    }
+  }
+
+  private StringBuilder getStringBuilderForMemberIds(Set<String> memberIds) {
+    StringBuilder sb = new StringBuilder();
+    if (isNotEmpty(memberIds)) {
+      memberIds.forEach(id -> sb.append(id).append(" "));
+    }
+    return sb;
   }
 }

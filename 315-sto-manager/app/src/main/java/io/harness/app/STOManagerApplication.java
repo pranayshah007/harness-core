@@ -21,6 +21,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
 import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
+import io.harness.ci.execution.queue.CIExecutionPoller;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.filter.CIFilterCreationResponseMerger;
 import io.harness.ci.registrars.ExecutionAdvisers;
@@ -266,7 +267,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     registerPMSSDK(configuration, injector);
     registerResources(environment, injector);
     registerWaitEnginePublishers(injector);
-    registerManagedBeans(environment, injector);
+    registerManagedBeans(environment, injector, configuration);
     registerHealthCheck(environment, injector);
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
@@ -383,10 +384,16 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
         .scheduleWithFixedDelay(injector.getInstance(ProgressUpdateService.class), 0L, 5L, TimeUnit.SECONDS);
   }
 
-  private void registerManagedBeans(Environment environment, Injector injector) {
+  private void registerManagedBeans(Environment environment, Injector injector, CIManagerConfiguration config) {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
+    boolean local = config.getCiExecutionServiceConfig().isLocal();
+    if (!local) {
+      environment.lifecycle().manage(injector.getInstance(CIExecutionPoller.class));
+    }
+    // Do not remove as it's used for MaintenanceController for shutdown mode
+    environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
   }
 
   private void registerPmsSdkEvents(Injector injector) {

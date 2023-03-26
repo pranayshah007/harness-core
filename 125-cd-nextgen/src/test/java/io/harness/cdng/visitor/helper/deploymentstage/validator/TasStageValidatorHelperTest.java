@@ -369,7 +369,7 @@ public class TasStageValidatorHelperTest extends CategoryTest {
             .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
             .build();
     assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
-        .hasMessage("Only one BG App Setup step is valid, found: 4");
+        .hasMessage("Only one BG App Setup step is valid, found: 3");
   }
 
   private void assertTemplateGet(String templateRef, String fileName) throws IOException {
@@ -459,6 +459,39 @@ public class TasStageValidatorHelperTest extends CategoryTest {
                                                          .templateEntityType(TemplateEntityType.STEPGROUP_TEMPLATE)
                                                          .childType("CI")
                                                          .yaml(accountStepGrp)
+                                                         .build())));
+
+    steps.add(ExecutionWrapperConfig.builder()
+                  .stepGroup(getStepGroupTemplate("stepGroup", "accountStepGrpTemplate", "v1"))
+                  .build());
+
+    List<ExecutionWrapperConfig> rollbackSteps = new ArrayList<>();
+    rollbackSteps.add(ExecutionWrapperConfig.builder().step(getSwapRollback(SWAP_ROLLBACK)).build());
+    DeploymentStageConfig stageConfig =
+        DeploymentStageConfig.builder()
+            .deploymentType(ServiceDefinitionType.TAS)
+            .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
+            .build();
+    tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateStepGroupTemplateDiffTemplateChildTypeNull() throws IOException {
+    List<ExecutionWrapperConfig> steps = new ArrayList<>();
+    steps.add(ExecutionWrapperConfig.builder().step(getAppSetup(TAS_BG_APP_SETUP)).build());
+
+    Call<ResponseDTO<TemplateResponseDTO>> callRequestAccount = mock(Call.class);
+    doReturn(callRequestAccount)
+        .when(templateResourceClient)
+        .get(eq("accountStepGrpTemplate"), any(), any(), any(), any(), anyBoolean());
+    when(callRequestAccount.execute())
+        .thenReturn(
+            Response.success(ResponseDTO.newResponse(TemplateResponseDTO.builder()
+                                                         .templateEntityType(TemplateEntityType.STEPGROUP_TEMPLATE)
+                                                         .childType(DEPLOYMENT_STAGE)
+                                                         .yaml("notATemplate")
                                                          .build())));
 
     steps.add(ExecutionWrapperConfig.builder()

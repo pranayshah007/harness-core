@@ -221,6 +221,41 @@ public class CustomDeploymentStageValidatorHelperTest extends CategoryTest {
   @Test
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
+  public void testValidateStepGroupTemplateDiffTemplateChildTypeNullTemplate() throws IOException {
+    List<ExecutionWrapperConfig> steps = new ArrayList<>();
+    steps.add(
+        ExecutionWrapperConfig.builder().step(getFetchInstances(CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT)).build());
+
+    Call<ResponseDTO<TemplateResponseDTO>> callRequestAccount = mock(Call.class);
+    doReturn(callRequestAccount)
+        .when(templateResourceClient)
+        .get(eq("accountStepGrpTemplate"), any(), any(), any(), any(), anyBoolean());
+    Mockito.when(callRequestAccount.execute())
+        .thenReturn(
+            Response.success(ResponseDTO.newResponse(TemplateResponseDTO.builder()
+                                                         .templateEntityType(TemplateEntityType.STEPGROUP_TEMPLATE)
+                                                         .childType(DEPLOYMENT_STAGE)
+                                                         .yaml("notATemplate")
+                                                         .build())));
+
+    steps.add(ExecutionWrapperConfig.builder()
+                  .stepGroup(getStepGroupTemplate("stepGroup", "accountStepGrpTemplate", "v1"))
+                  .build());
+
+    List<ExecutionWrapperConfig> rollbackSteps = new ArrayList<>();
+    rollbackSteps.add(
+        ExecutionWrapperConfig.builder().step(getFetchInstances(CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT)).build());
+    DeploymentStageConfig stageConfig =
+        DeploymentStageConfig.builder()
+            .deploymentType(ServiceDefinitionType.CUSTOM_DEPLOYMENT)
+            .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
+            .build();
+    customDeploymentStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
   public void testValidateNullSteps() {
     List<ExecutionWrapperConfig> steps = new ArrayList<>();
     ObjectMapper mapper = new ObjectMapper();
@@ -266,7 +301,7 @@ public class CustomDeploymentStageValidatorHelperTest extends CategoryTest {
             .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
             .build();
     assertThatThrownBy(() -> customDeploymentStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
-        .hasMessage("Fetch instance script step should be present only 1 time found: 4");
+        .hasMessage("Fetch instance script step should be present only 1 time found: 3");
   }
 
   @Test

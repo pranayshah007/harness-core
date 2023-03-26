@@ -13,11 +13,13 @@ import static io.harness.constants.Constants.SCM_INTERNAL_SERVER_ERROR_CODE;
 import static io.harness.constants.Constants.SCM_INTERNAL_SERVER_ERROR_MESSAGE;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -257,15 +259,34 @@ public class ScmServiceClientImplTest extends CategoryTest {
   @Owner(developers = OwnerRule.MOHIT_GARG)
   @Category(UnitTests.class)
   public void testEmptyCommitIdWhenUpdateFile() {
+    String errorMessage = "CommitID Not found";
     when(scmGitProviderMapper.mapToSCMGitProvider(any(), eq(true))).thenReturn(Provider.newBuilder().build());
     when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
     when(scmBlockingStub.updateFile(any()))
         .thenReturn(UpdateFileResponse.newBuilder().setStatus(200).setCommitId("").build());
+    when(scmBlockingStub.getLatestCommitOnFile(any()))
+        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setError(errorMessage).build());
     UpdateFileResponse updateFileResponse =
         scmServiceClient.updateFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub, false);
     assertThat(updateFileResponse).isNotNull();
-    assertThat(updateFileResponse.getStatus() == SCM_INTERNAL_SERVER_ERROR_CODE).isTrue();
-    assertThat(updateFileResponse.getError().equals(SCM_INTERNAL_SERVER_ERROR_MESSAGE)).isTrue();
+    assertThat(updateFileResponse.getStatus() == Constants.HTTP_BAD_REQUEST_STATUS_CODE).isTrue();
+    assertThat(updateFileResponse.getError().equals(errorMessage)).isTrue();
+  }
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testEmptyCommitIdButFetchedFromGetLatestCommitIDWhenUpdateFile() {
+    String newCommitId = "NEW_COMMIT_ID";
+    when(scmGitProviderMapper.mapToSCMGitProvider(any(), eq(true))).thenReturn(Provider.newBuilder().build());
+    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
+    when(scmBlockingStub.updateFile(any()))
+        .thenReturn(UpdateFileResponse.newBuilder().setStatus(200).setCommitId("").build());
+    when(scmBlockingStub.getLatestCommitOnFile(any()))
+        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setCommitId(newCommitId).build());
+    UpdateFileResponse updateFileResponse =
+        scmServiceClient.updateFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub, false);
+    assertThat(updateFileResponse).isNotNull();
+    assertEquals(newCommitId, updateFileResponse.getCommitId());
   }
 
   @Test

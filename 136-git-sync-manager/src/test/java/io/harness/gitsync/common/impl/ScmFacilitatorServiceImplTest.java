@@ -44,6 +44,8 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthentication
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmBadRequestException;
@@ -536,6 +538,26 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
         .thenReturn(scmConnector);
 
     when(GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas(any())).thenReturn(repoURL);
+    String responseUrl = scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName);
+
+    assertThat(responseUrl.equals(repoURL)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetRepoUrlForGitlab() {
+    mockStatic(GitClientHelper.class);
+    GitlabConnectorDTO gitlabConnectorDTO = GitlabConnectorDTO.builder()
+                                                .connectionType(GitConnectionType.ACCOUNT)
+                                                .apiAccess(GitlabApiAccessDTO.builder().build())
+                                                .url(repoURL)
+                                                .build();
+    connectorInfo = ConnectorInfoDTO.builder().connectorConfig(gitlabConnectorDTO).build();
+    when(gitSyncConnectorHelper.getScmConnectorForGivenRepo(any(), any(), any(), any(), any()))
+        .thenReturn((ScmConnector) connectorInfo.getConnectorConfig());
+
+    when(GitClientHelper.getCompleteHTTPUrlForGitLab(any())).thenReturn(repoURL);
     String responseUrl = scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName);
 
     assertThat(responseUrl.equals(repoURL)).isTrue();

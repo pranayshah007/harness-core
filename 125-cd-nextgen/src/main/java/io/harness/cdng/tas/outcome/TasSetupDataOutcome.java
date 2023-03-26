@@ -12,6 +12,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.tas.TasInstanceCountType;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.beans.pcf.TasResizeStrategyType;
@@ -48,6 +49,7 @@ public class TasSetupDataOutcome implements Outcome, ExecutionSweepingOutput {
   TasApplicationInfo newApplicationDetails;
   List<String> tempRouteMap;
   List<String> routeMaps;
+  TasInstanceCountType instanceCountType;
   @Builder.Default Boolean isBlueGreen = Boolean.FALSE;
   boolean useAppAutoScalar;
   @Expression(ALLOW_SECRETS) TasManifestsPackage manifestsPackage;

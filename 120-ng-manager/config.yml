@@ -152,7 +152,7 @@ auditClientConfig:
   readTimeOutSeconds: 15
 
 ceNextGenClientConfig:
-  baseUrl: http://localhost:7340/api/
+  baseUrl: http://localhost:7340/ccm/api/
   connectTimeOutSeconds: 30
   readTimeOutSeconds: 200
 

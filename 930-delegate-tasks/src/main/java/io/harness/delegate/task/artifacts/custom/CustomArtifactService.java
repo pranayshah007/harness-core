@@ -16,6 +16,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.task.artifacts.mappers.CustomRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
@@ -60,6 +62,9 @@ public class CustomArtifactService {
 
   public ArtifactTaskExecutionResponse getBuilds(
       CustomArtifactDelegateRequest attributesRequest, LogCallback executionLogCallback) {
+    if (executionLogCallback == null) {
+      executionLogCallback = new NGDelegateLogCallback(null, "", false, CommandUnitsProgress.builder().build());
+    }
     List<BuildDetails> buildDetails = getBuildDetails(attributesRequest, executionLogCallback);
     List<CustomArtifactDelegateResponse> customArtifactDelegateResponseList =
         buildDetails.stream()
@@ -71,6 +76,9 @@ public class CustomArtifactService {
 
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(
       CustomArtifactDelegateRequest attributesRequest, LogCallback executionLogCallback) {
+    if (executionLogCallback == null) {
+      executionLogCallback = new NGDelegateLogCallback(null, "", false, CommandUnitsProgress.builder().build());
+    }
     List<BuildDetails> buildDetails = getBuildDetails(attributesRequest, executionLogCallback);
     if (filterVersion(buildDetails, attributesRequest) != null
         && EmptyPredicate.isNotEmpty(filterVersion(buildDetails, attributesRequest))) {

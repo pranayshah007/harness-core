@@ -20,9 +20,9 @@
      ]
    },
    {
-     "moduleName": "CCM",
+     "moduleName": "CE",
      "displayName": "Cloud Cost Management",
-     "version": "Coming Soon",
+     "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/cloud-cost-management",
