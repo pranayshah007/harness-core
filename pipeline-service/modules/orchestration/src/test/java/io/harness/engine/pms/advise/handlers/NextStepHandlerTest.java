@@ -8,6 +8,7 @@
 package io.harness.engine.pms.advise.handlers;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.pms.contracts.plan.ExecutionMode.NORMAL;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
@@ -138,13 +139,14 @@ public class NextStepHandlerTest extends CategoryTest {
                             .stepType(StepType.newBuilder().build())
                             .build();
     // node already of identityType. Same will be returned.
-    assertThat(nextStepHandler.createIdentityNodeIfRequired(identityPlanNode, NodeExecution.builder().build()))
+    assertThat(nextStepHandler.createIdentityNodeIfRequired(identityPlanNode, NodeExecution.builder().build(), NORMAL))
         .isEqualTo(identityPlanNode);
     // NodeExecution.parentId is empty. Same node will be returned.
     assertThat(nextStepHandler.createIdentityNodeIfRequired(planNode,
                    NodeExecution.builder()
                        .ambiance(Ambiance.newBuilder().setPlanExecutionId("planExecutinoId").build())
-                       .build()))
+                       .build(),
+                   NORMAL))
         .isEqualTo(planNode);
 
     doReturn(NodeExecution.builder()
@@ -154,8 +156,8 @@ public class NextStepHandlerTest extends CategoryTest {
                  .build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(eq("parentId"), any());
-    assertThat(
-        nextStepHandler.createIdentityNodeIfRequired(planNode, NodeExecution.builder().parentId("parentId").build()))
+    assertThat(nextStepHandler.createIdentityNodeIfRequired(
+                   planNode, NodeExecution.builder().parentId("parentId").build(), NORMAL))
         .isEqualTo(planNode);
 
     // Till now, same node has been returned all time. So, no interaction with planService.
@@ -183,7 +185,8 @@ public class NextStepHandlerTest extends CategoryTest {
             .ambiance(Ambiance.newBuilder().setPlanId("planId").build())
             .originalNodeExecutionId("originalNodeExecutionId")
             .parentId("parentId")
-            .build());
+            .build(),
+        NORMAL);
     assertThat(savedIdentityNode.getName()).isEqualTo(planNode.getName());
     assertThat(savedIdentityNode.getIdentifier()).isEqualTo(planNode.getIdentifier());
     assertThat(savedIdentityNode.getStepType()).isEqualTo(planNode.getStepType());
