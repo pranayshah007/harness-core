@@ -564,24 +564,11 @@ public class ExecutionHelper {
     String planExecutionId = executionSummaryEntity.getPlanExecutionId();
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()), PipelineRbacPermissions.PIPELINE_VIEW);
-    boolean isPipelineRollbackStageSelected = executionSummaryEntity.getLayoutNodeMap().containsKey(stageNodeId)
-        && executionSummaryEntity.getLayoutNodeMap()
-               .get(stageNodeId)
-               .getNodeType()
-               .equals(StepSpecTypeConstants.PIPELINE_ROLLBACK_STAGE);
 
-    ChildExecutionDetailDTO rollbackGraph = null;
-    if (executionSummaryEntity.getRollbackModeExecutionId() != null) {
-      if (isPipelineRollbackStageSelected) {
-        rollbackGraph = buildRollbackGraph(accountId, orgId, projectId, executionSummaryEntity, entityGitDetails,
-            childStageNodeId, stageNodeExecutionId);
-      } else {
-        rollbackGraph =
-            buildRollbackGraph(accountId, orgId, projectId, executionSummaryEntity, entityGitDetails, null, null);
-      }
-    }
-    // Checking if the stage is of type Pipeline Stage, then return the child graph along with top graph of parent
-    // pipeline
+    ChildExecutionDetailDTO rollbackGraph = buildRollbackGraph(accountId, orgId, projectId, executionSummaryEntity,
+        entityGitDetails, childStageNodeId, stageNodeExecutionId, stageNodeId);
+
+    // If the stage is of type Pipeline Stage, then return the child graph along with top graph of parent pipeline
     if (pipelineStageHelper.validateChildGraphToGenerate(executionSummaryEntity.getLayoutNodeMap(), stageNodeId)) {
       NodeExecution nodeExecution = getNodeExecution(stageNodeId, planExecutionId);
       if (nodeExecution != null && isNotEmpty(nodeExecution.getExecutableResponses())) {
@@ -594,8 +581,7 @@ public class ExecutionHelper {
       }
     }
 
-    if ((EmptyPredicate.isEmpty(stageNodeId) || isPipelineRollbackStageSelected)
-        && (renderFullBottomGraph == null || !renderFullBottomGraph)) {
+    if (EmptyPredicate.isEmpty(stageNodeId) && (renderFullBottomGraph == null || !renderFullBottomGraph)) {
       pmsExecutionService.sendGraphUpdateEvent(executionSummaryEntity);
       return PipelineExecutionDetailDTO.builder()
           .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
@@ -612,24 +598,23 @@ public class ExecutionHelper {
         .build();
   }
 
-  private NodeExecution getNodeExecution(String stageNodeId, String planExecutionId) {
-    try {
-      return nodeExecutionService.getByPlanNodeUuid(stageNodeId, planExecutionId);
-    } catch (InvalidRequestException ex) {
-      log.info("NodeExecution is null for plan node: {} ", stageNodeId);
-    }
-    return null;
-  }
-
   ChildExecutionDetailDTO buildRollbackGraph(String accountId, String orgId, String projectId,
       PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails, String childStageNodeId,
-      String stageNodeExecutionId) {
+      String stageNodeExecutionId, String stageNodeId) {
+    // if rollback mode execution has started, then executionSummaryEntity will have its planExecutionId, and the
+    // rollback graph will be always there
+    boolean generateRollbackGraph = executionSummaryEntity.getRollbackModeExecutionId() != null;
+    if (!generateRollbackGraph) {
+      return null;
+    }
+    boolean isPipelineRollbackStageSelected = isPipelineRollbackStageSelected(executionSummaryEntity, stageNodeId);
+
     String childExecutionId = executionSummaryEntity.getRollbackModeExecutionId();
     PipelineExecutionSummaryEntity executionSummaryEntityForChild =
         pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, childExecutionId, false);
 
     ExecutionGraph executionGraphForChild = null;
-    if (childStageNodeId != null) {
+    if (isPipelineRollbackStageSelected && childStageNodeId != null) {
       executionGraphForChild = ExecutionGraphMapper.toExecutionGraph(
           pmsExecutionService.getOrchestrationGraph(
               childStageNodeId, executionSummaryEntityForChild.getPlanExecutionId(), stageNodeExecutionId),
@@ -640,5 +625,22 @@ public class ExecutionHelper {
             PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntityForChild, entityGitDetails))
         .executionGraph(executionGraphForChild)
         .build();
+  }
+
+  boolean isPipelineRollbackStageSelected(PipelineExecutionSummaryEntity executionSummaryEntity, String stageNodeId) {
+    return executionSummaryEntity.getLayoutNodeMap().containsKey(stageNodeId)
+        && executionSummaryEntity.getLayoutNodeMap()
+               .get(stageNodeId)
+               .getNodeType()
+               .equals(StepSpecTypeConstants.PIPELINE_ROLLBACK_STAGE);
+  }
+
+  private NodeExecution getNodeExecution(String stageNodeId, String planExecutionId) {
+    try {
+      return nodeExecutionService.getByPlanNodeUuid(stageNodeId, planExecutionId);
+    } catch (InvalidRequestException ex) {
+      log.info("NodeExecution is null for plan node: {} ", stageNodeId);
+    }
+    return null;
   }
 }
