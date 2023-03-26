@@ -10,10 +10,8 @@ package io.harness.plancreator.pipelinerollback;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
-import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
-import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -65,9 +63,5 @@ public class PipelineRollbackStageHelper {
       throw new InvalidRequestException("Exception while creating Pipeline Rollback Stage");
     }
     return prbStageYamlField.getNode().getCurrJsonNode();
-  }
-
-  public boolean isPipelineRollbackStage(NodeExecution nodeExecution) {
-    return nodeExecution.getStepType().getType().equals(OrchestrationStepTypes.PIPELINE_ROLLBACK_STAGE);
   }
 }

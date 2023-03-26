@@ -9,6 +9,7 @@ package io.harness.pms.plan.execution.service;
 
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrency.ConcurrentChildInstance;
@@ -18,7 +19,6 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.NodeType;
-import io.harness.plancreator.pipelinerollback.PipelineRollbackStageHelper;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -230,7 +230,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE) {
       updateRequired = updateIdentityStageOrStrategyNodes(planExecutionId, update) || updateRequired;
     }
-    if (PipelineRollbackStageHelper.isPipelineRollbackStage(nodeExecution)) {
+    if (nodeExecution.getStepType().getType().equals(OrchestrationStepTypes.PIPELINE_ROLLBACK_STAGE)) {
       String previousStagePlanNodeId = nodeExecutionService.get(nodeExecution.getPreviousId()).getNodeId();
       ExecutionSummaryUpdateUtils.updateNextIdOfStageBeforePipelineRollback(
           update, nodeExecution.getNodeId(), previousStagePlanNodeId);
