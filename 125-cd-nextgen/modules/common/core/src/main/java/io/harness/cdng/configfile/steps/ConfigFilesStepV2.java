@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.ConfigFileWrapper;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.configfile.mapper.ConfigFileOutcomeMapper;
 import io.harness.cdng.configfile.validator.IndividualConfigFileStepValidator;
 import io.harness.cdng.expressions.CDExpressionResolver;

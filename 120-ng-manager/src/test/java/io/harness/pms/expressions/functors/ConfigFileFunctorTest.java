@@ -22,7 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.configfile.ConfigFileOutcome;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.pms.contracts.ambiance.Ambiance;
