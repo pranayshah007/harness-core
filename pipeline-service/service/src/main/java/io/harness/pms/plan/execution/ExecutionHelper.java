@@ -137,7 +137,7 @@ public class ExecutionHelper {
   PipelineStageHelper pipelineStageHelper;
   NodeExecutionService nodeExecutionService;
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
-  RollbackGraphBuilder rollbackGraphBuilder;
+  RollbackGraphGenerator rollbackGraphGenerator;
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier) {
@@ -564,8 +564,8 @@ public class ExecutionHelper {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()), PipelineRbacPermissions.PIPELINE_VIEW);
 
-    ChildExecutionDetailDTO rollbackGraph = rollbackGraphBuilder.buildRollbackGraph(accountId, orgId, projectId,
-        executionSummaryEntity, entityGitDetails, childStageNodeId, stageNodeExecutionId, stageNodeId);
+    ChildExecutionDetailDTO rollbackGraph = rollbackGraphGenerator.checkAndBuildRollbackGraph(accountId, orgId,
+        projectId, executionSummaryEntity, entityGitDetails, childStageNodeId, stageNodeExecutionId, stageNodeId);
 
     // If the stage is of type Pipeline Stage, then return the child graph along with top graph of parent pipeline
     if (pipelineStageHelper.validateChildGraphToGenerate(executionSummaryEntity.getLayoutNodeMap(), stageNodeId)) {

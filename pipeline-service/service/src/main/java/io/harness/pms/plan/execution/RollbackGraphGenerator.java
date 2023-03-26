@@ -29,10 +29,10 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
-public class RollbackGraphBuilder {
-  PMSExecutionService pmsExecutionService;
+public class RollbackGraphGenerator {
+  PMSExecutionService executionService;
 
-  ChildExecutionDetailDTO buildRollbackGraph(String accountId, String orgId, String projectId,
+  ChildExecutionDetailDTO checkAndBuildRollbackGraph(String accountId, String orgId, String projectId,
       PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails, String childStageNodeId,
       String stageNodeExecutionId, String stageNodeId) {
     // if rollback mode execution has started, then executionSummaryEntity will have its planExecutionId, and the
@@ -45,12 +45,12 @@ public class RollbackGraphBuilder {
 
     String childExecutionId = executionSummaryEntity.getRollbackModeExecutionId();
     PipelineExecutionSummaryEntity executionSummaryEntityForChild =
-        pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, childExecutionId, false);
+        executionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, childExecutionId);
 
     ExecutionGraph executionGraphForChild = null;
     if (isPipelineRollbackStageSelected && childStageNodeId != null) {
       executionGraphForChild = ExecutionGraphMapper.toExecutionGraph(
-          pmsExecutionService.getOrchestrationGraph(
+          executionService.getOrchestrationGraph(
               childStageNodeId, executionSummaryEntityForChild.getPlanExecutionId(), stageNodeExecutionId),
           executionSummaryEntityForChild);
     }
