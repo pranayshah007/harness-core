@@ -12,6 +12,8 @@ import static io.harness.cdng.hooks.ServiceHookConstants.PRE_HOOK;
 import static io.harness.cdng.utilities.ServiceHookUtility.fetchIndividualServiceHookYamlField;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.hooks.ServiceHook;
 import io.harness.cdng.hooks.ServiceHookType;
@@ -58,6 +60,7 @@ import lombok.Data;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
+@OwnedBy(HarnessTeam.CDP)
 public class ServiceHooksPlanCreator extends ChildrenPlanCreator<ServiceHooks> {
   @Inject KryoSerializer kryoSerializer;
 
@@ -124,8 +127,8 @@ public class ServiceHooksPlanCreator extends ChildrenPlanCreator<ServiceHooks> {
 
     return planCreationResponseMap;
   }
-  @VisibleForTesting
-  void addDependenciesForIndividualServiceHook(final String serviceHookIdentifier,
+
+  public void addDependenciesForIndividualServiceHook(final String serviceHookIdentifier,
       ServiceHookStepParameters stepParameters, YamlField serviceHooksYamlField,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap) {
     YamlField individualServiceHookYamlField =

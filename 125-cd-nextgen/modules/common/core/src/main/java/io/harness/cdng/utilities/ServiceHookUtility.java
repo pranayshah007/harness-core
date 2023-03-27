@@ -38,7 +38,13 @@ public class ServiceHookUtility {
         getServiceHookIdentifierToYamlNodeMap(serviceHooksYamlField);
 
     if (serviceHookIdentifierToYamlNodeMap.containsKey(serviceHookIdentifier)) {
-      return serviceHookIdentifierToYamlNodeMap.get(serviceHookIdentifier).getField(YamlTypes.PRE_HOOK);
+      YamlField individualYamlField =
+          serviceHookIdentifierToYamlNodeMap.get(serviceHookIdentifier).getField(YamlTypes.PRE_HOOK);
+      if (individualYamlField == null) {
+        individualYamlField =
+            serviceHookIdentifierToYamlNodeMap.get(serviceHookIdentifier).getField(YamlTypes.POST_HOOK);
+      }
+      return individualYamlField;
     }
 
     return serviceHooksYamlField.getNode().asArray().get(0).getField(YamlTypes.PRE_HOOK);
@@ -47,8 +53,14 @@ public class ServiceHookUtility {
   @NotNull
   public static Map<String, YamlNode> getServiceHookIdentifierToYamlNodeMap(YamlField serviceHooksYamlField) {
     List<YamlNode> yamlNodes = Optional.of(serviceHooksYamlField.getNode().asArray()).orElse(Collections.emptyList());
-    return yamlNodes.stream().collect(
-        Collectors.toMap(e -> e.getField(YamlTypes.PRE_HOOK).getNode().getIdentifier(), k -> k));
+    return yamlNodes.stream().collect(Collectors.toMap(e -> {
+      try {
+        return e.getField(YamlTypes.PRE_HOOK).getNode().getIdentifier();
+      } catch (NullPointerException ex) {
+        return e.getField(YamlTypes.POST_HOOK).getNode().getIdentifier();
+      }
+    }, k -> k));
+    // when error occurs catch and add in preHook
   }
 
   public YamlField fetchServiceHooksYamlFieldAndSetYamlUpdates(
@@ -85,24 +97,24 @@ public class ServiceHookUtility {
 
   private YamlField fetchServiceHooksFieldYamlFieldUnderStageOverride(YamlField stageOverride) {
     return new YamlField(YamlTypes.SERVICE_HOOKS,
-        new YamlNode(YamlTypes.SERVICE_HOOKS, getConfigFilesJsonNode(), stageOverride.getNode()));
+        new YamlNode(YamlTypes.SERVICE_HOOKS, getServiceHooksJsonNode(), stageOverride.getNode()));
   }
 
-  public JsonNode getConfigFilesJsonNode() {
+  public JsonNode getServiceHooksJsonNode() {
     // preHook, postHook will give problem
     String yamlField = "---\n"
         + "- preHook:\n"
         + "     identifier: serviceHookIdentifier\n"
         + "     spec:\n";
 
-    YamlField configFilesYamlField;
+    YamlField serviceHooksYamlField;
     try {
       String yamlFieldWithUuid = YamlUtils.injectUuid(yamlField);
-      configFilesYamlField = YamlUtils.readTree(yamlFieldWithUuid);
+      serviceHooksYamlField = YamlUtils.readTree(yamlFieldWithUuid);
     } catch (IOException ex) {
       throw new InvalidRequestException("Exception while creating stageOverrides", ex);
     }
 
-    return configFilesYamlField.getNode().getCurrJsonNode();
+    return serviceHooksYamlField.getNode().getCurrJsonNode();
   }
 }

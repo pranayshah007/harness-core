@@ -200,6 +200,7 @@ public interface YamlTypes {
   String SERVICE_HOOKS = "serviceHooks";
   String SERVICE_HOOK = "serviceHook";
   String PRE_HOOK = "preHook";
+  String POST_HOOK = "postHook";
   String ELASTIGROUP_BG_STAGE_SETUP = StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP;
   String ELASTIGROUP_SWAP_ROUTE = StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE;
 

@@ -24,6 +24,7 @@ import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -36,7 +37,10 @@ public class IndividualServiceHookPlanCreator implements PartialPlanCreator<Serv
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
-    return Collections.singletonMap(YamlTypes.PRE_HOOK, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
+    Map<String, Set<String>> supportedTypes = new HashMap<>();
+    supportedTypes.put(YamlTypes.PRE_HOOK, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
+    supportedTypes.put(YamlTypes.POST_HOOK, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
+    return supportedTypes;
   }
 
   @Override
