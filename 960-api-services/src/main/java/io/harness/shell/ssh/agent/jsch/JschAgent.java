@@ -40,10 +40,10 @@ import io.harness.shell.ssh.agent.SshAgent;
 import io.harness.shell.ssh.agent.SshClient;
 import io.harness.shell.ssh.connection.ExecCommandData;
 import io.harness.shell.ssh.connection.ExecResponse;
-import io.harness.shell.ssh.connection.SftpCommandData;
+import io.harness.shell.ssh.sftp.SftpCommandData;
+import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.shell.ssh.xfer.ScpResponse;
 import io.harness.shell.ssh.xfer.ScpUploadCommandData;
-import io.harness.shell.ssh.xfer.SftpResponse;
 import io.harness.ssh.SshHelperUtils;
 import io.harness.stream.BoundedInputStream;
 

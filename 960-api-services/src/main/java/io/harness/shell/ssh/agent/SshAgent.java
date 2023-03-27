@@ -16,10 +16,10 @@ import io.harness.logging.LogCallback;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.connection.ExecCommandData;
 import io.harness.shell.ssh.connection.ExecResponse;
-import io.harness.shell.ssh.connection.SftpCommandData;
+import io.harness.shell.ssh.sftp.SftpCommandData;
+import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.shell.ssh.xfer.ScpResponse;
 import io.harness.shell.ssh.xfer.ScpUploadCommandData;
-import io.harness.shell.ssh.xfer.SftpResponse;
 
 import java.io.File;
 import java.util.Arrays;
