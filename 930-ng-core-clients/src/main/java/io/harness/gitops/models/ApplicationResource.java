@@ -7,6 +7,8 @@
 
 package io.harness.gitops.models;
 
+import io.harness.data.structure.HarnessStringUtils;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
@@ -39,6 +41,7 @@ public class ApplicationResource {
     @JsonProperty("name") public String name;
     @JsonProperty("namespace") public String namespace;
     @JsonProperty("ownerReferences") public List<OwnerReference> ownerReferences;
+    @JsonProperty("labels") public Label labels;
 
     @Data
     @Builder
@@ -148,6 +151,15 @@ public class ApplicationResource {
     @JsonProperty("source") public Source source;
   }
 
+  @Data
+  @Builder
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class Label {
+    @JsonProperty("harness.io/serviceRef") public String serviceRef;
+    @JsonProperty("harness.io/envRef") public String envRef;
+    @JsonProperty("harness.io/buildRef") public String buildRef;
+  }
+
   public String getSyncOperationPhase() {
     if (getApp().getStatus().getOperationState() == null) {
       return "";
@@ -184,5 +196,17 @@ public class ApplicationResource {
 
   public List<ApplicationResource.Resource> getResources() {
     return getApp().getStatus().getResources();
+  }
+
+  public String getEnvironmentRef() {
+    return getLabels() == null ? "" : HarnessStringUtils.emptyIfNull(getLabels().getEnvRef());
+  }
+
+  public String getServiceRef() {
+    return getLabels() == null ? "" : HarnessStringUtils.emptyIfNull(getLabels().getServiceRef());
+  }
+
+  public Label getLabels() {
+    return getApp().getMetadata().getLabels();
   }
 }
