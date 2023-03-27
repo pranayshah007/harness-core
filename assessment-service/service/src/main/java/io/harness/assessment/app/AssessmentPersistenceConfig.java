@@ -130,6 +130,6 @@ public class AssessmentPersistenceConfig extends AbstractMongoClientConfiguratio
 
   @Override
   protected boolean autoIndexCreation() {
-    return false;
+    return true;
   }
 }

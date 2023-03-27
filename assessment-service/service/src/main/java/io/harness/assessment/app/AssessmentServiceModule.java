@@ -8,8 +8,16 @@
 package io.harness.assessment.app;
 
 import io.harness.assessment.serializer.AssessmentServiceRegistrars;
+import io.harness.assessment.settings.services.AssessmentEvaluationService;
+import io.harness.assessment.settings.services.AssessmentEvaluationServiceImpl;
+import io.harness.assessment.settings.services.AssessmentResultService;
+import io.harness.assessment.settings.services.AssessmentResultServiceImpl;
 import io.harness.assessment.settings.services.AssessmentUploadService;
 import io.harness.assessment.settings.services.AssessmentUploadServiceImpl;
+import io.harness.assessment.settings.services.BenchmarkService;
+import io.harness.assessment.settings.services.BenchmarkServiceImpl;
+import io.harness.assessment.settings.services.InvitationService;
+import io.harness.assessment.settings.services.InvitationServiceImpl;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
@@ -119,6 +127,10 @@ public class AssessmentServiceModule extends AbstractModule {
 
     bind(AssessmentServiceConfiguration.class).toInstance(appConfig);
     bind(AssessmentUploadService.class).to(AssessmentUploadServiceImpl.class);
+    bind(AssessmentEvaluationService.class).to(AssessmentEvaluationServiceImpl.class);
+    bind(InvitationService.class).to(InvitationServiceImpl.class);
+    bind(AssessmentResultService.class).to(AssessmentResultServiceImpl.class);
+    bind(BenchmarkService.class).to(BenchmarkServiceImpl.class);
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
     // serve health checks. If it's being used for other tasks also, max pool size should be increased.
     bind(ExecutorService.class)

@@ -4,10 +4,17 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-package io.harness.assessment.settings.services;
 
-import io.harness.assessment.settings.beans.dto.AssessmentInviteDTO;
+package io.harness.assessment.settings.beans.dto.upload;
 
-public interface InvitationService {
-  AssessmentInviteDTO sendAssessmentInvite(AssessmentInviteDTO assessmentInviteDTO);
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import lombok.Data;
+
+@Data
+public class UploadedOption {
+  @NotNull String optionId;
+  String optionText;
+  @Min(0) @Max(10) Long optionPoints;
 }

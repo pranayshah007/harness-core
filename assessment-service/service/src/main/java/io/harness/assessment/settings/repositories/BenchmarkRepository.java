@@ -4,21 +4,21 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-
 package io.harness.assessment.settings.repositories;
 
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.assessment.settings.beans.entities.Assessment;
+import io.harness.assessment.settings.beans.entities.Benchmark;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
 @OwnedBy(HarnessTeam.SEI)
-public interface AssessmentRepository extends CrudRepository<Assessment, String>, AssessmentRepositoryCustom {
-  Optional<Assessment> findByAssessmentIdAndVersion(String assessmentId, Long version);
-
-  Optional<Assessment> findFirstByAssessmentIdOrderByVersionDesc(String assessmentId);
+public interface BenchmarkRepository extends CrudRepository<Benchmark, String> {
+  List<Benchmark> findAllByAssessmentIdAndVersion(String assessmentId, Long version);
+  Optional<Benchmark> findOneByAssessmentIdAndVersionAndBenchmarkId(
+      String assessmentId, Long version, String benchmarkId);
 }
