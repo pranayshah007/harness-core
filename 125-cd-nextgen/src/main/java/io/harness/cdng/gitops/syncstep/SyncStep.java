@@ -134,7 +134,7 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
     }
 
     Set<String> serviceIdsInPipelineExecution = getServiceIdsInPipelineExecution(ambiance);
-    Set<String> environmentIdsInPipelineExecution = getEnvironmentIdsInPipelineExecution(ambiance);
+    Set<String> clusterIdsInPipelineExecution = getClusterIdsInPipelineExecution(ambiance);
 
     Set<Application> applicationsFailedToSync = new HashSet<>();
 
@@ -151,7 +151,7 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
     // check sync eligibility for applications
     logExecutionInfo("Checking application(s) eligibility for sync...", logger);
     prepareApplicationForSync(applicationsToBeSynced, applicationsFailedToSync, accountId, orgId, projectId,
-        serviceIdsInPipelineExecution, environmentIdsInPipelineExecution, logger);
+        serviceIdsInPipelineExecution, clusterIdsInPipelineExecution, logger);
     List<Application> applicationsEligibleForSync =
         getApplicationsToBeSyncedAndPolled(applicationsToBeSynced, applicationsFailedToSync);
 
@@ -191,14 +191,14 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
         .build();
   }
 
-  private Set<String> getEnvironmentIdsInPipelineExecution(Ambiance ambiance) {
+  private Set<String> getClusterIdsInPipelineExecution(Ambiance ambiance) {
     OptionalSweepingOutput optionalSweepingOutputForEnv = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(GITOPS_SWEEPING_OUTPUT));
     return optionalSweepingOutputForEnv != null && optionalSweepingOutputForEnv.isFound()
         ? ((GitopsClustersOutcome) optionalSweepingOutputForEnv.getOutput())
               .getClustersData()
               .stream()
-              .map(ClusterData::getEnvId)
+              .map(ClusterData::getClusterId)
               .collect(Collectors.toSet())
         : new HashSet<>();
   }
@@ -250,7 +250,7 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
 
   private void prepareApplicationForSync(List<Application> applicationsToBeSynced,
       Set<Application> failedToSyncApplications, String accountId, String orgId, String projectId,
-      Set<String> serviceIdsInPipelineExecution, Set<String> environmentIdsInPipelineExecution, LogCallback logger) {
+      Set<String> serviceIdsInPipelineExecution, Set<String> clusterIdsInPipelineExecution, LogCallback logger) {
     for (Application application : applicationsToBeSynced) {
       if (failedToSyncApplications.contains(application)) {
         continue;
@@ -259,7 +259,7 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
 
       if (latestApplicationState == null
           || !isApplicationEligibleForSync(
-              latestApplicationState, application, serviceIdsInPipelineExecution, environmentIdsInPipelineExecution)) {
+              latestApplicationState, application, serviceIdsInPipelineExecution, clusterIdsInPipelineExecution)) {
         failedToSyncApplications.add(application);
         continue;
       }
@@ -431,16 +431,16 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
   }
 
   private boolean isApplicationEligibleForSync(ApplicationResource latestApplicationState, Application application,
-      Set<String> serviceIdsInPipelineExecution, Set<String> environmentIdsInPipelineExecution) {
+      Set<String> serviceIdsInPipelineExecution, Set<String> clusterIdsInPipelineExecution) {
     if (!isApplicationCorrespondsToServiceInExecution(latestApplicationState, serviceIdsInPipelineExecution)) {
       application.setSyncMessage(
           "Application does not correspond to the service(s) selected in the pipeline execution.");
       return false;
     }
 
-    if (!isApplicationCorrespondsToEnvInExecution(latestApplicationState, environmentIdsInPipelineExecution)) {
+    if (!isApplicationCorrespondsToClusterInExecution(latestApplicationState, clusterIdsInPipelineExecution)) {
       application.setSyncMessage(
-          "Application does not correspond to the environment(s) selected in the pipeline execution.");
+          "Application does not correspond to the cluster(s) selected in the pipeline execution.");
       return false;
     }
 
@@ -458,9 +458,9 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
     return true;
   }
 
-  private boolean isApplicationCorrespondsToEnvInExecution(
-      ApplicationResource latestApplicationState, Set<String> environmentIdsInPipelineExecution) {
-    return environmentIdsInPipelineExecution.contains(latestApplicationState.getEnvironmentRef());
+  private boolean isApplicationCorrespondsToClusterInExecution(
+      ApplicationResource latestApplicationState, Set<String> clusterIdsInPipelineExecution) {
+    return clusterIdsInPipelineExecution.contains(latestApplicationState.getClusterIdentifier());
   }
 
   private boolean isApplicationCorrespondsToServiceInExecution(
