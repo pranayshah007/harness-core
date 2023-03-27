@@ -8,6 +8,7 @@ package io.harness.idp.configmanager.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 
@@ -18,7 +19,7 @@ import lombok.experimental.UtilityClass;
 public class AppConfigMapper {
   public AppConfig toDTO(AppConfigEntity appConfigEntity) {
     AppConfig appConfig = new AppConfig();
-    appConfig.setPluginId(appConfigEntity.getPluginId());
+    appConfig.setConfigId(appConfigEntity.getConfigId());
     appConfig.setConfigs(appConfigEntity.getConfigs());
     appConfig.setEnabled(appConfigEntity.getEnabled());
     appConfig.setEnabledDisabledAt(appConfigEntity.getEnabledDisabledAt());
@@ -30,7 +31,7 @@ public class AppConfigMapper {
   public AppConfigEntity fromDTO(AppConfig appConfig, String accountIdentifier) {
     return AppConfigEntity.builder()
         .accountIdentifier(accountIdentifier)
-        .pluginId(appConfig.getPluginId())
+        .configId(appConfig.getConfigId())
         .configs(appConfig.getConfigs())
         .enabled(appConfig.isEnabled())
         .build();

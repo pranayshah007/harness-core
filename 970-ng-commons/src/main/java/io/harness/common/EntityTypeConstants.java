@@ -92,6 +92,7 @@ public interface EntityTypeConstants {
   String CLAIR = "Clair";
   String DATA_THEOREM = "DataTheorem";
   String DOCKER_CONTENT_TRUST = "DockerContentTrust";
+  String CUSTOM_INGEST = "CustomIngest";
   String EXTERNAL = "External";
   String FORTIFY_ON_DEMAND = "FortifyOnDemand";
   String GRYPE = "Grype";

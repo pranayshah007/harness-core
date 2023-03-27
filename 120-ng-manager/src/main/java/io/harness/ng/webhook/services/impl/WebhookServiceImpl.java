@@ -108,12 +108,26 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
       log.info("Upsert Webhook Response : {}", response);
       upsertWebhookResponseDTO = response;
     } catch (ExplanationException ex) {
-      int statusCode = convertScmErrorCodeToStatusCode(((ScmException) ex.getCause()).getCode());
-      processAndThrowException(statusCode, scmConnector, ex.getMessage(), upsertWebhookRequestDTO);
+      if (ex.getCause() instanceof ScmException) {
+        int statusCode = convertScmErrorCodeToStatusCode(((ScmException) ex.getCause()).getCode());
+        processAndThrowException(statusCode, scmConnector, ex.getMessage(), upsertWebhookRequestDTO);
+      } else {
+        log.error("Upsert Webhook Error for accountId: {}, orgId:{}, projectId:{} : ",
+            upsertWebhookRequestDTO.getAccountIdentifier(), upsertWebhookRequestDTO.getOrgIdentifier(),
+            upsertWebhookRequestDTO.getProjectIdentifier(), ex);
+        throw ex;
+      }
     } catch (HintException ex) {
-      ErrorCode errorCode = ((ScmException) ex.getCause().getCause()).getCode();
-      int statusCode = convertScmErrorCodeToStatusCode(errorCode);
-      processAndThrowException(statusCode, scmConnector, ex.getMessage(), upsertWebhookRequestDTO);
+      if (ex.getCause() != null && ex.getCause().getCause() instanceof ScmException) {
+        ErrorCode errorCode = ((ScmException) ex.getCause().getCause()).getCode();
+        int statusCode = convertScmErrorCodeToStatusCode(errorCode);
+        processAndThrowException(statusCode, scmConnector, ex.getMessage(), upsertWebhookRequestDTO);
+      } else {
+        log.error("Upsert Webhook Error for accountId: {}, orgId:{}, projectId:{} : ",
+            upsertWebhookRequestDTO.getAccountIdentifier(), upsertWebhookRequestDTO.getOrgIdentifier(),
+            upsertWebhookRequestDTO.getProjectIdentifier(), ex);
+        throw ex;
+      }
     } catch (ScmException ex) {
       int statusCode = convertScmErrorCodeToStatusCode(ex.getCode());
       processAndThrowException(statusCode, scmConnector, ex.getMessage(), upsertWebhookRequestDTO);

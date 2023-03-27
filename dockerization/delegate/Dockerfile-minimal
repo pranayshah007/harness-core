@@ -28,7 +28,7 @@ COPY immutable-scripts /opt/harness-delegate/
 
 WORKDIR /opt/harness-delegate
 
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 ARG BASEURL=https://app.harness.io/public/shared/delegates
 ARG DELEGATEVERSION
 

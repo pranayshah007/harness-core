@@ -7,11 +7,14 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.CLI_OPTIONS;
 import static io.harness.cdng.provision.terraform.TerraformStepHelper.SKIP_REFRESH_COMMAND;
 import static io.harness.cdng.provision.terraform.TerraformStepHelper.TERRAFORM_CLOUD_CLI;
 
 import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V3;
 import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V4;
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V5;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -182,6 +185,15 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
     ParameterField<Boolean> skipTerraformRefreshCommand =
         planStepParameters.getConfiguration().getSkipTerraformRefresh();
     builder.skipTerraformRefresh(ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommand));
+
+    if (featureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
+      io.harness.delegate.TaskType taskTypeV5 =
+          io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V5.name()).build();
+      helper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV5, CLI_OPTIONS);
+
+      builder.terraformCommandFlags(
+          helper.getTerraformCliFlags(planStepParameters.getConfiguration().getCliOptionFlags()));
+    }
 
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.taskType(TFTaskType.PLAN)

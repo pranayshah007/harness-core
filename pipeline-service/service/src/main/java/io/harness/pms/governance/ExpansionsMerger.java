@@ -54,8 +54,8 @@ public class ExpansionsMerger {
         }
       }
     }
-    String jsonWithUpdates = MergeHelper.mergeUpdatesIntoJson(pipelineYaml, fqnToUpdateMap);
-    return MergeHelper.removeFQNs(jsonWithUpdates, toBeRemovedFQNs);
+    String withFQNsRemoved = MergeHelper.removeFQNs(pipelineYaml, toBeRemovedFQNs);
+    return MergeHelper.mergeUpdatesIntoJson(withFQNsRemoved, fqnToUpdateMap);
   }
 
   String getNewFQN(String fqn, String key, ExpansionPlacementStrategy placementStrategy) {

@@ -40,13 +40,13 @@ public class BackstagePermissionsApiImpl implements BackstagePermissionsApi {
   public Response getBackstagePermissions(String harnessAccount) {
     Optional<BackstagePermissions> backstagePermissions =
         backstagePermissionsService.findByAccountIdentifier(harnessAccount);
-    BackstagePermissionsResponse backstagePermissionsResponseResponse = new BackstagePermissionsResponse();
     if (backstagePermissions.isEmpty()) {
       log.warn("Could not fetch permissions for the account {}", harnessAccount);
       return Response.status(Response.Status.NOT_FOUND).build();
     }
-    backstagePermissionsResponseResponse.setData(backstagePermissions.get());
-    return Response.status(Response.Status.OK).entity(backstagePermissionsResponseResponse).build();
+    BackstagePermissionsResponse backstagePermissionsResponse = new BackstagePermissionsResponse();
+    backstagePermissionsResponse.setData(backstagePermissions.get());
+    return Response.status(Response.Status.OK).entity(backstagePermissionsResponse).build();
   }
 
   @Override

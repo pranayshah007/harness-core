@@ -6,7 +6,8 @@
  */
 package io.harness.credit.services.impl;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.GTM;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.credit.entities.CICredit;
 import io.harness.credit.entities.Credit;
@@ -15,7 +16,7 @@ import io.harness.repositories.CreditRepository;
 
 import com.google.inject.Inject;
 
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 public class CreditServiceImpl implements CreditService {
   private final CreditRepository creditRepository;
   @Inject

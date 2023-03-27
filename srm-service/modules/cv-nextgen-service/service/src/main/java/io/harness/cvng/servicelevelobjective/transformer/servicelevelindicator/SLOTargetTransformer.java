@@ -8,7 +8,7 @@
 package io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator;
 
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.SLOTargetSpec;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.SLOTarget;
+import io.harness.cvng.servicelevelobjective.entities.SLOTarget;
 
 public interface SLOTargetTransformer<E extends SLOTarget, T extends SLOTargetSpec> {
   E getSLOTarget(T spec);

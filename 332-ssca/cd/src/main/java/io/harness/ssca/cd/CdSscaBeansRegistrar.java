@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.ssca.cd.beans.stepnode.CdSscaOrchestrationStepNode;
+import io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationStepNode;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
 import io.harness.yaml.schema.beans.YamlGroup;
 import io.harness.yaml.schema.beans.YamlSchemaMetadata;
@@ -33,7 +33,7 @@ public class CdSscaBeansRegistrar {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .namespace(SchemaNamespaceConstants.PMS)
                                            .modulesSupported(ImmutableList.of(ModuleType.CD))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .featureFlags(Collections.singletonList(FeatureName.SSCA_ENABLED.name()))

@@ -12,6 +12,7 @@ import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
@@ -85,12 +86,15 @@ import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObject
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
+import io.harness.cvng.servicelevelobjective.entities.SLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.cvng.servicelevelobjective.transformer.SLOTargetTransformerOldAndNew;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
@@ -115,6 +119,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -139,6 +144,8 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
 
   @Inject private OutboxService outboxService;
   @Inject private SLIRecordService sliRecordService;
+
+  @Inject private Map<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMap;
 
   private BuilderFactory builderFactory;
   ProjectParams projectParams;
@@ -270,6 +277,13 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+    SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
+                              .getSLOTarget(sloDTO.getSloTarget().getSpec());
+    assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
+    assertThat(serviceLevelObjective.getSloTarget())
+        .isEqualTo(SLOTargetTransformerOldAndNew.getOldSLOtargetFromNewSLOtarget(sloTarget));
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
     SimpleServiceLevelObjective simpleServiceLevelObjective =
         (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
@@ -305,6 +319,45 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThat(verificationTaskService.getCompositeSLOVerificationTaskId(
                    builderFactory.getContext().getAccountId(), compositeServiceLevelObjective.getUuid()))
         .isEqualTo(compositeServiceLevelObjective.getUuid());
+    serviceLevelObjective = serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+    sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
+                    .getSLOTarget(sloDTO.getSloTarget().getSpec());
+    assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
+    assertThat(serviceLevelObjective.getSloTarget())
+        .isEqualTo(SLOTargetTransformerOldAndNew.getOldSLOtargetFromNewSLOtarget(sloTarget));
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreateSimpleSLOWithConsecutiveMinutes_Success() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    SimpleServiceLevelObjectiveSpec spec = (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
+    WindowBasedServiceLevelIndicatorSpec sliSpec =
+        (WindowBasedServiceLevelIndicatorSpec) spec.getServiceLevelIndicators().get(0).getSpec();
+    RatioSLIMetricSpec sliMetricSpec = (RatioSLIMetricSpec) sliSpec.getSpec();
+    sliMetricSpec.setConsiderConsecutiveMinutes(5);
+    sliMetricSpec.setConsiderAllConsecutiveMinutesFromStartAsBad(false);
+    createMonitoredService();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+    SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
+                              .getSLOTarget(sloDTO.getSloTarget().getSpec());
+    assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
+    assertThat(serviceLevelObjective.getSloTarget())
+        .isEqualTo(SLOTargetTransformerOldAndNew.getOldSLOtargetFromNewSLOtarget(sloTarget));
+    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+    assertThat((RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) ((SimpleServiceLevelObjectiveSpec)
+                                                                                 serviceLevelObjectiveResponse
+                                                                                     .getServiceLevelObjectiveV2DTO()
+                                                                                     .getSpec())
+                                         .getServiceLevelIndicators()
+                                         .get(0)
+                                         .getSpec())
+                   .getSpec())
+        .isEqualTo(sliMetricSpec);
   }
 
   @Test
@@ -1123,7 +1176,10 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     String sliIndicator = serviceLevelIndicator.getUuid();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
-    serviceLevelIndicatorDTO1.setSliMissingDataType(SLIMissingDataType.BAD);
+    WindowBasedServiceLevelIndicatorSpec serviceLevelIndicatorSpec =
+        (WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec();
+    serviceLevelIndicatorSpec.setSliMissingDataType(SLIMissingDataType.BAD);
+    serviceLevelIndicatorDTO1.setSpec(serviceLevelIndicatorSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
@@ -1629,6 +1685,21 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     ServiceLevelObjectiveV2Response serviceLevelObjectiveV2Response =
         serviceLevelObjectiveV2Service.get(projectParams, sloDTO.getIdentifier());
     assertThat(serviceLevelObjectiveV2Response.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGet_IdentifierList() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    ProjectParams accountProjectParams =
+        ProjectParams.builder().accountIdentifier(projectParams.getAccountIdentifier()).build();
+    List<AbstractServiceLevelObjective> serviceLevelObjectiveList = serviceLevelObjectiveV2Service.getWithChildResource(
+        accountProjectParams, Collections.singletonList(sloDTO.getIdentifier()));
+    assertThat(serviceLevelObjectiveList.size()).isEqualTo(1);
+    assertThat(serviceLevelObjectiveList.get(0).getIdentifier()).isEqualTo(sloDTO.getIdentifier());
   }
 
   @Test
@@ -2227,6 +2298,47 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testSendNotification_compositeSLO() throws IllegalAccessException, IOException {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponseOne =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setName("rule2");
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleDTO.setConditions(
+        Arrays.asList(NotificationRuleCondition.builder()
+                          .type(NotificationRuleConditionType.ERROR_BUDGET_REMAINING_MINUTES)
+                          .spec(ErrorBudgetRemainingMinutesConditionSpec.builder().threshold(9000.0).build())
+                          .build()));
+    NotificationRuleResponse notificationRuleResponseTwo =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    compositeSLODTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build(),
+            NotificationRuleRefDTO.builder()
+                .notificationRuleRef(notificationRuleResponseTwo.getNotificationRule().getIdentifier())
+                .enabled(true)
+                .build()));
+    createMonitoredService();
+    serviceLevelObjectiveV2Service.update(projectParams, compositeSLODTO.getIdentifier(), compositeSLODTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, compositeSLODTO.getIdentifier());
+
+    clock = Clock.fixed(clock.instant().plus(1, ChronoUnit.HOURS), ZoneOffset.UTC);
+    FieldUtils.writeField(serviceLevelObjectiveV2Service, "clock", clock, true);
+    when(notificationClient.sendNotificationAsync(any()))
+        .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
+
+    serviceLevelObjectiveV2Service.handleNotification(serviceLevelObjective);
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
+  }
+
+  @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testShouldSendNotification_withErrorBudgetRemainingPercentage() {
@@ -2341,8 +2453,13 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                    .size())
         .isEqualTo(0);
   }
+
   private ServiceLevelObjectiveV2DTO createSLOBuilder() {
     return builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+  }
+
+  private ServiceLevelObjectiveV2DTO createCompositeSLOBuilder() {
+    return builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder().build();
   }
 
   private void createMonitoredService() {
@@ -2362,8 +2479,19 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     List<SLIRecordParam> sliRecordParams = new ArrayList<>();
     for (int i = 0; i < sliStates.size(); i++) {
       SLIRecord.SLIState sliState = sliStates.get(i);
-      sliRecordParams.add(
-          SLIRecordParam.builder().sliState(sliState).timeStamp(startTime.plus(Duration.ofMinutes(i))).build());
+      long goodCount = 0;
+      long badCount = 0;
+      if (sliState == GOOD) {
+        goodCount++;
+      } else if (sliState == BAD) {
+        badCount++;
+      }
+      sliRecordParams.add(SLIRecordParam.builder()
+                              .sliState(sliState)
+                              .timeStamp(startTime.plus(Duration.ofMinutes(i)))
+                              .goodEventCount(goodCount)
+                              .badEventCount(badCount)
+                              .build());
     }
     return sliRecordParams;
   }

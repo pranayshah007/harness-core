@@ -50,6 +50,7 @@ public class ApprovalStateExecutionDataTest extends WingsBaseTest {
                                      .approvalValue("DONE")
                                      .rejectionField("Status")
                                      .rejectionValue("REJECTED")
+                                     .description("a-description")
                                      .build();
     MockitoAnnotations.initMocks(approvalStateExecutionData);
     approvalStateExecutionData.setStatus(ExecutionStatus.SUCCESS);
@@ -65,7 +66,7 @@ public class ApprovalStateExecutionDataTest extends WingsBaseTest {
     List<String> keys = executionSummary.keySet().stream().collect(Collectors.toList());
     assertThat(keys).isNotNull().containsExactlyInAnyOrder("total", "breakdown", "approvalId", "status",
         "timeoutMillis", "approvalCriteria", "currentStatus", "rejectionCriteria", "approvedBy", "variables",
-        "comments", "approvalViaApiKey", "autoRejectPreviousDeployments");
+        "comments", "approvalViaApiKey", "autoRejectPreviousDeployments", "description");
   }
 
   @Test
@@ -77,6 +78,6 @@ public class ApprovalStateExecutionDataTest extends WingsBaseTest {
     assertThat(keys).isNotNull().containsExactlyInAnyOrder("startTs", "endTs", "authorizationStatus",
         "isUserAuthorized", "approvalId", "status", "timeoutMillis", "approvalCriteria", "currentStatus",
         "rejectionCriteria", "approvedBy", "variables", "comments", "duration", "approvalViaApiKey",
-        "autoRejectPreviousDeployments");
+        "autoRejectPreviousDeployments", "description");
   }
 }

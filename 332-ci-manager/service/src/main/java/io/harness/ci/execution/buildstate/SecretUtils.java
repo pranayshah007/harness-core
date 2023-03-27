@@ -47,6 +47,7 @@ import com.google.inject.name.Named;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -60,6 +61,9 @@ public class SecretUtils {
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 6;
+
+  private final Pattern secretManagerRefRegex =
+      Pattern.compile("(gcpsecretsmanager|hashicorpvault|awssecretsmanager|azurevault)://");
 
   @Inject
   public SecretUtils(@Named("PRIVILEGED") SecretNGManagerClient secretNGManagerClient,
@@ -122,7 +126,11 @@ public class SecretUtils {
     IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(secretRefData.toSecretRefStringValue(),
         ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
-    SecretVariableDTO.Type secretType = getSecretType(getSecret(identifierRef).getType());
+    SecretVariableDTO.Type secretType = SecretVariableDTO.Type.TEXT;
+    // only get secret type when secret manager is not referred directly, otherwise treat it as text.
+    if (!secretManagerRefRegex.matcher(secretIdentifier).find()) {
+      secretType = getSecretType(getSecret(identifierRef).getType());
+    }
     SecretVariableDTO secret =
         SecretVariableDTO.builder()
             .name("HARNESS"

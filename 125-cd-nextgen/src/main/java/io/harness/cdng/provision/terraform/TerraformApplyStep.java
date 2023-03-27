@@ -7,12 +7,15 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.CLI_OPTIONS;
 import static io.harness.cdng.provision.terraform.TerraformStepHelper.SKIP_REFRESH_COMMAND;
 import static io.harness.cdng.provision.terraform.TerraformStepHelper.TERRAFORM_CLOUD_CLI;
 
 import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V3;
 import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V4;
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V5;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -179,6 +182,14 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
       builder.workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()));
     }
 
+    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
+      io.harness.delegate.TaskType taskTypeV5 =
+          io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V5.name()).build();
+      helper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV5, CLI_OPTIONS);
+
+      builder.terraformCommandFlags(helper.getTerraformCliFlags(stepParameters.getConfiguration().getCliOptions()));
+    }
+
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.currentStateFileId(helper.getLatestFileId(entityId))
             .taskType(TFTaskType.APPLY)
@@ -233,6 +244,15 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
     builder.entityId(entityId);
     builder.currentStateFileId(helper.getLatestFileId(entityId));
+
+    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
+      io.harness.delegate.TaskType taskTypeV5 =
+          io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V5.name()).build();
+      helper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV5, CLI_OPTIONS);
+
+      builder.terraformCommandFlags(helper.getTerraformCliFlags(stepParameters.getConfiguration().getCliOptions()));
+    }
+
     TerraformInheritOutput inheritOutput = helper.getSavedInheritOutput(provisionerIdentifier, APPLY.name(), ambiance);
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.workspace(inheritOutput.getWorkspace())

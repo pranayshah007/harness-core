@@ -85,6 +85,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -136,6 +137,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PipelineAsyncValidationService pipelineAsyncValidationService;
   @Inject private final PipelineValidationService pipelineValidationService;
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
+  @Inject PmsFeatureFlagService pmsFeatureFlagService;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -809,8 +811,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
           orgIdentifier, projectIdentifier, pipelineIdentifier));
     }
 
-    return pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineEntityOptional.get().getYaml(), false);
+    if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
+      return null;
+    }
+    return pipelineGovernanceService.getExpandedPipelineJSONFromYaml(
+        accountId, orgIdentifier, projectIdentifier, pipelineEntityOptional.get().getYaml(), false, null, null);
   }
 
   @Override

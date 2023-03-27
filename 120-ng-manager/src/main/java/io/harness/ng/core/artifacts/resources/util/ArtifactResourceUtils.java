@@ -860,4 +860,35 @@ public class ArtifactResourceUtils {
     String entityRef;
     String entityFQN;
   }
+
+  @Nullable
+  public String getResolvedConnectorId(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String runtimeInputYaml, String connectorRef, String fqnPath,
+      GitEntityFindInfoDTO gitEntityBasicInfo) {
+    final ParameterField<String> connectorParameterField =
+        RuntimeInputValuesValidator.getInputSetParameterField(connectorRef);
+    if (connectorParameterField == null) {
+      return connectorRef;
+    }
+    if (!connectorParameterField.isExpression()) {
+      return connectorParameterField.getValue();
+    }
+    // this check assumes ui sends -1 as pipeline identifier when pipeline is under construction
+    if ("-1".equals(pipelineIdentifier)) {
+      throw new InvalidRequestException(
+          String.format("Couldn't resolve connector expression %s, as pipeline has not been saved yet.", connectorRef));
+    }
+
+    String mergedCompleteYaml = getMergedCompleteYaml(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
+    if (isNotEmpty(mergedCompleteYaml) && TemplateRefHelper.hasTemplateRef(mergedCompleteYaml)) {
+      mergedCompleteYaml = applyTemplatesOnGivenYaml(
+          accountId, orgIdentifier, projectIdentifier, mergedCompleteYaml, gitEntityBasicInfo);
+    }
+    CDYamlExpressionEvaluator CDYamlExpressionEvaluator =
+        new CDYamlExpressionEvaluator(mergedCompleteYaml, fqnPath, new ArrayList<>());
+    connectorRef = CDYamlExpressionEvaluator.renderExpression(connectorRef);
+
+    return connectorRef;
+  }
 }

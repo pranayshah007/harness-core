@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.PublishedFileArtifact;
 import io.harness.beans.execution.PublishedImageArtifact;
+import io.harness.ssca.execution.orchestration.outcome.PublishedSbomArtifact;
 
 import java.util.List;
 import lombok.Builder;

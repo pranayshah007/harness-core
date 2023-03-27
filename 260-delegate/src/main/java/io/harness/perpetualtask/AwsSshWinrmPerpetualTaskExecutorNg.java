@@ -37,6 +37,7 @@ import software.wings.service.impl.aws.model.AwsEC2Instance;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -52,7 +53,7 @@ public class AwsSshWinrmPerpetualTaskExecutorNg implements PerpetualTaskExecutor
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private AwsListEC2InstancesDelegateTaskHelper awsListEC2InstancesDelegateTaskHelper;
   @Inject private AwsASGDelegateTaskHelper awsASGDelegateTaskHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -106,8 +107,8 @@ public class AwsSshWinrmPerpetualTaskExecutorNg implements PerpetualTaskExecutor
   }
 
   private List<AwsEC2Instance> getAwsEC2Instance(AwsSshInstanceSyncPerpetualTaskParamsNg taskParams) {
-    AwsInfraDelegateConfig infraConfig =
-        (AwsInfraDelegateConfig) kryoSerializer.asObject(taskParams.getInfraDelegateConfig().toByteArray());
+    AwsInfraDelegateConfig infraConfig = (AwsInfraDelegateConfig) referenceFalseKryoSerializer.asObject(
+        taskParams.getInfraDelegateConfig().toByteArray());
 
     if (EmptyPredicate.isNotEmpty(infraConfig.getAutoScalingGroupName())) { // ASG
       return awsASGDelegateTaskHelper.getInstances(infraConfig.getAwsConnectorDTO(),

@@ -10,11 +10,15 @@ package io.harness.cvng.core.services.impl;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.offset;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -31,9 +35,11 @@ import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.change.ChangeTimeline.TimeRangeDetail;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.impl.ChangeEventServiceImpl.TimelineObject;
+import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
@@ -50,10 +56,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.MockitoAnnotations;
 
 public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Inject MonitoredServiceService monitoredServiceService;
@@ -62,14 +70,21 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;
 
   BuilderFactory builderFactory;
+  FeatureFlagService featureFlagService;
 
   List<String> changeSourceIdentifiers = Arrays.asList("changeSourceID");
 
   @Before
-  public void before() {
+  public void before() throws IllegalAccessException {
     builderFactory = BuilderFactory.getDefault();
     monitoredServiceService.createDefault(builderFactory.getProjectParams(),
         builderFactory.getContext().getServiceIdentifier(), builderFactory.getContext().getEnvIdentifier());
+    MockitoAnnotations.initMocks(this);
+    featureFlagService = mock(FeatureFlagService.class);
+    when(featureFlagService.isFeatureFlagEnabled(
+             eq(builderFactory.getContext().getAccountId()), eq(FeatureFlagNames.SRM_INTERNAL_CHANGE_SOURCE_CE)))
+        .thenReturn(true);
+    FieldUtils.writeField(changeEventService, "featureFlagService", featureFlagService, true);
   }
 
   @Test
@@ -372,7 +387,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
         Instant.parse("2023-01-31T00:00:00.00Z"), Instant.parse("2023-01-31T10:00:00.00Z"), "searchText", null, null);
     assertThat(activityQuery.toString())
         .isEqualTo(
-            "{ {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": \"2023-01-31T10:00:00Z\"}}}, {\"eventTime\": {\"$gte\": {\"$date\": \"2023-01-31T00:00:00Z\"}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\", \"PAGER_DUTY\", \"KUBERNETES\", \"HARNESS_CD_CURRENT_GEN\", \"FEATURE_FLAG\", \"CUSTOM_DEPLOY\", \"CUSTOM_INCIDENT\", \"CUSTOM_INFRA\", \"CUSTOM_FF\"]}}]}  }");
+            "{ {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": \"2023-01-31T10:00:00Z\"}}}, {\"eventTime\": {\"$gte\": {\"$date\": \"2023-01-31T00:00:00Z\"}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\", \"PAGER_DUTY\", \"KUBERNETES\", \"HARNESS_CD_CURRENT_GEN\", \"FEATURE_FLAG\", \"CHAOS_EXPERIMENT\", \"CUSTOM_DEPLOY\", \"CUSTOM_INCIDENT\", \"CUSTOM_INFRA\", \"CUSTOM_FF\"]}}]}  }");
   }
 
   @Test
@@ -381,11 +396,13 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   public void testGetChangeSummary() {
     hPersistence.save(Arrays.asList(
         builderFactory.getInternalChangeActivity_FFBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
+        builderFactory.getInternalChangeActivity_CEBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
         builderFactory.getKubernetesClusterActivityForAppServiceBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(100)).build(),
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(200)).build(),
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(300)).build(),
+        builderFactory.getInternalChangeActivity_CEBuilder().eventTime(Instant.ofEpochSecond(300)).build(),
         builderFactory.getInternalChangeActivity_FFBuilder().eventTime(Instant.ofEpochSecond(300)).build(),
         builderFactory.getInternalChangeActivity_FFBuilder().eventTime(Instant.ofEpochSecond(400)).build(),
         builderFactory.getKubernetesClusterActivityForAppServiceBuilder()
@@ -401,11 +418,13 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(1);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.DEPLOYMENT).getPercentageChange())
         .isCloseTo(200.0, offset(0.1));
+
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.ALERTS).getCount()).isEqualTo(0);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.ALERTS).getCountInPrecedingWindow())
         .isEqualTo(0);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.ALERTS).getPercentageChange())
         .isCloseTo(0.0, offset(0.1));
+
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.INFRASTRUCTURE).getCount()).isEqualTo(1);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.INFRASTRUCTURE).getCountInPrecedingWindow())
         .isEqualTo(1);
@@ -418,9 +437,35 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.FEATURE_FLAG).getPercentageChange())
         .isCloseTo(100.0, offset(0.1));
 
-    assertThat(changeSummaryDTO.getTotal().getCount()).isEqualTo(6);
-    assertThat(changeSummaryDTO.getTotal().getCountInPrecedingWindow()).isEqualTo(3);
-    assertThat(changeSummaryDTO.getTotal().getPercentageChange()).isCloseTo(100.0, offset(0.1));
+    assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.CHAOS_EXPERIMENT).getCount()).isEqualTo(1);
+    assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.CHAOS_EXPERIMENT).getCountInPrecedingWindow())
+        .isEqualTo(1);
+    assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.CHAOS_EXPERIMENT).getPercentageChange())
+        .isCloseTo(0.0, offset(0.1));
+
+    assertThat(changeSummaryDTO.getTotal().getCount()).isEqualTo(7);
+    assertThat(changeSummaryDTO.getTotal().getCountInPrecedingWindow()).isEqualTo(4);
+    assertThat(changeSummaryDTO.getTotal().getPercentageChange()).isCloseTo(75.0, offset(0.1));
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetChangeSummary_withCEFeatureFlagOff() {
+    hPersistence.save(
+        Arrays.asList(builderFactory.getInternalChangeActivity_CEBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
+            builderFactory.getInternalChangeActivity_CEBuilder().eventTime(Instant.ofEpochSecond(300)).build()));
+
+    when(featureFlagService.isFeatureFlagEnabled(
+             eq(builderFactory.getContext().getAccountId()), eq(FeatureFlagNames.SRM_INTERNAL_CHANGE_SOURCE_CE)))
+        .thenReturn(false);
+    ChangeSummaryDTO changeSummaryDTO =
+        changeEventService.getChangeSummary(builderFactory.getContext().getProjectParams(), (List<String>) null, null,
+            null, null, Instant.ofEpochSecond(100), Instant.ofEpochSecond(500));
+
+    assertThat(changeSummaryDTO.getTotal().getCount()).isEqualTo(0);
+    assertThat(changeSummaryDTO.getTotal().getCountInPrecedingWindow()).isEqualTo(0);
+    assertThat(changeSummaryDTO.getTotal().getPercentageChange()).isCloseTo(0.0, offset(0.1));
   }
 
   @Test
@@ -433,6 +478,11 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
             .monitoredServiceIdentifier("service_env2")
             .eventTime(Instant.ofEpochSecond(50))
             .build(),
+        builderFactory.getInternalChangeActivity_CEBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
+        builderFactory.getInternalChangeActivity_CEBuilder()
+            .monitoredServiceIdentifier("service_env2")
+            .eventTime(Instant.ofEpochSecond(50))
+            .build(),
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
         builderFactory.getKubernetesClusterActivityForAppServiceBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(100)).build(),
@@ -442,6 +492,11 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
             .build(),
         builderFactory.getInternalChangeActivity_FFBuilder().eventTime(Instant.ofEpochSecond(250)).build(),
         builderFactory.getInternalChangeActivity_FFBuilder()
+            .monitoredServiceIdentifier("service_env2")
+            .eventTime(Instant.ofEpochSecond(250))
+            .build(),
+        builderFactory.getInternalChangeActivity_CEBuilder().eventTime(Instant.ofEpochSecond(250)).build(),
+        builderFactory.getInternalChangeActivity_CEBuilder()
             .monitoredServiceIdentifier("service_env2")
             .eventTime(Instant.ofEpochSecond(250))
             .build(),
@@ -478,9 +533,15 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.FEATURE_FLAG).getPercentageChange())
         .isCloseTo(0.0, offset(0.1));
 
-    assertThat(changeSummaryDTO.getTotal().getCount()).isEqualTo(4);
-    assertThat(changeSummaryDTO.getTotal().getCountInPrecedingWindow()).isEqualTo(3);
-    assertThat(changeSummaryDTO.getTotal().getPercentageChange()).isCloseTo(33.33, offset(0.1));
+    assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.CHAOS_EXPERIMENT).getCount()).isEqualTo(1);
+    assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.CHAOS_EXPERIMENT).getCountInPrecedingWindow())
+        .isEqualTo(1);
+    assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.CHAOS_EXPERIMENT).getPercentageChange())
+        .isCloseTo(0.0, offset(0.1));
+
+    assertThat(changeSummaryDTO.getTotal().getCount()).isEqualTo(5);
+    assertThat(changeSummaryDTO.getTotal().getCountInPrecedingWindow()).isEqualTo(4);
+    assertThat(changeSummaryDTO.getTotal().getPercentageChange()).isCloseTo(25.00, offset(0.1));
   }
 
   @Test
@@ -528,6 +589,11 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
             .monitoredServiceIdentifier("service_env2")
             .eventTime(Instant.ofEpochSecond(50))
             .build(),
+        builderFactory.getInternalChangeActivity_CEBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
+        builderFactory.getInternalChangeActivity_CEBuilder()
+            .monitoredServiceIdentifier("service_env2")
+            .eventTime(Instant.ofEpochSecond(50))
+            .build(),
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
         builderFactory.getKubernetesClusterActivityForAppServiceBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(100)).build(),
@@ -540,6 +606,11 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
             .monitoredServiceIdentifier("service_env2")
             .eventTime(Instant.ofEpochSecond(250))
             .build(),
+        builderFactory.getInternalChangeActivity_CEBuilder().eventTime(Instant.ofEpochSecond(250)).build(),
+        builderFactory.getInternalChangeActivity_CEBuilder()
+            .monitoredServiceIdentifier("service_env2")
+            .eventTime(Instant.ofEpochSecond(250))
+            .build(),
         builderFactory.getPagerDutyActivityBuilder().eventTime(Instant.ofEpochSecond(300)).build(),
         builderFactory.getKubernetesClusterActivityForAppServiceBuilder()
             .eventTime(Instant.ofEpochSecond(300))
@@ -548,9 +619,9 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     ChangeSummaryDTO changeSummaryDTO =
         changeEventService.getChangeSummary(builderFactory.getContext().getProjectParams(),
             Arrays.asList(builderFactory.getContext().getServiceIdentifier()), null,
-            Arrays.asList(ChangeCategory.DEPLOYMENT, ChangeCategory.FEATURE_FLAG),
-            Arrays.asList(ChangeSourceType.HARNESS_FF, ChangeSourceType.KUBERNETES), Instant.ofEpochSecond(100),
-            Instant.ofEpochSecond(500));
+            Arrays.asList(ChangeCategory.DEPLOYMENT, ChangeCategory.FEATURE_FLAG, ChangeCategory.CHAOS_EXPERIMENT),
+            Arrays.asList(ChangeSourceType.HARNESS_FF, ChangeSourceType.KUBERNETES, ChangeSourceType.HARNESS_CE),
+            Instant.ofEpochSecond(100), Instant.ofEpochSecond(500));
 
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.DEPLOYMENT).getCount()).isEqualTo(0);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.DEPLOYMENT).getCountInPrecedingWindow())
@@ -564,6 +635,9 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.FEATURE_FLAG).getCount()).isEqualTo(1);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.FEATURE_FLAG).getCountInPrecedingWindow())
         .isEqualTo(1);
+    assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.CHAOS_EXPERIMENT).getCount()).isEqualTo(1);
+    assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.CHAOS_EXPERIMENT).getCountInPrecedingWindow())
+        .isEqualTo(1);
   }
 
   @Test
@@ -576,6 +650,11 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
             .monitoredServiceIdentifier("service_env2")
             .eventTime(Instant.ofEpochSecond(50))
             .build(),
+        builderFactory.getInternalChangeActivity_CEBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
+        builderFactory.getInternalChangeActivity_CEBuilder()
+            .monitoredServiceIdentifier("service_env2")
+            .eventTime(Instant.ofEpochSecond(50))
+            .build(),
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
         builderFactory.getKubernetesClusterActivityForAppServiceBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(100)).build(),
@@ -585,6 +664,11 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
             .build(),
         builderFactory.getInternalChangeActivity_FFBuilder().eventTime(Instant.ofEpochSecond(250)).build(),
         builderFactory.getInternalChangeActivity_FFBuilder()
+            .monitoredServiceIdentifier("service_env2")
+            .eventTime(Instant.ofEpochSecond(250))
+            .build(),
+        builderFactory.getInternalChangeActivity_CEBuilder().eventTime(Instant.ofEpochSecond(250)).build(),
+        builderFactory.getInternalChangeActivity_CEBuilder()
             .monitoredServiceIdentifier("service_env2")
             .eventTime(Instant.ofEpochSecond(250))
             .build(),
@@ -613,6 +697,12 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(1);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.FEATURE_FLAG).getPercentageChange())
         .isEqualTo(0);
+
+    assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.CHAOS_EXPERIMENT).getCount()).isEqualTo(1);
+    assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.CHAOS_EXPERIMENT).getCountInPrecedingWindow())
+        .isEqualTo(1);
+    assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.CHAOS_EXPERIMENT).getPercentageChange())
+        .isEqualTo(0);
   }
 
   @Test
@@ -622,11 +712,13 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     hPersistence.save(Arrays.asList(
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
         builderFactory.getInternalChangeActivity_FFBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
+        builderFactory.getInternalChangeActivity_CEBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
         builderFactory.getKubernetesClusterActivityForAppServiceBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(100)).build(),
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(200)).build(),
         builderFactory.getInternalChangeActivity_FFBuilder().eventTime(Instant.ofEpochSecond(250)).build(),
         builderFactory.getInternalChangeActivity_FFBuilder().eventTime(Instant.ofEpochSecond(300)).build(),
+        builderFactory.getInternalChangeActivity_CEBuilder().eventTime(Instant.ofEpochSecond(300)).build(),
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(300)).build(),
         builderFactory.getKubernetesClusterActivityForAppServiceBuilder()
             .eventTime(Instant.ofEpochSecond(300))
@@ -656,6 +748,12 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     assertThat(featureFlagChanges.get(1).getCount()).isEqualTo(1);
     assertThat(featureFlagChanges.get(1).getStartTime()).isEqualTo(300000);
     assertThat(featureFlagChanges.get(1).getEndTime()).isEqualTo(500000);
+    List<TimeRangeDetail> chaosExperimentChanges =
+        changeTimeline.getCategoryTimeline().get(ChangeCategory.CHAOS_EXPERIMENT);
+    assertThat(chaosExperimentChanges.size()).isEqualTo(1);
+    assertThat(chaosExperimentChanges.get(0).getCount()).isEqualTo(1);
+    assertThat(chaosExperimentChanges.get(0).getStartTime()).isEqualTo(300000);
+    assertThat(chaosExperimentChanges.get(0).getEndTime()).isEqualTo(500000);
   }
 
   @Test

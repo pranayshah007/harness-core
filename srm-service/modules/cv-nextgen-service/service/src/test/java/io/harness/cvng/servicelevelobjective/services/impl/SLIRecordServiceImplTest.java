@@ -12,6 +12,7 @@ import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.SKIP_DATA;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -95,6 +96,23 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testCreate_multipleSaves_requestSLI() {
+    Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(10));
+    List<Long> goodCounts = Arrays.asList(50l, 60l, 70l, 20l, 40l, 50l, 25l, 75l);
+    List<Long> badCounts = Arrays.asList(10l, 10l, 20l, 10l, 20l, 10l, 20l, 10l);
+    createDataForRequestSLI(startTime, goodCounts, badCounts);
+    SLIRecord lastRecord = sliRecordService.getLatestSLIRecord(serviceLevelIndicator.getUuid());
+    assertThat(lastRecord.getRunningBadCount()).isEqualTo(110);
+    assertThat(lastRecord.getRunningGoodCount()).isEqualTo(390);
+    createDataForRequestSLI(startTime.plus(Duration.ofMinutes(10)), goodCounts, badCounts);
+    lastRecord = sliRecordService.getLatestSLIRecord(serviceLevelIndicator.getUuid());
+    assertThat(lastRecord.getRunningBadCount()).isEqualTo(220);
+    assertThat(lastRecord.getRunningGoodCount()).isEqualTo(780);
+  }
+
+  @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testCreate_SkipData() {
@@ -127,6 +145,46 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     assertThat(sliRecords.get(2).getRunningBadCount()).isEqualTo(1);
     assertThat(sliRecords.get(2).getRunningGoodCount()).isEqualTo(3);
   }
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testUpdate_completeOverlap_requestSLI() {
+    Instant startTime = Instant.parse("2020-07-27T10:50:00Z");
+    List<Long> goodCounts = Arrays.asList(50l, 60l, 70l, 20l, 40l, 50l, 25l, 75l);
+    List<Long> badCounts = Arrays.asList(10l, 10l, 20l, 10l, 20l, 10l, 20l, 10l);
+    createDataForRequestSLI(startTime, goodCounts, badCounts);
+    SLIRecord lastRecord = sliRecordService.getLatestSLIRecord(serviceLevelIndicator.getUuid());
+    assertThat(lastRecord.getRunningBadCount()).isEqualTo(110);
+    assertThat(lastRecord.getRunningGoodCount()).isEqualTo(390);
+    assertThat(lastRecord.getSliVersion()).isZero();
+    goodCounts = Arrays.asList(10l, 60l, 70l, 20l, 40l, 50l, 25l, 75l);
+    badCounts = Arrays.asList(10l, 20l, 20l, 10l, 20l, 10l, 20l, 10l);
+    createDataForRequestSLI(startTime, goodCounts, badCounts);
+    SLIRecord updatedLastRecord = sliRecordService.getLatestSLIRecord(serviceLevelIndicator.getUuid());
+    assertThat(updatedLastRecord.getRunningBadCount()).isEqualTo(120l);
+    assertThat(updatedLastRecord.getRunningGoodCount()).isEqualTo(350l);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testUpdate_partialOverlap_requestSLI() {
+    Instant startTime = Instant.parse("2020-07-27T10:50:00Z");
+    List<Long> goodCounts = Arrays.asList(50l, 60l, 70l, 20l, 40l, 50l, 25l, 75l);
+    List<Long> badCounts = Arrays.asList(10l, 10l, 20l, 10l, 20l, 10l, 20l, 10l);
+    createDataForRequestSLI(startTime, goodCounts, badCounts);
+    SLIRecord lastRecord = sliRecordService.getLatestSLIRecord(serviceLevelIndicator.getUuid());
+    assertThat(lastRecord.getRunningBadCount()).isEqualTo(110);
+    assertThat(lastRecord.getRunningGoodCount()).isEqualTo(390);
+    assertThat(lastRecord.getSliVersion()).isZero();
+    goodCounts = Arrays.asList(0l, 0l, 70l, 20l, 40l);
+    badCounts = Arrays.asList(0l, 0l, 20l, 10l, 20l);
+    createDataForRequestSLI(startTime.plus(Duration.ofMinutes(5)), goodCounts, badCounts);
+    SLIRecord updatedLastRecord = sliRecordService.getLatestSLIRecord(serviceLevelIndicator.getUuid());
+    assertThat(updatedLastRecord.getRunningBadCount()).isEqualTo(120l);
+    assertThat(updatedLastRecord.getRunningGoodCount()).isEqualTo(370l);
+  }
+
   @Test
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
@@ -265,12 +323,38 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     sliRecordService.create(sliRecordParams, serviceLevelIndicator.getUuid(), verificationTaskId, 0);
   }
 
+  private void createDataForRequestSLI(Instant startTime, List<Long> goodCounts, List<Long> badCounts) {
+    List<SLIRecordParam> sliRecordParams = new ArrayList<>();
+    for (int i = 0; i < goodCounts.size(); i++) {
+      sliRecordParams.add(SLIRecordParam.builder()
+                              .sliState(GOOD)
+                              .timeStamp(startTime.plus(Duration.ofMinutes(i)))
+                              .badEventCount(badCounts.get(i))
+                              .goodEventCount(goodCounts.get(i))
+                              .build());
+    }
+    sliRecordService.create(sliRecordParams, serviceLevelIndicator.getUuid(), verificationTaskId, 0);
+  }
+
   private List<SLIRecordParam> getSLIRecordParam(Instant startTime, List<SLIState> sliStates) {
     List<SLIRecordParam> sliRecordParams = new ArrayList<>();
     for (int i = 0; i < sliStates.size(); i++) {
       SLIState sliState = sliStates.get(i);
-      sliRecordParams.add(
-          SLIRecordParam.builder().sliState(sliState).timeStamp(startTime.plus(Duration.ofMinutes(i))).build());
+      long goodCountValue = 0;
+      long badCountValue = 0;
+
+      if (sliState == SLIState.GOOD) {
+        goodCountValue = 1;
+      } else if (sliState == SLIState.BAD) {
+        badCountValue = 1;
+      }
+
+      sliRecordParams.add(SLIRecordParam.builder()
+                              .sliState(sliState)
+                              .timeStamp(startTime.plus(Duration.ofMinutes(i)))
+                              .badEventCount(badCountValue)
+                              .goodEventCount(goodCountValue)
+                              .build());
     }
     return sliRecordParams;
   }

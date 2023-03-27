@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.artifacts.nexus;
 
+import static io.harness.delegate.task.artifacts.ArtifactServiceConstant.ACCEPT_ALL_REGEX;
+
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -45,7 +47,7 @@ public class NexusArtifactTaskHandler extends DelegateArtifactTaskHandler<NexusA
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(NexusArtifactDelegateRequest attributesRequest) {
     BuildDetailsInternal lastSuccessfulBuild;
     NexusRequest nexusConfig = NexusRequestResponseMapper.toNexusInternalConfig(attributesRequest);
-    if (isRegex(attributesRequest)) {
+    if (isRegex(attributesRequest) || attributesRequest.getTag().equals(ACCEPT_ALL_REGEX)) {
       lastSuccessfulBuild =
           nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, attributesRequest.getRepositoryName(),
               attributesRequest.getRepositoryPort(), attributesRequest.getArtifactPath(),

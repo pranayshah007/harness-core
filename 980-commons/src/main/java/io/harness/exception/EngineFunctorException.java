@@ -29,6 +29,10 @@ public class EngineFunctorException extends WingsException {
     super.param(REASON_ARG, StringUtils.isBlank(reason) ? "Unknown reason" : reason);
   }
 
+  public EngineFunctorException(Throwable throwable) {
+    super(throwable.getMessage(), throwable, ENGINE_FUNCTOR_ERROR, Level.ERROR, null, null);
+    super.param(REASON_ARG, StringUtils.isBlank(throwable.getMessage()) ? "Unknown reason" : throwable.getMessage());
+  }
   public String getReason() {
     return (String) getParams().get(REASON_ARG);
   }

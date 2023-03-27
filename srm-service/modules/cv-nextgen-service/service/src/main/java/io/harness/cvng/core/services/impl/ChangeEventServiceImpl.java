@@ -38,9 +38,11 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.ChangeEventService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventEntityAndDTOTransformer;
+import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageRequest;
@@ -82,6 +84,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   @Inject ActivityService activityService;
   @Inject HPersistence hPersistence;
   @Inject MonitoredServiceService monitoredServiceService;
+  @Inject FeatureFlagService featureFlagService;
 
   @Override
   public Boolean register(ChangeEventDTO changeEventDTO) {
@@ -205,6 +208,11 @@ public class ChangeEventServiceImpl implements ChangeEventService {
           timeRangeDetail.incrementCount(timelineObject.count);
           milliSecondFromStartDetailMap.put(timelineObject.id.index, timeRangeDetail);
         });
+    if (!featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureFlagNames.SRM_INTERNAL_CHANGE_SOURCE_CE)) {
+      categoryMilliSecondFromStartDetailMap.remove(ChangeCategory.CHAOS_EXPERIMENT);
+    }
+
     ChangeTimelineBuilder changeTimelineBuilder = ChangeTimeline.builder();
     categoryMilliSecondFromStartDetailMap.forEach(
         (key, value) -> changeTimelineBuilder.categoryTimeline(key, new ArrayList<>(value.values())));
@@ -238,6 +246,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
     return getTimeline(monitoredServiceParams, List.of(monitoredServiceIdentifier), searchText, null, changeSourceTypes,
         trendStartTime, trendEndTime, CVNextGenConstants.CVNG_TIMELINE_BUCKET_COUNT, false);
   }
+
   private Iterator<TimelineObject> getTimelineObject(ProjectParams projectParams,
       List<String> monitoredServiceIdentifiers, String searchText, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime, Integer pointCount,
@@ -308,6 +317,11 @@ public class ChangeEventServiceImpl implements ChangeEventService {
           countSoFar = countSoFar + timelineObject.count;
           changeCategoryToIndexToCount.get(changeCategory).put(timelineObject.id.index, countSoFar);
         });
+    if (!featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureFlagNames.SRM_INTERNAL_CHANGE_SOURCE_CE)) {
+      changeCategoryToIndexToCount.remove(ChangeCategory.CHAOS_EXPERIMENT);
+    }
+
     long currentTotalCount =
         changeCategoryToIndexToCount.values().stream().map(c -> c.getOrDefault(1, 0)).mapToLong(num -> num).sum();
     long previousTotalCount =

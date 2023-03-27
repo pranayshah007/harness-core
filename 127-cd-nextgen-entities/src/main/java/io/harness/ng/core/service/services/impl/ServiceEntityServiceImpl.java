@@ -641,7 +641,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         return null;
       }
       String serviceDefinition = serviceDefinitionNode.toString();
-      String serviceDefinitionInputs = RuntimeInputFormHelper.createTemplateFromYaml(serviceDefinition);
+      String serviceDefinitionInputs =
+          RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(serviceDefinition);
+
       if (isEmpty(serviceDefinitionInputs)) {
         return serviceDefinitionInputs;
       }

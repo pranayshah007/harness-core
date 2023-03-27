@@ -45,28 +45,33 @@ public class MigratorExpressionUtils {
   private static final int MAX_DEPTH = 8;
 
   public static Object render(MigrationContext context, Object object, Map<String, Object> customExpressions) {
-    Map<CgEntityId, CgEntityNode> cgEntities = context.getEntities();
-    Map<CgEntityId, NGYamlFile> migratedEntities = context.getMigratedEntities();
-    // Generate the secret map
-    Map<String, String> secretRefMap = new HashMap<>();
-    if (EmptyPredicate.isNotEmpty(cgEntities) && EmptyPredicate.isNotEmpty(migratedEntities)) {
-      Set<CgEntityId> secretIds = migratedEntities.keySet()
-                                      .stream()
-                                      .filter(cgEntityId -> NGMigrationEntityType.SECRET.equals(cgEntityId.getType()))
-                                      .filter(cgEntities::containsKey)
-                                      .collect(Collectors.toSet());
-      for (CgEntityId secretId : secretIds) {
-        EncryptedData encryptedData = (EncryptedData) cgEntities.get(secretId).getEntity();
-        NGYamlFile ngYamlFile = migratedEntities.get(secretId);
-        if (StringUtils.isNotBlank(encryptedData.getName())) {
-          secretRefMap.put(
-              encryptedData.getName(), MigratorUtility.getIdentifierWithScope(ngYamlFile.getNgEntityDetail()));
+    try {
+      Map<CgEntityId, CgEntityNode> cgEntities = context.getEntities();
+      Map<CgEntityId, NGYamlFile> migratedEntities = context.getMigratedEntities();
+      // Generate the secret map
+      Map<String, String> secretRefMap = new HashMap<>();
+      if (EmptyPredicate.isNotEmpty(cgEntities) && EmptyPredicate.isNotEmpty(migratedEntities)) {
+        Set<CgEntityId> secretIds = migratedEntities.keySet()
+                                        .stream()
+                                        .filter(cgEntityId -> NGMigrationEntityType.SECRET.equals(cgEntityId.getType()))
+                                        .filter(cgEntities::containsKey)
+                                        .collect(Collectors.toSet());
+        for (CgEntityId secretId : secretIds) {
+          EncryptedData encryptedData = (EncryptedData) cgEntities.get(secretId).getEntity();
+          NGYamlFile ngYamlFile = migratedEntities.get(secretId);
+          if (StringUtils.isNotBlank(encryptedData.getName())) {
+            secretRefMap.put(
+                encryptedData.getName(), MigratorUtility.getIdentifierWithScope(ngYamlFile.getNgEntityDetail()));
+          }
         }
       }
-    }
 
-    Map<String, Object> ctx = prepareContextMap(context, secretRefMap, customExpressions);
-    return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(ctx));
+      Map<String, Object> ctx = prepareContextMap(context, secretRefMap, customExpressions);
+      return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(ctx));
+    } catch (Exception e) {
+      log.error("There was an error rendering the expressions", e);
+      return object;
+    }
   }
 
   @NotNull

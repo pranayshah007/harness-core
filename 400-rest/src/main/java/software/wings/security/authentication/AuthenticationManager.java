@@ -374,14 +374,14 @@ public class AuthenticationManager {
       if (isPasswordHash) {
         if (authHandler instanceof PasswordBasedAuthHandler) {
           PasswordBasedAuthHandler passwordBasedAuthHandler = (PasswordBasedAuthHandler) authHandler;
-          user = passwordBasedAuthHandler.authenticateWithPasswordHash(userName, password).getUser();
+          user = passwordBasedAuthHandler.authenticateWithPasswordHash(userName, password, account.getUuid()).getUser();
         } else {
           log.error("isPasswordHash should not be true if the auth mechanism {} is not username / password",
               account.getAuthenticationMechanism());
           throw new WingsException(INVALID_CREDENTIAL);
         }
       } else {
-        user = authHandler.authenticate(userName, password).getUser();
+        user = authHandler.authenticate(userName, password, account.getUuid()).getUser();
       }
 
       if (user.isTwoFactorAuthenticationEnabled()) {

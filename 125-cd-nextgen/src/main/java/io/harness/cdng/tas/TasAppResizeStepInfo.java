@@ -53,10 +53,11 @@ public class TasAppResizeStepInfo extends TasAppResizeBaseStepInfo implements CD
 
   @Builder(builderMethodName = "infoBuilder")
   public TasAppResizeStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      TasInstanceSelectionWrapper newAppInstances, TasInstanceSelectionWrapper oldAppInstances, String tasBGAppSetupFqn,
-      String tasBasicAppSetupFqn, String tasCanaryAppSetupFqn) {
-    super(newAppInstances, oldAppInstances, delegateSelectors, tasBGAppSetupFqn, tasBasicAppSetupFqn,
-        tasCanaryAppSetupFqn);
+      TasInstanceSelectionWrapper newAppInstances, TasInstanceSelectionWrapper oldAppInstances,
+      ParameterField<Boolean> ignoreInstanceCountManifest, String tasBGAppSetupFqn, String tasBasicAppSetupFqn,
+      String tasCanaryAppSetupFqn) {
+    super(newAppInstances, oldAppInstances, ignoreInstanceCountManifest, delegateSelectors, tasBGAppSetupFqn,
+        tasBasicAppSetupFqn, tasCanaryAppSetupFqn);
   }
   @Override
   public StepType getStepType() {
@@ -73,6 +74,7 @@ public class TasAppResizeStepInfo extends TasAppResizeBaseStepInfo implements CD
     return TasAppResizeStepParameters.infoBuilder()
         .newAppInstances(newAppInstances)
         .oldAppInstances(oldAppInstances)
+        .ignoreInstanceCountManifest(ignoreInstanceCountManifest)
         .tasBGAppSetupFqn(tasBGSetupFqn)
         .tasBasicAppSetupFqn(tasBasicSetupFqn)
         .tasCanaryAppSetupFqn(tasCanarySetupFqn)

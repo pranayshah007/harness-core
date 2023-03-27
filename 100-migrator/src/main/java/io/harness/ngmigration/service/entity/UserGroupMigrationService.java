@@ -134,13 +134,14 @@ public class UserGroupMigrationService extends NgMigrationService {
                                                      .build())
                                    .build();
 
-    NGYamlFile ngYamlFile = NGYamlFile.builder()
-                                .filename(String.format("usergroup/%s.yaml", userGroup.getName()))
-                                .yaml(yamlDTO)
-                                .type(USER_GROUP)
-                                .ngEntityDetail(NgEntityDetail.builder().identifier(identifier).build())
-                                .cgBasicInfo(userGroup.getCgBasicInfo())
-                                .build();
+    NGYamlFile ngYamlFile =
+        NGYamlFile.builder()
+            .filename(String.format("usergroup/%s.yaml", userGroup.getName()))
+            .yaml(yamlDTO)
+            .type(USER_GROUP)
+            .ngEntityDetail(NgEntityDetail.builder().entityType(USER_GROUP).identifier(identifier).build())
+            .cgBasicInfo(userGroup.getCgBasicInfo())
+            .build();
     migrationContext.getMigratedEntities().putIfAbsent(entityId, ngYamlFile);
     return YamlGenerationDetails.builder().yamlFileList(Collections.singletonList(ngYamlFile)).build();
   }

@@ -10,10 +10,13 @@ package io.harness.idp.common;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.List;
+
 @OwnedBy(HarnessTeam.IDP)
 public class Constants {
   private Constants() {}
 
   public static final String IDP_RESOURCE_TYPE = "IDP_SETTINGS";
   public static final String IDP_PERMISSION = "idp_idpsettings_manage";
+  public static final List<String> pluginIds = List.of("pager-duty", "snyk-security", "harness-ci-cd");
 }

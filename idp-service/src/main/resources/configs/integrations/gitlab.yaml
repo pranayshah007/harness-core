@@ -1,0 +1,3 @@
+gitlab:
+  - host: HOST_VALUE
+    token: ${GITLAB_TOKEN}

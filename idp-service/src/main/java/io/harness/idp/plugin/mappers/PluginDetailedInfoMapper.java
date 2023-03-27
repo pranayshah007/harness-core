@@ -18,15 +18,17 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class PluginDetailedInfoMapper {
-  public PluginDetailedInfo toDTO(PluginInfoEntity pluginInfoEntity, AppConfig appConfig, String staticConfig) {
+  public PluginDetailedInfo toDTO(PluginInfoEntity pluginInfoEntity, AppConfig appConfig) {
     PluginDetailedInfo pluginDetailedInfo = new PluginDetailedInfo();
     boolean isEnabled = appConfig != null && appConfig.isEnabled();
     pluginDetailedInfo.setPluginDetails(PluginInfoMapper.toDTO(pluginInfoEntity, isEnabled));
     pluginDetailedInfo.setDescription(pluginInfoEntity.getDescription());
     pluginDetailedInfo.setCategory(pluginInfoEntity.getCategory());
     pluginDetailedInfo.setSource(pluginInfoEntity.getSource());
-    String config = (appConfig != null && appConfig.isEnabled()) ? appConfig.getConfigs() : staticConfig;
+    String config =
+        (appConfig != null && appConfig.isEnabled()) ? appConfig.getConfigs() : pluginInfoEntity.getConfig();
     pluginDetailedInfo.setConfig(config);
+    pluginDetailedInfo.setLayout(pluginInfoEntity.getLayout());
     return pluginDetailedInfo;
   }
 }

@@ -43,7 +43,7 @@ public class SLODashboardWidget {
   public ErrorBudgetRisk getErrorBudgetRisk() {
     return ErrorBudgetRisk.getFromPercentage(errorBudgetRemainingPercentage);
   }
-  @NotNull int errorBudgetRemaining;
+  @NotNull long errorBudgetRemaining;
   @NotNull int totalErrorBudget;
   @NotNull SLOTargetType sloTargetType;
   @NotNull int currentPeriodLengthDays;
@@ -72,12 +72,12 @@ public class SLODashboardWidget {
   @Builder
   public static class SLOGraphData {
     double errorBudgetRemainingPercentage;
-    int errorBudgetRemaining;
+    long errorBudgetRemaining;
     List<Point> errorBudgetBurndown;
     List<Point> sloPerformanceTrend;
     boolean isRecalculatingSLI;
     boolean isCalculatingSLI;
-    @JsonIgnore int errorBudgetBurned;
+    @JsonIgnore long errorBudgetBurned;
     @JsonIgnore double sliStatusPercentage;
     public double errorBudgetSpentPercentage() {
       return 100 - errorBudgetRemainingPercentage;

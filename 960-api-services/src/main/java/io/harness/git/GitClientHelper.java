@@ -617,6 +617,14 @@ public class GitClientHelper {
         BITBUCKET_SAAS_GIT_LABEL, PATH_SEPARATOR, gitOwner, PATH_SEPARATOR, gitRepo);
   }
 
+  public static String getCompleteHTTPUrlForGitLab(String anyRepoUrl) {
+    String scmGroup = getGitSCM(anyRepoUrl);
+    String gitOwner = getGitOwner(anyRepoUrl, true);
+    String gitRepo = getGitRepo(anyRepoUrl);
+    return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR, gitOwner,
+        PATH_SEPARATOR, gitRepo);
+  }
+
   public static String getCompleteHTTPRepoUrlForAzureRepoSaas(String anyRepoUrl) {
     final String AZURE_REPO_URL = "https://dev.azure.com";
     String gitOwner = getGitOwner(anyRepoUrl, true);

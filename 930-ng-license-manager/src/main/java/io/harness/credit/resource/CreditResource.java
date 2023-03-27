@@ -6,7 +6,8 @@
  */
 package io.harness.credit.resource;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.GTM;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.credit.services.CreditService;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -38,7 +39,7 @@ import lombok.AllArgsConstructor;
     })
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Hidden
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 public class CreditResource {
   private final CreditService creditService;
   /**

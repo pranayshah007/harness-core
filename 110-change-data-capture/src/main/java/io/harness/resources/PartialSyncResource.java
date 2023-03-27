@@ -8,6 +8,7 @@
 package io.harness.resources;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
+import static io.harness.NGCommonEntityConstants.CONNECTOR_IDENTIFIER_KEY;
 import static io.harness.NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY;
 import static io.harness.NGCommonEntityConstants.IDENTIFIER_KEY;
 import static io.harness.NGCommonEntityConstants.INFRA_IDENTIFIER;
@@ -25,9 +26,11 @@ import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.entities.billing.CECloudAccount.CECloudAccountKeys;
+import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.entities.AccountEntity;
 import io.harness.entities.CDCEntity;
 import io.harness.entities.CECloudAccountCDCEntity;
+import io.harness.entities.ConnectorCDCEntity;
 import io.harness.entities.EnvironmentCDCEntity;
 import io.harness.entities.InfrastructureEntityTimeScale;
 import io.harness.entities.OrganizationEntity;
@@ -91,6 +94,7 @@ public class PartialSyncResource {
   @Inject PipelineExecutionSummaryEntityCDCEntity pipelineExecutionSummaryEntityCDCEntity;
   @Inject ProjectEntity projectEntity;
   @Inject ServiceCDCEntity serviceCDCEntity;
+  @Inject ConnectorCDCEntity connectorCDCEntity;
 
   @GET
   @Path("/accounts")
@@ -249,6 +253,23 @@ public class PartialSyncResource {
     addTsFilter(filters, ServiceEntityKeys.createdAt, createdAtFrom, createdAtTo);
 
     return triggerSync(serviceCDCEntity, filters, handler);
+  }
+
+  @GET
+  @Path("/connectors")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "trigger bulk sync for the connectors entity using supplied filters")
+  public RestResponse<String> triggerConnectorsSync(@QueryParam(CONNECTOR_IDENTIFIER_KEY) @Nullable String identifier,
+      @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(HANDLER_KEY) @Nullable String handler,
+      @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
+      @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
+    List<Bson> filters = new ArrayList<>();
+    addEqFilter(filters, ConnectorKeys.identifier, identifier);
+    addEqFilter(filters, ConnectorKeys.accountIdentifier, accountId);
+    addTsFilter(filters, ConnectorKeys.createdAt, createdAtFrom, createdAtTo);
+
+    return triggerSync(connectorCDCEntity, filters, handler);
   }
 
   private void addEqFilter(List<Bson> filters, String key, String value) {

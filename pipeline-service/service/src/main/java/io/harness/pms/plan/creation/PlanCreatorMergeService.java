@@ -221,6 +221,7 @@ public class PlanCreatorMergeService {
         PlanCreationBlobResponseUtils.mergeStartingNodeId(
             finalResponseBuilder, currIterationResponse.getStartingNodeId());
         PlanCreationBlobResponseUtils.mergeLayoutNodeInfo(finalResponseBuilder, currIterationResponse);
+        PlanCreationBlobResponseUtils.mergePreservedNodesInRollbackMode(finalResponseBuilder, currIterationResponse);
         if (EmptyPredicate.isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap())) {
           throw new InvalidRequestException(
               PmsExceptionUtils.getUnresolvedDependencyPathsErrorMessage(finalResponseBuilder.getDeps()));

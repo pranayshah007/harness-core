@@ -7,7 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.entities;
 
-import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
@@ -36,14 +36,18 @@ public class RatioServiceLevelIndicator extends ServiceLevelIndicator {
   Double thresholdValue;
   ThresholdType thresholdType;
 
+  Integer considerConsecutiveMinutes;
+
+  Boolean considerAllConsecutiveMinutesFromStartAsBad;
+
   @Override
   public SLIMetricType getSLIMetricType() {
     return SLIMetricType.RATIO;
   }
 
   @Override
-  public SLIExecutionType getSLIExecutionType() {
-    return SLIExecutionType.WINDOW;
+  public SLIEvaluationType getSLIEvaluationType() {
+    return SLIEvaluationType.WINDOW;
   }
 
   @Override
@@ -65,6 +69,18 @@ public class RatioServiceLevelIndicator extends ServiceLevelIndicator {
           .set(RatioServiceLevelIndicatorKeys.metric2, ratioServiceLevelIndicator.getMetric2())
           .set(RatioServiceLevelIndicatorKeys.thresholdValue, ratioServiceLevelIndicator.getThresholdValue())
           .set(RatioServiceLevelIndicatorKeys.thresholdType, ratioServiceLevelIndicator.getThresholdType());
+      if (ratioServiceLevelIndicator.getConsiderConsecutiveMinutes() != null) {
+        updateOperations.set(RatioServiceLevelIndicatorKeys.considerConsecutiveMinutes,
+            ratioServiceLevelIndicator.getConsiderConsecutiveMinutes());
+      } else {
+        updateOperations.unset(RatioServiceLevelIndicatorKeys.considerConsecutiveMinutes);
+      }
+      if (ratioServiceLevelIndicator.considerAllConsecutiveMinutesFromStartAsBad != null) {
+        updateOperations.set(RatioServiceLevelIndicatorKeys.considerAllConsecutiveMinutesFromStartAsBad,
+            ratioServiceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad());
+      } else {
+        updateOperations.unset(RatioServiceLevelIndicatorKeys.considerAllConsecutiveMinutesFromStartAsBad);
+      }
     }
   }
 
@@ -87,6 +103,14 @@ public class RatioServiceLevelIndicator extends ServiceLevelIndicator {
       Preconditions.checkArgument(this.getEventType().equals(ratioServiceLevelIndicator.getEventType()));
       Preconditions.checkArgument(this.getThresholdValue().equals(ratioServiceLevelIndicator.getThresholdValue()));
       Preconditions.checkArgument(this.getThresholdType().equals(ratioServiceLevelIndicator.getThresholdType()));
+      if (this.getConsiderConsecutiveMinutes() != null) {
+        Preconditions.checkArgument(
+            this.getConsiderConsecutiveMinutes().equals(ratioServiceLevelIndicator.getConsiderConsecutiveMinutes()));
+      }
+      if (this.getConsiderAllConsecutiveMinutesFromStartAsBad() != null) {
+        Preconditions.checkArgument(this.getConsiderAllConsecutiveMinutesFromStartAsBad().equals(
+            ratioServiceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad()));
+      }
       return false;
     } catch (IllegalArgumentException ex) {
       return true;

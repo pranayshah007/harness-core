@@ -39,6 +39,7 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.DuplicateFileImportException;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
@@ -297,7 +298,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
       assertThatThrownBy(()
                              -> pmsInputSetService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
                                  entity.getIdentifier(), false, null, null, false, false, false))
-          .isInstanceOf(InvalidRequestException.class);
+          .isInstanceOf(EntityNotFoundException.class);
     }
     mockSettings.close();
   }

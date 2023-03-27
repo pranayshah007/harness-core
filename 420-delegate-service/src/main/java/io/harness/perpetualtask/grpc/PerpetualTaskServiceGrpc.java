@@ -51,10 +51,10 @@ public class PerpetualTaskServiceGrpc
   public void perpetualTaskContext(
       PerpetualTaskContextRequest request, StreamObserver<PerpetualTaskContextResponse> responseObserver) {
     try {
-      responseObserver.onNext(
-          PerpetualTaskContextResponse.newBuilder()
-              .setPerpetualTaskContext(perpetualTaskService.perpetualTaskContext(request.getPerpetualTaskId().getId()))
-              .build());
+      responseObserver.onNext(PerpetualTaskContextResponse.newBuilder()
+                                  .setPerpetualTaskContext(perpetualTaskService.perpetualTaskContext(
+                                      request.getPerpetualTaskId().getId(), false))
+                                  .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unexpected error occurred while getting perpetual task context.", e);
