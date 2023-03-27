@@ -1170,7 +1170,6 @@ public class NativeHelmStepHelperTest extends CategoryTest {
         HelmChartManifestOutcome.builder()
             .identifier("helm")
             .store(harnessStore)
-            .chartName(ParameterField.createValueField("Todolist"))
             .valuesPaths(ParameterField.createValueField(asList("org:/path/to/helm/chart/valuesOverride.yaml")))
             .build();
 
@@ -1242,7 +1241,6 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     HelmChartManifestOutcome helmChartManifestOutcome = HelmChartManifestOutcome.builder()
                                                             .identifier("helm")
                                                             .store(customRemoteStoreConfig)
-                                                            .chartName(ParameterField.createValueField("Todolist"))
                                                             .valuesPaths(ParameterField.createValueField(null))
                                                             .build();
 
