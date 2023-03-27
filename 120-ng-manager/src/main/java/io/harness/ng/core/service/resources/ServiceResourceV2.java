@@ -12,8 +12,7 @@ import static io.harness.artifact.ArtifactUtilities.getArtifactoryRegistryUrl;
 import static io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl.getConnector;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
-import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
+import static io.harness.pms.rbac.NGResourceType.SERVICE;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_VIEW_PERMISSION;
@@ -433,9 +432,6 @@ public class ServiceResourceV2 {
           "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope,
       @Parameter(description = "Specify true if services' version info need to be included", hidden = true) @QueryParam(
           "includeVersionInfo") @DefaultValue("false") boolean includeVersionInfo) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
-        Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
-
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false,
         searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope);
     Pageable pageRequest;
@@ -1129,6 +1125,6 @@ public class ServiceResourceV2 {
   }
   boolean hasViewPermissionForAll(String accountId, String orgIdentifier, String projectIdentifier) {
     return accessControlClient.hasAccess(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
-        Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION);
+        Resource.of(SERVICE, null), SERVICE_VIEW_PERMISSION);
   }
 }

@@ -527,8 +527,6 @@ public class EnvironmentResourceV2 {
               "Specify true if all accessible environments are to be included. Returns environments at account/org/project level.")
       @QueryParam(NGResourceFilterConstants.INCLUDE_ALL_ACCESSIBLE_AT_SCOPE) @DefaultValue(
           "false") boolean includeAllAccessibleAtScope) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
-        Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier,
         false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope);
     Pageable pageRequest;
