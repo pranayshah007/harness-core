@@ -7,6 +7,7 @@
 
 package io.harness.shell.ssh.agent.jsch;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.ERROR_IN_GETTING_CHANNEL_STREAMS;
 import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
 import static io.harness.eraro.ErrorCode.UNKNOWN_EXECUTOR_TYPE_ERROR;
@@ -537,7 +538,7 @@ public class JschAgent extends SshAgent<JschClient, JschExecSession, JschSftpSes
     if (enableProxy) {
       if (Http.getProxyHostName() != null && !Http.shouldUseNonProxy(config.getHost())) {
         log.info("Using proxy");
-        ProxyHTTP proxyHTTP = getProxy(config, logCallback);
+        ProxyHTTP proxyHTTP = getProxy();
         session.setProxy(proxyHTTP);
       }
     }
@@ -558,7 +559,7 @@ public class JschAgent extends SshAgent<JschClient, JschExecSession, JschSftpSes
     }
   }
 
-  private static ProxyHTTP getProxy(SshSessionConfig config, LogCallback logCallback) {
+  private static ProxyHTTP getProxy() {
     String host = Http.getProxyHostName();
     String port = Http.getProxyPort();
 
