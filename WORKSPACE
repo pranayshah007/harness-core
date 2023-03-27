@@ -5601,14 +5601,13 @@ maven_install(
         "com.azure.resourcemanager:azure-resourcemanager-authorization:2.14.0",
         "com.azure.resourcemanager:azure-resourcemanager-resources:2.14.0",
     ],
+    override_targets = {
+        "com.fasterxml.jackson.core:jackson-databind": "@maven//:com_fasterxml_jackson_core_jackson_databind",
+    },
     repositories = [
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
-    override_targets = {
-        "com.fasterxml.jackson.core:jackson-databind": "@maven//:com_fasterxml_jackson_core_jackson_databind",
-    },
-
     version_conflict_policy = "pinned",
 )
 

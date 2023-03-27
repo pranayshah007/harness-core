@@ -18,7 +18,7 @@ shared_dependencies = [
     "@ce-nextgen//:com_azure_azure_identity",
     "@ce-nextgen//:com_azure_resourcemanager_azure_resourcemanager",
     "@ce-nextgen//:com_azure_resourcemanager_azure_resourcemanager_authorization",
-    "@ce-nextgen//:com_azure_resourcemanager_azure_resourcemanager_resources"
+    "@ce-nextgen//:com_azure_resourcemanager_azure_resourcemanager_resources",
 ] + [
     "//374-ceng-graphql:module",
     "//440-connector-nextgen:module",
