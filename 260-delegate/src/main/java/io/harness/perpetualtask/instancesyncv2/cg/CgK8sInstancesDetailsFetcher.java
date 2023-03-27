@@ -106,11 +106,27 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
           e);
       return InstanceSyncData.newBuilder()
           .setTaskDetailsId(releaseDetails.getTaskDetailsId())
+          .setReleaseDetails(Any.pack(DirectK8sReleaseDetails.newBuilder()
+                                          .setReleaseName(instanceSyncTaskDetails.getReleaseName())
+                                          .setNamespace(instanceSyncTaskDetails.getNamespace())
+                                          .setIsHelm(instanceSyncTaskDetails.getIsHelm())
+                                          .setContainerServiceName(instanceSyncTaskDetails.getContainerServiceName())
+                                          .build()))
           .setErrorMessage("Exception while fetching running K8s pods. Exception message: " + e.getMessage())
+          .setTaskResponse(ByteString.copyFrom(
+              referenceFalseKryoSerializer.asBytes(createFailedTaskResponse(instanceSyncTaskDetails.getIsHelm(), e))))
           .setExecutionStatus(CommandExecutionStatus.FAILURE.name())
           .build();
     }
   }
+
+  private DelegateTaskNotifyResponseData createFailedTaskResponse(boolean isHelm, Exception ex) {
+    if (isHelm) {
+      return ContainerSyncResponse.builder().commandExecutionStatus(FAILURE).errorMessage(ex.getMessage()).build();
+    }
+    return K8sTaskExecutionResponse.builder().commandExecutionStatus(FAILURE).errorMessage(ex.getMessage()).build();
+  }
+
   private String getExecutionStatus(boolean isHelm, DelegateTaskNotifyResponseData taskResponseData) {
     if (isHelm) {
       ContainerSyncResponse containerSyncResponse = (ContainerSyncResponse) taskResponseData;

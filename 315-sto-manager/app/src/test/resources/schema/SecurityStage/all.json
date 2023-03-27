@@ -8131,6 +8131,9 @@
               "minLength": 1
             }
           ]
+        },
+        "project_key": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"

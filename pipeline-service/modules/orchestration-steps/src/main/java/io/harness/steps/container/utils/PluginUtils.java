@@ -9,9 +9,14 @@ package io.harness.steps.container.utils;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.expression.ExpressionResolverUtils;
 import io.harness.ssca.cd.beans.stepinfo.CdSscaOrchestrationSpecParameters;
+import io.harness.ssca.execution.SscaOrchestrationStepPluginUtils;
+import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.ssca.SscaOrchestrationPluginHelper;
+import io.harness.steps.plugin.ContainerStepType;
 import io.harness.steps.plugin.PluginStep;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
@@ -41,6 +46,20 @@ public class PluginUtils {
         return SscaOrchestrationPluginHelper.getSscaOrchestrationSecretVars((CdSscaOrchestrationSpecParameters) step);
       default:
         return new HashMap<>();
+    }
+  }
+
+  public static String getConnectorRef(PluginStep pluginStep) {
+    return ExpressionResolverUtils.resolveStringParameter("connectorRef", pluginStep.getType().toString(),
+        pluginStep.getIdentifier(), pluginStep.getConnectorRef(), false);
+  }
+
+  public static Map<EnvVariableEnum, String> getConnectorSecretEnvMap(ContainerStepType containerStepType) {
+    switch (containerStepType) {
+      case CD_SSCA_ORCHESTRATION:
+        return SscaOrchestrationStepPluginUtils.getConnectorSecretEnvMap();
+      default:
+        throw new ContainerStepExecutionException("Unhandled connector secret for step type: " + containerStepType);
     }
   }
 }

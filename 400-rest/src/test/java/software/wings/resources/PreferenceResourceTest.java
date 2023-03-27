@@ -102,7 +102,7 @@ public class PreferenceResourceTest extends WingsBaseTest {
       deployPref.setUuid(PREFERENCE_ID);
       PageResponse<Preference> pageResponse = new PageResponse<>();
       pageResponse.setResponse(asList(deployPref));
-      when(preferenceService.list(any(PageRequest.class), any())).thenReturn(pageResponse);
+      when(preferenceService.list(any(PageRequest.class), any(), any())).thenReturn(pageResponse);
       RestResponse<PageResponse<Preference>> restResponse =
           RESOURCES.client()
               .target("/preference?accountId=" + ACCOUNT_ID)

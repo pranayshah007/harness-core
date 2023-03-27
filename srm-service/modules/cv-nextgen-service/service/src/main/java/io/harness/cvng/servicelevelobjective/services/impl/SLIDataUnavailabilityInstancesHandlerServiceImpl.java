@@ -64,6 +64,8 @@ public class SLIDataUnavailabilityInstancesHandlerServiceImpl implements SLIData
     for (SLIRecordParam sliRecord : sliRecordList) {
       if (failureInstants.contains(sliRecord.getTimeStamp())) {
         sliRecord.setSliState(SLIRecord.SLIState.SKIP_DATA);
+        sliRecord.setBadEventCount(0l);
+        sliRecord.setGoodEventCount(0l);
       }
       updatedRecords.add(sliRecord);
     }

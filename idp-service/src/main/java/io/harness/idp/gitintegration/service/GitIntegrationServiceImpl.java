@@ -18,15 +18,15 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
+import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.gitintegration.entities.CatalogConnector;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
-import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.spec.server.idp.v1.model.AppConfig;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
-import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -40,7 +40,7 @@ import org.apache.commons.math3.util.Pair;
 @OwnedBy(HarnessTeam.IDP)
 public class GitIntegrationServiceImpl implements GitIntegrationService {
   ConnectorProcessorFactory connectorProcessorFactory;
-  EnvironmentSecretService environmentSecretService;
+  BackstageEnvVariableService backstageEnvVariableService;
 
   CatalogConnectorRepository catalogConnectorRepository;
 
@@ -54,11 +54,10 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   public void createConnectorSecretsEnvVariable(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String connectorIdentifier, ConnectorType connectorType) {
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(connectorType);
-    Pair<ConnectorInfoDTO, Map<String, EnvironmentSecret>> connectorEnvSecrets =
+    Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> connectorEnvSecrets =
         connectorProcessor.getConnectorAndSecretsInfo(
             accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
-    environmentSecretService.syncK8sSecret(
-        new ArrayList<>(connectorEnvSecrets.getSecond().values()), accountIdentifier);
+    backstageEnvVariableService.sync(new ArrayList<>(connectorEnvSecrets.getSecond().values()), accountIdentifier);
   }
 
   @Override
@@ -100,7 +99,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   public void createAppConfigForGitIntegrations(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String connectorIdentifier, ConnectorType connectorType) {
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(connectorType);
-    Pair<ConnectorInfoDTO, Map<String, EnvironmentSecret>> connectorEnvSecrets =
+    Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> connectorEnvSecrets =
         connectorProcessor.getConnectorAndSecretsInfo(
             accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
     String host = GitIntegrationUtils.getHostForConnector(connectorEnvSecrets.getFirst(), connectorType);

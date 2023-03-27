@@ -10,8 +10,11 @@ package io.harness.ssca.cd.beans.stepinfo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.common.SpecParameters;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.ssca.beans.Attestation;
+import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSource;
+import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.ssca.beans.tools.SbomOrchestrationTool;
 import io.harness.steps.plugin.ContainerStepType;
 import io.harness.steps.plugin.PluginStep;
@@ -43,5 +46,13 @@ public class CdSscaOrchestrationSpecParameters
     super(tool, source, attestation, infrastructure);
     this.name = name;
     this.identifier = identifier;
+  }
+
+  @Override
+  public ParameterField<String> getConnectorRef() {
+    if (source != null && SbomSourceType.IMAGE.equals(source.getType())) {
+      return ((ImageSbomSource) source.getSbomSourceSpec()).getConnector();
+    }
+    return null;
   }
 }

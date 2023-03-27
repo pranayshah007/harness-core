@@ -22,6 +22,7 @@ import io.harness.NgManagerTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.models.ActiveServiceInstanceInfoV2;
 import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
@@ -1212,7 +1213,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
-  public void test_getPipelineExecutionCountInfo() {
+  public void test_getPipelineExecutionCountInfo() throws InvalidRequestException {
     CDOverviewDashboardServiceImpl cdOverviewDashboardService1 = spy(cdOverviewDashboardService);
     List<ServiceArtifactExecutionDetail> serviceArtifactExecutionDetailList = getServiceArtifactExecutionDetailList();
     Map<String, String> statusMap = getExecutionStatusMap();

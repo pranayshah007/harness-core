@@ -72,6 +72,8 @@ import lombok.extern.slf4j.Slf4j;
 public final class STOSettingsUtils {
   public static final String SECURITY_ENV_PREFIX = "SECURITY_";
   public static final String PRODUCT_PROJECT_VERSION = "product_project_version";
+
+  public static final String PRODUCT_PROJECT_KEY = "product_project_key";
   public static final String PRODUCT_PROJECT_NAME = "product_project_name";
   public static final String PRODUCT_PROJECT_TOKEN = "product_project_token";
   public static final String PRODUCT_PRODUCT_NAME = "product_product_name";
@@ -80,13 +82,12 @@ public final class STOSettingsUtils {
   public static final String PRODUCT_EXCLUDE = "product_exclude";
   public static final String PRODUCT_INCLUDE = "product_include";
   public static final String TOOL_PROJECT_NAME = "tool.project_name";
+  public static final String TOOL_PROJECT_KEY = "tool.project_key";
   public static final String TOOL_PROJECT_TOKEN = "tool.project_token";
   public static final String TOOL_PRODUCT_NAME = "tool.product_name";
   public static final String TOOL_PRODUCT_TOKEN = "tool.product_token";
   public static final String TOOL_EXCLUDE = "tool.exclude";
   public static final String TOOL_INCLUDE = "tool.include";
-  public static final Integer ZAP_DEFAULT_PORT = 8080;
-  public static final Integer DEFAULT_INSTANCE_PORT = 80;
 
   private STOSettingsUtils() {
     throw new IllegalStateException("Utility class");
@@ -419,6 +420,8 @@ public final class STOSettingsUtils {
     STOYamlSonarqubeToolData toolData = stepInfo.getTool();
 
     if (toolData != null) {
+      map.put(getSTOKey(PRODUCT_PROJECT_KEY),
+          resolveStringParameter(TOOL_PROJECT_KEY, stepType, identifier, toolData.getProjectKey(), false));
       map.put(getSTOKey(PRODUCT_EXCLUDE),
           resolveStringParameter(TOOL_EXCLUDE, stepType, identifier, toolData.getExclude(), false));
       map.put(getSTOKey(PRODUCT_INCLUDE),
