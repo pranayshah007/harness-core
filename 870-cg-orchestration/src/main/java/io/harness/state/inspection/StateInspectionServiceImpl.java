@@ -66,8 +66,9 @@ public class StateInspectionServiceImpl implements StateInspectionService {
         persistence.createQuery(StateInspection.class)
             .filter(StateInspectionKeys.stateExecutionInstanceId, stateExecutionInstanceId)
             .get();
-
-    transformToYaml(stateInspection);
+    if (stateInspection != null) {
+      transformToYaml(stateInspection);
+    }
     return stateInspection;
   }
 
