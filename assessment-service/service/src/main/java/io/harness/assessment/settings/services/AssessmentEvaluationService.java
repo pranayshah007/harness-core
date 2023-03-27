@@ -7,4 +7,13 @@
 
 package io.harness.assessment.settings.services;
 
-public class AssessmentEvaluationService {}
+import io.harness.assessment.settings.beans.dto.AssessmentResultsResponse;
+import io.harness.assessment.settings.beans.dto.UserAssessmentDTO;
+import io.harness.assessment.settings.beans.dto.UserResponsesRequest;
+
+public interface AssessmentEvaluationService {
+  AssessmentResultsResponse submitAssessmentResponse(UserResponsesRequest userResponsesRequest, String token);
+
+  UserAssessmentDTO saveAssessmentResponse(UserResponsesRequest userResponsesRequest, String token);
+  UserAssessmentDTO getAssessmentForUser(String assessmentId);
+}

@@ -31,15 +31,15 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldNameConstants(innerTypeName = "OrganizationEvaluationEntityKeys")
 @StoreIn(DbAliases.ASSESSMENT)
-@Entity(value = "OrganizationEvaluations", noClassnameStored = true)
-@Document("OrganizationEvaluations")
+@Entity(value = "organizationEvaluations", noClassnameStored = true)
+@Document("organizationEvaluations")
 @Persistent
 @OwnedBy(HarnessTeam.SEI)
 public class OrganizationEvaluation implements PersistentEntity, UpdatedAtAware {
-  @Id @org.mongodb.morphia.annotations.Id String organizationEvaluationId;
+  @Id @org.mongodb.morphia.annotations.Id String id;
   String organizationId;
   String assessmentId;
-  String version;
+  Long version;
   List<Score> scores;
   Long numOfResponses;
   @LastModifiedDate long lastUpdatedAt;

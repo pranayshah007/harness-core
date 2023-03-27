@@ -72,7 +72,7 @@ public class AssessmentServiceConfiguration extends Configuration {
     defaultSwaggerBundleConfiguration.setResourcePackage(resourcePackage);
     defaultSwaggerBundleConfiguration.setSchemes(new String[] {"https", "http"});
     defaultSwaggerBundleConfiguration.setHost("{{localhost}}");
-    defaultSwaggerBundleConfiguration.setTitle("Template Service API Reference");
+    defaultSwaggerBundleConfiguration.setTitle("Assessment Service API Reference");
     defaultSwaggerBundleConfiguration.setVersion("2.0");
     return Optional.ofNullable(swaggerBundleConfiguration).orElse(defaultSwaggerBundleConfiguration);
   }

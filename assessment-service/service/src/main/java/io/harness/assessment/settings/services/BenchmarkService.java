@@ -4,10 +4,16 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
+
 package io.harness.assessment.settings.services;
 
-import io.harness.assessment.settings.beans.dto.AssessmentInviteDTO;
+import io.harness.assessment.settings.beans.dto.BenchmarkDTO;
+import io.harness.assessment.settings.beans.dto.BenchmarksListRequest;
 
-public interface InvitationService {
-  AssessmentInviteDTO sendAssessmentInvite(AssessmentInviteDTO assessmentInviteDTO);
+import java.util.List;
+
+public interface BenchmarkService {
+  BenchmarkDTO uploadBenchmark(BenchmarksListRequest benchmarksListRequest, String assessmentId);
+
+  List<BenchmarkDTO> getBenchmarks(String assessmentId, Long version);
 }
