@@ -43,7 +43,14 @@ public class StateInspectionServiceImpl implements StateInspectionService {
   private final String EXPRESSION_VARIABLE_USAGE = "expressionVariableUsage";
 
   public void transformToYaml(StateInspection stateInspection) {
-    ExpressionVariableUsage v = (ExpressionVariableUsage) stateInspection.getData().get(EXPRESSION_VARIABLE_USAGE);
+    ExpressionVariableUsage v = null;
+    try {
+      v = (ExpressionVariableUsage) stateInspection.getData().get(EXPRESSION_VARIABLE_USAGE);
+    } catch (Exception e) {
+      log.info("There is no variable expression usage for stateExecutionInstance {}",
+          stateInspection.getStateExecutionInstanceId());
+    }
+
     if (v != null) {
       List<ExpressionVariableUsage.Item> vars = v.getVariables();
 
@@ -66,7 +73,6 @@ public class StateInspectionServiceImpl implements StateInspectionService {
         persistence.createQuery(StateInspection.class)
             .filter(StateInspectionKeys.stateExecutionInstanceId, stateExecutionInstanceId)
             .get();
-
     transformToYaml(stateInspection);
     return stateInspection;
   }
