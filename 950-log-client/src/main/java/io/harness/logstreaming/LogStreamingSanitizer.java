@@ -31,6 +31,10 @@ public class LogStreamingSanitizer {
 
   public void sanitizeLogMessage(LogLine logLine) {
     String sanitizedLogMessage = logLine.getMessage();
+    if (isEmpty(sanitizedLogMessage)) {
+      logLine.setMessage(sanitizedLogMessage);
+      return;
+    }
     if (!isEmpty(secrets)) {
       ArrayList<String> secretMasks = new ArrayList<>();
       ArrayList<String> secretValues = new ArrayList<>();
@@ -46,7 +50,6 @@ public class LogStreamingSanitizer {
 
     // JWT mask
     sanitizedLogMessage = LogSanitizerHelper.sanitizeJWT(sanitizedLogMessage);
-
     logLine.setMessage(sanitizedLogMessage);
   }
 
