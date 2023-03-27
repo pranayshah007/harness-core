@@ -10,6 +10,8 @@ package io.harness.ccm.views.utils;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static java.lang.Boolean.parseBoolean;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.entities.AWSViewPreferenceCost;
 import io.harness.ccm.views.entities.AWSViewPreferences;
@@ -38,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CE)
 public class CEViewPreferenceUtils {
-  @Named("PRIVILEGED") private NGSettingsClient settingsClient;
+  @Inject @Named("PRIVILEGED") private NGSettingsClient settingsClient;
   @Inject private ViewParametersHelper viewParametersHelper;
 
   public ViewPreferences getCEViewPreferencesForMigration(final CEView ceView) {
@@ -51,7 +53,7 @@ public class CEViewPreferenceUtils {
     if (!isEmpty(settingsResponse)) {
       final List<SettingDTO> settingsDTO =
           settingsResponse.stream().map(SettingResponseDTO::getSetting).collect(Collectors.toList());
-      final Map<String, Object> settingsMap =
+      final Map<String, String> settingsMap =
           settingsDTO.stream().collect(Collectors.toMap(SettingDTO::getIdentifier, SettingDTO::getValue));
       viewPreferences = getViewPreferences(ceView, settingsMap);
     }
@@ -63,7 +65,7 @@ public class CEViewPreferenceUtils {
         SettingIdentifiers.PERSPECTIVE_PREFERENCES_GROUP_IDENTIFIER));
   }
 
-  private ViewPreferences getViewPreferences(final CEView ceView, final Map<String, Object> settingsMap) {
+  private ViewPreferences getViewPreferences(final CEView ceView, final Map<String, String> settingsMap) {
     ViewPreferences viewPreferences;
     if (Objects.nonNull(ceView.getViewPreferences())) {
       viewPreferences = getViewPreferencesFromCEView(ceView, settingsMap);
@@ -73,7 +75,7 @@ public class CEViewPreferenceUtils {
     return viewPreferences;
   }
 
-  private ViewPreferences getViewPreferencesFromCEView(final CEView ceView, final Map<String, Object> settingsMap) {
+  private ViewPreferences getViewPreferencesFromCEView(final CEView ceView, final Map<String, String> settingsMap) {
     return ViewPreferences.builder()
         .includeOthers(getBooleanSettingValue(
             ceView.getViewPreferences().getIncludeOthers(), settingsMap, SettingIdentifiers.SHOW_OTHERS_IDENTIFIER))
@@ -87,7 +89,7 @@ public class CEViewPreferenceUtils {
         .build();
   }
 
-  private ViewPreferences getDefaultViewPreferences(final CEView ceView, final Map<String, Object> settingsMap) {
+  private ViewPreferences getDefaultViewPreferences(final CEView ceView, final Map<String, String> settingsMap) {
     return ViewPreferences.builder()
         .includeOthers(getBooleanSettingValue(settingsMap, SettingIdentifiers.SHOW_OTHERS_IDENTIFIER))
         .includeUnallocatedCost(
@@ -99,7 +101,7 @@ public class CEViewPreferenceUtils {
         .build();
   }
 
-  private GCPViewPreferences getGCPViewPreferences(final CEView ceView, final Map<String, Object> settingsMap) {
+  private GCPViewPreferences getGCPViewPreferences(final CEView ceView, final Map<String, String> settingsMap) {
     final GCPViewPreferences gcpViewPreferences;
     if (Objects.nonNull(ceView) && Objects.nonNull(ceView.getViewPreferences())
         && Objects.nonNull(ceView.getViewPreferences().getGcpPreferences())) {
@@ -111,7 +113,7 @@ public class CEViewPreferenceUtils {
   }
 
   private GCPViewPreferences getGCPViewPreferencesFromCEView(
-      final CEView ceView, final Map<String, Object> settingsMap) {
+      final CEView ceView, final Map<String, String> settingsMap) {
     final GCPViewPreferences gcpViewPreferences = ceView.getViewPreferences().getGcpPreferences();
     return GCPViewPreferences.builder()
         .includeDiscounts(getBooleanSettingValue(
@@ -119,13 +121,13 @@ public class CEViewPreferenceUtils {
         .build();
   }
 
-  private GCPViewPreferences getDefaultGCPViewPreferences(final Map<String, Object> settingsMap) {
+  private GCPViewPreferences getDefaultGCPViewPreferences(final Map<String, String> settingsMap) {
     return GCPViewPreferences.builder()
         .includeDiscounts(getBooleanSettingValue(settingsMap, SettingIdentifiers.INCLUDE_GCP_DISCOUNTS_IDENTIFIER))
         .build();
   }
 
-  private AWSViewPreferences getAWSViewPreferences(final CEView ceView, final Map<String, Object> settingsMap) {
+  private AWSViewPreferences getAWSViewPreferences(final CEView ceView, final Map<String, String> settingsMap) {
     AWSViewPreferences awsViewPreferences;
     if (Objects.nonNull(ceView) && Objects.nonNull(ceView.getViewPreferences())
         && Objects.nonNull(ceView.getViewPreferences().getAwsPreferences())) {
@@ -137,7 +139,7 @@ public class CEViewPreferenceUtils {
   }
 
   private AWSViewPreferences getAWSViewPreferencesFromCEView(
-      final CEView ceView, final Map<String, Object> settingsMap) {
+      final CEView ceView, final Map<String, String> settingsMap) {
     final AWSViewPreferences awsViewPreferences = ceView.getViewPreferences().getAwsPreferences();
     return AWSViewPreferences.builder()
         .includeDiscounts(getBooleanSettingValue(
@@ -153,7 +155,7 @@ public class CEViewPreferenceUtils {
         .build();
   }
 
-  private AWSViewPreferences getDefaultAWSViewPreferences(final Map<String, Object> settingsMap) {
+  private AWSViewPreferences getDefaultAWSViewPreferences(final Map<String, String> settingsMap) {
     return AWSViewPreferences.builder()
         .includeDiscounts(getBooleanSettingValue(settingsMap, SettingIdentifiers.INCLUDE_AWS_DISCOUNTS_IDENTIFIER))
         .includeCredits(getBooleanSettingValue(settingsMap, SettingIdentifiers.INCLUDE_AWS_CREDIT_IDENTIFIER))
@@ -164,21 +166,21 @@ public class CEViewPreferenceUtils {
   }
 
   private Boolean getBooleanSettingValue(
-      final Boolean value, final Map<String, Object> settingsMap, final String settingIdentifier) {
+      final Boolean value, final Map<String, String> settingsMap, final String settingIdentifier) {
     return Objects.nonNull(value) ? value : getBooleanSettingValue(settingsMap, settingIdentifier);
   }
 
   private AWSViewPreferenceCost getAWSCostSettingValue(
-      final AWSViewPreferenceCost value, final Map<String, Object> settingsMap, final String settingIdentifier) {
+      final AWSViewPreferenceCost value, final Map<String, String> settingsMap, final String settingIdentifier) {
     return Objects.nonNull(value) ? value : getAWSCostSettingValue(settingsMap, settingIdentifier);
   }
 
-  private Boolean getBooleanSettingValue(final Map<String, Object> settingsMap, final String settingIdentifier) {
-    return (Boolean) settingsMap.get(settingIdentifier);
+  private Boolean getBooleanSettingValue(final Map<String, String> settingsMap, final String settingIdentifier) {
+    return parseBoolean(settingsMap.get(settingIdentifier));
   }
 
   private AWSViewPreferenceCost getAWSCostSettingValue(
-      final Map<String, Object> settingsMap, final String settingIdentifier) {
-    return AWSViewPreferenceCost.fromString((String) settingsMap.get(settingIdentifier));
+      final Map<String, String> settingsMap, final String settingIdentifier) {
+    return AWSViewPreferenceCost.fromString(settingsMap.get(settingIdentifier));
   }
 }
