@@ -108,4 +108,5 @@ public class YAMLFieldNameConstants {
   public final String PATCHES_PATHS = "patchesPaths";
 
   public final String SERVICE_CONFIG = "serviceConfig";
+  public final String STEP_GROUP_V2 = "stepGroupV2";
 }

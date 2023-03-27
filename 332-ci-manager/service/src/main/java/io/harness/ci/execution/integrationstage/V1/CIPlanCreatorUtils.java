@@ -33,22 +33,18 @@ import io.harness.beans.yaml.extended.runtime.V1.RuntimeV1;
 import io.harness.beans.yaml.extended.runtime.V1.VMRuntimeV1;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.states.codebase.ScmGitRefManager;
+import io.harness.ci.utils.ContainerPlanCreaterUtils;
 import io.harness.ci.utils.WebhookTriggerProcessorUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.ng.core.BaseNGAccess;
-import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.steps.ParallelStepElementConfig;
-import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.PipelineStoreType;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
-import io.harness.pms.utils.IdentifierGeneratorUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -65,13 +61,9 @@ import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import io.harness.yaml.repository.Reference;
 import io.harness.yaml.repository.ReferenceType;
 import io.harness.yaml.repository.Repository;
-import io.harness.yaml.utils.JsonPipelineUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -80,7 +72,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CI)
 @Slf4j
-public class CIPlanCreatorUtils {
+public class CIPlanCreatorUtils extends ContainerPlanCreaterUtils {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ScmGitRefManager scmGitRefManager;
@@ -158,47 +150,6 @@ public class CIPlanCreatorUtils {
   public static List<YamlField> getStepYamlFields(YamlField yamlField) {
     List<YamlNode> yamlNodes = Optional.of(yamlField.getNode().asArray()).orElse(Collections.emptyList());
     return yamlNodes.stream().map(YamlField::new).collect(Collectors.toList());
-  }
-
-  public static ExecutionWrapperConfig getExecutionConfig(YamlField step) {
-    if (step.getType() == null) {
-      throw new InvalidRequestException("Type cannot be null for CI Step");
-    }
-    switch (step.getType()) {
-      case YAMLFieldNameConstants.PARALLEL:
-        List<YamlField> parallelNodes = getStepYamlFields(
-            step.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YAMLFieldNameConstants.STEPS));
-        ParallelStepElementConfig parallelStepElementConfig =
-            ParallelStepElementConfig.builder()
-                .sections(
-                    parallelNodes.stream().map(CIPlanCreatorUtils::getExecutionConfig).collect(Collectors.toList()))
-                .build();
-        return ExecutionWrapperConfig.builder()
-            .uuid(step.getUuid())
-            .parallel(getJsonNode(parallelStepElementConfig))
-            .build();
-      case YAMLFieldNameConstants.GROUP:
-        List<YamlField> groupNodes = getStepYamlFields(
-            step.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YAMLFieldNameConstants.STEPS));
-        StepGroupElementConfig stepGroupElementConfig =
-            StepGroupElementConfig.builder()
-                .identifier(IdentifierGeneratorUtils.getId(step.getNodeName()))
-                .name(step.getNodeName())
-                .steps(groupNodes.stream().map(CIPlanCreatorUtils::getExecutionConfig).collect(Collectors.toList()))
-                .build();
-        return ExecutionWrapperConfig.builder()
-            .uuid(step.getUuid())
-            .stepGroup(getJsonNode(stepGroupElementConfig))
-            .build();
-      default:
-        JsonNode node = step.getNode().getCurrJsonNode();
-        if (node != null && node.isObject() && node.get(YAMLFieldNameConstants.NAME) != null) {
-          ObjectNode objectNode = (ObjectNode) node;
-          objectNode.put(YAMLFieldNameConstants.IDENTIFIER,
-              IdentifierGeneratorUtils.getId(objectNode.get(YAMLFieldNameConstants.NAME).asText()));
-        }
-        return ExecutionWrapperConfig.builder().uuid(step.getUuid()).step(step.getNode().getCurrJsonNode()).build();
-    }
   }
 
   public static ParameterField<CIShellType> getShell(ParameterField<Shell> shellParameterField) {
@@ -392,14 +343,5 @@ public class CIPlanCreatorUtils {
     }
     log.error("Non supported event type, status will be empty");
     return "";
-  }
-
-  private static JsonNode getJsonNode(Object object) {
-    try {
-      String json = JsonPipelineUtils.writeJsonString(object);
-      return JsonPipelineUtils.getMapper().readTree(json);
-    } catch (IOException e) {
-      throw new CIStageExecutionException("Failed to serialise node", e);
-    }
   }
 }
