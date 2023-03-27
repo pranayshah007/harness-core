@@ -115,7 +115,7 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
     if (!cdFeatureFlagHelper.isEnabled(accountId, FeatureName.GITOPS_SYNC_STEP)) {
-      throw new InvalidRequestException("Feature Flag GITOPS_SYNC_STEP is not enabled.", USER);
+      throw new InvalidRequestException("Feature Flag GITOPS_SYNC_STEP is not enabled", USER);
     }
 
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
