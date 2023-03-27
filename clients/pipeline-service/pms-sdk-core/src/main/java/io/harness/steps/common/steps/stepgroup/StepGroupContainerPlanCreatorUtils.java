@@ -7,4 +7,4 @@
 
 package io.harness.steps.common.steps.stepgroup;
 
-public class StepGroupContainerPlanCreaterUtils {}
+public class StepGroupContainerPlanCreatorUtils {}
