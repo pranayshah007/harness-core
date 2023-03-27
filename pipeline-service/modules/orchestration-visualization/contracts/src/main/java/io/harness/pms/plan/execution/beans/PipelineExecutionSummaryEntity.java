@@ -143,7 +143,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   Boolean notifyOnlyMe;
 
-  ExecutionMode executionMode;
+  ExecutionMode executionMode; // this is used to filter out rollback mode executions from executions list API
   String rollbackModeExecutionId;
 
   // TTL index
