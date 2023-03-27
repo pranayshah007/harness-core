@@ -24,13 +24,35 @@ import org.redisson.api.RLock;
 public class RedisAcquiredLock implements AcquiredLock<RLock> {
   RLock lock;
   boolean isLeaseInfinite;
+  boolean isSentinelMode;
 
   @Override
   public void release() {
+    if (isSentinelMode) {
+      unlockAsync();
+    } else {
+      unlock();
+    }
+  }
+
+  private void unlockAsync() {
+    try {
+      if (lock != null && (lock.isHeldByCurrentThread() || isLeaseInfinite())) {
+        log.info(
+            "[RedisAcquiredLock][unlockAsync()]: Unlocking lock for Thread ID: {}", Thread.currentThread().getId());
+        lock.unlockAsync();
+        log.info("[RedisAcquiredLock][unlockAsync()]: Unlocked lock successfully for Thread ID {}",
+            Thread.currentThread().getId());
+      }
+    } catch (Exception e) {
+      log.error("[RedisAcquiredLock][unlockAsync()]: Exception while unlocking", e);
+    }
+  }
+  private void unlock() {
     try {
       if (lock != null && (lock.isHeldByCurrentThread() || isLeaseInfinite())) {
         log.info("[RedisAcquiredLock]: Unlocking lock for Thread ID: {}", Thread.currentThread().getId());
-        lock.forceUnlock();
+        lock.unlock();
         log.info("[RedisAcquiredLock]: Unlocked lock successfully for Thread ID {}", Thread.currentThread().getId());
       }
     } catch (Exception e) {

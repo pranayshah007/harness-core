@@ -21,7 +21,6 @@
 
     <logger name="software.wings" level="INFO"/>
     <logger name="org.zeroturnaround" level="WARN"/>
-    <logger name="org.redisson" level="TRACE"/>
     <root level="${LOGGING_LEVEL:-INFO}">
         <appender-ref ref="stdout"/>
     </root>
