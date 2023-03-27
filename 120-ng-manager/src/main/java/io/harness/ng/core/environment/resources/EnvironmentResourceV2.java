@@ -541,29 +541,41 @@ public class EnvironmentResourceV2 {
     } else {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
+
     Page<Environment> environmentPage = null;
+
     if (hasViewPermissionForAll(accountId, orgIdentifier, projectIdentifier)) {
       environmentPage = environmentService.list(criteria, pageRequest);
+
     } else {
       Page<Environment> environmentPages = environmentService.list(criteria, Pageable.unpaged());
+
       if (environmentPages == null) {
         return ResponseDTO.newResponse(getNGPageResponse(Page.empty()));
       }
+
       List<Environment> environmentList = environmentPages.getContent();
+
       environmentList = environmentRbacHelper.getPermittedEnvironmentsList(environmentList);
+
       if (isEmpty(environmentList)) {
         return ResponseDTO.newResponse(getNGPageResponse(Page.empty()));
       }
+
       populateInFilter(criteria, EnvironmentKeys.identifier,
           environmentList.stream().map(Environment::getIdentifier).collect(toList()));
+
       environmentPage = environmentService.list(criteria, pageRequest);
     }
+
     environmentPage.forEach(environment -> {
       if (EmptyPredicate.isEmpty(environment.getYaml())) {
         NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
+
         environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
       }
     });
+
     return ResponseDTO.newResponse(getNGPageResponse(environmentPage.map(EnvironmentMapper::toResponseWrapper)));
   }
 

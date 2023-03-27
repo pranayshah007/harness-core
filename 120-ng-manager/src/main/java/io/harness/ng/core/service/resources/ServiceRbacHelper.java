@@ -36,8 +36,10 @@ public class ServiceRbacHelper {
     if (isEmpty(serviceEntities)) {
       return Collections.emptyList();
     }
+
     Map<EntityScopeInfo, ServiceEntity> serviceMap = serviceEntities.stream().collect(
         Collectors.toMap(ServiceRbacHelper::getEntityScopeInfoFromService, Function.identity()));
+
     List<PermissionCheckDTO> permissionChecks =
         serviceEntities.stream()
             .map(service
@@ -49,12 +51,16 @@ public class ServiceRbacHelper {
                        .resourceType(NGResourceType.SERVICE)
                        .build())
             .collect(Collectors.toList());
+
     AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+
     List<ServiceEntity> permittedServices = new ArrayList<>();
+
     for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
       if (accessControlDTO.isPermitted()) {
         ServiceEntity service =
             serviceMap.get(ServiceRbacHelper.getEntityScopeInfoFromAccessControlDTO(accessControlDTO));
+
         if (service != null) {
           permittedServices.add(service);
         }

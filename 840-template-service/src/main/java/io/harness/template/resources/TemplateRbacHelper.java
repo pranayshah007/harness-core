@@ -28,8 +28,10 @@ public class TemplateRbacHelper {
     if (isEmpty(templateEntities)) {
       return Collections.emptyList();
     }
+
     Map<EntityScopeInfo, TemplateEntity> templateMap = templateEntities.stream().collect(
         Collectors.toMap(TemplateRbacHelper::getEntityScopeInfoFromTemplate, Function.identity()));
+
     List<PermissionCheckDTO> permissionChecks =
         templateEntities.stream()
             .map(templateEntity
@@ -41,17 +43,22 @@ public class TemplateRbacHelper {
                        .resourceType("TEMPLATE")
                        .build())
             .collect(Collectors.toList());
+
     AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+
     List<TemplateEntity> permittedTemplates = new ArrayList<>();
+
     for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
       if (accessControlDTO.isPermitted()) {
         TemplateEntity templateEntity =
             templateMap.get(TemplateRbacHelper.getEntityScopeInfoFromAccessControlDTO(accessControlDTO));
+
         if (templateEntity != null) {
           permittedTemplates.add(templateEntity);
         }
       }
     }
+
     return permittedTemplates;
   }
 

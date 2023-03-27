@@ -501,28 +501,39 @@ public class NGTemplateResource {
     } else {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
+
     Page<TemplateEntity> templateEntities = null;
+
     if (hasViewPermissionForAll(accountId, orgId, projectId)) {
       templateEntities =
           templateService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches);
+
     } else {
       Page<TemplateEntity> templateEntityPage =
           templateService.list(criteria, Pageable.unpaged(), accountId, orgId, projectId, getDistinctFromBranches);
+
       if (templateEntityPage == null) {
         return ResponseDTO.newResponse(Page.empty());
       }
+
       List<TemplateEntity> templateEntityList = templateEntityPage.getContent();
+
       templateEntityList = templateRbacHelper.getPermittedTemplateList(templateEntityList);
+
       if (isEmpty(templateEntityList)) {
         return ResponseDTO.newResponse(Page.empty());
       }
+
       populateInFilter(criteria, TemplateEntityKeys.identifier,
           templateEntityList.stream().map(TemplateEntity::getIdentifier).collect(toList()));
+
       templateEntities =
           templateService.list(criteria, Pageable.unpaged(), accountId, orgId, projectId, getDistinctFromBranches);
     }
+
     Page<TemplateSummaryResponseDTO> templateSummaryResponseDTOS =
         templateEntities.map(NGTemplateDtoMapper::prepareTemplateSummaryResponseDto);
+
     return ResponseDTO.newResponse(templateSummaryResponseDTOS);
   }
 

@@ -41,6 +41,7 @@ public class EnvironmentRbacHelper {
 
     Map<EntityScopeInfo, Environment> environmentMap = environments.stream().collect(
         Collectors.toMap(EnvironmentRbacHelper::getEntityScopeInfoFromEnvironment, Function.identity()));
+
     List<PermissionCheckDTO> permissionChecks =
         environments.stream()
             .map(environment
@@ -60,6 +61,7 @@ public class EnvironmentRbacHelper {
                                  environments.get(0).getOrgIdentifier(), environments.get(0).getProjectIdentifier()))
                              .resourceType(NGResourceType.ENVIRONMENT)
                              .build());
+
     permissionChecks.add(PermissionCheckDTO.builder()
                              .permission(CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION)
                              .resourceAttributes(getEnvironmentAttributesMap("Production"))
@@ -69,10 +71,13 @@ public class EnvironmentRbacHelper {
                              .build());
 
     AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+
     List<AccessControlDTO> accessControlDTOList = accessCheckResponse.getAccessControlList();
 
     accessControlDTOList = CheckingTypeBasedFilters(accessControlDTOList);
+
     List<Environment> permittedEnvironments = new ArrayList<>();
+
     for (AccessControlDTO accessControlDTO : accessControlDTOList) {
       Environment environment =
           environmentMap.get(EnvironmentRbacHelper.getEntityScopeInfoFromAccessControlDTO(accessControlDTO));
@@ -80,6 +85,7 @@ public class EnvironmentRbacHelper {
       if (environment == null) {
         continue;
       }
+
       if (accessControlDTO.isPermitted() || (environment.getType().toString() == "PreProduction" && hasPreProdAccess)
           || (environment.getType().toString() == "Production" && hasProdAccess)) {
         permittedEnvironments.add(environment);
@@ -94,13 +100,16 @@ public class EnvironmentRbacHelper {
         if (accessControlDTO.isPermitted()) {
           if (accessControlDTO.getResourceAttributes().get("type") == "PreProduction") {
             hasPreProdAccess = true;
+
           } else if (accessControlDTO.getResourceAttributes().get("type") == "Production") {
             hasProdAccess = true;
           }
         }
+
         accessControlDTOList.remove(accessControlDTO);
       }
     }
+
     return accessControlDTOList;
   }
 
@@ -128,7 +137,9 @@ public class EnvironmentRbacHelper {
   }
   private Map<String, String> getEnvironmentAttributesMap(String environmentType) {
     Map<String, String> environmentAttributes = new HashMap<>();
+
     environmentAttributes.put("type", environmentType);
+
     return environmentAttributes;
   }
 }

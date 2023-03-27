@@ -452,18 +452,24 @@ public class ServiceResourceV2 {
 
     if (hasViewPermissionForAll(accountId, orgIdentifier, projectIdentifier)) {
       serviceEntities = serviceEntityService.list(criteria, pageRequest);
+
     } else {
       Page<ServiceEntity> serviceEntityPage = serviceEntityService.list(criteria, Pageable.unpaged());
+
       if (serviceEntityPage == null) {
         return ResponseDTO.newResponse(getNGPageResponse(Page.empty()));
       }
+
       List<ServiceEntity> serviceList = serviceEntityPage.getContent();
+
       serviceList = serviceRbacHelper.getPermittedServiceList(serviceList);
+
       if (isEmpty(serviceList)) {
         return ResponseDTO.newResponse(getNGPageResponse(Page.empty()));
       }
       populateInFilter(criteria, ServiceEntityKeys.identifier,
           serviceList.stream().map(ServiceEntity::getIdentifier).collect(toList()));
+
       serviceEntities = serviceEntityService.list(criteria, pageRequest);
     }
     if (ServiceDefinitionType.CUSTOM_DEPLOYMENT == type && !isEmpty(deploymentTemplateIdentifier)
@@ -471,12 +477,14 @@ public class ServiceResourceV2 {
       serviceEntities = customDeploymentYamlHelper.getFilteredServiceEntities(
           page, size, sort, deploymentTemplateIdentifier, versionLabel, serviceEntities);
     }
+
     serviceEntities.forEach(serviceEntity -> {
       if (EmptyPredicate.isEmpty(serviceEntity.getYaml())) {
         NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
         serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
       }
     });
+
     return ResponseDTO.newResponse(getNGPageResponse(
         serviceEntities.map(entity -> ServiceElementMapper.toResponseWrapper(entity, includeVersionInfo))));
   }
