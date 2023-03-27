@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway
+  namespace: {{ .Release.Namespace }}
+data:
+  MANAGER_URL: {{ (default .Values.loadbalancerURL .Values.global.loadbalancerURL) | quote }}
+  MANAGER_PUBLIC_URL: {{ (default .Values.loadbalancerURL .Values.global.loadbalancerURL) | quote }}
+  MEMORY: {{ .Values.java.memory | quote }}
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  API_VERSION: 'release-gateway:182'
+  LOG_SVC_GLOBAL_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
+  TI_SVC_GLOBAL_TOKEN: 78d16b66-4b4c-11eb-8377-acde48001122
+  CACHE_TYPE: REDIS
+  TOKEN_CACHE_TTL: '300'
+  USE_SENTINEL: 'true'
+  SENTINEL_MASTER_NAME: 'harness-redis'
+  REDIS_PORT: '26379'
+  REDIS_SENTINELS: 'redis-sentinel-harness-announce-0.{{ .Release.Namespace }},redis-sentinel-harness-announce-1.{{ .Release.Namespace }},redis-sentinel-harness-announce-2.{{ .Release.Namespace }}'
+  HARNESS_ENABLE_NG_AUTH_UI : 'true'
+  {{- if .Values.global.mongoSSL }}
+  MONGO_SSL_CONFIG: "true"
+  MONGO_SSL_CA_TRUST_STORE_PATH: /opt/harness/keystore.jks
+  MONGO_SSL_CA_TRUST_STORE_PASSWORD: password
+  {{- end }}
