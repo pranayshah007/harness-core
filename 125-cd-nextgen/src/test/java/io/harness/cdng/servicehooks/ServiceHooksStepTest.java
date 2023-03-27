@@ -7,6 +7,7 @@
 
 package io.harness.cdng.servicehooks;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILED_CHILDREN_OUTPUT;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 
@@ -16,12 +17,9 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
-import io.harness.cdng.configfile.ConfigFileOutcome;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.hooks.ServiceHookOutcome;
 import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.hooks.steps.ServiceHooksStep;
@@ -42,7 +40,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 
-@OwnedBy(HarnessTeam.CDP)
+@OwnedBy(CDP)
 public class ServiceHooksStepTest extends CDNGTestBase {
   @Mock private ServiceStepsHelper serviceStepsHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;

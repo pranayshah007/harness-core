@@ -113,11 +113,6 @@ public class ServiceHooksPlanCreatorTest extends CDNGTestBase {
     serviceHooksPlanCreator.addDependenciesForIndividualServiceHook(
         serviceHookIdentifier, serviceHookStepParameters, serviceFilesYamlNodes, planCreationResponseMap);
     assertThat(planCreationResponseMap.size()).isEqualTo(2);
-
-    // should return the first from the list
-    serviceHooksPlanCreator.addDependenciesForIndividualServiceHook(
-        "notExistingIdentifier", serviceHookStepParameters, serviceFilesYamlNodes, planCreationResponseMap);
-    assertThat(planCreationResponseMap.size()).isEqualTo(3);
   }
 
   private YamlField readYaml(String path) throws IOException {

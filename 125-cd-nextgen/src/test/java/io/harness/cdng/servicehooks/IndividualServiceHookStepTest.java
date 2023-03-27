@@ -106,7 +106,7 @@ public class IndividualServiceHookStepTest extends CDNGTestBase {
 
     assertThat(serviceHookOutcome.getStore().getKind()).isEqualTo(StoreConfigType.INLINE.getDisplayName());
     InlineStoreConfig store = (InlineStoreConfig) serviceHookOutcome.getStore();
-    assertThat(store.getContent()).isEqualTo("sup");
+    assertThat(store.getContent().getValue()).isEqualTo("sup");
   }
 
   private Ambiance getAmbiance() {

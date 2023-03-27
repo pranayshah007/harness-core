@@ -23,7 +23,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 
 import com.google.inject.Singleton;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 

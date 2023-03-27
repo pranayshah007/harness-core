@@ -15,11 +15,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
-import io.harness.cdng.configfile.ConfigFile;
-import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
-import io.harness.cdng.creator.plan.configfile.IndividualConfigFilePlanCreator;
 import io.harness.cdng.creator.plan.servicehook.IndividualServiceHookPlanCreator;
+import io.harness.cdng.hooks.ServiceHook;
 import io.harness.cdng.hooks.steps.ServiceHookStepParameters;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
@@ -49,7 +47,7 @@ public class IndividualServiceHookPlanCreatorTest extends CDNGTestBase {
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testGetFieldClass() {
-    assertThat(individualServiceHookPlanCreator.getFieldClass()).isEqualTo(ConfigFile.class);
+    assertThat(individualServiceHookPlanCreator.getFieldClass()).isEqualTo(ServiceHook.class);
   }
 
   @Test
