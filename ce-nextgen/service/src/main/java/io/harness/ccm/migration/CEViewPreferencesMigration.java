@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CE)
 public class CEViewPreferencesMigration implements NGMigration {
   @Inject private CEViewDao ceViewDao;
+  @Inject private CEViewPreferenceUtils ceViewPreferenceUtils;
   @Inject private HPersistence hPersistence;
 
   @Override
@@ -54,7 +55,7 @@ public class CEViewPreferencesMigration implements NGMigration {
   }
 
   private void modifyCEView(final CEView ceView) {
-    ceView.setViewPreferences(CEViewPreferenceUtils.getCEViewPreferencesForMigration(ceView));
+    ceView.setViewPreferences(ceViewPreferenceUtils.getCEViewPreferencesForMigration(ceView));
     if (Objects.isNull(ceView.getViewRules())) {
       ceView.setViewRules(Collections.emptyList());
     }

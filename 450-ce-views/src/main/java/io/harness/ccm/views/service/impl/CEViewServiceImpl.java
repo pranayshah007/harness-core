@@ -81,15 +81,6 @@ import org.springframework.util.CollectionUtils;
 @Singleton
 @OwnedBy(CE)
 public class CEViewServiceImpl implements CEViewService {
-  @Inject private CEViewDao ceViewDao;
-  @Inject private CEViewFolderDao ceViewFolderDao;
-  @Inject private CEReportScheduleDao ceReportScheduleDao;
-  @Inject private ViewsBillingService viewsBillingService;
-  @Inject private ViewCustomFieldService viewCustomFieldService;
-  @Inject private ViewTimeRangeHelper viewTimeRangeHelper;
-  @Inject private ViewFilterBuilderHelper viewFilterBuilderHelper;
-  @Inject private ViewsQueryHelper viewsQueryHelper;
-
   private static final String VIEW_NAME_DUPLICATE_EXCEPTION = "Perspective with given name already exists";
   private static final String CLONE_NAME_DUPLICATE_EXCEPTION = "A clone for this perspective already exists";
   private static final String VIEW_LIMIT_REACHED_EXCEPTION =
@@ -111,6 +102,17 @@ public class CEViewServiceImpl implements CEViewService {
   private static final String DEFAULT_CLUSTER_FIELD_NAME = "Cluster Name";
 
   private static final int VIEW_COUNT = 1000;
+
+  @Inject private CEViewDao ceViewDao;
+  @Inject private CEViewFolderDao ceViewFolderDao;
+  @Inject private CEReportScheduleDao ceReportScheduleDao;
+  @Inject private ViewsBillingService viewsBillingService;
+  @Inject private ViewCustomFieldService viewCustomFieldService;
+  @Inject private ViewTimeRangeHelper viewTimeRangeHelper;
+  @Inject private ViewFilterBuilderHelper viewFilterBuilderHelper;
+  @Inject private ViewsQueryHelper viewsQueryHelper;
+  @Inject private CEViewPreferenceUtils ceViewPreferenceUtils;
+
   @Override
   public CEView save(CEView ceView, boolean clone) {
     validateView(ceView, clone);
@@ -267,7 +269,7 @@ public class CEViewServiceImpl implements CEViewService {
     }
 
     ceView.setDataSources(new ArrayList<>(viewFieldIdentifierSet));
-    ceView.setViewPreferences(CEViewPreferenceUtils.getCEViewPreferences(ceView));
+    ceView.setViewPreferences(ceViewPreferenceUtils.getCEViewPreferences(ceView));
   }
 
   @Override
