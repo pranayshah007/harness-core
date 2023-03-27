@@ -90,7 +90,7 @@ public class NGAzureKeyVaultFetchEngineTask extends AbstractDelegateRunnableTask
     TokenCredential credentials = null;
     if (BooleanUtils.isTrue(azureKeyVaultConnectorDTO.getUseManagedIdentity())) {
       credentials = KeyVaultAuthenticator.getManagedIdentityCredentials(
-          azureKeyVaultConnectorDTO.getClientId(), azureKeyVaultConnectorDTO.getAzureManagedIdentityType());
+          azureKeyVaultConnectorDTO.getManagedClientId(), azureKeyVaultConnectorDTO.getAzureManagedIdentityType());
     } else {
       credentials = KeyVaultAuthenticator.getAuthenticationTokenCredentials(azureKeyVaultConnectorDTO.getClientId(),
           String.valueOf(azureKeyVaultConnectorDTO.getSecretKey().getDecryptedValue()),
