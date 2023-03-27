@@ -23,6 +23,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.product.ci.engine.proto.ExecuteStepRequest;
 import io.harness.product.ci.engine.proto.LiteEngineGrpc;
+import io.harness.utils.TokenUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -85,7 +86,8 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
       executeStepRequest = executeStepRequest.toBuilder().setManagerSvcEndpoint(managerUrl).build();
     }
     if (isNotEmpty(accountKey)) {
-      executeStepRequest = executeStepRequest.toBuilder().setAccountKey(accountKey).build();
+      executeStepRequest =
+          executeStepRequest.toBuilder().setAccountKey(TokenUtils.getDecodedTokenString(accountKey)).build();
     }
     if (isNotEmpty(delegateID)) {
       executeStepRequest = executeStepRequest.toBuilder().setDelegateId(delegateID).build();
