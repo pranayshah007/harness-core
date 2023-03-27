@@ -14,6 +14,8 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialD
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
+import io.harness.delegate.beans.connector.rancher.RancherAuthType;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
@@ -27,6 +29,15 @@ public abstract class AbstractKubernetesConnectorValidator extends AbstractConne
       KubernetesAuthCredentialDTO kubernetesAuthCredential = getKubernetesAuthCredential(
           (KubernetesClusterDetailsDTO) kubernetesClusterConfig.getCredential().getConfig());
       return super.getEncryptionDetail(kubernetesAuthCredential, accountIdentifier, orgIdentifier, projectIdentifier);
+    }
+    return null;
+  }
+
+  protected List<EncryptedDataDetail> fetchEncryptionDetailsList(RancherConnectorDTO rancherClusterConfig,
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    if (rancherClusterConfig.getConfig().getConfig().getCredentials().getAuthType() == RancherAuthType.BEARER_TOKEN) {
+      return super.getEncryptionDetail(rancherClusterConfig.getConfig().getConfig().getCredentials().getAuth(),
+          accountIdentifier, orgIdentifier, projectIdentifier);
     }
     return null;
   }

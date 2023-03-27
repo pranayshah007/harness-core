@@ -70,7 +70,8 @@ public enum ConnectorType implements EntitySubtype {
 
   @JsonProperty("Spot") SPOT("Spot"),
   @JsonProperty("Bamboo") BAMBOO("Bamboo"),
-  @JsonProperty("TerraformCloud") TERRAFORM_CLOUD("TerraformCloud");
+  @JsonProperty("TerraformCloud") TERRAFORM_CLOUD("TerraformCloud"),
+  @JsonProperty("Rancher") RANCHER("Rancher");
 
   private final String displayName;
 

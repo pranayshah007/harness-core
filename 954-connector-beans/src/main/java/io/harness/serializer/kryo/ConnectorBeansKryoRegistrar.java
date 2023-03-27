@@ -156,6 +156,15 @@ import io.harness.delegate.beans.connector.pagerduty.PagerDutyConnectorDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
+import io.harness.delegate.beans.connector.rancher.RancherAuthType;
+import io.harness.delegate.beans.connector.rancher.RancherConfigType;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorBearerTokenAuthenticationDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthCredentialsDTOSerializer;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthenticationSpecDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorConfigDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitAuthType;
@@ -505,5 +514,15 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsSdkClientBackoffStrategyDTO.class, 10000458);
     kryo.register(AwsSdkClientBackoffStrategySpecDTO.class, 10000459);
     kryo.register(AwsSdkClientBackoffStrategyType.class, 10000460);
+
+    kryo.register(RancherAuthType.class, 20000501);
+    kryo.register(RancherConfigType.class, 20000502);
+    kryo.register(RancherConnectorBearerTokenAuthenticationDTO.class, 20000503);
+    kryo.register(RancherConnectorConfigAuthCredentialsDTO.class, 20000504);
+    kryo.register(RancherConnectorConfigAuthCredentialsDTOSerializer.class, 20000505);
+    kryo.register(RancherConnectorConfigAuthDTO.class, 20000506);
+    kryo.register(RancherConnectorConfigAuthenticationSpecDTO.class, 20000507);
+    kryo.register(RancherConnectorConfigDTO.class, 20000508);
+    kryo.register(RancherConnectorDTO.class, 20000509);
   }
 }
