@@ -219,6 +219,13 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
         o, new AmbianceResolveFunctorImpl(this, inputSetValidatorFactory, expressionMode));
   }
 
+  @Override
+  public Object resolve(Object o, ExpressionMode expressionMode, Map<String, Object> contextMap) {
+    contextMap.forEach(this::addToContext);
+    return ExpressionEvaluatorUtils.updateExpressions(
+        o, new AmbianceResolveFunctorImpl(this, inputSetValidatorFactory, expressionMode));
+  }
+
   public static class AmbianceResolveFunctorImpl extends ResolveFunctorImpl {
     private final ParameterFieldProcessor parameterFieldProcessor;
 

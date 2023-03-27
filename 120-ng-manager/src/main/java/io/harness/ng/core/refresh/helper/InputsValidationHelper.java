@@ -18,6 +18,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.ng.core.yaml.CDYamlFacade;
 import io.harness.persistence.PersistentEntity;
@@ -26,6 +28,9 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
+import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.yaml.TemplateRefHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,6 +54,8 @@ public class InputsValidationHelper {
   @Inject EntityFetchHelper entityFetchHelper;
   @Inject EnvironmentRefreshHelper environmentRefreshHelper;
   @Inject private CDYamlFacade cdYamlFacade;
+
+  @Inject private TemplateResourceClient templateResourceClient;
 
   public InputsValidationResponse validateInputsForYaml(
       String accountId, String orgId, String projectId, String yaml, String resolvedTemplatesYaml) {
@@ -149,6 +156,15 @@ public class InputsValidationHelper {
       return;
     }
 
+    /**
+     * serviceInputs are coming from yaml which we are trying to check
+     * it will have template node -> templateInputs -> some field which is now fixed or a missing field
+     *
+     * we fetch service. service will also have template -> template inputs
+     * but they are stale as well. so we have to check for template inputs separately
+     *
+     */
+
     if (NGExpressionUtils.isRuntimeField(serviceRef)) {
       if (serviceInputs.isObject()
           || (serviceInputs.isValueNode() && !NGExpressionUtils.matchesInputSetPattern(serviceInputs.asText()))) {
@@ -168,7 +184,15 @@ public class InputsValidationHelper {
 
     String serviceYaml = serviceEntity.fetchNonEmptyYaml();
 
-    // TODO: call Template service to resolve artifact source templates. If inputs issue, add service as nodeError.
+    //    if (TemplateRefHelper.hasTemplateRef(serviceYaml)) {
+    //      ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
+    //      serviceEntityService.validateTemplateInputs(
+    //          context.getAccountId(), context.getOrgId(), context.getProjectId(), serviceRef);
+    //      if (!validateTemplateInputsResponseDTO.isValidYaml()) {
+    //        errorNodeSummary.setValid(false);
+    //        return;
+    //      }
+    //    }
 
     YamlNode primaryArtifactRefNode = YamlNodeUtils.goToPathUsingFqn(
         entityNode, "serviceInputs.serviceDefinition.spec.artifacts.primary.primaryArtifactRef");

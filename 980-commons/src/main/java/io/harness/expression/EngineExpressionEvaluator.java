@@ -169,6 +169,10 @@ public class EngineExpressionEvaluator {
     return ExpressionEvaluatorUtils.updateExpressions(o, new ResolveFunctorImpl(this, expressionMode));
   }
 
+  public Object resolve(Object o, ExpressionMode expressionMode, Map<String, Object> contextMap) {
+    return ExpressionEvaluatorUtils.updateExpressions(o, new ResolveFunctorImpl(this, expressionMode));
+  }
+
   public PartialEvaluateResult partialResolve(Object o, ExpressionMode expressionMode) {
     Map<String, Object> partialCtx = new HashMap<>();
     Object res =
@@ -539,7 +543,7 @@ public class EngineExpressionEvaluator {
     return engine.createScript(expression).execute(ctx);
   }
 
-  private EngineJexlContext prepareContext(Map<String, Object> ctx) {
+  protected EngineJexlContext prepareContext(Map<String, Object> ctx) {
     synchronized (this) {
       if (!initialized) {
         initialize();

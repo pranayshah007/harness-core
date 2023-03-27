@@ -17,6 +17,7 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsEngineExpressionServiceImpl implements PmsEngineExpressionService {
@@ -51,6 +52,14 @@ public class PmsEngineExpressionServiceImpl implements PmsEngineExpressionServic
   @Deprecated
   public Object resolve(Ambiance ambiance, Object o, boolean skipUnresolvedExpressionsCheck) {
     return resolve(ambiance, o, EngineExpressionEvaluator.calculateExpressionMode(skipUnresolvedExpressionsCheck));
+  }
+
+  @Override
+  @Deprecated
+  public Object resolve(
+      Ambiance ambiance, Object o, ExpressionMode expressionMode, Map<String, Object> contextMapCustom) {
+    EngineExpressionEvaluator evaluator = prepareExpressionEvaluator(ambiance);
+    return evaluator.resolve(o, expressionMode, contextMapCustom);
   }
 
   @Override
