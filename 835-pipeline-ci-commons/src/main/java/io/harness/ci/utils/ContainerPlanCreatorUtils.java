@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public abstract class ContainerPlanCreaterUtils {
+public abstract class ContainerPlanCreatorUtils {
   public static List<YamlField> getStepYamlFields(YamlField yamlField) {
     List<YamlNode> yamlNodes = Optional.of(yamlField.getNode().asArray()).orElse(Collections.emptyList());
     return yamlNodes.stream().map(YamlField::new).collect(Collectors.toList());
@@ -48,7 +48,7 @@ public abstract class ContainerPlanCreaterUtils {
         ParallelStepElementConfig parallelStepElementConfig =
             ParallelStepElementConfig.builder()
                 .sections(parallelNodes.stream()
-                              .map(ContainerPlanCreaterUtils::getExecutionConfig)
+                              .map(ContainerPlanCreatorUtils::getExecutionConfig)
                               .collect(Collectors.toList()))
                 .build();
         return ExecutionWrapperConfig.builder()
@@ -63,7 +63,7 @@ public abstract class ContainerPlanCreaterUtils {
                 .identifier(IdentifierGeneratorUtils.getId(step.getNodeName()))
                 .name(step.getNodeName())
                 .steps(
-                    groupNodes.stream().map(ContainerPlanCreaterUtils::getExecutionConfig).collect(Collectors.toList()))
+                    groupNodes.stream().map(ContainerPlanCreatorUtils::getExecutionConfig).collect(Collectors.toList()))
                 .build();
         return ExecutionWrapperConfig.builder()
             .uuid(step.getUuid())

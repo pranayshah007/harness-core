@@ -33,7 +33,7 @@ import io.harness.beans.yaml.extended.runtime.V1.RuntimeV1;
 import io.harness.beans.yaml.extended.runtime.V1.VMRuntimeV1;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.states.codebase.ScmGitRefManager;
-import io.harness.ci.utils.ContainerPlanCreaterUtils;
+import io.harness.ci.utils.ContainerPlanCreatorUtils;
 import io.harness.ci.utils.WebhookTriggerProcessorUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -72,7 +72,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CI)
 @Slf4j
-public class CIPlanCreatorUtils extends ContainerPlanCreaterUtils {
+public class CIPlanCreatorUtils extends ContainerPlanCreatorUtils {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ScmGitRefManager scmGitRefManager;
