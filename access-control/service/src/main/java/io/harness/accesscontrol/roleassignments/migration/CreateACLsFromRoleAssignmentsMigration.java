@@ -7,6 +7,8 @@
 
 package io.harness.accesscontrol.roleassignments.migration;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.principals.PrincipalType;
@@ -67,19 +69,27 @@ public class CreateACLsFromRoleAssignmentsMigration implements NGMigration {
       long numberOfACLsCreated = 0;
       Optional<UserGroupDBO> userGroupDBO = userGroupRepository.findByIdentifierAndScopeIdentifier(
           roleAssignment.getPrincipalIdentifier(), roleAssignment.getScopeIdentifier());
-      Set<String> users = userGroupDBO.get().getUsers();
-      long offset = 0;
-      while (offset < users.size() + 1) {
-        Set<String> subSetUsers = users.stream().skip(offset).limit(1000).collect(Collectors.toSet());
-        List<ACL> aclsToCreate = changeConsumerService.getAClsForRoleAssignment(roleAssignment, subSetUsers);
+      if (userGroupDBO.isPresent()) {
+        Set<String> users = userGroupDBO.get().getUsers();
+        if (isNotEmpty(users)) {
+          long offset = 0;
+          while (offset < users.size() + 1) {
+            Set<String> subSetUsers = users.stream().skip(offset).limit(1000).collect(Collectors.toSet());
+            List<ACL> aclsToCreate = changeConsumerService.getAClsForRoleAssignment(roleAssignment, subSetUsers);
 
-        aclsToCreate.addAll(
-            changeConsumerService.getImplicitACLsForRoleAssignment(roleAssignment, subSetUsers, new HashSet<>()));
-        aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
+            aclsToCreate.addAll(
+                changeConsumerService.getImplicitACLsForRoleAssignment(roleAssignment, subSetUsers, new HashSet<>()));
+            aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
 
-        offset += 1000;
-        numberOfACLsCreated += aclsToCreate.size();
+            offset += 1000;
+            numberOfACLsCreated += aclsToCreate.size();
+          }
+        } else {
+          log.info("No users in usergroup {} in scope {}", roleAssignment.getPrincipalIdentifier(),
+              roleAssignment.getScopeIdentifier());
+        }
       }
+
       return numberOfACLsCreated;
     } else {
       List<ACL> aclsToCreate = changeConsumerService.getAClsForRoleAssignment(roleAssignment);
