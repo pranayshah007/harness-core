@@ -5,18 +5,19 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.assessment.settings.beans.entities;
+package io.harness.assessment.settings.beans.dto;
 
 import java.util.List;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class UserResponse {
-  String questionId;
-  String sectionId;
-  List<UserResponseItem> responses;
-  Double userScore;
-  Long maxScore;
+public class UserResponsesRequest {
+  @NotNull
+  @Size(min = 1, max = 20)
+  List<UserResponseRequestItem> responses; // this should also be different object TODO
+  String role;
 }

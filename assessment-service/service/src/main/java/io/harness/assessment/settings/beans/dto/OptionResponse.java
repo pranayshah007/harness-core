@@ -7,4 +7,12 @@
 
 package io.harness.assessment.settings.beans.dto;
 
-public class AssessmentDTO {}
+import lombok.Data;
+import lombok.experimental.SuperBuilder;
+
+@Data
+@SuperBuilder
+public class OptionResponse {
+  String optionId;
+  String optionText;
+}

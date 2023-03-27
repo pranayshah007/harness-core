@@ -4,10 +4,16 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-package io.harness.assessment.settings.services;
 
-import io.harness.assessment.settings.beans.dto.AssessmentInviteDTO;
+package io.harness.assessment.settings.beans.dto;
 
-public interface InvitationService {
-  AssessmentInviteDTO sendAssessmentInvite(AssessmentInviteDTO assessmentInviteDTO);
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
+
+@Data
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
+public class OptionResponseWithSelection extends OptionResponse {
+  boolean isSelected;
 }

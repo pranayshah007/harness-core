@@ -10,15 +10,14 @@ package io.harness.assessment.settings.repositories;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.assessment.settings.beans.entities.Assessment;
+import io.harness.assessment.settings.beans.entities.UserInvitation;
 
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
 @OwnedBy(HarnessTeam.SEI)
-public interface AssessmentRepository extends CrudRepository<Assessment, String>, AssessmentRepositoryCustom {
-  Optional<Assessment> findByAssessmentIdAndVersion(String assessmentId, Long version);
-
-  Optional<Assessment> findFirstByAssessmentIdOrderByVersionDesc(String assessmentId);
+public interface UserInvitationRepository extends CrudRepository<UserInvitation, String> {
+  Optional<UserInvitation> findOneByGeneratedCode(String code);
+  Optional<UserInvitation> findOneByUserId(String userId);
 }

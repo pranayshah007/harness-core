@@ -5,18 +5,25 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.assessment.settings.beans.entities;
+package io.harness.assessment.settings.beans.dto.upload;
+
+import io.harness.assessment.settings.beans.entities.Question;
 
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
-@Data
 @Builder
-public class UserResponse {
-  String questionId;
-  String sectionId;
-  List<UserResponseItem> responses;
-  Double userScore;
-  Long maxScore;
+@Data
+public class AssessmentUploadResponse {
+  String assessmentId;
+  String assessmentName;
+  Long version;
+  List<Question> questions;
+  Long expectedCompletionDuration;
+  Long baseScore;
+  Long createdAt;
+  String createdBy;
+  Boolean isPublished;
+  Long lastUpdatedAt;
 }

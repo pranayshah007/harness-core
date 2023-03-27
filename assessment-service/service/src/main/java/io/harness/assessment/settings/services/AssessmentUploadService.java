@@ -6,4 +6,15 @@
  */
 package io.harness.assessment.settings.services;
 
-public interface AssessmentUploadService {}
+import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadRequest;
+import io.harness.assessment.settings.beans.dto.upload.AssessmentUploadResponse;
+
+public interface AssessmentUploadService {
+  AssessmentUploadResponse uploadNewAssessment(AssessmentUploadRequest assessmentUploadRequest);
+
+  AssessmentUploadResponse updateAssessment(AssessmentUploadRequest assessmentUploadRequest);
+
+  AssessmentUploadResponse publishAssessment(String assessmentId);
+
+  AssessmentUploadResponse getAssessment(String assessmentId);
+}
