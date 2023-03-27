@@ -143,8 +143,8 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   Boolean notifyOnlyMe;
 
-  ExecutionMode executionMode;
-  String rollbackModeExecutionId;
+  ExecutionMode executionMode; // this is used to filter out rollback mode executions from executions list API
+  RollbackExecutionInfo rollbackExecutionInfo;
 
   // TTL index
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
@@ -304,5 +304,9 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   public boolean isStagesExecutionAllowed() {
     return allowStagesExecution != null && allowStagesExecution;
+  }
+
+  public String getRollbackModeExecutionId() {
+    return rollbackExecutionInfo != null ? rollbackExecutionInfo.getRollbackModeExecutionId() : null;
   }
 }
