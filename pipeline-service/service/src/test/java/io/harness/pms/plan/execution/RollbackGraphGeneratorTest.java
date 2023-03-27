@@ -17,6 +17,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.pipeline.mappers.PipelineExecutionSummaryDtoMapper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.RollbackExecutionInfo;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
@@ -64,10 +65,11 @@ public class RollbackGraphGeneratorTest extends CategoryTest {
     ChildExecutionDetailDTO noRollbackIdResponse =
         rollbackGraphGenerator.checkAndBuildRollbackGraph(null, null, null, noRollbackId, null, null, null, null);
     assertThat(noRollbackIdResponse).isNull();
-    PipelineExecutionSummaryEntity parentExecutionSummary = PipelineExecutionSummaryEntity.builder()
-                                                                .rollbackModeExecutionId(rollbackId)
-                                                                .layoutNodeMap(layoutNodeMap)
-                                                                .build();
+    PipelineExecutionSummaryEntity parentExecutionSummary =
+        PipelineExecutionSummaryEntity.builder()
+            .rollbackExecutionInfo(RollbackExecutionInfo.builder().rollbackModeExecutionId(rollbackId).build())
+            .layoutNodeMap(layoutNodeMap)
+            .build();
     PipelineExecutionSummaryEntity childExecutionSummary =
         PipelineExecutionSummaryEntity.builder().planExecutionId(rollbackId).build();
     doReturn(childExecutionSummary)

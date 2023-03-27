@@ -300,6 +300,8 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         + "value";
     public String isChildPipeline = PlanExecutionSummaryKeys.parentStageInfo + "."
         + "hasParentPipeline";
+    public String rollbackModeExecutionId = PlanExecutionSummaryKeys.rollbackExecutionInfo + "."
+        + "rollbackModeExecutionId";
   }
 
   public boolean isStagesExecutionAllowed() {
