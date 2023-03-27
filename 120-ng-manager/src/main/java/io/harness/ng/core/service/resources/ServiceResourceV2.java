@@ -12,15 +12,19 @@ import static io.harness.artifact.ArtifactUtilities.getArtifactoryRegistryUrl;
 import static io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl.getConnector;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
+import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_VIEW_PERMISSION;
+import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static software.wings.beans.Service.ServiceKeys;
 
 import static java.lang.Long.parseLong;
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
@@ -188,7 +192,7 @@ public class ServiceResourceV2 {
   @Inject ArtifactSourceTemplateHelper artifactSourceTemplateHelper;
   private ServiceEntityYamlSchemaHelper serviceSchemaHelper;
   private ScopeAccessHelper scopeAccessHelper;
-
+  private ServiceRbacHelper serviceRbacHelper;
   private final NGFeatureFlagHelperService featureFlagService;
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
   public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE =
@@ -444,7 +448,24 @@ public class ServiceResourceV2 {
     } else {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
-    Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
+    Page<ServiceEntity> serviceEntities = null;
+
+    if (hasViewPermissionForAll(accountId, orgIdentifier, projectIdentifier)) {
+      serviceEntities = serviceEntityService.list(criteria, pageRequest);
+    } else {
+      Page<ServiceEntity> serviceEntityPage = serviceEntityService.list(criteria, Pageable.unpaged());
+      if (serviceEntityPage == null) {
+        return ResponseDTO.newResponse(getNGPageResponse(Page.empty()));
+      }
+      List<ServiceEntity> serviceList = serviceEntityPage.getContent();
+      serviceList = serviceRbacHelper.getPermittedServiceList(serviceList);
+      if (isEmpty(serviceList)) {
+        return ResponseDTO.newResponse(getNGPageResponse(Page.empty()));
+      }
+      populateInFilter(criteria, ServiceEntityKeys.identifier,
+          serviceList.stream().map(ServiceEntity::getIdentifier).collect(toList()));
+      serviceEntities = serviceEntityService.list(criteria, pageRequest);
+    }
     if (ServiceDefinitionType.CUSTOM_DEPLOYMENT == type && !isEmpty(deploymentTemplateIdentifier)
         && !isEmpty(versionLabel)) {
       serviceEntities = customDeploymentYamlHelper.getFilteredServiceEntities(
@@ -1097,5 +1118,9 @@ public class ServiceResourceV2 {
   public ResponseDTO<Set<KustomizeCommandFlagType>>
   getKustomizeCommandFlags() {
     return ResponseDTO.newResponse(new HashSet<>(Arrays.asList(KustomizeCommandFlagType.values())));
+  }
+  boolean hasViewPermissionForAll(String accountId, String orgIdentifier, String projectIdentifier) {
+    return accessControlClient.hasAccess(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+        Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION);
   }
 }

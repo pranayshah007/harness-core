@@ -90,11 +90,13 @@ public class EnvironmentRbacHelper {
 
   private List<AccessControlDTO> CheckingTypeBasedFilters(List<AccessControlDTO> accessControlDTOList) {
     for (AccessControlDTO accessControlDTO : accessControlDTOList) {
-      if (accessControlDTO.isPermitted() && accessControlDTO.getResourceAttributes() != null) {
-        if (accessControlDTO.getResourceAttributes().get("type") == "PreProduction") {
-          hasPreProdAccess = true;
-        } else if (accessControlDTO.getResourceAttributes().get("type") == "Production") {
-          hasProdAccess = true;
+      if (accessControlDTO.getResourceAttributes() != null) {
+        if (accessControlDTO.isPermitted()) {
+          if (accessControlDTO.getResourceAttributes().get("type") == "PreProduction") {
+            hasPreProdAccess = true;
+          } else if (accessControlDTO.getResourceAttributes().get("type") == "Production") {
+            hasProdAccess = true;
+          }
         }
         accessControlDTOList.remove(accessControlDTO);
       }
