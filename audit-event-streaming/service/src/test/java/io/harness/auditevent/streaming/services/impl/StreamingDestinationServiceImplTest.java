@@ -7,10 +7,6 @@
 
 package io.harness.auditevent.streaming.services.impl;
 
-import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys.accountIdentifier;
-import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys.identifier;
-import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys.name;
-import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys.status;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO.TypeEnum.AWS_S3;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationStatus.ACTIVE;
@@ -148,22 +144,23 @@ public class StreamingDestinationServiceImplTest extends CategoryTest {
     Criteria capturedCriteria = criteriaArgumentCaptor.getValue();
     assertThat(capturedCriteria).isNotNull();
     Document document = capturedCriteria.getCriteriaObject();
-    assertThat(document).containsExactly(Map.entry(status, ACTIVE));
+    assertThat(document).containsExactly(Map.entry(StreamingDestinationKeys.status, ACTIVE));
   }
 
   private void assertListCriteria(Criteria criteria, StreamingDestinationStatus status, String searchTerm) {
     Document document = criteria.getCriteriaObject();
-    assertThat(document).containsEntry(accountIdentifier, ACCOUNT_IDENTIFIER);
-    assertThat(document).containsAllEntriesOf(Map.ofEntries(
-        Map.entry(accountIdentifier, ACCOUNT_IDENTIFIER), Map.entry(StreamingDestinationKeys.status, status)));
+    assertThat(document).containsEntry(StreamingDestinationKeys.accountIdentifier, ACCOUNT_IDENTIFIER);
+    assertThat(document).containsAllEntriesOf(
+        Map.ofEntries(Map.entry(StreamingDestinationKeys.accountIdentifier, ACCOUNT_IDENTIFIER),
+            Map.entry(StreamingDestinationKeys.status, status)));
     assertThat(document).containsKey("$or");
     BasicDBList orList = (BasicDBList) document.get("$or");
     int expectedSize = 2;
     assertThat(orList).hasSize(expectedSize);
     Document nameMatcher = (Document) orList.get(0);
     Document identifierMatcher = (Document) orList.get(1);
-    assertPatternMatcher(searchTerm, nameMatcher, name);
-    assertPatternMatcher(searchTerm, identifierMatcher, identifier);
+    assertPatternMatcher(searchTerm, nameMatcher, StreamingDestinationKeys.name);
+    assertPatternMatcher(searchTerm, identifierMatcher, StreamingDestinationKeys.identifier);
   }
 
   private void assertPatternMatcher(String searchTerm, Document document, String key) {

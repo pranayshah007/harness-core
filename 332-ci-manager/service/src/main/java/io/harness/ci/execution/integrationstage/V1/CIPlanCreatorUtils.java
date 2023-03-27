@@ -68,6 +68,7 @@ import io.harness.yaml.repository.Repository;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -190,6 +191,12 @@ public class CIPlanCreatorUtils {
             .stepGroup(getJsonNode(stepGroupElementConfig))
             .build();
       default:
+        JsonNode node = step.getNode().getCurrJsonNode();
+        if (node != null && node.isObject() && node.get(YAMLFieldNameConstants.NAME) != null) {
+          ObjectNode objectNode = (ObjectNode) node;
+          objectNode.put(YAMLFieldNameConstants.IDENTIFIER,
+              IdentifierGeneratorUtils.getId(objectNode.get(YAMLFieldNameConstants.NAME).asText()));
+        }
         return ExecutionWrapperConfig.builder().uuid(step.getUuid()).step(step.getNode().getCurrJsonNode()).build();
     }
   }

@@ -35,6 +35,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.StepContainerUtils;
 import io.harness.ci.utils.ContainerSecretEvaluator;
 import io.harness.ci.utils.PortFinder;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
@@ -43,6 +44,7 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.delegate.beans.ci.pod.ContainerSecrets;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
+import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
@@ -55,24 +57,27 @@ import io.harness.pms.expression.ExpressionResolverUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
+import io.harness.steps.container.execution.plugin.PluginExecutionConfigHelper;
 import io.harness.steps.container.utils.ConnectorUtils;
 import io.harness.steps.container.utils.ContainerParamsProvider;
 import io.harness.steps.container.utils.ContainerStepImageUtils;
 import io.harness.steps.container.utils.ContainerStepResolverUtils;
 import io.harness.steps.container.utils.K8sPodInitUtils;
+import io.harness.steps.container.utils.PluginUtils;
 import io.harness.steps.container.utils.SecretUtils;
 import io.harness.steps.plugin.ContainerStepInfo;
 import io.harness.steps.plugin.ContainerStepSpec;
+import io.harness.steps.plugin.PluginStep;
 import io.harness.steps.plugin.infrastructure.ContainerCleanupDetails;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.yaml.core.variables.SecretNGVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -92,6 +97,8 @@ public class ContainerStepInitHelper {
   @Inject private ContainerParamsProvider internalContainerParamsProvider;
   @Inject K8sPodInitUtils k8sPodInitUtils;
   @Inject SecretUtils secretUtils;
+  @Inject PluginExecutionConfigHelper pluginExecutionConfigHelper;
+  @Inject PluginUtils pluginUtils;
 
   public CIK8InitializeTaskParams getK8InitializeTaskParams(
       ContainerStepSpec containerStepInfo, Ambiance ambiance, String logPrefix) {
@@ -218,14 +225,31 @@ public class ContainerStepInitHelper {
       List<SecretVariableDetails> secretVariableDetails, List<CIK8ContainerParams> containerParams) {
     List<ContainerDefinitionInfo> stepCtrDefinitions =
         getStepContainerDefinitions(containerStepInfo, infrastructure, ambiance);
+    Map<String, List<ConnectorConversionInfo>> stepConnectorMap = getStepConnectorRefs(containerStepInfo);
     for (ContainerDefinitionInfo containerDefinitionInfo : stepCtrDefinitions) {
       CIK8ContainerParams cik8ContainerParams =
           createCIK8ContainerParams(ngAccess, containerDefinitionInfo, harnessInternalImageConnector, commonEnvVars,
-              Collections.emptyMap(), volumeToMountPath, k8sPodInitUtils.getWorkDir(),
+              stepConnectorMap, volumeToMountPath, k8sPodInitUtils.getWorkDir(),
               k8sPodInitUtils.getCtrSecurityContext(infrastructure), logPrefix, secretVariableDetails, os);
       containerParams.add(cik8ContainerParams);
     }
     return stepCtrDefinitions;
+  }
+
+  private Map<String, List<ConnectorConversionInfo>> getStepConnectorRefs(ContainerStepSpec containerStepInfo) {
+    Map<String, List<ConnectorConversionInfo>> stepConnectorMap = new HashMap<>();
+    if (containerStepInfo instanceof PluginStep) {
+      PluginStep pluginStep = (PluginStep) containerStepInfo;
+      stepConnectorMap.put(containerStepInfo.getIdentifier(), new ArrayList<>());
+      String connectorRef = PluginUtils.getConnectorRef(pluginStep);
+      if (EmptyPredicate.isEmpty(connectorRef)) {
+        return stepConnectorMap;
+      }
+      Map<EnvVariableEnum, String> envToSecretMap = PluginUtils.getConnectorSecretEnvMap(pluginStep.getType());
+      stepConnectorMap.get(containerStepInfo.getIdentifier())
+          .add(ConnectorConversionInfo.builder().connectorRef(connectorRef).envToSecretsMap(envToSecretMap).build());
+    }
+    return stepConnectorMap;
   }
 
   private CIK8ContainerParams getLiteEngineContainerParams(ContainerDetailsSweepingOutput k8PodDetails,
@@ -342,8 +366,8 @@ public class ContainerStepInitHelper {
     Set<Integer> usedPorts = new HashSet<>();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
 
-    ContainerDefinitionInfo stepCtrDefinitionInfos =
-        createStepContainerDefinitions(initializeStepInfo, portFinder, AmbianceUtils.getAccountId(ambiance), os);
+    ContainerDefinitionInfo stepCtrDefinitionInfos = createStepContainerDefinitions(
+        initializeStepInfo, portFinder, AmbianceUtils.getAccountId(ambiance), os, ambiance);
 
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     containerDefinitionInfos.add(stepCtrDefinitionInfos);
@@ -376,13 +400,49 @@ public class ContainerStepInitHelper {
   }
 
   private ContainerDefinitionInfo createStepContainerDefinitions(
-      ContainerStepSpec containerStepInfo, PortFinder portFinder, String accountId, OSType os) {
+      ContainerStepSpec containerStepInfo, PortFinder portFinder, String accountId, OSType os, Ambiance ambiance) {
     switch (containerStepInfo.getType()) {
       case RUN_CONTAINER:
         return createStepContainerDefinition((ContainerStepInfo) containerStepInfo, portFinder, accountId, os);
+      case CD_SSCA_ORCHESTRATION:
+        return createPluginStepContainerDefinition((PluginStep) containerStepInfo, portFinder, accountId, os, ambiance);
       default:
         throw new ContainerStepExecutionException("Container step initialization not handled");
     }
+  }
+
+  private ContainerDefinitionInfo createPluginStepContainerDefinition(
+      PluginStep pluginStep, PortFinder portFinder, String accountId, OSType os, Ambiance ambiance) {
+    Integer port = portFinder.getNextPort();
+
+    String identifier = pluginStep.getIdentifier().replace("_", "");
+    String containerName = format("%s%s", STEP_PREFIX, identifier).toLowerCase();
+
+    Map<String, String> envMap =
+        new HashMap<>(pluginUtils.getPluginCompatibleEnvVariables(pluginStep, identifier, ambiance));
+    Map<String, SecretNGVariable> secretNGVariableMap =
+        new HashMap<>(pluginUtils.getPluginCompatibleSecretVars(pluginStep));
+
+    return ContainerDefinitionInfo.builder()
+        .name(containerName)
+        .commands(StepContainerUtils.getCommand(os))
+        .args(StepContainerUtils.getArguments(port))
+        .envVars(envMap)
+        .secretVariables(new ArrayList<>(secretNGVariableMap.values()))
+        .containerImageDetails(ContainerImageDetails.builder()
+                                   .imageDetails(k8sPodInitUtils.getImageInfo(
+                                       pluginExecutionConfigHelper.getPluginImage(pluginStep).getImage()))
+                                   .build())
+        .isHarnessManagedImage(true)
+        .containerResourceParams(getStepContainerResource(pluginStep, accountId))
+        .ports(Arrays.asList(port))
+        .containerType(CIContainerType.PLUGIN)
+        .stepIdentifier(identifier)
+        .stepName(pluginStep.getName())
+        .imagePullPolicy(null)
+        .privileged(null)
+        .runAsUser(null)
+        .build();
   }
 
   private ContainerDefinitionInfo createStepContainerDefinition(
@@ -429,7 +489,7 @@ public class ContainerStepInitHelper {
         .build();
   }
 
-  private ContainerResourceParams getStepContainerResource(ContainerStepInfo resource, String accountId) {
+  private ContainerResourceParams getStepContainerResource(ContainerStepSpec resource, String accountId) {
     Integer cpuLimit;
     Integer memoryLimit;
     Pair<Integer, Integer> stepRequest = k8sPodInitUtils.getStepRequest(resource, accountId);

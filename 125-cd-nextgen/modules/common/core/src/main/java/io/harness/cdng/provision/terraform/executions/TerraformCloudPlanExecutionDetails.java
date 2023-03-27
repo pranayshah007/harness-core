@@ -71,5 +71,6 @@ public class TerraformCloudPlanExecutionDetails implements PersistentEntity, Uui
   private String tfPlanFileBucket;
   private String tfcPolicyChecksFileId;
   private String tfcPolicyChecksFileBucket;
+  private boolean canBeApplied;
   private RunDetails runDetails;
 }

@@ -173,6 +173,7 @@ public class SecretFactory {
                                       .value(secretValue)
                                       .secretManagerIdentifier(MigratorUtility.getIdentifierWithScope(
                                           NgEntityDetail.builder()
+                                              .entityType(NGMigrationEntityType.SECRET_MANAGER)
                                               .identifier("harnessSecretManager")
                                               .orgIdentifier(entityDetail.getOrgIdentifier())
                                               .projectIdentifier(entityDetail.getProjectIdentifier())

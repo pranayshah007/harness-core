@@ -13,6 +13,7 @@ import io.harness.cdng.tas.TasSwapRollbackStepNode;
 import io.harness.cdng.tas.TasSwapRoutesStepInfo;
 import io.harness.cdng.tas.TasSwapRoutesStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -54,12 +55,13 @@ public class PcfBGMapRouteStepMapperImpl extends PcfAbstractStepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     PcfSwitchBlueGreenRoutes state = (PcfSwitchBlueGreenRoutes) getState(graphNode);
 
     if (graphNode.isRollback()) {
       TasSwapRollbackStepNode tasSwapRollbackStepNode = new TasSwapRollbackStepNode();
-      baseSetup(state, tasSwapRollbackStepNode);
+      baseSetup(state, tasSwapRollbackStepNode, context.getIdentifierCaseFormat());
       TasSwapRollbackStepInfo tasSwapRollbackStepInfo =
           TasSwapRollbackStepInfo.infoBuilder()
               .upsizeInActiveApp(ParameterField.createValueField(state.isUpSizeInActiveApp()))
@@ -68,7 +70,7 @@ public class PcfBGMapRouteStepMapperImpl extends PcfAbstractStepMapper {
       return tasSwapRollbackStepNode;
     } else {
       TasSwapRoutesStepNode tasSwapRoutesStepNode = new TasSwapRoutesStepNode();
-      baseSetup(state, tasSwapRoutesStepNode);
+      baseSetup(state, tasSwapRoutesStepNode, context.getIdentifierCaseFormat());
       TasSwapRoutesStepInfo tasSwapRoutesStepInfo =
           TasSwapRoutesStepInfo.infoBuilder()
               .downSizeOldApplication(ParameterField.createValueField(state.isDownsizeOldApps()))

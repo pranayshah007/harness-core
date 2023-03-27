@@ -80,7 +80,7 @@ public class RuleDAO {
     }
     ruleList.setTotalItems(rules.asList().size());
 
-    ruleList.setRule(
+    ruleList.setRules(
         rules.limit(governancePolicyFilter.getLimit()).offset(governancePolicyFilter.getOffset()).asList());
     return ruleList;
   }

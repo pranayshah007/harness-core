@@ -65,6 +65,9 @@ import io.harness.cdng.customdeployment.CustomDeploymentNGVariableType;
 import io.harness.cdng.customdeployment.CustomDeploymentNumberNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentSecretNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable;
+import io.harness.cdng.hooks.ServiceHook;
+import io.harness.cdng.hooks.ServiceHookOutcome;
+import io.harness.cdng.hooks.ServiceHookWrapper;
 import io.harness.cdng.infra.beans.AsgInfrastructureOutcome;
 import io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
@@ -393,5 +396,9 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsSamInfrastructureOutcome.class, 1510001);
     kryo.register(AwsSamDirectoryManifest.class, 1510002);
     kryo.register(AwsSamDirectoryManifestOutcome.class, 1510003);
+    // HOOKS
+    kryo.register(ServiceHookWrapper.class, 160001);
+    kryo.register(ServiceHook.class, 160002);
+    kryo.register(ServiceHookOutcome.class, 160004);
   }
 }

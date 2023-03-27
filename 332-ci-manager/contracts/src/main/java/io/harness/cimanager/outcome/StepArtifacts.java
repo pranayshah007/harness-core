@@ -27,4 +27,5 @@ import org.springframework.data.annotation.TypeAlias;
 public class StepArtifacts {
   @Singular List<PublishedFileArtifact> publishedFileArtifacts;
   @Singular List<PublishedImageArtifact> publishedImageArtifacts;
+  @Singular List<PublishedSbomArtifact> publishedSbomArtifacts;
 }

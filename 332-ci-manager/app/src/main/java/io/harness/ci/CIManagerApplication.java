@@ -9,6 +9,7 @@ package io.harness.app;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.app.CIManagerConfiguration.HARNESS_RESOURCE_CLASSES;
+import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
@@ -22,6 +23,7 @@ import io.harness.Microservice;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.SCMGrpcClientModule;
+import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.migration.CIManagerMigrationProvider;
 import io.harness.authorization.AuthorizationServiceHeader;
@@ -65,6 +67,11 @@ import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
+import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
+import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
+import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
+import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
+import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
@@ -135,6 +142,8 @@ import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
+import io.dropwizard.jersey.errors.EarlyEofExceptionMapper;
+import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
@@ -278,7 +287,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     modules.add(new CIPersistenceModule());
     addGuiceValidationModule(modules);
-    modules.add(new CIManagerServiceModule(configuration));
+    modules.add(new CIManagerServiceModule(CI_MANAGER, "ci", configuration));
     modules.add(new CacheModule(configuration.getCacheConfig()));
 
     modules.add(YamlSdkModule.getInstance());
@@ -297,6 +306,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     registerManagedBeans(environment, injector, configuration);
     registerHealthCheck(environment, injector);
     registerAuthFilters(configuration, environment, injector);
+    registerExceptionMappers(environment);
     registerCorrelationFilter(environment, injector);
     registerStores(configuration, injector);
     registerYamlSdk(injector);
@@ -510,6 +520,16 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
       environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
           injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
     }
+  }
+  private void registerExceptionMappers(Environment environment) {
+    environment.jersey().register(JerseyViolationExceptionMapperV2.class);
+    environment.jersey().register(GenericExceptionMapperV2.class);
+    environment.jersey().register(new JsonProcessingExceptionMapper(true));
+    environment.jersey().register(EarlyEofExceptionMapper.class);
+    environment.jersey().register(NGAccessDeniedExceptionMapper.class);
+    environment.jersey().register(WingsExceptionMapperV2.class);
+    environment.jersey().register(NotFoundExceptionMapper.class);
+    environment.jersey().register(NotAllowedExceptionMapper.class);
   }
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {

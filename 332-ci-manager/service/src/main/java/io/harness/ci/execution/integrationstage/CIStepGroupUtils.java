@@ -364,7 +364,11 @@ public class CIStepGroupUtils {
                               .entrypoint(ParameterField.createValueField(entrypoint))
                               .harnessManagedImage(true)
                               .build();
-
+    OnFailureConfig onFailureConfig = OnFailureConfig.builder()
+                                          .errors(Collections.singletonList(NGFailureType.ALL_ERRORS))
+                                          .action(IgnoreFailureActionConfig.builder().build())
+                                          .build();
+    FailureStrategyConfig failureStrategyConfig = FailureStrategyConfig.builder().onFailure(onFailureConfig).build();
     PluginStepNode pluginStepNode =
         PluginStepNode.builder()
             .identifier(RESTORE_CACHE_STEP_ID)
@@ -373,6 +377,7 @@ public class CIStepGroupUtils {
             .uuid(generateUuid())
             .type(PluginStepNode.StepType.Plugin)
             .pluginStepInfo(step)
+            .failureStrategies(ParameterField.createValueField(Collections.singletonList(failureStrategyConfig)))
             .build();
     try {
       String jsonString = JsonPipelineUtils.writeJsonString(pluginStepNode);

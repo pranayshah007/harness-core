@@ -282,8 +282,9 @@ public class EnvironmentMapper {
               fromYaml.getNgEnvironmentInfoConfig().getType().toString(), environmentRequest.getType().toString()));
     }
     if (isNotEmpty(mismatchedEntries)) {
-      throw new InvalidRequestException(
-          "Found mismatch in following fields between yaml and requested value respectively: " + mismatchedEntries);
+      throw new InvalidRequestException(String.format(
+          "For the environment [name: %s, identifier: %s], Found mismatch in following fields between yaml and requested value respectively: %s",
+          environmentRequest.getName(), environmentRequest.getIdentifier(), mismatchedEntries));
     }
   }
 }

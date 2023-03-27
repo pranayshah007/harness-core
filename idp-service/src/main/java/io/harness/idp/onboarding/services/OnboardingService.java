@@ -12,15 +12,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesResponse;
 import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
 import io.harness.spec.server.idp.v1.model.ImportHarnessEntitiesRequest;
-import io.harness.spec.server.idp.v1.model.OnboardingAccessCheckResponse;
+import io.harness.spec.server.idp.v1.model.ManualImportEntityRequest;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface OnboardingService {
-  OnboardingAccessCheckResponse accessCheck(String accountIdentifier, String userId);
-
   HarnessEntitiesResponse getHarnessEntities(
       String accountIdentifier, int page, int limit, String sort, String order, String searchTerm);
 
   ImportEntitiesResponse importHarnessEntities(
       String accountIdentifier, ImportHarnessEntitiesRequest importHarnessEntitiesRequest);
+
+  ImportEntitiesResponse manualImportEntity(String harnessAccount, ManualImportEntityRequest manualImportEntityRequest);
 }

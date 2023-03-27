@@ -8,11 +8,13 @@
 package io.harness.cvng.servicelevelobjective.services.impl;
 
 import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
+import static io.harness.rule.TestUserProvider.testUserProvider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
@@ -23,6 +25,7 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.servicelevelobjective.beans.AnnotationDTO;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationResponse;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsResponse;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.Annotation;
 import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
@@ -68,6 +71,7 @@ public class AnnotationServiceImplTest extends CvNextGenTestBase {
 
     startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
     endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    testUserProvider.setActiveUser(EmbeddedUser.builder().name("user1").email("user1@harness.io").build());
   }
 
   @Test
@@ -77,6 +81,24 @@ public class AnnotationServiceImplTest extends CvNextGenTestBase {
     AnnotationDTO annotationDTO = builderFactory.getAnnotationDTO();
     AnnotationResponse annotationResponse = annotationService.create(builderFactory.getProjectParams(), annotationDTO);
     assertThat(annotationResponse.getAnnotationDTO()).isEqualTo(annotationDTO);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetAllInstancesGrouped() {
+    AnnotationDTO annotationDTO1 = builderFactory.getAnnotationDTO();
+    annotationService.create(builderFactory.getProjectParams(), annotationDTO1);
+    AnnotationDTO annotationDTO2 = builderFactory.getAnnotationDTO();
+    annotationDTO2.setMessage("new one");
+    annotationService.create(builderFactory.getProjectParams(), annotationDTO2);
+    AnnotationDTO annotationDTO3 = builderFactory.getAnnotationDTO();
+    annotationDTO3.setStartTime(startTime + Duration.ofMinutes(5).toSeconds());
+    annotationService.create(builderFactory.getProjectParams(), annotationDTO3);
+
+    List<SecondaryEventsResponse> response = annotationService.getAllInstancesGrouped(builderFactory.getProjectParams(),
+        startTime, startTime + Duration.ofMinutes(60).toSeconds(), serviceLevelObjective.getIdentifier());
+    assertThat(response.size()).isEqualTo(2);
   }
 
   @Test

@@ -10,12 +10,15 @@ package io.harness.ng.core.service.resources;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
+import static io.harness.rule.OwnerRule.ACHYUTH;
+import static io.harness.rule.OwnerRule.SATHISH;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.VED;
 import static io.harness.rule.OwnerRule.vivekveman;
 
+import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -35,6 +38,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl;
+import io.harness.cdng.manifest.yaml.kinds.KustomizeCommandFlagType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
@@ -43,6 +47,8 @@ import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
 import io.harness.ng.core.beans.ServicesYamlMetadataApiInput;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
+import io.harness.ng.core.service.dto.ServiceResponse;
+import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.pms.rbac.NGResourceType;
@@ -50,9 +56,13 @@ import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 import io.harness.utils.NGFeatureFlagHelperService;
 
+import software.wings.beans.Service.ServiceKeys;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -64,7 +74,11 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(CDC)
 public class ServiceResourceV2Test extends CategoryTest {
@@ -83,6 +97,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   ServiceEntity entity;
   ServiceEntity entityWithMongoVersion;
   ServiceRequestDTO serviceRequestDTO;
+  ServiceResponseDTO serviceResponseDTO;
 
   @Before
   public void setup() {
@@ -109,6 +124,15 @@ public class ServiceResourceV2Test extends CategoryTest {
                             .projectIdentifier(PROJ_IDENTIFIER)
                             .name(NAME)
                             .build();
+    serviceResponseDTO = ServiceResponseDTO.builder()
+                             .accountId(ACCOUNT_ID)
+                             .identifier(IDENTIFIER)
+                             .orgIdentifier(ORG_IDENTIFIER)
+                             .projectIdentifier(PROJ_IDENTIFIER)
+                             .version(1L)
+                             .description("")
+                             .tags(new HashMap<>())
+                             .build();
   }
 
   @Test
@@ -534,5 +558,44 @@ public class ServiceResourceV2Test extends CategoryTest {
         + "    type: \"Kubernetes\"\n";
 
     assertThat(updatedYaml).isEqualTo(service.getYaml());
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testListServices() {
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, ServiceKeys.createdAt));
+    Page<ServiceEntity> serviceList = new PageImpl<>(Collections.singletonList(entity), pageable, 1);
+    when(serviceEntityService.list(any(), any())).thenReturn(serviceList);
+    List<ServiceResponse> content =
+        serviceResourceV2.getAllServicesList(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "services", 0, 10, null)
+            .getData()
+            .getContent();
+
+    assertThat(content).isNotNull();
+    assertThat(content.size()).isEqualTo(1);
+    assertThat(content.get(0).getService()).isEqualTo(serviceResponseDTO);
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testListServicesWithInvalidAccountIdentifier() {
+    when(serviceEntityService.list(any(), any()))
+        .thenThrow(new InvalidRequestException(format("Invalid account identifier, %s", ACCOUNT_ID)));
+
+    assertThatThrownBy(()
+                           -> serviceResourceV2.getAllServicesList(
+                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "services", 0, 10, null))
+        .hasMessage(format("Invalid account identifier, %s", ACCOUNT_ID))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testKustomizeCommandFlags() {
+    assertThat(serviceResourceV2.getKustomizeCommandFlags().getData())
+        .containsExactlyInAnyOrder(KustomizeCommandFlagType.BUILD);
   }
 }

@@ -119,10 +119,10 @@ public final class EventsFrameworkConstants {
   public static final int CD_DEPLOYMENT_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String INTERNAL_CHANGE_EVENT_FF = "cf_svc_updates";
+  public static final String INTERNAL_CHANGE_EVENT_CE = "chaos_change_events";
 
   public static final int INTERNAL_CHANGE_EVENT_FF_BATCH_SIZE = 1;
-
-  public static final int INTERNAL_CHANGE_EVENT_MAX_TOPIC_SIZE = 5000;
+  public static final int INTERNAL_CHANGE_EVENT_CE_BATCH_SIZE = 1;
 
   public static final String SRM_STATEMACHINE_EVENT = "srm_statemachine_event";
   public static final int SRM_STATEMACHINE_EVENT_BATCH_SIZE = 1;

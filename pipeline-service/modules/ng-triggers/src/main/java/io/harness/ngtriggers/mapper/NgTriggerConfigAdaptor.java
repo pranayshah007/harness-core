@@ -429,5 +429,11 @@ public class NgTriggerConfigAdaptor {
         parsedValues.add("edit");
       }
     }
+    if (GithubPRAction.class.isAssignableFrom(gitActions.get(0).getClass())) {
+      if (parsedValues.contains("edit")) {
+        parsedValues.remove("edit");
+        parsedValues.add("update");
+      }
+    }
   }
 }

@@ -10,6 +10,7 @@ package io.harness.ccm.views.helper;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.entities.CostTarget;
 import io.harness.ccm.views.businessMapping.entities.SharedCost;
+import io.harness.ccm.views.businessMapping.entities.SharedCostSplit;
 import io.harness.ccm.views.businessMapping.entities.SharingStrategy;
 import io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
@@ -122,8 +123,8 @@ public class ViewBusinessMappingResponseHelper {
     for (QLCEViewEntityStatsDataPoint dataPoint : entityStatsDataPoints) {
       double finalCost = !costTargetNames.contains(dataPoint.getName()) ? dataPoint.getCost().doubleValue()
                                                                         : dataPoint.getCost().doubleValue()
-              + calculateSharedCost(businessMapping.getSharedCosts(), sharedCosts, dataPoint.getCost().doubleValue(),
-                  totalCost, numberOfEntities);
+              + calculateSharedCost(businessMapping.getSharedCosts(), sharedCosts, dataPoint.getName(),
+                  dataPoint.getCost().doubleValue(), totalCost, numberOfEntities);
       final QLCEViewEntityStatsDataPointBuilder qlceViewEntityStatsDataPointBuilder =
           QLCEViewEntityStatsDataPoint.builder();
       // Setting cost trend 0 because shared cost trend is not computed
@@ -169,26 +170,34 @@ public class ViewBusinessMappingResponseHelper {
     return updatedDataPoints;
   }
 
-  public double calculateSharedCost(List<SharedCost> sharedCostBuckets, Map<String, Double> sharedCosts,
+  public double calculateSharedCost(List<SharedCost> sharedCostBuckets, Map<String, Double> sharedCosts, String entity,
       double entityCost, double totalCost, double totalEntities) {
-    double sharedCost = 0.0;
+    double totalSharedCost = 0.0;
     for (SharedCost sharedCostBucket : sharedCostBuckets) {
       SharingStrategy sharingStrategy = totalCost != 0 ? sharedCostBucket.getStrategy() : SharingStrategy.EQUAL;
+      double sharedCost =
+          sharedCosts.getOrDefault(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()), 0.0D);
       switch (sharingStrategy) {
         case PROPORTIONAL:
-          sharedCost +=
-              sharedCosts.getOrDefault(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()), 0.0D)
-              * (entityCost / totalCost);
+          totalSharedCost += sharedCost * (entityCost / totalCost);
           break;
         case EQUAL:
+          totalSharedCost += sharedCost * (1.0 / totalEntities);
+          break;
+        case FIXED:
+          for (final SharedCostSplit sharedCostSplit : sharedCostBucket.getSplits()) {
+            if (entity.equals(sharedCostSplit.getCostTargetName())) {
+              totalSharedCost += sharedCost * (sharedCostSplit.getPercentageContribution() / 100.0D);
+              break;
+            }
+          }
+          break;
         default:
-          sharedCost +=
-              sharedCosts.getOrDefault(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()), 0.0D)
-              * (1.0 / totalEntities);
+          log.error("Invalid shared cost strategy for shared cost bucket: {}", sharedCostBucket);
           break;
       }
     }
-    return sharedCost;
+    return totalSharedCost;
   }
 
   public Map<String, List<EntitySharedCostDetails>> calculateSharedCostPerEntity(
@@ -207,11 +216,12 @@ public class ViewBusinessMappingResponseHelper {
     entityCosts.keySet().forEach(entity -> {
       List<EntitySharedCostDetails> entitySharedCostDetails = new ArrayList<>();
       sharedCostBuckets.forEach(sharedCostBucket
-          -> entitySharedCostDetails.add(EntitySharedCostDetails.builder()
-                                             .sharedCostBucketName(sharedCostBucket.getName())
-                                             .cost(calculateSharedCost(Collections.singletonList(sharedCostBucket),
-                                                 sharedCosts, entityCosts.get(entity), totalCost, totalEntities))
-                                             .build()));
+          -> entitySharedCostDetails.add(
+              EntitySharedCostDetails.builder()
+                  .sharedCostBucketName(sharedCostBucket.getName())
+                  .cost(calculateSharedCost(Collections.singletonList(sharedCostBucket), sharedCosts, entity,
+                      entityCosts.get(entity), totalCost, totalEntities))
+                  .build()));
       sharedCostDetailsPerEntity.put(entity, entitySharedCostDetails);
     });
     return sharedCostDetailsPerEntity;
@@ -252,7 +262,8 @@ public class ViewBusinessMappingResponseHelper {
   }
 
   public double calculateSharedCostForTimestamp(Map<String, Map<Timestamp, Double>> sharedCosts, Timestamp timestamp,
-      BusinessMapping sharedCostBusinessMapping, Double entityCost, Double numberOfEntities, Double totalCost) {
+      BusinessMapping sharedCostBusinessMapping, String entity, Double entityCost, Double numberOfEntities,
+      Double totalCost) {
     double sharedCost = 0.0;
     for (SharedCost sharedCostBucket : sharedCostBusinessMapping.getSharedCosts()) {
       Map<Timestamp, Double> sharedCostsPerTimestamp =
@@ -265,8 +276,18 @@ public class ViewBusinessMappingResponseHelper {
             sharedCost += sharedCostForGivenTimestamp * (entityCost / totalCost);
             break;
           case EQUAL:
-          default:
             sharedCost += sharedCostForGivenTimestamp * (1.0 / numberOfEntities);
+            break;
+          case FIXED:
+            for (final SharedCostSplit sharedCostSplit : sharedCostBucket.getSplits()) {
+              if (entity.equals(sharedCostSplit.getCostTargetName())) {
+                sharedCost += sharedCostForGivenTimestamp * (sharedCostSplit.getPercentageContribution() / 100.0D);
+                break;
+              }
+            }
+            break;
+          default:
+            log.error("Invalid shared cost strategy for shared cost bucket: {}", sharedCostBucket);
             break;
         }
       }

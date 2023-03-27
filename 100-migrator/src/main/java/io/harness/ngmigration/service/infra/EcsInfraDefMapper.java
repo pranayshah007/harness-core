@@ -19,7 +19,7 @@ import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.InfrastructureType;
-import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -30,7 +30,6 @@ import software.wings.infra.AwsEcsInfrastructure;
 import software.wings.infra.AwsEcsInfrastructure.AwsEcsInfrastructureKeys;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 
 import java.util.List;
 import java.util.Map;
@@ -51,9 +50,9 @@ public class EcsInfraDefMapper implements InfraDefMapper {
   }
 
   @Override
-  public Infrastructure getSpec(MigrationInputDTO inputDTO, InfrastructureDefinition infrastructureDefinition,
-      Map<CgEntityId, NGYamlFile> migratedEntities, Map<CgEntityId, CgEntityNode> entities,
+  public Infrastructure getSpec(MigrationContext migrationContext, InfrastructureDefinition infrastructureDefinition,
       List<ElastigroupConfiguration> elastigroupConfiguration) {
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     NgEntityDetail connectorDetail;
     if (infrastructureDefinition.getCloudProviderType() == CloudProviderType.AWS) {
       AwsEcsInfrastructure ecsInfrastructure = (AwsEcsInfrastructure) infrastructureDefinition.getInfrastructure();

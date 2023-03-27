@@ -30,8 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BackstagePermissionsServiceImpl implements BackstagePermissionsService {
   private static final String SETTINGS_CONFIG = "settings-config";
-  private static final String PERMISSIONS = "permissions";
-  private static final String USERGROUP = "userGroup";
+  private static final String PERMISSIONS = "PERMISSIONS";
+  private static final String USERGROUP = "USERGROUP";
   private BackstagePermissionsRepository backstagePermissionsRepository;
   private K8sClient k8sClient;
   private NamespaceService namespaceService;

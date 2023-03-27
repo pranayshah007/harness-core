@@ -441,8 +441,9 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     logCallback.saveExecutionLog(
         format("Fetch last applied run in workspace: %s", workspace), INFO, CommandExecutionStatus.RUNNING);
     String lastAppliedId = terraformCloudTaskHelper.getLastAppliedRunId(url, token, workspace);
-    logCallback.saveExecutionLog(
-        format("Last applied run was: %s", lastAppliedId), INFO, CommandExecutionStatus.SUCCESS);
+    logCallback.saveExecutionLog(lastAppliedId == null ? "There isn't any applied run in the workspace"
+                                                       : format("Last applied run was: %s", lastAppliedId),
+        INFO, CommandExecutionStatus.SUCCESS);
     return TerraformCloudGetLastAppliedTaskResponse.builder()
         .lastAppliedRun(lastAppliedId)
         .workspaceId(workspace)

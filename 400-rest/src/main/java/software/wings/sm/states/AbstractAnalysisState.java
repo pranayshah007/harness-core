@@ -51,14 +51,14 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog.FieldType;
+import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.common.TemplateExpressionProcessor;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.dl.WingsPersistence;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.AwsHelperService;
-import software.wings.service.impl.ThirdPartyApiCallLog;
-import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;
-import software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
 import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.ContinuousVerificationExecutionMetaData;
@@ -106,6 +106,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -430,7 +431,10 @@ public abstract class AbstractAnalysisState extends State implements SweepingOut
       apiCallLog.setResponseTimeStamp(startTimeMSForCurrentMinute + random.nextInt(100));
       thirdPartyApiCallLogs.add(apiCallLog);
     }
-    wingsPersistence.save(thirdPartyApiCallLogs);
+    wingsPersistence.save(
+        thirdPartyApiCallLogs.stream()
+            .map(thirdPartyApiCallLog -> software.wings.service.impl.ThirdPartyApiCallLog.fromDto(thirdPartyApiCallLog))
+            .collect(Collectors.toList()));
   }
 
   /**

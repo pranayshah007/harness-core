@@ -139,9 +139,10 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
           (ManualExecutionSource) getExecutionSource(ambiance, stepParameters.getExecutionSource());
       String prNumber = manualExecutionSource.getPrNumber();
       if (scmGitRefTaskResponseData == null && isNotEmpty(prNumber)) {
+        log.error("Failed to retrieve codebase info from returned delegate response with PR number: " + prNumber, ex);
         throw new CIStageExecutionException("Failed to retrieve PrNumber: " + prNumber + " details");
       }
-      log.error("Failed to retrieve codebase info from returned delegate response");
+      log.error("Failed to retrieve codebase info from returned delegate response", ex);
     }
 
     saveScmResponseToSweepingOutput(ambiance, stepParameters, scmGitRefTaskResponseData);

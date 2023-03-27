@@ -36,6 +36,7 @@ import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
+import io.harness.ssca.beans.entities.SSCAServiceConfig;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPoolConfig;
@@ -133,8 +134,6 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty(value = "enableAudit") private boolean enableAudit;
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty("shouldUseEventsFrameworkSnapshotDebezium") private boolean shouldUseEventsFrameworkSnapshotDebezium;
-  @JsonProperty("allowDifferentReposForPipelineAndInputSets")
-  private boolean allowDifferentReposForPipelineAndInputSets;
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty("segmentConfiguration") private SegmentConfiguration segmentConfiguration;
@@ -174,10 +173,14 @@ public class PipelineServiceConfiguration extends Configuration {
   private String policyManagerSecret;
   private ServiceHttpClientConfig opaClientConfig;
 
+  private SSCAServiceConfig sscaServiceConfig;
+
   private PipelineServiceIteratorsConfig iteratorsConfig;
   private boolean shouldDeployWithGitSync;
   private GitSdkConfiguration gitSdkConfiguration;
   private DelegatePollingConfig delegatePollingConfig;
+  private ThreadPoolConfig
+      pipelineAsyncValidationPoolConfig; // to be used for defining thread config for async validations of Pipelines
 
   public PipelineServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();

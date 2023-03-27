@@ -33,10 +33,10 @@ import io.harness.ngmigration.dto.SimilarWorkflowDetail;
 import io.harness.ngmigration.service.CreateProjectService;
 import io.harness.ngmigration.service.DiscoveryService;
 import io.harness.ngmigration.service.MigrationResourceService;
-import io.harness.ngmigration.service.UsergroupImportService;
 import io.harness.ngmigration.service.async.AsyncDiscoveryHandler;
 import io.harness.ngmigration.service.async.AsyncSimilarWorkflowHandler;
 import io.harness.ngmigration.service.async.AsyncUpgradeHandler;
+import io.harness.ngmigration.service.importer.UsergroupImportService;
 import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -189,16 +189,6 @@ public class NgMigrationResource {
   public RestResponse<MigrationAsyncTracker> getQueuedUpgradeResult(
       @QueryParam("requestId") String reqId, @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
     return new RestResponse<>(asyncUpgradeHandler.getTaskResult(accountId, reqId));
-  }
-
-  @POST
-  @Path("/user-group/save")
-  @Timed
-  @ExceptionMetered
-  @ApiKeyAuthorized(permissionType = LOGGED_IN)
-  public RestResponse<SaveSummaryDTO> saveUserGroups(
-      @HeaderParam(X_API_KEY) String auth, @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
-    return new RestResponse<>(usergroupImportService.importUserGroups(auth, accountId));
   }
 
   @POST

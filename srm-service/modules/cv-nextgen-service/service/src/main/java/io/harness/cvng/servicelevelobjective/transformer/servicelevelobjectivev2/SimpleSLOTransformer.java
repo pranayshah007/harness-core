@@ -16,8 +16,10 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.entities.SLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
+import io.harness.cvng.servicelevelobjective.transformer.SLOTargetTransformerOldAndNew;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.ng.core.mapper.TagMapper;
 
@@ -46,7 +48,8 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
       tags.put("serviceLevelIndicatorType", simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType().toString());
       serviceLevelObjectiveV2DTO.setTags(tags);
     }
-
+    SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveV2DTO.getSloTarget().getType())
+                              .getSLOTarget(serviceLevelObjectiveV2DTO.getSloTarget().getSpec());
     return SimpleServiceLevelObjective.builder()
         .accountId(projectParams.getAccountIdentifier())
         .orgIdentifier(projectParams.getOrgIdentifier())
@@ -58,8 +61,8 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
         .userJourneyIdentifiers(serviceLevelObjectiveV2DTO.getUserJourneyRefs())
         .notificationRuleRefs(notificationRuleService.getNotificationRuleRefs(projectParams,
             serviceLevelObjectiveV2DTO.getNotificationRuleRefs(), NotificationRuleType.SLO, Instant.ofEpochSecond(0)))
-        .sloTarget(sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveV2DTO.getSloTarget().getType())
-                       .getSLOTarget(serviceLevelObjectiveV2DTO.getSloTarget().getSpec()))
+        .sloTarget(SLOTargetTransformerOldAndNew.getOldSLOtargetFromNewSLOtarget(sloTarget))
+        .target(sloTarget)
         .sloTargetPercentage(serviceLevelObjectiveV2DTO.getSloTarget().getSloTargetPercentage())
         .enabled(isEnabled)
         .serviceLevelIndicatorType(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType())
@@ -100,7 +103,8 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
         .sloTarget(SLOTargetDTO.builder()
                        .type(serviceLevelObjective.getSloTarget().getType())
                        .spec(sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjective.getSloTarget().getType())
-                                 .getSLOTargetSpec(serviceLevelObjective.getSloTarget()))
+                                 .getSLOTargetSpec(SLOTargetTransformerOldAndNew.getNewSLOtargetFromOldSLOtarget(
+                                     serviceLevelObjective.getSloTarget())))
                        .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
                        .build())
         .tags(TagMapper.convertToMap(serviceLevelObjective.getTags()))

@@ -44,6 +44,8 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthentication
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmBadRequestException;
@@ -71,6 +73,7 @@ import io.harness.gitsync.common.helper.GitClientEnabledHelper;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
+import io.harness.gitsync.core.runnable.GitBackgroundCacheRefreshHelper;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.ng.beans.PageRequest;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
@@ -91,8 +94,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -128,11 +129,11 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   Scope scope;
   ScmConnector scmConnector;
   @Mock GitFileCacheService gitFileCacheService;
-  ExecutorService executorService = Executors.newFixedThreadPool(1);
   DelegateServiceGrpcClient delegateServiceGrpcClient;
 
   @InjectMocks GitFilePathHelper gitFilePathHelper;
   @Mock GitFilePathHelper gitFilePathHelperMock;
+  @Mock GitBackgroundCacheRefreshHelper gitBackgroundCacheRefreshHelper;
 
   String fileUrl = "https://github.com/harness/repoName/blob/branch/filePath";
 
@@ -141,7 +142,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     MockitoAnnotations.initMocks(this);
     scmFacilitatorService = new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService,
         scmOrchestratorService, ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService,
-        executorService, gitFilePathHelper, delegateServiceGrpcClient);
+        gitFilePathHelper, delegateServiceGrpcClient, gitBackgroundCacheRefreshHelper);
     pageRequest = PageRequest.builder().build();
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
                                              .connectionType(GitConnectionType.ACCOUNT)
@@ -537,6 +538,26 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
         .thenReturn(scmConnector);
 
     when(GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas(any())).thenReturn(repoURL);
+    String responseUrl = scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName);
+
+    assertThat(responseUrl.equals(repoURL)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetRepoUrlForGitlab() {
+    mockStatic(GitClientHelper.class);
+    GitlabConnectorDTO gitlabConnectorDTO = GitlabConnectorDTO.builder()
+                                                .connectionType(GitConnectionType.ACCOUNT)
+                                                .apiAccess(GitlabApiAccessDTO.builder().build())
+                                                .url(repoURL)
+                                                .build();
+    connectorInfo = ConnectorInfoDTO.builder().connectorConfig(gitlabConnectorDTO).build();
+    when(gitSyncConnectorHelper.getScmConnectorForGivenRepo(any(), any(), any(), any(), any()))
+        .thenReturn((ScmConnector) connectorInfo.getConnectorConfig());
+
+    when(GitClientHelper.getCompleteHTTPUrlForGitLab(any())).thenReturn(repoURL);
     String responseUrl = scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName);
 
     assertThat(responseUrl.equals(repoURL)).isTrue();

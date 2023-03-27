@@ -19,6 +19,7 @@ import io.harness.licensing.entities.modules.CEModuleLicense;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.CIModuleLicense;
 import io.harness.licensing.entities.modules.ChaosModuleLicense;
+import io.harness.licensing.entities.modules.IACMModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.licensing.entities.modules.SRMModuleLicense;
 import io.harness.licensing.entities.modules.STOModuleLicense;
@@ -285,6 +286,14 @@ public class ModuleLicenseHelper {
         if (chaosLicense.getTotalChaosExperimentRuns() != null
             && !chaosLicense.getTotalChaosExperimentRuns().equals(currentCHAOSLicense.getTotalChaosExperimentRuns())) {
           currentCHAOSLicense.setTotalChaosExperimentRuns(chaosLicense.getTotalChaosExperimentRuns());
+        }
+        break;
+      case IACM:
+        IACMModuleLicense iacmLicense = (IACMModuleLicense) update;
+        IACMModuleLicense currentIACMLicense = (IACMModuleLicense) current;
+        if (iacmLicense.getNumberOfDevelopers() != null
+            && !iacmLicense.getNumberOfDevelopers().equals(currentIACMLicense.getNumberOfDevelopers())) {
+          currentIACMLicense.setNumberOfDevelopers(iacmLicense.getNumberOfDevelopers());
         }
         break;
       default:

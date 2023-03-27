@@ -51,7 +51,7 @@ public class IACMTerraformPlanInfo extends IACMStepInfo {
 
   @Override
   public TypeInfo getNonYamlInfo() {
-    return TypeInfo.builder().stepInfoType(CIStepInfoType.IACM_TERRAFORM_PLAN).build();
+    return TypeInfo.builder().stepInfoType(CIStepInfoType.IACM_TERRAFORM).build();
   }
 
   @Builder

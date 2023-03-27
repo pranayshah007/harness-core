@@ -9,9 +9,11 @@ package io.harness.ng.serviceaccounts.service.impl;
 
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_SERVICE_ACCOUNTS;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_SERVICEACCOUNT_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.SERVICEACCOUNT;
 import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.ng.core.utils.NGUtils.verifyValuesNotChanged;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
@@ -20,10 +22,17 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.accesscontrol.AccessControlAdminClient;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.principals.PrincipalDTO;
 import io.harness.accesscontrol.resourcegroups.api.ResourceGroupDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentAggregateResponseDTO;
@@ -41,6 +50,7 @@ import io.harness.ng.core.api.ApiKeyService;
 import io.harness.ng.core.api.TokenService;
 import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
+import io.harness.ng.core.dto.EntityScopeInfo;
 import io.harness.ng.core.dto.RoleAssignmentMetadataDTO;
 import io.harness.ng.core.dto.ServiceAccountFilterDTO;
 import io.harness.ng.core.events.ServiceAccountCreateEvent;
@@ -83,7 +93,8 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
   @Inject private ServiceAccountRepository serviceAccountRepository;
   @Inject private OutboxService outboxService;
   @Inject private AccountOrgProjectValidator accountOrgProjectValidator;
-  @Inject private AccessControlAdminClient accessControlAdminClient;
+  @Inject @Named("PRIVILEGED") private AccessControlAdminClient accessControlAdminClient;
+  @Inject private AccessControlClient accessControlClient;
   @Inject private ApiKeyService apiKeyService;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
   @Inject private TokenService tokenService;
@@ -251,7 +262,25 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
                                                                .is(null)
                                                                .and(ServiceAccountKeys.orgIdentifier)
                                                                .is(null),
-        filterDTO);
+        filterDTO, filterDTO.getIdentifiers());
+
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(SERVICEACCOUNT, null), VIEW_SERVICEACCOUNT_PERMISSION)) {
+      List<ServiceAccount> serviceAccountList =
+          serviceAccountRepository.findAll(criteria, Pageable.unpaged()).getContent();
+      serviceAccountList = getPermittedServiceAccounts(serviceAccountList);
+      if (isEmpty(serviceAccountList)) {
+        return PageUtils.getNGPageResponse(Page.empty());
+      }
+      criteria = createServiceAccountFilterCriteria(Criteria.where(ServiceAccountKeys.accountIdentifier)
+                                                        .is(accountIdentifier)
+                                                        .and(ServiceAccountKeys.projectIdentifier)
+                                                        .is(null)
+                                                        .and(ServiceAccountKeys.orgIdentifier)
+                                                        .is(null),
+          filterDTO, serviceAccountList.stream().map(ServiceAccount::getIdentifier).collect(Collectors.toList()));
+    }
+
     Page<ServiceAccount> serviceAccounts = serviceAccountRepository.findAll(criteria, pageable);
     List<String> saIdentifiers =
         serviceAccounts.stream().map(ServiceAccount::getIdentifier).distinct().collect(Collectors.toList());
@@ -317,28 +346,74 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
   }
 
   @Override
-  public List<ServiceAccountDTO> listServiceAccounts(
+  public List<ServiceAccount> listServiceAccounts(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> identifiers) {
-    List<ServiceAccount> serviceAccounts;
     if (identifiers.isEmpty()) {
-      serviceAccounts = serviceAccountRepository.findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
+      return serviceAccountRepository.findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
           accountIdentifier, orgIdentifier, projectIdentifier);
     } else {
-      serviceAccounts =
-          serviceAccountRepository.findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifierIsIn(
-              accountIdentifier, orgIdentifier, projectIdentifier, identifiers);
+      return serviceAccountRepository.findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifierIsIn(
+          accountIdentifier, orgIdentifier, projectIdentifier, identifiers);
+    }
+  }
+
+  @Override
+  public List<ServiceAccount> getPermittedServiceAccounts(List<ServiceAccount> serviceAccounts) {
+    if (isEmpty(serviceAccounts)) {
+      return Collections.emptyList();
     }
 
-    List<ServiceAccountDTO> serviceAccountDTOS = new ArrayList<>();
-    if (isNotEmpty(serviceAccounts)) {
-      serviceAccounts.forEach(
-          serviceAccount -> serviceAccountDTOS.add(ServiceAccountDTOMapper.getDTOFromServiceAccount(serviceAccount)));
+    Map<EntityScopeInfo, List<ServiceAccount>> allServiceAccountScopesMap = serviceAccounts.stream().collect(
+        Collectors.groupingBy(ServiceAccountServiceImpl::getEntityScopeInfoFromServiceAccount));
+
+    List<PermissionCheckDTO> permissionChecks =
+        serviceAccounts.stream()
+            .map(serviceAccount
+                -> PermissionCheckDTO.builder()
+                       .permission(VIEW_SERVICEACCOUNT_PERMISSION)
+                       .resourceIdentifier(serviceAccount.getIdentifier())
+                       .resourceScope(ResourceScope.of(serviceAccount.getAccountIdentifier(),
+                           serviceAccount.getOrgIdentifier(), serviceAccount.getProjectIdentifier()))
+                       .resourceType(SERVICEACCOUNT)
+                       .build())
+            .collect(Collectors.toList());
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+
+    List<ServiceAccount> permittedServiceAccounts = new ArrayList<>();
+    for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
+      if (accessControlDTO.isPermitted()) {
+        permittedServiceAccounts.add(
+            allServiceAccountScopesMap.get(getEntityScopeInfoFromAccessControlDTO(accessControlDTO)).get(0));
+      }
     }
-    return serviceAccountDTOS;
+    return permittedServiceAccounts;
+  }
+
+  private static EntityScopeInfo getEntityScopeInfoFromAccessControlDTO(AccessControlDTO accessControlDTO) {
+    return EntityScopeInfo.builder()
+        .accountIdentifier(accessControlDTO.getResourceScope().getAccountIdentifier())
+        .orgIdentifier(isBlank(accessControlDTO.getResourceScope().getOrgIdentifier())
+                ? null
+                : accessControlDTO.getResourceScope().getOrgIdentifier())
+        .projectIdentifier(isBlank(accessControlDTO.getResourceScope().getProjectIdentifier())
+                ? null
+                : accessControlDTO.getResourceScope().getProjectIdentifier())
+        .identifier(accessControlDTO.getResourceIdentifier())
+        .build();
+  }
+
+  private static EntityScopeInfo getEntityScopeInfoFromServiceAccount(ServiceAccount serviceAccount) {
+    return EntityScopeInfo.builder()
+        .accountIdentifier(serviceAccount.getAccountIdentifier())
+        .orgIdentifier(isBlank(serviceAccount.getOrgIdentifier()) ? null : serviceAccount.getOrgIdentifier())
+        .projectIdentifier(
+            isBlank(serviceAccount.getProjectIdentifier()) ? null : serviceAccount.getProjectIdentifier())
+        .identifier(serviceAccount.getIdentifier())
+        .build();
   }
 
   private Criteria createServiceAccountFilterCriteria(
-      Criteria criteria, ServiceAccountFilterDTO serviceAccountFilterDTO) {
+      Criteria criteria, ServiceAccountFilterDTO serviceAccountFilterDTO, List<String> identifiers) {
     if (serviceAccountFilterDTO == null) {
       return criteria;
     }
@@ -358,9 +433,8 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
         && !serviceAccountFilterDTO.getProjectIdentifier().isEmpty()) {
       criteria.and(ServiceAccountKeys.projectIdentifier).in(serviceAccountFilterDTO.getProjectIdentifier());
     }
-    if (Objects.nonNull(serviceAccountFilterDTO.getIdentifiers())
-        && !serviceAccountFilterDTO.getIdentifiers().isEmpty()) {
-      criteria.and(ServiceAccountKeys.identifier).in(serviceAccountFilterDTO.getIdentifiers());
+    if (Objects.nonNull(identifiers) && !identifiers.isEmpty()) {
+      criteria.and(ServiceAccountKeys.identifier).in(identifiers);
     }
     return criteria;
   }

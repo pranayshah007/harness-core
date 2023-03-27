@@ -15,7 +15,7 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
-import io.harness.steps.plugin.ContainerStepInfo;
+import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -29,21 +29,14 @@ import java.util.List;
 public class ContainerStepRbacHelper {
   @Inject PipelineRbacHelper pipelineRbacHelper;
 
-  public void validateResources(ContainerStepInfo containerStepInfo, Ambiance ambiance) {
+  public void validateResources(ContainerStepSpec containerStepInfo, Ambiance ambiance) {
     List<EntityDetail> entityDetailList = new ArrayList<>();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
 
-    String imageConnectorRef = containerStepInfo.getConnectorRef().getValue();
     String k8sConnectorRef =
         ((ContainerK8sInfra) containerStepInfo.getInfrastructure()).getSpec().getConnectorRef().getValue();
-
-    IdentifierRef imageConnectorIdentifierRef =
-        IdentifierRefHelper.getIdentifierRef(imageConnectorRef, accountId, orgIdentifier, projectIdentifier);
-    EntityDetail imageConnectorEntityDetail =
-        EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(imageConnectorIdentifierRef).build();
-    entityDetailList.add(imageConnectorEntityDetail);
 
     IdentifierRef k8sConnectorIdentifierRef =
         IdentifierRefHelper.getIdentifierRef(k8sConnectorRef, accountId, orgIdentifier, projectIdentifier);

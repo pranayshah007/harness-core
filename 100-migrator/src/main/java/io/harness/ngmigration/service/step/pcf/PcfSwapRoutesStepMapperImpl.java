@@ -13,6 +13,7 @@ import io.harness.cdng.tas.TasSwapRollbackStepNode;
 import io.harness.cdng.tas.TasSwapRoutesStepInfo;
 import io.harness.cdng.tas.TasSwapRoutesStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -55,12 +56,13 @@ public class PcfSwapRoutesStepMapperImpl extends PcfAbstractStepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     PcfSwitchBlueGreenRoutes state = (PcfSwitchBlueGreenRoutes) getState(graphNode);
 
     if (graphNode.isRollback()) {
       TasSwapRollbackStepNode tasSwapRollbackStepNode = new TasSwapRollbackStepNode();
-      baseSetup(state, tasSwapRollbackStepNode);
+      baseSetup(state, tasSwapRollbackStepNode, context.getIdentifierCaseFormat());
 
       TasSwapRollbackStepInfo tasSwapRollbackStepInfo =
           TasSwapRollbackStepInfo.infoBuilder()
@@ -71,7 +73,7 @@ public class PcfSwapRoutesStepMapperImpl extends PcfAbstractStepMapper {
       return tasSwapRollbackStepNode;
     } else {
       TasSwapRoutesStepNode tasSwapRoutesStepNode = new TasSwapRoutesStepNode();
-      baseSetup(state, tasSwapRoutesStepNode);
+      baseSetup(state, tasSwapRoutesStepNode, context.getIdentifierCaseFormat());
 
       TasSwapRoutesStepInfo tasSwapRoutesStepInfo =
           TasSwapRoutesStepInfo.infoBuilder()
@@ -82,6 +84,7 @@ public class PcfSwapRoutesStepMapperImpl extends PcfAbstractStepMapper {
       return tasSwapRoutesStepNode;
     }
   }
+
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     return false;

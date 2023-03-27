@@ -168,7 +168,19 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
       Instant startTime, List<SLIRecord.SLIState> sliStates, Duration increment) {
     List<SLIRecordParam> sliRecordParams = new ArrayList<>();
     for (SLIRecord.SLIState sliState : sliStates) {
-      sliRecordParams.add(SLIRecordParam.builder().sliState(sliState).timeStamp(startTime.plus(increment)).build());
+      long goodCount = 0;
+      long badCount = 0;
+      if (sliState == GOOD) {
+        goodCount++;
+      } else if (sliState == BAD) {
+        badCount++;
+      }
+      sliRecordParams.add(SLIRecordParam.builder()
+                              .sliState(sliState)
+                              .timeStamp(startTime.plus(increment))
+                              .goodEventCount(goodCount)
+                              .badEventCount(badCount)
+                              .build());
     }
     return sliRecordParams;
   }

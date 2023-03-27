@@ -20,6 +20,7 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static io.harness.security.ServiceTokenGenerator.VERIFICATION_SERVICE_SECRET;
 
 import static com.google.inject.matcher.Matchers.not;
+import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
@@ -70,10 +71,13 @@ import io.harness.cvng.core.jobs.CustomChangeEventConsumer;
 import io.harness.cvng.core.jobs.DataCollectionTasksPerpetualTaskStatusUpdateHandler;
 import io.harness.cvng.core.jobs.DeploymentChangeEventConsumer;
 import io.harness.cvng.core.jobs.EntityCRUDStreamConsumer;
+import io.harness.cvng.core.jobs.InternalChangeEventCEConsumer;
 import io.harness.cvng.core.jobs.InternalChangeEventFFConsumer;
 import io.harness.cvng.core.jobs.MonitoringSourcePerpetualTaskHandler;
 import io.harness.cvng.core.jobs.PersistentLockCleanup;
 import io.harness.cvng.core.jobs.SLIDataCollectionTaskCreateNextTaskHandler;
+import io.harness.cvng.core.jobs.SLOHealthIndicatorTimescaleHandler;
+import io.harness.cvng.core.jobs.SLOHistoryTimescaleHandler;
 import io.harness.cvng.core.jobs.SLORecalculationFailureHandler;
 import io.harness.cvng.core.jobs.ServiceGuardDataCollectionTaskCreateNextTaskHandler;
 import io.harness.cvng.core.jobs.StatemachineEventConsumer;
@@ -97,6 +101,8 @@ import io.harness.cvng.notification.jobs.SLONotificationHandler;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys;
+import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
+import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHealthIndicatorKeys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
 import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
@@ -309,6 +315,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     new Thread(injector.getInstance(EntityCRUDStreamConsumer.class)).start();
     new Thread(injector.getInstance(DeploymentChangeEventConsumer.class)).start();
     new Thread(injector.getInstance(InternalChangeEventFFConsumer.class)).start();
+    new Thread(injector.getInstance(InternalChangeEventCEConsumer.class)).start();
     new Thread(injector.getInstance(CustomChangeEventConsumer.class)).start();
     new Thread(injector.getInstance(StatemachineEventConsumer.class)).start();
   }
@@ -473,6 +480,8 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerCreateNextDataCollectionTaskIterator(injector);
     registerCVNGDemoPerpetualTaskIterator(injector);
     registerSLORecalculationFailure(injector);
+    sloHistoryTimescale(injector);
+    sloHealthIndicatorTimescale(injector);
     registerDataCollectionTasksPerpetualTaskStatusUpdateIterator(injector);
     registerCompositeSLODataExecutorTaskIterator(injector);
     injector.getInstance(CVNGStepTaskHandler.class).registerIterator();
@@ -861,6 +870,59 @@ public class VerificationApplication extends Application<VerificationConfigurati
     dataCollectionExecutor.scheduleWithFixedDelay(
         () -> sloRecalculationFailureHandlerIterator.process(), 0, 1, TimeUnit.MINUTES);
   }
+  private void sloHistoryTimescale(Injector injector) {
+    ScheduledThreadPoolExecutor dataCollectionExecutor =
+        new ScheduledThreadPoolExecutor(3, new ThreadFactoryBuilder().setNameFormat("slo-history-timescale").build());
+    SLOHistoryTimescaleHandler sloHistoryTimescaleHandler = injector.getInstance(SLOHistoryTimescaleHandler.class);
+    PersistenceIterator sloHistoryTimescaleHandlerIterator =
+        MongoPersistenceIterator
+            .<AbstractServiceLevelObjective, MorphiaFilterExpander<AbstractServiceLevelObjective>>builder()
+            .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("SLOHistoryTimescaleHandlerIterator")
+            .clazz(AbstractServiceLevelObjective.class)
+            .fieldName(ServiceLevelObjectiveV2Keys.sloHistoryTimescaleIteration)
+            .targetInterval(ofHours(24))
+            .acceptableNoAlertDelay(ofMinutes(1))
+            .executorService(dataCollectionExecutor)
+            .semaphore(new Semaphore(3))
+            .handler(sloHistoryTimescaleHandler)
+            .schedulingType(REGULAR)
+            .filterExpander(query
+                -> query.criteria(ServiceLevelObjectiveV2Keys.lastUpdatedAt)
+                       .greaterThan(
+                           injector.getInstance(Clock.class).instant().minus(45, ChronoUnit.MINUTES).toEpochMilli()))
+            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
+            .redistribute(true)
+            .build();
+    injector.injectMembers(sloHistoryTimescaleHandlerIterator);
+    dataCollectionExecutor.scheduleWithFixedDelay(
+        () -> sloHistoryTimescaleHandlerIterator.process(), 0, 1, TimeUnit.MINUTES);
+  }
+
+  private void sloHealthIndicatorTimescale(Injector injector) {
+    ScheduledThreadPoolExecutor dataCollectionExecutor = new ScheduledThreadPoolExecutor(
+        3, new ThreadFactoryBuilder().setNameFormat("slo-health-indicator-timescale").build());
+    SLOHealthIndicatorTimescaleHandler sloHealthIndicatorTimescaleHandler =
+        injector.getInstance(SLOHealthIndicatorTimescaleHandler.class);
+    PersistenceIterator sloHealthIndicatorTimescaleHandlerIterator =
+        MongoPersistenceIterator.<SLOHealthIndicator, MorphiaFilterExpander<SLOHealthIndicator>>builder()
+            .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("SLOHealthIndicatorTimescaleHandlerIterator")
+            .clazz(SLOHealthIndicator.class)
+            .fieldName(SLOHealthIndicatorKeys.timescaleIteration)
+            .targetInterval(ofMinutes(60))
+            .acceptableNoAlertDelay(ofMinutes(1))
+            .executorService(dataCollectionExecutor)
+            .semaphore(new Semaphore(3))
+            .handler(sloHealthIndicatorTimescaleHandler)
+            .schedulingType(REGULAR)
+            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
+            .redistribute(true)
+            .build();
+    injector.injectMembers(sloHealthIndicatorTimescaleHandler);
+    dataCollectionExecutor.scheduleWithFixedDelay(
+        () -> sloHealthIndicatorTimescaleHandlerIterator.process(), 0, 60, TimeUnit.MINUTES);
+  }
 
   private void registerCVNGDemoPerpetualTaskIterator(Injector injector) {
     ScheduledThreadPoolExecutor cvngDemoPerpetualTaskExecutor = new ScheduledThreadPoolExecutor(
@@ -1046,11 +1108,14 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void registerNotificationTemplates(VerificationConfiguration configuration, Injector injector) {
     NotificationClient notificationClient = injector.getInstance(NotificationClient.class);
-    List<PredefinedTemplate> templates = new ArrayList<>(Arrays.asList(PredefinedTemplate.CVNG_SLO_SLACK,
-        PredefinedTemplate.CVNG_SLO_EMAIL, PredefinedTemplate.CVNG_SLO_PAGERDUTY, PredefinedTemplate.CVNG_SLO_MSTEAMS,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_EMAIL,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_PAGERDUTY, PredefinedTemplate.CVNG_MONITOREDSERVICE_MSTEAMS,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_EMAIL));
+    List<PredefinedTemplate> templates = new ArrayList<>(
+        Arrays.asList(PredefinedTemplate.CVNG_SLO_SIMPLE_SLACK, PredefinedTemplate.CVNG_SLO_SIMPLE_EMAIL,
+            PredefinedTemplate.CVNG_SLO_SIMPLE_PAGERDUTY, PredefinedTemplate.CVNG_SLO_SIMPLE_MSTEAMS,
+            PredefinedTemplate.CVNG_SLO_COMPOSITE_SLACK, PredefinedTemplate.CVNG_SLO_COMPOSITE_EMAIL,
+            PredefinedTemplate.CVNG_SLO_COMPOSITE_PAGERDUTY, PredefinedTemplate.CVNG_SLO_COMPOSITE_MSTEAMS,
+            PredefinedTemplate.CVNG_MONITOREDSERVICE_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_EMAIL,
+            PredefinedTemplate.CVNG_MONITOREDSERVICE_PAGERDUTY, PredefinedTemplate.CVNG_MONITOREDSERVICE_MSTEAMS,
+            PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_EMAIL));
 
     if (configuration.getShouldConfigureWithNotification()) {
       for (PredefinedTemplate template : templates) {
@@ -1083,9 +1148,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .semaphore(new Semaphore(5))
             .handler(notificationHandler)
             .schedulingType(REGULAR)
-            .filterExpander(query
-                -> query.and(query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.SIMPLE),
-                    query.criteria(ServiceLevelObjectiveV2Keys.notificationRuleRefs).exists()))
+            .filterExpander(query -> query.criteria(ServiceLevelObjectiveV2Keys.notificationRuleRefs).exists())
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();

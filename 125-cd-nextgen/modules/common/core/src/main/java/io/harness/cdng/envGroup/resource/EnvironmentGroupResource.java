@@ -8,9 +8,12 @@
 package io.harness.cdng.envGroup.resource;
 
 import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Long.parseLong;
+import static java.util.stream.Collectors.toList;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
@@ -133,9 +136,10 @@ public class EnvironmentGroupResource {
   private final AccessControlClient accessControlClient;
 
   private final NGFeatureFlagHelperService featureFlagHelperService;
+  private EnvironmentGroupRbacHelper environmentGroupRbacHelper;
 
   public static final String ENVIRONMENT_GROUP_PARAM_MESSAGE = "Environment Group Identifier for the entity";
-
+  private static final Integer QUERY_PAGE_SIZE = 10000;
   @GET
   @Path("{envGroupIdentifier}")
   @ApiOperation(value = "Gets a Environment Group by identifier", nickname = "getEnvironmentGroup")
@@ -243,8 +247,6 @@ public class EnvironmentGroupResource {
       @Parameter(description = "Specify true if all accessible environment groups are to be included") @QueryParam(
           NGResourceFilterConstants.INCLUDE_ALL_ENV_GROUPS_ACCESSIBLE_AT_SCOPE) @DefaultValue("false")
       boolean includeAllEnvGroupsAccessibleAtScope) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
-        Resource.of(NGResourceType.ENVIRONMENT_GROUP, null), CDNGRbacPermissions.ENVIRONMENT_GROUP_VIEW_PERMISSION);
     Criteria criteria = environmentGroupService.formCriteria(accountId, orgIdentifier, projectIdentifier, false,
         searchTerm, filterIdentifier, (EnvironmentGroupFilterPropertiesDTO) filterProperties,
         includeAllEnvGroupsAccessibleAtScope);
@@ -254,9 +256,27 @@ public class EnvironmentGroupResource {
     }
     Pageable pageRequest =
         PageUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, EnvironmentGroupKeys.lastModifiedAt));
+    Page<EnvironmentGroupEntity> envGroupEntities = null;
+    if (hasViewPermissionForAll(accountId, orgIdentifier, projectIdentifier)) {
+      envGroupEntities =
+          environmentGroupService.list(criteria, pageRequest, projectIdentifier, orgIdentifier, accountId);
+    } else {
+      Page<EnvironmentGroupEntity> environmentGroupEntitiesPage =
+          environmentGroupService.list(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountId);
+      if (environmentGroupEntitiesPage == null) {
+        return ResponseDTO.newResponse(getNGPageResponse(Page.empty()));
+      }
+      List<EnvironmentGroupEntity> environmentGroupEntities = environmentGroupEntitiesPage.getContent();
 
-    Page<EnvironmentGroupEntity> envGroupEntities =
-        environmentGroupService.list(criteria, pageRequest, projectIdentifier, orgIdentifier, accountId);
+      environmentGroupEntities = environmentGroupRbacHelper.getPermittedEnvironmentGroupList(environmentGroupEntities);
+      if (isEmpty(environmentGroupEntities)) {
+        return ResponseDTO.newResponse(getNGPageResponse(Page.empty()));
+      }
+      populateInFilter(criteria, EnvironmentGroupEntity.EnvironmentGroupKeys.identifier,
+          environmentGroupEntities.stream().map(EnvironmentGroupEntity::getIdentifier).collect(toList()));
+      envGroupEntities =
+          environmentGroupService.list(criteria, pageRequest, projectIdentifier, orgIdentifier, accountId);
+    }
 
     return ResponseDTO.newResponse(getNGPageResponse(envGroupEntities.map(
         envGroup -> EnvironmentGroupMapper.toResponseWrapper(envGroup, getEnvironmentResponses(envGroup)))));
@@ -369,5 +389,9 @@ public class EnvironmentGroupResource {
     envIdentifiers.forEach(envId
         -> accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
             Resource.of(NGResourceType.ENVIRONMENT, envId), CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION));
+  }
+  boolean hasViewPermissionForAll(String accountId, String orgIdentifier, String projectIdentifier) {
+    return accessControlClient.hasAccess(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+        Resource.of(NGResourceType.ENVIRONMENT_GROUP, null), CDNGRbacPermissions.ENVIRONMENT_GROUP_VIEW_PERMISSION);
   }
 }

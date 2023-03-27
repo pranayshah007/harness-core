@@ -19,6 +19,7 @@ public final class TerraformCloudExceptionConstants {
     public static final String PLEASE_CHECK_TFC_CONFIG = "Please check Terraform Cloud configuration";
     public static final String PLEASE_CHECK_POLICY = "Please check status of policy check: %s";
     public static final String PLEASE_CHECK_RUN = "Please check status of run: %s";
+    public static final String PLEASE_CHECK_PLAN_STATUS = "Please check status of plan: %s";
     public static final String POLICY_OVERRIDE_HINT =
         "To override policies select option [ Continue on Soft-Mandatory Policy evaluation result ] in step configuration";
   }
@@ -45,6 +46,7 @@ public final class TerraformCloudExceptionConstants {
     public static final String POLICY_OVERRIDE_ERROR_MESSAGE = "Policy check failed and not overridden";
     public static final String WORKSPACE_OR_RUN_MUST_BE_PROVIDED =
         "Workspace or run id must be provided to fetch last applied run";
+    public static final String ERROR_PLAN = "Error while executing Plan";
   }
 
   public static final class Message {
@@ -65,5 +67,6 @@ public final class TerraformCloudExceptionConstants {
     public static final String ERROR_GETTING_APPLIED_POLICIES = "Failed to get applied polices";
     public static final String ERROR_TO_APPLY = "Failed to do apply";
     public static final String MISSING_WORKSPACE_ID = "Workspace id is missing";
+    public static final String FAILED_TO_PLAN = "Failed to execute Plan";
   }
 }

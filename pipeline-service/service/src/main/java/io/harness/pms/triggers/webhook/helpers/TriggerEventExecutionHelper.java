@@ -215,7 +215,7 @@ public class TriggerEventExecutionHelper {
         runtimeInputYaml = triggerExecutionHelper.fetchInputSetYAML(triggerDetails, triggerWebhookEvent);
       }
       PlanExecution response = triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
-          triggerDetails, triggerPayload, triggerWebhookEvent, payload);
+          triggerDetails, triggerPayload, triggerWebhookEvent, payload, runtimeInputYaml);
       return generateEventHistoryForSuccess(
           triggerDetails, runtimeInputYaml, ngTriggerEntity, triggerWebhookEvent, response);
     } catch (Exception e) {
@@ -294,7 +294,7 @@ public class TriggerEventExecutionHelper {
       }
 
       PlanExecution response = triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionReques(
-          triggerDetails, triggerPayloadBuilder.build());
+          triggerDetails, triggerPayloadBuilder.build(), runtimeInputYaml);
       return generateEventHistoryForSuccess(triggerDetails, runtimeInputYaml, ngTriggerEntity, pseudoEvent, response);
     } catch (Exception e) {
       return generateEventHistoryForError(pseudoEvent, triggerDetails, runtimeInputYaml, ngTriggerEntity, e);

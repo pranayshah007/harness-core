@@ -31,7 +31,6 @@ import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
-import io.harness.ngtriggers.beans.dto.ValidatePipelineInputsResponseDTO;
 import io.harness.ngtriggers.beans.source.GitMoveOperationType;
 import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.pms.annotations.PipelineServiceAuth;
@@ -272,20 +271,6 @@ public interface NGTriggerResource {
   ResponseDTO<NGTriggerCatalogDTO>
   getTriggerCatalog(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
-
-  @GET
-  @Path("{triggerIdentifier}/validatePipelineInputs")
-  @ApiOperation(hidden = true, value = "This validates whether yaml of trigger is valid or not",
-      nickname = "validatePipelineInputs")
-  @Hidden
-  ResponseDTO<ValidatePipelineInputsResponseDTO>
-  validatePipelineInputs(
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-      @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
-          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
-      @PathParam("triggerIdentifier") String triggerIdentifier);
 
   @GET
   @Path("{triggerIdentifier}/eventHistory")

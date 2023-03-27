@@ -23,6 +23,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -155,8 +156,9 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     List<NGYamlFile> result = new ArrayList<>();
     InfrastructureProvisioner provisioner = (InfrastructureProvisioner) entities.get(entityId).getEntity();
     if (provisioner instanceof ARMInfrastructureProvisioner) {
@@ -164,7 +166,8 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
       if (isNotEmpty(armInfrastructureProvisioner.getTemplateBody())) {
         byte[] fileContent = armInfrastructureProvisioner.getTemplateBody().getBytes(StandardCharsets.UTF_8);
         NGYamlFile yamlConfigFile = getYamlConfigFile(inputDTO, fileContent,
-            generateFileIdentifier("infraProvisioners/" + armInfrastructureProvisioner.getName()));
+            generateFileIdentifier(
+                "infraProvisioners/" + armInfrastructureProvisioner.getName(), inputDTO.getIdentifierCaseFormat()));
         if (null != yamlConfigFile) {
           result.add(yamlConfigFile);
         }

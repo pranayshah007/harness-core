@@ -342,7 +342,7 @@ import io.harness.cvng.outbox.CVServiceOutboxEventHandler;
 import io.harness.cvng.outbox.MonitoredServiceOutboxEventHandler;
 import io.harness.cvng.outbox.ServiceLevelObjectiveOutboxEventHandler;
 import io.harness.cvng.resources.VerifyStepResource;
-import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
@@ -365,6 +365,7 @@ import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.SLOTimeScaleService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
@@ -379,6 +380,7 @@ import io.harness.cvng.servicelevelobjective.services.impl.SLIRecordServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLODashboardServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLOErrorBudgetResetServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLOHealthIndicatorServiceImpl;
+import io.harness.cvng.servicelevelobjective.services.impl.SLOTimeScaleServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelIndicatorServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelObjectiveV2ServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.ThresholdAnalyserServiceImpl;
@@ -774,7 +776,7 @@ public class CVServiceModule extends AbstractModule {
     bind(ExecutionLogService.class).to(ExecutionLogServiceImpl.class);
     bind(DeleteEntityByHandler.class).to(DefaultDeleteEntityByHandler.class);
     bind(TimeSeriesAnomalousPatternsService.class).to(TimeSeriesAnomalousPatternsServiceImpl.class);
-
+    bind(SLOTimeScaleService.class).to(SLOTimeScaleServiceImpl.class);
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
@@ -875,15 +877,15 @@ public class CVServiceModule extends AbstractModule {
     MapBinder<String, ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder =
         MapBinder.newMapBinder(binder(), String.class, ServiceLevelIndicatorUpdatableEntity.class);
     serviceLevelIndicatorMapBinder
-        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.WINDOW, SLIMetricType.RATIO))
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIEvaluationType.WINDOW, SLIMetricType.RATIO))
         .to(RatioServiceLevelIndicatorUpdatableEntity.class)
         .in(Scopes.SINGLETON);
     serviceLevelIndicatorMapBinder
-        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.WINDOW, SLIMetricType.THRESHOLD))
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIEvaluationType.WINDOW, SLIMetricType.THRESHOLD))
         .to(ThresholdServiceLevelIndicatorUpdatableEntity.class)
         .in(Scopes.SINGLETON);
     serviceLevelIndicatorMapBinder
-        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.REQUEST, null))
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIEvaluationType.REQUEST, null))
         .to(RequestServiceLevelIndicatorUpdatableEntity.class)
         .in(Scopes.SINGLETON);
 
@@ -984,6 +986,9 @@ public class CVServiceModule extends AbstractModule {
     activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.FEATURE_FLAG)
         .to(InternalChangeActivityUpdatableEntity.class)
         .in(Scopes.SINGLETON);
+    activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.CHAOS_EXPERIMENT)
+        .to(InternalChangeActivityUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
     activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.CUSTOM_DEPLOY)
         .to(CustomChangeActivityUpdatableEntity.class)
         .in(Scopes.SINGLETON);
@@ -1015,6 +1020,9 @@ public class CVServiceModule extends AbstractModule {
         .to(DeploymentActivityUpdateHandler.class)
         .in(Scopes.SINGLETON);
     activityUpdateHandlerMapBinder.addBinding(ActivityType.FEATURE_FLAG)
+        .to(InternalChangeActivityUpdateHandler.class)
+        .in(Scopes.SINGLETON);
+    activityUpdateHandlerMapBinder.addBinding(ActivityType.CHAOS_EXPERIMENT)
         .to(InternalChangeActivityUpdateHandler.class)
         .in(Scopes.SINGLETON);
     activityUpdateHandlerMapBinder.addBinding(ActivityType.CUSTOM_DEPLOY)
@@ -1062,15 +1070,15 @@ public class CVServiceModule extends AbstractModule {
     MapBinder<String, ServiceLevelIndicatorTransformer> serviceLevelIndicatorFQDITransformerMapBinder =
         MapBinder.newMapBinder(binder(), String.class, ServiceLevelIndicatorTransformer.class);
     serviceLevelIndicatorFQDITransformerMapBinder
-        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.REQUEST, null))
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIEvaluationType.REQUEST, null))
         .to(RequestServiceLevelIndicatorTransformer.class)
         .in(Scopes.SINGLETON);
     serviceLevelIndicatorFQDITransformerMapBinder
-        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.WINDOW, SLIMetricType.RATIO))
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIEvaluationType.WINDOW, SLIMetricType.RATIO))
         .to(RatioServiceLevelIndicatorTransformer.class)
         .in(Scopes.SINGLETON);
     serviceLevelIndicatorFQDITransformerMapBinder
-        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.WINDOW, SLIMetricType.THRESHOLD))
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIEvaluationType.WINDOW, SLIMetricType.THRESHOLD))
         .to(ThresholdServiceLevelIndicatorTransformer.class)
         .in(Scopes.SINGLETON);
 
@@ -1090,6 +1098,9 @@ public class CVServiceModule extends AbstractModule {
         .to(HarnessCDCurrentGenChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
     changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_FF)
+        .to(InternalChangeEventTransformer.class)
+        .in(Scopes.SINGLETON);
+    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_CE)
         .to(InternalChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
     changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.CUSTOM_DEPLOY)

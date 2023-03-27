@@ -89,9 +89,10 @@ public class VaultSecretMigrator implements SecretMigrator {
             .isReadOnly(vaultConfig.isReadOnly())
             .delegateSelectors(vaultConfig.getDelegateSelectors());
 
-    String secretIdentifier =
-        String.format("migratedHarnessSecret_%s", MigratorUtility.generateIdentifier(vaultConfig.getName()));
+    String secretIdentifier = String.format("migratedHarnessSecret_%s",
+        MigratorUtility.generateIdentifier(vaultConfig.getName(), inputDTO.getIdentifierCaseFormat()));
     NgEntityDetail secretEntityDetail = NgEntityDetail.builder()
+                                            .entityType(NGMigrationEntityType.SECRET)
                                             .identifier(secretIdentifier)
                                             .orgIdentifier(orgIdentifier)
                                             .projectIdentifier(projectIdentifier)

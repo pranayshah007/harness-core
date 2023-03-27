@@ -77,6 +77,8 @@ import lombok.experimental.UtilityClass;
 @HarnessEntity(exportable = true)
 @ChangeDataCapture(table = "accounts", fields = {AccountKeys.accountName, AccountKeys.createdAt}, handler = "")
 public class Account extends Base implements PersistentRegularIterable, NGMigrationEntity {
+  public static final int DEFAULT_SESSION_TIMEOUT_IN_MINUTES = 1440;
+
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -143,6 +145,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @Getter @Setter boolean isProductLed;
 
   @Getter @Setter private boolean smpAccount;
+  @Getter @Setter private Integer sessionTimeOutInMinutes = DEFAULT_SESSION_TIMEOUT_IN_MINUTES;
 
   /**
    * If this flag is set, all encryption/decryption activities will go through LOCAL security manager.

@@ -25,7 +25,6 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorS
 
 import com.google.inject.Inject;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -51,9 +50,8 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
     if (dataCollectionTask == null) {
       enqueueFirstTask(serviceLevelIndicator);
     } else {
-      if (Instant.ofEpochMilli(dataCollectionTask.getLastUpdatedAt())
-              .isBefore(clock.instant().minus(Duration.ofMinutes(2)))
-          && dataCollectionTask.getStatus().equals(DataCollectionExecutionStatus.SUCCESS)) {
+      if (dataCollectionTask.shouldHandlerCreateNextTask(clock.instant())) {
+        log.info("Creating next task for sliId: {}", sliVerificationTaskId);
         createNextTask(dataCollectionTask);
         log.warn(
             "Recovered from next task creation issue. DataCollectionTask uuid: {}, account: {}, projectIdentifier: {}, orgIdentifier: {}, ",
@@ -91,7 +89,8 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
       serviceLevelIndicatorService.enqueueDataCollectionFailureInstanceAndTriggerAnalysis(
           prevSLITask.getVerificationTaskId(), prevSLITask.getEndTime().plus(1, ChronoUnit.MINUTES),
           nextTaskStartTime.minus(1, ChronoUnit.MINUTES), serviceLevelIndicator);
-      log.info("Restarting Data collection startTime: {}", nextTaskStartTime);
+      log.info("Restarting Data collection startTime for task {} : {}", prevSLITask.getVerificationTaskId(),
+          nextTaskStartTime);
     }
     DataCollectionTask dataCollectionTask = getDataCollectionTaskForSLI(
         cvConfigList, serviceLevelIndicator, nextTaskStartTime, nextTaskStartTime.plus(5, ChronoUnit.MINUTES));
@@ -100,6 +99,7 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
     }
     dataCollectionTaskService.validateIfAlreadyExists(dataCollectionTask);
     dataCollectionTaskService.save(dataCollectionTask);
+    log.info("Created data collection task {}", dataCollectionTask);
   }
 
   private DataCollectionTask getDataCollectionTaskForSLI(

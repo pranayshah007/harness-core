@@ -278,7 +278,7 @@ public class ViewsQueryHelper {
 
   public ViewQueryParams buildQueryParams(String accountId, boolean isTimeTruncGroupByRequired,
       boolean isUsedByTimeSeriesStats, boolean isClusterQuery, boolean isTotalCountQuery, int timeOffsetInDays,
-      boolean skipDefaultGroupBy) {
+      boolean skipDefaultGroupBy, boolean skipGroupBy) {
     return ViewQueryParams.builder()
         .accountId(accountId)
         .isClusterQuery(isClusterQuery)
@@ -287,19 +287,20 @@ public class ViewsQueryHelper {
         .isTotalCountQuery(isTotalCountQuery)
         .timeOffsetInDays(timeOffsetInDays)
         .skipDefaultGroupBy(skipDefaultGroupBy)
+        .skipGroupBy(skipGroupBy)
         .build();
   }
 
   public ViewQueryParams buildQueryParams(String accountId, boolean isTimeTruncGroupByRequired,
       boolean isUsedByTimeSeriesStats, boolean isClusterQuery, boolean isTotalCountQuery) {
-    return buildQueryParams(
-        accountId, isTimeTruncGroupByRequired, isUsedByTimeSeriesStats, isClusterQuery, isTotalCountQuery, 0, false);
+    return buildQueryParams(accountId, isTimeTruncGroupByRequired, isUsedByTimeSeriesStats, isClusterQuery,
+        isTotalCountQuery, 0, false, false);
   }
 
   public ViewQueryParams buildQueryParams(String accountId, boolean isTimeTruncGroupByRequired,
       boolean isUsedByTimeSeriesStats, boolean isClusterQuery, boolean isTotalCountQuery, boolean skipDefaultGroupBy) {
     return buildQueryParams(accountId, isTimeTruncGroupByRequired, isUsedByTimeSeriesStats, isClusterQuery,
-        isTotalCountQuery, 0, skipDefaultGroupBy);
+        isTotalCountQuery, 0, skipDefaultGroupBy, false);
   }
 
   public ViewQueryParams buildQueryParams(String accountId, boolean isClusterQuery) {
@@ -315,6 +316,20 @@ public class ViewsQueryHelper {
         .isTimeTruncGroupByRequired(false)
         .isTotalCountQuery(false)
         .timeOffsetInDays(0)
+        .skipGroupBy(false)
+        .build();
+  }
+
+  public ViewQueryParams buildQueryParamsWithSkipGroupBy(ViewQueryParams queryParams, boolean skipGroupBy) {
+    return ViewQueryParams.builder()
+        .accountId(queryParams.getAccountId())
+        .isClusterQuery(queryParams.isClusterQuery())
+        .isUsedByTimeSeriesStats(queryParams.isUsedByTimeSeriesStats())
+        .isTimeTruncGroupByRequired(queryParams.isTimeTruncGroupByRequired())
+        .isTotalCountQuery(queryParams.isTotalCountQuery())
+        .timeOffsetInDays(queryParams.getTimeOffsetInDays())
+        .skipDefaultGroupBy(queryParams.isSkipDefaultGroupBy())
+        .skipGroupBy(skipGroupBy)
         .build();
   }
 

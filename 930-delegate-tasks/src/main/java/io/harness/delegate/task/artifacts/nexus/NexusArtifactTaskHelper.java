@@ -86,6 +86,16 @@ public class NexusArtifactTaskHelper {
         artifactTaskResponse = getSuccessTaskResponse(nexusArtifactTaskHandler.getRepositories(attributes));
         saveLogs(executionLogCallback, "validated artifact server: " + registryUrl);
         break;
+      case GET_NEXUS_GROUP_IDS:
+        saveLogs(executionLogCallback, "Fetching GroupIds for Nexus");
+        artifactTaskResponse = getSuccessTaskResponse(nexusArtifactTaskHandler.getGroupIds(attributes));
+        saveLogs(executionLogCallback, "Fetched GroupIds for Nexus");
+        break;
+      case GET_NEXUS_ARTIFACTIDS:
+        saveLogs(executionLogCallback, "Fetching ArtifactIds for Nexus");
+        artifactTaskResponse = getSuccessTaskResponse(nexusArtifactTaskHandler.getArtifactIds(attributes));
+        saveLogs(executionLogCallback, "Fetched ArtifactIds for Nexus");
+        break;
       default:
         saveLogs(executionLogCallback,
             "No corresponding Nexus artifact task type [{}]: " + artifactTaskParameters.toString());

@@ -7,18 +7,22 @@
 
 package io.harness.idp.proxy.layout;
 
-import static io.harness.idp.constants.Constants.IDP_SETTINGS;
-import static io.harness.idp.constants.Constants.MANAGE_PERMISSION;
+import static io.harness.idp.common.Constants.IDP_PERMISSION;
+import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
 import static io.harness.remote.client.NGRestUtils.getGeneralResponse;
 
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.clients.BackstageResourceClient;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.LayoutProxyApi;
+import io.harness.spec.server.idp.v1.model.LayoutRequest;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -26,6 +30,7 @@ import lombok.experimental.FieldDefaults;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
+@NextGenManagerAuth
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class LayoutProxyApiImpl implements LayoutProxyApi {
   static final String BEARER_TOKEN_FORMAT = "Bearer %s";
@@ -33,18 +38,18 @@ public class LayoutProxyApiImpl implements LayoutProxyApi {
   @Inject BackstageResourceClient backstageResourceClient;
 
   @Override
-  @NGAccessControlCheck(resourceType = IDP_SETTINGS, permission = MANAGE_PERMISSION)
-  public Response createLayout(String harnessAccount) {
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+  public Response createLayout(@Valid LayoutRequest body, @AccountIdentifier String harnessAccount) {
     Object entity = getGeneralResponse(backstageResourceClient.createLayout(
-        String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
+        body, String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
     return Response.ok(entity).build();
   }
 
   @Override
-  @NGAccessControlCheck(resourceType = IDP_SETTINGS, permission = MANAGE_PERMISSION)
-  public Response deleteLayout(String harnessAccount) {
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+  public Response deleteLayout(@Valid LayoutRequest body, @AccountIdentifier String harnessAccount) {
     Object entity = getGeneralResponse(backstageResourceClient.deleteLayout(
-        String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
+        body, String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
     return Response.ok(entity).build();
   }
 

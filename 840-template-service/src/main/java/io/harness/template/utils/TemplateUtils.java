@@ -179,6 +179,6 @@ public class TemplateUtils {
       GlobalContextManager.set(new GlobalContext());
     }
     GlobalContextManager.upsertGlobalContextRecord(
-        ThreadOperationContextHelper.getThreadOperationContext().withUserFlow(userFlow));
+        ThreadOperationContextHelper.getOrInitThreadOperationContext().withUserFlow(userFlow));
   }
 }

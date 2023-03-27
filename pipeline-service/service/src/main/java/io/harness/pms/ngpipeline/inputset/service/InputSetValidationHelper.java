@@ -148,7 +148,7 @@ public class InputSetValidationHelper {
   public InputSetYamlDiffDTO getYAMLDiff(GitSyncSdkService gitSyncSdkService, PMSInputSetService inputSetService,
       PMSPipelineService pipelineService, ValidateAndMergeHelper validateAndMergeHelper, String accountId,
       String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String inputSetIdentifier,
-      String pipelineBranch, String pipelineRepoID, boolean allowDifferentReposForPipelineAndInputSets) {
+      String pipelineBranch, String pipelineRepoID) {
     //    get input set and pipeline metadata for checking the if same repos or different repos to set the branch for
     //    input set
     InputSetEntity inputSetMetadata = inputSetService.getMetadata(
@@ -159,8 +159,7 @@ public class InputSetValidationHelper {
         inputSetMetadata.getPipelineIdentifier(), false, true);
     // fetch complete input set yaml
     InputSetEntity inputSetEntity = getInputSetEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-        pipelineBranch, pipelineMetadata, inputSetMetadata, inputSetIdentifier, inputSetService,
-        allowDifferentReposForPipelineAndInputSets);
+        pipelineBranch, pipelineMetadata, inputSetMetadata, inputSetIdentifier, inputSetService);
 
     EntityGitDetails entityGitDetails = PMSInputSetElementMapper.getEntityGitDetails(inputSetEntity);
     // fetch complete pipeline yaml
@@ -181,11 +180,9 @@ public class InputSetValidationHelper {
 
   private InputSetEntity getInputSetEntity(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String pipelineBranch, PipelineEntity pipelineMetadata,
-      InputSetEntity inputSetMetadata, String inputSetIdentifier, PMSInputSetService inputSetService,
-      boolean allowDifferentReposForPipelineAndInputSets) {
+      InputSetEntity inputSetMetadata, String inputSetIdentifier, PMSInputSetService inputSetService) {
     Optional<InputSetEntity> optionalInputSetEntity;
-    if (allowDifferentReposForPipelineAndInputSets && EmptyPredicate.isNotEmpty(pipelineMetadata.getRepo())
-        && EmptyPredicate.isNotEmpty(inputSetMetadata.getRepo())
+    if (EmptyPredicate.isNotEmpty(pipelineMetadata.getRepo()) && EmptyPredicate.isNotEmpty(inputSetMetadata.getRepo())
         && pipelineMetadata.getRepo().equals(inputSetMetadata.getRepo())) {
       if (EmptyPredicate.isNotEmpty(pipelineBranch)) {
         GitSyncBranchContext branchContext =

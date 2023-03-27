@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Value;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -22,9 +23,11 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class JiraIssueKeyNG {
   @NotNull String url;
   @NotNull String key;
+  Map<String, Object> ticketFields;
 
-  public JiraIssueKeyNG(@NotEmpty String baseUrl, @NotEmpty String key) {
+  public JiraIssueKeyNG(@NotEmpty String baseUrl, @NotEmpty String key, Map<String, Object> ticketFields) {
     this.url = JiraIssueUtilsNG.prepareIssueUrl(baseUrl, key);
     this.key = key;
+    this.ticketFields = ticketFields;
   }
 }

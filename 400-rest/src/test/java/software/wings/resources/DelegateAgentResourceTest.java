@@ -78,6 +78,9 @@ import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.beans.Account;
 import software.wings.beans.AccountPreferences;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog.FieldType;
+import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceResponse;
@@ -86,7 +89,6 @@ import software.wings.dl.WingsPersistence;
 import software.wings.exception.WingsExceptionMapper;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.ratelimit.DelegateRequestRateLimiter;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.instance.InstanceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.DelegateService;
@@ -98,6 +100,7 @@ import com.google.protobuf.TextFormat;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
@@ -146,6 +149,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
   private static final ManifestCollectionResponseHandler manifestCollectionResponseHandler =
       mock(ManifestCollectionResponseHandler.class);
   private static final ConnectorHearbeatPublisher connectorHearbeatPublisher = mock(ConnectorHearbeatPublisher.class);
+  private static final KryoSerializer referenceFalseKryoSerializer = mock(KryoSerializer.class);
   private static final KryoSerializer kryoSerializer = mock(KryoSerializer.class);
   private static final FeatureFlagService featureFlagService = mock(FeatureFlagService.class);
   private static final PollingResourceClient pollResourceClient = mock(PollingResourceClient.class);
@@ -162,12 +166,12 @@ public class DelegateAgentResourceTest extends CategoryTest {
   @ClassRule
   public static final ResourceTestRule RESOURCES =
       ResourceTestRule.builder()
-          .instance(
-              new DelegateAgentResource(delegateService, accountService, wingsPersistence, delegateRequestRateLimiter,
-                  subdomainUrlHelper, artifactCollectionResponseHandler, instanceSyncResponseHandler,
-                  manifestCollectionResponseHandler, connectorHearbeatPublisher, kryoSerializer,
-                  configurationController, featureFlagService, delegateTaskServiceClassic, pollResourceClient,
-                  instanceSyncResponsePublisher, delegatePollingHeartbeatService, delegateCapacityManagementService))
+          .instance(new DelegateAgentResource(delegateService, accountService, wingsPersistence,
+              delegateRequestRateLimiter, subdomainUrlHelper, artifactCollectionResponseHandler,
+              instanceSyncResponseHandler, manifestCollectionResponseHandler, connectorHearbeatPublisher,
+              kryoSerializer, configurationController, featureFlagService, delegateTaskServiceClassic,
+              pollResourceClient, instanceSyncResponsePublisher, delegatePollingHeartbeatService,
+              delegateCapacityManagementService, referenceFalseKryoSerializer))
           .instance(new AbstractBinder() {
             @Override
             protected void configure() {
@@ -268,12 +272,12 @@ public class DelegateAgentResourceTest extends CategoryTest {
             .buildSourceResponse(BuildSourceResponse.builder().build())
             .build();
 
-    when(kryoSerializer.asObject(any(byte[].class))).thenReturn(buildSourceExecutionResponse);
+    when(referenceFalseKryoSerializer.asObject(any(byte[].class))).thenReturn(buildSourceExecutionResponse);
 
     RequestBody requestBody = RequestBody.create(okhttp3.MediaType.parse("application/octet-stream"), "");
 
     RESOURCES.client()
-        .target("/agent/delegates/artifact-collection/12345679?accountId=" + ACCOUNT_ID)
+        .target("/agent/delegates/artifact-collection/v2/12345679?accountId=" + ACCOUNT_ID)
         .request()
         .post(entity(requestBody, "application/x-kryo"), new GenericType<RestResponse<Boolean>>() {});
 
@@ -484,15 +488,15 @@ public class DelegateAgentResourceTest extends CategoryTest {
                           .accountId(ACCOUNT_ID)
                           .stateExecutionId(STATE_EXECUTION_ID)
                           .requestTimeStamp(i)
-                          .request(Lists.newArrayList(ThirdPartyApiCallLog.ThirdPartyApiCallField.builder()
+                          .request(Lists.newArrayList(ThirdPartyApiCallField.builder()
                                                           .name(generateUuid())
                                                           .value(generateUuid())
-                                                          .type(ThirdPartyApiCallLog.FieldType.TEXT)
+                                                          .type(FieldType.TEXT)
                                                           .build()))
-                          .response(Lists.newArrayList(ThirdPartyApiCallLog.ThirdPartyApiCallField.builder()
+                          .response(Lists.newArrayList(ThirdPartyApiCallField.builder()
                                                            .name(generateUuid())
                                                            .value(generateUuid())
-                                                           .type(ThirdPartyApiCallLog.FieldType.TEXT)
+                                                           .type(FieldType.TEXT)
                                                            .build()))
                           .delegateId(DELEGATE_ID)
                           .delegateTaskId(generateUuid())
@@ -507,7 +511,11 @@ public class DelegateAgentResourceTest extends CategoryTest {
         .request()
         .post(entity(apiCallLogs, MediaType.APPLICATION_JSON), new GenericType<RestResponse<String>>() {});
 
-    verify(wingsPersistence, atLeastOnce()).save(apiCallLogs);
+    verify(wingsPersistence, atLeastOnce())
+        .save(apiCallLogs.stream()
+                  .map(thirdPartyApiCallLog
+                      -> software.wings.service.impl.ThirdPartyApiCallLog.fromDto(thirdPartyApiCallLog))
+                  .collect(Collectors.toList()));
   }
 
   @Test

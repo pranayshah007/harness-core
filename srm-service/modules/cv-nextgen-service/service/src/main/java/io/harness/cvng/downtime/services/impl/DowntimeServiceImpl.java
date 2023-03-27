@@ -36,6 +36,7 @@ import io.harness.cvng.downtime.beans.RuleType;
 import io.harness.cvng.downtime.entities.Downtime;
 import io.harness.cvng.downtime.entities.Downtime.DowntimeDetails;
 import io.harness.cvng.downtime.entities.Downtime.DowntimeKeys;
+import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.downtime.transformer.DowntimeSpecDetailsTransformer;
@@ -65,6 +66,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -260,6 +262,15 @@ public class DowntimeServiceImpl implements DowntimeService {
     }
     Downtime downtime = downtimeOptional.get();
     DowntimeDTO downtimeDTO = getDowntimeDTOFromDowntime(downtime);
+    List<EntityUnavailabilityStatusesDTO> pastOrActiveInstances =
+        entityUnavailabilityStatusesService.getPastAndActiveDowntimeInstances(
+            projectParams, Collections.singletonList(identifier));
+    if (!pastOrActiveInstances.isEmpty()) {
+      throw new InvalidRequestException(String.format(
+          "Downtime with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can't be deleted, as it has a a past/current instance of downtime, where deleting it can impact SLO adversely.",
+          identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          projectParams.getProjectIdentifier()));
+    }
     entityUnavailabilityStatusesService.deleteFutureDowntimeInstances(projectParams, identifier);
     entityUnavailabilityStatusesService.updateAndSaveRunningInstance(projectParams, identifier);
     outboxService.save(DowntimeDeleteEvent.builder()
@@ -310,6 +321,18 @@ public class DowntimeServiceImpl implements DowntimeService {
                     Collections.singletonMap(MonitoredServiceKeys.identifier, monitoredServiceIdentifier))))
         .collect(Collectors.toList());
   }
+
+  @Override
+  public List<EntityUnavailabilityStatuses> filterDowntimeInstancesOnMSs(ProjectParams projectParams,
+      List<EntityUnavailabilityStatuses> entityUnavailabilityStatuses, Set<String> monitoredServiceIdentifiers) {
+    return entityUnavailabilityStatuses.stream()
+        .filter(instance
+            -> monitoredServiceIdentifiers.stream().anyMatch(monitoredServiceIdentifier
+                -> instance.getEntitiesRule().isPresent(
+                    Collections.singletonMap(MonitoredServiceKeys.identifier, monitoredServiceIdentifier))))
+        .collect(Collectors.toList());
+  }
+
   @Override
   public void deleteByProjectIdentifier(
       Class<Downtime> clazz, String accountId, String orgIdentifier, String projectIdentifier) {
@@ -596,8 +619,15 @@ public class DowntimeServiceImpl implements DowntimeService {
   private List<DowntimeListView> getDowntimeListViewFromDowntime(
       ProjectParams projectParams, List<Downtime> downtimes, Map<String, AffectedEntity> identifierAffectedEntityMap) {
     List<String> downtimeIdentifiers = downtimes.stream().map(Downtime::getIdentifier).collect(Collectors.toList());
+    List<EntityUnavailabilityStatusesDTO> pastOrActiveInstances =
+        entityUnavailabilityStatusesService.getPastAndActiveDowntimeInstances(projectParams, downtimeIdentifiers);
     List<EntityUnavailabilityStatusesDTO> activeOrFirstUpcomingInstance =
         entityUnavailabilityStatusesService.getActiveOrFirstUpcomingInstance(projectParams, downtimeIdentifiers);
+    Map<String, Integer> downtimeIdentifierToPastAndActiveInstancesCountMap = new HashMap<>();
+    for (EntityUnavailabilityStatusesDTO dto : pastOrActiveInstances) {
+      downtimeIdentifierToPastAndActiveInstancesCountMap.merge(dto.getEntityId(), 1, Integer::sum);
+    }
+
     Map<String, EntityUnavailabilityStatusesDTO> downtimeIdentifierToInstancesDTOMap =
         activeOrFirstUpcomingInstance.stream().collect(
             Collectors.toMap(EntityUnavailabilityStatusesDTO::getEntityId, statusesDTO -> statusesDTO));
@@ -638,6 +668,8 @@ public class DowntimeServiceImpl implements DowntimeService {
                    .duration(downtimeTransformerMap.get(downtime.getType())
                                  .getDowntimeDuration(downtime.getDowntimeDetails()))
                    .spec(getDowntimeSpecDTO(downtime.getType(), downtime.getDowntimeDetails(), downtime.getTimezone()))
+                   .pastOrActiveInstancesCount(
+                       downtimeIdentifierToPastAndActiveInstancesCountMap.getOrDefault(downtime.getIdentifier(), 0))
                    .build())
         .collect(Collectors.toList());
   }

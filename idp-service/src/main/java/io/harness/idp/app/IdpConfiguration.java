@@ -8,19 +8,19 @@
 package io.harness.idp.app;
 
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
-import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration;
 
 import static java.util.Collections.singletonList;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
-import io.harness.idp.onboarding.OnboardingModuleConfig;
+import io.harness.idp.onboarding.config.OnboardingModuleConfig;
 import io.harness.idp.provision.ProvisionModuleConfig;
+import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
+import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
@@ -36,13 +36,9 @@ import io.dropwizard.request.logging.LogbackAccessRequestLogFactory;
 import io.dropwizard.request.logging.RequestLogFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
-import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import javax.ws.rs.Path;
@@ -60,6 +56,8 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("logStreamingServiceConfig")
   @ConfigSecret
   private LogStreamingServiceConfiguration logStreamingServiceConfig;
+  @JsonProperty("redisLockConfig") private RedisConfig redisLockConfig;
+  @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
   @JsonProperty("managerClientConfig") private ServiceHttpClientConfig managerClientConfig;
   @JsonProperty("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
   @JsonProperty("ngManagerServiceSecret") private String ngManagerServiceSecret;
@@ -71,10 +69,10 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("jwtIdentityServiceSecret") private String jwtIdentityServiceSecret;
   @JsonProperty("onboardingModuleConfig") private OnboardingModuleConfig onboardingModuleConfig;
   @JsonProperty("accessControlClient") private AccessControlClientConfiguration accessControlClientConfiguration;
-  @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
   @JsonProperty("backstageSaToken") private String backstageSaToken;
   @JsonProperty("backstageSaCaCrt") private String backstageSaCaCrt;
   @JsonProperty("backstageMasterUrl") private String backstageMasterUrl;
+  @JsonProperty("backstagePodLabel") private String backstagePodLabel;
   @JsonProperty(PROVISION_MODULE_CONFIG) private ProvisionModuleConfig provisionModuleConfig;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
   public static final String IDP_SPEC_PACKAGE = "io.harness.spec.server.idp.v1";
@@ -139,27 +137,5 @@ public class IdpConfiguration extends Configuration {
         .stream()
         .filter(klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), IDP_SPEC_PACKAGE))
         .collect(Collectors.toSet());
-  }
-
-  public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
-    Set<String> resourcePackages = new HashSet<>();
-    Set<Class<?>> reflections =
-        HarnessReflections.get()
-            .getTypesAnnotatedWith(Path.class)
-            .stream()
-            .filter(klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), "io.harness.idp.resources"))
-            .collect(Collectors.toSet());
-    reflections.forEach(resource -> {
-      if (resource.isInterface() || EmptyPredicate.isEmpty(resource.getInterfaces())) {
-        resourcePackages.add(resource.getPackage().getName());
-      }
-    });
-    SwaggerBundleConfiguration defaultSwaggerBundleConfiguration = buildSwaggerBundleConfiguration(reflections);
-    defaultSwaggerBundleConfiguration.setResourcePackage(String.join(",", resourcePackages));
-    defaultSwaggerBundleConfiguration.setVersion("1.0");
-    defaultSwaggerBundleConfiguration.setTitle("IDP");
-    defaultSwaggerBundleConfiguration.setSchemes(new String[] {"https", "http"});
-    defaultSwaggerBundleConfiguration.setHost("{{host}}");
-    return Optional.ofNullable(swaggerBundleConfiguration).orElse(defaultSwaggerBundleConfiguration);
   }
 }

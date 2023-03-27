@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.OrchestrationEventLog;
+import io.harness.engine.expressions.usages.ExpressionUsagesEntity;
 import io.harness.engine.interrupts.AbortInterruptCallback;
 import io.harness.engine.pms.resume.EngineResumeAllCallback;
 import io.harness.engine.pms.resume.EngineResumeCallback;
@@ -26,6 +27,7 @@ public class OrchestrationMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(OrchestrationEventLog.class);
+    set.add(ExpressionUsagesEntity.class);
   }
 
   @Override

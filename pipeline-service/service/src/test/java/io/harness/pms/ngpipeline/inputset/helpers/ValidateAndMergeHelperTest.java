@@ -94,7 +94,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   public void testGetInputSetTemplateResponseDTOWithNoRuntime() {
     doReturn(Optional.empty())
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false, false, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     assertThatThrownBy(()
                            -> validateAndMergeHelper.getInputSetTemplateResponseDTO(
                                accountId, orgId, projectId, pipelineId, null, false))
@@ -194,7 +194,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     PipelineEntity pipeline = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.REMOTE).build();
     doReturn(Optional.of(pipeline))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false, false, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, false);
 
     String yamlForS1 = "inputSet:\n"
         + "  pipeline:\n"
@@ -323,7 +323,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
                                   .build();
     doReturn(Optional.of(pipeline))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false, false, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, false);
 
     doReturn(Optional.of(inputSet1))
         .when(pmsInputSetService)
@@ -365,7 +365,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     PipelineEntity pipeline = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.REMOTE).build();
     doReturn(Optional.of(pipeline))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false, false, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, false);
 
     String yamlForS1 = "inputSet:\n"
         + "  pipeline:\n"
@@ -405,7 +405,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     PipelineEntity pipeline = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.REMOTE).build();
     doReturn(Optional.of(pipeline))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false, false, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, false);
 
     String yamlForS1 = "inputSet:\n"
         + "  pipeline:\n"
@@ -502,7 +502,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "      field2: <+input>\n";
     doReturn(Optional.of(PipelineEntity.builder().yaml(base).build()))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false, false, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, false);
     String lastRuntimeS1S2 = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
@@ -609,7 +609,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "      field2: <+input>\n";
     doReturn(Optional.of(PipelineEntity.builder().yaml(base).build()))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false, false, true);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, true);
     String lastRuntimeS1S2 = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
@@ -657,7 +657,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "    value: \"v2val\"\n";
     doReturn(Optional.of(PipelineEntity.builder().yaml(base).build()))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false, false, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, false);
     String merged = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(
         accountId, orgId, projectId, pipelineId, null, null, null, null, runtime, false);
     String expected = "pipeline:\n"

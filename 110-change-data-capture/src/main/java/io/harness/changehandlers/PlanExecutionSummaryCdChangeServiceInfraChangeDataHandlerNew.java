@@ -159,6 +159,17 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
         columnValueMapping.put(PlanExecutionSummaryCDConstants.SERVICE_END_TS, "");
       }
 
+      if (((BasicDBObject) stageExecutionNode.getValue()).get(PlanExecutionSummaryCDConstants.FAILURE_INFO) != null
+          && ((BasicDBObject) ((BasicDBObject) stageExecutionNode.getValue())
+                     .get(PlanExecutionSummaryCDConstants.FAILURE_INFO))
+                  .get("message")
+              != null) {
+        String message = String.valueOf(((BasicDBObject) ((BasicDBObject) stageExecutionNode.getValue())
+                                             .get(PlanExecutionSummaryCDConstants.FAILURE_INFO))
+                                            .get("message"));
+        columnValueMapping.put("execution_failure_details", message);
+      }
+
       columnValueMapping.put("service_name", "");
       columnValueMapping.put("service_id", "");
       columnValueMapping.put(PlanExecutionSummaryCDConstants.ACCOUNT_ID_KEY, "");

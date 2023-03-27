@@ -15,7 +15,7 @@ import static io.harness.govern.Switch.unhandled;
 
 import static software.wings.app.ManagerCacheRegistrar.NEW_RELIC_APPLICATION_CACHE;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.beans.FeatureName;
 import io.harness.eraro.ErrorCode;
@@ -38,11 +38,11 @@ import software.wings.beans.NewRelicConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.apm.Method;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.common.VerificationConstants;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.dl.WingsPersistence;
 import software.wings.metrics.TimeSeriesMetricDefinition;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.APMDelegateService;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;
 import software.wings.service.impl.apm.MLServiceUtils;

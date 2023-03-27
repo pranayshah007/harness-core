@@ -45,10 +45,17 @@ public enum PredefinedTemplate {
       "notification_templates/approval/slack/plain_text_execution.txt", "harness_approval_execution_slack"),
   HARNESS_APPROVAL_EXECUTION_NOTIFICATION_EMAIL(
       "notification_templates/approval/email/plain_text_execution.txt", "harness_approval_execution_email"),
-  CVNG_SLO_SLACK("cvng_notification_templates/cvng_slo_slack.txt", "cvng_slo_slack"),
-  CVNG_SLO_EMAIL("cvng_notification_templates/cvng_slo_email.txt", "cvng_slo_email"),
-  CVNG_SLO_PAGERDUTY("cvng_notification_templates/cvng_slo_pagerduty.txt", "cvng_slo_pagerduty"),
-  CVNG_SLO_MSTEAMS("cvng_notification_templates/cvng_slo_msteams.txt", "cvng_slo_msteams"),
+  CVNG_SLO_SIMPLE_SLACK("cvng_notification_templates/cvng_slo_simple_slack.txt", "cvng_slo_simple_slack"),
+  CVNG_SLO_SIMPLE_EMAIL("cvng_notification_templates/cvng_slo_simple_email.txt", "cvng_slo_simple_email"),
+  CVNG_SLO_SIMPLE_PAGERDUTY("cvng_notification_templates/cvng_slo_simple_pagerduty.txt", "cvng_slo_simple_pagerduty"),
+  CVNG_SLO_SIMPLE_MSTEAMS("cvng_notification_templates/cvng_slo_simple_msteams.txt", "cvng_slo_simple_msteams"),
+
+  CVNG_SLO_COMPOSITE_SLACK("cvng_notification_templates/cvng_slo_composite_slack.txt", "cvng_slo_composite_slack"),
+  CVNG_SLO_COMPOSITE_EMAIL("cvng_notification_templates/cvng_slo_composite_email.txt", "cvng_slo_composite_email"),
+  CVNG_SLO_COMPOSITE_PAGERDUTY(
+      "cvng_notification_templates/cvng_slo_composite_pagerduty.txt", "cvng_slo_composite_pagerduty"),
+  CVNG_SLO_COMPOSITE_MSTEAMS(
+      "cvng_notification_templates/cvng_slo_composite_msteams.txt", "cvng_slo_composite_msteams"),
   CVNG_MONITOREDSERVICE_SLACK(
       "cvng_notification_templates/cvng_monitoredservice_slack.txt", "cvng_monitoredservice_slack"),
   CVNG_MONITOREDSERVICE_ET_SLACK(

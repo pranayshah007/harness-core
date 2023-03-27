@@ -312,4 +312,37 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
     assertThat(result.getErrors()).hasSize(1);
     assertThat(result.getErrors().get(0).getReason()).isEqualTo(MESSAGE);
   }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testValidateClusterOrchestratorSuccess() {
+    ceAwsConnectorDTO.setFeaturesEnabled(Collections.singletonList(CEFeatures.CLUSTER_ORCHESTRATOR));
+    ceawsConnectorResponseDTO = AWSConnectorTestHelper.getCEAwsConnectorResponseDTO(ceAwsConnectorDTO);
+    ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
+
+    assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
+    assertThat(result.getErrors()).isNullOrEmpty();
+    assertThat(result.getTestedAt()).isLessThanOrEqualTo(Instant.now().toEpochMilli());
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testValidateClusterOrchestratorPermissionMissing() {
+    ceAwsConnectorDTO.setFeaturesEnabled(Collections.singletonList(CEFeatures.CLUSTER_ORCHESTRATOR));
+    ceawsConnectorResponseDTO = AWSConnectorTestHelper.getCEAwsConnectorResponseDTO(ceAwsConnectorDTO);
+    doReturn(Collections.singletonList(DENY_EVALUATION_RESULT))
+        .when(awsClient)
+        .simulatePrincipalPolicy(any(), any(), any(), any(), any());
+    ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
+
+    assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);
+    assertThat(result.getTestedAt()).isLessThanOrEqualTo(Instant.now().toEpochMilli());
+
+    assertThat(result.getErrors()).hasSize(1);
+    assertThat(result.getErrors().get(0).getReason()).isEqualTo(REASON);
+    assertThat(result.getErrors().get(0).getMessage()).isEqualTo(MESSAGE_SUGGESTION);
+    assertThat(result.getErrors().get(0).getCode()).isEqualTo(403);
+  }
 }

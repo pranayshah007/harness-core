@@ -14,6 +14,7 @@ import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.AbortedBy;
 import io.harness.data.validator.Trimmed;
 import io.harness.dto.FailureInfoDTO;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
@@ -108,6 +109,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   Status internalStatus;
   ExecutionStatus status;
+  AbortedBy abortedBy;
 
   String inputSetYaml;
   String pipelineTemplate; // saving the template here because after an execution, the pipeline can be updated

@@ -13,6 +13,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import static io.harness.expression.Expression.DISALLOW_SECRETS;
 
 import static software.wings.beans.TaskType.TERRAFORM_TASK_NG;
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V5;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
@@ -69,6 +70,7 @@ public class TerraformTaskNGParameters
   boolean useOptimizedTfPlan;
   boolean isTerraformCloudCli;
   boolean skipTerraformRefresh;
+  @Expression(ALLOW_SECRETS) Map<String, String> terraformCommandFlags;
   // For plan
   TerraformCommand terraformCommand;
 
@@ -168,6 +170,9 @@ public class TerraformTaskNGParameters
   }
 
   public TaskType getDelegateTaskType() {
+    if (isNotEmpty(this.terraformCommandFlags)) {
+      return TERRAFORM_TASK_NG_V5;
+    }
     if (this.skipTerraformRefresh) {
       return TaskType.TERRAFORM_TASK_NG_V4;
     }

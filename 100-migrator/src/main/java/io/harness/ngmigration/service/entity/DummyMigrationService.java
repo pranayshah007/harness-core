@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.DummyNode;
-import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.beans.YamlGenerationDetails;
@@ -27,7 +27,6 @@ import software.wings.ngmigration.NGMigrationEntity;
 
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import org.apache.commons.lang3.NotImplementedException;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -57,8 +56,7 @@ public class DummyMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
     return null;
   }
 

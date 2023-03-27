@@ -16,6 +16,8 @@ RUN microdnf update --nodocs \
     lsof \
     findutils \
     tar \
+    gzip \
+    git \
     shadow-utils \
   && useradd -u 1001 -g 0 harness \
   && microdnf remove shadow-utils \
@@ -35,7 +37,7 @@ ENV INSTALL_CLIENT_TOOLS_IN_BACKGROUND=true
 ENV JAVA_HOME=/opt/java/openjdk/
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 ARG BASEURL=https://app.harness.io/public/shared/delegates
 ARG DELEGATEVERSION
 
@@ -53,14 +55,14 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/harness-pywinrm/v0.4-dev/harness-pywinrm https://app.harness.io/public/shared/tools/harness-pywinrm/release/v0.4-dev/bin/linux/$TARGETARCH/harness-pywinrm \
   && mkdir -m 777 -p client-tools/chartmuseum/v0.15.0 \
   && curl -s -L -o client-tools/chartmuseum/v0.15.0/chartmuseum https://app.harness.io/public/shared/tools/chartmuseum/release/v0.15.0/bin/linux/$TARGETARCH/chartmuseum \
-  && mkdir -m 777 -p client-tools/tf-config-inspect/v1.1 \
-  && curl -s -L -o client-tools/tf-config-inspect/v1.1/terraform-config-inspect https://app.harness.io/public/shared/tools/terraform-config-inspect/v1.1/linux/$TARGETARCH/terraform-config-inspect \
+  && mkdir -m 777 -p client-tools/tf-config-inspect/v1.2 \
+  && curl -s -L -o client-tools/tf-config-inspect/v1.2/terraform-config-inspect https://app.harness.io/public/shared/tools/terraform-config-inspect/v1.2/linux/$TARGETARCH/terraform-config-inspect \
   && mkdir -m 777 -p client-tools/oc/v4.2.16 \
   && curl -s -L -o client-tools/oc/v4.2.16/oc https://app.harness.io/public/shared/tools/oc/release/v4.2.16/bin/linux/$TARGETARCH/oc \
   && mkdir -m 777 -p client-tools/kustomize/v4.5.4 \
   && curl -s -L -o client-tools/kustomize/v4.5.4/kustomize https://app.harness.io/public/shared/tools/kustomize/release/v4.5.4/bin/linux/$TARGETARCH/kustomize \
-  && mkdir -m 777 -p client-tools/scm/91e2a39c \
-  && curl -s -L -o client-tools/scm/91e2a39c/scm https://app.harness.io/public/shared/tools/scm/release/91e2a39c/bin/linux/$TARGETARCH/scm \
+  && mkdir -m 777 -p client-tools/scm/ef2d02fb \
+  && curl -s -L -o client-tools/scm/ef2d02fb/scm https://app.harness.io/public/shared/tools/scm/release/ef2d02fb/bin/linux/$TARGETARCH/scm \
   && chmod -R 775 /opt/harness-delegate \
   && chgrp -R 0 /opt/harness-delegate  \
   && chown -R 1001 /opt/harness-delegate

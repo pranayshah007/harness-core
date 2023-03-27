@@ -33,6 +33,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -63,6 +64,7 @@ public class TasInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
   private static final String PERPETUAL_TASK_ID = "perpetualTaskId";
 
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Mock private TasTaskHelperBase tasTaskHelperBase;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
@@ -72,7 +74,7 @@ public class TasInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
 
   @Before
   public void setUp() throws IOException {
-    on(tasInstanceSyncPerpetualTaskExecuter).set("kryoSerializer", kryoSerializer);
+    on(tasInstanceSyncPerpetualTaskExecuter).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
     doReturn(call)
         .when(delegateAgentManagerClient)
         .processInstanceSyncNGResult(anyString(), anyString(), perpetualTaskResponseCaptor.capture());
@@ -197,7 +199,7 @@ public class TasInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
         -> tasDeploymentReleaseList.add(
             TasDeploymentRelease.newBuilder()
                 .setApplicationName(app)
-                .setTasInfraConfig(ByteString.copyFrom(kryoSerializer.asBytes(tasInfraConfig)))
+                .setTasInfraConfig(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(tasInfraConfig)))
                 .build()));
     return tasDeploymentReleaseList;
   }

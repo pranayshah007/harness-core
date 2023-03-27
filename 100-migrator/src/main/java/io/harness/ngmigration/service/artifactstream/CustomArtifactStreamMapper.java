@@ -62,12 +62,12 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
               .getVersionLabel());
       return PrimaryArtifact.builder()
           .primaryArtifactRef(ParameterField.createValueField("<+input>"))
-          .sources(
-              Collections.singletonList(ArtifactSource.builder()
-                                            .name(MigratorUtility.generateName(artifactStream.getName()))
-                                            .identifier(MigratorUtility.generateIdentifier(artifactStream.getName()))
-                                            .template(templateLinkConfig)
-                                            .build()))
+          .sources(Collections.singletonList(ArtifactSource.builder()
+                                                 .name(MigratorUtility.generateName(artifactStream.getName()))
+                                                 .identifier(MigratorUtility.generateIdentifier(
+                                                     artifactStream.getName(), inputDTO.getIdentifierCaseFormat()))
+                                                 .template(templateLinkConfig)
+                                                 .build()))
           .build();
     } else {
       CustomArtifactStream.Script primaryScript = customArtifactStream.getScripts().get(0);

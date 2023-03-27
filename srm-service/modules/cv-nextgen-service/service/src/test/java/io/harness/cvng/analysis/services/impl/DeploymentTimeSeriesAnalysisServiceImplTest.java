@@ -1025,7 +1025,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     List<MetricsAnalysis> metricsAnalyses =
         deploymentTimeSeriesAnalysisService.getFilteredMetricAnalysesForVerifyStepExecutionId(
             accountId, verificationJobInstanceId, deploymentTimeSeriesAnalysisFilter);
-    assertThat(metricsAnalyses).hasSize(1);
+    assertThat(metricsAnalyses).hasSize(2);
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isEqualTo("identifier");
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");
@@ -1123,7 +1123,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     List<MetricsAnalysis> metricsAnalyses =
         deploymentTimeSeriesAnalysisService.getFilteredMetricAnalysesForVerifyStepExecutionId(
             accountId, verificationJobInstanceId, deploymentTimeSeriesAnalysisFilter);
-    assertThat(metricsAnalyses).hasSize(1);
+    assertThat(metricsAnalyses).hasSize(2);
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isNotBlank();
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");

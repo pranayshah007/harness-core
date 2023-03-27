@@ -107,13 +107,17 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
                 .proceedIfFailed(request.getChildren().getShouldProceedIfFailed())
                 .build();
 
-        waitNotifyEngine.waitForAllOn(publisherName, maxConcurrentChildCallback, uuid);
+        String waitInstanceId = waitNotifyEngine.waitForAllOn(publisherName, maxConcurrentChildCallback, uuid);
+        log.info("SpawnChildrenRequestProcessor registered a waitInstance for maxConcurrency with waitInstanceId: {}",
+            waitInstanceId);
         currentChild++;
       }
 
       // Attach a Callback to the parent for the child
       EngineResumeCallback callback = EngineResumeCallback.builder().ambiance(ambiance).build();
-      waitNotifyEngine.waitForAllOn(publisherName, callback, callbackIds.toArray(new String[0]));
+      String waitInstanceId =
+          waitNotifyEngine.waitForAllOn(publisherName, callback, callbackIds.toArray(new String[0]));
+      log.info("SpawnChildrenRequestProcessor registered a waitInstance with id: {}", waitInstanceId);
 
       // Update the parent with executable response
       nodeExecutionService.updateV2(nodeExecutionId,

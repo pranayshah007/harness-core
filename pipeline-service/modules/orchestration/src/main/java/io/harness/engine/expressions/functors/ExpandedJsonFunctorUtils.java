@@ -41,6 +41,7 @@ public class ExpandedJsonFunctorUtils {
       return null;
     }
     List<String> expressions = new ArrayList<>();
+    expressions.add(String.format("expandedJson.%s", expression));
     String group = expressionKeys.get(0);
     String finalExpression = expression;
     List<Level> levels = new ArrayList<>(ambiance.getLevelsList());

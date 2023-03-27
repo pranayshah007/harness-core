@@ -9,6 +9,7 @@ package io.harness.gitops.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.Instant;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -145,5 +146,43 @@ public class ApplicationResource {
     @JsonProperty("resources") public List<Resource> resources;
     @JsonProperty("revision") public String revision;
     @JsonProperty("source") public Source source;
+  }
+
+  public String getSyncOperationPhase() {
+    if (getApp().getStatus().getOperationState() == null) {
+      return "";
+    }
+    return getApp().getStatus().getOperationState().getPhase();
+  }
+
+  public ApplicationResource.SyncPolicy getSyncPolicy() {
+    return getApp().getSpec().getSyncPolicy();
+  }
+
+  public Instant getLastSyncStartedAt() {
+    if (getApp().getStatus().getOperationState() == null
+        || getApp().getStatus().getOperationState().getStartedAt() == null) {
+      return null;
+    }
+    return Instant.parse(getApp().getStatus().getOperationState().getStartedAt());
+  }
+
+  public String getHealthStatus() {
+    return getApp().getStatus().getHealth().getStatus();
+  }
+
+  public String getSyncMessage() {
+    if (getApp().getStatus().getOperationState() == null) {
+      return "";
+    }
+    return getApp().getStatus().getOperationState().getMessage();
+  }
+
+  public String getTargetRevision() {
+    return getApp().getSpec().getSource().getTargetRevision();
+  }
+
+  public List<ApplicationResource.Resource> getResources() {
+    return getApp().getStatus().getResources();
   }
 }

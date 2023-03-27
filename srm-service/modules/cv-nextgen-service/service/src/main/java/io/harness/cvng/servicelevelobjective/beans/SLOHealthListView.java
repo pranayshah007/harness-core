@@ -48,6 +48,7 @@ public class SLOHealthListView {
   @NotNull ServiceLevelObjectiveType sloType;
   @NotNull double sloTargetPercentage;
   @NotNull int noOfActiveAlerts;
+  @NotNull SLIEvaluationType evaluationType;
   @NotNull ProjectParams projectParams;
   @NotNull
   public ErrorBudgetRisk getErrorBudgetRisk() {
@@ -56,7 +57,8 @@ public class SLOHealthListView {
 
   public static SLOHealthListViewBuilder getSLOHealthListViewBuilder(
       AbstractServiceLevelObjective serviceLevelObjective, List<UserJourneyDTO> userJourneys,
-      int totalErrorBudgetMinutes, SLOHealthIndicator sloHealthIndicator) {
+      int totalErrorBudgetMinutes, SLOHealthIndicator sloHealthIndicator,
+      Map<AbstractServiceLevelObjective, SLIEvaluationType> serviceLevelObjectiveSLIEvaluationTypeMap) {
     return SLOHealthListView.builder()
         .sloIdentifier(serviceLevelObjective.getIdentifier())
         .name(serviceLevelObjective.getName())
@@ -72,6 +74,7 @@ public class SLOHealthListView {
         .burnRate(sloHealthIndicator.getErrorBudgetBurnRate())
         .noOfActiveAlerts(serviceLevelObjective.getNotificationRuleRefs().size())
         .sloType(serviceLevelObjective.getType())
+        .evaluationType(serviceLevelObjectiveSLIEvaluationTypeMap.get(serviceLevelObjective))
         .projectParams(ProjectParams.builder()
                            .accountIdentifier(serviceLevelObjective.getAccountId())
                            .orgIdentifier(serviceLevelObjective.getOrgIdentifier())

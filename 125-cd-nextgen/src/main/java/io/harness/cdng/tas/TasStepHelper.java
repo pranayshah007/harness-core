@@ -155,7 +155,6 @@ import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
-import io.harness.logstreaming.NGLogCallback;
 import io.harness.manifest.CustomManifestSource;
 import io.harness.manifest.CustomSourceFile;
 import io.harness.ng.core.NGAccess;
@@ -745,7 +744,7 @@ public class TasStepHelper {
     }
   }
 
-  private ManifestsOutcome resolveManifestsOutcome(Ambiance ambiance) {
+  public ManifestsOutcome resolveManifestsOutcome(Ambiance ambiance) {
     OptionalOutcome manifestsOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS));
 
@@ -761,7 +760,7 @@ public class TasStepHelper {
     return (ManifestsOutcome) manifestsOutcome.getOutcome();
   }
 
-  private void filterManifestOutcomesByType(
+  public void filterManifestOutcomesByType(
       TasStepPassThroughData tasStepPassThroughData, Collection<ManifestOutcome> manifestOutcomes) {
     if (isEmpty(manifestOutcomes)) {
       throw new InvalidRequestException("Manifests are mandatory for TAS step.", USER);
@@ -1984,28 +1983,24 @@ public class TasStepHelper {
       return UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
     }
 
-    List<UnitProgress> finalUnitProgressList = currentProgressData.getUnitProgresses()
-                                                   .stream()
-                                                   .map(unitProgress -> {
-                                                     if (unitProgress.getStatus() == RUNNING) {
-                                                       LogCallback logCallback =
-                                                           getLogCallback(unitProgress.getUnitName(), ambiance, false);
-                                                       logCallback.saveExecutionLog(exceptionMessage, ERROR, FAILURE);
-                                                       return UnitProgress.newBuilder(unitProgress)
-                                                           .setStatus(UnitStatus.FAILURE)
-                                                           .setEndTime(System.currentTimeMillis())
-                                                           .build();
-                                                     }
+    List<UnitProgress> finalUnitProgressList =
+        currentProgressData.getUnitProgresses()
+            .stream()
+            .map(unitProgress -> {
+              if (unitProgress.getStatus() == RUNNING) {
+                LogCallback logCallback = cdStepHelper.getLogCallback(unitProgress.getUnitName(), ambiance, false);
+                logCallback.saveExecutionLog(exceptionMessage, ERROR, FAILURE);
+                return UnitProgress.newBuilder(unitProgress)
+                    .setStatus(UnitStatus.FAILURE)
+                    .setEndTime(System.currentTimeMillis())
+                    .build();
+              }
 
-                                                     return unitProgress;
-                                                   })
-                                                   .collect(Collectors.toList());
+              return unitProgress;
+            })
+            .collect(Collectors.toList());
 
     return UnitProgressData.builder().unitProgresses(finalUnitProgressList).build();
-  }
-
-  public LogCallback getLogCallback(String commandUnitName, Ambiance ambiance, boolean shouldOpenStream) {
-    return new NGLogCallback(logStreamingStepClientFactory, ambiance, commandUnitName, shouldOpenStream);
   }
 
   public void closeLogStream(Ambiance ambiance) {

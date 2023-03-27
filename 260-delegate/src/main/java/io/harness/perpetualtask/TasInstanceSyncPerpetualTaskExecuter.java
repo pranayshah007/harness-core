@@ -29,6 +29,7 @@ import io.harness.perpetualtask.instancesync.TasInstanceSyncPerpetualTaskParams;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 public class TasInstanceSyncPerpetualTaskExecuter implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private TasTaskHelperBase tasTaskHelperBase;
 
@@ -89,8 +90,8 @@ public class TasInstanceSyncPerpetualTaskExecuter implements PerpetualTaskExecut
   private TasDeploymentReleaseData toTasDeploymentReleaseData(TasDeploymentRelease tasDeploymentRelease) {
     return TasDeploymentReleaseData.builder()
         .applicationName(tasDeploymentRelease.getApplicationName())
-        .tasInfraConfig(
-            (TasInfraConfig) kryoSerializer.asObject(tasDeploymentRelease.getTasInfraConfig().toByteArray()))
+        .tasInfraConfig((TasInfraConfig) referenceFalseKryoSerializer.asObject(
+            tasDeploymentRelease.getTasInfraConfig().toByteArray()))
         .build();
   }
 

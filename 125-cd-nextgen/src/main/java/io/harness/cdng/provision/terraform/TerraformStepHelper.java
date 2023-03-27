@@ -7,7 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
-import static io.harness.beans.FeatureName.TERRAFORM_REMOTE_BACKEND_CONFIG;
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -156,6 +156,7 @@ public class TerraformStepHelper {
   public static final String USE_CONNECTOR_CREDENTIALS = "useConnectorCredentials";
   public static final String TERRAFORM_CLOUD_CLI = "Terraform cloud CLI";
   public static final String SKIP_REFRESH_COMMAND = "Skip Refresh Command";
+  public static final String CLI_OPTIONS = "CLI Options";
 
   @Inject private HPersistence persistence;
   @Inject private K8sStepHelper k8sStepHelper;
@@ -865,7 +866,7 @@ public class TerraformStepHelper {
   public TerraformBackendConfigFileInfo toTerraformBackendFileInfo(
       TerraformBackendConfig backendConfig, Ambiance ambiance) {
     TerraformBackendConfigFileInfo fileInfo = null;
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), TERRAFORM_REMOTE_BACKEND_CONFIG)) {
+    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG)) {
       return null;
     }
     if (backendConfig != null) {
@@ -1068,7 +1069,7 @@ public class TerraformStepHelper {
   public TerraformBackendConfigFileInfo prepareTerraformBackendConfigFileInfo(
       TerraformBackendConfigFileConfig bcFileConfig, Ambiance ambiance) {
     TerraformBackendConfigFileInfo fileInfo = null;
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), TERRAFORM_REMOTE_BACKEND_CONFIG)) {
+    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG)) {
       return null;
     }
     if (bcFileConfig != null) {
@@ -1163,5 +1164,18 @@ public class TerraformStepHelper {
               FeatureName.CD_TERRAFORM_CLOUD_CLI_NG.name(), AmbianceUtils.getAccountId(ambiance)),
           ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
+  }
+
+  public Map<String, String> getTerraformCliFlags(List<TerraformCliOptionFlag> commandFlags) {
+    if (commandFlags == null) {
+      return new HashMap<>();
+    }
+
+    Map<String, String> commandsValueMap = new HashMap<>();
+    for (TerraformCliOptionFlag commandFlag : commandFlags) {
+      commandsValueMap.put(commandFlag.getCommandType().name(), commandFlag.getFlag().getValue());
+    }
+
+    return commandsValueMap;
   }
 }

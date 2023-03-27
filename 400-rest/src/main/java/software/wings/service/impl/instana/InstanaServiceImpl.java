@@ -11,10 +11,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 import static software.wings.common.VerificationConstants.INSTANA_DOCKER_PLUGIN;
 import static software.wings.common.VerificationConstants.INSTANA_GROUPBY_TAG_TRACE_NAME;
 import static software.wings.common.VerificationConstants.VERIFICATION_HOST_PLACEHOLDER;
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.VerificationOperationException;
@@ -24,9 +24,9 @@ import io.harness.time.Timestamp;
 import software.wings.beans.InstanaConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.delegatetasks.cv.DataCollectionException;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;
 import software.wings.service.impl.apm.MLServiceUtils;
 import software.wings.service.intfc.SettingsService;

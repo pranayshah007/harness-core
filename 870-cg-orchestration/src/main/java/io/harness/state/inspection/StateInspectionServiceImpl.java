@@ -14,6 +14,7 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
 import io.harness.state.inspection.StateInspection.StateInspectionKeys;
@@ -38,11 +39,36 @@ public class StateInspectionServiceImpl implements StateInspectionService {
 
   @Getter Subject<StateInspectionListener> subject = new Subject<>();
 
+  private final String K8S_RESOURCES_MANIFESTS = "k8sResources.manifests";
+  private final String EXPRESSION_VARIABLE_USAGE = "expressionVariableUsage";
+
+  public void transformToYaml(StateInspection stateInspection) {
+    ExpressionVariableUsage v = (ExpressionVariableUsage) stateInspection.getData().get(EXPRESSION_VARIABLE_USAGE);
+    if (v != null) {
+      List<ExpressionVariableUsage.Item> vars = v.getVariables();
+
+      for (ExpressionVariableUsage.Item var : vars) {
+        if (var.getExpression().equals(K8S_RESOURCES_MANIFESTS)) {
+          vars.remove(var);
+          vars.add(ExpressionVariableUsage.Item.builder()
+                       .expression(var.getExpression())
+                       .value(ManifestHelper.toYamlForLogs(ManifestHelper.processYaml(var.getValue())))
+                       .count(var.getCount())
+                       .build());
+        }
+      }
+    }
+  }
+
   @Override
   public StateInspection get(String stateExecutionInstanceId) {
-    return persistence.createQuery(StateInspection.class)
-        .filter(StateInspectionKeys.stateExecutionInstanceId, stateExecutionInstanceId)
-        .get();
+    StateInspection stateInspection =
+        persistence.createQuery(StateInspection.class)
+            .filter(StateInspectionKeys.stateExecutionInstanceId, stateExecutionInstanceId)
+            .get();
+
+    transformToYaml(stateInspection);
+    return stateInspection;
   }
 
   @Override

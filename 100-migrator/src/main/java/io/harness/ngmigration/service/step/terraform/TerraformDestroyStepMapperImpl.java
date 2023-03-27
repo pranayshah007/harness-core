@@ -14,6 +14,7 @@ import io.harness.cdng.provision.terraform.TerraformDestroyStepNode;
 import io.harness.cdng.provision.terraform.TerraformStepConfiguration;
 import io.harness.cdng.provision.terraform.TerraformStepConfigurationType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -47,10 +48,11 @@ public class TerraformDestroyStepMapperImpl extends BaseTerraformProvisionerMapp
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     DestroyTerraformProvisionState state = (DestroyTerraformProvisionState) getState(graphNode);
     TerraformDestroyStepNode terraformDestroyStepNode = new TerraformDestroyStepNode();
-    baseSetup(graphNode, terraformDestroyStepNode);
+    baseSetup(graphNode, terraformDestroyStepNode, context.getIdentifierCaseFormat());
 
     TerraformStepConfiguration stepConfiguration = new TerraformStepConfiguration();
     if ((Boolean) graphNode.getProperties().getOrDefault("inheritFromLast", false)) {

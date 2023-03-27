@@ -43,6 +43,7 @@ public class StepParametersUtils {
     stageBuilder.variables(
         ParameterField.createValueField(NGVariablesUtils.getMapOfVariables(stageNode.getVariables())));
     stageBuilder.tags(CollectionUtils.emptyIfNull(stageNode.getTags()));
+    stageBuilder.delegateSelectors(stageNode.getDelegateSelectors());
 
     return stageBuilder;
   }

@@ -14,6 +14,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
@@ -29,6 +32,9 @@ public class MigratorExpressionUtilsTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   ExpressionEvaluator expressionEvaluator = new ExpressionEvaluator();
   MigratorResolveFunctor migratorResolveFunctor = new MigratorResolveFunctor(MigratorExpressionUtils.prepareContextMap(
+      MigrationContext.builder()
+          .inputDTO(MigrationInputDTO.builder().identifierCaseFormat(CaseFormat.CAMEL_CASE).build())
+          .build(),
       new HashMap<>(), ImmutableMap.of("workflow.variables.var2", "<+pqr>", "app.name", "<+org.name>")));
 
   @Test

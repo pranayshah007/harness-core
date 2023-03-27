@@ -19,6 +19,8 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackParameters;
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserWithRollback;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
 import io.harness.advisers.retry.RetryAdviserRollbackParameters;
 import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
@@ -41,6 +43,8 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExecutionMode;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
@@ -111,6 +115,9 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
         stepElement.getIdentifier(), stepElement.getName(), dependenciesNodeMap, metadataMap,
         StrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializer, ctx.getCurrentField()));
     // We are swapping the uuid with strategy node if present.
+
+    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
+    ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
     PlanNode stepPlanNode =
         PlanNode.builder()
             .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stepElement.getUuid()))
@@ -126,8 +133,9 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
                                        .build())
             .adviserObtainments(adviserObtainmentFromMetaData)
             .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
-            .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
-                                                : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
+            .whenCondition(isStepInsideRollback
+                    ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen(), executionMode)
+                    : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()
                     .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
@@ -359,11 +367,12 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
                   .build());
           break;
         case PIPELINE_ROLLBACK:
-          rollbackParameters = PlanCreatorUtilsCommon.getRollbackParameters(
-              currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
-          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
-                                        .build());
+          OnFailPipelineRollbackParameters onFailPipelineRollbackParameters =
+              GenericPlanCreatorUtils.buildOnFailPipelineRollbackParameters(failureTypes);
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(OnFailPipelineRollbackAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(onFailPipelineRollbackParameters)))
+                  .build());
           break;
         case MARK_AS_FAILURE:
           adviserObtainmentList.add(

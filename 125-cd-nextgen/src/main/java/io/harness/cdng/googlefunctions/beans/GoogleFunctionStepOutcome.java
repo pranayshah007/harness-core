@@ -31,6 +31,8 @@ public class GoogleFunctionStepOutcome implements Outcome, ExecutionSweepingOutp
   String runtime;
   String state;
   String environment;
+  String url;
+  String source;
   @Nonnull GoogleCloudRunService cloudRunService;
   @Nonnull List<GoogleCloudRunRevision> activeCloudRunRevisions;
 

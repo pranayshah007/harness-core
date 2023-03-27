@@ -82,6 +82,12 @@ public class PerpetualTaskRecord
                  .field(PerpetualTaskRecordKeys.state)
                  .field(PerpetualTaskRecordKeys.delegateId)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("clientContext_clientParams_infrastructureMappingId")
+                 .field(PerpetualTaskRecordKeys.clientContext + "." + PerpetualTaskClientContextKeys.clientParams + "."
+                     + "infrastructureMappingId")
+                 .sparse(true)
+                 .build())
         .build();
   }
 
