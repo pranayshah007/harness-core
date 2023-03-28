@@ -5062,7 +5062,7 @@ plain_artifacts = [
     "net.jodah:expiringmap:0.5.7",
     "net.jodah:failsafe:2.2.0",
     "net.minidev:accessors-smart:1.2",
-    "net.minidev:json-smart:2.4.8",
+    "net.minidev:json-smart:2.4.10",
     "net.openhft:affinity:3.2.2",
     "net.openhft:chronicle-bytes:2.19.0",
     "net.openhft:chronicle-core:2.19.0",

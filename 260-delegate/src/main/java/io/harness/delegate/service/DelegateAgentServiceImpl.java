@@ -47,6 +47,8 @@ import static io.harness.delegate.message.MessageConstants.WATCHER_PROCESS;
 import static io.harness.delegate.message.MessageConstants.WATCHER_VERSION;
 import static io.harness.delegate.message.MessengerType.DELEGATE;
 import static io.harness.delegate.message.MessengerType.WATCHER;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_CONNECTED;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_DISCONNECTED;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_CURRENTLY_EXECUTING;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_IN_QUEUE;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_EXECUTION_TIME;
@@ -836,14 +838,17 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void handleOpen(Object o) {
     log.info("Event:{}, message:[{}]", Event.OPEN.name(), o.toString());
+    metricRegistry.recordGaugeInc(DELEGATE_CONNECTED, new String[] {DELEGATE_NAME});
   }
 
   private void handleClose(Object o) {
     log.info("Event:{}, trying to reconnect, message:[{}]", Event.CLOSE.name(), o);
+    metricRegistry.recordGaugeInc(DELEGATE_DISCONNECTED, new String[] {DELEGATE_NAME});
   }
 
   private void handleError(final Exception e) {
     log.info("Event:{}", Event.ERROR.name(), e);
+    metricRegistry.recordGaugeInc(DELEGATE_DISCONNECTED, new String[] {DELEGATE_NAME});
   }
 
   private void finalizeSocket() {
