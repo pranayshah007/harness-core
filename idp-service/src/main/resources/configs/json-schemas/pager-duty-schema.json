@@ -1,0 +1,61 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1679770775.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proxy"
+  ],
+  "properties": {
+    "proxy": {
+      "$id": "#root/proxy",
+      "title": "Proxy",
+      "type": "object",
+      "required": [
+        "/pagerduty"
+      ],
+      "properties": {
+        "/pagerduty": {
+          "$id": "#root/proxy//pagerduty",
+          "title": "/pagerduty",
+          "type": "object",
+          "required": [
+            "target",
+            "headers"
+          ],
+          "properties": {
+            "target": {
+              "$id": "#root/proxy//pagerduty/target",
+              "title": "Target",
+              "type": "string",
+              "default": "",
+              "pattern": "^.*$"
+            },
+            "headers": {
+              "$id": "#root/proxy//pagerduty/headers",
+              "title": "Headers",
+              "type": "object",
+              "required": [
+                "Authorization"
+              ],
+              "properties": {
+                "Authorization": {
+                  "$id": "#root/proxy//pagerduty/headers/Authorization",
+                  "title": "Authorization",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                }
+              }
+            }
+
+          }
+        }
+
+      }
+    }
+
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1679769765.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "anyOf": [
+    "app",
+    "backend",
+    "proxy",
+    "kubernetes",
+    "kafka",
+    "integrations"
+  ],
+  "properties": {
+    "app": {
+      "$id": "#root/app",
+      "title": "App"
+    },
+    "backend": {
+      "$id": "#root/backend",
+      "title": "Backend"
+    },
+    "proxy": {
+      "$id": "#root/proxy",
+      "title": "Proxy"
+    },
+    "kubernetes": {
+      "$id": "#root/kubernetes",
+      "title": "Kubernetes"
+    },
+    "kafka": {
+      "$id": "#root/kafka",
+      "title": "Kafka"
+    },
+    "integrations": {
+      "$id": "#root/integrations",
+      "title": "Integrations"
+    }
+  }
+}
+
+

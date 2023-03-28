@@ -1,3 +1,4 @@
-gitlab:
-  - host: HOST_VALUE
-    token: ${GITLAB_TOKEN}
+integrations:
+  gitlab:
+    - host: gitlab.com
+      token: ${GITLAB_TOKEN}

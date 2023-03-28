@@ -15,6 +15,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
@@ -51,6 +52,9 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   private static final String TARGET_TO_REPLACE_IN_CONFIG = "HOST_VALUE";
 
   private static final String SUFFIX_FOR_GITHUB_APP_CONNECTOR = "_App";
+
+  private static final String INVALID_SCHEMA_FOR_INTEGRATIONS =
+      "Invalid json schema for integrations config for account - {}";
 
   @Override
   public void createConnectorSecretsEnvVariable(String accountIdentifier, String orgIdentifier,
@@ -133,7 +137,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   }
 
   public void createAppConfigForGitIntegrations(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String connectorIdentifier, ConnectorType connectorType) {
+      String projectIdentifier, String connectorIdentifier, ConnectorType connectorType) throws Exception {
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(connectorType);
     Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> connectorEnvSecrets =
         connectorProcessor.getConnectorAndSecretsInfo(
@@ -147,6 +151,12 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     String integrationConfigs = ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString);
     log.info("Connector chosen in git integration is  - {} ", connectorTypeAsString);
     integrationConfigs = integrationConfigs.replace(TARGET_TO_REPLACE_IN_CONFIG, host);
+
+    String schemaForIntegrations =
+        ConfigManagerUtils.getJsonSchemaBasedOnConnectorTypeForIntegrations(connectorTypeAsString);
+    if (!ConfigManagerUtils.isValidSchema(integrationConfigs, schemaForIntegrations)) {
+      log.error(String.format(INVALID_SCHEMA_FOR_INTEGRATIONS, accountIdentifier));
+    }
 
     AppConfig appConfig = new AppConfig();
     appConfig.setConfigId(connectorTypeAsString);

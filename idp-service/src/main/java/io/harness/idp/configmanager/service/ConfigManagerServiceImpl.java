@@ -55,6 +55,14 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   private static final String CONFIG_NAME = "app-config";
 
+  private static final String INVALID_PLUGIN_CONFIG_PROVIDED = "Invalid plugin config provided for Plugin id - %s";
+  private static final String MERGED_APP_CONFIG_JSON_SCHEMA_PATH = "configs/json-schemas/merged-app-config-schema.json";
+
+  private static final String INVALID_CONFIG_ID_PROVIDED = "Error in reading schema - Invalid config id provided";
+
+  private static final String INVALID_MERGED_APP_CONFIG_SCHEMA =
+      "Invalid schema for merged app-config.yaml for account - %s";
+
   @Override
   public Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier) {
     List<AppConfigEntity> allPluginConfig =
@@ -74,7 +82,9 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public AppConfig saveConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType) {
+  public AppConfig saveConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
+      throws Exception {
+    validateSchemaForPlugin(appConfig.getConfigs(), appConfig.getConfigId());
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
     appConfigEntity.setEnabledDisabledAt(System.currentTimeMillis());
@@ -84,8 +94,9 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   @Override
   public AppConfig updateConfigForAccount(
-      AppConfigRequest appConfigRequest, String accountIdentifier, ConfigType configType) {
+      AppConfigRequest appConfigRequest, String accountIdentifier, ConfigType configType) throws Exception {
     AppConfig appConfig = appConfigRequest.getAppConfig();
+    validateSchemaForPlugin(appConfig.getConfigs(), appConfig.getConfigId());
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
     AppConfigEntity updatedData = appConfigRepository.updateConfig(appConfigEntity, configType);
@@ -109,6 +120,10 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   @Override
   public MergedAppConfigEntity mergeAndSaveAppConfig(String accountIdentifier) throws Exception {
     String mergedAppConfig = mergeAllAppConfigsForAccount(accountIdentifier);
+    if (!ConfigManagerUtils.isValidSchema(
+            mergedAppConfig, ConfigManagerUtils.readFile(MERGED_APP_CONFIG_JSON_SCHEMA_PATH))) {
+      throw new InvalidRequestException(String.format(INVALID_MERGED_APP_CONFIG_SCHEMA, accountIdentifier));
+    }
     updateConfigMap(accountIdentifier, mergedAppConfig);
     MergedAppConfigEntity mergedAppConfigEntity =
         MergedAppConfigMapper.getMergedAppConfigEntity(accountIdentifier, mergedAppConfig);
@@ -148,5 +163,15 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     k8sClient.updateConfigMapData(namespace, CONFIG_NAME, data, true);
     log.info(
         "Config map successfully created/updated for account - {} in namespace - {}", accountIdentifier, namespace);
+  }
+
+  private void validateSchemaForPlugin(String config, String configId) throws Exception {
+    String pluginSchema = ConfigManagerUtils.getPluginConfigSchema(configId);
+    if (pluginSchema == null) {
+      throw new UnsupportedOperationException(INVALID_CONFIG_ID_PROVIDED);
+    }
+    if (!ConfigManagerUtils.isValidSchema(config, pluginSchema)) {
+      throw new InvalidRequestException(String.format(INVALID_PLUGIN_CONFIG_PROVIDED, configId));
+    }
   }
 }
