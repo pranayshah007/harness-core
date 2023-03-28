@@ -14,10 +14,12 @@ import static io.harness.ngtriggers.Constants.GIT_USER;
 import static io.harness.ngtriggers.Constants.TRIGGER_REF;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.HARSH;
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doCallRealMethod;
@@ -29,8 +31,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.TriggerException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -330,6 +334,34 @@ public class TriggerExecutionHelperTest extends CategoryTest {
       assertThat(gitEntityInfo.getConnectorRef()).isEqualTo(connectorRef);
       assertThat(gitEntityInfo.getBranch()).isEqualTo(branch);
     }
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testEmptyBranchNameInTrigger() {
+    TriggerDetails triggerDetails = TriggerDetails.builder()
+                                        .ngTriggerEntity(ngTriggerEntity)
+                                        .ngTriggerConfigV2(NGTriggerConfigV2.builder().build())
+                                        .build();
+    TriggerPayload.Builder payloadBuilder = TriggerPayload.newBuilder().setType(Type.GIT).setParsedPayload(
+        ParsedPayload.newBuilder()
+            .setPr(PullRequestHook.newBuilder()
+                       .setPr(PullRequest.newBuilder().setNumber(1).setSource("source").setTarget("target").build())
+                       .setRepo(Repository.newBuilder().setLink("https://github.com").build())
+                       .build())
+            .build());
+    Optional<PipelineEntity> pipelineEntityToExecute =
+        Optional.of(PipelineEntity.builder().storeType(StoreType.REMOTE).build());
+    doReturn(pipelineEntityToExecute)
+        .when(pmsPipelineService)
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+    assertThatThrownBy(()
+                           -> triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionReques(
+                               triggerDetails, payloadBuilder.build(), null))
+        .isInstanceOf(TriggerException.class)
+        .hasMessage(
+            "Failed while requesting Pipeline Execution through Trigger: pipelineBranchName is missing or is empty in trigger yaml.");
   }
 
   @Test

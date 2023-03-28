@@ -162,6 +162,10 @@ public class TriggerExecutionHelper {
       String payload, String executionTagForGitEvent, ExecutionTriggerInfo triggerInfo,
       TriggerWebhookEvent triggerWebhookEvent, String runtimeInputYaml) {
     try {
+      SecurityContextBuilder.setContext(
+          new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+      SourcePrincipalContextBuilder.setSourcePrincipal(
+          new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
       NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
       Optional<PipelineEntity> pipelineEntityToExecute;
       String targetIdentifier = ngTriggerEntity.getTargetIdentifier();
@@ -179,6 +183,9 @@ public class TriggerExecutionHelper {
                   + ", For Trigger: " + ngTriggerEntity.getIdentifier() + " does not exist.",
               USER);
         }
+        if (pipelineEntityToExecute.get().getStoreType() == StoreType.REMOTE) {
+          throw new TriggerException("pipelineBranchName is missing or is empty in trigger yaml.", USER);
+        }
         branch = pipelineEntityToExecute.get().getBranch();
         final GitEntityInfo branchInfo = GitEntityInfo.builder()
                                              .branch(pipelineEntityToExecute.get().getBranch())
@@ -188,10 +195,6 @@ public class TriggerExecutionHelper {
         GitSyncBranchContext gitSyncBranchContext = GitSyncBranchContext.builder().gitBranchInfo(branchInfo).build();
         gitSyncBranchContextByteString = pmsGitSyncHelper.serializeGitSyncBranchContext(gitSyncBranchContext);
       } else {
-        SecurityContextBuilder.setContext(
-            new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
-        SourcePrincipalContextBuilder.setSourcePrincipal(
-            new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
         if (isNotEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
           if (isBranchExpr(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
             branch = resolveBranchExpression(
