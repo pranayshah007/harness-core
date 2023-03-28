@@ -195,9 +195,6 @@ public class SpotinstAmiInstanceSyncDelegateExecutorTest extends DelegateTestBas
             .setSpotinstEncryptedData(spotinstEncryptionDetailsBytes)
             .build();
 
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(taskParams))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
   }
 }

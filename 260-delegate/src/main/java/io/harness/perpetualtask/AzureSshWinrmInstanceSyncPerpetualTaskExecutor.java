@@ -38,11 +38,13 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.AzureSshInstanceSyncPerpetualTaskParamsNg;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -53,11 +55,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor
-    extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
+public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private static final Set<String> VALID_SERVICE_TYPES = ImmutableSet.of(ServiceSpecType.SSH, ServiceSpecType.WINRM);
 
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private AzureAsyncTaskHelper azureAsyncTaskHelper;
 
   @Override
@@ -73,7 +75,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor
     }
 
     try {
-      return executeTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
+      return executeTask(taskId, taskParams);
     } catch (IOException ioe) {
       throw NestedExceptionUtils.hintWithExplanationException("Failed to authenticate with Azure",
           "Please check you Azure connector configuration or delegate filesystem permissions.",
@@ -81,11 +83,11 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor
     }
   }
 
-  private PerpetualTaskResponse executeTask(PerpetualTaskId taskId,
-      AzureSshInstanceSyncPerpetualTaskParamsNg taskParams, boolean referenceFalseKryoSerializer) throws IOException {
+  private PerpetualTaskResponse executeTask(
+      PerpetualTaskId taskId, AzureSshInstanceSyncPerpetualTaskParamsNg taskParams) throws IOException {
     try (LazyAutoCloseableWorkingDirectory workingDirectory =
              new LazyAutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_AUTH_CERT_DIR_PATH)) {
-      Set<String> azureHosts = getAzureHosts(taskParams, workingDirectory, referenceFalseKryoSerializer);
+      Set<String> azureHosts = getAzureHosts(taskParams, workingDirectory);
 
       List<String> instanceHosts =
           taskParams.getHostsList().stream().filter(azureHosts::contains).collect(Collectors.toList());
@@ -103,10 +105,9 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor
   }
 
   private Set<String> getAzureHosts(AzureSshInstanceSyncPerpetualTaskParamsNg taskParams,
-      LazyAutoCloseableWorkingDirectory workingDir, boolean referenceFalseKryoSerializer) throws IOException {
-    AzureInfraDelegateConfig infraConfig =
-        (AzureInfraDelegateConfig) getKryoSerializer(referenceFalseKryoSerializer)
-            .asObject(taskParams.getAzureSshWinrmInfraDelegateConfig().toByteArray());
+      LazyAutoCloseableWorkingDirectory workingDir) throws IOException {
+    AzureInfraDelegateConfig infraConfig = (AzureInfraDelegateConfig) referenceFalseKryoSerializer.asObject(
+        taskParams.getAzureSshWinrmInfraDelegateConfig().toByteArray());
 
     AzureOSType azureOSType =
         ServiceSpecType.SSH.equals(taskParams.getServiceType()) ? AzureOSType.LINUX : AzureOSType.WINDOWS;

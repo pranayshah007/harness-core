@@ -109,10 +109,8 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
                                                      .setAccountId(ACCOUNT_ID)
                                                      .addAllK8SDeploymentReleaseList(deploymentReleases)
                                                      .build();
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
-                                                                    .setCustomizedParams(Any.pack(message))
-                                                                    .setReferenceFalseKryoSerializer(true)
-                                                                    .build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
+        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
 
     k8sInstanceSyncPerpetualTaskExecutor.runOnce(
         PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build(), perpetualTaskExecutionParams, Instant.EPOCH);
@@ -147,10 +145,8 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
                                                      .setAccountId(ACCOUNT_ID)
                                                      .addAllK8SDeploymentReleaseList(deploymentReleases)
                                                      .build();
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
-                                                                    .setCustomizedParams(Any.pack(message))
-                                                                    .setReferenceFalseKryoSerializer(true)
-                                                                    .build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
+        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
 
     k8sInstanceSyncPerpetualTaskExecutor.runOnce(
         PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build(), perpetualTaskExecutionParams, Instant.EPOCH);
@@ -185,10 +181,8 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
                                                      .setAccountId(ACCOUNT_ID)
                                                      .addAllK8SDeploymentReleaseList(deploymentReleases)
                                                      .build();
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
-                                                                    .setCustomizedParams(Any.pack(message))
-                                                                    .setReferenceFalseKryoSerializer(true)
-                                                                    .build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
+        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
 
     k8sInstanceSyncPerpetualTaskExecutor.runOnce(
         PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build(), perpetualTaskExecutionParams, Instant.EPOCH);
@@ -223,10 +217,8 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
                                                      .setAccountId(ACCOUNT_ID)
                                                      .addAllK8SDeploymentReleaseList(deploymentReleases)
                                                      .build();
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
-                                                                    .setCustomizedParams(Any.pack(message))
-                                                                    .setReferenceFalseKryoSerializer(true)
-                                                                    .build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
+        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
 
     k8sInstanceSyncPerpetualTaskExecutor.runOnce(
         PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build(), perpetualTaskExecutionParams, Instant.EPOCH);

@@ -343,10 +343,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
                                                         .setClusterName("cluster")
                                                         .build())
             .build();
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(params))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
   }
 
   private PerpetualTaskExecutionParams getContainerInstancePerpetualTaskParamsHelm() {
@@ -367,10 +364,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
                                                         .setReleaseName("release")
                                                         .build())
             .build();
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(params))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
   }
 
   private PerpetualTaskExecutionParams getK8sPerpetualTaskParams() {
@@ -387,9 +381,6 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
                                                     .setReleaseName("release")
                                                     .build())
             .build();
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(params))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
   }
 }

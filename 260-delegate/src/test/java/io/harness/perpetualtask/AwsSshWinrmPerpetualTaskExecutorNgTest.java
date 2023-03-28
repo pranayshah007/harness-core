@@ -122,9 +122,6 @@ public class AwsSshWinrmPerpetualTaskExecutorNgTest extends DelegateTestBase {
                                                           .setHostConnectionType("PublicIP")
                                                           .build();
 
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(message))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
   }
 }

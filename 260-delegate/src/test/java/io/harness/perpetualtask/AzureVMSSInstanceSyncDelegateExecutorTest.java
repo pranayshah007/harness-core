@@ -120,9 +120,6 @@ public class AzureVMSSInstanceSyncDelegateExecutorTest extends DelegateTestBase 
                                                               .setResourceGroupName("res-gp")
                                                               .setVmssId("vmss-id")
                                                               .build();
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(taskParams))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
   }
 }

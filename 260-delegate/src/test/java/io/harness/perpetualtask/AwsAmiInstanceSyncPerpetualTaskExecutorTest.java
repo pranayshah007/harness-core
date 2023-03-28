@@ -176,9 +176,6 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
                                                        .setRegion("us-east-1")
                                                        .setAsgName("asg-1")
                                                        .build();
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(params))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
   }
 }

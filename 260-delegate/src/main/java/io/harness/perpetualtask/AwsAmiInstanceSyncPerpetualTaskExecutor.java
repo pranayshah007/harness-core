@@ -18,6 +18,7 @@ import io.harness.grpc.utils.AnyUtils;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsAmiInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.AwsAsgListInstancesResponse;
@@ -25,6 +26,7 @@ import software.wings.service.intfc.aws.delegate.AwsAsgHelperServiceDelegate;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -33,10 +35,10 @@ import org.eclipse.jetty.server.Response;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class AwsAmiInstanceSyncPerpetualTaskExecutor
-    extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
+public class AwsAmiInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
   @Inject private AwsAsgHelperServiceDelegate awsAsgHelperServiceDelegate;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -48,13 +50,12 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutor
     final AwsAmiInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AwsAmiInstanceSyncPerpetualTaskParams.class);
 
-    final AwsConfig awsConfig = (AwsConfig) getKryoSerializer(params.getReferenceFalseKryoSerializer())
-                                    .asObject(taskParams.getAwsConfig().toByteArray());
+    final AwsConfig awsConfig =
+        (AwsConfig) referenceFalseKryoSerializer.asObject(taskParams.getAwsConfig().toByteArray());
 
     @SuppressWarnings("unchecked")
     final List<EncryptedDataDetail> encryptedDataDetails =
-        (List<EncryptedDataDetail>) getKryoSerializer(params.getReferenceFalseKryoSerializer())
-            .asObject(taskParams.getEncryptedData().toByteArray());
+        (List<EncryptedDataDetail>) referenceFalseKryoSerializer.asObject(taskParams.getEncryptedData().toByteArray());
 
     final AwsAsgListInstancesResponse awsResponse = getAwsResponse(taskParams, awsConfig, encryptedDataDetails);
 

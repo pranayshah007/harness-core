@@ -125,9 +125,6 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutorTest extends Delegate
             .setAzureSshWinrmInfraDelegateConfig(ByteString.copyFrom(bytes))
             .build();
 
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(message))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
   }
 }

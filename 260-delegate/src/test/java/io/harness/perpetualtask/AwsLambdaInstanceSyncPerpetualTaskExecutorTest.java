@@ -213,9 +213,6 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
                                                           .setFunctionName("function-1")
                                                           .setQualifier("version-1")
                                                           .build();
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(params))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
   }
 }

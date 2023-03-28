@@ -18,6 +18,7 @@ import io.harness.grpc.utils.AnyUtils;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.AwsEc2ListInstancesResponse;
@@ -26,6 +27,7 @@ import software.wings.service.intfc.aws.delegate.AwsEc2HelperServiceDelegate;
 import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -34,9 +36,10 @@ import org.eclipse.jetty.server.Response;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class AwsSshInstanceSyncExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
+public class AwsSshInstanceSyncExecutor implements PerpetualTaskExecutor {
   @Inject private AwsEc2HelperServiceDelegate ec2ServiceDelegate;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -46,23 +49,17 @@ public class AwsSshInstanceSyncExecutor extends PerpetualTaskExecutorBase implem
 
     final String region = instanceSyncParams.getRegion();
 
-    final AwsConfig awsConfig = (AwsConfig) getKryoSerializer(params.getReferenceFalseKryoSerializer())
-                                    .asObject(instanceSyncParams.getAwsConfig().toByteArray());
+    final AwsConfig awsConfig =
+        (AwsConfig) referenceFalseKryoSerializer.asObject(instanceSyncParams.getAwsConfig().toByteArray());
     final List<EncryptedDataDetail> encryptedDataDetails =
-        cast(getKryoSerializer(params.getReferenceFalseKryoSerializer())
-                 .asObject(instanceSyncParams.getEncryptedData().toByteArray()));
-    final List<Filter> filters = cast(getKryoSerializer(params.getReferenceFalseKryoSerializer())
-                                          .asObject(instanceSyncParams.getFilter().toByteArray()));
+        cast(referenceFalseKryoSerializer.asObject(instanceSyncParams.getEncryptedData().toByteArray()));
+    final List<Filter> filters =
+        cast(referenceFalseKryoSerializer.asObject(instanceSyncParams.getFilter().toByteArray()));
 
     final AwsEc2ListInstancesResponse awsResponse = getInstances(region, awsConfig, encryptedDataDetails, filters);
     try {
-      if (params.getReferenceFalseKryoSerializer()) {
-        execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
-            taskId.getId(), awsConfig.getAccountId(), awsResponse));
-      } else {
-        execute(delegateAgentManagerClient.publishInstanceSyncResult(
-            taskId.getId(), awsConfig.getAccountId(), awsResponse));
-      }
+      execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
+          taskId.getId(), awsConfig.getAccountId(), awsResponse));
     } catch (Exception e) {
       log.error(String.format("Failed to publish the instance collection result to manager for aws ssh for taskId [%s]",
                     taskId.getId()),

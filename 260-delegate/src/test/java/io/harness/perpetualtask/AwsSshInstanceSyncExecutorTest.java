@@ -178,10 +178,7 @@ public class AwsSshInstanceSyncExecutorTest extends DelegateTestBase {
                                                        .setEncryptedData(encryptionDetailsBytes)
                                                        .setRegion("us-east-1")
                                                        .build();
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(params))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
   }
 
   @Test

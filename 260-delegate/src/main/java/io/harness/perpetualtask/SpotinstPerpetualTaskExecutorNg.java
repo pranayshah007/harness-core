@@ -32,10 +32,12 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.SpotinstAmiInstanceSyncPerpetualTaskParamsNg;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.serializer.KryoSerializer;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -48,8 +50,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class SpotinstPerpetualTaskExecutorNg extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
+public class SpotinstPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject protected SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
   @Inject private SpotNgConfigMapper ngConfigMapper;
 
@@ -60,12 +63,12 @@ public class SpotinstPerpetualTaskExecutorNg extends PerpetualTaskExecutorBase i
     SpotinstAmiInstanceSyncPerpetualTaskParamsNg taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), SpotinstAmiInstanceSyncPerpetualTaskParamsNg.class);
 
-    return executeTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
+    return executeTask(taskId, taskParams);
   }
 
-  private PerpetualTaskResponse executeTask(PerpetualTaskId taskId,
-      SpotinstAmiInstanceSyncPerpetualTaskParamsNg taskParams, boolean referenceFalseKryoSerializer) {
-    Map<String, Set<String>> instanceIdsMap = getInstanceIdsMap(taskParams, referenceFalseKryoSerializer);
+  private PerpetualTaskResponse executeTask(
+      PerpetualTaskId taskId, SpotinstAmiInstanceSyncPerpetualTaskParamsNg taskParams) {
+    Map<String, Set<String>> instanceIdsMap = getInstanceIdsMap(taskParams);
 
     List<ServerInstanceInfo> serverInstanceInfos =
         instanceIdsMap.entrySet()
@@ -82,13 +85,11 @@ public class SpotinstPerpetualTaskExecutorNg extends PerpetualTaskExecutorBase i
     return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(instanceSyncResponseMsg).build();
   }
 
-  private Map<String, Set<String>> getInstanceIdsMap(
-      SpotinstAmiInstanceSyncPerpetualTaskParamsNg taskParams, boolean referenceFalseKryoSerializer) {
-    SpotConnectorDTO spotConnectorDTO = (SpotConnectorDTO) getKryoSerializer(referenceFalseKryoSerializer)
-                                            .asObject(taskParams.getSpotinstConfig().toByteArray());
-    List<EncryptedDataDetail> encryptionDetails =
-        (List<EncryptedDataDetail>) getKryoSerializer(referenceFalseKryoSerializer)
-            .asObject(taskParams.getSpotinstEncryptedData().toByteArray());
+  private Map<String, Set<String>> getInstanceIdsMap(SpotinstAmiInstanceSyncPerpetualTaskParamsNg taskParams) {
+    SpotConnectorDTO spotConnectorDTO =
+        (SpotConnectorDTO) referenceFalseKryoSerializer.asObject(taskParams.getSpotinstConfig().toByteArray());
+    List<EncryptedDataDetail> encryptionDetails = (List<EncryptedDataDetail>) referenceFalseKryoSerializer.asObject(
+        taskParams.getSpotinstEncryptedData().toByteArray());
     SpotConfig spotConfig = ngConfigMapper.mapSpotConfigWithDecryption(spotConnectorDTO, encryptionDetails);
     String spotAccountId = spotConfig.getCredential().getSpotAccountId();
     String appTokenId = spotConfig.getCredential().getAppTokenId();

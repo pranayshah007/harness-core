@@ -102,10 +102,8 @@ public class TasInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
                                                      .setAccountId(ACCOUNT_IDENTIFIER)
                                                      .addAllTasDeploymentReleaseList(deploymentReleases)
                                                      .build();
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
-                                                                    .setCustomizedParams(Any.pack(message))
-                                                                    .setReferenceFalseKryoSerializer(true)
-                                                                    .build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
+        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
 
     tasInstanceSyncPerpetualTaskExecuter.runOnce(
         PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build(), perpetualTaskExecutionParams, Instant.EPOCH);
@@ -144,10 +142,8 @@ public class TasInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
                                                      .setAccountId(ACCOUNT_IDENTIFIER)
                                                      .addAllTasDeploymentReleaseList(deploymentReleases)
                                                      .build();
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
-                                                                    .setCustomizedParams(Any.pack(message))
-                                                                    .setReferenceFalseKryoSerializer(true)
-                                                                    .build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
+        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
 
     tasInstanceSyncPerpetualTaskExecuter.runOnce(
         PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build(), perpetualTaskExecutionParams, Instant.EPOCH);
@@ -181,10 +177,8 @@ public class TasInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
                                                      .setAccountId(ACCOUNT_IDENTIFIER)
                                                      .addAllTasDeploymentReleaseList(deploymentReleases)
                                                      .build();
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
-                                                                    .setCustomizedParams(Any.pack(message))
-                                                                    .setReferenceFalseKryoSerializer(true)
-                                                                    .build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
+        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
 
     PerpetualTaskResponse perpetualTaskResponse = tasInstanceSyncPerpetualTaskExecuter.runOnce(
         PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build(), perpetualTaskExecutionParams, Instant.EPOCH);

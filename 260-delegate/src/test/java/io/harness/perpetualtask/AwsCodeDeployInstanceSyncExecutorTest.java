@@ -168,9 +168,6 @@ public class AwsCodeDeployInstanceSyncExecutorTest extends DelegateTestBase {
     ByteString filterBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(singletonList(new Filter())));
     paramsBuilder.setFilter(filterBytes);
 
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(paramsBuilder.build()))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(paramsBuilder.build())).build();
   }
 }
