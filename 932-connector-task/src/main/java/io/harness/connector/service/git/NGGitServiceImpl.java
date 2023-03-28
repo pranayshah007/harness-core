@@ -10,7 +10,6 @@ package io.harness.connector.service.git;
 import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 import static io.harness.git.Constants.DEFAULT_FETCH_IDENTIFIER;
 import static io.harness.git.model.GitRepositoryType.YAML;
-import static io.harness.shell.SshSessionFactory.getSSHSession;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,7 +28,10 @@ import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitBaseRequest;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.git.model.JgitSshAuthRequest;
+import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
+import io.harness.shell.ssh.agent.jsch.JschAgent;
+import io.harness.shell.ssh.exception.SshException;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -96,9 +98,14 @@ public class NGGitServiceImpl implements NGGitService {
       @Override
       protected Session createSession(OpenSshConfig.Host hc, String user, String host, int port, FS fs)
           throws JSchException {
-        sshSessionConfig.setPort(port); // use port from repo URL
-        sshSessionConfig.setHost(host);
-        return getSSHSession(sshSessionConfig);
+        try {
+          sshSessionConfig.setPort(port);
+          sshSessionConfig.setHost(host);
+          return new JschAgent(sshSessionConfig, new NoopExecutionCallback())
+              .getJschSession(); // use port from repo URL
+        } catch (SshException se) {
+          throw new JSchException(se.getMessage());
+        }
       }
 
       @Override

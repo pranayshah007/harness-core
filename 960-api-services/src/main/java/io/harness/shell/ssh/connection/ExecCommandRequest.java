@@ -7,10 +7,12 @@
 
 package io.harness.shell.ssh.connection;
 
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-public class ExecCommandData {
+@Builder
+public class ExecCommandRequest {
   private String command;
   private boolean displayCommand;
   private StringBuffer output;

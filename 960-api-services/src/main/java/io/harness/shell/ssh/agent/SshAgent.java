@@ -14,8 +14,9 @@ import static io.harness.logging.LogLevel.INFO;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.ssh.connection.ExecCommandData;
+import io.harness.shell.ssh.connection.ExecCommandRequest;
 import io.harness.shell.ssh.connection.ExecResponse;
+import io.harness.shell.ssh.connection.TestResponse;
 import io.harness.shell.ssh.sftp.SftpCommandData;
 import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.shell.ssh.xfer.ScpResponse;
@@ -24,19 +25,18 @@ import io.harness.shell.ssh.xfer.ScpUploadCommandData;
 import java.io.File;
 import java.util.Arrays;
 import java.util.regex.Pattern;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 // external interface; created using SshFactory
-@Getter
 @Slf4j
-public abstract class SshAgent<Client, ExecSession, SftpSession> {
-  private SshSessionConfig sshSessionConfig;
-  private LogCallback logCallback;
+public abstract class SshAgent {
+  @Getter(AccessLevel.PROTECTED) @Setter(AccessLevel.PROTECTED) private SshSessionConfig sshSessionConfig;
+  @Getter(AccessLevel.PROTECTED) @Setter(AccessLevel.PROTECTED) private LogCallback logCallback;
   protected static final String SSH_NETWORK_PROXY = "SSH_NETWORK_PROXY";
   protected static final String UUID = generateUuid();
-  protected static final String HARNESS_START_TOKEN = "harness_start_token_" + UUID;
-  protected static final String HARNESS_END_TOKEN = "harness_end_token_" + UUID;
   /**
    * The constant log.
    */
@@ -63,14 +63,15 @@ public abstract class SshAgent<Client, ExecSession, SftpSession> {
     return Arrays.copyOf(sshSessionConfig.getKey(), sshSessionConfig.getKey().length);
   }
 
-  protected abstract ExecResponse exec(ExecCommandData commandData);
-  protected abstract ScpResponse scpUpload(ScpUploadCommandData commandData);
+  public abstract ExecResponse exec(ExecCommandRequest commandData);
+  public abstract TestResponse test();
+  public abstract ScpResponse scpUpload(ScpUploadCommandData commandData);
 
-  protected abstract SftpResponse sftp(SftpCommandData commandData);
+  public abstract SftpResponse sftpUpload(SftpCommandData commandData);
 
-  protected abstract Client getClient();
-  protected abstract ExecSession getExecSession(SshClient sshClient);
-  protected abstract SftpSession getSftpSession(SshClient sshClient);
+  protected abstract Object getClient();
+  protected abstract Object getExecSession(SshClient sshClient);
+  protected abstract Object getSftpSession(SshClient sshClient);
   protected abstract void configureProxy();
   protected String getKeyPath() {
     String userhome = System.getProperty("user.home");
@@ -81,7 +82,7 @@ public abstract class SshAgent<Client, ExecSession, SftpSession> {
     }
     return keyPath;
   }
-  public void init(SshSessionConfig config, LogCallback logCallback) {
+  protected void init(SshSessionConfig config, LogCallback logCallback) {
     this.sshSessionConfig = config;
     this.logCallback = logCallback;
   }

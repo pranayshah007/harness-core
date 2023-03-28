@@ -9,7 +9,6 @@ package software.wings.delegatetasks.validation.capabilitycheck;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
-import static io.harness.shell.SshSessionFactory.getSSHSession;
 
 import static software.wings.utils.SshDelegateHelperUtils.populateBuilderWithCredentials;
 
@@ -25,6 +24,7 @@ import io.harness.delegate.task.executioncapability.CapabilityCheck;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
+import io.harness.shell.ssh.SshFactory;
 
 import software.wings.beans.BastionConnectionAttributes;
 import software.wings.beans.HostConnectionAttributes;
@@ -37,7 +37,6 @@ import software.wings.service.intfc.security.SecretManagementDelegateService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import com.jcraft.jsch.JSchException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -78,8 +77,8 @@ public class SSHHostValidationCapabilityCheck implements CapabilityCheck {
   }
 
   @VisibleForTesting
-  void performTest(SshSessionConfig hostConnectionTest) throws JSchException {
-    getSSHSession(hostConnectionTest).disconnect();
+  void performTest(SshSessionConfig hostConnectionTest) {
+    SshFactory.getSshClient(hostConnectionTest).test();
   }
 
   private void decryptCredentials(SettingAttribute hostConnectionAttributes,

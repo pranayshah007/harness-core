@@ -14,32 +14,53 @@ import static io.harness.shell.ExecutorType.KEY_AUTH;
 import static io.harness.shell.ExecutorType.PASSWORD_AUTH;
 
 import io.harness.logging.LogCallback;
+import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.AccessType;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.agent.SshAgent;
 import io.harness.shell.ssh.agent.jsch.JschAgent;
 
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 
 @Slf4j
+@UtilityClass
 public class SshFactory {
-  public SshAgent getSshClient(SshClientType sshClientType, SshSessionConfig config, LogCallback logCallback) {
+  public static SshAgent getSshClient(SshSessionConfig config) {
+    return getSshClient(config, new NoopExecutionCallback());
+  }
+
+  public static SshAgent getSshClient(SshSessionConfig config, LogCallback logCallback) {
+    init(config);
+
+    if (config.isVaultSSH()) {
+      // this flow is planned to be migrated to SSHJ flows
+      return new JschAgent(config, logCallback);
+    } else {
+      return new JschAgent(config, logCallback);
+    }
+  }
+
+  private static SshAgent getSshClient(SshClientType sshClientType, SshSessionConfig config, LogCallback logCallback) {
     SshAgent client;
 
     if (null == sshClientType) {
-      client = new JschAgent();
+      client = new JschAgent(config, logCallback);
     } else {
       switch (sshClientType) {
         case JSCH:
-          client = new JschAgent();
+          client = new JschAgent(config, logCallback);
           break;
         default:
           throw new NotImplementedException("Ssh client type not implemented: " + sshClientType);
       }
     }
 
-    client.init(config, logCallback);
+    return client;
+  }
+
+  private static void init(SshSessionConfig config) {
     if (config.getExecutorType() == null) {
       if (config.getBastionHostConfig() != null) {
         config.setExecutorType(BASTION_HOST);
@@ -52,8 +73,7 @@ public class SshFactory {
         }
       }
     }
-
-    return client;
   }
+  // Will use this until we close on migrating all Vault users to
   public enum SshClientType { JSCH, SSHJ }
 }

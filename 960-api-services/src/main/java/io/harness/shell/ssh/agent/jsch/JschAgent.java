@@ -26,9 +26,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyMap;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.SshRetryableException;
-import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.Misc;
@@ -38,8 +38,10 @@ import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshUserInfo;
 import io.harness.shell.ssh.agent.SshAgent;
 import io.harness.shell.ssh.agent.SshClient;
-import io.harness.shell.ssh.connection.ExecCommandData;
+import io.harness.shell.ssh.connection.ExecCommandRequest;
 import io.harness.shell.ssh.connection.ExecResponse;
+import io.harness.shell.ssh.connection.TestResponse;
+import io.harness.shell.ssh.exception.SshException;
 import io.harness.shell.ssh.sftp.SftpCommandData;
 import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.shell.ssh.xfer.ScpResponse;
@@ -68,11 +70,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
-public class JschAgent extends SshAgent<JschClient, JschExecSession, JschSftpSession> {
+public class JschAgent extends SshAgent {
   private static final int SCP_ALLOWED_BYTES = 1024 * 1024; // 1MB
 
+  public JschAgent(SshSessionConfig config, LogCallback logCallback) {
+    setSshSessionConfig(config);
+    setLogCallback(logCallback);
+  }
+
   @Override
-  protected ExecResponse exec(ExecCommandData commandData) {
+  public ExecResponse exec(ExecCommandRequest commandData) {
     StringBuffer output = null != commandData.getOutput() ? commandData.getOutput() : new StringBuffer();
     CommandExecutionStatus commandExecutionStatus = FAILURE;
 
@@ -112,7 +119,7 @@ public class JschAgent extends SshAgent<JschClient, JschExecSession, JschSftpSes
               totalBytesRead += numOfBytesRead;
               if (totalBytesRead >= MAX_BYTES_READ_PER_CHANNEL) {
                 // TODO: better error reporting
-                throw new WingsException(UNKNOWN_ERROR);
+                throw new SshException(UNKNOWN_ERROR);
               }
               String dataReadFromTheStream = new String(byteBuffer, 0, numOfBytesRead, UTF_8);
               output.append(dataReadFromTheStream);
@@ -155,7 +162,7 @@ public class JschAgent extends SshAgent<JschClient, JschExecSession, JschSftpSes
   }
 
   @Override
-  protected SftpResponse sftp(SftpCommandData commandData) {
+  public SftpResponse sftpUpload(SftpCommandData commandData) {
     try (JschClient client = getClient()) {
       try (JschSftpSession session = getSftpSession(client)) {
         ChannelSftp channel = session.getChannel();
@@ -176,6 +183,21 @@ public class JschAgent extends SshAgent<JschClient, JschExecSession, JschSftpSes
       }
     } catch (Exception ex) {
       return SftpResponse.builder().exitCode(1).status(FAILURE).success(false).build();
+    }
+  }
+
+  @Override
+  public TestResponse test() {
+    try (JschClient client = getClient()) {
+      try (JschExecSession ignored = getExecSession(client)) {
+        return TestResponse.builder().status(SUCCESS).build();
+      }
+    } catch (JSchException ex) {
+      log.error("Failed to validate Host: ", ex);
+      ErrorCode errorCode = normalizeError(ex);
+      return TestResponse.builder().status(FAILURE).errorCode(errorCode).error(errorCode.getDescription()).build();
+    } catch (Exception exception) {
+      return TestResponse.builder().status(FAILURE).error(exception.getMessage()).build();
     }
   }
 
@@ -202,7 +224,7 @@ public class JschAgent extends SshAgent<JschClient, JschExecSession, JschSftpSes
   }
 
   @Override
-  protected ScpResponse scpUpload(ScpUploadCommandData commandData) {
+  public ScpResponse scpUpload(ScpUploadCommandData commandData) {
     CommandExecutionStatus commandExecutionStatus = FAILURE;
 
     try {
@@ -262,7 +284,7 @@ public class JschAgent extends SshAgent<JschClient, JschExecSession, JschSftpSes
               saveExecutionLogError("Command execution failed with error " + normalizeError((JSchException) ex));
             }
           } else {
-            throw new WingsException(ERROR_IN_GETTING_CHANNEL_STREAMS, ex);
+            throw new SshException(ERROR_IN_GETTING_CHANNEL_STREAMS, ex);
           }
           return ScpResponse.builder().status(commandExecutionStatus).success(false).exitCode(1).build();
         }
@@ -406,7 +428,7 @@ public class JschAgent extends SshAgent<JschClient, JschExecSession, JschSftpSes
       ChannelExec execChannel = (ChannelExec) ((JschClient) sshClient).getSession().openChannel("exec");
       return JschExecSession.builder().channel(execChannel).build();
     } catch (Exception ex) {
-      throw new WingsException("Failed to get sessions");
+      throw new SshException("Failed to get sessions");
     }
   }
 
@@ -416,7 +438,7 @@ public class JschAgent extends SshAgent<JschClient, JschExecSession, JschSftpSes
       ChannelSftp sftpChannel = (ChannelSftp) ((JschClient) sshClient).getSession().openChannel("sftp");
       return JschSftpSession.builder().channel(sftpChannel).build();
     } catch (Exception ex) {
-      throw new WingsException("Failed to get sessions");
+      throw new SshException("Failed to get sessions");
     }
   }
 
@@ -434,11 +456,11 @@ public class JschAgent extends SshAgent<JschClient, JschExecSession, JschSftpSes
         case BASTION_HOST:
           return getSSHSessionWithJumpbox(config.getBastionHostConfig());
         default:
-          throw new WingsException(
+          throw new SshException(
               UNKNOWN_EXECUTOR_TYPE_ERROR, new Throwable("Unknown executor type: " + config.getExecutorType()));
       }
     } catch (JSchException jschEx) {
-      throw new WingsException(normalizeError(jschEx), normalizeError(jschEx).name(), jschEx);
+      throw new SshException(normalizeError(jschEx), normalizeError(jschEx).name(), jschEx);
     }
   }
 
