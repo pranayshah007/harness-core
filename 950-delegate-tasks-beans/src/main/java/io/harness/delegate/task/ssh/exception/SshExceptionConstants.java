@@ -110,4 +110,9 @@ public class SshExceptionConstants {
 
   public final String SSH_INVALID_CREDENTIALS_HINT = "Please provide correct %s credentials.";
   public final String SSH_INVALID_CREDENTIALS_EXPLANATION = "Provided %s credentials are not authorized.";
+
+  public final String TASK_TIMEOUT_FAILED = "Task execution has timed out";
+  public final String TASK_TIMEOUT_HINT =
+      "Please check the timeout configuration on the step to extend the duration of the step";
+  public final String TASK_TIMEOUT_EXPLANATION = "Provided timeout was not enough to execute the task";
 }

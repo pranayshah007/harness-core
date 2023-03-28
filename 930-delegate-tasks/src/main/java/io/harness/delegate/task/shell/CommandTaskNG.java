@@ -8,9 +8,9 @@
 package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.concurrent.HTimeLimiter;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -28,10 +28,11 @@ import io.harness.shell.CommandExecutionData;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptType;
 import io.harness.shell.ShellExecutionData;
-import io.harness.shell.SshSessionManager;
 
 import com.google.common.base.Joiner;
+import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,6 +48,8 @@ import org.apache.commons.lang3.tuple.Pair;
 @OwnedBy(CDP)
 public class CommandTaskNG extends AbstractDelegateRunnableTask {
   @Inject private Map<Pair, CommandHandler> commandUnitHandlers;
+  @Inject private SshWinRmLogCallbackProviderFactory logCallbackProviderFactory;
+  @Inject private TimeLimiter timeLimiter;
 
   public CommandTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -61,37 +64,30 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
 
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
-    if (parameters instanceof SshCommandTaskParameters) {
-      return runSsh((SshCommandTaskParameters) parameters);
-    } else if (parameters instanceof WinrmTaskParameters) {
-      return runWinRm((WinrmTaskParameters) parameters);
-    } else {
-      throw new IllegalArgumentException(String.format("Invalid parameters type provide %s", parameters.getClass()));
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    boolean isSsh = parameters instanceof SshCommandTaskParameters;
+
+    CommandTaskParameters commandTaskParameters = (CommandTaskParameters) parameters;
+    try {
+      return HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMillis(commandTaskParameters.getTimeoutInMillis()),
+          () -> run(parameters, commandUnitsProgress, isSsh));
+    } catch (Exception e) {
+      throw SshWinRmExceptionHandler.handle(
+          e, log, commandUnitsProgress, isSsh, getLogStreamingTaskClient(), logCallbackProviderFactory);
     }
   }
 
-  private DelegateResponseData runSsh(SshCommandTaskParameters parameters) {
-    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-
-    try {
-      return getTaskResponse(parameters, commandUnitsProgress, ScriptType.BASH);
-    } catch (Exception e) {
-      throw SshWinRmExceptionHandler.handle(e, log, commandUnitsProgress, true);
-    } finally {
-      if (!parameters.executeOnDelegate && isNotEmpty(parameters.getHost())) {
-        SshSessionManager.evictAndDisconnectCachedSession(parameters.getExecutionId(), parameters.getHost());
-      }
-    }
+  public DelegateResponseData run(TaskParameters parameters, CommandUnitsProgress commandUnitsProgress, boolean isSsh) {
+    return isSsh ? runSsh((SshCommandTaskParameters) parameters, commandUnitsProgress)
+                 : runWinRm((WinrmTaskParameters) parameters, commandUnitsProgress);
   }
 
-  private DelegateResponseData runWinRm(WinrmTaskParameters parameters) {
-    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+  private DelegateResponseData runSsh(SshCommandTaskParameters parameters, CommandUnitsProgress commandUnitsProgress) {
+    return getTaskResponse(parameters, commandUnitsProgress, ScriptType.BASH);
+  }
 
-    try {
-      return getTaskResponse(parameters, commandUnitsProgress, ScriptType.POWERSHELL);
-    } catch (Exception e) {
-      throw SshWinRmExceptionHandler.handle(e, log, commandUnitsProgress, false);
-    }
+  private DelegateResponseData runWinRm(WinrmTaskParameters parameters, CommandUnitsProgress commandUnitsProgress) {
+    return getTaskResponse(parameters, commandUnitsProgress, ScriptType.POWERSHELL);
   }
 
   private CommandTaskResponse getTaskResponse(

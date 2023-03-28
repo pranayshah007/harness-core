@@ -40,6 +40,7 @@ import lombok.AccessLevel;
 import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @Getter
@@ -55,6 +56,7 @@ public abstract class CommandTaskParameters implements TaskParameters, Execution
   SshWinRmArtifactDelegateConfig artifactDelegateConfig;
   FileDelegateConfig fileDelegateConfig;
   @Expression(ALLOW_SECRETS) List<String> outputVariables;
+  @Setter Long timeoutInMillis;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

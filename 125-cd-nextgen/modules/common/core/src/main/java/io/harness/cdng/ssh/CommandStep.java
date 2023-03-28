@@ -104,6 +104,7 @@ public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {
 
       CommandTaskParameters taskParameters =
           sshCommandStepHelper.buildCommandTaskParameters(ambiance, executeCommandStepParameters);
+      taskParameters.setTimeoutInMillis(CDStepHelper.getTimeoutInMillis(stepParameters));
 
       TaskData taskData = commandTaskDataFactory.create(taskParameters, stepParameters.getTimeout());
 
