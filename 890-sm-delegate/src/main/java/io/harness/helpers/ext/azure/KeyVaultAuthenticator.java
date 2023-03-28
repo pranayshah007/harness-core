@@ -111,7 +111,7 @@ public class KeyVaultAuthenticator {
             AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())), httpClient),
         azureProfile);
     String subscriptionId = azureKeyVaultConnectorDTO.getSubscription();
-    if (isBlank(subscriptionId)) {
+    if (isBlank(subscriptionId) && !azureKeyVaultConnectorDTO.getUseManagedIdentity()) {
       Subscription subscription = authenticated.subscriptions().list().stream().findFirst().get();
       subscriptionId = subscription.subscriptionId();
     }
