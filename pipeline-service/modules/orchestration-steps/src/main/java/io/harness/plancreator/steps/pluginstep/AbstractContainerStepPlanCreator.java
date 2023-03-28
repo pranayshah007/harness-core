@@ -43,6 +43,7 @@ import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.utils.TimeoutUtils;
+import io.harness.when.utils.RunInfoUtils;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -126,6 +127,7 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
                 .build())
         .adviserObtainments(getAdviserObtainmentFromMetaData(
             ctx.getCurrentField(), StrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField())))
+        .whenCondition(RunInfoUtils.getRunConditionForStep(config.getWhen()))
         .timeoutObtainment(
             SdkTimeoutObtainment.builder()
                 .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
