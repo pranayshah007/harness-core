@@ -89,7 +89,7 @@ public class AggregateStreamingServiceImplTest extends CategoryTest {
 
   @Before
   public void setup() {
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
     connectorId = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     connectorRef = "account." + connectorId;
     this.aggregateStreamingService =
