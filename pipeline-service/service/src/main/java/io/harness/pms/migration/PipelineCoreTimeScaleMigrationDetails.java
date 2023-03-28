@@ -48,6 +48,7 @@ public class PipelineCoreTimeScaleMigrationDetails implements MigrationDetails {
         .add(Pair.of(14, AddArtifactDisplayNameToServiceInfraInfoTable.class))
         .add(Pair.of(15, UpdatePipelineExecutionSummaryCdTimescaleTable.class))
         .add(Pair.of(16, AddExecutionFailureDetailsToServiceInfraInfoTable.class))
+        .add(Pair.of(17, RenameEnvGroupRefInServiceInfraInfoTable.class))
         .build();
   }
 }
