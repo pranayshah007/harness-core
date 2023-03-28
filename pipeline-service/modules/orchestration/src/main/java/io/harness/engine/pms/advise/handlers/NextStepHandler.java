@@ -74,8 +74,7 @@ public class NextStepHandler implements AdviserResponseHandler {
   Node createIdentityNodeIfRequired(Node nextNode, NodeExecution prevNodeExecution, ExecutionMode executionMode) {
     // If nextNode already instance of IdentityPlanNode, or if in rollback mode, the plan node received is to be
     // preserved, then return the node as is.
-    if (nextNode instanceof IdentityPlanNode
-        || (ExecutionModeUtils.isRollbackMode(executionMode) && ((PlanNode) nextNode).isPreserveInRollbackMode())) {
+    if (checkIfSameNodeIsRequired(nextNode, executionMode)) {
       return nextNode;
     }
     if (EmptyPredicate.isEmpty(prevNodeExecution.getParentId())) {
@@ -95,5 +94,10 @@ public class NextStepHandler implements AdviserResponseHandler {
       return identityNode;
     }
     return nextNode;
+  }
+
+  boolean checkIfSameNodeIsRequired(Node nextNode, ExecutionMode executionMode) {
+    return nextNode.getNodeType().equals(NodeType.IDENTITY_PLAN_NODE)
+        || (ExecutionModeUtils.isRollbackMode(executionMode) && ((PlanNode) nextNode).isPreserveInRollbackMode());
   }
 }
