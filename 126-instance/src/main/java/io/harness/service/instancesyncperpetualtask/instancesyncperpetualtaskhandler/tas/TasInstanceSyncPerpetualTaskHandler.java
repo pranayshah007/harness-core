@@ -108,7 +108,7 @@ public class TasInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
   private TasDeploymentRelease toTasDeploymentRelease(TasDeploymentReleaseData releaseData) {
     return TasDeploymentRelease.newBuilder()
         .setApplicationName(releaseData.getApplicationName())
-        .setTasInfraConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getTasInfraConfig())))
+        .setTasInfraConfig(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(releaseData.getTasInfraConfig())))
         .build();
   }
 

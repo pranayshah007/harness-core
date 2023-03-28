@@ -107,8 +107,10 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNGTest extends DelegateTe
                                                                 .addAwsLambdaDeploymentReleaseList(deploymentRelease)
                                                                 .build();
 
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
-        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
+                                                                    .setCustomizedParams(Any.pack(taskParams))
+                                                                    .setReferenceFalseKryoSerializer(true)
+                                                                    .build();
     PerpetualTaskId taskId = PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build();
     AwsLambdaDeploymentReleaseData deploymentReleaseData = AwsLambdaDeploymentReleaseData.builder()
                                                                .function(FUNCTION)

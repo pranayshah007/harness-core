@@ -104,6 +104,9 @@ public class PdcInstanceSyncExecutorTest extends DelegateTestBase {
                 ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(SettingAttribute.builder().build())))
             .build();
 
-    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
+    return PerpetualTaskExecutionParams.newBuilder()
+        .setCustomizedParams(Any.pack(message))
+        .setReferenceFalseKryoSerializer(true)
+        .build();
   }
 }
