@@ -10,8 +10,12 @@ package io.harness.template.resources;
 import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
+import static io.harness.template.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
 
 import static java.lang.Long.parseLong;
+import static java.util.stream.Collectors.toList;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
@@ -178,6 +182,7 @@ public class NGTemplateResource {
   private final VariablesServiceBlockingStub variablesServiceBlockingStub;
   private final TemplateYamlConversionHelper templateYamlConversionHelper;
   private final TemplateReferenceHelper templateReferenceHelper;
+  private TemplateRbacHelper templateRbacHelper;
   @Inject CustomDeploymentResourceClient customDeploymentResourceClient;
   @Inject TemplateVariableCreatorFactory templateVariableCreatorFactory;
 
@@ -484,8 +489,6 @@ public class NGTemplateResource {
       @Parameter(description = "This contains details of Template filters based on Template Types and Template Names ")
       @Body TemplateFilterPropertiesDTO filterProperties,
       @QueryParam("getDistinctFromBranches") Boolean getDistinctFromBranches) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
-        Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
     log.info(String.format("Get List of templates in project: %s, org: %s, account: %s", projectId, orgId, accountId));
     Criteria criteria = templateServiceHelper.formCriteria(accountId, orgId, projectId, filterIdentifier,
         filterProperties, false, searchTerm, includeAllTemplatesAccessibleAtScope);
@@ -498,10 +501,28 @@ public class NGTemplateResource {
     } else {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
-
+    Page<TemplateEntity> templateEntities = null;
+    if (hasViewPermissionForAll(accountId, orgId, projectId)) {
+      templateEntities =
+          templateService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches);
+    } else {
+      Page<TemplateEntity> templateEntityPage =
+          templateService.list(criteria, Pageable.unpaged(), accountId, orgId, projectId, getDistinctFromBranches);
+      if (templateEntityPage == null) {
+        return ResponseDTO.newResponse(Page.empty());
+      }
+      List<TemplateEntity> templateEntityList = templateEntityPage.getContent();
+      templateEntityList = templateRbacHelper.getPermittedTemplateList(templateEntityList);
+      if (isEmpty(templateEntityList)) {
+        return ResponseDTO.newResponse(Page.empty());
+      }
+      populateInFilter(criteria, TemplateEntityKeys.identifier,
+          templateEntityList.stream().map(TemplateEntity::getIdentifier).collect(toList()));
+      templateEntities =
+          templateService.list(criteria, Pageable.unpaged(), accountId, orgId, projectId, getDistinctFromBranches);
+    }
     Page<TemplateSummaryResponseDTO> templateSummaryResponseDTOS =
-        templateService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches)
-            .map(NGTemplateDtoMapper::prepareTemplateSummaryResponseDto);
+        templateEntities.map(NGTemplateDtoMapper::prepareTemplateSummaryResponseDto);
     return ResponseDTO.newResponse(templateSummaryResponseDTOS);
   }
 
@@ -995,5 +1016,9 @@ public class NGTemplateResource {
     TemplateMoveConfigResponse templateMoveConfigResponse = templateService.moveTemplateStoreTypeConfig(
         accountId, orgId, projectId, templateIdentifier, templateMoveConfigRequestDTO);
     return ResponseDTO.newResponse(templateMoveConfigResponse);
+  }
+  boolean hasViewPermissionForAll(String accountId, String orgIdentifier, String projectIdentifier) {
+    return accessControlClient.hasAccess(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+        Resource.of("TEMPLATE", null), TEMPLATE_VIEW_PERMISSION);
   }
 }

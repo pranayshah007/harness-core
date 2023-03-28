@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -31,11 +32,13 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDC)
 public class EnvironmentRbacHelper {
   @Inject private AccessControlClient accessControlClient;
-
+  private boolean hasProdAccess = false;
+  private boolean hasPreProdAccess = false;
   public List<Environment> getPermittedEnvironmentsList(List<Environment> environments) {
     if (isEmpty(environments)) {
       return Collections.emptyList();
     }
+
     Map<EntityScopeInfo, Environment> environmentMap = environments.stream().collect(
         Collectors.toMap(EnvironmentRbacHelper::getEntityScopeInfoFromEnvironment, Function.identity()));
     List<PermissionCheckDTO> permissionChecks =
@@ -49,18 +52,54 @@ public class EnvironmentRbacHelper {
                        .resourceType(NGResourceType.ENVIRONMENT)
                        .build())
             .collect(Collectors.toList());
+
+    permissionChecks.add(PermissionCheckDTO.builder()
+                             .permission(CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION)
+                             .resourceAttributes(getEnvironmentAttributesMap("PreProduction"))
+                             .resourceScope(ResourceScope.of(environments.get(0).getAccountId(),
+                                 environments.get(0).getOrgIdentifier(), environments.get(0).getProjectIdentifier()))
+                             .resourceType(NGResourceType.ENVIRONMENT)
+                             .build());
+    permissionChecks.add(PermissionCheckDTO.builder()
+                             .permission(CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION)
+                             .resourceAttributes(getEnvironmentAttributesMap("Production"))
+                             .resourceScope(ResourceScope.of(environments.get(0).getAccountId(),
+                                 environments.get(0).getOrgIdentifier(), environments.get(0).getProjectIdentifier()))
+                             .resourceType(NGResourceType.ENVIRONMENT)
+                             .build());
+
     AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+    List<AccessControlDTO> accessControlDTOList = accessCheckResponse.getAccessControlList();
+
+    accessControlDTOList = CheckingTypeBasedFilters(accessControlDTOList);
     List<Environment> permittedEnvironments = new ArrayList<>();
-    for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
-      if (accessControlDTO.isPermitted()) {
-        Environment environment =
-            environmentMap.get(EnvironmentRbacHelper.getEntityScopeInfoFromAccessControlDTO(accessControlDTO));
-        if (environment != null) {
-          permittedEnvironments.add(environment);
-        }
+    for (AccessControlDTO accessControlDTO : accessControlDTOList) {
+      Environment environment =
+          environmentMap.get(EnvironmentRbacHelper.getEntityScopeInfoFromAccessControlDTO(accessControlDTO));
+
+      if (environment == null) {
+        continue;
+      }
+      if (accessControlDTO.isPermitted() || (environment.getType().toString() == "PreProduction" && hasPreProdAccess)
+          || (environment.getType().toString() == "Production" && hasProdAccess)) {
+        permittedEnvironments.add(environment);
       }
     }
     return permittedEnvironments;
+  }
+
+  private List<AccessControlDTO> CheckingTypeBasedFilters(List<AccessControlDTO> accessControlDTOList) {
+    for (AccessControlDTO accessControlDTO : accessControlDTOList) {
+      if (accessControlDTO.isPermitted() && accessControlDTO.getResourceAttributes() != null) {
+        if (accessControlDTO.getResourceAttributes().get("type") == "PreProduction") {
+          hasPreProdAccess = true;
+        } else if (accessControlDTO.getResourceAttributes().get("type") == "Production") {
+          hasProdAccess = true;
+        }
+        accessControlDTOList.remove(accessControlDTO);
+      }
+    }
+    return accessControlDTOList;
   }
 
   private static EntityScopeInfo getEntityScopeInfoFromEnvironment(Environment environmentEntity) {
@@ -84,5 +123,10 @@ public class EnvironmentRbacHelper {
                 : accessControlDTO.getResourceScope().getProjectIdentifier())
         .identifier(accessControlDTO.getResourceIdentifier())
         .build();
+  }
+  private Map<String, String> getEnvironmentAttributesMap(String environmentType) {
+    Map<String, String> environmentAttributes = new HashMap<>();
+    environmentAttributes.put("type", environmentType);
+    return environmentAttributes;
   }
 }

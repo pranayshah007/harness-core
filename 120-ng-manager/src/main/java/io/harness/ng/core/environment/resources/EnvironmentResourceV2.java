@@ -23,10 +23,12 @@ import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_DELETE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
+import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Long.parseLong;
+import static java.util.stream.Collectors.toList;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
@@ -184,6 +186,7 @@ public class EnvironmentResourceV2 {
   private final NGFeatureFlagHelperService featureFlagHelperService;
   private final ScopeAccessHelper scopeAccessHelper;
   private EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
+  private EnvironmentRbacHelper environmentRbacHelper;
 
   public static final String ENVIRONMENT_YAML_METADATA_INPUT_PARAM_MESSAGE =
       "Lists of Environment Identifiers and service identifiers for the entities";
@@ -538,7 +541,30 @@ public class EnvironmentResourceV2 {
     } else {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
-    return getEnvironmentsPageByCriteria(criteria, pageRequest);
+    Page<Environment> environmentPage = null;
+    if (hasViewPermissionForAll(accountId, orgIdentifier, projectIdentifier)) {
+      environmentPage = environmentService.list(criteria, pageRequest);
+    } else {
+      Page<Environment> environmentPages = environmentService.list(criteria, Pageable.unpaged());
+      if (environmentPages == null) {
+        return ResponseDTO.newResponse(getNGPageResponse(Page.empty()));
+      }
+      List<Environment> environmentList = environmentPages.getContent();
+      environmentList = environmentRbacHelper.getPermittedEnvironmentsList(environmentList);
+      if (isEmpty(environmentList)) {
+        return ResponseDTO.newResponse(getNGPageResponse(Page.empty()));
+      }
+      populateInFilter(criteria, EnvironmentKeys.identifier,
+          environmentList.stream().map(Environment::getIdentifier).collect(toList()));
+      environmentPage = environmentService.list(criteria, pageRequest);
+    }
+    environmentPage.forEach(environment -> {
+      if (EmptyPredicate.isEmpty(environment.getYaml())) {
+        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
+        environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
+      }
+    });
+    return ResponseDTO.newResponse(getNGPageResponse(environmentPage.map(EnvironmentMapper::toResponseWrapper)));
   }
 
   @POST
@@ -1135,5 +1161,10 @@ public class EnvironmentResourceV2 {
     Map<String, String> environmentAttributes = new HashMap<>();
     environmentAttributes.put("type", environmentType);
     return environmentAttributes;
+  }
+
+  boolean hasViewPermissionForAll(String accountId, String orgIdentifier, String projectIdentifier) {
+    return accessControlClient.hasAccess(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+        Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION);
   }
 }
