@@ -127,7 +127,7 @@ public class EnvironmentExpansionHandler implements JsonExpansionHandler {
                                             .spec(infrastructureConfig.getInfrastructureDefinitionConfig().getSpec())
                                             .build())
               .environment(EnvironmentMapper.toBasicInfo(environment))
-              .infraSpecConnectorNode(
+              .infrastructureConnectorNode(
                   connectorDTO
                       .<JsonNode>map(connectorResponseDTO
                           -> objectMapper.convertValue(connectorResponseDTO.getConnector(), ObjectNode.class))

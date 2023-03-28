@@ -34,6 +34,7 @@ import lombok.SneakyThrows;
 import lombok.experimental.FieldNameConstants;
 
 @OwnedBy(HarnessTeam.CDC)
+@Data
 @Builder
 @FieldNameConstants(innerTypeName = "keys")
 public class InfrastructureExpandedValue implements ExpandedValue {
@@ -42,7 +43,7 @@ public class InfrastructureExpandedValue implements ExpandedValue {
   private InfraUseFromStage useFromStage;
   private boolean allowSimultaneousDeployments;
 
-  private JsonNode infraSpecConnectorNode;
+  private JsonNode infrastructureConnectorNode;
 
   @Override
   public String getKey() {
@@ -58,13 +59,13 @@ public class InfrastructureExpandedValue implements ExpandedValue {
     putIfNonNull(props, "useFromStage", useFromStage);
     putIfNonNull(props, "allowSimultaneousDeployments", allowSimultaneousDeployments);
     String json = JsonPipelineUtils.writeJsonString(props);
-    if (infraSpecConnectorNode != null) {
+    if (infrastructureConnectorNode != null) {
       YamlConfig yamlConfig = new YamlConfig(json);
       ObjectNode parentNode = (ObjectNode) yamlConfig.getYamlMap();
       ObjectNode infraNode = (ObjectNode) parentNode.get(keys.infrastructureDefinition);
       ObjectNode spec = (ObjectNode) infraNode.get("spec");
       if (spec.get(YamlTypes.CONNECTOR_REF) != null) {
-        spec.set("connector", infraSpecConnectorNode);
+        spec.set("connector", infrastructureConnectorNode);
         spec.remove(YamlTypes.CONNECTOR_REF);
       }
       return parentNode.toPrettyString();

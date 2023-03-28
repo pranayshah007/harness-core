@@ -19,5 +19,6 @@ public class ExpansionKeysConstants {
   public String CONNECTOR_EXPANSION_KEY = "connector";
   public String SERVICE_EXPANSION_KEY = "service";
   public String ENV_EXPANSION_KEY = "environment";
+  public String MULTI_ENV_EXPANSION_KEY = "environments";
   public String INFRA_EXPANSION_KEY = "infrastructure";
 }
