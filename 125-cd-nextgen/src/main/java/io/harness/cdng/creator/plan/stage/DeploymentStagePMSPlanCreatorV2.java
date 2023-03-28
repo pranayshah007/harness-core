@@ -58,6 +58,7 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.StepType;
@@ -254,14 +255,19 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           Optional<String> provisionerIdOptional =
               addProvisionerNodeIfNeeded(specField, planCreationResponseMap, stageNode, infraNodeId);
           String serviceNextNodeId = provisionerIdOptional.isEmpty() ? infraNodeId : provisionerIdOptional.get();
-          String serviceNodeId = addServiceNode(specField, planCreationResponseMap, stageNode, serviceNextNodeId);
-          addSpecNode(planCreationResponseMap, specField, serviceNodeId);
+          if (ctx.getMetadata().getMetadata().getExecutionMode() != ExecutionMode.PIPELINE_ROLLBACK) {
+            String serviceNodeId = addServiceNode(specField, planCreationResponseMap, stageNode, serviceNextNodeId);
+            addSpecNode(planCreationResponseMap, specField, serviceNodeId);
+          } else {
+            addSpecNode(planCreationResponseMap, specField, executionField.getNode().getUuid());
+          }
         }
       } else {
         final YamlField serviceField = servicePlanCreatorHelper.getResolvedServiceField(specField);
         PipelineInfrastructure pipelineInfrastructure = stageNode.getDeploymentStageConfig().getInfrastructure();
         addEnvAndInfraDependency(planCreationResponseMap, specField, pipelineInfrastructure);
-        addServiceDependency(planCreationResponseMap, specField, stageNode, serviceField);
+        addServiceDependency(planCreationResponseMap, specField, stageNode, serviceField,
+            ctx.getMetadata().getMetadata().getExecutionMode(), executionField);
       }
 
       addCDExecutionDependencies(planCreationResponseMap, executionField);
@@ -520,9 +526,16 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
   // This function adds the service dependency and returns the resolved service field
   private void addServiceDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      YamlField specField, DeploymentStageNode stageNode, YamlField serviceField) throws IOException {
+      YamlField specField, DeploymentStageNode stageNode, YamlField serviceField, ExecutionMode mode,
+      YamlField executionField) throws IOException {
     // Adding service child by resolving the serviceField
-    String serviceNodeUuid = serviceField.getNode().getUuid();
+    String serviceNodeUuid = "";
+
+    if (mode != ExecutionMode.PIPELINE_ROLLBACK) {
+      serviceNodeUuid = serviceField.getNode().getUuid();
+    } else {
+      serviceNodeUuid = executionField.getNode().getUuid();
+    }
 
     // Adding Spec node
     planCreationResponseMap.put(specField.getNode().getUuid(),

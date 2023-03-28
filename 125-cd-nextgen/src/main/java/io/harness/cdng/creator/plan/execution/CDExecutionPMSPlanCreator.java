@@ -16,6 +16,7 @@ import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -27,6 +28,8 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.common.NGSectionStepParameters;
 import io.harness.steps.common.NGSectionStepWithRollbackInfo;
 
@@ -74,12 +77,18 @@ public class CDExecutionPMSPlanCreator extends ChildrenPlanCreator<ExecutionElem
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, ExecutionElementConfig config, List<String> childrenNodeIds) {
-    YamlField stepsField =
-        Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STEPS));
-    StepParameters stepParameters = NGSectionStepParameters.builder()
-                                        .childNodeId(stepsField.getNode().getUuid())
-                                        .logMessage("Execution Element")
-                                        .build();
+    String childNodeId = "";
+    if (ctx.getMetadata().getMetadata().getExecutionMode() == ExecutionMode.PIPELINE_ROLLBACK) {
+      YamlNode stageNode =
+          YamlUtils.getGivenYamlNodeFromParentPath(ctx.getCurrentField().getNode(), YAMLFieldNameConstants.STAGE);
+      childNodeId = stageNode.getUuid() + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX;
+    } else {
+      YamlField stepsField =
+          Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STEPS));
+      childNodeId = stepsField.getNode().getUuid();
+    }
+    StepParameters stepParameters =
+        NGSectionStepParameters.builder().childNodeId(childNodeId).logMessage("Execution Element").build();
     return PlanNode.builder()
         .uuid(ctx.getCurrentField().getNode().getUuid())
         .identifier(NGCommonUtilPlanCreationConstants.EXECUTION_NODE_IDENTIFIER)

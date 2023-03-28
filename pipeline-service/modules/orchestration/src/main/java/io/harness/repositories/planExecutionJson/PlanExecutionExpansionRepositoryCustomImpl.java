@@ -19,6 +19,7 @@ import io.harness.springdata.PersistenceUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
+import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -59,6 +60,11 @@ public class PlanExecutionExpansionRepositoryCustomImpl implements PlanExecution
   @Override
   public PlanExecutionExpansion find(Query query) {
     return mongoTemplate.findOne(query, PlanExecutionExpansion.class);
+  }
+
+  @Override
+  public List<PlanExecutionExpansion> findAll(Query query) {
+    return mongoTemplate.find(query, PlanExecutionExpansion.class);
   }
 
   @Override

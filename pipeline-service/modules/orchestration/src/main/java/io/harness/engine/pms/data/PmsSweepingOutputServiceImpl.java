@@ -19,16 +19,19 @@ import io.harness.data.ExecutionSweepingOutputInstance;
 import io.harness.data.ExecutionSweepingOutputInstance.ExecutionSweepingOutputKeys;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.expressions.ExpressionEvaluatorProvider;
+import io.harness.engine.expressions.functors.ExpandedJsonFunctorUtils;
 import io.harness.engine.expressions.functors.NodeExecutionEntityType;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.data.output.PmsSweepingOutput;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.springdata.PersistenceUtils;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.mongodb.DuplicateKeyException;
@@ -125,7 +128,12 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
       // It is not an expression-like ref-object.
       return resolveOptionalUsingRuntimeId(ambiance, refObject);
     }
-
+    String fullyQualifiedName = ExpandedJsonFunctorUtils.createFullQualifiedName(ambiance, refObject.getName());
+    RawOptionalSweepingOutput rawOptionalSweepingOutput =
+        resolveOptionalUsingFullyQualifiedName(ambiance, refObject, fullyQualifiedName);
+    if (rawOptionalSweepingOutput.isFound()) {
+      return rawOptionalSweepingOutput;
+    }
     EngineExpressionEvaluator evaluator =
         expressionEvaluatorProvider.get(null, ambiance, EnumSet.of(NodeExecutionEntityType.SWEEPING_OUTPUT), true);
     injector.injectMembers(evaluator);
@@ -157,6 +165,16 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
     return RawOptionalSweepingOutput.builder().found(true).output(instance.getOutputValueJson()).build();
   }
 
+  private RawOptionalSweepingOutput resolveOptionalUsingFullyQualifiedName(
+      Ambiance ambiance, RefObject refObject, String fullyQualifiedName) {
+    ExecutionSweepingOutputInstance instance =
+        getInstanceUsingFullyQualifiedName(ambiance, refObject, fullyQualifiedName);
+    if (instance == null) {
+      return RawOptionalSweepingOutput.builder().found(false).build();
+    }
+    return RawOptionalSweepingOutput.builder().found(true).output(instance.getOutputValueJson()).build();
+  }
+
   private ExecutionSweepingOutputInstance getInstance(Ambiance ambiance, RefObject refObject) {
     String name = refObject.getName();
     Query query = query(where(ExecutionSweepingOutputKeys.planExecutionId).is(ambiance.getPlanExecutionId()))
@@ -172,20 +190,39 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
               .orElse(null);
   }
 
+  private ExecutionSweepingOutputInstance getInstanceUsingFullyQualifiedName(
+      Ambiance ambiance, RefObject refObject, String fullyQualifiedName) {
+    String name = refObject.getName();
+    List<String> planExecutionIds = Lists.newArrayList(ambiance.getPlanExecutionId());
+    if (ambiance.getMetadata().getExecutionMode() != ExecutionMode.NORMAL) {
+      planExecutionIds.add(ambiance.getMetadata().getRollbackPlanExecutionId());
+    }
+    Query query = query(where(ExecutionSweepingOutputKeys.planExecutionId).in(planExecutionIds))
+                      .addCriteria(where(ExecutionSweepingOutputKeys.fullyQualifiedName).is(fullyQualifiedName));
+    List<ExecutionSweepingOutputInstance> instances = mongoTemplate.find(query, ExecutionSweepingOutputInstance.class);
+    // Multiple instances might be returned if the same name was saved at different levels/specificity.
+    return EmptyPredicate.isEmpty(instances)
+        ? null
+        : instances.stream()
+              .max(Comparator.comparing(ExecutionSweepingOutputInstance::getLevelRuntimeIdIdx))
+              .orElse(null);
+  }
+
   @Override
   public String consumeInternal(Ambiance ambiance, Level producedBy, String name, String value, String groupName) {
     try {
-      ExecutionSweepingOutputInstance instance =
-          mongoTemplate.insert(ExecutionSweepingOutputInstance.builder()
-                                   .uuid(generateUuid())
-                                   .planExecutionId(ambiance.getPlanExecutionId())
-                                   .stageExecutionId(ambiance.getStageExecutionId())
-                                   .producedBy(producedBy)
-                                   .name(name)
-                                   .valueOutput(PmsSweepingOutput.parse(value))
-                                   .levelRuntimeIdIdx(ResolverUtils.prepareLevelRuntimeIdIdx(ambiance.getLevelsList()))
-                                   .groupName(groupName)
-                                   .build());
+      ExecutionSweepingOutputInstance instance = mongoTemplate.insert(
+          ExecutionSweepingOutputInstance.builder()
+              .uuid(generateUuid())
+              .planExecutionId(ambiance.getPlanExecutionId())
+              .stageExecutionId(ambiance.getStageExecutionId())
+              .producedBy(producedBy)
+              .name(name)
+              .valueOutput(PmsSweepingOutput.parse(value))
+              .levelRuntimeIdIdx(ResolverUtils.prepareLevelRuntimeIdIdx(ambiance.getLevelsList()))
+              .groupName(groupName)
+              .fullyQualifiedName(ExpandedJsonFunctorUtils.generateFullyQualifiedName(ambiance, name))
+              .build());
       return instance.getUuid();
     } catch (DuplicateKeyException ex) {
       throw new SweepingOutputException(format("Sweeping output with name %s is already saved", name), ex);

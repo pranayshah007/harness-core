@@ -139,4 +139,16 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
   public void deleteAllExpansions(Set<String> planExecutionIds) {
     planExecutionExpansionRepository.deleteAllExpansions(planExecutionIds);
   }
+
+  @Override
+  public void cloneExpandedJson(String planExecutionIdToClone, String planExecutionId) {
+    Criteria criteria = Criteria.where("planExecutionId").is(planExecutionIdToClone);
+    Query query = new Query(criteria);
+    PlanExecutionExpansion planExecutionExpansion = planExecutionExpansionRepository.find(query);
+    PlanExecutionExpansion clonedPlanExpansion = PlanExecutionExpansion.builder()
+                                                     .expandedJson(planExecutionExpansion.getExpandedJson())
+                                                     .planExecutionId(planExecutionId)
+                                                     .build();
+    planExecutionExpansionRepository.save(clonedPlanExpansion);
+  }
 }

@@ -22,6 +22,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
@@ -64,6 +65,8 @@ public class PipelineExecutor {
   PipelineTelemetryHelper pipelineTelemetryHelper;
   PlanExecutionService planExecutionService;
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
+
+  PlanExpansionService planExpansionService;
 
   public PlanExecutionResponseDto runPipelineWithInputSetPipelineYaml(@NotNull String accountId,
       @NotNull String orgIdentifier, @NotNull String projectIdentifier, @NotNull String pipelineIdentifier,
@@ -174,6 +177,8 @@ public class PipelineExecutor {
     ExecutionMetadata executionMetadata =
         rollbackModeExecutionHelper.transformExecutionMetadata(originalExecutionMetadata, executionId, triggerInfo,
             accountId, orgIdentifier, projectIdentifier, executionMode);
+    planExpansionService.cloneExpandedJson(
+        executionMetadata.getRollbackPlanExecutionId(), executionMetadata.getExecutionUuid());
 
     Optional<PlanExecutionMetadata> optPlanExecutionMetadata =
         planExecutionMetadataService.findByPlanExecutionId(originalExecutionId);

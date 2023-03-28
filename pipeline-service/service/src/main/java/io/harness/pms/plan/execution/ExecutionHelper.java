@@ -36,6 +36,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata.Builder;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.logging.AutoLogContext;
@@ -138,6 +139,8 @@ public class ExecutionHelper {
   NodeExecutionService nodeExecutionService;
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
   RollbackGraphGenerator rollbackGraphGenerator;
+
+  PlanExpansionService planExpansionService;
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier) {
@@ -496,10 +499,9 @@ public class ExecutionHelper {
       return retryExecutionHelper.transformPlan(
           plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
     }
-    if (isRollbackMode(executionMode)) {
-      return rollbackModeExecutionHelper.transformPlanForRollbackMode(
-          plan, previousExecutionId, resp.getPreservedNodesInRollbackModeList(), executionMode);
-    }
+    //      return rollbackModeExecutionHelper.transformPlanForRollbackMode(
+    //          plan, previousExecutionId, resp.getPreservedNodesInRollbackModeList(), executionMode);
+    //    }
     return plan;
   }
 

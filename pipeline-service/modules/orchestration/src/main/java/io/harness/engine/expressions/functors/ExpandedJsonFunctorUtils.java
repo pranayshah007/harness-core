@@ -15,6 +15,8 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
@@ -28,6 +30,10 @@ import lombok.experimental.UtilityClass;
 public class ExpandedJsonFunctorUtils {
   // Todo: Take this via evaluator
   List<String> PREFIX_COMBINATIONS = Lists.newArrayList(OUTCOME, STEP_INPUTS);
+
+  Map<String, String> GROUP_ALIASES =
+      Map.of(YAMLFieldNameConstants.STAGE, StepOutcomeGroup.STAGE.name(), YAMLFieldNameConstants.STEP,
+          StepOutcomeGroup.STEP.name(), YAMLFieldNameConstants.STEP_GROUP, StepCategory.STEP_GROUP.name());
 
   public List<String> getExpressions(Ambiance ambiance, Map<String, String> groupAliases, String expression) {
     // If there is embedded expression inside it, then we should not split this into multiple expressions.
@@ -65,6 +71,54 @@ public class ExpandedJsonFunctorUtils {
     expressions.add(finalExpression);
     expressions.addAll(fetchPrefixExpressions(finalExpression));
     return expressions;
+  }
+
+  public String createFullQualifiedName(Ambiance ambiance, String expression) {
+    // We split by . so that we can convert relative qualified names to fully qualified names.
+    List<String> expressionKeys = Arrays.asList(expression.split("\\."));
+
+    if (EmptyPredicate.isEmpty(expressionKeys)) {
+      return null;
+    }
+    String group = expressionKeys.get(0);
+    String finalExpression = expression;
+    List<Level> levels = new ArrayList<>(ambiance.getLevelsList());
+
+    if (GROUP_ALIASES.containsKey(group)) {
+      finalExpression = getFullyQualifiedExpressionBasedOnGroupV2(levels, group, expressionKeys);
+    } else {
+      List<String> fullyQualifiedName = new ArrayList<>();
+      for (Level level : levels) {
+        if (level.getIdentifier().equals(group)) {
+          break;
+        }
+        if (!level.getSkipExpressionChain() || level.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+          fullyQualifiedName.add(level.getIdentifier());
+        }
+      }
+      fullyQualifiedName.add(finalExpression);
+      finalExpression = String.join(".", fullyQualifiedName);
+    }
+    return finalExpression;
+  }
+
+  /**
+   * This is used to generate fully qualified name
+   *
+   * @param ambiance
+   * @param key
+   * @return
+   */
+  public String generateFullyQualifiedName(Ambiance ambiance, String key) {
+    List<Level> levels = ambiance.getLevelsList();
+    List<String> fullyQualifiedName = new ArrayList<>();
+    for (Level level : levels) {
+      if (!level.getSkipExpressionChain() || level.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+        fullyQualifiedName.add(level.getIdentifier());
+      }
+    }
+    fullyQualifiedName.add(key);
+    return String.join(".", fullyQualifiedName);
   }
 
   /**
@@ -123,6 +177,15 @@ public class ExpandedJsonFunctorUtils {
       List<Level> levels, String group, List<String> expressionKeys) {
     String groupExpressions = expandGroupExpression(levels, group);
     List<String> postFix = Lists.newArrayList("expandedJson");
+    postFix.add(groupExpressions);
+    postFix.addAll(expressionKeys.subList(1, expressionKeys.size()));
+    return String.join(".", postFix);
+  }
+
+  private String getFullyQualifiedExpressionBasedOnGroupV2(
+      List<Level> levels, String group, List<String> expressionKeys) {
+    String groupExpressions = expandGroupExpression(levels, group);
+    List<String> postFix = new ArrayList<>();
     postFix.add(groupExpressions);
     postFix.addAll(expressionKeys.subList(1, expressionKeys.size()));
     return String.join(".", postFix);

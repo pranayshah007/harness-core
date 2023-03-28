@@ -83,6 +83,8 @@ public class ExecutionSweepingOutputInstance implements PersistentEntity, UuidAc
 
   String groupName;
 
+  String fullyQualifiedName;
+
   public String getOutputValueJson() {
     if (!EmptyPredicate.isEmpty(valueOutput)) {
       return valueOutput.toJson();

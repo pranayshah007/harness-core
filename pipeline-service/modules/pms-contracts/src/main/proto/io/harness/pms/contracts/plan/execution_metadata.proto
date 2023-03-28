@@ -29,6 +29,7 @@ message ExecutionMetadata {
   string harnessVersion = 17;
   bool isDebug = 18;
   ExecutionMode executionMode = 19;
+  string rollbackPlanExecutionId = 20;
 }
 
 message RetryExecutionInfo {

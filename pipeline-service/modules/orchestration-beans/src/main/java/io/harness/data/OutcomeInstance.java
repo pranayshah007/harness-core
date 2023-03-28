@@ -94,6 +94,8 @@ public class OutcomeInstance implements PersistentEntity, UuidAccess {
   String groupName;
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 
+  String fullyQualifiedName;
+
   public String getOutcomeJsonValue() {
     if (!isEmpty(outcomeValue)) {
       return outcomeValue.toJson();

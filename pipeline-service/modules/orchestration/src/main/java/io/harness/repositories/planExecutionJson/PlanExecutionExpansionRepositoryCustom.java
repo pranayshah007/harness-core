@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.execution.PlanExecutionExpansion;
 
+import java.util.List;
 import java.util.Set;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -22,6 +23,8 @@ public interface PlanExecutionExpansionRepositoryCustom {
   void update(String planExecutionId, Update update);
 
   PlanExecutionExpansion find(Query query);
+
+  List<PlanExecutionExpansion> findAll(Query query);
 
   void deleteAllExpansions(Set<String> planExecutionIds);
 }

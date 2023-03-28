@@ -47,4 +47,6 @@ public interface PlanExpansionService {
   void updateStatus(Ambiance ambiance, Status status);
 
   void deleteAllExpansions(Set<String> planExecutionIds);
+
+  void cloneExpandedJson(String planExecutionIdToClone, String planExecutionId);
 }
