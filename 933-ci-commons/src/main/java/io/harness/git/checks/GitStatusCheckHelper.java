@@ -267,7 +267,7 @@ public class GitStatusCheckHelper {
   }
 
   private String getBitBucketApiURL(String url) {
-    if (url.contains("bitbucket.org/")) {
+    if (url.contains("bitbucket.org")) {
       return BITBUCKET_API_URL;
     } else {
       String domain = GitClientHelper.getGitSCM(url);
