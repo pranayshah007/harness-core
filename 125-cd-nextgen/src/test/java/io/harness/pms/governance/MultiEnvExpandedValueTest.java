@@ -14,7 +14,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.infrastructure.InfrastructureType;
-import io.harness.pms.governance.InfrastructureExpandedValue.InfrastructureValue;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
