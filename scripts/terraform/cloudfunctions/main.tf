@@ -21,6 +21,22 @@ variable "region" {
   type = string
 }
 
+variable "serviceAccount" {
+  type = string
+}
+
+variable "awsS3Bucket" {
+  type = string
+}
+
+variable "aws_secret_key" {
+  type = string
+}
+
+variable "aws_access_key" {
+  type = string
+}
+
 provider "google" {
   credentials = var.credentialsFile
   project = var.projectId
@@ -37,4 +53,8 @@ module "ce-cloudfunctions" {
   deployment = var.deployment
   projectId = var.projectId
   region = var.region
+  serviceAccount = var.serviceAccount
+  aws_access_key = var.aws_access_key
+  aws_secret_key = var.aws_secret_key
+  awsS3Bucket = var.awsS3Bucket
 }

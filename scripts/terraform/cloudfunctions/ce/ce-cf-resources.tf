@@ -17,6 +17,42 @@ resource "google_storage_bucket" "bucket1" {
   project = "${var.projectId}"
 }
 
+# bucket for clusterdata avro files
+resource "google_storage_bucket" "clusterdata-main" {
+  name = "clusterdata-${var.deployment}"
+  location = "us"
+  project = "${var.projectId}"
+}
+
+# backup bucket for clusterdata avro files
+resource "google_storage_bucket" "clusterdata-backup" {
+  name = "clusterdata-${var.deployment}-backup"
+  location = "us"
+  project = "${var.projectId}"
+}
+
+# bucket for custodian output files
+resource "google_storage_bucket" "custodian" {
+  name = "ccm-custodian-bucket-${var.deployment}"
+  location = "us"
+  project = "${var.projectId}"
+}
+
+
+# bucket for aws csv files
+resource "google_storage_bucket" "aws" {
+  name = "awscustomerbillingdata-${var.deployment}"
+  location = "us"
+  project = "${var.projectId}"
+}
+
+# bucket for azure csv files
+resource "google_storage_bucket" "azure" {
+  name = "azurecustomerbillingdata-${var.deployment}"
+  location = "us"
+  project = "${var.projectId}"
+}
+
 # PubSub topic for AWS data pipeline. scheduler pushes into this
 resource "google_pubsub_topic" "ce-awsdata-topic" {
   name = "ce-awsdata-scheduler"
@@ -1005,6 +1041,7 @@ resource "google_storage_bucket_object" "ce-gcp-disk-inventory-data-load-archive
 
 resource "google_cloudfunctions_function" "ce-clusterdata-function" {
     name                      = "ce-clusterdata-terraform"
+    service_account_email     = "${var.serviceAccount}"
     entry_point               = "main"
     available_memory_mb       = 256
     timeout                   = 540
@@ -1014,7 +1051,6 @@ resource "google_cloudfunctions_function" "ce-clusterdata-function" {
     source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
     source_archive_object     = "${google_storage_bucket_object.ce-clusterdata-archive.name}"
     max_instances             = 3000
-
   environment_variables = {
       disabled = "false"
       disable_for_accounts = ""
@@ -1022,7 +1058,7 @@ resource "google_cloudfunctions_function" "ce-clusterdata-function" {
     }
     event_trigger {
       event_type = "google.storage.object.finalize"
-      resource   = "clusterdata-${var.deployment}"
+      resource   = "${google_storage_bucket.clusterdata-main.name}"
       failure_policy {
         retry = false
       }
@@ -1032,6 +1068,7 @@ resource "google_cloudfunctions_function" "ce-clusterdata-function" {
 
 resource "google_cloudfunctions_function" "ce-gcp-billing-bq-function" {
   name                      = "ce-gcp-billing-bq-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = ""
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1064,6 +1101,7 @@ resource "google_cloudfunctions_function" "ce-gcp-billing-bq-function" {
 
 resource "google_cloudfunctions_function" "ce-aws-billing-bq-function" {
   name                      = "ce-aws-billing-bq-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = ""
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1095,6 +1133,7 @@ resource "google_cloudfunctions_function" "ce-aws-billing-bq-function" {
 
 resource "google_cloudfunctions_function" "ce-aws-billing-gcs-function" {
   name                      = "ce-aws-billing-gcs-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = ""
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1123,6 +1162,7 @@ resource "google_cloudfunctions_function" "ce-aws-billing-gcs-function" {
 
 resource "google_cloudfunctions_function" "ce-azure-billing-bq-function" {
   name                      = "ce-azure-billing-bq-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered when cloud scheduler sends an event in pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1153,6 +1193,7 @@ resource "google_cloudfunctions_function" "ce-azure-billing-bq-function" {
 
 resource "google_cloudfunctions_function" "ce-azure-billing-cost-bq-function" {
   name                      = "ce-azure-billing-cost-bq-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered when cloud scheduler sends an event in pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1180,6 +1221,7 @@ resource "google_cloudfunctions_function" "ce-azure-billing-cost-bq-function" {
 
 resource "google_cloudfunctions_function" "ce-azure-billing-gcs-function" {
   name                      = "ce-azure-billing-gcs-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered when azure gcs data transfer job completes"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1209,6 +1251,7 @@ resource "google_cloudfunctions_function" "ce-azure-billing-gcs-function" {
 
 resource "google_cloudfunctions_function" "ce-azure-billing-schema-function" {
   name                      = "ce-azure-billing-schema-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered when ce-azure-billing-bq sends an event in pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 2048
@@ -1236,6 +1279,7 @@ resource "google_cloudfunctions_function" "ce-azure-billing-schema-function" {
 
 resource "google_cloudfunctions_function" "ce-awsdata-ec2-function" {
   name                      = "ce-awsdata-ec2-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 1024
@@ -1264,6 +1308,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ec2-function" {
 
 resource "google_cloudfunctions_function" "ce-awsdata-ec2-load-function" {
   name                      = "ce-awsdata-ec2-load-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1292,6 +1337,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ec2-load-function" {
 
 resource "google_cloudfunctions_function" "ce-awsdata-ec2-metric-function" {
   name                      = "ce-awsdata-ec2-metric-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1320,6 +1366,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ec2-metric-function" {
 
 resource "google_cloudfunctions_function" "ce-awsdata-ebs-function" {
   name                      = "ce-awsdata-ebs-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 1024
@@ -1348,6 +1395,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ebs-function" {
 
 resource "google_cloudfunctions_function" "ce-awsdata-ebs-load-function" {
   name                      = "ce-awsdata-ebs-load-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1376,6 +1424,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ebs-load-function" {
 
 resource "google_cloudfunctions_function" "ce-awsdata-ebs-metrics-function" {
   name                      = "ce-awsdata-ebs-metrics-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1404,6 +1453,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ebs-metrics-function" {
 
 resource "google_cloudfunctions_function" "ce-awsdata-rds-function" {
   name                      = "ce-awsdata-rds-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1432,6 +1482,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-rds-function" {
 
 resource "google_cloudfunctions_function" "ce-awsdata-rds-load-function" {
   name                      = "ce-awsdata-rds-load-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1460,6 +1511,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-rds-load-function" {
 
 resource "google_cloudfunctions_function" "ce-aws-inventory-init-function" {
   name                      = "ce-aws-inventory-init-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1488,6 +1540,7 @@ resource "google_cloudfunctions_function" "ce-aws-inventory-init-function" {
 
 resource "google_cloudfunctions_function" "ce-gcp-inventory-init-function" {
   name                      = "ce-gcp-inventory-init-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1516,6 +1569,7 @@ resource "google_cloudfunctions_function" "ce-gcp-inventory-init-function" {
 
 resource "google_cloudfunctions_function" "ce-azure-inventory-init-function" {
   name                      = "ce-azure-inventory-init-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1544,6 +1598,7 @@ resource "google_cloudfunctions_function" "ce-azure-inventory-init-function" {
 
 resource "google_cloudfunctions_function" "ce-gcp-instance-inventory-data-function" {
   name                      = "ce-gcp-instance-inventory-data-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 1024
@@ -1572,6 +1627,7 @@ resource "google_cloudfunctions_function" "ce-gcp-instance-inventory-data-functi
 
 resource "google_cloudfunctions_function" "ce-gcp-instance-inventory-data-load-function" {
   name                      = "ce-gcp-instance-inventory-data-load-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1600,6 +1656,7 @@ resource "google_cloudfunctions_function" "ce-gcp-instance-inventory-data-load-f
 
 resource "google_cloudfunctions_function" "ce-gcp-disk-inventory-data-function" {
   name                      = "ce-gcp-disk-inventory-data-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 1024
@@ -1628,6 +1685,7 @@ resource "google_cloudfunctions_function" "ce-gcp-disk-inventory-data-function" 
 
 resource "google_cloudfunctions_function" "ce-gcp-disk-inventory-data-load-function" {
   name                      = "ce-gcp-disk-inventory-data-load-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1773,13 +1831,14 @@ resource "google_cloudfunctions2_function" "ce-azure-vm-inventory-data-function"
         enable_for_accounts = ""
         GCP_PROJECT = "${var.projectId}"
     }
-    service_account_email = data.google_app_engine_default_service_account.default.email
+    service_account_email = "${var.serviceAccount}"
   }
 }
 
 
 resource "google_cloudfunctions_function" "ce-azure-vm-inventory-data-load-function" {
   name                      = "ce-azure-vm-inventory-data-load-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 256
@@ -1807,6 +1866,7 @@ resource "google_cloudfunctions_function" "ce-azure-vm-inventory-data-load-funct
 
 resource "google_cloudfunctions_function" "ce-azure-vm-inventory-metric-data-function" {
   name                      = "ce-azure-vm-inventory-metric-data-terraform"
+  service_account_email     = "${var.serviceAccount}"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
   available_memory_mb       = 1024
@@ -1817,7 +1877,6 @@ resource "google_cloudfunctions_function" "ce-azure-vm-inventory-metric-data-fun
   source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
   source_archive_object     = "${google_storage_bucket_object.ce-azure-vm-inventory-metric-data-archive.name}"
   max_instances             = 3000
-
   environment_variables = {
     disabled = "false"
     enable_for_accounts = ""
@@ -1831,4 +1890,160 @@ resource "google_cloudfunctions_function" "ce-azure-vm-inventory-metric-data-fun
       retry = false
     }
   }
+}
+
+
+resource "google_storage_bucket_iam_member" "gcs-s3-bucket" {
+  bucket     = google_storage_bucket.aws.name
+  role       = "roles/storage.admin"
+  member     = "serviceAccount:${var.serviceAccount}"
+  depends_on = [google_storage_bucket.aws]
+}
+
+
+resource "google_pubsub_topic_iam_member" "notification_config" {
+  topic = google_pubsub_topic.ce-aws-billing-gcs-topic.id
+  role = "roles/pubsub.publisher"
+  member = "serviceAccount:${var.serviceAccount}"
+}
+
+resource "google_storage_transfer_job" "ccm-aws-s3-bucket-hourly-sync" {
+  description = "CCM AWS NG1"
+  project     = var.projectId
+
+  transfer_spec {
+    object_conditions {
+      max_time_elapsed_since_last_modification = "3600s"
+    }
+    transfer_options {
+      overwrite_objects_already_existing_in_sink = false
+      delete_objects_unique_in_sink = false
+      delete_objects_from_source_after_transfer = false
+      overwrite_when = "DIFFERENT"
+    }
+    aws_s3_data_source {
+      bucket_name = var.awsS3Bucket
+      aws_access_key {
+        access_key_id     = var.aws_access_key
+        secret_access_key = var.aws_secret_key
+      }
+    }
+    gcs_data_sink {
+      bucket_name = google_storage_bucket.aws.name
+    }
+  }
+
+  schedule {
+    schedule_start_date {
+      year  = 2022
+      month = 12
+      day   = 21
+    }
+    repeat_interval = "3600s"
+  }
+
+  notification_config {
+    pubsub_topic  = google_pubsub_topic.ce-aws-billing-gcs-topic.id
+    event_types   = [
+      "TRANSFER_OPERATION_SUCCESS",
+      "TRANSFER_OPERATION_FAILED",
+      "TRANSFER_OPERATION_ABORTED"
+    ]
+    payload_format = "JSON"
+  }
+
+  depends_on = [google_storage_bucket_iam_member.gcs-s3-bucket, google_pubsub_topic_iam_member.notification_config]
+}
+
+
+resource "google_bigquery_dataset" "default" {
+  dataset_id                  = "CE_INTERNAL"
+  friendly_name               = "CE_INTERNAL"
+  description                 = "CE_INTERNAL dataset"
+  location                    = "US"
+}
+
+resource "google_bigquery_table" "connectorDataSyncStatus" {
+  dataset_id = google_bigquery_dataset.default.dataset_id
+  table_id   = "connectorDataSyncStatus"
+
+  time_partitioning {
+    type = "DAY"
+  }
+
+  schema = <<EOF
+[
+  {
+    "name": "accountId",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "The harness accountId"
+  },
+  {
+    "name": "connectorId",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "CCM connectorId"
+  },
+  {
+    "name": "jobType",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "CCM jobType"
+  },
+  {
+    "name": "cloudProviderId",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "cloudProviderId"
+  },
+  {
+    "name": "lastSuccessfullExecutionAt",
+    "type": "TIMESTAMP",
+    "mode": "NULLABLE",
+    "description": "TIMESTAMP when last successfull execution occured at"
+  }
+]
+EOF
+
+}
+
+resource "google_bigquery_table" "costAggregated" {
+  dataset_id = google_bigquery_dataset.default.dataset_id
+  table_id   = "costAggregated"
+
+  time_partitioning {
+    type = "DAY"
+    field = "day"
+  }
+
+  schema = <<EOF
+[
+  {
+    "name": "accountId",
+    "type": "STRING",
+    "mode": "REQUIRED",
+    "description": "The harness accountId"
+  },
+  {
+    "name": "cloudProvider",
+    "type": "STRING",
+    "mode": "REQUIRED",
+    "description": "cloudProvider"
+  },
+  {
+    "name": "cost",
+    "type": "FLOAT",
+    "mode": "REQUIRED",
+    "description": "CCM cost"
+  },
+  {
+    "name": "day",
+    "type": "TIMESTAMP",
+    "mode": "REQUIRED",
+    "description": "day"
+  }
+]
+EOF
+
 }
