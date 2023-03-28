@@ -285,7 +285,7 @@ function setupClientUtils() {
       cp images/chartmuseum/${platform}/$chartmuseumversion/chartmuseum ${STORAGE_DIR_LOCATION}/harness-download/harness-chartmuseum/release/$chartmuseumversion/bin/${platform}/amd64/
     done
 
-    for tfConfigInspectVersion in v1.0 v1.1; do
+    for tfConfigInspectVersion in v1.0 v1.1 v1.2; do
       mkdir -p ${STORAGE_DIR_LOCATION}/harness-download/harness-terraform-config-inspect/"$tfConfigInspectVersion"/${platform}/amd64/
       cp images/tf-config-inspect/${platform}/"$tfConfigInspectVersion"/terraform-config-inspect ${STORAGE_DIR_LOCATION}/harness-download/harness-terraform-config-inspect/"$tfConfigInspectVersion"/${platform}/amd64/
     done
