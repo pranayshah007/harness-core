@@ -1384,8 +1384,8 @@ public class BuilderFactory {
         .type(ServiceLevelObjectiveType.SIMPLE)
         .projectIdentifier(context.getProjectIdentifier())
         .orgIdentifier(context.getOrgIdentifier())
-        .identifier("sloIdentifier")
-        .name("sloName")
+        .identifier("sloIdentifier_request")
+        .name("sloName_request")
         .tags(new HashMap<String, String>() {
           {
             put("tag1", "value1");
