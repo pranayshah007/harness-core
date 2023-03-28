@@ -129,9 +129,12 @@ public class FilterCreatorMergeService {
     }
 
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-    boolean defaultBranchCheckForGitSync = true && isGitSimplificationEnabled(pipelineEntity, gitEntityInfo);
+    boolean defaultBranchCheckForGitX = false;
+    if (gitEntityInfo != null) {
+      defaultBranchCheckForGitX = gitEntityInfo.isDefaultBranch();
+    }
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType().equals(StoreType.INLINE)
-        || defaultBranchCheckForGitSync) {
+        || defaultBranchCheckForGitX) {
       pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, response.getReferredEntitiesList());
     }
 

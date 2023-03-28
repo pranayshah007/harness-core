@@ -317,6 +317,15 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       validateStoredYaml(pipelineEntity);
 
       return optionalPipelineEntity;
+    } else {
+      // In case of pipelines with GITX enabled
+      try {
+        pipelineEntity =
+            pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
+      } catch (IOException e) {
+        throw new InvalidRequestException(
+            "Failed to update the pipeline info for the gitX enabled pipeline while reloading from git.");
+      }
     }
     if (EmptyPredicate.isEmpty(pipelineEntity.getData())) {
       String errorMessage = PipelineCRUDErrorResponse.errorMessageForEmptyYamlOnGit(
