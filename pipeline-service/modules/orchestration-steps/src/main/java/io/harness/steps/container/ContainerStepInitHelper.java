@@ -138,7 +138,7 @@ public class ContainerStepInitHelper {
       String logPrefix) {
     String podName = getPodName(ambiance, containerStepInfo.getIdentifier().toLowerCase());
     Map<String, String> buildLabels =
-        k8sPodInitUtils.getLabels(ambiance, containerStepInfo.getIdentifier().replace("_", ""));
+        k8sPodInitUtils.getLabels(ambiance, getKubernetesStandardPodName(containerStepInfo.getIdentifier()));
     Map<String, String> annotations = ExpressionResolverUtils.resolveMapParameter(
         "annotations", "ContainerStep", "stepSetup", k8sDirectInfraYaml.getSpec().getAnnotations(), false);
     Map<String, String> labels = ExpressionResolverUtils.resolveMapParameter(
@@ -175,6 +175,10 @@ public class ContainerStepInitHelper {
         .activeDeadLineSeconds(CIConstants.POD_MAX_TTL_SECS)
         .volumes(volumes)
         .build();
+  }
+
+  public static String getKubernetesStandardPodName(String containerStepInfo) {
+    return containerStepInfo.replace("_", "");
   }
 
   private Pair<CIK8ContainerParams, List<CIK8ContainerParams>> getStepContainers(ContainerStepSpec containerStepInfo,
@@ -396,7 +400,7 @@ public class ContainerStepInitHelper {
       PluginStep pluginStep, PortFinder portFinder, String accountId, OSType os) {
     Integer port = portFinder.getNextPort();
 
-    String identifier = pluginStep.getIdentifier().replace("_", "");
+    String identifier = getKubernetesStandardPodName(pluginStep.getIdentifier());
     String containerName = format("%s%s", STEP_PREFIX, identifier).toLowerCase();
 
     Map<String, String> envMap = new HashMap<>(PluginUtils.getPluginCompatibleEnvVariables(pluginStep, identifier));
@@ -434,7 +438,7 @@ public class ContainerStepInitHelper {
     if (runStepInfo.getConnectorRef() == null) {
       throw new ContainerStepExecutionException("connector ref can't be empty in k8s infrastructure");
     }
-    String identifier = runStepInfo.getIdentifier().replace("_", "");
+    String identifier = getKubernetesStandardPodName(runStepInfo.getIdentifier());
     Integer port = portFinder.getNextPort();
     String containerName = format("%s%s", STEP_PREFIX, identifier).toLowerCase();
 
