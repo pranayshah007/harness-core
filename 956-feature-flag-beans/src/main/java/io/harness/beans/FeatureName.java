@@ -337,7 +337,6 @@ public enum FeatureName {
   YAML_APIS_GRANULAR_PERMISSION,
   AZURE_ARTIFACTS_NG,
   BAMBOO_ARTIFACT_NG("Bamboo Artifact Connector NG", HarnessTeam.CDC),
-  CD_AMI_ARTIFACTS_NG("AMI Artifact Source NG", HarnessTeam.CDC),
   DO_NOT_RENEW_APPROLE_TOKEN(
       "CAUTION: USE THIS ONLY WHEN THE CUSTOMER DELEGATE IS IN VERSION HIGHER OR EQUAL TO 764xx. Used for disabling appRole token renewal and fetching token on the fly before CRUD",
       HarnessTeam.PL),
