@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.artifacts.azureartifacts;
 
+import static io.harness.delegate.task.artifacts.ArtifactServiceConstant.ACCEPT_ALL_REGEX;
+
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsInternalConfig;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryService;
 import io.harness.data.structure.EmptyPredicate;
@@ -93,9 +95,11 @@ public class AzureArtifactsTaskHandler extends DelegateArtifactTaskHandler<Azure
     AzureArtifactsInternalConfig azureArtifactsInternalConfig =
         AzureArtifactsRequestResponseMapper.toAzureArtifactsInternalConfig(attributesRequest);
 
-    if (isRegex(attributesRequest)) {
+    if (isRegex(attributesRequest) || attributesRequest.getVersion().equals(ACCEPT_ALL_REGEX)) {
+      String versionRegex =
+          isRegex(attributesRequest) ? attributesRequest.getVersionRegex() : attributesRequest.getVersion();
       lastSuccessfulBuild = azureArtifactsRegistryService.getLastSuccessfulBuildFromRegex(azureArtifactsInternalConfig,
-          attributesRequest.getPackageType(), attributesRequest.getPackageName(), attributesRequest.getVersionRegex(),
+          attributesRequest.getPackageType(), attributesRequest.getPackageName(), versionRegex,
           attributesRequest.getFeed(), attributesRequest.getProject(), attributesRequest.getScope());
 
     } else {

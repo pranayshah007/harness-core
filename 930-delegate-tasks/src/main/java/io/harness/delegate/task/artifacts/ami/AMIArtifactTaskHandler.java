@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.artifacts.ami;
 
+import static io.harness.delegate.task.artifacts.ArtifactServiceConstant.ACCEPT_ALL_REGEX;
+
 import io.harness.ami.AMITagsResponse;
 import io.harness.artifacts.ami.service.AMIRegistryService;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -69,9 +71,10 @@ public class AMIArtifactTaskHandler extends DelegateArtifactTaskHandler<AMIArtif
 
     BuildDetails lastSuccessfulBuild;
 
-    if (isRegex(attributes)) {
-      lastSuccessfulBuild = amiRegistryService.getLastSuccessfulBuild(awsInternalConfig, attributes.getRegion(),
-          attributes.getTags(), attributes.getFilters(), attributes.getVersionRegex());
+    if (isRegex(attributes) || attributes.getVersion().equals(ACCEPT_ALL_REGEX)) {
+      String versionRegex = isRegex(attributes) ? attributes.getVersionRegex() : attributes.getVersion();
+      lastSuccessfulBuild = amiRegistryService.getLastSuccessfulBuild(
+          awsInternalConfig, attributes.getRegion(), attributes.getTags(), attributes.getFilters(), versionRegex);
     } else {
       lastSuccessfulBuild = amiRegistryService.getBuild(awsInternalConfig, attributes.getRegion(), attributes.getTags(),
           attributes.getFilters(), attributes.getVersion());
