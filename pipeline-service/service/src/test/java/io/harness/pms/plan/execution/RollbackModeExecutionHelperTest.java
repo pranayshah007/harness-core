@@ -248,7 +248,8 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
         createdPlan, prevExecId, Collections.singletonList("uuid2"), POST_EXECUTION_ROLLBACK);
     List<Node> nodes = transformedPlan.getPlanNodes();
     assertThat(nodes).hasSize(3);
-    assertThat(nodes).contains(stageNode, tobePreserved);
+    assertThat(nodes).contains(
+        stageNode.withPreserveInRollbackMode(true), tobePreserved.withPreserveInRollbackMode(true));
     List<Node> identityNodes =
         nodes.stream().filter(node -> node.getNodeType() == NodeType.IDENTITY_PLAN_NODE).collect(Collectors.toList());
     assertThat(identityNodes).hasSize(1);

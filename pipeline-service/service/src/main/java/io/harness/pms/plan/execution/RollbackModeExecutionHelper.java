@@ -20,6 +20,7 @@ import io.harness.execution.PlanExecutionMetadata;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.Plan;
+import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
@@ -264,9 +265,10 @@ public class RollbackModeExecutionHelper {
 
   void addPreservedPlanNodes(
       Plan createdPlan, List<String> nodeIDsToPreserve, Map<String, Node> planNodeIDToUpdatedPlanNodes) {
-    for (Node planNode : createdPlan.getPlanNodes()) {
-      if (nodeIDsToPreserve.contains(planNode.getUuid()) || isStageOrAncestorOfSomeStage(planNode)) {
-        planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), planNode);
+    for (Node node : createdPlan.getPlanNodes()) {
+      if (nodeIDsToPreserve.contains(node.getUuid()) || isStageOrAncestorOfSomeStage(node)) {
+        PlanNode planNode = ((PlanNode) node).withPreserveInRollbackMode(true);
+        planNodeIDToUpdatedPlanNodes.put(node.getUuid(), planNode);
       }
     }
   }
