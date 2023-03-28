@@ -58,7 +58,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutorTest extends Delegate
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
   @Mock private AzureAsyncTaskHelper azureAsyncTaskHelper;
-  @Mock private KryoSerializer referenceFalseKryoSerializer;
+  @Mock private KryoSerializer kryoSerializer;
 
   @InjectMocks private AzureSshWinrmInstanceSyncPerpetualTaskExecutor executor;
   @Captor private ArgumentCaptor<SshWinrmInstanceSyncPerpetualTaskResponse> perpetualTaskResponseCaptor;
@@ -84,7 +84,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutorTest extends Delegate
                  .tags(new HashMap<>())
                  .hostConnectionType("PublicIP")
                  .build())
-        .when(referenceFalseKryoSerializer)
+        .when(kryoSerializer)
         .asObject(any(byte[].class));
   }
 

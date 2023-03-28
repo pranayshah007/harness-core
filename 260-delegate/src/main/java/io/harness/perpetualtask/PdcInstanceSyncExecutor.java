@@ -25,7 +25,6 @@ import software.wings.service.impl.aws.model.response.HostReachabilityResponse;
 import software.wings.utils.HostValidationService;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +35,7 @@ import org.eclipse.jetty.server.Response;
 @OwnedBy(CDP)
 public class PdcInstanceSyncExecutor implements PerpetualTaskExecutor {
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private KryoSerializer kryoSerializer;
   @Inject private HostValidationService hostValidationService;
 
   @Override
@@ -45,8 +44,8 @@ public class PdcInstanceSyncExecutor implements PerpetualTaskExecutor {
     final PdcInstanceSyncPerpetualTaskParams instanceSyncParams =
         AnyUtils.unpack(params.getCustomizedParams(), PdcInstanceSyncPerpetualTaskParams.class);
 
-    final SettingAttribute settingAttribute = (SettingAttribute) referenceFalseKryoSerializer.asObject(
-        instanceSyncParams.getSettingAttribute().toByteArray());
+    final SettingAttribute settingAttribute =
+        (SettingAttribute) kryoSerializer.asObject(instanceSyncParams.getSettingAttribute().toByteArray());
     HostReachabilityResponse response;
     try {
       List<HostReachabilityInfo> hostReachabilityInfos =
@@ -63,7 +62,7 @@ public class PdcInstanceSyncExecutor implements PerpetualTaskExecutor {
           HostReachabilityResponse.builder().executionStatus(ExecutionStatus.FAILED).errorMessage(message).build();
     }
     try {
-      execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
+      execute(delegateAgentManagerClient.publishInstanceSyncResult(
           taskId.getId(), settingAttribute.getAccountId(), response));
     } catch (Exception e) {
       log.error(String.format(

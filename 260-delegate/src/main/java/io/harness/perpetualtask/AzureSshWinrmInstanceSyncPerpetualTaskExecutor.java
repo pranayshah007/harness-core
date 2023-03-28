@@ -44,7 +44,6 @@ import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -59,7 +58,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor implements Perpetual
   private static final Set<String> VALID_SERVICE_TYPES = ImmutableSet.of(ServiceSpecType.SSH, ServiceSpecType.WINRM);
 
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private KryoSerializer kryoSerializer;
   @Inject private AzureAsyncTaskHelper azureAsyncTaskHelper;
 
   @Override
@@ -106,7 +105,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor implements Perpetual
 
   private Set<String> getAzureHosts(AzureSshInstanceSyncPerpetualTaskParamsNg taskParams,
       LazyAutoCloseableWorkingDirectory workingDir) throws IOException {
-    AzureInfraDelegateConfig infraConfig = (AzureInfraDelegateConfig) referenceFalseKryoSerializer.asObject(
+    AzureInfraDelegateConfig infraConfig = (AzureInfraDelegateConfig) kryoSerializer.asObject(
         taskParams.getAzureSshWinrmInfraDelegateConfig().toByteArray());
 
     AzureOSType azureOSType =

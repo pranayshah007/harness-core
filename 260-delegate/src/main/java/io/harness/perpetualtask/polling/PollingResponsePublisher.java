@@ -24,23 +24,21 @@ import okhttp3.RequestBody;
 @Slf4j
 public class PollingResponsePublisher {
   private final KryoSerializer kryoSerializer;
-  private final KryoSerializer referenceFalseKryoSerializer;
   private final DelegateAgentManagerClient delegateAgentManagerClient;
 
   @Inject
-  public PollingResponsePublisher(KryoSerializer kryoSerializer, KryoSerializer referenceFalseKryoSerializer,
-      DelegateAgentManagerClient delegateAgentManagerClient) {
+  public PollingResponsePublisher(
+      KryoSerializer kryoSerializer, DelegateAgentManagerClient delegateAgentManagerClient) {
     this.kryoSerializer = kryoSerializer;
-    this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.delegateAgentManagerClient = delegateAgentManagerClient;
   }
 
   public boolean publishToManger(String taskId, PollingDelegateResponse pollingDelegateResponse) {
     try {
-      byte[] responseSerialized = referenceFalseKryoSerializer.asBytes(pollingDelegateResponse);
+      byte[] responseSerialized = kryoSerializer.asBytes(pollingDelegateResponse);
 
       executeWithExceptions(
-          delegateAgentManagerClient.publishPollingResultV2(taskId, pollingDelegateResponse.getAccountId(),
+          delegateAgentManagerClient.publishPollingResult(taskId, pollingDelegateResponse.getAccountId(),
               RequestBody.create(MediaType.parse("application/octet-stream"), responseSerialized)));
       return true;
     } catch (Exception ex) {

@@ -39,7 +39,6 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   private final KryoSerializer kryoSerializer;
-  private final KryoSerializer referenceFalseKryoSerializer;
   private final ManifestCollectionService manifestCollectionService;
   private final PollingResponsePublisher pollingResponsePublisher;
 
@@ -47,10 +46,9 @@ public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   private static final long TIMEOUT_IN_MILLIS = 120L * 1000;
 
   @Inject
-  public ManifestPerpetualTaskExecutorNg(KryoSerializer kryoSerializer, KryoSerializer referenceFalseKryoSerializer,
+  public ManifestPerpetualTaskExecutorNg(KryoSerializer kryoSerializer,
       ManifestCollectionService manifestCollectionService, PollingResponsePublisher pollingResponsePublisher) {
     this.kryoSerializer = kryoSerializer;
-    this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.manifestCollectionService = manifestCollectionService;
     this.pollingResponsePublisher = pollingResponsePublisher;
   }
@@ -80,8 +78,8 @@ public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   public boolean cleanup(PerpetualTaskId taskId, PerpetualTaskExecutionParams params) {
     ManifestCollectionTaskParamsNg taskParams = getTaskParams(params);
     cache.invalidate(taskParams.getPollingDocId());
-    ManifestDelegateConfig manifestConfig = (ManifestDelegateConfig) referenceFalseKryoSerializer.asObject(
-        taskParams.getManifestCollectionParams().toByteArray());
+    ManifestDelegateConfig manifestConfig =
+        (ManifestDelegateConfig) kryoSerializer.asObject(taskParams.getManifestCollectionParams().toByteArray());
     manifestCollectionService.cleanup(manifestConfig);
     return true;
   }
@@ -93,8 +91,8 @@ public class ManifestPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   private void collectManifests(
       ManifestsCollectionCache manifestsCollectionCache, ManifestCollectionTaskParamsNg taskParams, String taskId) {
     try {
-      ManifestDelegateConfig manifestConfig = (ManifestDelegateConfig) referenceFalseKryoSerializer.asObject(
-          taskParams.getManifestCollectionParams().toByteArray());
+      ManifestDelegateConfig manifestConfig =
+          (ManifestDelegateConfig) kryoSerializer.asObject(taskParams.getManifestCollectionParams().toByteArray());
       List<String> chartVersions = manifestCollectionService.collectManifests(manifestConfig);
       if (isEmpty(chartVersions)) {
         log.info("No manifests present for the repository");

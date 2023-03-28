@@ -30,7 +30,6 @@ import io.harness.perpetualtask.instancesync.AsgInstanceSyncPerpetualTaskParamsN
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 public class AsgInstanceSyncPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private AsgTaskHelper asgTaskHelper;
 
@@ -90,8 +89,8 @@ public class AsgInstanceSyncPerpetualTaskExecutorNg implements PerpetualTaskExec
 
   private AsgDeploymentReleaseData toAsgDeploymentReleaseData(AsgDeploymentRelease asgDeploymentRelease) {
     return AsgDeploymentReleaseData.builder()
-        .asgInfraConfig((AsgInfraConfig) referenceFalseKryoSerializer.asObject(
-            asgDeploymentRelease.getAsgInfraConfig().toByteArray()))
+        .asgInfraConfig(
+            (AsgInfraConfig) kryoSerializer.asObject(asgDeploymentRelease.getAsgInfraConfig().toByteArray()))
         .asgNameWithoutSuffix(asgDeploymentRelease.getAsgNameWithoutSuffix())
         .executionStrategy(asgDeploymentRelease.getExecutionStrategy())
         .build();

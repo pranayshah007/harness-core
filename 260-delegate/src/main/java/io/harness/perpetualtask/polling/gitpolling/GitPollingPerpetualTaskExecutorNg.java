@@ -43,7 +43,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   private final KryoSerializer kryoSerializer;
-  private final KryoSerializer referenceFalseKryoSerializer;
   private final GitPollingServiceImpl gitPollingService;
   private final PollingResponsePublisher pollingResponsePublisher;
 
@@ -57,8 +56,7 @@ public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor 
     String pollingDocId = taskParams.getPollingDocId();
     String perpetualTaskId = taskId.getId();
     GitPollingTaskParameters gitPollingTaskParameters =
-        (GitPollingTaskParameters) referenceFalseKryoSerializer.asObject(
-            taskParams.getGitpollingWebhookParams().toByteArray());
+        (GitPollingTaskParameters) kryoSerializer.asObject(taskParams.getGitpollingWebhookParams().toByteArray());
     GitPollingCache gitPollingCache = cache.get(pollingDocId, id -> new GitPollingCache());
 
     if (!gitPollingCache.needsToPublish()) {

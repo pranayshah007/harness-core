@@ -30,7 +30,6 @@ import io.harness.perpetualtask.instancesync.ServerlessAwsLambdaInstanceSyncPerp
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessAwsLambdaInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private ServerlessTaskHelperBase serverlessTaskHelperBase;
 
@@ -95,7 +94,7 @@ public class ServerlessAwsLambdaInstanceSyncPerpetualTaskExecutor implements Per
   private ServerlessAwsLambdaDeploymentReleaseData toServerlessAwsLambdaDeploymentReleaseData(
       ServerlessAwsLambdaDeploymentRelease serverlessAwsLambdaDeploymentRelease) {
     return ServerlessAwsLambdaDeploymentReleaseData.builder()
-        .serverlessInfraConfig((ServerlessAwsLambdaInfraConfig) referenceFalseKryoSerializer.asObject(
+        .serverlessInfraConfig((ServerlessAwsLambdaInfraConfig) kryoSerializer.asObject(
             serverlessAwsLambdaDeploymentRelease.getServerlessInfraConfig().toByteArray()))
         .functions(serverlessAwsLambdaDeploymentRelease.getFunctionsList())
         .region(serverlessAwsLambdaDeploymentRelease.getRegion())

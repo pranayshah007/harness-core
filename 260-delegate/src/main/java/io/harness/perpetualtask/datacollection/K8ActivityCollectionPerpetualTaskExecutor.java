@@ -33,7 +33,6 @@ import software.wings.delegatetasks.cvng.K8InfoDataService;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.name.Named;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
 import java.time.Instant;
@@ -49,7 +48,7 @@ public class K8ActivityCollectionPerpetualTaskExecutor implements PerpetualTaskE
   private final Map<String, WatcherGroup> watchMap = new ConcurrentHashMap<>();
   @Inject private K8InfoDataService k8InfoDataService;
 
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private KryoSerializer kryoSerializer;
   @Inject private ChangeIntelSharedInformerFactory changeIntelSharedInformerFactory;
   @Inject private ApiClientFactory apiClientFactory;
   @Inject private Injector injector;
@@ -62,8 +61,8 @@ public class K8ActivityCollectionPerpetualTaskExecutor implements PerpetualTaskE
           AnyUtils.unpack(params.getCustomizedParams(), K8ActivityCollectionPerpetualTaskParams.class);
       log.info("Executing for !! changeSourceId: {}", taskParams.getDataCollectionWorkerId());
       watchMap.computeIfAbsent(taskId.getId(), id -> {
-        CVDataCollectionInfo dataCollectionInfo = (CVDataCollectionInfo) referenceFalseKryoSerializer.asObject(
-            taskParams.getDataCollectionInfo().toByteArray());
+        CVDataCollectionInfo dataCollectionInfo =
+            (CVDataCollectionInfo) kryoSerializer.asObject(taskParams.getDataCollectionInfo().toByteArray());
         log.info("for {} DataCollectionInfo {} ", taskParams.getDataCollectionWorkerId(), dataCollectionInfo);
 
         KubernetesClusterConfigDTO kubernetesClusterConfig =

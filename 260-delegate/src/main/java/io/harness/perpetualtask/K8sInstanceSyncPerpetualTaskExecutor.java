@@ -35,7 +35,6 @@ import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -58,7 +57,7 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
   private static final String NAMESPACE_RELEASE_NAME_KEY_PATTERN = "namespace:%s_releaseName:%s";
   private static final String DEFAULT_NAMESPACE = "default";
 
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private KryoSerializer kryoSerializer;
   @Inject private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -102,7 +101,7 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
     return K8sDeploymentReleaseData.builder()
         .releaseName(k8SDeploymentRelease.getReleaseName())
         .namespaces(new LinkedHashSet<>(k8SDeploymentRelease.getNamespacesList()))
-        .k8sInfraDelegateConfig((K8sInfraDelegateConfig) referenceFalseKryoSerializer.asObject(
+        .k8sInfraDelegateConfig((K8sInfraDelegateConfig) kryoSerializer.asObject(
             k8SDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()))
         .build();
   }

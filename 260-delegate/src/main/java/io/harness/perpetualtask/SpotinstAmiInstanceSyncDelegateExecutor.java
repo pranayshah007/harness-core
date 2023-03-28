@@ -29,7 +29,6 @@ import software.wings.delegatetasks.spotinst.taskhandler.SpotInstSyncTaskHandler
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +41,7 @@ public class SpotinstAmiInstanceSyncDelegateExecutor implements PerpetualTaskExe
   @Inject private EncryptionService encryptionService;
   @Inject private SpotInstSyncTaskHandler taskHandler;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private KryoSerializer kryoSerializer;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -53,17 +52,16 @@ public class SpotinstAmiInstanceSyncDelegateExecutor implements PerpetualTaskExe
 
     final SpotinstAmiInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), SpotinstAmiInstanceSyncPerpetualTaskParams.class);
-    final AwsConfig awsConfig =
-        (AwsConfig) referenceFalseKryoSerializer.asObject(taskParams.getAwsConfig().toByteArray());
+    final AwsConfig awsConfig = (AwsConfig) kryoSerializer.asObject(taskParams.getAwsConfig().toByteArray());
     final SpotInstConfig spotInstConfig =
-        (SpotInstConfig) referenceFalseKryoSerializer.asObject(taskParams.getSpotinstConfig().toByteArray());
+        (SpotInstConfig) kryoSerializer.asObject(taskParams.getSpotinstConfig().toByteArray());
 
     SpotInstTaskExecutionResponse instanceSyncResponse = executeSyncTask(taskParams, awsConfig, spotInstConfig);
 
     try {
       log.info("Publish instance sync result to manager for elastigroup id {} and perpetual task {}",
           taskParams.getElastigroupId(), taskId.getId());
-      execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
+      execute(delegateAgentManagerClient.publishInstanceSyncResult(
           taskId.getId(), spotInstConfig.getAccountId(), instanceSyncResponse));
     } catch (Exception ex) {
       log.error(
@@ -82,11 +80,9 @@ public class SpotinstAmiInstanceSyncDelegateExecutor implements PerpetualTaskExe
   private SpotInstTaskExecutionResponse executeSyncTask(
       SpotinstAmiInstanceSyncPerpetualTaskParams taskParams, AwsConfig awsConfig, SpotInstConfig spotInstConfig) {
     final List<EncryptedDataDetail> awsEncryptedDataDetails =
-        (List<EncryptedDataDetail>) referenceFalseKryoSerializer.asObject(
-            taskParams.getAwsEncryptedData().toByteArray());
+        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getAwsEncryptedData().toByteArray());
     final List<EncryptedDataDetail> spotinstEncryptedDataDetails =
-        (List<EncryptedDataDetail>) referenceFalseKryoSerializer.asObject(
-            taskParams.getSpotinstEncryptedData().toByteArray());
+        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getSpotinstEncryptedData().toByteArray());
 
     encryptionService.decrypt(awsConfig, awsEncryptedDataDetails, true);
     ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, awsEncryptedDataDetails);

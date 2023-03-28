@@ -34,7 +34,6 @@ import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -72,8 +71,6 @@ public class GoogleFunctionInstanceSyncPerpetualTaskExecutorTest extends Delegat
   private final long TIME = 74987321;
 
   @Inject private KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
-
   @Mock private GoogleFunctionTaskHelperBase googleFunctionTaskHelperBase;
   @Mock private Call<RestResponse<Boolean>> call;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -84,8 +81,7 @@ public class GoogleFunctionInstanceSyncPerpetualTaskExecutorTest extends Delegat
 
   @Before
   public void setUp() throws IOException {
-    on(googleFunctionInstanceSyncPerpetualTaskExecutor)
-        .set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
+    on(googleFunctionInstanceSyncPerpetualTaskExecutor).set("kryoSerializer", kryoSerializer);
     doReturn(call)
         .when(delegateAgentManagerClient)
         .processInstanceSyncNGResult(anyString(), anyString(), perpetualTaskResponseCaptor.capture());
@@ -100,8 +96,7 @@ public class GoogleFunctionInstanceSyncPerpetualTaskExecutorTest extends Delegat
         GcpGoogleFunctionInfraConfig.builder().gcpConnectorDTO(GcpConnectorDTO.builder().build()).build();
     GoogleFunctionDeploymentRelease deploymentRelease =
         GoogleFunctionDeploymentRelease.newBuilder()
-            .setGoogleFunctionsInfraConfig(
-                ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(googleFunctionInfraConfig)))
+            .setGoogleFunctionsInfraConfig(ByteString.copyFrom(kryoSerializer.asBytes(googleFunctionInfraConfig)))
             .setFunction(FUNCTION)
             .setRegion(REGION)
             .build();

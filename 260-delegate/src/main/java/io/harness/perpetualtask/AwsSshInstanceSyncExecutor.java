@@ -27,7 +27,6 @@ import software.wings.service.intfc.aws.delegate.AwsEc2HelperServiceDelegate;
 import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +38,7 @@ import org.eclipse.jetty.server.Response;
 public class AwsSshInstanceSyncExecutor implements PerpetualTaskExecutor {
   @Inject private AwsEc2HelperServiceDelegate ec2ServiceDelegate;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private KryoSerializer kryoSerializer;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -49,17 +48,15 @@ public class AwsSshInstanceSyncExecutor implements PerpetualTaskExecutor {
 
     final String region = instanceSyncParams.getRegion();
 
-    final AwsConfig awsConfig =
-        (AwsConfig) referenceFalseKryoSerializer.asObject(instanceSyncParams.getAwsConfig().toByteArray());
+    final AwsConfig awsConfig = (AwsConfig) kryoSerializer.asObject(instanceSyncParams.getAwsConfig().toByteArray());
     final List<EncryptedDataDetail> encryptedDataDetails =
-        cast(referenceFalseKryoSerializer.asObject(instanceSyncParams.getEncryptedData().toByteArray()));
-    final List<Filter> filters =
-        cast(referenceFalseKryoSerializer.asObject(instanceSyncParams.getFilter().toByteArray()));
+        cast(kryoSerializer.asObject(instanceSyncParams.getEncryptedData().toByteArray()));
+    final List<Filter> filters = cast(kryoSerializer.asObject(instanceSyncParams.getFilter().toByteArray()));
 
     final AwsEc2ListInstancesResponse awsResponse = getInstances(region, awsConfig, encryptedDataDetails, filters);
     try {
-      execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
-          taskId.getId(), awsConfig.getAccountId(), awsResponse));
+      execute(
+          delegateAgentManagerClient.publishInstanceSyncResult(taskId.getId(), awsConfig.getAccountId(), awsResponse));
     } catch (Exception e) {
       log.error(String.format("Failed to publish the instance collection result to manager for aws ssh for taskId [%s]",
                     taskId.getId()),
