@@ -486,6 +486,8 @@ public class NGTemplateResource {
       @Parameter(description = "This contains details of Template filters based on Template Types and Template Names ")
       @Body TemplateFilterPropertiesDTO filterProperties,
       @QueryParam("getDistinctFromBranches") Boolean getDistinctFromBranches) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
     log.info(String.format("Get List of templates in project: %s, org: %s, account: %s", projectId, orgId, accountId));
     Criteria criteria = templateServiceHelper.formCriteria(accountId, orgId, projectId, filterIdentifier,
         filterProperties, false, searchTerm, includeAllTemplatesAccessibleAtScope);
