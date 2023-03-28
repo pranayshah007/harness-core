@@ -179,6 +179,8 @@ userMetadata {"name": "uniqueUserMetadataEmailId", "unique": true} {"email": 1}
 userProjectMaps {"name": "accountOrgProjectMapIdx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 userProjectMaps {"name": "uniqueUserProjectMap", "unique": true} {"userId": 1, "accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 userProjectMaps {"name": "userProjectMapMigrationIdx", "background": true} {"moved": 1, "tries": 1}
+userSourceCodeManagers {"name": "accountIdentifier_1", "background": true} {"accountIdentifier": 1}
+userSourceCodeManagers {"name": "unique_accountIdentifier_userIdentifier_type_idx", "unique": true} {"accountIdentifier": 1, "userIdentifier": 1, "type": 1}
 variables {"name": "accountId_orgId_projectId_createdAt_decreasing_sort_Index", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "createdAt": -1}
 variables {"name": "accountId_orgId_projectId_identifier_unique_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 waitInstances {"name": "correlationIds_1", "background": true} {"correlationIds": 1}
