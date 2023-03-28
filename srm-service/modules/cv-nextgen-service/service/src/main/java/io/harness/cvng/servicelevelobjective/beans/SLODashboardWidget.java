@@ -35,6 +35,7 @@ public class SLODashboardWidget {
   List<MonitoredServiceDetail> monitoredServiceDetails;
   Map<String, String> tags;
   ServiceLevelIndicatorType type;
+  SLIEvaluationType evaluationType;
   @NotNull ServiceLevelObjectiveType sloType;
   @NotNull BurnRate burnRate;
   @NotNull int timeRemainingDays;
@@ -79,6 +80,7 @@ public class SLODashboardWidget {
     boolean isCalculatingSLI;
     @JsonIgnore long errorBudgetBurned;
     @JsonIgnore double sliStatusPercentage;
+    @JsonIgnore SLIEvaluationType evaluationType;
     public double errorBudgetSpentPercentage() {
       return 100 - errorBudgetRemainingPercentage;
     }

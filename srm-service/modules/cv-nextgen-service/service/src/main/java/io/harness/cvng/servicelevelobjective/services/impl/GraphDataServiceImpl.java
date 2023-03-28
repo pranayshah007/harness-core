@@ -17,6 +17,7 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.EntityDisabledTimeService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.utils.DateTimeUtils;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLIValue;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
@@ -86,7 +87,8 @@ public class GraphDataServiceImpl implements GraphDataService {
       ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
           projectParams, simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
       return getGraphData(serviceLevelIndicator, startTime, endTime, totalErrorBudgetMinutes,
-          serviceLevelIndicator.getSliMissingDataType(), serviceLevelIndicator.getVersion(), filter);
+          serviceLevelIndicator.getSliMissingDataType(), serviceLevelIndicator.getVersion(), filter,
+          serviceLevelObjective);
     }
   }
 
@@ -172,8 +174,10 @@ public class GraphDataServiceImpl implements GraphDataService {
 
   public SLODashboardWidget.SLOGraphData getGraphData(ServiceLevelIndicator serviceLevelIndicator, Instant startTime,
       Instant endTime, int totalErrorBudgetMinutes, SLIMissingDataType sliMissingDataType, int sliVersion,
-      TimeRangeParams filter) {
-    Preconditions.checkState(totalErrorBudgetMinutes != 0, "Total error budget minutes should not be zero.");
+      TimeRangeParams filter, AbstractServiceLevelObjective serviceLevelObjective) {
+    Preconditions.checkState(
+        !(totalErrorBudgetMinutes == 0 && serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW),
+        "Total error budget minutes should not be zero.");
     if (Objects.isNull(filter)) {
       filter = TimeRangeParams.builder().startTime(startTime).endTime(endTime).build();
     }
@@ -187,8 +191,8 @@ public class GraphDataServiceImpl implements GraphDataService {
             .build();
 
     MonitoredService monitoredService = monitoredServiceService.getMonitoredService(monitoredServiceParams);
-    List<EntityDisableTime> disableTimes =
-        entityDisabledTimeService.get(monitoredService.getUuid(), monitoredService.getAccountId());
+    List<EntityDisableTime> disableTimes = entityDisabledTimeService.get(
+        monitoredService.getUuid(), monitoredService.getAccountId()); // Not Need... for Request
     int currentDisabledRange = 0;
     long disabledMinutesFromStart = 0;
     int skipRecordCount = 0;
@@ -207,10 +211,9 @@ public class GraphDataServiceImpl implements GraphDataService {
       SLIValue sliValue = null;
       long beginningMinute = sliRecords.get(0).getEpochMinute();
       SLIRecord firstRecord = sliRecords.get(0);
-      long lastRecordBeforeStartGoodCount =
-          firstRecord.getRunningGoodCount() - (firstRecord.getSliState() == SLIRecord.SLIState.GOOD ? 1 : 0);
-      long lastRecordBeforeStartBadCount =
-          firstRecord.getRunningBadCount() - (firstRecord.getSliState() == SLIRecord.SLIState.BAD ? 1 : 0);
+      Pair<Long, Long> previousRunningCount = getPreviousRunningCount(firstRecord, serviceLevelIndicator);
+      long lastRecordBeforeStartGoodCount = previousRunningCount.getLeft();
+      long lastRecordBeforeStartBadCount = previousRunningCount.getRight();
 
       for (SLIRecord sliRecord : sliRecords) {
         long goodCountFromStart = sliRecord.getRunningGoodCount() - lastRecordBeforeStartGoodCount;
@@ -240,19 +243,33 @@ public class GraphDataServiceImpl implements GraphDataService {
               .sliStatusPercentage(sliStatusPercentage)
               .errorBudgetBurned(Math.max(badCountTillRangeEndTime - badCountTillRangeStartTime, 0))
               .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
+              .evaluationType(serviceLevelIndicator.getSLIEvaluationType())
               .build();
         }
 
-        sliValue = sliMissingDataType.calculateSLIValue(
-            goodCountFromStart + skipRecordCount, badCountFromStart, minutesFromStart, disabledMinutesFromStart);
+        if (serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW) {
+          sliValue = sliMissingDataType.calculateSLIValue(
+              goodCountFromStart + skipRecordCount, badCountFromStart, minutesFromStart, disabledMinutesFromStart);
+        } else {
+          sliValue = SLIValue.builder()
+                         .goodCount(goodCountFromStart)
+                         .badCount(badCountFromStart)
+                         .total(goodCountFromStart + badCountFromStart)
+                         .build();
+        }
 
         if (getBadCountTillRangeStartTime
             && !sliRecord.getTimestamp().isBefore(DateTimeUtils.roundDownTo1MinBoundary(filter.getStartTime()))) {
           badCountTillRangeStartTime = sliValue.getBadCount();
-          if (sliRecord.getSliState().equals(SLIRecord.SLIState.BAD)
-              || (sliRecord.getSliState().equals(SLIRecord.SLIState.NO_DATA)
-                  && sliMissingDataType == SLIMissingDataType.BAD)) {
-            badCountTillRangeStartTime--;
+          if (serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW) {
+            if (sliRecord.getSliState().equals(SLIRecord.SLIState.BAD)
+                || (sliRecord.getSliState().equals(SLIRecord.SLIState.NO_DATA)
+                    && sliMissingDataType == SLIMissingDataType.BAD)) {
+              badCountTillRangeStartTime--;
+            }
+          } else {
+            badCountTillRangeStartTime -=
+                sliRecord.getRunningBadCount() - getPreviousRunningCount(sliRecord, serviceLevelIndicator).getRight();
           }
           getBadCountTillRangeStartTime = false;
         }
@@ -265,18 +282,20 @@ public class GraphDataServiceImpl implements GraphDataService {
                          .value(sliValue.sliPercentage())
                          .enabled(enabled)
                          .build());
-        errorBudgetBurndown.add(
-            SLODashboardWidget.Point.builder()
-                .timestamp(sliRecord.getTimestamp().toEpochMilli())
-                .value(((totalErrorBudgetMinutes - sliValue.getBadCount()) * 100.0) / totalErrorBudgetMinutes)
-                .enabled(enabled)
-                .build());
+        errorBudgetBurndown.add(SLODashboardWidget.Point.builder()
+                                    .timestamp(sliRecord.getTimestamp().toEpochMilli())
+                                    .value(getErrorBudgetValue(serviceLevelIndicator, totalErrorBudgetMinutes, sliValue,
+                                        serviceLevelObjective))
+                                    .enabled(enabled)
+                                    .build());
         currentSLIRecord++;
       }
 
       errorBudgetRemainingPercentage = errorBudgetBurndown.get(errorBudgetBurndown.size() - 1).getValue();
       sliStatusPercentage = sliTrend.get(sliTrend.size() - 1).getValue();
-      errorBudgetRemaining = totalErrorBudgetMinutes - sliValue.getBadCount();
+      errorBudgetRemaining =
+          getTotalErrorBudget(serviceLevelIndicator, totalErrorBudgetMinutes, sliValue, serviceLevelObjective)
+          - sliValue.getBadCount();
     } else if (Instant.ofEpochMilli(serviceLevelIndicator.getCreatedAt())
                    .isBefore(clock.instant().minus(Duration.ofMinutes(10)))) {
       isCalculatingSLI = true;
@@ -294,7 +313,38 @@ public class GraphDataServiceImpl implements GraphDataService {
         .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
         .errorBudgetBurned(Math.max(badCountTillRangeEndTime - badCountTillRangeStartTime, 0))
         .sliStatusPercentage(sliStatusPercentage)
+        .evaluationType(serviceLevelIndicator.getSLIEvaluationType())
         .build();
+  }
+
+  private double getErrorBudgetValue(ServiceLevelIndicator serviceLevelIndicator, long totalErrorBudgetMinutes,
+      SLIValue sliValue, AbstractServiceLevelObjective serviceLevelObjective) {
+    long totalErrorBudget =
+        getTotalErrorBudget(serviceLevelIndicator, totalErrorBudgetMinutes, sliValue, serviceLevelObjective);
+    return ((totalErrorBudget - sliValue.getBadCount()) * 100.0) / totalErrorBudget;
+  }
+
+  private long getTotalErrorBudget(ServiceLevelIndicator serviceLevelIndicator, long totalErrorBudgetMinutes,
+      SLIValue sliValue, AbstractServiceLevelObjective serviceLevelObjective) {
+    if (serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW) {
+      return totalErrorBudgetMinutes;
+    } else {
+      return (long) ((100.0 - serviceLevelObjective.getSloTargetPercentage()) * sliValue.getTotal()) / 100;
+    }
+  }
+
+  private Pair<Long, Long> getPreviousRunningCount(SLIRecord sliRecord, ServiceLevelIndicator serviceLevelIndicator) {
+    if (serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW) {
+      return Pair.of(sliRecord.getRunningGoodCount() - (sliRecord.getSliState() == SLIRecord.SLIState.GOOD ? 1 : 0),
+          sliRecord.getRunningBadCount() - (sliRecord.getSliState() == SLIRecord.SLIState.BAD ? 1 : 0));
+    } else {
+      SLIRecord previousRecord =
+          sliRecordService.getLastSLIRecord(serviceLevelIndicator.getUuid(), sliRecord.getTimestamp());
+      if (Objects.isNull(previousRecord)) {
+        return Pair.of(0l, 0l);
+      }
+      return Pair.of(previousRecord.getRunningGoodCount(), previousRecord.getRunningBadCount());
+    }
   }
 
   private boolean isMinuteEnabled(List<EntityDisableTime> disableTimes, int currentDisabledRange, SLIRecord sliRecord) {

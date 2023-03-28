@@ -575,10 +575,13 @@ public class ExecutionHelper {
       if (nodeExecution != null && isNotEmpty(nodeExecution.getExecutableResponses())) {
         // TODO: check with @sahilHindwani whether this update is required or not.
         pmsExecutionService.sendGraphUpdateEvent(executionSummaryEntity);
-        return pipelineStageHelper
-            .getResponseDTOWithChildGraph(accountId, childStageNodeId, executionSummaryEntity, entityGitDetails,
-                nodeExecution, stageNodeExecutionId)
-            .withRollbackGraph(rollbackGraph);
+        ChildExecutionDetailDTO childGraph = pipelineStageHelper.getChildGraph(
+            accountId, childStageNodeId, entityGitDetails, nodeExecution, stageNodeExecutionId);
+        return PipelineExecutionDetailDTO.builder()
+            .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
+            .childGraph(childGraph)
+            .rollbackGraph(rollbackGraph)
+            .build();
       }
     }
 
