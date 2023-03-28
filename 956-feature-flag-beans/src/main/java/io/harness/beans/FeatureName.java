@@ -671,6 +671,7 @@ public enum FeatureName {
       HarnessTeam.SPG),
   CDS_SERVICENOW_TICKET_TYPE_V2("FF to use servicenow ticketTypesV2 endpoint", HarnessTeam.CDC),
   FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE),
+  CD_ONBOARDING_HELP_ENABLED("Enables help panel for CD onboarding ", HarnessTeam.CDP),
   BAMBOO_BUILD("Bamboo Build Step", HarnessTeam.CDC);
 
   @Deprecated
