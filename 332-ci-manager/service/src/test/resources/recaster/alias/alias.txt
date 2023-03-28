@@ -339,3 +339,5 @@ io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo
 io.harness.beans.stages.IACMStageConfigImplV1
 io.harness.beans.stages.IACMStageNodeV1
 io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput
+io.harness.ci.config.ContainerlessPluginConfig
+io.harness.ci.config.VmContainerlessStepConfig
