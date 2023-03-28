@@ -26,6 +26,7 @@ You can run multiple PR check triggers by comma separating them in a single comm
 - File-Permission-Check: `trigger checkpermission`
 - Recency: `trigger recency`
 - BuildNumberMetadata: `trigger buildnum`
+- Trigger CommonChecks: `trigger commonchecks`
 - PMD: `trigger pmd`
 - Copyright Check: `trigger copyrightcheck`
 - Feature Name Check: `trigger featurenamecheck`
