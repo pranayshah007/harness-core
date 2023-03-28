@@ -662,7 +662,8 @@ public enum FeatureName {
       "Allow selection of specific service accounts in Resource group", HarnessTeam.PL),
   FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE),
   SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
-      "Unnecessary restriction apps calls are not called from UI", HarnessTeam.SPG);
+      "Unnecessary restriction apps calls are not called from UI", HarnessTeam.SPG),
+  BAMBOO_BUILD("Bamboo Build Step", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {
