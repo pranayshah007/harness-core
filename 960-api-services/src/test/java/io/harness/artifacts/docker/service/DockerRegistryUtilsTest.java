@@ -11,9 +11,12 @@ import static io.harness.artifacts.docker.beans.DockerImageManifestResponse.Dock
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.HARSH;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -164,5 +167,21 @@ public class DockerRegistryUtilsTest extends CategoryTest {
     history.setV1Compatibility(v1Compatibility);
     dockerImageManifestResponse.setHistory(Collections.singletonList(history));
     return dockerImageManifestResponse;
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testValidateCredentialForDockerAcrDomain() {
+    boolean response = dockerRegistryUtils.isAcrContainerRegistry(dockerConfig);
+    assertFalse(response);
+    DockerInternalConfig dockerInternalConfig =
+        DockerInternalConfig.builder().dockerRegistryUrl("https://sridhartest.azurecr.io/").build();
+    response = dockerRegistryUtils.isAcrContainerRegistry(dockerInternalConfig);
+    assertTrue(response);
+
+    dockerInternalConfig = DockerInternalConfig.builder().dockerRegistryUrl("https://sridhartest.azurecr.us/").build();
+    response = dockerRegistryUtils.isAcrContainerRegistry(dockerInternalConfig);
+    assertTrue(response);
   }
 }

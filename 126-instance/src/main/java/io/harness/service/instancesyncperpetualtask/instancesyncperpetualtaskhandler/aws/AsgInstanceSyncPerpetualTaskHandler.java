@@ -42,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AsgInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTaskHandler {
   @Inject private AsgEntityHelper asgEntityHelper;
+
   @Override
   public PerpetualTaskExecutionBundle getExecutionBundle(InfrastructureMappingDTO infrastructureMappingDTO,
       List<DeploymentInfoDTO> deploymentInfoDTOList, InfrastructureOutcome infrastructureOutcome) {
@@ -112,7 +113,7 @@ public class AsgInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
   private AsgDeploymentRelease toAsgDeploymentRelease(AsgDeploymentReleaseData releaseData) {
     return AsgDeploymentRelease.newBuilder()
         .setAsgNameWithoutSuffix(releaseData.getAsgNameWithoutSuffix())
-        .setAsgInfraConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getAsgInfraConfig())))
+        .setAsgInfraConfig(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(releaseData.getAsgInfraConfig())))
         .setExecutionStrategy(releaseData.getExecutionStrategy())
         .build();
   }

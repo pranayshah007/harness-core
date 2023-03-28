@@ -182,6 +182,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .executionInputConfigured(orchestrationStartInfo.getPlanExecutionMetadata().getExecutionInputConfigured())
             .connectorRef(
                 EmptyPredicate.isEmpty(metadata.getPipelineConnectorRef()) ? null : metadata.getPipelineConnectorRef())
+            .executionMode(metadata.getExecutionMode())
             .build();
     pmsExecutionSummaryService.save(pipelineExecutionSummaryEntity);
     notificationHelper.sendNotification(

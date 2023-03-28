@@ -702,7 +702,7 @@ public abstract class WorkflowHandler {
             .execution(ExecutionElementConfig.builder().steps(Collections.singletonList(wrapper)).build())
             .build();
     CustomStageNode customStageNode = new CustomStageNode();
-    customStageNode.setName(phase.getName());
+    customStageNode.setName(MigratorUtility.generateName(phase.getName()));
     customStageNode.setIdentifier(
         MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()));
     customStageNode.setCustomStageConfig(customStageConfig);
@@ -719,7 +719,7 @@ public abstract class WorkflowHandler {
       return null;
     }
     DeploymentStageNode stageNode = new DeploymentStageNode();
-    stageNode.setName(phase.getName());
+    stageNode.setName(MigratorUtility.generateName(phase.getName()));
     stageNode.setIdentifier(MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()));
     stageNode.setDeploymentStageConfig(stageConfig);
     stageNode.setFailureStrategies(getDefaultFailureStrategy(context));

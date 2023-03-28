@@ -60,22 +60,30 @@ import io.harness.utils.IdentifierRefHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import retrofit2.Response;
 
 @Singleton
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ConnectorUtils {
+  @Inject
+  public ConnectorUtils(ConnectorResourceClient connectorResourceClient,
+      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService,
+      ContainerExecutionConfig containerExecutionConfig) {
+    this.connectorResourceClient = connectorResourceClient;
+    this.secretManagerClientService = secretManagerClientService;
+    this.containerExecutionConfig = containerExecutionConfig;
+  }
+
   private final ConnectorResourceClient connectorResourceClient;
   private final SecretManagerClientService secretManagerClientService;
   private final ContainerExecutionConfig containerExecutionConfig;

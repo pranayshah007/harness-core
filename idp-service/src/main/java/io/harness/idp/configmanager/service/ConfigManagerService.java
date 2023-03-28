@@ -7,6 +7,8 @@
 package io.harness.idp.configmanager.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.configmanager.ConfigType;
+import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
@@ -18,11 +20,11 @@ public interface ConfigManagerService {
   Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier);
   public AppConfig getPluginConfig(String accountIdentifier, String pluginId);
 
-  AppConfig savePluginConfig(AppConfigRequest appConfigRequest, String accountIdentifier);
+  AppConfig saveConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType);
 
-  AppConfig updatePluginConfig(AppConfigRequest appConfigRequest, String accountIdentifier);
+  AppConfig updateConfigForAccount(AppConfigRequest appConfigRequest, String accountIdentifier, ConfigType configType);
 
-  AppConfig togglePlugin(String accountIdentifier, String pluginName, Boolean isEnabled);
+  AppConfig toggleConfigForAccount(String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType);
 
   MergedAppConfigEntity mergeAndSaveAppConfig(String accountIdentifier) throws Exception;
 }

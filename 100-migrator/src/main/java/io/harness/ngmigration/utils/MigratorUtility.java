@@ -19,7 +19,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.network.Http;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -36,7 +35,6 @@ import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
-import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -66,14 +64,12 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import io.serializer.HObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,57 +95,6 @@ public class MigratorUtility {
   public static final Pattern ngPattern = Pattern.compile("<\\+[\\w-.\"()]+>");
 
   private static final String[] schemes = {"https", "http"};
-
-  private static final int APPLICATION = 0;
-  private static final int SECRET_MANAGER_TEMPLATE = 1;
-  private static final int SECRET_MANAGER = 2;
-  private static final int SECRET = 5;
-  private static final int TEMPLATE = 7;
-  private static final int SERVICE_COMMAND_TEMPLATE = 8;
-  private static final int CONNECTOR = 10;
-  private static final int CONTAINER_TASK = 13;
-  private static final int ECS_SERVICE_SPEC = 14;
-  private static final int MANIFEST = 15;
-  private static final int CONFIG_FILE = 16;
-  private static final int AMI_STARTUP_SCRIPT = 17;
-  private static final int ELASTIGROUP_CONFIGURATION = 18;
-  private static final int SERVICE = 20;
-  private static final int INFRA_PROVISIONER = 23;
-  private static final int ENVIRONMENT = 25;
-  private static final int INFRA = 35;
-  private static final int SERVICE_VARIABLE = 40;
-  private static final int WORKFLOW = 70;
-  private static final int PIPELINE = 100;
-
-  private static final int TRIGGER = 150;
-  private static final int USER_GROUP = -2;
-  private static final int FILE_STORE = -1;
-
-  private static final Map<NGMigrationEntityType, Integer> MIGRATION_ORDER =
-      ImmutableMap.<NGMigrationEntityType, Integer>builder()
-          .put(NGMigrationEntityType.USER_GROUP, USER_GROUP)
-          .put(NGMigrationEntityType.FILE_STORE, FILE_STORE)
-          .put(NGMigrationEntityType.APPLICATION, APPLICATION)
-          .put(NGMigrationEntityType.SECRET_MANAGER_TEMPLATE, SECRET_MANAGER_TEMPLATE)
-          .put(NGMigrationEntityType.SECRET_MANAGER, SECRET_MANAGER)
-          .put(NGMigrationEntityType.TEMPLATE, TEMPLATE)
-          .put(NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE, SERVICE_COMMAND_TEMPLATE)
-          .put(NGMigrationEntityType.CONNECTOR, CONNECTOR)
-          .put(NGMigrationEntityType.CONTAINER_TASK, CONTAINER_TASK)
-          .put(NGMigrationEntityType.ECS_SERVICE_SPEC, ECS_SERVICE_SPEC)
-          .put(NGMigrationEntityType.AMI_STARTUP_SCRIPT, AMI_STARTUP_SCRIPT)
-          .put(NGMigrationEntityType.ELASTIGROUP_CONFIGURATION, ELASTIGROUP_CONFIGURATION)
-          .put(NGMigrationEntityType.MANIFEST, MANIFEST)
-          .put(NGMigrationEntityType.CONFIG_FILE, CONFIG_FILE)
-          .put(NGMigrationEntityType.SERVICE, SERVICE)
-          .put(NGMigrationEntityType.INFRA_PROVISIONER, INFRA_PROVISIONER)
-          .put(NGMigrationEntityType.ENVIRONMENT, ENVIRONMENT)
-          .put(NGMigrationEntityType.INFRA, INFRA)
-          .put(NGMigrationEntityType.SERVICE_VARIABLE, SERVICE_VARIABLE)
-          .put(NGMigrationEntityType.WORKFLOW, WORKFLOW)
-          .put(NGMigrationEntityType.PIPELINE, PIPELINE)
-          .put(NGMigrationEntityType.TRIGGER, TRIGGER)
-          .build();
 
   private MigratorUtility() {}
 
@@ -201,24 +146,13 @@ public class MigratorUtility {
   }
 
   public static void sort(List<NGYamlFile> files) {
-    files.sort(Comparator.comparingInt(MigratorUtility::toInt));
+    files.sort(new MigrationEntityComparator());
   }
 
   public static ParameterField<List<TaskSelectorYaml>> getDelegateSelectors(List<String> strings) {
     return EmptyPredicate.isEmpty(strings)
         ? ParameterField.createValueField(Collections.emptyList())
         : ParameterField.createValueField(strings.stream().map(TaskSelectorYaml::new).collect(Collectors.toList()));
-  }
-
-  // This is for sorting entities while creating
-  private static int toInt(NGYamlFile file) {
-    if (NGMigrationEntityType.SECRET == file.getType()) {
-      return SecretFactory.isStoredInHarnessSecretManager(file) ? Integer.MIN_VALUE : SECRET;
-    }
-    if (MIGRATION_ORDER.containsKey(file.getType())) {
-      return MIGRATION_ORDER.get(file.getType());
-    }
-    throw new InvalidArgumentsException("Unknown type found: " + file.getType());
   }
 
   public static Scope getDefaultScope(MigrationInputDTO inputDTO, CgEntityId entityId, Scope defaultScope) {

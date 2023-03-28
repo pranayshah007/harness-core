@@ -41,7 +41,7 @@ public class NoopFeatureFlagServiceImplTest {
     Boolean flag = noopFeatureFlagService.isEnabled(accountId, featureName);
     assertThat(flag).isEqualTo(false);
 
-    Boolean flag2 = noopFeatureFlagService.isEnabled(accountId, FeatureName.NG_GITOPS);
+    Boolean flag2 = noopFeatureFlagService.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN);
     assertThat(flag2).isEqualTo(false);
   }
 }

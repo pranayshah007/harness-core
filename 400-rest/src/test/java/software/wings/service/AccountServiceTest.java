@@ -30,6 +30,7 @@ import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.UTKARSH;
@@ -90,6 +91,7 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
+import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.filter.OutboxEventFilter;
@@ -119,6 +121,7 @@ import software.wings.beans.accountdetails.events.AccountDetailsCrossGenerationA
 import software.wings.beans.accountdetails.events.AccountDetailsDefaultExperienceUpdateEvent;
 import software.wings.beans.governance.GovernanceConfig;
 import software.wings.dl.WingsPersistence;
+import software.wings.exception.AccountNotFoundException;
 import software.wings.features.GovernanceFeature;
 import software.wings.features.api.PremiumFeature;
 import software.wings.licensing.LicenseService;
@@ -170,6 +173,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import javax.validation.ConstraintViolationException;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -1702,5 +1706,54 @@ public class AccountServiceTest extends WingsBaseTest {
         () -> accountService.scheduleAccountLevelJobs(accountId, List.of(AccountJobType.INSTANCE), jobProperties))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(format("Failed to create instance stats for account, %s", accountId));
+  }
+
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void testGetSessionTimeoutInMinutesWithValidValue() {
+    Account account = saveAccount("Harness");
+    SessionTimeoutSettings sessionTimeoutSettings = new SessionTimeoutSettings(30);
+    accountService.setSessionTimeoutInMinutes(account.getUuid(), sessionTimeoutSettings);
+    assertTrue(accountService.getSessionTimeoutInMinutes(account.getUuid()).equals(30));
+  }
+
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void testGetSessionTimeoutInMinutesWithNullValue() {
+    Account account = saveAccount("Harness");
+    assertThatExceptionOfType(ConstraintViolationException.class)
+        .isThrownBy(() -> accountService.setSessionTimeoutInMinutes(account.getUuid(), null));
+  }
+
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void testGetSessionTimeoutInMinutesForLowerLimit() {
+    Account account = saveAccount("Harness");
+    SessionTimeoutSettings sessionTimeoutSettings = new SessionTimeoutSettings(29);
+    assertThatExceptionOfType(ConstraintViolationException.class)
+        .isThrownBy(() -> accountService.setSessionTimeoutInMinutes(account.getUuid(), sessionTimeoutSettings));
+  }
+
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void testDefaultValueForAccountWithNoSessionTimeout() {
+    Account account = saveAccount("Harness");
+    System.out.println();
+    assertTrue(accountService.getSessionTimeoutInMinutes(account.getUuid()).equals(1440));
+  }
+
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void testGetSessionTimeoutInMinutesWithInvalidAccountId() {
+    Account account = saveAccount("Harness");
+    SessionTimeoutSettings sessionTimeoutSettings = new SessionTimeoutSettings(30);
+    accountService.setSessionTimeoutInMinutes(account.getUuid(), sessionTimeoutSettings);
+    assertThatExceptionOfType(AccountNotFoundException.class)
+        .isThrownBy(() -> accountService.setSessionTimeoutInMinutes("dummy", sessionTimeoutSettings));
   }
 }

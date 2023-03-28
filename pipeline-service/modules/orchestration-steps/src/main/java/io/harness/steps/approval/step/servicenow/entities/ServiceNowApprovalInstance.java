@@ -20,7 +20,6 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.servicenow.ServiceNowFieldValueNG;
-import io.harness.servicenow.ServiceNowTicketTypeNG;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
 import io.harness.steps.approval.step.beans.ServiceNowChangeWindowSpecDTO;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
@@ -28,11 +27,9 @@ import io.harness.steps.approval.step.servicenow.ServiceNowApprovalOutCome;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalSpecParameters;
 
 import dev.morphia.annotations.Entity;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -70,8 +67,7 @@ public class ServiceNowApprovalInstance extends ApprovalInstance {
     String ticketNumber = specParameters.getTicketNumber().getValue();
     String connectorRef = specParameters.getConnectorRef().getValue();
     String ticketType = specParameters.getTicketType().getValue();
-    List<String> validTicketTypes =
-        Arrays.stream(ServiceNowTicketTypeNG.values()).map(Enum::toString).collect(Collectors.toList());
+
     if (isBlank(ticketNumber)) {
       throw new InvalidRequestException("ticketNumber can't be empty");
     }
@@ -81,10 +77,7 @@ public class ServiceNowApprovalInstance extends ApprovalInstance {
     if (isBlank(ticketType)) {
       throw new InvalidRequestException(String.format("%s can't be empty", ServiceNowApprovalInstanceKeys.ticketType));
     }
-    if (!validTicketTypes.contains(ticketType)) {
-      throw new InvalidRequestException(String.format("Invalid %s value for ServiceNow: %s, possible values are [%s]",
-          ServiceNowApprovalInstanceKeys.ticketType, ticketType, String.join(", ", validTicketTypes)));
-    }
+    // allowing custom tables too , hence ticketType is not validated to be in ServiceNowTicketTypeNG
 
     ServiceNowApprovalInstance instance =
         ServiceNowApprovalInstance.builder()

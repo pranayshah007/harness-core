@@ -74,8 +74,6 @@ public abstract class AbstractServiceLevelObjective
   @NotNull @Singular @Size(max = 128) List<NGTag> tags;
   List<String> userJourneyIdentifiers;
   List<NotificationRuleRef> notificationRuleRefs;
-  @NotNull ServiceLevelObjective.SLOTarget sloTarget;
-
   SLOTarget target;
 
   private boolean enabled;
@@ -115,11 +113,11 @@ public abstract class AbstractServiceLevelObjective
   }
 
   public TimePeriod getCurrentTimeRange(LocalDateTime currentDateTime) {
-    return sloTarget.getCurrentTimeRange(currentDateTime);
+    return target.getCurrentTimeRange(currentDateTime);
   }
 
   public List<SLODashboardDetail.TimeRangeFilter> getTimeRangeFilters() {
-    return sloTarget.getTimeRangeFilters();
+    return target.getTimeRangeFilters();
   }
 
   public int getTotalErrorBudgetMinutes(LocalDateTime currentDateTime) {

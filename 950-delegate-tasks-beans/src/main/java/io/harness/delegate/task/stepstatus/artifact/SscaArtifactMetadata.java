@@ -26,5 +26,6 @@ public class SscaArtifactMetadata implements ArtifactMetadataSpec {
   String digest;
   String sbomName;
   String sbomUrl;
+  String stepExecutionId;
   boolean isSbomAttested;
 }

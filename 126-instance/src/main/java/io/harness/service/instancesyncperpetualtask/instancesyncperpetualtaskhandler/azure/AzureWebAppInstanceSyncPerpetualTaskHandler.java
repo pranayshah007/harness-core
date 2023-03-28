@@ -93,7 +93,7 @@ public class AzureWebAppInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
   private AzureWebAppDeploymentRelease toAzureWebAppDeploymentRelease(AzureWebAppDeploymentReleaseData releaseData) {
     return AzureWebAppDeploymentRelease.newBuilder()
         .setAzureWebAppInfraDelegateConfig(
-            ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getAzureWebAppInfraDelegateConfig())))
+            ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(releaseData.getAzureWebAppInfraDelegateConfig())))
         .setSubscriptionId(releaseData.getSubscriptionId())
         .setResourceGroupName(releaseData.getResourceGroupName())
         .setAppName(releaseData.getAppName())

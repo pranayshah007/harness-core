@@ -9,6 +9,7 @@ package io.harness.ng.core.artifacts.resources;
 
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VINICIUS;
@@ -941,5 +942,28 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     } catch (IOException e) {
       throw new InvalidRequestException("Could not read resource file: " + filename);
     }
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testGetResolvedConnectorId() throws IOException {
+    Call<ResponseDTO<MergeInputSetResponseDTOPMS>> mergeInputSetCall = mock(Call.class);
+    when(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
+             any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(mergeInputSetCall);
+    when(mergeInputSetCall.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder()
+                                                                 .isErrorResponse(false)
+                                                                 .completePipelineYaml(pipelineYamlWithoutTemplates)
+                                                                 .build())));
+    String connectorExpression = "<+pipeline.variables.image_path>";
+    String connectorResolvedValue = artifactResourceUtils.getResolvedConnectorId(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+        PIPELINE_ID, "", connectorExpression,
+        "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+        GitEntityFindInfoDTO.builder().build());
+    assertThat(connectorResolvedValue).isEqualTo("library/nginx");
+    verify(pipelineServiceClient)
+        .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
   }
 }

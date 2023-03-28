@@ -9,6 +9,7 @@ package io.harness.idp.configmanager.beans.entity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.configmanager.ConfigType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -39,17 +40,18 @@ public class AppConfigEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("unique_account_plugin_id")
+                 .name("unique_account_config_id")
                  .unique(true)
                  .field(AppConfigEntityKeys.accountIdentifier)
-                 .field(AppConfigEntityKeys.pluginId)
+                 .field(AppConfigEntityKeys.configId)
                  .build())
         .build();
   }
 
   @Id @org.mongodb.morphia.annotations.Id private String id;
   @NotNull private String accountIdentifier;
-  @NotNull private String pluginId;
+  @NotNull private ConfigType configType;
+  @NotNull private String configId;
   @NotNull private String configs;
   @NotNull private Boolean enabled;
   @CreatedDate Long createdAt;

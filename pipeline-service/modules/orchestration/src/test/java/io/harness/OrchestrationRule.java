@@ -7,6 +7,7 @@
 
 package io.harness;
 
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -14,6 +15,7 @@ import static io.harness.maintenance.MaintenanceController.forceMaintenance;
 
 import static org.mockito.Mockito.mock;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
@@ -24,6 +26,7 @@ import io.harness.delay.DelayEventListener;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.expressions.AmbianceExpressionEvaluatorProvider;
+import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
@@ -42,6 +45,7 @@ import io.harness.pms.sdk.core.SdkDeployMode;
 import io.harness.queue.QueueController;
 import io.harness.queue.QueueListenerController;
 import io.harness.redis.RedisConfig;
+import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.KryoModule;
@@ -179,8 +183,17 @@ public class OrchestrationRule implements MethodRule, InjectorRuleMixin, MongoRu
         bind(new TypeLiteral<DelegateServiceGrpc.DelegateServiceBlockingStub>() {
         }).toInstance(DelegateServiceGrpc.newBlockingStub(InProcessChannelBuilder.forName(generateUuid()).build()));
         bind(OrchestrationEventEmitter.class).to(MockEventEmitter.class);
+        bind(EntitySetupUsageClient.class).toInstance(mock(EntitySetupUsageClient.class));
       }
     });
+    ServiceHttpClientConfig serviceHttpClientConfig =
+        ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build();
+    modules.add(AccessControlClientModule.getInstance(AccessControlClientConfiguration.builder()
+                                                          .enableAccessControl(true)
+                                                          .accessControlServiceSecret("secret")
+                                                          .accessControlServiceConfig(serviceHttpClientConfig)
+                                                          .build(),
+        PIPELINE_SERVICE.getServiceId()));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -195,6 +208,15 @@ public class OrchestrationRule implements MethodRule, InjectorRuleMixin, MongoRu
         return RedisConfig.builder().build();
       }
     });
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      @Named("PRIVILEGED")
+      AccountClient getAccountClient() {
+        return mock(AccountClient.class);
+      }
+    });
+
     modules.add(PersistentLockModule.getInstance());
 
     modules.add(new AbstractModule() {

@@ -11,6 +11,7 @@ import io.harness.engine.executions.node.NodeExecutionServiceImpl;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
@@ -29,6 +30,7 @@ public class MarkAsFailureAdviseHandler extends NextStepHandler {
     }
 
     String nextNodeId = adviserResponse.getMarkAsFailureAdvise().getNextNodeId();
-    runNextNode(prevNodeExecution, nextNodeId);
+    ExecutionMode executionMode = prevNodeExecution.getAmbiance().getMetadata().getExecutionMode();
+    runNextNode(prevNodeExecution, nextNodeId, executionMode);
   }
 }

@@ -129,7 +129,7 @@ io.harness.beans.build.PublishedArtifact
 io.harness.when.beans.StageWhenCondition
 io.harness.plancreator.strategy.ExcludeConfig
 io.harness.beans.execution.PublishedImageArtifact
-io.harness.beans.execution.PublishedSbomArtifact
+io.harness.ssca.execution.orchestration.outcome.PublishedSbomArtifact
 io.harness.ci.beans.entities.CIExecutionImages
 io.harness.beans.execution.WebhookGitUser
 io.harness.plancreator.stages.stage.StageElementConfig
@@ -338,3 +338,4 @@ io.harness.ssca.beans.stepnode.SscaOrchestrationStepNode
 io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo
 io.harness.beans.stages.IACMStageConfigImplV1
 io.harness.beans.stages.IACMStageNodeV1
+io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput

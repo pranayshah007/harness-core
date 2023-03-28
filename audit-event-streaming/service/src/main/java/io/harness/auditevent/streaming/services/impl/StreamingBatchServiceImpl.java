@@ -7,14 +7,14 @@
 
 package io.harness.auditevent.streaming.services.impl;
 
-import static io.harness.audit.entities.AuditEvent.AuditEventKeys.ACCOUNT_IDENTIFIER_KEY;
-import static io.harness.audit.entities.AuditEvent.AuditEventKeys.createdAt;
 import static io.harness.auditevent.streaming.beans.BatchStatus.READY;
 
+import io.harness.audit.entities.AuditEvent.AuditEventKeys;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.auditevent.streaming.AuditEventRepository;
 import io.harness.auditevent.streaming.beans.BatchStatus;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
+import io.harness.auditevent.streaming.entities.StreamingBatch.StreamingBatchBuilder;
 import io.harness.auditevent.streaming.entities.StreamingBatch.StreamingBatchKeys;
 import io.harness.auditevent.streaming.repositories.StreamingBatchRepository;
 import io.harness.auditevent.streaming.services.StreamingBatchService;
@@ -109,8 +109,7 @@ public class StreamingBatchServiceImpl implements StreamingBatchService {
     return update(streamingDestination.getAccountIdentifier(), streamingBatch);
   }
 
-  private StreamingBatch.StreamingBatchBuilder newBatchBuilder(
-      StreamingDestination streamingDestination, Long timestamp) {
+  private StreamingBatchBuilder newBatchBuilder(StreamingDestination streamingDestination, Long timestamp) {
     return StreamingBatch.builder()
         .accountIdentifier(streamingDestination.getAccountIdentifier())
         .streamingDestinationIdentifier(streamingDestination.getIdentifier())
@@ -119,9 +118,9 @@ public class StreamingBatchServiceImpl implements StreamingBatchService {
   }
 
   private long getTotalNumberOfAuditRecords(StreamingDestination streamingDestination, StreamingBatch streamingBatch) {
-    Criteria criteria = Criteria.where(ACCOUNT_IDENTIFIER_KEY)
+    Criteria criteria = Criteria.where(AuditEventKeys.ACCOUNT_IDENTIFIER_KEY)
                             .is(streamingDestination.getAccountIdentifier())
-                            .and(createdAt)
+                            .and(AuditEventKeys.createdAt)
                             .gt(streamingBatch.getStartTime())
                             .lte(streamingBatch.getEndTime());
     return auditEventRepository.countAuditEvents(criteria);

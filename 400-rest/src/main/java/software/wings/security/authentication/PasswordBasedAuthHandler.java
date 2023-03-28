@@ -63,7 +63,7 @@ public class PasswordBasedAuthHandler implements AuthHandler {
   }
 
   private AuthenticationResponse authenticateInternal(boolean isPasswordHash, String... credentials) {
-    if (credentials == null || credentials.length != 2) {
+    if (credentials == null || credentials.length != 3) {
       throw new WingsException(INVALID_ARGUMENT);
     }
 
@@ -74,7 +74,8 @@ public class PasswordBasedAuthHandler implements AuthHandler {
     if (user == null) {
       throw new WingsException(USER_DOES_NOT_EXIST, USER);
     }
-    String accountId = user.getDefaultAccountId();
+
+    String accountId = isEmpty(credentials[2]) ? user.getDefaultAccountId() : credentials[2];
     String uuid = user.getUuid();
 
     try (AutoLogContext ignore = new UserLogContext(accountId, uuid, OVERRIDE_ERROR)) {
@@ -84,7 +85,7 @@ public class PasswordBasedAuthHandler implements AuthHandler {
         throw new WingsException(EMAIL_NOT_VERIFIED, USER);
       }
 
-      if (!domainWhitelistCheckerService.isDomainWhitelisted(user)) {
+      if (!domainWhitelistCheckerService.isDomainWhitelisted(user, authenticationUtils.getAccount(accountId))) {
         domainWhitelistCheckerService.throwDomainWhitelistFilterException();
       }
 

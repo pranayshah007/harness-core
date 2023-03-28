@@ -11,12 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static org.springframework.data.mongodb.core.query.Update.update;
 
+import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo.ModuleVersionInfoKeys;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.NextGenConfiguration;
 
+import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -46,14 +48,16 @@ import org.springframework.data.mongodb.core.query.Update;
 @Singleton
 @Slf4j
 public class UpdateVersionInfoTask {
+  private static final String COMING_SOON = "Coming Soon";
+  private static final String VERSION = "version";
+  private static final String JOB_INTERRUPTED = "UpdateVersionInfoTask Sync job was interrupted due to: ";
   @Inject private MongoTemplate mongoTemplate;
   @Inject NextGenConfiguration nextGenConfiguration;
-
-  List<ModuleVersionInfo> allModulesFromDB;
-  private static final String pathToFile = "mvi/baseinfo.json";
+  List<ModuleVersionInfo> moduleVersionInfos;
+  private static final String BASE_INFO_JSON_FILE = "mvi/baseinfo.json";
 
   public UpdateVersionInfoTask() {
-    allModulesFromDB = new ArrayList<>();
+    moduleVersionInfos = new ArrayList<>();
   }
 
   public void run() throws InterruptedException {
@@ -61,42 +65,58 @@ public class UpdateVersionInfoTask {
   }
 
   private void checkVersionChange() {
-    if (allModulesFromDB.isEmpty()) {
-      // read from base file
+    if (moduleVersionInfos.isEmpty()) {
       readFromFile();
     }
 
-    // get current versions
-    allModulesFromDB.forEach(module -> {
-      if (!module.getVersion().equals("Coming Soon")) {
-        String currentVersion = "";
+    // get the latest versions for the supported module types
+    moduleVersionInfos.forEach(moduleVersionInfo -> {
+      if (!moduleVersionInfo.getVersion().equals(COMING_SOON)) {
         try {
-          String baseUrl = nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
-          StringBuilder baseUrlBuilder = new StringBuilder();
-          baseUrlBuilder.append(baseUrl);
-          if (!baseUrl.endsWith("/")) {
-            baseUrlBuilder.append('/');
-          }
-          baseUrlBuilder.append("version");
-          currentVersion = getCurrentMicroserviceVersions(module.getModuleName(), baseUrlBuilder.toString());
+          String baseUrl = getBaseUrl(moduleVersionInfo.getModuleName());
+          String latestVersion = getLatestVersion(moduleVersionInfo, baseUrl);
+          moduleVersionInfo.setVersion(latestVersion);
         } catch (IOException e) {
+          log.error("Encountered an exception while trying to update the version for module: {}",
+              moduleVersionInfo.getDisplayName());
           throw new UnexpectedException("Update VersionInfo Task Sync job interrupted:" + e);
         }
-        module.setVersion(currentVersion);
       }
-      updateModuleVersionInfoCollection(module);
+      updateModuleVersionInfoCollection(moduleVersionInfo);
     });
   }
 
+  private String getBaseUrl(String moduleName) {
+    if (ModuleType.CD.name().equals(moduleName)) {
+      return nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
+    } else if (ModuleType.CE.name().equals(moduleName)) {
+      return nextGenConfiguration.getCeNextGenClientConfig().getBaseUrl();
+    } else {
+      return "";
+    }
+  }
+
+  private String getLatestVersion(ModuleVersionInfo moduleVersionInfo, String baseUrl) throws IOException {
+    StringBuilder baseUrlBuilder = new StringBuilder();
+    baseUrlBuilder.append(baseUrl);
+    if (!baseUrl.endsWith("/")) {
+      baseUrlBuilder.append('/');
+    }
+    baseUrlBuilder.append(VERSION);
+
+    return getCurrentMicroserviceVersions(moduleVersionInfo.getModuleName(), baseUrlBuilder.toString());
+  }
+
+  // Reads from basic configuration file
   private void readFromFile() {
     try {
       ClassLoader classLoader = this.getClass().getClassLoader();
-      String parsedYamlFile =
-          Resources.toString(Objects.requireNonNull(classLoader.getResource(pathToFile)), StandardCharsets.UTF_8);
+      String parsedYamlFile = Resources.toString(
+          Objects.requireNonNull(classLoader.getResource(BASE_INFO_JSON_FILE)), StandardCharsets.UTF_8);
 
       ObjectMapper objectMapper = new ObjectMapper();
-      allModulesFromDB = Arrays.asList(objectMapper.readValue(parsedYamlFile, ModuleVersionInfo[].class));
-      allModulesFromDB.forEach(module -> { getFormattedDateTime(module); });
+      moduleVersionInfos = Arrays.asList(objectMapper.readValue(parsedYamlFile, ModuleVersionInfo[].class));
+      moduleVersionInfos.forEach(module -> { getFormattedDateTime(module); });
     } catch (Exception ex) {
       log.error("Update VersionInfo Task Sync job interrupted", ex);
     }
@@ -116,10 +136,9 @@ public class UpdateVersionInfoTask {
   }
 
   private String getCurrentMicroserviceVersions(String serviceName, String serviceVersionUrl) throws IOException {
-    if (serviceName == null || serviceName.equals("") || serviceVersionUrl == null || serviceVersionUrl.equals("")) {
+    if (StringUtils.isNullOrEmpty(serviceName) || StringUtils.isNullOrEmpty(serviceVersionUrl)) {
       return "Coming Soon";
     }
-
     HttpRequest request = HttpRequest.newBuilder()
                               .uri(URI.create(serviceVersionUrl))
                               .method("GET", HttpRequest.BodyPublishers.noBody())
@@ -128,23 +147,19 @@ public class UpdateVersionInfoTask {
     try {
       response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
     } catch (IOException e) {
-      throw new UnexpectedException("Update VersionInfo Task Sync job interrupted:" + e);
+      throw new UnexpectedException(JOB_INTERRUPTED, e);
     } catch (InterruptedException e) {
-      log.error("Update VersionInfo Task Sync job interrupted", e);
+      log.error(JOB_INTERRUPTED, e);
     }
-
-    if (response != null) {
-      log.info(response.body());
-    }
-
     if (response == null) {
       return "";
     }
+    log.info("Request: {} and Response Body: {}", request, response.body());
     JSONObject jsonObject = new JSONObject(response.body().toString().trim());
-    JSONObject resourcejsonObject = (JSONObject) jsonObject.get("resource");
-    JSONObject versionInfojsonObject = (JSONObject) resourcejsonObject.get("versionInfo");
+    JSONObject resourceJsonObject = (JSONObject) jsonObject.get("resource");
+    JSONObject versionInfoJsonObject = (JSONObject) resourceJsonObject.get("versionInfo");
 
-    return versionInfojsonObject.getString("version");
+    return versionInfoJsonObject.getString("version");
   }
 
   private void updateModuleVersionInfoCollection(ModuleVersionInfo module) {

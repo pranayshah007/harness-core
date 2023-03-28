@@ -10,6 +10,7 @@ package io.harness.engine.expressions.functors;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.utils.FunctorUtils;
 import io.harness.expression.functors.ExpressionFunctor;
 
 import lombok.Value;
@@ -24,6 +25,6 @@ public class SecretFunctor implements ExpressionFunctor {
   }
 
   public Object getValue(String secretIdentifier) {
-    return "${ngSecretManager.obtain(\"" + secretIdentifier + "\", " + expressionFunctorToken + ")}";
+    return FunctorUtils.getSecretExpression(expressionFunctorToken, secretIdentifier);
   }
 }

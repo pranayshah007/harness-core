@@ -94,6 +94,7 @@ public class CfRouteMappingCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       List<ApplicationSummary> previousReleases = cfDeploymentManager.getPreviousReleasesForRolling(
           cfRequestConfig, ((CfRouteMappingRequestNG) cfCommandRequestNG).getApplicationName());
       workingDirectory = generateWorkingDirectoryOnDelegate(cfRouteMappingRequestNG);
+      cfRequestConfig.setCfHomeDirPath(workingDirectory.getAbsolutePath());
       ApplicationDetail detailsBeforeDeployment = isEmpty(previousReleases)
           ? null
           : cfCommandTaskHelperNG.getApplicationDetails(cfRequestConfig, cfDeploymentManager);

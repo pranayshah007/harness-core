@@ -136,6 +136,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
       List<ApplicationSummary> previousReleases = cfDeploymentManager.getPreviousReleasesForRolling(
           cfRequestConfig, ((CfRollingDeployRequestNG) cfCommandRequestNG).getApplicationName());
       workingDirectory = generateWorkingDirectoryOnDelegate(cfRollingDeployRequestNG);
+      cfRequestConfig.setCfHomeDirPath(workingDirectory.getAbsolutePath());
       ApplicationDetail detailsBeforeDeployment = isEmpty(previousReleases)
           ? null
           : cfCommandTaskHelperNG.getApplicationDetails(cfRequestConfig, cfDeploymentManager);

@@ -10,14 +10,21 @@ package io.harness.idp.gitintegration.repositories;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.gitintegration.entities.CatalogConnector;
+import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
 @OwnedBy(HarnessTeam.IDP)
 public interface CatalogConnectorRepository
-    extends CrudRepository<CatalogConnector, String>, CatalogConnectorRepositoryCustom {
-  Optional<CatalogConnector> findByAccountIdentifier(String accountIdentifier);
+    extends CrudRepository<CatalogConnectorEntity, String>, CatalogConnectorRepositoryCustom {
+  Optional<CatalogConnectorEntity> findByAccountIdentifier(String accountIdentifier);
+  Optional<CatalogConnectorEntity> findByAccountIdentifierAndConnectorIdentifier(
+      String accountIdentifier, String connectorIdentifier);
+
+  Optional<CatalogConnectorEntity> findByAccountIdentifierAndConnectorProviderType(
+      String accountIdentifier, String connectorProviderType);
+  List<CatalogConnectorEntity> findAllByAccountIdentifier(String accountIdentifier);
 }

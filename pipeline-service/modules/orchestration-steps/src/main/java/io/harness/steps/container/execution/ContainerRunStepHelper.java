@@ -12,6 +12,7 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.LITE_ENG
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.TMP_PATH;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.steps.container.ContainerStepInitHelper.getKubernetesStandardPodName;
 
 import static java.lang.String.format;
 
@@ -91,7 +92,8 @@ public class ContainerRunStepHelper {
             identifier, accountId, containerStepInfo.getName(), timeout);
       case CD_SSCA_ORCHESTRATION:
         return pluginStepSerializer.serializeStepWithStepParameters((PluginStep) containerStepInfo, port, parkedTaskId,
-            logKey, identifier, timeout, accountId, containerStepInfo.getName(), delegateCallbackTokenSupplier);
+            logKey, identifier, timeout, accountId, containerStepInfo.getName(), delegateCallbackTokenSupplier,
+            ambiance);
       default:
         throw new ContainerStepExecutionException("Step serialization not handled");
     }
@@ -166,7 +168,7 @@ public class ContainerRunStepHelper {
     ContainerPortDetails containerPortDetails = (ContainerPortDetails) executionSweepingOutputService.resolve(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(PORT_DETAILS));
 
-    List<Integer> ports = containerPortDetails.getPortDetails().get(stepIdentifier);
+    List<Integer> ports = containerPortDetails.getPortDetails().get(getKubernetesStandardPodName(stepIdentifier));
 
     if (ports.size() != 1) {
       throw new ContainerStepExecutionException(format("Step [%s] should map to single port", stepIdentifier));

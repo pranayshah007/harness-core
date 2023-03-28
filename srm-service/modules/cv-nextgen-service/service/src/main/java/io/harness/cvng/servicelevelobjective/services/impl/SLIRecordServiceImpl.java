@@ -18,7 +18,6 @@ import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjec
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
@@ -86,11 +85,8 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   private void createSLIRecords(List<SLIRecordParam> sliRecordParamList, String sliId, String verificationTaskId,
       int sliVersion, long runningGoodCount, long runningBadCount, List<SLIRecord> sliRecordList) {
     for (SLIRecordParam sliRecordParam : sliRecordParamList) {
-      if (SLIState.GOOD.equals(sliRecordParam.getSliState())) {
-        runningGoodCount++;
-      } else if (SLIState.BAD.equals(sliRecordParam.getSliState())) {
-        runningBadCount++;
-      }
+      runningBadCount += sliRecordParam.getBadEventCount();
+      runningGoodCount += sliRecordParam.getGoodEventCount();
       SLIRecord sliRecord = SLIRecord.builder()
                                 .runningBadCount(runningBadCount)
                                 .runningGoodCount(runningGoodCount)
@@ -116,11 +112,8 @@ public class SLIRecordServiceImpl implements SLIRecordService {
     List<SLIRecord> updateOrCreateSLIRecords = new ArrayList<>();
     for (SLIRecordParam sliRecordParam : sliRecordParamList) {
       SLIRecord sliRecord = sliRecordMap.get(sliRecordParam.getTimeStamp());
-      if (SLIState.GOOD.equals(sliRecordParam.getSliState())) {
-        runningGoodCount++;
-      } else if (SLIState.BAD.equals(sliRecordParam.getSliState())) {
-        runningBadCount++;
-      }
+      runningBadCount += sliRecordParam.getBadEventCount();
+      runningGoodCount += sliRecordParam.getGoodEventCount();
       if (Objects.nonNull(sliRecord)) {
         sliRecord.setRunningGoodCount(runningGoodCount);
         sliRecord.setRunningBadCount(runningBadCount);

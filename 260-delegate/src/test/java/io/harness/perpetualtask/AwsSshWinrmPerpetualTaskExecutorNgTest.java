@@ -60,7 +60,7 @@ public class AwsSshWinrmPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Mock private Call<RestResponse<Boolean>> call;
   @Mock private AwsListEC2InstancesDelegateTaskHelper awsListEC2InstancesDelegateTaskHelper;
   @Mock private AwsASGDelegateTaskHelper awsASGDelegateTaskHelper;
-  @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializer referenceFalseKryoSerializer;
 
   @InjectMocks private AwsSshWinrmPerpetualTaskExecutorNg executor;
   @Captor private ArgumentCaptor<SshWinrmInstanceSyncPerpetualTaskResponse> perpetualTaskResponseCaptor;
@@ -83,7 +83,7 @@ public class AwsSshWinrmPerpetualTaskExecutorNgTest extends DelegateTestBase {
                  .region("r1")
                  .tags(Collections.singletonMap("tag1", "value"))
                  .build())
-        .when(kryoSerializer)
+        .when(referenceFalseKryoSerializer)
         .asObject(any(byte[].class));
   }
 
@@ -122,6 +122,9 @@ public class AwsSshWinrmPerpetualTaskExecutorNgTest extends DelegateTestBase {
                                                           .setHostConnectionType("PublicIP")
                                                           .build();
 
-    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
+    return PerpetualTaskExecutionParams.newBuilder()
+        .setCustomizedParams(Any.pack(message))
+        .setReferenceFalseKryoSerializer(true)
+        .build();
   }
 }

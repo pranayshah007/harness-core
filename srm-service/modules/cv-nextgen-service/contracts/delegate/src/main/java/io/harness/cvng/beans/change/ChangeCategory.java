@@ -18,11 +18,12 @@ import org.apache.commons.collections4.MapUtils;
 
 @AllArgsConstructor
 public enum ChangeCategory {
-  //@JsonProperty added for swagger as it doesnt understand @JsonValue
+  //@JsonProperty added for swagger as it doesn't understand @JsonValue
   @JsonProperty("Deployment") DEPLOYMENT("Deployment"),
   @JsonProperty("Infrastructure") INFRASTRUCTURE("Infrastructure"),
   @JsonProperty("Alert") ALERTS("Alert"),
-  @JsonProperty("FeatureFlag") FEATURE_FLAG("FeatureFlag");
+  @JsonProperty("FeatureFlag") FEATURE_FLAG("FeatureFlag"),
+  @JsonProperty("ChaosExperiment") CHAOS_EXPERIMENT("ChaosExperiment");
 
   private static Map<String, ChangeCategory> STRING_TO_CHANGE_CATEGORY_MAP;
 

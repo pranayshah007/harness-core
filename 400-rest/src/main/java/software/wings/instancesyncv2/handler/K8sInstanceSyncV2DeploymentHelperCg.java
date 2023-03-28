@@ -44,6 +44,7 @@ import software.wings.settings.SettingVariableTypes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -72,6 +73,7 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
   private final InfrastructureMappingService infrastructureMappingService;
 
   private final KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public PerpetualTaskExecutionBundle fetchInfraConnectorDetails(SettingAttribute cloudProvider) {
@@ -90,10 +92,10 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
             .putAllSetupAbstractions(Maps.of(NG, "false", OWNER, cloudProvider.getAccountId()));
     cloudProvider.getValue().fetchRequiredExecutionCapabilities(null).forEach(executionCapability
         -> builder
-               .addCapabilities(
-                   Capability.newBuilder()
-                       .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionCapability)))
-                       .build())
+               .addCapabilities(Capability.newBuilder()
+                                    .setKryoCapability(ByteString.copyFrom(
+                                        referenceFalseKryoSerializer.asDeflatedBytes(executionCapability)))
+                                    .build())
                .build());
     return builder.build();
   }
@@ -233,6 +235,10 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
   public List<CgDeploymentReleaseDetails> getDeploymentReleaseDetails(InstanceSyncTaskDetails taskDetails) {
     InfrastructureMapping infraMapping =
         infrastructureMappingService.get(taskDetails.getAppId(), taskDetails.getInfraMappingId());
+
+    if (infraMapping == null) {
+      return Collections.emptyList();
+    }
 
     if (!(infraMapping instanceof ContainerInfrastructureMapping)) {
       log.error("Unsupported infrastructure mapping being tracked here: [{}]. InfraMappingType found: [{}]",

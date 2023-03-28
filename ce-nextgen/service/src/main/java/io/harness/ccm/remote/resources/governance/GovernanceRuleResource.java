@@ -15,7 +15,6 @@ import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
 import static io.harness.ccm.remote.resources.TelemetryConstants.RULE_NAME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
@@ -51,24 +50,16 @@ import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
 import io.harness.ccm.views.service.RuleExecutionService;
 import io.harness.ccm.views.service.RuleSetService;
-import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
-import io.harness.connector.ConnectorResponseDTO;
-import io.harness.delegate.beans.connector.CEFeatures;
-import io.harness.delegate.beans.connector.CcmConnectorFilter;
-import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
-import io.harness.filter.FilterType;
-import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.remote.GovernanceConfig;
-import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.telemetry.Category;
@@ -102,6 +93,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -531,35 +523,14 @@ public class GovernanceRuleResource {
         return ResponseDTO.newResponse(GovernanceEnqueueResponseDTO.builder().ruleExecutionId(null).build());
       }
       // Step-3 Figure out roleArn and externalId from the connector listv2 api call for all target accounts.
-      List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
-      PageResponse<ConnectorResponseDTO> response = null;
-      ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
-          ConnectorFilterPropertiesDTO.builder()
-              .types(Arrays.asList(ConnectorType.CE_AWS))
-              .ccmConnectorFilter(CcmConnectorFilter.builder()
-                                      .featuresEnabled(Arrays.asList(CEFeatures.GOVERNANCE))
-                                      .awsAccountIds(ruleEnforcement.getTargetAccounts())
-                                      .build())
-              .build();
-      connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
-      int page = 0;
-      int size = 100;
-      do {
-        response = NGRestUtils.getResponse(connectorResourceClient.listConnectors(
-            accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
-        if (response != null && isNotEmpty(response.getContent())) {
-          nextGenConnectorResponses.addAll(response.getContent());
-        }
-        page++;
-      } while (response != null && isNotEmpty(response.getContent()));
-
+      Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
+          accountId, ruleEnforcement.getTargetAccounts().stream().collect(Collectors.toSet()));
       log.info(
           "For rule enforcement setting {}: Got connector data: {}", ruleEnforcementUuid, nextGenConnectorResponses);
 
       // Step-4 Enqueue in faktory
-      for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
-        ConnectorInfoDTO connectorInfo = connector.getConnector();
-        CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();
+      for (ConnectorInfoDTO connectorInfoDTO : nextGenConnectorResponses) {
+        CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfoDTO.getConnectorConfig();
         for (String region : ruleEnforcement.getTargetRegions()) {
           for (Rule rule : rulesList) {
             try {

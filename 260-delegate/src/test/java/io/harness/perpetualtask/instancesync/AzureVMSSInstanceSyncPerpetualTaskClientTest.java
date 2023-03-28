@@ -73,7 +73,7 @@ public class AzureVMSSInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
   @Category(UnitTests.class)
   public void testGetTaskParams() {
     AzureVmssInstanceSyncPerpetualTaskParams taskParams =
-        (AzureVmssInstanceSyncPerpetualTaskParams) client.getTaskParams(getPerpetualTaskClientContext());
+        (AzureVmssInstanceSyncPerpetualTaskParams) client.getTaskParams(getPerpetualTaskClientContext(), true);
     assertThat(taskParams).isNotNull();
     assertThat(taskParams.getVmssId()).isEqualTo("vmss-id");
     assertThat(taskParams.getSubscriptionId()).isEqualTo("subs-id");

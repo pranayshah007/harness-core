@@ -233,6 +233,7 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(199, "CD_SSCA_ORCHESTRATION");
     entityTypeOrdinalMapping.put(200, "TAS_ROUTE_MAPPING");
     entityTypeOrdinalMapping.put(201, "AWS_SECURITY_HUB");
+    entityTypeOrdinalMapping.put(202, "CUSTOM_INGEST");
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }

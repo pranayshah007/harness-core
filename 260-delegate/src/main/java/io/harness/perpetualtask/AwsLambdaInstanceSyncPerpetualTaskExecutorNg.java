@@ -27,7 +27,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsLambdaDeploymentRelease;
 import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskParamsNg;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -40,9 +39,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(HarnessTeam.CDP)
-public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
+public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg
+    extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
-  @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private AwsLambdaTaskHelperBase awsLambdaTaskHelperBase;
 
@@ -52,12 +51,13 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg implements PerpetualTa
     log.info("Running the Aws Lambda InstanceSync perpetual task executor for task id: {}", taskId);
     AwsLambdaInstanceSyncPerpetualTaskParamsNg taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AwsLambdaInstanceSyncPerpetualTaskParamsNg.class);
-    return executeAwsLambdaInstanceSyncTask(taskId, taskParams);
+    return executeAwsLambdaInstanceSyncTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
   }
 
-  public PerpetualTaskResponse executeAwsLambdaInstanceSyncTask(
-      PerpetualTaskId taskId, AwsLambdaInstanceSyncPerpetualTaskParamsNg taskParams) {
-    List<AwsLambdaDeploymentReleaseData> deploymentReleaseDataList = getAwsLambdaDeploymentReleaseData(taskParams);
+  public PerpetualTaskResponse executeAwsLambdaInstanceSyncTask(PerpetualTaskId taskId,
+      AwsLambdaInstanceSyncPerpetualTaskParamsNg taskParams, boolean referenceFalseKryoSerializer) {
+    List<AwsLambdaDeploymentReleaseData> deploymentReleaseDataList =
+        getAwsLambdaDeploymentReleaseData(taskParams, referenceFalseKryoSerializer);
 
     List<ServerInstanceInfo> serverInstanceInfos = deploymentReleaseDataList.stream()
                                                        .map(this::getServerInstanceInfoList)
@@ -81,18 +81,18 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg implements PerpetualTa
   }
 
   private List<AwsLambdaDeploymentReleaseData> getAwsLambdaDeploymentReleaseData(
-      AwsLambdaInstanceSyncPerpetualTaskParamsNg taskParams) {
+      AwsLambdaInstanceSyncPerpetualTaskParamsNg taskParams, boolean referenceFalseSerializer) {
     return taskParams.getAwsLambdaDeploymentReleaseListList()
         .stream()
-        .map(this::toAwsLambdaDeploymentReleaseData)
+        .map(data -> toAwsLambdaDeploymentReleaseData(data, referenceFalseSerializer))
         .collect(Collectors.toList());
   }
 
   private AwsLambdaDeploymentReleaseData toAwsLambdaDeploymentReleaseData(
-      AwsLambdaDeploymentRelease awsLambdaDeploymentRelease) {
+      AwsLambdaDeploymentRelease awsLambdaDeploymentRelease, boolean referenceFalseSerializer) {
     return AwsLambdaDeploymentReleaseData.builder()
-        .awsLambdaInfraConfig((AwsLambdaFunctionsInfraConfig) kryoSerializer.asObject(
-            awsLambdaDeploymentRelease.getAwsLambdaInfraConfig().toByteArray()))
+        .awsLambdaInfraConfig((AwsLambdaFunctionsInfraConfig) getKryoSerializer(referenceFalseSerializer)
+                                  .asObject(awsLambdaDeploymentRelease.getAwsLambdaInfraConfig().toByteArray()))
         .function(awsLambdaDeploymentRelease.getFunction())
         .region(awsLambdaDeploymentRelease.getRegion())
         .build();

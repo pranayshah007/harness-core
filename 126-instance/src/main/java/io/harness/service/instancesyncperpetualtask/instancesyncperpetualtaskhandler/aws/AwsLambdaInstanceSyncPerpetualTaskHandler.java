@@ -125,7 +125,8 @@ public class AwsLambdaInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpe
     return AwsLambdaDeploymentRelease.newBuilder()
         .setFunction(releaseData.getFunction())
         .setRegion(releaseData.getRegion())
-        .setAwsLambdaInfraConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getAwsLambdaInfraConfig())))
+        .setAwsLambdaInfraConfig(
+            ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(releaseData.getAwsLambdaInfraConfig())))
         .build();
   }
 
