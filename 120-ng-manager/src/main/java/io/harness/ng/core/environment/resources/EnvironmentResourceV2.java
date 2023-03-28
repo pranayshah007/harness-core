@@ -540,7 +540,7 @@ public class EnvironmentResourceV2 {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
 
-    Page<Environment> environmentPage = null;
+    final Page<Environment> environmentPage;
 
     if (hasViewPermissionForAll(accountId, orgIdentifier, projectIdentifier)) {
       environmentPage = environmentService.list(criteria, pageRequest);

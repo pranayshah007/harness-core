@@ -1,4 +1,4 @@
-package io.harness.template.resources;
+package io.harness.template.services;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.template.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;

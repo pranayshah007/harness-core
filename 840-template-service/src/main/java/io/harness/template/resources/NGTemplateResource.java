@@ -10,12 +10,9 @@ package io.harness.template.resources;
 import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
 import static io.harness.template.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
 
 import static java.lang.Long.parseLong;
-import static java.util.stream.Collectors.toList;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
@@ -91,6 +88,7 @@ import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
+import io.harness.template.services.TemplateRbacHelper;
 import io.harness.template.services.TemplateVariableCreatorFactory;
 import io.harness.template.services.TemplateVariableCreatorService;
 import io.harness.template.utils.TemplateUtils;
@@ -502,37 +500,9 @@ public class NGTemplateResource {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
 
-    Page<TemplateEntity> templateEntities = null;
-
-    if (hasViewPermissionForAll(accountId, orgId, projectId)) {
-      templateEntities =
-          templateService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches);
-
-    } else {
-      Page<TemplateEntity> templateEntityPage =
-          templateService.list(criteria, Pageable.unpaged(), accountId, orgId, projectId, getDistinctFromBranches);
-
-      if (templateEntityPage == null) {
-        return ResponseDTO.newResponse(Page.empty());
-      }
-
-      List<TemplateEntity> templateEntityList = templateEntityPage.getContent();
-
-      templateEntityList = templateRbacHelper.getPermittedTemplateList(templateEntityList);
-
-      if (isEmpty(templateEntityList)) {
-        return ResponseDTO.newResponse(Page.empty());
-      }
-
-      populateInFilter(criteria, TemplateEntityKeys.identifier,
-          templateEntityList.stream().map(TemplateEntity::getIdentifier).collect(toList()));
-
-      templateEntities =
-          templateService.list(criteria, Pageable.unpaged(), accountId, orgId, projectId, getDistinctFromBranches);
-    }
-
     Page<TemplateSummaryResponseDTO> templateSummaryResponseDTOS =
-        templateEntities.map(NGTemplateDtoMapper::prepareTemplateSummaryResponseDto);
+        templateService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches)
+            .map(NGTemplateDtoMapper::prepareTemplateSummaryResponseDto);
 
     return ResponseDTO.newResponse(templateSummaryResponseDTOS);
   }
@@ -573,8 +543,6 @@ public class NGTemplateResource {
       @Parameter(description = "This contains details of Template filters based on Template Types and Template Names ")
       @Body TemplateFilterPropertiesDTO filterProperties,
       @QueryParam("getDistinctFromBranches") boolean getDistinctFromBranches) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
     log.info(String.format("Get List of templates in project: %s, org: %s, account: %s", projectIdentifier,
         orgIdentifier, accountIdentifier));
 
