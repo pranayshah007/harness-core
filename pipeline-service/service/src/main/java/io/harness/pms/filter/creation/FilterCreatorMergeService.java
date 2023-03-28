@@ -127,7 +127,14 @@ public class FilterCreatorMergeService {
     if (gitConnectorReference.isPresent()) {
       response = response.toBuilder().addAllReferredEntities(Arrays.asList(gitConnectorReference.get())).build();
     }
-    pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, response.getReferredEntitiesList());
+
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    boolean defaultBranchCheckForGitSync = true && isGitSimplificationEnabled(pipelineEntity, gitEntityInfo);
+    if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType().equals(StoreType.INLINE)
+        || defaultBranchCheckForGitSync) {
+      pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, response.getReferredEntitiesList());
+    }
+
     return FilterCreatorMergeServiceResponse.builder()
         .filters(filters)
         .stageCount(response.getStageCount())
