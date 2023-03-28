@@ -16,6 +16,7 @@ import io.harness.cdng.artifact.GarArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -42,6 +43,7 @@ public class GarArtifactOutcome implements ArtifactOutcome {
   String registryHostname;
   String imagePullSecret;
   String repositoryType;
+  Map<String, String> metadata;
   boolean primaryArtifact;
   @Override
   public ArtifactSummary getArtifactSummary() {
