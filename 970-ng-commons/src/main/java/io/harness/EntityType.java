@@ -567,7 +567,10 @@ public enum EntityType {
       ModuleType.STO, EntityTypeConstants.AWS_SECURITY_HUB, IdentifierRef.class, EntityYamlRootNames.AWS_SECURITY_HUB),
   @JsonProperty(EntityTypeConstants.CUSTOM_INGEST)
   CUSTOM_INGEST(
-      ModuleType.STO, EntityTypeConstants.CUSTOM_INGEST, IdentifierRef.class, EntityYamlRootNames.CUSTOM_INGEST);
+      ModuleType.STO, EntityTypeConstants.CUSTOM_INGEST, IdentifierRef.class, EntityYamlRootNames.CUSTOM_INGEST),
+  @JsonProperty(EntityTypeConstants.BACKSTAGE_ENVIRONMENT_VARIABLE)
+  BACKSTAGE_ENVIRONMENT_VARIABLE(
+      ModuleType.IDP, EntityTypeConstants.BACKSTAGE_ENVIRONMENT_VARIABLE, IdentifierRef.class);
 
   private final ModuleType moduleType;
   String yamlName;
