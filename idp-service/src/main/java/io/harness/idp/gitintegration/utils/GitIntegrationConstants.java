@@ -15,6 +15,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.IDP)
 public class GitIntegrationConstants {
+  public static final String ACCOUNT_SCOPED = "account.";
   public static final String GITHUB_TOKEN = "GITHUB_TOKEN";
   public static final String GITHUB_APP_ID = "GITHUB_APP_APPLICATION_ID";
   public static final String GITHUB_APP_PRIVATE_KEY_REF = "GITHUB_APP_PRIVATE_KEY_REF";

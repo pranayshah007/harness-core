@@ -159,6 +159,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
                                        .state(PerpetualTaskState.TASK_UNASSIGNED)
                                        .assignIteration(currentTimeMillis())
                                        .taskDescription(taskDescription)
+                                       .referenceFalseKryoSerializer(true)
                                        .build();
 
       perpetualTaskCrudSubject.fireInform(PerpetualTaskCrudObserver::onPerpetualTaskCreated);
@@ -274,13 +275,13 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   }
 
   @Override
-  public PerpetualTaskExecutionContext perpetualTaskContext(String taskId) {
+  public PerpetualTaskExecutionContext perpetualTaskContext(String taskId, boolean referenceFalseKryoSerializer) {
     log.info("Getting perpetual task context for task with id: {}", taskId);
     PerpetualTaskRecord perpetualTaskRecord = perpetualTaskRecordDao.getTask(taskId);
 
     PerpetualTaskExecutionParams params = null;
     try {
-      params = getTaskParams(perpetualTaskRecord);
+      params = getTaskParams(perpetualTaskRecord, referenceFalseKryoSerializer);
     } catch (Exception e) {
       log.error("Error while fetching perpetual task context task params ", e);
       perpetualTaskRecordDao.updateInvalidStateWithExceptions(
@@ -300,12 +301,13 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
         .build();
   }
 
-  private PerpetualTaskExecutionParams getTaskParams(PerpetualTaskRecord perpetualTaskRecord) throws Exception {
+  private PerpetualTaskExecutionParams getTaskParams(
+      PerpetualTaskRecord perpetualTaskRecord, boolean referenceFalseKryoSerializer) throws Exception {
     Message perpetualTaskParams = null;
 
     if (perpetualTaskRecord.getClientContext().getClientParams() != null) {
       PerpetualTaskServiceClient client = clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType());
-      perpetualTaskParams = client.getTaskParams(perpetualTaskRecord.getClientContext());
+      perpetualTaskParams = client.getTaskParams(perpetualTaskRecord.getClientContext(), referenceFalseKryoSerializer);
 
       return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(perpetualTaskParams)).build();
     } else {
@@ -319,6 +321,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
       }
 
       return PerpetualTaskExecutionParams.newBuilder()
+          .setReferenceFalseKryoSerializer(perpetualTaskRecord.isReferenceFalseKryoSerializer())
           .setCustomizedParams(perpetualTaskExecutionBundle.getTaskParams())
           .build();
     }

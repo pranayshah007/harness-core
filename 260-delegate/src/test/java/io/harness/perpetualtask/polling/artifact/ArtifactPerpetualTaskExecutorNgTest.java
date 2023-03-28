@@ -33,6 +33,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
+import io.harness.perpetualtask.PerpetualTaskExecutorBase;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.polling.ArtifactCollectionTaskParamsNg;
@@ -43,6 +44,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -73,10 +75,12 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
   private static final String CONNECTOR_REF = "CONNECTOR_REF";
 
   private ArtifactPerpetualTaskExecutorNg artifactPerpetualTaskExecutorNg;
+  private PerpetualTaskExecutorBase perpetualTaskExecutorBase;
   private PerpetualTaskId perpetualTaskId;
   private String polling_doc_id;
 
-  @Inject KryoSerializer kryoSerializer;
+  private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Mock private ArtifactRepositoryServiceImpl artifactRepositoryService;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
@@ -84,9 +88,9 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Before
   public void setup() {
     PollingResponsePublisher pollingResponsePublisher =
-        new PollingResponsePublisher(kryoSerializer, delegateAgentManagerClient);
-    artifactPerpetualTaskExecutorNg =
-        new ArtifactPerpetualTaskExecutorNg(kryoSerializer, artifactRepositoryService, pollingResponsePublisher);
+        new PollingResponsePublisher(kryoSerializer, referenceFalseKryoSerializer, delegateAgentManagerClient);
+    artifactPerpetualTaskExecutorNg = new ArtifactPerpetualTaskExecutorNg(
+        artifactRepositoryService, pollingResponsePublisher, kryoSerializer, referenceFalseKryoSerializer);
     perpetualTaskId = PerpetualTaskId.newBuilder().setId(UUIDGenerator.generateUuid()).build();
     polling_doc_id = UUIDGenerator.generateUuid();
   }
@@ -100,11 +104,12 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
     verify(artifactRepositoryService).collectBuilds(any(ArtifactTaskParameters.class));
 
     ArgumentCaptor<RequestBody> captor = ArgumentCaptor.forClass(RequestBody.class);
-    verify(delegateAgentManagerClient).publishPollingResult(anyString(), anyString(), captor.capture());
+    verify(delegateAgentManagerClient).publishPollingResultV2(anyString(), anyString(), captor.capture());
 
     Buffer bufferedSink = new Buffer();
     captor.getValue().writeTo(bufferedSink);
-    PollingDelegateResponse response = (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
+    PollingDelegateResponse response =
+        (PollingDelegateResponse) referenceFalseKryoSerializer.asObject(bufferedSink.readByteArray());
     validateRunOnceOutput(response, 11, true, 11, 0);
   }
 
@@ -118,21 +123,21 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
     // initially repo has 0-10000 versions.
     assertThat(runOnce(0, 10, false, false).getResponseCode()).isEqualTo(200);
 
-    verify(delegateAgentManagerClient, times(1)).publishPollingResult(anyString(), anyString(), captor.capture());
+    verify(delegateAgentManagerClient, times(1)).publishPollingResultV2(anyString(), anyString(), captor.capture());
     captor.getValue().writeTo(bufferedSink);
     PollingDelegateResponse pollingDelegateResponse1 =
-        (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
+        (PollingDelegateResponse) referenceFalseKryoSerializer.asObject(bufferedSink.readByteArray());
     validateRunOnceOutput(pollingDelegateResponse1, 11, true, 11, 0);
 
     // now repo has 2-10005 versions.
     assertThat(runOnce(2, 15, false, false).getResponseCode()).isEqualTo(200);
 
-    verify(delegateAgentManagerClient, times(2)).publishPollingResult(anyString(), anyString(), captor.capture());
+    verify(delegateAgentManagerClient, times(2)).publishPollingResultV2(anyString(), anyString(), captor.capture());
     verify(artifactRepositoryService, times(2)).collectBuilds(any(ArtifactTaskParameters.class));
 
     captor.getValue().writeTo(bufferedSink);
     PollingDelegateResponse pollingDelegateResponse2 =
-        (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
+        (PollingDelegateResponse) referenceFalseKryoSerializer.asObject(bufferedSink.readByteArray());
 
     validateRunOnceOutput(pollingDelegateResponse2, 14, false, 5, 2);
   }
@@ -145,12 +150,12 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
     verify(artifactRepositoryService, times(1)).collectBuilds(any(ArtifactTaskParameters.class));
 
     ArgumentCaptor<RequestBody> captor = ArgumentCaptor.forClass(RequestBody.class);
-    verify(delegateAgentManagerClient).publishPollingResult(anyString(), anyString(), captor.capture());
+    verify(delegateAgentManagerClient).publishPollingResultV2(anyString(), anyString(), captor.capture());
 
     Buffer bufferedSink = new Buffer();
     captor.getValue().writeTo(bufferedSink);
     PollingDelegateResponse pollingDelegateResponse =
-        (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
+        (PollingDelegateResponse) referenceFalseKryoSerializer.asObject(bufferedSink.readByteArray());
     assertThat(pollingDelegateResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     assertThat(pollingDelegateResponse.getErrorMessage()).isEqualTo("");
   }
@@ -162,7 +167,7 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
     assertThat(runOnce(0, 10, false, true).getResponseCode()).isEqualTo(200);
 
     verify(artifactRepositoryService).collectBuilds(any(ArtifactTaskParameters.class));
-    verify(delegateAgentManagerClient).publishPollingResult(anyString(), anyString(), any(RequestBody.class));
+    verify(delegateAgentManagerClient).publishPollingResultV2(anyString(), anyString(), any(RequestBody.class));
     ArtifactsCollectionCache artifactsCollectionCache =
         artifactPerpetualTaskExecutorNg.getCache().getIfPresent(polling_doc_id);
     assertThat(artifactsCollectionCache).isNotNull();
@@ -179,8 +184,10 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
     ArtifactCollectionTaskParamsNg taskParams =
         ArtifactCollectionTaskParamsNg.newBuilder().setPollingDocId(polling_doc_id).build();
 
-    PerpetualTaskExecutionParams executionParams =
-        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
+    PerpetualTaskExecutionParams executionParams = PerpetualTaskExecutionParams.newBuilder()
+                                                       .setCustomizedParams(Any.pack(taskParams))
+                                                       .setReferenceFalseKryoSerializer(true)
+                                                       .build();
 
     artifactPerpetualTaskExecutorNg.cleanup(perpetualTaskId, executionParams);
     assertThat(artifactPerpetualTaskExecutorNg.getCache().getIfPresent(polling_doc_id)).isNull();
@@ -221,16 +228,18 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
                                                         .artifactTaskType(ArtifactTaskType.GET_BUILDS)
                                                         .build();
 
-    ArtifactCollectionTaskParamsNg taskParams =
-        ArtifactCollectionTaskParamsNg.newBuilder()
-            .setPollingDocId(polling_doc_id)
-            .setArtifactCollectionParams(ByteString.copyFrom(kryoSerializer.asBytes(artifactTaskParameters)))
-            .build();
+    ArtifactCollectionTaskParamsNg taskParams = ArtifactCollectionTaskParamsNg.newBuilder()
+                                                    .setPollingDocId(polling_doc_id)
+                                                    .setArtifactCollectionParams(ByteString.copyFrom(
+                                                        referenceFalseKryoSerializer.asBytes(artifactTaskParameters)))
+                                                    .build();
 
-    PerpetualTaskExecutionParams executionParams =
-        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
+    PerpetualTaskExecutionParams executionParams = PerpetualTaskExecutionParams.newBuilder()
+                                                       .setCustomizedParams(Any.pack(taskParams))
+                                                       .setReferenceFalseKryoSerializer(true)
+                                                       .build();
 
-    Mockito.when(delegateAgentManagerClient.publishPollingResult(anyString(), anyString(), any(RequestBody.class)))
+    Mockito.when(delegateAgentManagerClient.publishPollingResultV2(anyString(), anyString(), any(RequestBody.class)))
         .thenReturn(call);
     Mockito.when(call.execute())
         .thenReturn(throwErrorWhilePublishing

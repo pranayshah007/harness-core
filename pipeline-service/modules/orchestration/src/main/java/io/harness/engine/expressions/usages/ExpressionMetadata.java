@@ -11,9 +11,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Builder
+@EqualsAndHashCode
 public class ExpressionMetadata {
   String fqn;
   String expression;

@@ -11,6 +11,7 @@ import static io.harness.cdng.manifest.ManifestConfigType.TAS_AUTOSCALER;
 import static io.harness.cdng.manifest.ManifestConfigType.TAS_MANIFEST;
 import static io.harness.cdng.manifest.ManifestConfigType.TAS_VARS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AZURE_ARTIFACTS_NAME;
@@ -38,16 +39,20 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
@@ -64,7 +69,14 @@ import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.execution.ExecutionInfoKey;
+import io.harness.cdng.execution.StageExecutionInfo;
+import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
+import io.harness.cdng.execution.tas.TasStageExecutionDetails;
+import io.harness.cdng.execution.tas.TasStageExecutionDetails.TasStageExecutionDetailsKeys;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
@@ -86,6 +98,7 @@ import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -161,6 +174,7 @@ import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
@@ -170,23 +184,31 @@ import io.harness.git.model.GitFile;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.logging.UnitProgress;
+import io.harness.logging.UnitStatus;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.manifest.CustomManifestSource;
 import io.harness.manifest.CustomSourceFile;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.filestore.FileUsage;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.pcf.model.CfCliVersion;
 import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.OrchestrationRefType;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.execution.invokers.StrategyHelper;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -196,6 +218,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.StepHelper;
+import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
@@ -207,6 +230,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.lang3.tuple.Pair;
 import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Rule;
@@ -241,22 +265,36 @@ public class TasStepHelperTest extends CategoryTest {
   @Mock private LogCallback mockLogCallback;
   @Mock private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
   @Mock private FileStoreService fileStoreService;
+  @Mock private StageExecutionInfoService stageExecutionInfoService;
   @Spy @InjectMocks private K8sEntityHelper k8sEntityHelper;
-  @Mock private TasInfraConfig tasInfraConfig;
   @Spy @InjectMocks private CDStepHelper cdStepHelper;
   @Spy @InjectMocks private TasStepHelper tasStepHelper;
   @Spy @InjectMocks private TasBasicAppSetupStep tasBasicAppSetupStep = new TasBasicAppSetupStep();
+  private final String ACCOUNT_ID = "test-account";
+  private final String ORG_ID = "test-org";
+  private final String PROJECT_ID = "test-account";
+
   private final Ambiance ambiance = Ambiance.newBuilder()
-                                        .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                                        .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                                        .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+                                        .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID)
+                                        .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_ID)
+                                        .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_ID)
+                                        .setStageExecutionId(STAGE_EXECUTION_ID)
                                         .build();
+  private final EnvironmentOutcome environment =
+      EnvironmentOutcome.builder()
+          .identifier("env")
+          .type(io.harness.ng.core.environment.beans.EnvironmentType.Production)
+          .build();
+  private final TasInfraConfig tasInfraConfig = TasInfraConfig.builder().organization("org").space("space").build();
   private final TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
       TanzuApplicationServiceInfrastructureOutcome.builder()
           .connectorRef("tas")
           .organization("org")
+          .environment(environment)
+          .infrastructureKey("key")
           .space("space")
           .build();
+  private static final String STAGE_EXECUTION_ID = "stageExecutionId";
   private final String ACR_SUBSCRIPTION_ID = "123456-5432-5432-543213";
   private final String NEXUS_URL = "https://nexus3.dev/repo/abc/def";
   private final String NEXUS_MAVEN_FORMAT = "maven";
@@ -398,7 +436,134 @@ public class TasStepHelperTest extends CategoryTest {
         .when(engineExpressionService)
         .renderExpression(eq(ambiance), anyString());
     Reflect.on(tasStepHelper).set("cdStepHelper", cdStepHelper);
+    when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
+        .thenReturn(ServiceStepOutcome.builder().identifier("serviceID").type(ServiceSpecType.TAS).build());
     doReturn(infrastructureOutcome).when(outcomeService).resolve(eq(ambiance), eq(infra));
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testFindLastSuccessfulStageExecutionDetails() {
+    final TasStageExecutionDetails stageExecutionDetails =
+        TasStageExecutionDetails.builder().pipelineExecutionId("pipeline").build();
+    final List<StageExecutionInfo> stageExecutionInfos =
+        singletonList(StageExecutionInfo.builder().executionDetails(stageExecutionDetails).build());
+
+    final ExecutionInfoKey expectedExecutionInfoKey = ExecutionInfoKey.builder()
+                                                          .scope(Scope.builder()
+                                                                     .accountIdentifier(ACCOUNT_ID)
+                                                                     .orgIdentifier(ORG_ID)
+                                                                     .projectIdentifier(PROJECT_ID)
+                                                                     .build())
+                                                          .envIdentifier("env")
+                                                          .infraIdentifier("key")
+                                                          .serviceIdentifier("serviceID")
+                                                          .deploymentIdentifier("org-space-test-tas")
+                                                          .build();
+
+    doReturn(stageExecutionInfos)
+        .when(stageExecutionInfoService)
+        .listLatestSuccessfulStageExecutionInfo(expectedExecutionInfoKey, STAGE_EXECUTION_ID, 1);
+    assertThat(tasStepHelper.findLastSuccessfulStageExecutionDetails(ambiance, tasInfraConfig, "test-tas"))
+        .isEqualTo(stageExecutionDetails);
+
+    doReturn(null)
+        .when(stageExecutionInfoService)
+        .listLatestSuccessfulStageExecutionInfo(expectedExecutionInfoKey, STAGE_EXECUTION_ID, 1);
+    assertThat(tasStepHelper.findLastSuccessfulStageExecutionDetails(ambiance, tasInfraConfig, "test-tas"))
+        .isEqualTo(null);
+
+    doReturn(emptyList())
+        .when(stageExecutionInfoService)
+        .listLatestSuccessfulStageExecutionInfo(expectedExecutionInfoKey, STAGE_EXECUTION_ID, 1);
+    assertThat(tasStepHelper.findLastSuccessfulStageExecutionDetails(ambiance, tasInfraConfig, "test-tas"))
+        .isEqualTo(null);
+
+    InvalidArgumentsException exceptionToBeThrown = new InvalidArgumentsException(
+        Pair.of("infrastructure", "Invalid infrastructure type: KubernetesDirect, expected: TAS"));
+    K8sDirectInfrastructureOutcome infrastructureOutcome =
+        K8sDirectInfrastructureOutcome.builder().infrastructureKey("key").build();
+    doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
+    assertThatThrownBy(
+        () -> tasStepHelper.findLastSuccessfulStageExecutionDetails(ambiance, tasInfraConfig, "test-tas"))
+        .isEqualToComparingFieldByField(exceptionToBeThrown);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testUpdateManifestFiles() {
+    TasManifestsPackage tasManifestsPackage =
+        TasManifestsPackage.builder().manifestYml(MANIFEST_YML).variableYmls(asList(VARS_YML_1)).build();
+    Scope scope =
+        Scope.builder().accountIdentifier(ACCOUNT_ID).orgIdentifier(ORG_ID).projectIdentifier(PROJECT_ID).build();
+    Map<String, Object> updates = new HashMap<>();
+    updates.put(StageExecutionInfoKeys.deploymentIdentifier, "org-space-test-tas");
+    updates.put(String.format(
+                    "%s.%s", StageExecutionInfoKeys.executionDetails, TasStageExecutionDetailsKeys.tasManifestsPackage),
+        tasManifestsPackage);
+    tasStepHelper.updateManifestFiles(ambiance, tasManifestsPackage, "test-tas", tasInfraConfig);
+    verify(stageExecutionInfoService, times(1)).update(scope, STAGE_EXECUTION_ID, updates);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testUpdateAutoscalarEnabledField() {
+    Scope scope =
+        Scope.builder().accountIdentifier(ACCOUNT_ID).orgIdentifier(ORG_ID).projectIdentifier(PROJECT_ID).build();
+    Map<String, Object> updates = new HashMap<>();
+    updates.put(StageExecutionInfoKeys.deploymentIdentifier, "org-space-test-tas");
+    updates.put(String.format(
+                    "%s.%s", StageExecutionInfoKeys.executionDetails, TasStageExecutionDetailsKeys.isAutoscalarEnabled),
+        true);
+    tasStepHelper.updateAutoscalarEnabledField(ambiance, true, "test-tas", tasInfraConfig);
+    verify(stageExecutionInfoService, times(1)).update(scope, STAGE_EXECUTION_ID, updates);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testUpdateRouteMapsField() {
+    Scope scope =
+        Scope.builder().accountIdentifier(ACCOUNT_ID).orgIdentifier(ORG_ID).projectIdentifier(PROJECT_ID).build();
+    List<String> routeMaps = asList("route1", "route2");
+    Map<String, Object> updates = new HashMap<>();
+    updates.put(StageExecutionInfoKeys.deploymentIdentifier, "org-space-test-tas");
+    updates.put(String.format("%s.%s", StageExecutionInfoKeys.executionDetails, TasStageExecutionDetailsKeys.routeMaps),
+        routeMaps);
+    tasStepHelper.updateRouteMapsField(ambiance, routeMaps, "test-tas", tasInfraConfig);
+    verify(stageExecutionInfoService, times(1)).update(scope, STAGE_EXECUTION_ID, updates);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testUpdateDesiredCountField() {
+    Scope scope =
+        Scope.builder().accountIdentifier(ACCOUNT_ID).orgIdentifier(ORG_ID).projectIdentifier(PROJECT_ID).build();
+    Map<String, Object> updates = new HashMap<>();
+    updates.put(StageExecutionInfoKeys.deploymentIdentifier, "org-space-test-tas");
+    updates.put(
+        String.format("%s.%s", StageExecutionInfoKeys.executionDetails, TasStageExecutionDetailsKeys.desiredCount), 3);
+    tasStepHelper.updateDesiredCountField(ambiance, 3, "test-tas", tasInfraConfig);
+    verify(stageExecutionInfoService, times(1)).update(scope, STAGE_EXECUTION_ID, updates);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testUpdateIsFirstDeploymentField() {
+    Scope scope =
+        Scope.builder().accountIdentifier(ACCOUNT_ID).orgIdentifier(ORG_ID).projectIdentifier(PROJECT_ID).build();
+    Map<String, Object> updates = new HashMap<>();
+    updates.put(StageExecutionInfoKeys.deploymentIdentifier, "org-space-test-tas");
+    updates.put(
+        String.format("%s.%s", StageExecutionInfoKeys.executionDetails, TasStageExecutionDetailsKeys.isFirstDeployment),
+        true);
+    tasStepHelper.updateIsFirstDeploymentField(ambiance, true, "test-tas", tasInfraConfig);
+    verify(stageExecutionInfoService, times(1)).update(scope, STAGE_EXECUTION_ID, updates);
   }
 
   @Test
@@ -419,9 +584,40 @@ public class TasStepHelperTest extends CategoryTest {
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
   public void testGetDeploymentIdentifier() {
-    assertThat(tasStepHelper.getDeploymentIdentifier(
-                   TasInfraConfig.builder().organization("org").space("space").build(), "testApp"))
-        .isEqualTo("org-space-testApp");
+    assertThat(tasStepHelper.getDeploymentIdentifier(tasInfraConfig, "testApp")).isEqualTo("org-space-testApp");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testCompleteUnitProgressDataEmpty() {
+    UnitProgressData response = tasStepHelper.completeUnitProgressData(null, ambiance, "foobar");
+    assertThat(response.getUnitProgresses().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testCompleteUnitProgressData() {
+    List<UnitProgress> unitProgresses = new ArrayList<>();
+    unitProgresses.add(UnitProgress.newBuilder().setStatus(UnitStatus.SUCCESS).build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    UnitProgressData response = tasStepHelper.completeUnitProgressData(unitProgressData, ambiance, "foobar");
+    assertThat(response.getUnitProgresses().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testCompleteUnitProgressDataRunning() {
+    List<UnitProgress> unitProgresses = new ArrayList<>();
+    unitProgresses.add(UnitProgress.newBuilder().setStatus(UnitStatus.RUNNING).setUnitName("foobar").build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    NGLogCallback mockCallback = mock(NGLogCallback.class);
+    doReturn(mockCallback).when(cdStepHelper).getLogCallback("foobar", ambiance, true);
+    doNothing().when(mockCallback).saveExecutionLog(any(), any(), any());
+    UnitProgressData response = tasStepHelper.completeUnitProgressData(unitProgressData, ambiance, "foobar");
+    assertThat(response.getUnitProgresses().get(0).getStatus()).isEqualTo(UnitStatus.FAILURE);
   }
 
   @Test
@@ -1333,6 +1529,40 @@ public class TasStepHelperTest extends CategoryTest {
     assertThat(azureArtifactRequestDetails.getJobName()).isEqualTo("testJobName");
     assertThat(packageArtifactConfig.getSourceType()).isEqualTo(JENKINS);
     assertThat(packageArtifactConfig.getEncryptedDataDetails()).isEqualTo(encryptedDataDetails);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testShouldPrepareTasGitValuesFetchTaskNoManifest() {
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder().spec(TasBasicAppSetupStepParameters.infoBuilder().build()).build();
+    OptionalOutcome manifestsOutcome = OptionalOutcome.builder().found(false).build();
+    doReturn(manifestsOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
+    assertThatThrownBy(() -> tasStepHelper.startChainLink(tasStepExecutor, ambiance, stepElementParameters))
+        .hasMessage(
+            "No manifests found in stage Deployment stage. TAS step requires at least one manifest defined in stage service definition");
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID)
+            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_ID)
+            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_ID)
+            .setStageExecutionId(STAGE_EXECUTION_ID)
+            .addLevels(
+                Level.newBuilder()
+                    .setRuntimeId(generateUuid())
+                    .setSetupId(generateUuid())
+                    .setGroup("STAGE")
+                    .setStartTs(3)
+                    .setIdentifier("appSetup")
+                    .setStepType(
+                        StepType.newBuilder().setType("BasicAppSetup").setStepCategory(StepCategory.STAGE).build())
+                    .build())
+            .build();
+    doReturn(manifestsOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
+    assertThatThrownBy(() -> tasStepHelper.startChainLink(tasStepExecutor, ambiance, stepElementParameters))
+        .hasMessage(
+            "No manifests found in stage appSetup. BasicAppSetup step requires at least one manifest defined in stage service definition");
   }
 
   @Test

@@ -216,6 +216,10 @@ if [[ "" != "$STO_SERVICE_ENDPOINT" ]]; then
   export STO_SERVICE_ENDPOINT; yq -i '.stoServiceConfig.baseUrl=env(STO_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
+  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$API_URL" ]]; then
   export API_URL; yq -i '.apiUrl=env(API_URL)' $CONFIG_FILE
 fi
@@ -246,6 +250,10 @@ fi
 
 if [[ "" != "$STO_SERVICE_GLOBAL_TOKEN" ]]; then
   export STO_SERVICE_GLOBAL_TOKEN; yq -i '.stoServiceConfig.globalToken=env(STO_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SSCA_SERVICE_GLOBAL_TOKEN" ]]; then
+  export SSCA_SERVICE_GLOBAL_TOKEN; yq -i '.sscaServiceConfig.globalToken=env(SSCA_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then

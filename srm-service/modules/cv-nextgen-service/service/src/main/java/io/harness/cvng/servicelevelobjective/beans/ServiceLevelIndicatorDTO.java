@@ -22,7 +22,7 @@ import lombok.Data;
 public class ServiceLevelIndicatorDTO {
   String name;
   String identifier;
-  SLIExecutionType type;
+  SLIEvaluationType type;
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
       visible = true, defaultImpl = WindowBasedServiceLevelIndicatorSpec.class)
   @Valid
@@ -35,7 +35,7 @@ public class ServiceLevelIndicatorDTO {
 
   @JsonIgnore
   public String getEvaluationAndMetricType() {
-    if (this.getType().equals(SLIExecutionType.REQUEST)) {
+    if (this.getType().equals(SLIEvaluationType.REQUEST)) {
       return type.name();
     } else {
       SLIMetricType sliMetricType = ((WindowBasedServiceLevelIndicatorSpec) this.getSpec()).getSpec().getType();

@@ -8,6 +8,7 @@
 package io.harness.delegate.task.artifacts.custom;
 
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -71,6 +72,29 @@ public class CustomArtifactServiceTest extends CategoryTest {
         .getBuildDetails(any(), any(), any());
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse1 =
         customArtifactService.getBuilds(customArtifactDelegateRequest, logCallback);
+    assertThat(artifactTaskExecutionResponse1).isNotNull();
+    assertThat(artifactTaskExecutionResponse1.getBuildDetails().get(0).getNumber()).isEqualTo("version");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsWithNullLogCallBack() {
+    CustomArtifactDelegateRequest customArtifactDelegateRequest = CustomArtifactDelegateRequest.builder()
+                                                                      .artifactsArrayPath("results")
+                                                                      .versionPath("version")
+                                                                      .script("echo script")
+                                                                      .workingDirectory("/tmp")
+                                                                      .build();
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
+    doReturn(ShellScriptTaskResponseNG.builder().status(CommandExecutionStatus.SUCCESS).build())
+        .when(customArtifactScriptExecutionOnDelegateNG)
+        .executeOnDelegate(any(), any());
+    doReturn(Collections.singletonList(BuildDetails.Builder.aBuildDetails().withNumber("version").build()))
+        .when(customArtifactScriptExecutionOnDelegateNG)
+        .getBuildDetails(any(), any(), any());
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse1 =
+        customArtifactService.getBuilds(customArtifactDelegateRequest, null);
     assertThat(artifactTaskExecutionResponse1).isNotNull();
     assertThat(artifactTaskExecutionResponse1.getBuildDetails().get(0).getNumber()).isEqualTo("version");
   }
@@ -149,6 +173,30 @@ public class CustomArtifactServiceTest extends CategoryTest {
         .getBuildDetails(any(), any(), any());
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse1 =
         customArtifactService.getLastSuccessfulBuild(customArtifactDelegateRequest, logCallback);
+    assertThat(artifactTaskExecutionResponse1).isNotNull();
+    assertThat(artifactTaskExecutionResponse1.getBuildDetails().get(0).getNumber()).isEqualTo("version");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuildDetailsWithNullLogCallback() {
+    CustomArtifactDelegateRequest customArtifactDelegateRequest = CustomArtifactDelegateRequest.builder()
+                                                                      .artifactsArrayPath("results")
+                                                                      .versionPath("version")
+                                                                      .script("echo script")
+                                                                      .workingDirectory("/tmp")
+                                                                      .version("version")
+                                                                      .build();
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
+    doReturn(ShellScriptTaskResponseNG.builder().status(CommandExecutionStatus.SUCCESS).build())
+        .when(customArtifactScriptExecutionOnDelegateNG)
+        .executeOnDelegate(any(), any());
+    doReturn(Collections.singletonList(BuildDetails.Builder.aBuildDetails().withNumber("version").build()))
+        .when(customArtifactScriptExecutionOnDelegateNG)
+        .getBuildDetails(any(), any(), any());
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse1 =
+        customArtifactService.getLastSuccessfulBuild(customArtifactDelegateRequest, null);
     assertThat(artifactTaskExecutionResponse1).isNotNull();
     assertThat(artifactTaskExecutionResponse1.getBuildDetails().get(0).getNumber()).isEqualTo("version");
   }

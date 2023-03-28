@@ -457,7 +457,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       stepGroupSchema.putIfAbsent("type", jsonNode.get("type"));
       stepGroupSchema.putIfAbsent("$schema", jsonNode.get("$schema"));
       stepGroupSchema.putIfAbsent("definitions", jsonNode.get("definitions"));
-      stepGroupSchema.putIfAbsent("$ref", getStepGroupProperties(stepNameSpace));
+      stepGroupSchema.putIfAbsent("properties", getStepGroupProperties(stepNameSpace));
       return stepGroupSchema;
     }
     return jsonNode;
@@ -486,7 +486,13 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     if (EmptyPredicate.isNotEmpty(namespace)) {
       namespace = namespace + "/";
     }
-    String stepGroupProperties = "\"#/definitions/" + namespace + "StepGroupElementConfig\"";
+    String stepGroupProperties = "{\"properties\": {\n"
+        + "    \"stepGroup\": {\n"
+        + "      \"readOnly\": true,\n"
+        + "      \"$ref\": \"#/definitions/" + namespace + "StepGroupElementConfig\"\n"
+        + "    }\n"
+        + "  }\n"
+        + "}";
     ObjectMapper mapper = new ObjectMapper();
     try {
       return mapper.readTree(stepGroupProperties);

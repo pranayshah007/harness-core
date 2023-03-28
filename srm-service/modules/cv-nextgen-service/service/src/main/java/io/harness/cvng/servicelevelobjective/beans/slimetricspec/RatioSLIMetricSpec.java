@@ -29,6 +29,10 @@ public class RatioSLIMetricSpec extends SLIMetricSpec {
   @NotNull Double thresholdValue;
   @NotNull ThresholdType thresholdType;
 
+  Integer considerConsecutiveMinutes;
+
+  Boolean considerAllConsecutiveMinutesFromStartAsBad;
+
   @Override
   public SLIMetricType getType() {
     return SLIMetricType.RATIO;

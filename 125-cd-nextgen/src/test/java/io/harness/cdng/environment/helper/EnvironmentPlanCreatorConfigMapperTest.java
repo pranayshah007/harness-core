@@ -11,6 +11,7 @@ import static io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMap
 import static io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig;
 
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
@@ -29,8 +30,10 @@ import io.harness.yaml.core.variables.NGServiceOverrides;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
 
 public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
+  @InjectMocks EnvironmentPlanCreatorConfigMapper environmentPlanCreatorConfigMapper;
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
@@ -105,5 +108,59 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
     assertThat(config.getTags().get("k")).isEqualTo("v");
     assertThat(config.getType()).isEqualTo(EnvironmentType.Production);
     assertThat(config.getGitOpsClusterRefs()).hasSize(2);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENA)
+  @Category(UnitTests.class)
+  public void testGetClusterRefsWhenDeployToAllIsFalse() {
+    EnvironmentYamlV2 envV2Yaml =
+        EnvironmentYamlV2.builder()
+            .environmentRef(ParameterField.<String>builder().value("envId").build())
+            .deployToAll(ParameterField.createValueField(false))
+            .gitOpsClusters(
+                ParameterField.<List<ClusterYaml>>builder()
+                    .value(asList(ClusterYaml.builder().identifier(ParameterField.createValueField("c1")).build(),
+                        ClusterYaml.builder().identifier(ParameterField.createValueField("c2")).build()))
+                    .build())
+            .build();
+    List<String> clusterRefs = environmentPlanCreatorConfigMapper.getClusterRefs(envV2Yaml);
+    assertTrue(!clusterRefs.isEmpty());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENA)
+  @Category(UnitTests.class)
+  public void testGetClusterRefsWhenDeployToAllIsNull() {
+    EnvironmentYamlV2 envV2Yaml =
+        EnvironmentYamlV2.builder()
+            .environmentRef(ParameterField.<String>builder().value("envId").build())
+            .deployToAll(ParameterField.createValueField(null))
+            .gitOpsClusters(
+                ParameterField.<List<ClusterYaml>>builder()
+                    .value(asList(ClusterYaml.builder().identifier(ParameterField.createValueField("c1")).build(),
+                        ClusterYaml.builder().identifier(ParameterField.createValueField("c2")).build()))
+                    .build())
+            .build();
+    List<String> clusterRefs = environmentPlanCreatorConfigMapper.getClusterRefs(envV2Yaml);
+    assertTrue(!clusterRefs.isEmpty());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENA)
+  @Category(UnitTests.class)
+  public void testGetClusterRefsWhenDeployToAllIsTrue() {
+    EnvironmentYamlV2 envV2Yaml =
+        EnvironmentYamlV2.builder()
+            .environmentRef(ParameterField.<String>builder().value("envId").build())
+            .deployToAll(ParameterField.createValueField(true))
+            .gitOpsClusters(
+                ParameterField.<List<ClusterYaml>>builder()
+                    .value(asList(ClusterYaml.builder().identifier(ParameterField.createValueField("c1")).build(),
+                        ClusterYaml.builder().identifier(ParameterField.createValueField("c2")).build()))
+                    .build())
+            .build();
+    List<String> clusterRefs = environmentPlanCreatorConfigMapper.getClusterRefs(envV2Yaml);
+    assertTrue(clusterRefs.isEmpty());
   }
 }

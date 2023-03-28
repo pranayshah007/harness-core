@@ -64,6 +64,7 @@ import software.wings.beans.settings.helm.GCSHelmRepoConfig;
 import software.wings.beans.settings.helm.HelmRepoConfig;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
 import software.wings.beans.settings.helm.OciHelmRepoConfig;
+import software.wings.delegatetasks.helm.constants.HelmConstants;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.helpers.ext.helm.request.HelmCommandRequest;
@@ -115,7 +116,6 @@ public class HelmTaskHelper {
   private static final long DEFAULT_TIMEOUT_IN_MILLIS = Duration.ofMinutes(DEFAULT_STEADY_STATE_TIMEOUT).toMillis();
   public static final String RESOURCE_DIR_BASE = "./repository/helm/resources/";
   public static final String REGISTRY_URL = "${REGISTRY_URL}";
-  public static final String REGISTRY_URL_PREFIX = "oci://%s";
 
   @Inject private EncryptionService encryptionService;
   @Inject private CgChartmuseumClientFactory cgChartmuseumClientFactory;
@@ -471,7 +471,8 @@ public class HelmTaskHelper {
     OciHelmRepoConfig repoConfig = (OciHelmRepoConfig) helmChartConfigParams.getHelmRepoConfig();
     try {
       loginOciRegistry(repoConfig, HelmVersion.V380, timeoutInMillis, chartDirectory);
-      String repoName = String.format(REGISTRY_URL_PREFIX, Paths.get(repoConfig.getChartRepoUrl()).normalize());
+      String repoName =
+          String.format(HelmConstants.REGISTRY_URL_PREFIX, Paths.get(repoConfig.getChartRepoUrl()).normalize());
       helmTaskHelperBase.fetchChartFromRepo(repoName, helmChartConfigParams.getRepoDisplayName(),
           helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion(), chartDirectory,
           helmChartConfigParams.getHelmVersion(), helmCommandFlag, timeoutInMillis, cacheDir);

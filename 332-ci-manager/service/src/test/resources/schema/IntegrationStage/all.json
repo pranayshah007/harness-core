@@ -8385,6 +8385,9 @@
               "minLength": 1
             }
           ]
+        },
+        "project_key": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -9956,6 +9959,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "CustomIngest"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CustomIngestStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "DataTheorem"
               }
             }
@@ -9980,22 +9999,6 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/DockerContentTrustStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "External"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/CustomIngestStepInfo"
               }
             }
           }

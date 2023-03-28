@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
+import static io.harness.utils.ExecutionModeUtils.isRollbackMode;
 
 import static java.lang.String.format;
 
@@ -40,6 +41,7 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.notification.bean.NotificationRules;
+import io.harness.opaclient.model.OpaConstants;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
@@ -263,7 +265,8 @@ public class ExecutionHelper {
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
       }
       String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
-          pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef, true);
+          pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef, true,
+          OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
       planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
       PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataBuilder.build();
 
@@ -493,7 +496,7 @@ public class ExecutionHelper {
       return retryExecutionHelper.transformPlan(
           plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
     }
-    if (executionMode.equals(ExecutionMode.POST_EXECUTION_ROLLBACK)) {
+    if (isRollbackMode(executionMode)) {
       return rollbackModeExecutionHelper.transformPlanForRollbackMode(
           plan, previousExecutionId, resp.getPreservedNodesInRollbackModeList(), executionMode);
     }

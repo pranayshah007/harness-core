@@ -7,7 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.entities;
 
-import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 
@@ -38,8 +38,8 @@ public class RequestServiceLevelIndicator extends ServiceLevelIndicator {
   }
 
   @Override
-  public SLIExecutionType getSLIExecutionType() {
-    return SLIExecutionType.REQUEST;
+  public SLIEvaluationType getSLIEvaluationType() {
+    return SLIEvaluationType.REQUEST;
   }
 
   @Override

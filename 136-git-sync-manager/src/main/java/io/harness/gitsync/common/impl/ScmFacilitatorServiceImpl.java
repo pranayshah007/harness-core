@@ -719,6 +719,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         }
       case AZURE_REPO:
         return GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas(gitConnectionUrl);
+      case GITLAB:
+        return GitClientHelper.getCompleteHTTPUrlForGitLab(gitConnectionUrl);
       default:
         throw new InvalidRequestException(
             format("Connector of given type : %s isn't supported", scmConnector.getConnectorType()));

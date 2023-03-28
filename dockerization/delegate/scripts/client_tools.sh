@@ -32,6 +32,8 @@ if [[ ( -z "$DISABLE_CLIENT_TOOLS") || ("$DISABLE_CLIENT_TOOLS" = "false") ]]; t
   && curl -s -L -o client-tools/tf-config-inspect/v1.0/terraform-config-inspect https://app.harness.io/public/shared/tools/terraform-config-inspect/v1.0/linux/$ARCH/terraform-config-inspect \
   && mkdir -m 777 -p client-tools/tf-config-inspect/v1.1 \
   && curl -s -L -o client-tools/tf-config-inspect/v1.1/terraform-config-inspect https://app.harness.io/public/shared/tools/terraform-config-inspect/v1.1/linux/$ARCH/terraform-config-inspect \
+  && mkdir -m 777 -p client-tools/tf-config-inspect/v1.2 \
+  && curl -s -L -o client-tools/tf-config-inspect/v1.2/terraform-config-inspect https://app.harness.io/public/shared/tools/terraform-config-inspect/v1.2/linux/$ARCH/terraform-config-inspect \
   && mkdir -m 777 -p client-tools/oc/v4.2.16 \
   && curl -s -L -o client-tools/oc/v4.2.16/oc https://app.harness.io/public/shared/tools/oc/release/v4.2.16/bin/linux/$ARCH/oc \
   && mkdir -m 777 -p client-tools/kustomize/v3.5.4 \

@@ -11,7 +11,6 @@ import static io.harness.beans.steps.outcome.StepArtifacts.StepArtifactsBuilder;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.steps.outcome.PublishedSbomArtifact;
 import io.harness.beans.steps.outcome.StepArtifacts;
 import io.harness.ci.states.AbstractStepExecutable;
 import io.harness.delegate.task.stepstatus.StepStatus;
@@ -23,8 +22,9 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.ssca.beans.SBOMArtifactResponse;
 import io.harness.ssca.client.SSCAServiceClient;
+import io.harness.ssca.client.beans.SBOMArtifactResponse;
+import io.harness.ssca.execution.orchestration.outcome.PublishedSbomArtifact;
 
 import com.google.inject.Inject;
 import java.io.IOException;

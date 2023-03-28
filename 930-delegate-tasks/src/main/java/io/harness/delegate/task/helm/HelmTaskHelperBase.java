@@ -43,7 +43,7 @@ import static io.harness.logging.LogLevel.WARN;
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
-import static software.wings.delegatetasks.helm.HelmTaskHelper.REGISTRY_URL_PREFIX;
+import static software.wings.delegatetasks.helm.constants.HelmConstants.REGISTRY_URL_PREFIX;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;

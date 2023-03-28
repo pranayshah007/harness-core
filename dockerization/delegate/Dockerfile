@@ -55,8 +55,8 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/harness-pywinrm/v0.4-dev/harness-pywinrm https://app.harness.io/public/shared/tools/harness-pywinrm/release/v0.4-dev/bin/linux/$TARGETARCH/harness-pywinrm \
   && mkdir -m 777 -p client-tools/chartmuseum/v0.15.0 \
   && curl -s -L -o client-tools/chartmuseum/v0.15.0/chartmuseum https://app.harness.io/public/shared/tools/chartmuseum/release/v0.15.0/bin/linux/$TARGETARCH/chartmuseum \
-  && mkdir -m 777 -p client-tools/tf-config-inspect/v1.1 \
-  && curl -s -L -o client-tools/tf-config-inspect/v1.1/terraform-config-inspect https://app.harness.io/public/shared/tools/terraform-config-inspect/v1.1/linux/$TARGETARCH/terraform-config-inspect \
+  && mkdir -m 777 -p client-tools/tf-config-inspect/v1.2 \
+  && curl -s -L -o client-tools/tf-config-inspect/v1.2/terraform-config-inspect https://app.harness.io/public/shared/tools/terraform-config-inspect/v1.2/linux/$TARGETARCH/terraform-config-inspect \
   && mkdir -m 777 -p client-tools/oc/v4.2.16 \
   && curl -s -L -o client-tools/oc/v4.2.16/oc https://app.harness.io/public/shared/tools/oc/release/v4.2.16/bin/linux/$TARGETARCH/oc \
   && mkdir -m 777 -p client-tools/kustomize/v4.5.4 \

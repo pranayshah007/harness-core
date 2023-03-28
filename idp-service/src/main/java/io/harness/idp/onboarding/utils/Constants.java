@@ -28,7 +28,6 @@ public class Constants {
   public static final int PAGE_LIMIT_FOR_ENTITY_FETCH = 1000;
   public static final String ENTITY_REQUIRED_ERROR_MESSAGE =
       "At-least one entity of type organization / project / service should be provided";
-  public static final String ACCOUNT_SCOPED = "account.";
   public static final String SLASH_DELIMITER = "/";
   public static final String YAML_FILE_EXTENSION = ".yaml";
   public static final String SOURCE_FORMAT = "blob";

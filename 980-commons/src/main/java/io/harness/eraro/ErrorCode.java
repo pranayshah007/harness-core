@@ -667,7 +667,8 @@ public enum ErrorCode {
   INTERNAL_SERVER_ERROR(Status.INTERNAL_SERVER_ERROR),
 
   SCM_FORBIDDEN,
-  AWS_EKS_ERROR;
+  AWS_EKS_ERROR,
+  OPA_POLICY_EVALUATION_ERROR;
 
   private Status status = BAD_REQUEST;
   private String description;

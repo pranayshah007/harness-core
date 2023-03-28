@@ -27,8 +27,8 @@ import io.harness.git.model.GitFileChange;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
-import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -62,7 +62,7 @@ public abstract class ConnectorProcessor {
     return connectorDTO.get().getConnectorInfo();
   }
 
-  public abstract Pair<ConnectorInfoDTO, Map<String, EnvironmentSecret>> getConnectorAndSecretsInfo(
+  public abstract Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> getConnectorAndSecretsInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier);
 
   public abstract void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
@@ -76,7 +76,7 @@ public abstract class ConnectorProcessor {
             .branch(catalogConnectorInfo.getBranch())
             .unsureOrNonExistentBranch(true)
             .filePaths(Collections.singletonList(remoteFolder))
-            .connectorId(catalogConnectorInfo.getSourceConnector().getIdentifier())
+            .connectorId(catalogConnectorInfo.getInfraConnector().getIdentifier())
             .accountId(accountIdentifier)
             .recursive(true)
             .authRequest(
@@ -109,7 +109,7 @@ public abstract class ConnectorProcessor {
             .repoUrl(catalogConnectorInfo.getRepo())
             .branch(catalogConnectorInfo.getBranch())
             .unsureOrNonExistentBranch(true)
-            .connectorId(catalogConnectorInfo.getSourceConnector().getIdentifier())
+            .connectorId(catalogConnectorInfo.getInfraConnector().getIdentifier())
             .accountId(accountIdentifier)
             .authRequest(
                 UsernamePasswordAuthRequest.builder().username(username).password(password.toCharArray()).build())

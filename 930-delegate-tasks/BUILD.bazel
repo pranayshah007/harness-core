@@ -42,6 +42,7 @@ java_library(
         "//930-delegate-tasks/src/main/java/software/wings/core/executors/bash:module",
         "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/azure/taskhelper:module",
         "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/bash:module",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/helm/constants:module",
         "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/validation/core:module",
         "//930-delegate-tasks/src/main/proto/io/harness:930_delegate_tasks_java_proto",
         "//931-delegate-annotations/src/java/software/wings/delegatetasks:module",

@@ -22,6 +22,7 @@ import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
 import io.harness.ssca.beans.tools.syft.SyftSbomOrchestration;
 import io.harness.ssca.client.SSCAServiceUtils;
+import io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
 import com.google.inject.Inject;

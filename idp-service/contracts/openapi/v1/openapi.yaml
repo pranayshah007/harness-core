@@ -1,6 +1,6 @@
 openapi: 3.0.3
 x-stoplight:
-  id: 9i33e8gca28nf
+  id: q0pbqzd9uictu
 info:
   title: IDP
   version: '1.0'
@@ -12,14 +12,14 @@ info:
 servers:
   - url: 'https://api.harness.io'
 paths:
-  /v1/environment-secrets:
+  /v1/backstage-env-variables:
     get:
-      summary: Retrieves all Environment Secrets
+      summary: Retrieves all backstage env variables
       responses:
         '200':
-          $ref: '#/components/responses/EnvironmentSecretResponseList'
-      operationId: get-environment-secrets
-      description: Get all environment secrets mapping for a given account
+          $ref: '#/components/responses/BackstageEnvVariableResponseList'
+      operationId: get-backstage-env-variables
+      description: Get all backsage env variables mapping for a given account
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Page'
@@ -29,127 +29,129 @@ paths:
         - x-api-key: []
       x-internal: true
       tags:
-        - EnvironmentSecret
+        - BackstageEnvVariable
     post:
-      summary: Creates an Environment Secret
-      operationId: create-environment-secret
+      summary: Creates an backstage env variable
+      operationId: create-backstage-env-variable
       responses:
         '201':
-          $ref: '#/components/responses/EnvironmentSecretResponse'
-      description: Creates an environment secret
+          $ref: '#/components/responses/BackstageEnvVariableResponse'
+      description: Creates an backstage env variable
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
         - x-api-key: []
       requestBody:
-        $ref: '#/components/requestBodies/EnvironmentSecretRequest'
-      tags:
-        - EnvironmentSecret
+        $ref: '#/components/requestBodies/BackstageEnvVariableRequest'
       x-internal: true
+      tags:
+        - BackstageEnvVariable
     parameters: []
-  /v1/environment-secrets/sync:
+  /v1/backstage-env-variables/sync:
     parameters: []
     put:
-      summary: ''
-      operationId: sync-environment-secrets
-      description: Synchronize all environment secrets mapping for a given account
+      summary: Sync backstage env variables
+      operationId: sync-backstage-env-variables
+      description: Synchronize all backstage env variables mapping for a given account
       x-internal: true
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
         - x-api-key: []
-      tags:
-        - EnvironmentSecret
       responses:
         '204':
           description: No Content
-  '/v1/environment-secrets/{environment-secret}':
+      tags:
+        - BackstageEnvVariable
+  '/v1/backstage-env-variables/{backstage-env-variable}':
     parameters:
-      - $ref: '#/components/parameters/EnvironmentSecret'
+      - $ref: '#/components/parameters/BackstageEnvVariable'
     get:
-      summary: Retrieves an Environment Secret
+      summary: Retrieves a backstage env variable
       responses:
         '200':
-          $ref: '#/components/responses/EnvironmentSecretResponse'
-      operationId: get-environment-secret
-      description: Get environment secret mapping for a given environment secret
+          $ref: '#/components/responses/BackstageEnvVariableResponse'
+        '':
+          $ref: '#/components/responses/BackstageEnvVariableResponse'
+      operationId: get-backstage-env-variable
+      description: Get backstage env variable mapping for a given backstage env variable
       security:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       x-internal: true
       tags:
-        - EnvironmentSecret
+        - BackstageEnvVariable
     put:
-      summary: Updates an Environment Secret
-      operationId: update-environment-secret
+      summary: Updates a backstage env variable
+      operationId: update-backstage-env-variable
       responses:
         '200':
-          $ref: '#/components/responses/EnvironmentSecretResponse'
+          $ref: '#/components/responses/BackstageEnvVariableResponse'
       security:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
-        $ref: '#/components/requestBodies/EnvironmentSecretRequest'
-      description: Updates the specified environment secret
-      tags:
-        - EnvironmentSecret
+        $ref: '#/components/requestBodies/BackstageEnvVariableRequest'
+      description: Updates the specified backstage env variable
       x-internal: true
+      tags:
+        - BackstageEnvVariable
     delete:
-      summary: Deletes an Environment Secret
-      operationId: delete-environment-secret
-      description: Deletes the requested environment secret
+      summary: Deletes a backstage env variable
+      operationId: delete-backstage-env-variable
+      description: Deletes the requested backstage env variable
       security:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      tags:
-        - EnvironmentSecret
       x-internal: true
       responses:
         '204':
           description: No Content
-  /v1/environment-secrets/batch:
+      tags:
+        - BackstageEnvVariable
+  /v1/backstage-env-variables/batch:
     post:
-      summary: Creates Multiple Environment Secret
-      operationId: create-environment-secrets
+      summary: Creates Multiple backstage env variables
+      operationId: create-backstage-env-variables
       responses:
         '201':
-          $ref: '#/components/responses/EnvironmentSecretResponseList'
-      description: Creates multiple environment secret
+          $ref: '#/components/responses/BackstageEnvVariableResponseList'
+      description: Creates multiple backstage env variables
       x-internal: true
       requestBody:
-        $ref: '#/components/requestBodies/EnvironmentSecretRequestList'
+        $ref: '#/components/requestBodies/BackstageEnvVariableRequestList'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
         - x-api-key: []
       tags:
-        - EnvironmentSecret
+        - BackstageEnvVariable
     put:
-      summary: Updates Multiple Environment Secret
-      operationId: update-environment-secrets
+      summary: Updates Multiple backstage env variables
+      operationId: update-backstage-env-variables
       responses:
         '200':
-          $ref: '#/components/responses/EnvironmentSecretResponseList'
-      description: Updates the multiple environment secrets specified in the request
+          $ref: '#/components/responses/BackstageEnvVariableResponseList'
+      description: Updates the multiple backstage env variables specified in the request
       x-internal: true
       security:
         - x-api-key: []
       requestBody:
-        $ref: '#/components/requestBodies/EnvironmentSecretRequestList'
-      tags:
-        - EnvironmentSecret
+        $ref: '#/components/requestBodies/BackstageEnvVariableRequestList'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - BackstageEnvVariable
     delete:
-      summary: Deletes Multiple Environment Secret
-      operationId: delete-environment-secrets
+      summary: Deletes Multiple backstage env variables
+      operationId: delete-backstage-env-variables
       responses:
         '204':
           description: No Content
-      description: Deletes the multiple environment secrets specified in the request
+      description: Deletes the multiple backstage env variables specified in the request
       x-internal: true
       security:
         - x-api-key: []
@@ -159,11 +161,12 @@ paths:
             items:
               type: string
           in: query
-          name: environment-secret
-          description: Identifier field of environment secrets
+          name: backstage-env-variable
+          description: Identifier field of backstage env variable
         - $ref: '#/components/parameters/AccountHeader'
       tags:
-        - EnvironmentSecret
+        - BackstageEnvVariable
+    parameters: []
   /v1/backstage-permissions:
     get:
       summary: Gets all backstage permissions
@@ -436,7 +439,7 @@ paths:
       summary: Your GET endpoint
       responses:
         '200':
-          $ref: '#/components/responses/GeneralResponse'
+          $ref: '#/components/responses/LayoutResponse'
       operationId: get-layout-health
       description: Get Layout Health
       x-internal: true
@@ -499,12 +502,6 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/PluginId'
-    parameters:
-      - schema:
-          type: string
-        name: plugin-id
-        in: path
-        required: true
   /v1/app-config:
     post:
       summary: ''
@@ -545,44 +542,160 @@ paths:
       x-internal: true
       tags:
         - AppConfig
+  /v1/connectors-info:
+    get:
+      summary: Get all connectors info
+      tags:
+        - ConnectorInfo
+      responses:
+        '200':
+          $ref: '#/components/responses/ConnectorInfoResponseList'
+      operationId: get-connectors-info
+      description: Get all connectors info
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+  /v1/connector-info:
+    post:
+      summary: Create or update connector info
+      tags:
+        - ConnectorInfo
+      operationId: save-connector-info
+      responses:
+        '201':
+          $ref: '#/components/responses/ConnectorInfoResponse'
+      description: Create or update connector info
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/ConnectorInfoRequest'
+  '/v1/connector-info/{provider-type}':
+    get:
+      summary: Get connector info by connector provider type
+      tags:
+        - ConnectorInfo
+      responses:
+        '200':
+          $ref: '#/components/responses/ConnectorInfoResponse'
+      operationId: get-connector-info-by-providerType
+      description: Get connector info by connector provider type
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ProviderType'
 components:
   schemas:
-    EnvironmentSecret:
-      title: EnvironmentSecret
+    BackstageEnvVariable:
+      title: BackstageEnvVariable
       x-stoplight:
-        id: c62d4d8f19081
+        id: mx4577z6q5ui0
       type: object
+      description: Backstage Env Variable
+      discriminator:
+        propertyName: type
+        mapping:
+          Config: '#/components/schemas/BackstageEnvConfigVariable'
+          Secret: '#/components/schemas/BackstageEnvSecretVariable'
+      x-examples: {}
       properties:
         identifier:
           type: string
+          x-stoplight:
+            id: ifbqbz1jlv275
         env_name:
           type: string
-        secret_identifier:
-          type: string
-        decrypted_value:
-          type: string
+          x-stoplight:
+            id: 4zuc9epeyht73
         created:
           type: integer
+          x-stoplight:
+            id: 77v995uneakvt
           format: int64
         updated:
           type: integer
+          x-stoplight:
+            id: pj181njip2pmz
           format: int64
-    EnvironmentSecretRequest:
-      title: EnvironmentSecretRequest
+        type:
+          type: string
+          x-stoplight:
+            id: sjviqf7m7oeff
+            type: null
+          description: This specifies the type of backstage env variable
+          enum:
+            - Config
+            - Secret
+      required:
+        - env_name
+        - type
+    BackstageEnvSecretVariable:
+      title: BackstageEnvSecretVariable
+      x-stoplight:
+        id: vnn39er7ngivm
+      x-discriminator-value: Secret
+      allOf:
+        - $ref: '#/components/schemas/BackstageEnvVariable'
+          x-stoplight:
+            id: hf1o5948xcd93
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - Secret
+            harness_secret_identifier:
+              type: string
+              x-stoplight:
+                id: pu8uqht14yg13
+          required:
+            - type
+            - harness_secret_identifier
+      x-examples: {}
+    BackstageEnvConfigVariable:
+      title: BackstageEnvConfigVariable
+      x-stoplight:
+        id: 070pc2aob4jhc
+      x-discriminator-value: Config
+      allOf:
+        - $ref: '#/components/schemas/BackstageEnvVariable'
+          x-stoplight:
+            id: roe9dk8ktccbi
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - Config
+            value:
+              type: string
+              x-stoplight:
+                id: 5juxk5r0hnhr5
+          required:
+            - type
+            - value
+      x-examples: {}
+    BackstageEnvVariableRequest:
       x-stoplight:
         id: a94746e067851
       type: object
       properties:
-        secret:
-          $ref: '#/components/schemas/EnvironmentSecret'
-    EnvironmentSecretResponse:
-      title: EnvironmentSecretResponse
+        env_variable:
+          $ref: '#/components/schemas/BackstageEnvVariable'
+          x-stoplight:
+            id: r2xgjoclqancb
+    BackstageEnvVariableResponse:
       x-stoplight:
         id: e8875709fc5b1
       type: object
       properties:
-        secret:
-          $ref: '#/components/schemas/EnvironmentSecret'
+        env_variable:
+          $ref: '#/components/schemas/BackstageEnvVariable'
+          x-stoplight:
+            id: h1ub7r23fswfs
     BackstagePermissions:
       title: BackstagePermissions
       x-stoplight:
@@ -875,6 +988,7 @@ components:
           enum:
             - Monitoring
             - CI/CD
+            - Security
         source:
           type: string
           x-stoplight:
@@ -883,6 +997,10 @@ components:
           type: string
           x-stoplight:
             id: 4arnqctb1wfyl
+        layout:
+          type: object
+          x-stoplight:
+            id: ns1ky9089aalt
     ManualImportEntityRequest:
       title: ManualImportEntityRequest
       x-stoplight:
@@ -996,6 +1114,26 @@ components:
           $ref: '#/components/schemas/AppConfig'
           x-stoplight:
             id: 7rhhzvrxp6grz
+    ConnectorInfoRequest:
+      title: ConnectorInfoRequest
+      x-stoplight:
+        id: ac9uhio4r21e5
+      type: object
+      properties:
+        connectorDetails:
+          $ref: '#/components/schemas/ConnectorDetails'
+          x-stoplight:
+            id: cfx70t6ohuzrc
+    ConnectorInfoResponse:
+      title: ConnectorInfoResponse
+      x-stoplight:
+        id: iq2fsejvdmg8g
+      type: object
+      properties:
+        connectorDetails:
+          $ref: '#/components/schemas/ConnectorDetails'
+          x-stoplight:
+            id: ictqwjgoxe2bc
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1025,13 +1163,13 @@ components:
       schema:
         type: string
       description: Parameter on the basis of which sorting is done.
-    EnvironmentSecret:
-      name: environment-secret
+    BackstageEnvVariable:
+      name: backstage-env-variable
       in: path
       required: true
       schema:
         type: string
-      description: Identifier field of the environment secret the resource is scoped to
+      description: Identifier field of the backstage env variable the resource is scoped to
     StatusType:
       name: type
       in: path
@@ -1075,6 +1213,10 @@ components:
       required: true
       schema:
         type: string
+        enum:
+          - pager-duty
+          - snyk-security
+          - harness-ci-cd
     PluginName:
       name: PluginId
       in: query
@@ -1089,27 +1231,33 @@ components:
       schema:
         type: boolean
       description: flag for checking enablement/disablement
+    ProviderType:
+      name: provider-type
+      in: path
+      required: true
+      schema:
+        type: string
   requestBodies:
-    EnvironmentSecretRequest:
+    BackstageEnvVariableRequest:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/EnvironmentSecretRequest'
+            $ref: '#/components/schemas/BackstageEnvVariableRequest'
         application/yaml:
           schema:
-            $ref: '#/components/schemas/EnvironmentSecretRequest'
-    EnvironmentSecretRequestList:
+            $ref: '#/components/schemas/BackstageEnvVariableRequest'
+    BackstageEnvVariableRequestList:
       content:
         application/json:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/EnvironmentSecretRequest'
+              $ref: '#/components/schemas/BackstageEnvVariableRequest'
         application/yaml:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/EnvironmentSecretRequest'
+              $ref: '#/components/schemas/BackstageEnvVariableRequest'
     BackstagePermissionsRequest:
       content:
         application/json:
@@ -1148,29 +1296,34 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/AppConfigRequest'
+    ConnectorInfoRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorInfoRequest'
   responses:
-    EnvironmentSecretResponse:
+    BackstageEnvVariableResponse:
       description: Example response
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/EnvironmentSecretResponse'
+            $ref: '#/components/schemas/BackstageEnvVariableResponse'
         application/yaml:
           schema:
-            $ref: '#/components/schemas/EnvironmentSecretResponse'
-    EnvironmentSecretResponseList:
+            $ref: '#/components/schemas/BackstageEnvVariableResponse'
+    BackstageEnvVariableResponseList:
       description: Example response
       content:
         application/json:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/EnvironmentSecretResponse'
+              $ref: '#/components/schemas/BackstageEnvVariableResponse'
         application/yaml:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/EnvironmentSecretResponse'
+              $ref: '#/components/schemas/BackstageEnvVariableResponse'
       headers:
         X-Total-Elements:
           schema:
@@ -1292,6 +1445,24 @@ components:
           schema:
             type: object
             properties: {}
+    ConnectorInfoResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorInfoResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ConnectorInfoResponse'
+    ConnectorInfoResponseList:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorInfoResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ConnectorInfoResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -1299,6 +1470,6 @@ components:
       in: header
 tags:
   - name: AppConfig
+  - name: BackstageEnvVariable
   - name: BackstagePermissions
-  - name: EnvironmentSecret
   - name: LayoutProxy

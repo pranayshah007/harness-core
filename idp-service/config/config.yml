@@ -43,6 +43,21 @@ eventsFramework:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
+redisLockConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
+  userName: ""
+  password: ""
+
 logging:
   level: INFO
   loggers:
@@ -58,6 +73,8 @@ logging:
       threshold: TRACE
       target: STDOUT
       stackdriverLogEnabled: false
+
+distributedLockImplementation: MONGO
 
 logStreamingServiceConfig:
   baseUrl: http://localhost:8079

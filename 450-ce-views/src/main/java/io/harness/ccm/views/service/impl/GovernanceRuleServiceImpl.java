@@ -8,6 +8,7 @@
 package io.harness.ccm.views.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,10 +17,23 @@ import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.RuleList;
 import io.harness.ccm.views.service.GovernanceRuleService;
+import io.harness.connector.ConnectorFilterPropertiesDTO;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResourceClient;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.delegate.beans.connector.CEFeatures;
+import io.harness.delegate.beans.connector.CcmConnectorFilter;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.filter.FilterType;
+import io.harness.ng.beans.PageResponse;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.yaml.validator.YamlSchemaValidator;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -28,9 +42,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessExecutor;
 
@@ -40,6 +58,7 @@ import org.zeroturnaround.exec.ProcessExecutor;
 public class GovernanceRuleServiceImpl implements GovernanceRuleService {
   @Inject private RuleDAO ruleDAO;
   @Inject private YamlSchemaValidator yamlSchemaValidator;
+  @Inject private ConnectorResourceClient connectorResourceClient;
   @Override
   public boolean save(Rule rules) {
     return ruleDAO.save(rules);
@@ -149,7 +168,72 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
     }
   }
 
+  @Override
+  public List<ConnectorResponseDTO> getAWSConnectorWithTargetAccounts(List<String> accounts, String accountId) {
+    List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
+    PageResponse<ConnectorResponseDTO> response = null;
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
+        ConnectorFilterPropertiesDTO.builder()
+            .types(Arrays.asList(ConnectorType.CE_AWS))
+            .ccmConnectorFilter(CcmConnectorFilter.builder()
+                                    .featuresEnabled(Arrays.asList(CEFeatures.GOVERNANCE))
+                                    .awsAccountIds(accounts)
+                                    .build())
+            .build();
+    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
+    int page = 0;
+    int size = 1000;
+    do {
+      response = NGRestUtils.getResponse(connectorResourceClient.listConnectors(
+          accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
+      if (response != null && isNotEmpty(response.getContent())) {
+        nextGenConnectorResponses.addAll(response.getContent());
+      }
+      page++;
+    } while (response != null && isNotEmpty(response.getContent()));
+
+    return nextGenConnectorResponses;
+  }
+
   ProcessExecutor getProcessExecutor() {
     return new ProcessExecutor();
+  }
+
+  private final Cache<CacheKey, ConnectorInfoDTO> connectorCache =
+      Caffeine.newBuilder().maximumSize(2000).expireAfterWrite(15, TimeUnit.MINUTES).build();
+
+  @Override
+  public Set<ConnectorInfoDTO> getConnectorResponse(String accountId, Set<String> targetAccounts) {
+    Set<ConnectorInfoDTO> responseDTO = new HashSet<>();
+    List<String> accounts = new ArrayList<>();
+    for (String targetAccount : targetAccounts) {
+      final CacheKey cacheKey = new CacheKey(accountId, targetAccount);
+      ConnectorInfoDTO connectorInfoDTO = connectorCache.getIfPresent(cacheKey);
+      if (connectorInfoDTO != null) {
+        log.info("cache hit for key: {} value: {}", cacheKey, connectorInfoDTO);
+        responseDTO.add(connectorInfoDTO);
+      } else {
+        accounts.add(targetAccount);
+        log.info("cache miss for key: {}", cacheKey);
+      }
+    }
+    if (!accounts.isEmpty()) {
+      log.info("accounts not cached: {}", accounts);
+      List<ConnectorResponseDTO> nextGenConnectorResponses = getAWSConnectorWithTargetAccounts(accounts, accountId);
+      for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
+        ConnectorInfoDTO connectorInfo = connector.getConnector();
+        CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();
+        responseDTO.add(connectorInfo);
+        final CacheKey cacheKey = new CacheKey(accountId, ceAwsConnectorDTO.getAwsAccountId());
+        connectorCache.put(cacheKey, connectorInfo);
+      }
+    }
+    return responseDTO;
+  }
+
+  @Value
+  private static class CacheKey {
+    String accountId;
+    String targetAccount;
   }
 }

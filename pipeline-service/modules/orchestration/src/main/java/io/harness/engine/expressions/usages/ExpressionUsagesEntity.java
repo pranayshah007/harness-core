@@ -11,18 +11,21 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.NonFinal;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -34,20 +37,23 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("expressionUsage")
 @TypeAlias("expressionUsage")
 @OwnedBy(HarnessTeam.PIPELINE)
-public class ExpressionUsagesEntity {
-  @NotEmpty String accountIdentifier;
-  @NotEmpty String orgIdentifier;
-  @NotEmpty String projectIdentifier;
-  @FdUniqueIndex String pipelineIdentifier;
-  Map<ExpressionCategory, List<ExpressionMetadata>> expressions;
+public class ExpressionUsagesEntity implements PersistentEntity {
+  @NonFinal @Id @dev.morphia.annotations.Id String uuid;
+  @NotEmpty private String accountIdentifier;
+  @NotEmpty private String orgIdentifier;
+  @NotEmpty private String projectIdentifier;
+  @NotEmpty private String pipelineIdentifier;
+  private Map<ExpressionCategory, Set<ExpressionMetadata>> expressionsMap;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId")
+                 .name("accountId_orgId_projectId_pipelineId")
                  .field(ExpressionUsagesEntityKeys.accountIdentifier)
                  .field(ExpressionUsagesEntityKeys.orgIdentifier)
                  .field(ExpressionUsagesEntityKeys.projectIdentifier)
+                 .field(ExpressionUsagesEntityKeys.pipelineIdentifier)
+                 .unique(true)
                  .build())
         .build();
   }
