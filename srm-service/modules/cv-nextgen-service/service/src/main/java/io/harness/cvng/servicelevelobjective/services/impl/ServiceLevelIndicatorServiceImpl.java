@@ -194,10 +194,9 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
   private SLIValue getSLIValue(ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, SLIAnalyseResponse sliAnalyseResponse,
       SLIAnalyseResponse initialSLIResponse) {
     if (serviceLevelIndicatorDTO.getType() == SLIEvaluationType.WINDOW) {
-      return ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec())
-          .getSliMissingDataType()
-          .calculateSLIValue(sliAnalyseResponse.getRunningGoodCount(), sliAnalyseResponse.getRunningBadCount(),
-              Duration.between(initialSLIResponse.getTimeStamp(), sliAnalyseResponse.getTimeStamp()).toMinutes() + 1);
+      return serviceLevelIndicatorDTO.getSLIMissingDataType().calculateSLIValue(
+          sliAnalyseResponse.getRunningGoodCount(), sliAnalyseResponse.getRunningBadCount(),
+          Duration.between(initialSLIResponse.getTimeStamp(), sliAnalyseResponse.getTimeStamp()).toMinutes() + 1);
     } else if (serviceLevelIndicatorDTO.getType() == SLIEvaluationType.REQUEST) {
       return SLIValue.builder()
           .goodCount(sliAnalyseResponse.getRunningGoodCount())
