@@ -40,6 +40,7 @@ import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.AutoLogContext.OverrideBehavior;
+import io.harness.mappers.InstanceSyncPerpetualTaskMappingMapper;
 import io.harness.models.DeploymentEvent;
 import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.models.constants.InstanceSyncFlow;
@@ -140,47 +141,15 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
                   infrastructureMappingDTO.getInfrastructureKind());
           // check if existing instance sync perpetual task info record exists or not for incoming infrastructure
           // mapping
-          Optional<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOOptional =
-              instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId());
+
           InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO;
 
           if (instanceSyncPerpetualTaskService.isInstanceSyncV2Enabled()) {
-            saveInstanceSyncPerpetualTaskMapping(infrastructureMappingDTO, deploymentSummaryDTO);
-          }
-
-          if (instanceSyncPerpetualTaskInfoDTOOptional.isEmpty()) {
-            // no existing perpetual task info record found for given infrastructure mapping id
-            // so create a new perpetual task and instance sync perpetual task info record
-            String perpetualTaskId = instanceSyncPerpetualTaskService.createPerpetualTask(infrastructureMappingDTO,
-                abstractInstanceSyncHandler, Collections.singletonList(deploymentSummaryDTO.getDeploymentInfoDTO()),
-                deploymentEvent.getInfrastructureOutcome());
-            instanceSyncPerpetualTaskInfoDTO = instanceSyncPerpetualTaskInfoService.save(
-                prepareInstanceSyncPerpetualTaskInfoDTO(deploymentSummaryDTO, perpetualTaskId,
-                    instanceSyncPerpetualTaskService.isInstanceSyncV2Enabled()
-                        ? infrastructureMappingDTO.getConnectorRef()
-                        : null));
+            instanceSyncPerpetualTaskInfoDTO = handlingInstanceSyncPerpetualTaskV2(
+                abstractInstanceSyncHandler, infrastructureMappingDTO, deploymentSummaryDTO, deploymentEvent);
           } else {
-            instanceSyncPerpetualTaskInfoDTO = instanceSyncPerpetualTaskInfoDTOOptional.get();
-            if (isNewDeploymentInfo(deploymentSummaryDTO.getDeploymentInfoDTO(),
-                    instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList())) {
-              // it means deployment info doesn't exist in the perpetual task info
-              // add the deploymentinfo and deployment summary id to the instance sync pt info record
-              addNewDeploymentInfoToInstanceSyncPerpetualTaskInfoRecord(
-                  instanceSyncPerpetualTaskInfoDTO, deploymentSummaryDTO);
-              if (instanceSyncPerpetualTaskService.isInstanceSyncV2Enabled()) {
-                instanceSyncPerpetualTaskInfoService.updateDeploymentInfoListAndConnectorId(
-                    instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO.getConnectorRef());
-              } else {
-                instanceSyncPerpetualTaskInfoService.updateDeploymentInfoDetailsList(instanceSyncPerpetualTaskInfoDTO);
-              }
-
-              // Reset perpetual task to update the execution bundle with the latest information
-              instanceSyncPerpetualTaskService.resetPerpetualTask(infrastructureMappingDTO.getAccountIdentifier(),
-                  instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId(), infrastructureMappingDTO,
-                  abstractInstanceSyncHandler,
-                  getDeploymentInfoDTOListFromInstanceSyncPerpetualTaskInfo(instanceSyncPerpetualTaskInfoDTO),
-                  deploymentEvent.getInfrastructureOutcome());
-            }
+            instanceSyncPerpetualTaskInfoDTO = handlingInstanceSyncPerpetualTaskV1(
+                abstractInstanceSyncHandler, infrastructureMappingDTO, deploymentSummaryDTO, deploymentEvent);
           }
 
           InstanceSyncLocalCacheManager.setDeploymentSummary(
@@ -210,12 +179,49 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     }
   }
 
-  private void saveInstanceSyncPerpetualTaskMapping(
-      InfrastructureMappingDTO infrastructureMappingDTO, DeploymentSummaryDTO deploymentSummaryDTO) {
+  private InstanceSyncPerpetualTaskInfoDTO handlingInstanceSyncPerpetualTaskV1(
+      AbstractInstanceSyncHandler abstractInstanceSyncHandler, InfrastructureMappingDTO infrastructureMappingDTO,
+      DeploymentSummaryDTO deploymentSummaryDTO, DeploymentEvent deploymentEvent) {
+    Optional<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOOptional =
+        instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId());
+    InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO;
+    if (instanceSyncPerpetualTaskInfoDTOOptional.isEmpty()) {
+      // no existing perpetual task info record found for given infrastructure mapping id
+      // so create a new perpetual task and instance sync perpetual task info record
+      String perpetualTaskId = instanceSyncPerpetualTaskService.createPerpetualTask(infrastructureMappingDTO,
+          abstractInstanceSyncHandler, Collections.singletonList(deploymentSummaryDTO.getDeploymentInfoDTO()),
+          deploymentEvent.getInfrastructureOutcome());
+      instanceSyncPerpetualTaskInfoDTO =
+          instanceSyncPerpetualTaskInfoService.save(prepareInstanceSyncPerpetualTaskInfoDTO(
+              deploymentSummaryDTO, perpetualTaskId, infrastructureMappingDTO.getConnectorRef()));
+    } else {
+      instanceSyncPerpetualTaskInfoDTO = instanceSyncPerpetualTaskInfoDTOOptional.get();
+      if (isNewDeploymentInfo(deploymentSummaryDTO.getDeploymentInfoDTO(),
+              instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList())) {
+        // it means deployment info doesn't exist in the perpetual task info
+        // add the deploymentinfo and deployment summary id to the instance sync pt info record
+        addNewDeploymentInfoToInstanceSyncPerpetualTaskInfoRecord(
+            instanceSyncPerpetualTaskInfoDTO, deploymentSummaryDTO);
+
+        instanceSyncPerpetualTaskInfoService.updateDeploymentInfoDetailsList(instanceSyncPerpetualTaskInfoDTO);
+        // Reset perpetual task to update the execution bundle with the latest information
+        instanceSyncPerpetualTaskService.resetPerpetualTask(infrastructureMappingDTO.getAccountIdentifier(),
+            instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId(), infrastructureMappingDTO,
+            abstractInstanceSyncHandler,
+            getDeploymentInfoDTOListFromInstanceSyncPerpetualTaskInfo(instanceSyncPerpetualTaskInfoDTO),
+            deploymentEvent.getInfrastructureOutcome());
+      }
+    }
+    return instanceSyncPerpetualTaskInfoDTO;
+  }
+
+  private InstanceSyncPerpetualTaskInfoDTO handlingInstanceSyncPerpetualTaskV2(
+      AbstractInstanceSyncHandler abstractInstanceSyncHandler, InfrastructureMappingDTO infrastructureMappingDTO,
+      DeploymentSummaryDTO deploymentSummaryDTO, DeploymentEvent deploymentEvent) {
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.getByRef(
         infrastructureMappingDTO.getAccountIdentifier(), deploymentSummaryDTO.getOrgIdentifier(),
         deploymentSummaryDTO.getProjectIdentifier(), infrastructureMappingDTO.getConnectorRef());
-
+    InstanceSyncPerpetualTaskMappingDTO instanceSyncPerpetualTaskMappingDTO;
     if (connectorDTO.isPresent()) {
       ConnectorInfoDTO connectorInfoDTO = connectorDTO.get().getConnector();
       Optional<InstanceSyncPerpetualTaskMapping> instanceSyncPerpetualTaskMappingOptional =
@@ -223,19 +229,47 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
               connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier(),
               infrastructureMappingDTO.getConnectorRef());
       if (instanceSyncPerpetualTaskMappingOptional.isEmpty()) {
-        instanceSyncPerpetualTaskMappingService.save(
+        instanceSyncPerpetualTaskMappingDTO = instanceSyncPerpetualTaskMappingService.save(
             InstanceSyncPerpetualTaskMappingDTO.builder()
                 .accountId(infrastructureMappingDTO.getAccountIdentifier())
                 .orgId(connectorInfoDTO.getOrgIdentifier())
                 .projectId(connectorInfoDTO.getProjectIdentifier())
-                .perpetualTaskId(instanceSyncPerpetualTaskService.createPerpetualTaskV2())
+                .perpetualTaskId(instanceSyncPerpetualTaskService.createPerpetualTaskV2(
+                    abstractInstanceSyncHandler, infrastructureMappingDTO, connectorInfoDTO))
                 .connectorIdentifier(infrastructureMappingDTO.getConnectorRef())
                 .build());
+      } else {
+        instanceSyncPerpetualTaskMappingDTO =
+            InstanceSyncPerpetualTaskMappingMapper.toDTO(instanceSyncPerpetualTaskMappingOptional.get());
       }
-    } else {
-      throw new InvalidRequestException(String.format(
-          "No connector found for  connectorRef : [%s]", infrastructureMappingDTO.getConnectorRef(), USER));
+
+      Optional<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOOptional =
+          instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId());
+      if (instanceSyncPerpetualTaskInfoDTOOptional.isEmpty()) {
+        return instanceSyncPerpetualTaskInfoService.save(prepareInstanceSyncPerpetualTaskInfoDTO(deploymentSummaryDTO,
+            instanceSyncPerpetualTaskMappingDTO.getPerpetualTaskId(), infrastructureMappingDTO.getConnectorRef()));
+      } else {
+        InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO =
+            instanceSyncPerpetualTaskInfoDTOOptional.get();
+        if (isNewDeploymentInfo(deploymentSummaryDTO.getDeploymentInfoDTO(),
+                instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList())
+            || instanceSyncPerpetualTaskInfoDTO.getConnectorIdentifier() == null) {
+          addNewDeploymentInfoToInstanceSyncPerpetualTaskInfoRecord(
+              instanceSyncPerpetualTaskInfoDTO, deploymentSummaryDTO);
+          instanceSyncPerpetualTaskInfoDTO =
+              instanceSyncPerpetualTaskInfoService.updateDeploymentInfoListAndConnectorId(
+                  instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO.getConnectorRef());
+
+          // Reset perpetual task to update the execution bundle with the latest information
+          instanceSyncPerpetualTaskService.resetPerpetualTaskV2(infrastructureMappingDTO.getAccountIdentifier(),
+              instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId(), infrastructureMappingDTO,
+              abstractInstanceSyncHandler, connectorInfoDTO);
+        }
+        return instanceSyncPerpetualTaskInfoDTO;
+      }
     }
+    throw new InvalidRequestException(
+        String.format("No connector found for  connectorRef : [%s]", infrastructureMappingDTO.getConnectorRef(), USER));
   }
 
   @Override

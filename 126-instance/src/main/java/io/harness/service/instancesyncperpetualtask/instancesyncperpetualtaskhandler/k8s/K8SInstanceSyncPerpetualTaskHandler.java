@@ -13,13 +13,16 @@ import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GC
 
 import static java.lang.String.format;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.k8s.K8sEntityHelper;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.k8s.K8sDeploymentReleaseData;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -33,6 +36,8 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.K8sDeploymentRelease;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
+import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParamsV2;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.InstanceSyncPerpetualTaskHandler;
 
 import com.google.inject.Inject;
@@ -51,6 +56,7 @@ import lombok.AllArgsConstructor;
 @OwnedBy(HarnessTeam.CDP)
 public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTaskHandler {
   @Inject private K8sEntityHelper k8sEntityHelper;
+  @Inject private AccountClient accountClient;
 
   private static final String K8S_INSTANCE_SYNC_COMMAND_NAME = "Instance Sync";
   private static final int DEFAULT_TIMEOUT_IN_MIN = 10;
@@ -69,6 +75,18 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
         infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier());
+  }
+
+  @Override
+  public PerpetualTaskExecutionBundle getExecutionBundleForV2(
+      InfrastructureMappingDTO infrastructureMappingDTO, ConnectorInfoDTO connectorInfoDTO) {
+    Any perpetualTaskPack = packK8sInstanceSyncPerpetualTaskV2Params(infrastructureMappingDTO, connectorInfoDTO);
+
+    List<ExecutionCapability> executionCapabilities =
+        getExecutionCapabilitiesV2(connectorInfoDTO, infrastructureMappingDTO);
+
+    return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
+        connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier());
   }
 
   private List<K8sDeploymentReleaseData> populateDeploymentReleaseList(
@@ -138,6 +156,20 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
       String accountIdentifier, List<K8sDeploymentReleaseData> deploymentReleaseData) {
     return Any.pack(createK8sInstanceSyncPerpetualTaskParams(accountIdentifier, deploymentReleaseData));
   }
+  private Any packK8sInstanceSyncPerpetualTaskV2Params(
+      InfrastructureMappingDTO infrastructureMappingDTO, ConnectorInfoDTO connectorInfoDTO) {
+    return Any.pack(createK8sInstanceSyncPerpetualTaskV2Params(infrastructureMappingDTO, connectorInfoDTO));
+  }
+
+  private K8sInstanceSyncPerpetualTaskParamsV2 createK8sInstanceSyncPerpetualTaskV2Params(
+      InfrastructureMappingDTO infrastructureMappingDTO, ConnectorInfoDTO connectorInfoDTO) {
+    return K8sInstanceSyncPerpetualTaskParamsV2.newBuilder()
+        .setAccountId(infrastructureMappingDTO.getAccountIdentifier())
+        .setOrgId(connectorInfoDTO.getOrgIdentifier())
+        .setProjectId(connectorInfoDTO.getProjectIdentifier())
+        .setConnectorInfoDto(ByteString.copyFrom(kryoSerializer.asBytes(connectorInfoDTO)))
+        .build();
+  }
 
   private K8sInstanceSyncPerpetualTaskParams createK8sInstanceSyncPerpetualTaskParams(
       String accountIdentifier, List<K8sDeploymentReleaseData> deploymentReleaseData) {
@@ -167,6 +199,18 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
     }
 
     return toK8sInstanceSyncRequest(deploymentReleaseSample.get()).fetchRequiredExecutionCapabilities(null);
+  }
+
+  private List<ExecutionCapability> getExecutionCapabilitiesV2(
+      ConnectorInfoDTO connectorInfoDTO, InfrastructureMappingDTO infrastructureMappingDTO) {
+    if (connectorInfoDTO == null) {
+      return Collections.emptyList();
+    }
+
+    return K8sInstanceSyncUtils.fetchRequiredK8sExecutionCapabilities(infrastructureMappingDTO,
+        connectorInfoDTO.getConnectorConfig(), null,
+        CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(
+            FeatureName.CDS_K8S_SOCKET_CAPABILITY_CHECK_NG.name(), infrastructureMappingDTO.getAccountIdentifier())));
   }
 
   private K8sInstanceSyncRequest toK8sInstanceSyncRequest(K8sDeploymentReleaseData k8sDeploymentReleaseData) {
