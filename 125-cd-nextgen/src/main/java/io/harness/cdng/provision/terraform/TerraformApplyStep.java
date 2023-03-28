@@ -9,13 +9,6 @@ package io.harness.cdng.provision.terraform;
 
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
-import static io.harness.cdng.provision.terraform.TerraformStepHelper.CLI_OPTIONS;
-import static io.harness.cdng.provision.terraform.TerraformStepHelper.SKIP_REFRESH_COMMAND;
-import static io.harness.cdng.provision.terraform.TerraformStepHelper.TERRAFORM_CLOUD_CLI;
-
-import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V3;
-import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V4;
-import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V5;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -153,21 +146,12 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
 
     if (isTerraformCloudCli) {
       helper.checkIfTerraformCloudCliIsEnabled(FeatureName.CD_TERRAFORM_CLOUD_CLI_NG, true, ambiance);
-      io.harness.delegate.TaskType taskTypeV3 =
-          io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V3.name()).build();
-      helper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV3, TERRAFORM_CLOUD_CLI);
     }
 
     ParameterField<Boolean> skipTerraformRefreshCommandParameter =
         stepParameters.getConfiguration().getIsSkipTerraformRefresh();
     boolean skipRefreshCommand =
         ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommandParameter);
-
-    if (skipRefreshCommand) {
-      io.harness.delegate.TaskType taskTypeV4 =
-          io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V4.name()).build();
-      helper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV4, SKIP_REFRESH_COMMAND);
-    }
 
     helper.validateApplyStepConfigFilesInline(stepParameters);
     TerraformExecutionDataParameters spec = stepParameters.getConfiguration().getSpec();
@@ -183,10 +167,6 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
     }
 
     if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-      io.harness.delegate.TaskType taskTypeV5 =
-          io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V5.name()).build();
-      helper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV5, CLI_OPTIONS);
-
       builder.terraformCommandFlags(helper.getTerraformCliFlags(stepParameters.getConfiguration().getCliOptions()));
     }
 
@@ -246,10 +226,6 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
     builder.currentStateFileId(helper.getLatestFileId(entityId));
 
     if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_CLI_OPTIONS_NG)) {
-      io.harness.delegate.TaskType taskTypeV5 =
-          io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V5.name()).build();
-      helper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV5, CLI_OPTIONS);
-
       builder.terraformCommandFlags(helper.getTerraformCliFlags(stepParameters.getConfiguration().getCliOptions()));
     }
 

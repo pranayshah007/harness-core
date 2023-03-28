@@ -60,7 +60,6 @@ import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.AccountId;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
@@ -154,9 +153,6 @@ public class TerraformStepHelper {
   public static final String TF_VAR_FILES = "TF_VAR_FILES_%d";
   public static final String TF_BACKEND_CONFIG_FILE = "TF_BACKEND_CONFIG_FILE";
   public static final String USE_CONNECTOR_CREDENTIALS = "useConnectorCredentials";
-  public static final String TERRAFORM_CLOUD_CLI = "Terraform cloud CLI";
-  public static final String SKIP_REFRESH_COMMAND = "Skip Refresh Command";
-  public static final String CLI_OPTIONS = "CLI Options";
 
   @Inject private HPersistence persistence;
   @Inject private K8sStepHelper k8sStepHelper;
@@ -1144,16 +1140,6 @@ public class TerraformStepHelper {
     String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
     log.info("Task Successfully queued with taskId: {}", taskId);
     waitNotifyEngine.waitForAllOn(NG_ORCHESTRATION, new TerraformSecretCleanupTaskNotifyCallback(), taskId);
-  }
-
-  public void checkIfTaskIsSupportedByDelegate(
-      Ambiance ambiance, io.harness.delegate.TaskType taskType, String taskLogicName) {
-    AccountId accountIdentifier = AccountId.newBuilder().setId(AmbianceUtils.getAccountId(ambiance)).build();
-
-    boolean taskTypeSupported = delegateServiceGrpcClient.isTaskTypeSupported(accountIdentifier, taskType);
-    if (!taskTypeSupported) {
-      throw new InvalidRequestException(format("None of available delegates supports %s integration", taskLogicName));
-    }
   }
 
   public void checkIfTerraformCloudCliIsEnabled(
