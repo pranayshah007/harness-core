@@ -64,6 +64,7 @@ public class RollbackModeExecutionHelper {
       ExecutionMode executionMode) {
     return executionMetadata.toBuilder()
         .setExecutionUuid(planExecutionID)
+        .setRollbackPlanExecutionId(executionMetadata.getExecutionUuid())
         .setTriggerInfo(triggerInfo)
         .setRunSequence(pipelineMetadataService.incrementExecutionCounter(
             accountId, orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
