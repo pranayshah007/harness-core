@@ -24,7 +24,6 @@ import static io.harness.logging.LogLevel.INFO;
 import static io.harness.shell.AuthenticationScheme.HTTP_PASSWORD;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshSessionFactory.generateTGTUsingSshConfig;
-import static io.harness.shell.SshSessionFactory.getSSHSession;
 
 import static software.wings.beans.yaml.YamlConstants.GIT_DEFAULT_LOG_PREFIX;
 import static software.wings.beans.yaml.YamlConstants.GIT_HELM_LOG_PREFIX;
@@ -61,6 +60,7 @@ import io.harness.git.model.GitRepositoryType;
 import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
+import io.harness.shell.ssh.exception.SshException;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
@@ -1322,9 +1322,14 @@ public class GitClientImpl implements GitClient {
     return new JschConfigSessionFactory() {
       @Override
       protected Session createSession(Host hc, String user, String host, int port, FS fs) throws JSchException {
-        SshSessionConfig sshSessionConfig = createSshSessionConfig(settingAttribute, host);
-        sshSessionConfig.setPort(port); // use port from repo URL
-        return getSSHSession(sshSessionConfig);
+        try {
+          SshSessionConfig sshSessionConfig = createSshSessionConfig(settingAttribute, host);
+          sshSessionConfig.setPort(port);
+          return new JschAgent(sshSessionConfig, new NoopExecutionCallback())
+              .getJschSession(); // use port from repo URL
+        } catch (SshException se) {
+          throw new JSchException(se.getMessage());
+        }
       }
 
       @Override

@@ -692,6 +692,7 @@ public enum FeatureName {
       HarnessTeam.CDC),
   CDS_TERRAFORM_CLI_OPTIONS_NG("Enable terraform CLI Options", HarnessTeam.CDP),
   CD_ONBOARDING_HELP_ENABLED("Enables help panel for CD onboarding ", HarnessTeam.CDP),
+  CDS_SSH_AGENT("Enable SSH new implementation via SSH Agent", HarnessTeam.CDP),
   PIE_USE_SECRET_FUNCTOR_WITH_RBAC("Perform Rbac on secrets when used in pipeline execution", HarnessTeam.PIPELINE),
   SPG_ADOPT_DELEGATE_DECRYPTION_ON_SERVICE_VARIABLES(
       "Enable to resolve expression using nested values from secret.getValue from service variables", HarnessTeam.SPG),

@@ -50,7 +50,6 @@ public class ShellConnectionCapabilityCheckTest extends WingsBaseTest {
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void performCapabilityCheck() throws JSchException {
-    doNothing().when(shellConnectionCapabilityCheck).performTest(any(SshSessionConfig.class));
     CapabilityResponse capabilityResponse = shellConnectionCapabilityCheck.performCapabilityCheck(
         ShellConnectionCapability.builder()
             .shellScriptParameters(ShellScriptParameters.builder()
