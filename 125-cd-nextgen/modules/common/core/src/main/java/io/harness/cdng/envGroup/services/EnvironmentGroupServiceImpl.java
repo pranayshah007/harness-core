@@ -87,7 +87,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
   private final EnvironmentGroupRepository environmentRepository;
   private final Producer setupUsagesEventProducer;
-  private final IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   private final EntitySetupUsageService entitySetupUsageService;
   private final EnvironmentGroupServiceHelper environmentGroupServiceHelper;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
@@ -99,12 +98,11 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
   @Inject
   public EnvironmentGroupServiceImpl(EnvironmentGroupRepository environmentRepository,
       @Named(EventsFrameworkConstants.SETUP_USAGE) Producer setupUsagesEventProducer,
-      IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper, EntitySetupUsageService entitySetupUsageService,
-      EnvironmentGroupServiceHelper environmentGroupServiceHelper, TransactionTemplate transactionTemplate,
-      OutboxService outboxService, AccountClient accountClient, NGSettingsClient settingsClient) {
+      EntitySetupUsageService entitySetupUsageService, EnvironmentGroupServiceHelper environmentGroupServiceHelper,
+      TransactionTemplate transactionTemplate, OutboxService outboxService, AccountClient accountClient,
+      NGSettingsClient settingsClient) {
     this.environmentRepository = environmentRepository;
     this.setupUsagesEventProducer = setupUsagesEventProducer;
-    this.identifierRefProtoDTOHelper = identifierRefProtoDTOHelper;
     this.entitySetupUsageService = entitySetupUsageService;
     this.environmentGroupServiceHelper = environmentGroupServiceHelper;
     this.transactionTemplate = transactionTemplate;
@@ -372,7 +370,7 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
   public void setupUsagesForEnvironmentList(EnvironmentGroupEntity envGroupEntity) {
     EntityDetailProtoDTO envGroupDetails =
         EntityDetailProtoDTO.newBuilder()
-            .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(envGroupEntity.getAccountId(),
+            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(envGroupEntity.getAccountId(),
                 envGroupEntity.getOrgIdentifier(), envGroupEntity.getProjectIdentifier(),
                 envGroupEntity.getIdentifier()))
             .setType(EntityTypeProtoEnum.ENVIRONMENT_GROUP)

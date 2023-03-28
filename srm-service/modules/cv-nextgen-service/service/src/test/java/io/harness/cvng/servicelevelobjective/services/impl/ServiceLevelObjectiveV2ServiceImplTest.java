@@ -93,7 +93,6 @@ import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
-import io.harness.cvng.servicelevelobjective.transformer.SLOTargetTransformerOldAndNew;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
@@ -282,8 +281,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
                               .getSLOTarget(sloDTO.getSloTarget().getSpec());
     assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
-    assertThat(serviceLevelObjective.getSloTarget())
-        .isEqualTo(SLOTargetTransformerOldAndNew.getOldSLOtargetFromNewSLOtarget(sloTarget));
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
     SimpleServiceLevelObjective simpleServiceLevelObjective =
         (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
@@ -323,8 +320,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
                     .getSLOTarget(sloDTO.getSloTarget().getSpec());
     assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
-    assertThat(serviceLevelObjective.getSloTarget())
-        .isEqualTo(SLOTargetTransformerOldAndNew.getOldSLOtargetFromNewSLOtarget(sloTarget));
   }
 
   @Test
@@ -346,8 +341,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
                               .getSLOTarget(sloDTO.getSloTarget().getSpec());
     assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
-    assertThat(serviceLevelObjective.getSloTarget())
-        .isEqualTo(SLOTargetTransformerOldAndNew.getOldSLOtargetFromNewSLOtarget(sloTarget));
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
     assertThat((RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) ((SimpleServiceLevelObjectiveSpec)
                                                                                  serviceLevelObjectiveResponse

@@ -21,6 +21,7 @@ import io.harness.entities.PipelineExecutionSummaryEntityCDCEntity;
 import io.harness.entities.PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled;
 import io.harness.entities.ProjectEntity;
 import io.harness.entities.ServiceCDCEntity;
+import io.harness.entities.UserEntity;
 import io.harness.persistence.HPersistence;
 import io.harness.threading.ExecutorModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
@@ -94,6 +95,7 @@ public class ChangeDataCaptureModule extends AbstractModule {
     cdcEntityMultibinder.addBinding().to(ConnectorCDCEntity.class);
     cdcEntityMultibinder.addBinding().to(EnvironmentCDCEntity.class);
     cdcEntityMultibinder.addBinding().to(InfrastructureEntityTimeScale.class);
+    cdcEntityMultibinder.addBinding().to(UserEntity.class);
   }
 
   @Provides

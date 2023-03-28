@@ -8,7 +8,6 @@
 package io.harness.idp.onboarding.services.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.idp.onboarding.utils.Constants.ACCOUNT_SCOPED;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_ALL_LOCATION_FILE_NAME;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_LOCATION_URL_TYPE;
 import static io.harness.idp.onboarding.utils.Constants.ENTITY_REQUIRED_ERROR_MESSAGE;
@@ -34,15 +33,17 @@ import io.harness.clients.BackstageResourceClient;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.idp.common.Constants;
 import io.harness.idp.common.GsonUtils;
 import io.harness.idp.gitintegration.beans.CatalogInfraConnectorType;
 import io.harness.idp.gitintegration.beans.CatalogRepositoryDetails;
-import io.harness.idp.gitintegration.entities.CatalogConnector;
+import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
 import io.harness.idp.gitintegration.mappers.CatalogConnectorMapper;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
+import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
 import io.harness.idp.onboarding.beans.BackstageCatalogComponentEntity;
 import io.harness.idp.onboarding.beans.BackstageCatalogDomainEntity;
 import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
@@ -162,12 +163,13 @@ public class OnboardingServiceImpl implements OnboardingService {
         harnessServiceToBackstageComponent(orgProjectService.getRight());
     log.info("Mapped harness entities to backstage entities for IDP onboarding import");
 
-    replaceAccountScopedValuesInCatalogConnectorInfo(catalogConnectorInfo);
+    catalogConnectorInfo.getInfraConnector().setIdentifier(GitIntegrationUtils.replaceAccountScopeFromConnectorId(
+        catalogConnectorInfo.getInfraConnector().getIdentifier()));
 
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
-        ConnectorType.fromString(catalogConnectorInfo.getSourceConnector().getType()));
+        ConnectorType.fromString(catalogConnectorInfo.getInfraConnector().getType()));
     log.info("IDP onboarding import - connector processor initialized for type = {}",
-        catalogConnectorInfo.getSourceConnector().getType());
+        catalogConnectorInfo.getInfraConnector().getType());
 
     String catalogInfraConnectorType = connectorProcessor.getInfraConnectorType(
         accountIdentifier, catalogConnectorInfo.getInfraConnector().getIdentifier());
@@ -257,8 +259,8 @@ public class OnboardingServiceImpl implements OnboardingService {
   @Override
   public ImportEntitiesResponse manualImportEntity(
       String harnessAccount, ManualImportEntityRequest manualImportEntityRequest) {
-    CatalogConnector catalogConnector = getCatalogConnector(harnessAccount);
-    CatalogConnectorInfo catalogConnectorInfo = CatalogConnectorMapper.toDTO(catalogConnector);
+    CatalogConnectorEntity catalogConnectorEntity = getCatalogConnector(harnessAccount);
+    CatalogConnectorInfo catalogConnectorInfo = CatalogConnectorMapper.toDTO(catalogConnectorEntity);
 
     String tmpPathForCatalogInfoYamlStore =
         onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore() + SLASH_DELIMITER + harnessAccount;
@@ -280,7 +282,7 @@ public class OnboardingServiceImpl implements OnboardingService {
         catalogInfoLocationFilePath);
 
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
-        ConnectorType.fromString(catalogConnector.getSourceConnector().getType()));
+        ConnectorType.fromString(catalogConnectorEntity.getConnectorProviderType()));
     connectorProcessor.performPushOperation(harnessAccount, catalogConnectorInfo,
         onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), entitiesFolderPath,
         Collections.singletonList(catalogInfoLocationFilePath));
@@ -528,27 +530,20 @@ public class OnboardingServiceImpl implements OnboardingService {
     return serviceResponseDTOS;
   }
 
-  private void replaceAccountScopedValuesInCatalogConnectorInfo(CatalogConnectorInfo catalogConnectorInfo) {
-    catalogConnectorInfo.getInfraConnector().setIdentifier(
-        catalogConnectorInfo.getInfraConnector().getIdentifier().replace(ACCOUNT_SCOPED, ""));
-    catalogConnectorInfo.getSourceConnector().setIdentifier(
-        catalogConnectorInfo.getSourceConnector().getIdentifier().replace(ACCOUNT_SCOPED, ""));
-  }
-
   private void saveCatalogConnector(
       String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo, String catalogInfraConnectorType) {
-    CatalogConnector catalogConnector = new CatalogConnector();
+    CatalogConnectorEntity catalogConnectorEntity = new CatalogConnectorEntity();
 
-    catalogConnector.setAccountIdentifier(accountIdentifier);
-    catalogConnector.setIdentifier(catalogConnectorInfo.getInfraConnector().getIdentifier() + "_"
-        + catalogConnectorInfo.getSourceConnector().getIdentifier());
-    catalogConnector.setType(CatalogInfraConnectorType.valueOf(catalogInfraConnectorType));
-    catalogConnector.setInfraConnector(catalogConnectorInfo.getInfraConnector());
-    catalogConnector.setSourceConnector(catalogConnectorInfo.getSourceConnector());
-    catalogConnector.setCatalogRepositoryDetails(new CatalogRepositoryDetails(
+    catalogConnectorEntity.setAccountIdentifier(accountIdentifier);
+    catalogConnectorEntity.setIdentifier(
+        Constants.IDP_PREFIX + catalogConnectorInfo.getInfraConnector().getIdentifier());
+    catalogConnectorEntity.setType(CatalogInfraConnectorType.valueOf(catalogInfraConnectorType));
+    catalogConnectorEntity.setConnectorIdentifier(catalogConnectorInfo.getInfraConnector().getIdentifier());
+    catalogConnectorEntity.setConnectorProviderType(catalogConnectorInfo.getInfraConnector().getType());
+    catalogConnectorEntity.setCatalogRepositoryDetails(new CatalogRepositoryDetails(
         catalogConnectorInfo.getRepo(), catalogConnectorInfo.getBranch(), catalogConnectorInfo.getPath()));
 
-    catalogConnectorRepository.save(catalogConnector);
+    catalogConnectorRepository.save(catalogConnectorEntity);
     log.info("Saved catalogConnector to DB. Account = {}", accountIdentifier);
   }
 
@@ -634,7 +629,8 @@ public class OnboardingServiceImpl implements OnboardingService {
   private void createCatalogInfraConnectorInBackstageK8S(
       String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo) {
     try {
-      gitIntegrationService.createConnectorInBackstage(accountIdentifier, catalogConnectorInfo);
+      gitIntegrationService.createConnectorInBackstage(accountIdentifier,
+          catalogConnectorInfo.getInfraConnector().getIdentifier(), catalogConnectorInfo.getInfraConnector().getType());
     } catch (Exception e) {
       log.error("Unable to create infra connector secrets in backstage k8s, ex = {}", e.getMessage(), e);
     }
@@ -648,8 +644,9 @@ public class OnboardingServiceImpl implements OnboardingService {
     statusInfoService.save(statusInfo, accountIdentifier, type);
   }
 
-  private CatalogConnector getCatalogConnector(String accountIdentifier) {
-    Optional<CatalogConnector> catalogConnector = catalogConnectorRepository.findByAccountIdentifier(accountIdentifier);
+  private CatalogConnectorEntity getCatalogConnector(String accountIdentifier) {
+    Optional<CatalogConnectorEntity> catalogConnector =
+        catalogConnectorRepository.findByAccountIdentifier(accountIdentifier);
     if (catalogConnector.isEmpty()) {
       throw new InvalidRequestException(
           String.format("Catalog connector not found for accountIdentifier: [%s]]", accountIdentifier));

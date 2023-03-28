@@ -155,7 +155,8 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
     return K8sDeploymentRelease.newBuilder()
         .setReleaseName(releaseData.getReleaseName())
         .addAllNamespaces(releaseData.getNamespaces())
-        .setK8SInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getK8sInfraDelegateConfig())))
+        .setK8SInfraDelegateConfig(
+            ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(releaseData.getK8sInfraDelegateConfig())))
         .build();
   }
 

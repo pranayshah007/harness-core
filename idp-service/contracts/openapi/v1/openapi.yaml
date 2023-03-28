@@ -1,6 +1,6 @@
 openapi: 3.0.3
 x-stoplight:
-  id: 9i33e8gca28nf
+  id: q0pbqzd9uictu
 info:
   title: IDP
   version: '1.0'
@@ -542,6 +542,51 @@ paths:
       x-internal: true
       tags:
         - AppConfig
+  /v1/connectors-info:
+    get:
+      summary: Get all connectors info
+      tags:
+        - ConnectorInfo
+      responses:
+        '200':
+          $ref: '#/components/responses/ConnectorInfoResponseList'
+      operationId: get-connectors-info
+      description: Get all connectors info
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+  /v1/connector-info:
+    post:
+      summary: Create or update connector info
+      tags:
+        - ConnectorInfo
+      operationId: save-connector-info
+      responses:
+        '201':
+          $ref: '#/components/responses/ConnectorInfoResponse'
+      description: Create or update connector info
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/ConnectorInfoRequest'
+  '/v1/connector-info/{provider-type}':
+    get:
+      summary: Get connector info by connector provider type
+      tags:
+        - ConnectorInfo
+      responses:
+        '200':
+          $ref: '#/components/responses/ConnectorInfoResponse'
+      operationId: get-connector-info-by-providerType
+      description: Get connector info by connector provider type
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ProviderType'
 components:
   schemas:
     BackstageEnvVariable:
@@ -1069,6 +1114,26 @@ components:
           $ref: '#/components/schemas/AppConfig'
           x-stoplight:
             id: 7rhhzvrxp6grz
+    ConnectorInfoRequest:
+      title: ConnectorInfoRequest
+      x-stoplight:
+        id: ac9uhio4r21e5
+      type: object
+      properties:
+        connectorDetails:
+          $ref: '#/components/schemas/ConnectorDetails'
+          x-stoplight:
+            id: cfx70t6ohuzrc
+    ConnectorInfoResponse:
+      title: ConnectorInfoResponse
+      x-stoplight:
+        id: iq2fsejvdmg8g
+      type: object
+      properties:
+        connectorDetails:
+          $ref: '#/components/schemas/ConnectorDetails'
+          x-stoplight:
+            id: ictqwjgoxe2bc
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1166,6 +1231,12 @@ components:
       schema:
         type: boolean
       description: flag for checking enablement/disablement
+    ProviderType:
+      name: provider-type
+      in: path
+      required: true
+      schema:
+        type: string
   requestBodies:
     BackstageEnvVariableRequest:
       content:
@@ -1225,6 +1296,11 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/AppConfigRequest'
+    ConnectorInfoRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorInfoRequest'
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -1369,6 +1445,24 @@ components:
           schema:
             type: object
             properties: {}
+    ConnectorInfoResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorInfoResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ConnectorInfoResponse'
+    ConnectorInfoResponseList:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorInfoResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ConnectorInfoResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key

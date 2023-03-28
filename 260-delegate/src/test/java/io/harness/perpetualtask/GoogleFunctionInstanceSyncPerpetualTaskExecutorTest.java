@@ -112,8 +112,10 @@ public class GoogleFunctionInstanceSyncPerpetualTaskExecutorTest extends Delegat
             .addGoogleFunctionsDeploymentReleaseList(deploymentRelease)
             .build();
 
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
-        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
+                                                                    .setCustomizedParams(Any.pack(taskParams))
+                                                                    .setReferenceFalseKryoSerializer(true)
+                                                                    .build();
     PerpetualTaskId taskId = PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build();
     GoogleFunctionDeploymentReleaseData deploymentReleaseData =
         GoogleFunctionDeploymentReleaseData.builder()

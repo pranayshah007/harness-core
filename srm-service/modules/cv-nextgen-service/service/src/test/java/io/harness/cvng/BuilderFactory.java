@@ -241,7 +241,6 @@ import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicat
 import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicator.RequestServiceLevelIndicatorBuilder;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHealthIndicatorBuilder;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.RollingSLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveBuilder;
 import io.harness.cvng.verificationjob.entities.AutoVerificationJob;
@@ -1385,8 +1384,8 @@ public class BuilderFactory {
         .type(ServiceLevelObjectiveType.SIMPLE)
         .projectIdentifier(context.getProjectIdentifier())
         .orgIdentifier(context.getOrgIdentifier())
-        .identifier("sloIdentifier")
-        .name("sloName")
+        .identifier("sloIdentifier_request")
+        .name("sloName_request")
         .tags(new HashMap<String, String>() {
           {
             put("tag1", "value1");
@@ -1460,7 +1459,6 @@ public class BuilderFactory {
         .name("sloName")
         .tags(Collections.singletonList(NGTag.builder().key("key").value("value").build()))
         .desc("slo description")
-        .sloTarget(RollingSLOTarget.builder().periodLengthDays(30).build())
         .target(io.harness.cvng.servicelevelobjective.entities.RollingSLOTarget.builder().periodLengthDays(30).build())
         .sloTargetPercentage(80.0)
         .serviceLevelIndicators(Collections.singletonList("sloIdentifier_metric1"))

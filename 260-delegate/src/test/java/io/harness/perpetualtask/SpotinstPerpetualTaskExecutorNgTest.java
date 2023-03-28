@@ -133,6 +133,9 @@ public class SpotinstPerpetualTaskExecutorNgTest extends DelegateTestBase {
             .setInfrastructureKey("infraKey")
             .build();
 
-    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
+    return PerpetualTaskExecutionParams.newBuilder()
+        .setCustomizedParams(Any.pack(taskParams))
+        .setReferenceFalseKryoSerializer(true)
+        .build();
   }
 }

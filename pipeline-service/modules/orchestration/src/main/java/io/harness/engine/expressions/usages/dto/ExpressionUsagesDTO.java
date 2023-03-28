@@ -5,18 +5,22 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.engine.expressions.usages;
+package io.harness.engine.expressions.usages.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.expressions.usages.beans.ExpressionCategory;
 
+import java.util.Set;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
+import lombok.Data;
+import org.hibernate.validator.constraints.NotEmpty;
 
-@OwnedBy(HarnessTeam.PIPELINE)
+@Data
 @Builder
-@EqualsAndHashCode
-public class ExpressionMetadata {
-  String fqn;
-  String expression;
+@OwnedBy(HarnessTeam.PIPELINE)
+public class ExpressionUsagesDTO {
+  private String accountIdentifier;
+  private ExpressionCategory category;
+  @NotEmpty private Set<ExpressionMetadataDTO> expressions;
 }

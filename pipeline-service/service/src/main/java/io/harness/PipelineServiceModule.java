@@ -496,7 +496,7 @@ public class PipelineServiceModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.TRIGGER).to(TriggerOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.PIPELINE).to(PipelineOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.INPUT_SET).to(PipelineOutboxEventHandler.class);
-    outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.NODE_EXECUTION)
+    outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.PIPELINE_EXECUTION)
         .to(NodeExecutionOutboxEventPublisher.class);
   }
 

@@ -23,6 +23,7 @@ import io.harness.cvng.core.services.api.LogFeedbackService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.UserPrincipal;
@@ -43,8 +44,10 @@ import org.mockito.MockitoAnnotations;
 public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
   @Inject private LogFeedbackService logFeedbackService;
   @Inject private VerificationTaskService verificationTaskService;
+  @Inject private HPersistence hPersistence;
 
   VerificationJobInstance verificationJobInstance;
+  String verificationTaskUuid;
 
   @Mock private VerificationJobInstanceService verificationJobInstanceService;
   private ProjectPathParams projectPathParams;
@@ -69,7 +72,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
         new UserPrincipal("test", "test@harness.io", "test", projectPathParams.getAccountIdentifier());
     SecurityContextBuilder.setContext(userPrincipal);
     FieldUtils.writeField(logFeedbackService, "verificationJobInstanceService", verificationJobInstanceService, true);
-    verificationTaskService.createDeploymentVerificationTask(
+    verificationTaskUuid = verificationTaskService.createDeploymentVerificationTask(
         projectPathParams.getAccountIdentifier(), "", "abcd", new HashMap<>());
   }
 
@@ -104,7 +107,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(verificationJobInstance.getResolvedJob().getEnvIdentifier());
     assertThat(getLogFeedback.getSampleMessage()).isEqualTo(logFeedback.getSampleMessage());
     assertThat(getLogFeedback.getCreatedBy()).isEqualTo("test");
-    assertThat(getLogFeedback.getUpdatedby()).isNull();
+    assertThat(getLogFeedback.getUpdatedby()).isEqualTo("test");
     assertThat(getLogFeedback.getCreatedAt()).isNotNull();
   }
 
@@ -132,6 +135,12 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
         logFeedbackBuilder.feedbackScore(LogFeedback.FeedbackScore.NO_RISK_CONSIDER_FREQUENCY).build();
     logFeedbackService.update(projectPathParams, logFeedback.getFeedbackId(), updateLogFeedback);
 
+    List<LogFeedbackHistory> logFeedbackHistoryList =
+        logFeedbackService.history(projectPathParams, logFeedback.getFeedbackId());
+    assertThat(logFeedbackHistoryList.get(0).getLogFeedback().getFeedbackScore())
+        .isEqualTo(LogFeedback.FeedbackScore.HIGH_RISK);
+    assertThat(logFeedbackHistoryList.get(1).getLogFeedback().getFeedbackScore())
+        .isEqualTo(LogFeedback.FeedbackScore.NO_RISK_CONSIDER_FREQUENCY);
     LogFeedback updatedLogFeedback = logFeedbackService.get(projectPathParams, logFeedback.getFeedbackId());
     assertThat(updatedLogFeedback.getFeedbackId()).isEqualTo(logFeedback.getFeedbackId());
     assert updateLogFeedback != null;

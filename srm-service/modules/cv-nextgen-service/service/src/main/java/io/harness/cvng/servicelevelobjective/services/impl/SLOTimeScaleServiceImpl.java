@@ -14,8 +14,10 @@ import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CalenderSLOTarget;
+import io.harness.cvng.servicelevelobjective.entities.RollingSLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
@@ -78,9 +80,9 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
         upsertStatement.setString(6, simpleServiceLevelObjective.getIdentifier());
         upsertStatement.setString(7, simpleServiceLevelObjective.getName());
         upsertStatement.setString(8, simpleServiceLevelObjective.getUserJourneyIdentifiers().get(0));
-        upsertStatement.setInt(9, getPeriodDays(simpleServiceLevelObjective.getSloTarget()));
+        upsertStatement.setInt(9, getPeriodDays(simpleServiceLevelObjective.getTarget()));
         upsertStatement.setString(10, simpleServiceLevelObjective.getServiceLevelIndicatorType().toString());
-        upsertStatement.setString(11, simpleServiceLevelObjective.getSloTarget().getType().toString());
+        upsertStatement.setString(11, simpleServiceLevelObjective.getTarget().getType().toString());
         upsertStatement.setDouble(12, sloHealthIndicator.getErrorBudgetRemainingPercentage());
         upsertStatement.setDouble(13, simpleServiceLevelObjective.getSloTargetPercentage());
         upsertStatement.setString(14, monitoredService.getServiceIdentifier());
@@ -147,7 +149,7 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
             LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
         SLODashboardWidget.SLOGraphData sloGraphData =
             sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective);
-        TimePeriod timePeriod = simpleServiceLevelObjective.getSloTarget().getCurrentTimeRange(currentLocalDate);
+        TimePeriod timePeriod = simpleServiceLevelObjective.getTarget().getCurrentTimeRange(currentLocalDate);
         insertStatement.setTimestamp(
             1, new Timestamp(timePeriod.getStartTime().getSecond() * 1000L), Calendar.getInstance());
         insertStatement.setTimestamp(
@@ -164,7 +166,7 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
         } else {
           insertStatement.setString(10, "NO");
         }
-        insertStatement.setInt(11, getPeriodDays(simpleServiceLevelObjective.getSloTarget()));
+        insertStatement.setInt(11, getPeriodDays(simpleServiceLevelObjective.getTarget()));
         insertStatement.setInt(12, simpleServiceLevelObjective.getTotalErrorBudgetMinutes(currentLocalDate));
         insertStatement.execute();
       }
@@ -173,11 +175,11 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
     }
   }
 
-  private int getPeriodDays(ServiceLevelObjective.SLOTarget sloTarget) {
+  private int getPeriodDays(SLOTarget sloTarget) {
     if (sloTarget.getType().equals(SLOTargetType.ROLLING)) {
-      return ((ServiceLevelObjective.RollingSLOTarget) sloTarget).getPeriodLengthDays();
+      return ((RollingSLOTarget) sloTarget).getPeriodLengthDays();
     } else {
-      SLOCalenderType calenderType = ((ServiceLevelObjective.CalenderSLOTarget) sloTarget).getCalenderType();
+      SLOCalenderType calenderType = ((CalenderSLOTarget) sloTarget).getCalenderType();
       switch (calenderType) {
         case WEEKLY:
           return 7;

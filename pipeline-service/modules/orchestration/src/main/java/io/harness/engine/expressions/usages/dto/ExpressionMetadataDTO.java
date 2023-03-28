@@ -5,15 +5,18 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.engine.expressions.usages;
+package io.harness.engine.expressions.usages.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import lombok.Builder;
+import lombok.Data;
+
 @OwnedBy(HarnessTeam.PIPELINE)
-public enum ExpressionCategory {
-  ANY,
-  WHEN_CONDITION,
-  VARIABLE_VALUE,
-  COMMON_FIELD_VALUE;
+@Data
+@Builder
+public class ExpressionMetadataDTO {
+  String fqn;
+  String expression;
 }

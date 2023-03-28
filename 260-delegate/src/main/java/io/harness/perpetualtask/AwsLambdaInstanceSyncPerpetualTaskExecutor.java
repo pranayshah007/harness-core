@@ -28,7 +28,6 @@ import io.harness.grpc.utils.AnyUtils;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.infrastructure.instance.InvocationCount;
@@ -44,7 +43,6 @@ import software.wings.service.intfc.aws.delegate.AwsLambdaHelperServiceDelegate;
 import com.amazonaws.services.cloudwatch.model.Datapoint;
 import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -61,11 +59,11 @@ import org.joda.time.DateTime;
 @Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
 @OwnedBy(CDP)
-public class AwsLambdaInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
+public class AwsLambdaInstanceSyncPerpetualTaskExecutor
+    extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private AwsLambdaHelperServiceDelegate awsLambdaHelperServiceDelegate;
   @Inject private AwsCloudWatchHelperServiceDelegate awsCloudWatchHelperServiceDelegate;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -76,11 +74,13 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutor implements PerpetualTask
     final AwsLambdaInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AwsLambdaInstanceSyncPerpetualTaskParams.class);
 
-    final AwsConfig awsConfig =
-        (AwsConfig) referenceFalseKryoSerializer.asObject(taskParams.getAwsConfig().toByteArray());
+    final AwsConfig awsConfig = (AwsConfig) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+                                    .asObject(taskParams.getAwsConfig().toByteArray());
 
-    AwsLambdaDetailsMetricsResponse awsLambdaDetailsWithMetricsResponse = getAwsResponse(taskParams, awsConfig);
-    publishAwsLambdaSyncResult(taskId, taskParams, awsConfig, awsLambdaDetailsWithMetricsResponse);
+    AwsLambdaDetailsMetricsResponse awsLambdaDetailsWithMetricsResponse =
+        getAwsResponse(taskParams, awsConfig, params.getReferenceFalseKryoSerializer());
+    publishAwsLambdaSyncResult(
+        taskId, taskParams, awsConfig, awsLambdaDetailsWithMetricsResponse, params.getReferenceFalseKryoSerializer());
 
     return toPerpetualTaskResponse(awsLambdaDetailsWithMetricsResponse);
   }
@@ -91,10 +91,17 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutor implements PerpetualTask
   }
 
   private void publishAwsLambdaSyncResult(PerpetualTaskId taskId, AwsLambdaInstanceSyncPerpetualTaskParams taskParams,
-      AwsConfig awsConfig, AwsLambdaDetailsMetricsResponse awsLambdaDetailsWithMetricsResponse) {
+      AwsConfig awsConfig, AwsLambdaDetailsMetricsResponse awsLambdaDetailsWithMetricsResponse,
+      boolean useReferenceFalseSerializer) {
     try {
-      execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
-          taskId.getId(), awsConfig.getAccountId(), awsLambdaDetailsWithMetricsResponse));
+      if (useReferenceFalseSerializer) {
+        execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
+            taskId.getId(), awsConfig.getAccountId(), awsLambdaDetailsWithMetricsResponse));
+      } else {
+        execute(delegateAgentManagerClient.publishInstanceSyncResult(
+            taskId.getId(), awsConfig.getAccountId(), awsLambdaDetailsWithMetricsResponse));
+      }
+
     } catch (Exception e) {
       log.error(
           String.format("Failed to publish instance sync result for aws lambda. Function [%s] and PerpetualTaskId [%s]",
@@ -104,10 +111,11 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutor implements PerpetualTask
   }
 
   private AwsLambdaDetailsMetricsResponse getAwsResponse(
-      AwsLambdaInstanceSyncPerpetualTaskParams taskParams, AwsConfig awsConfig) {
+      AwsLambdaInstanceSyncPerpetualTaskParams taskParams, AwsConfig awsConfig, boolean referenceFalseSerializer) {
     @SuppressWarnings("unchecked")
     final List<EncryptedDataDetail> encryptedDataDetails =
-        (List<EncryptedDataDetail>) referenceFalseKryoSerializer.asObject(taskParams.getEncryptedData().toByteArray());
+        (List<EncryptedDataDetail>) getKryoSerializer(referenceFalseSerializer)
+            .asObject(taskParams.getEncryptedData().toByteArray());
 
     AwsLambdaDetailsResponse awsLambdaDetailsResponse =
         getAwsLambdaDetailsResponse(taskParams, awsConfig, encryptedDataDetails);

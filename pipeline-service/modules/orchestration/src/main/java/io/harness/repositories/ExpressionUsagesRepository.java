@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.engine.expressions.usages.ExpressionUsagesEntity;
+import io.harness.engine.expressions.usages.beans.ExpressionUsagesEntity;
 
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;

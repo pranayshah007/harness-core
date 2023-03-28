@@ -14,8 +14,10 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.plan.creation.PlanCreationBlobResponseUtils;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
+import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -99,6 +101,35 @@ public class PlanCreatorServiceHelper {
 
       if (planForField.getPlanNode() != null) {
         planForField.getPlanNode().setStageFqn(stageFqn);
+      }
+    }
+  }
+
+  /**
+   * This method copies the ServiceAffinity from parent to children
+   * If currentDependency is having a serviceAffinity then its passed to its children else sdk serviceName is added to
+   * children dependency.
+   *
+   * @param creatorResponse
+   * @param currentNodeDependency
+   * @param currentServiceName
+   * @param currentField
+   */
+  public void decorateCreationResponseWithServiceAffinity(CreatorResponse creatorResponse,
+      Dependency currentNodeDependency, String currentServiceName, YamlField currentField) {
+    String serviceAffinity = "";
+    if (currentNodeDependency != null) {
+      serviceAffinity = currentNodeDependency.getServiceAffinity();
+    }
+    // Attach ServiceAffinity of current service only if current node is stage
+    if (EmptyPredicate.isEmpty(serviceAffinity) && currentField.getName().equals(YAMLFieldNameConstants.STAGE)) {
+      serviceAffinity = currentServiceName;
+    }
+
+    Dependencies childDependencies = creatorResponse.getDependencies();
+    if (childDependencies != null) {
+      for (String dependencyKey : childDependencies.getDependenciesMap().keySet()) {
+        creatorResponse.addAffinityToDependencyMetadata(dependencyKey, serviceAffinity);
       }
     }
   }

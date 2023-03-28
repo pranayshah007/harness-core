@@ -7,6 +7,7 @@
 
 package io.harness.gar;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -14,6 +15,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.notMatching;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -21,6 +23,7 @@ import io.harness.CategoryTest;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
 import io.harness.artifacts.gar.service.GARApiServiceImpl;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
@@ -45,6 +48,8 @@ public class GARApiServiceTest extends CategoryTest {
   private String url;
   String basicAuthHeader = "auth";
   GarInternalConfig gcpInternalConfig;
+
+  private static final String SHA = "sha1";
 
   @Before
   public void setUp() {
@@ -104,6 +109,17 @@ public class GARApiServiceTest extends CategoryTest {
                 "/v1/projects/cd-play1/locations/us/repositories/vivek-repo/packages/package/tags/package"))
             .withHeader("Authorization", equalTo("bearerToken"))
             .willReturn(aResponse().withStatus(403).withBody("Response 403")));
+    wireMockRule.stubFor(
+        WireMock.get(WireMock.urlPathEqualTo("/v2/cd-play/vivek-repo/mongo/manifests/latest10"))
+            .withHeader("Authorization", equalTo("bearerToken"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Docker-Content-Digest", SHA)
+                    .withBody("{\n"
+                        + "    \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/tags/latest10\",\n"
+                        + "    \"version\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:38cd16441be083f00bf2c3e0e307292531b6d98eb77c09271cf43f2b58ce9f9e\"\n"
+                        + "}")));
 
     when(garApiServiceImpl.getUrl()).thenReturn("http://" + url);
   }
@@ -169,5 +185,22 @@ public class GARApiServiceTest extends CategoryTest {
     assertThatThrownBy(() -> garApiServiceImpl.verifyBuildNumber(modiifedInternalConfig1, "package"))
         .extracting(ex -> ((WingsException) ex).getParams().get("message"))
         .isEqualTo("Connector provided does not have access to project. Please check the project field."); // 403
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getGarRestClientDockerRegistryAPIUrlTest() {
+    String url = garApiServiceImpl.getGarRestClientDockerRegistryAPIUrl("region");
+    assertThat(url).isEqualTo("https://region-docker.pkg.dev");
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getArtifactMetaInfoTest() {
+    when(garApiServiceImpl.getGarRestClientDockerRegistryAPIUrl(any())).thenReturn("http://" + url);
+    ArtifactMetaInfo artifactMetaInfo = garApiServiceImpl.getArtifactMetaInfo(gcpInternalConfig, "latest10");
+    assertThat(artifactMetaInfo.getShaV2()).isEqualTo(SHA);
   }
 }

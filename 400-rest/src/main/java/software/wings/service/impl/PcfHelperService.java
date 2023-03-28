@@ -180,8 +180,6 @@ public class PcfHelperService {
 
     // checks the status code and error messages.
     if (CommandExecutionStatus.FAILURE == cfCommandExecutionResponse.getCommandExecutionStatus()) {
-      log.warn("Failed to fetch PCF application details for Instance Sync, check delegate logs"
-          + cfCommandExecutionResponse.getPcfCommandResponse().getOutput());
       if (cfCommandExecutionResponse.getErrorMessage().contains(pcfApplicationName + " does not exist")
           || cfCommandExecutionResponse.getErrorMessage().contains(organization + " does not exist")
           || cfCommandExecutionResponse.getErrorMessage().contains(space + " does not exist")) {

@@ -10,6 +10,7 @@ package io.harness.ng.core.environment.resources;
 import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
 import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.checkDuplicateConfigFilesIdentifiersWithIn;
 import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.checkDuplicateManifestIdentifiersWithIn;
@@ -18,6 +19,7 @@ import static io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityC
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.pms.rbac.NGResourceType.SERVICE;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_CREATE_PERMISSION;
+import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_DELETE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
@@ -31,7 +33,7 @@ import static org.apache.commons.lang3.StringUtils.isNumeric;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
-import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
@@ -48,6 +50,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -65,7 +68,6 @@ import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOverridesMetadataDTO;
 import io.harness.ng.core.environment.beans.EnvironmentInputsMergedResponseDto;
 import io.harness.ng.core.environment.beans.EnvironmentInputsetYamlAndServiceOverridesMetadataInput;
-import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.dto.EnvironmentRequestDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
@@ -106,7 +108,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -194,7 +195,6 @@ public class EnvironmentResourceV2 {
 
   @GET
   @Path("{environmentIdentifier}")
-  @NGAccessControlCheck(resourceType = ENVIRONMENT, permission = "core_environment_view")
   @ApiOperation(value = "Gets a Environment by identifier", nickname = "getEnvironmentV2")
   @Operation(operationId = "getEnvironmentV2", summary = "Gets an Environment by identifier",
       responses =
@@ -226,6 +226,10 @@ public class EnvironmentResourceV2 {
       throw new NotFoundException(String.format("Environment with identifier [%s] in project [%s], org [%s] not found",
           environmentIdentifier, projectIdentifier, orgIdentifier));
     }
+
+    checkForAccessOrThrow(getEnvironmentAttributesMap(environment.get().getType().toString()),
+        ResourceScope.of(accountId, orgIdentifier, projectIdentifier), environmentIdentifier,
+        ENVIRONMENT_VIEW_PERMISSION);
     return ResponseDTO.newResponse(version, environment.map(EnvironmentMapper::toResponseWrapper).orElse(null));
   }
 
@@ -245,15 +249,10 @@ public class EnvironmentResourceV2 {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
     validateEnvironmentScope(environmentRequestDTO, accountId);
 
-    if (environmentRequestDTO.getType() == null) {
-      throw new InvalidRequestException(
-          "Type for an environment cannot be empty. Possible values: " + Arrays.toString(EnvironmentType.values()));
-    }
-    Map<String, String> environmentAttributes = new HashMap<>();
-    environmentAttributes.put("type", environmentRequestDTO.getType().toString());
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
                                                   environmentRequestDTO.getProjectIdentifier()),
-        Resource.of(ENVIRONMENT, null, environmentAttributes), ENVIRONMENT_CREATE_PERMISSION);
+        Resource.of(ENVIRONMENT, null, getEnvironmentAttributesMap(environmentRequestDTO.getType().toString())),
+        ENVIRONMENT_CREATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     if (isEmpty(environmentRequestDTO.getYaml())) {
@@ -273,7 +272,6 @@ public class EnvironmentResourceV2 {
   @DELETE
   @Path("{environmentIdentifier}")
   @ApiOperation(value = "Delete en environment by identifier", nickname = "deleteEnvironmentV2")
-  @NGAccessControlCheck(resourceType = ENVIRONMENT, permission = "core_environment_delete")
   @Operation(operationId = "deleteEnvironmentV2", summary = "Delete an Environment by identifier",
       responses =
       {
@@ -292,6 +290,18 @@ public class EnvironmentResourceV2 {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
           "false") boolean forceDelete) {
+    Optional<Environment> environmentOptional =
+        environmentService.get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, false);
+    if (!environmentOptional.isPresent()) {
+      throw new NotFoundException(String.format("Environment with identifier [%s] in project [%s], org [%s] not found",
+          environmentIdentifier, projectIdentifier, orgIdentifier));
+    }
+    Map<String, String> environmentAttributes = new HashMap<>();
+    if (environmentOptional.get().getType() != null) {
+      environmentAttributes.put("type", environmentOptional.get().getType().toString());
+    }
+    checkForAccessOrThrow(environmentAttributes, ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+        environmentIdentifier, ENVIRONMENT_DELETE_PERMISSION);
     return ResponseDTO.newResponse(environmentService.delete(accountId, orgIdentifier, projectIdentifier,
         environmentIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null, forceDelete));
   }
@@ -312,10 +322,14 @@ public class EnvironmentResourceV2 {
       @Valid EnvironmentRequestDTO environmentRequestDTO) {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
     validateEnvironmentScope(environmentRequestDTO, accountId);
-
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
-                                                  environmentRequestDTO.getProjectIdentifier()),
-        Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
+    Map<String, String> environmentAttributes = new HashMap<>();
+    if (environmentRequestDTO.getType() != null) {
+      environmentAttributes = getEnvironmentAttributesMap(environmentRequestDTO.getType().toString());
+    }
+    checkForAccessOrThrow(environmentAttributes,
+        ResourceScope.of(
+            accountId, environmentRequestDTO.getOrgIdentifier(), environmentRequestDTO.getProjectIdentifier()),
+        environmentRequestDTO.getIdentifier(), ENVIRONMENT_UPDATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     if (isEmpty(environmentRequestDTO.getYaml())) {
@@ -344,10 +358,14 @@ public class EnvironmentResourceV2 {
       @Valid EnvironmentRequestDTO environmentRequestDTO) {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
     validateEnvironmentScope(environmentRequestDTO, accountId);
-
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
-                                                  environmentRequestDTO.getProjectIdentifier()),
-        Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
+    Map<String, String> environmentAttributes = new HashMap<>();
+    if (environmentRequestDTO.getType() != null) {
+      environmentAttributes = getEnvironmentAttributesMap(environmentRequestDTO.getType().toString());
+    }
+    checkForAccessOrThrow(environmentAttributes,
+        ResourceScope.of(
+            accountId, environmentRequestDTO.getOrgIdentifier(), environmentRequestDTO.getProjectIdentifier()),
+        environmentRequestDTO.getIdentifier(), ENVIRONMENT_UPDATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     if (isEmpty(environmentRequestDTO.getYaml())) {
@@ -1086,5 +1104,36 @@ public class EnvironmentResourceV2 {
     } catch (Exception ex) {
       throw new InvalidRequestException(ex.getMessage());
     }
+  }
+  private void checkForAccessOrThrow(
+      Map<String, String> environmentAttributes, ResourceScope resourceScope, String identifier, String permission) {
+    List<PermissionCheckDTO> permissionChecks = new ArrayList<>();
+    permissionChecks.add(PermissionCheckDTO.builder()
+                             .permission(permission)
+                             .resourceIdentifier(identifier)
+                             .resourceScope(resourceScope)
+                             .resourceType(ENVIRONMENT)
+                             .build());
+    permissionChecks.add(PermissionCheckDTO.builder()
+                             .permission(permission)
+                             .resourceAttributes(environmentAttributes)
+                             .resourceScope(resourceScope)
+                             .resourceType(ENVIRONMENT)
+                             .build());
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+    List<AccessControlDTO> accessControlDTOList = accessCheckResponse.getAccessControlList();
+
+    final boolean isActionAllowed =
+        CollectionUtils.emptyIfNull(accessControlDTOList).stream().anyMatch(AccessControlDTO::isPermitted);
+    if (!isActionAllowed) {
+      throw new NGAccessDeniedException(
+          String.format("Missing permission %s on %s with identifier %s", permission, ENVIRONMENT, identifier), USER,
+          permissionChecks);
+    }
+  }
+  private Map<String, String> getEnvironmentAttributesMap(String environmentType) {
+    Map<String, String> environmentAttributes = new HashMap<>();
+    environmentAttributes.put("type", environmentType);
+    return environmentAttributes;
   }
 }

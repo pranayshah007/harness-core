@@ -117,7 +117,7 @@ public class GoogleFunctionInstanceSyncPerpetualTaskHandler extends InstanceSync
         .setFunction(releaseData.getFunction())
         .setRegion(releaseData.getRegion())
         .setGoogleFunctionsInfraConfig(
-            ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getGoogleFunctionInfraConfig())))
+            ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(releaseData.getGoogleFunctionInfraConfig())))
         .build();
   }
 

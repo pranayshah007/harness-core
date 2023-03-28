@@ -57,10 +57,18 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     if (apiAccess != null && apiAccess.getType().toString().equals(GitIntegrationConstants.GITHUB_APP_CONNECTOR_TYPE)) {
       GithubAppSpecDTO apiAccessSpec = (GithubAppSpecDTO) apiAccess.getSpec();
 
-      BackstageEnvConfigVariable appIDEnvironmentSecret = new BackstageEnvConfigVariable();
-      appIDEnvironmentSecret.setEnvName(GitIntegrationConstants.GITHUB_APP_ID);
-      appIDEnvironmentSecret.value(apiAccessSpec.getApplicationId());
-      secrets.put(GitIntegrationConstants.GITHUB_APP_ID, appIDEnvironmentSecret);
+      if (apiAccessSpec.getApplicationIdRef() == null) {
+        BackstageEnvConfigVariable appIDEnvironmentSecret = new BackstageEnvConfigVariable();
+        appIDEnvironmentSecret.setEnvName(GitIntegrationConstants.GITHUB_APP_ID);
+        appIDEnvironmentSecret.setType(BackstageEnvVariable.TypeEnum.CONFIG);
+        appIDEnvironmentSecret.value(apiAccessSpec.getApplicationId());
+        secrets.put(GitIntegrationConstants.GITHUB_APP_ID, appIDEnvironmentSecret);
+      } else {
+        String applicationIdSecretRefId = apiAccessSpec.getApplicationIdRef().getIdentifier();
+        secrets.put(GitIntegrationConstants.GITHUB_APP_ID,
+            GitIntegrationUtils.getBackstageEnvSecretVariable(
+                applicationIdSecretRefId, GitIntegrationConstants.GITHUB_APP_ID));
+      }
 
       String privateRefKeySecretIdentifier = apiAccessSpec.getPrivateKeyRef().getIdentifier();
       secrets.put(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF,
@@ -90,7 +98,7 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
       String locationParentPath, String remoteFolder, List<String> filesToPush) {
     Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> connectorSecretsInfo = getConnectorAndSecretsInfo(
-        accountIdentifier, null, null, catalogConnectorInfo.getSourceConnector().getIdentifier());
+        accountIdentifier, null, null, catalogConnectorInfo.getInfraConnector().getIdentifier());
     BackstageEnvSecretVariable envSecretVariable =
         (BackstageEnvSecretVariable) connectorSecretsInfo.getSecond().get(GitIntegrationConstants.GITHUB_TOKEN);
     String githubConnectorSecret = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,

@@ -70,7 +70,7 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
 ENV PATH=/opt/harness-delegate/client-tools/kubectl/v1.24.3/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/go-template/v0.4.1/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/chartmuseum/v0.15.0/:$PATH
-ENV PATH=/opt/harness-delegate/client-tools/tf-config-inspect/v1.1/:$PATH
+ENV PATH=/opt/harness-delegate/client-tools/tf-config-inspect/v1.2/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/kustomize/v4.5.4/:$PATH
 
 RUN curl -s -L -o delegate.jar $BASEURL/$DELEGATEVERSION/delegate.jar

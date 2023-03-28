@@ -33,5 +33,6 @@ public class AwsConfig extends Connector {
   AwsCredentialType credentialType;
   CrossAccountAccessDTO crossAccountAccess;
   AwsCredential credential;
+  AwsSdkClientBackoffStrategy awsSdkClientBackoffStrategy;
   String testRegion;
 }

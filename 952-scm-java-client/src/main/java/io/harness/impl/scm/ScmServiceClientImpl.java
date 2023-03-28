@@ -187,6 +187,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     handleUpdateFileRequestIfBBOnPrem(fileModifyRequestBuilder, scmConnector, gitFileDetails);
     final FileModifyRequest fileModifyRequest =
         fileModifyRequestBuilder.setBlobId(Strings.nullToEmpty(gitFileDetails.getOldFileSha()))
+            .setCommitId(Strings.nullToEmpty(gitFileDetails.getCommitId()))
             .setUseGitClient(useGitClient)
             .build();
     UpdateFileResponse updateFileResponse =

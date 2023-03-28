@@ -17,6 +17,7 @@ import static io.harness.NGCommonEntityConstants.PIPELINE_KEY;
 import static io.harness.NGCommonEntityConstants.PLAN_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY;
+import static io.harness.NGCommonEntityConstants.USER_ID;
 
 import static dev.morphia.mapping.Mapper.ID_KEY;
 
@@ -38,6 +39,7 @@ import io.harness.entities.PipelineCDCEntity;
 import io.harness.entities.PipelineExecutionSummaryEntityCDCEntity;
 import io.harness.entities.ProjectEntity;
 import io.harness.entities.ServiceCDCEntity;
+import io.harness.entities.UserEntity;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
@@ -45,6 +47,7 @@ import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
+import io.harness.ng.core.user.entities.UserMetadata.UserMetadataKeys;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.rbac.PipelineRbacPermissions;
@@ -95,6 +98,7 @@ public class PartialSyncResource {
   @Inject ProjectEntity projectEntity;
   @Inject ServiceCDCEntity serviceCDCEntity;
   @Inject ConnectorCDCEntity connectorCDCEntity;
+  @Inject UserEntity userEntity;
 
   @GET
   @Path("/accounts")
@@ -270,6 +274,21 @@ public class PartialSyncResource {
     addTsFilter(filters, ConnectorKeys.createdAt, createdAtFrom, createdAtTo);
 
     return triggerSync(connectorCDCEntity, filters, handler);
+  }
+
+  @GET
+  @Path("/users")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "trigger bulk sync for the users entity using supplied filters")
+  public RestResponse<String> triggerUsersSync(@QueryParam(USER_ID) @Nullable String identifier,
+      @QueryParam(HANDLER_KEY) @Nullable String handler, @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
+      @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
+    List<Bson> filters = new ArrayList<>();
+    addEqFilter(filters, UserMetadataKeys.userId, identifier);
+    addTsFilter(filters, ServiceEntityKeys.createdAt, createdAtFrom, createdAtTo);
+
+    return triggerSync(userEntity, filters, handler);
   }
 
   private void addEqFilter(List<Bson> filters, String key, String value) {
