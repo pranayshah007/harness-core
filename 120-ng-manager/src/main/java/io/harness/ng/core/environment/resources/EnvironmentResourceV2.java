@@ -542,7 +542,7 @@ public class EnvironmentResourceV2 {
 
     final Page<Environment> environmentPage;
 
-    if (hasViewPermissionForAll(accountId, orgIdentifier, projectIdentifier)) {
+    if (hasViewPermissionForAllEnvironments(accountId, orgIdentifier, projectIdentifier)) {
       environmentPage = environmentService.list(criteria, pageRequest);
 
     } else {
@@ -568,9 +568,7 @@ public class EnvironmentResourceV2 {
 
     environmentPage.forEach(environment -> {
       if (EmptyPredicate.isEmpty(environment.getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
-
-        environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
+        environment.fetchNonEmptyYaml();
       }
     });
 
@@ -1173,7 +1171,7 @@ public class EnvironmentResourceV2 {
     return environmentAttributes;
   }
 
-  boolean hasViewPermissionForAll(String accountId, String orgIdentifier, String projectIdentifier) {
+  boolean hasViewPermissionForAllEnvironments(String accountId, String orgIdentifier, String projectIdentifier) {
     return accessControlClient.hasAccess(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION);
   }

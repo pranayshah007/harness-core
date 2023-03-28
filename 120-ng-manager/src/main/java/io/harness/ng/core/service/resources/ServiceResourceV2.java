@@ -446,7 +446,7 @@ public class ServiceResourceV2 {
     }
     Page<ServiceEntity> serviceEntities = null;
 
-    if (hasViewPermissionForAll(accountId, orgIdentifier, projectIdentifier)) {
+    if (hasViewPermissionForAllServices(accountId, orgIdentifier, projectIdentifier)) {
       serviceEntities = serviceEntityService.list(criteria, pageRequest);
 
     } else {
@@ -456,9 +456,7 @@ public class ServiceResourceV2 {
         return ResponseDTO.newResponse(getNGPageResponse(Page.empty()));
       }
 
-      List<ServiceEntity> serviceList = serviceEntityPage.getContent();
-
-      serviceList = serviceRbacHelper.getPermittedServiceList(serviceList);
+      List<ServiceEntity> serviceList = serviceRbacHelper.getPermittedServiceList(serviceEntityPage.getContent());
 
       if (isEmpty(serviceList)) {
         return ResponseDTO.newResponse(getNGPageResponse(Page.empty()));
@@ -476,8 +474,7 @@ public class ServiceResourceV2 {
 
     serviceEntities.forEach(serviceEntity -> {
       if (EmptyPredicate.isEmpty(serviceEntity.getYaml())) {
-        NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
-        serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
+        serviceEntity.fetchNonEmptyYaml();
       }
     });
 
@@ -1123,7 +1120,7 @@ public class ServiceResourceV2 {
   getKustomizeCommandFlags() {
     return ResponseDTO.newResponse(new HashSet<>(Arrays.asList(KustomizeCommandFlagType.values())));
   }
-  boolean hasViewPermissionForAll(String accountId, String orgIdentifier, String projectIdentifier) {
+  boolean hasViewPermissionForAllServices(String accountId, String orgIdentifier, String projectIdentifier) {
     return accessControlClient.hasAccess(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(SERVICE, null), SERVICE_VIEW_PERMISSION);
   }

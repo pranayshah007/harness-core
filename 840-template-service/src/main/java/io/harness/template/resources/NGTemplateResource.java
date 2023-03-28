@@ -10,7 +10,6 @@ package io.harness.template.resources;
 import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.template.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
 
 import static java.lang.Long.parseLong;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
@@ -995,9 +994,5 @@ public class NGTemplateResource {
     TemplateMoveConfigResponse templateMoveConfigResponse = templateService.moveTemplateStoreTypeConfig(
         accountId, orgId, projectId, templateIdentifier, templateMoveConfigRequestDTO);
     return ResponseDTO.newResponse(templateMoveConfigResponse);
-  }
-  boolean hasViewPermissionForAll(String accountId, String orgIdentifier, String projectIdentifier) {
-    return accessControlClient.hasAccess(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
-        Resource.of("TEMPLATE", null), TEMPLATE_VIEW_PERMISSION);
   }
 }
