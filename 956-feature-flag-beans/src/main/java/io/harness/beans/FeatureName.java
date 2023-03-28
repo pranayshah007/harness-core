@@ -689,7 +689,8 @@ public enum FeatureName {
   SPG_ADOPT_DELEGATE_DECRYPTION_ON_SERVICE_VARIABLES(
       "Enable to resolve expression using nested values from secret.getValue from service variables", HarnessTeam.SPG),
   CDS_REMOVE_COMMENTS_FROM_VALUES_YAML("Remove comments from values.yaml files", HarnessTeam.CDP),
-  BAMBOO_BUILD("Bamboo Build Step", HarnessTeam.CDC);
+  BAMBOO_BUILD("Bamboo Build Step", HarnessTeam.CDC),
+  CDS_AWS_BACKOFF_STRATEGY("Enable AWS SDK Client Backoff Strategy", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
