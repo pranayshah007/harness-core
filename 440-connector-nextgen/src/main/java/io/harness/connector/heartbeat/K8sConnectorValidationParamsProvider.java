@@ -8,8 +8,11 @@
 package io.harness.connector.heartbeat;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
+import io.harness.account.AccountClient;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
@@ -21,10 +24,13 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Singleton
 public class K8sConnectorValidationParamsProvider implements ConnectorValidationParamsProvider {
   @Inject EncryptionHelper encryptionHelper;
+  @Inject private AccountClient accountClient;
 
   @Override
   public ConnectorValidationParams getConnectorValidationParams(ConnectorInfoDTO connectorInfoDTO, String connectorName,
@@ -41,6 +47,19 @@ public class K8sConnectorValidationParamsProvider implements ConnectorValidation
         .kubernetesClusterConfigDTO((KubernetesClusterConfigDTO) connectorConfigDTO)
         .connectorName(connectorName)
         .encryptedDataDetails(encryptionDetail)
+        .useSocketCapability(useSocketCapability(accountIdentifier))
         .build();
+  }
+
+  private boolean useSocketCapability(String accountIdentifier) {
+    try {
+      return getResponse(
+          accountClient.isFeatureFlagEnabled(FeatureName.CDS_K8S_SOCKET_CAPABILITY_CHECK_NG.name(), accountIdentifier));
+    } catch (Exception e) {
+      log.warn("Unable to evaluate FF {} for account {}", FeatureName.CDS_K8S_SOCKET_CAPABILITY_CHECK_NG.name(),
+          accountIdentifier);
+    }
+
+    return false;
   }
 }
