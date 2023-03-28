@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    {{- include "scm-service.labels" . | nindent 4 }}
+  name: scm-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - name: scm
+      port: {{.Values.service.port}}
+      protocol: TCP
+      targetPort: {{.Values.service.port}}
+  selector:
+    {{- include "scm-service.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{.Values.service.type}}
