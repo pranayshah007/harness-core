@@ -34,6 +34,7 @@ import lombok.EqualsAndHashCode;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AwsConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable, ManagerExecutable {
   @Valid @NotNull AwsCredentialOutcomeDTO credential;
+  @Valid AwsSdkClientBackoffStrategyOutcomeDTO awsSdkClientBackOffStrategyOverride;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
 
