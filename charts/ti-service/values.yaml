@@ -1,0 +1,138 @@
+# Default values for ti-service
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  loadbalancerURL: ""
+  ingress:
+    enabled: false
+    className: harness
+    hosts:
+      - my-host.example.org
+    tls:
+      enabled: true
+      secretName: ''
+  istio:
+    enabled: false
+    gateway:
+      create: false
+    virtualService:
+      gateways:
+      hosts:
+  imagePullSecrets: []
+  imagePullSecrets: []
+replicaCount: 1
+maxSurge: 1
+maxUnavailable: 0
+
+image:
+  registry: docker.io
+  repository: harness/ti-service-signed
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "release-77"
+  digest: ""
+  imagePullSecrets: []
+
+waitForInitContainer:
+  image:
+    registry: docker.io
+    repository: harness/helm-init-container
+    pullPolicy: IfNotPresent
+    tag: "latest"
+    digest: ""
+    imagePullSecrets: []
+
+jobs:
+  migrate:
+    image:
+      registry: docker.io
+      tag: release-77
+      repository: harness/ti-service-signed
+      pullPolicy: IfNotPresent
+      digest: ""
+
+mongoSecrets:
+  userName:
+    name: harness-secrets
+    key: mongodbUsername
+  password:
+    name: mongodb-replicaset-chart
+    key: mongodb-root-password
+
+config:
+  TI_SERVICE_TIMESCALE_PORT: 5432
+  TI_SERVICE_DB_NAME: harnessti
+  TI_SERVICE_MONGODB_DB_NAME: ti-harness
+  TI_SERVICE_HYPER_TABLE: evaluation
+  TI_SERVICE_DISABLE_AUTH: "true"
+  TI_SERVICE_SELECTION_HYPER_TABLE: selection
+  TI_SERVICE_COVERAGE_HYPER_TABLE: coverage
+
+tiServiceTimescaleSecret:
+  password:
+    name: harness-secrets
+    key: timescaledbPostgresPassword
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "harness-default"
+
+podAnnotations: {}
+
+imagePullSecrets: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  runAsUser: 65534
+  runAsNonRoot: true
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8078
+
+resources:
+  limits:
+    cpu: 1
+    memory: 3072Mi
+  requests:
+    cpu: 1
+    memory: 3072Mi
+
+jobresources:
+  limits:
+    cpu: 1
+    memory: 3072Mi
+  requests:
+    cpu: 1
+    memory: 3072Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+useSSL: false

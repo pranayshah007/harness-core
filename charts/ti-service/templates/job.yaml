@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ti-migration-{{ lower ( randAlphaNum 6 ) }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+  labels:
+    {{- include "ti-service.labels" . | nindent 4 }}
+spec:
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "ti-service.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: migrate
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.jobs.migrate.image "global" .Values.global) }}
+        imagePullPolicy: {{ .Values.jobs.migrate.image.pullPolicy}}
+        command: ["/bin/bash", "-c", "sleep 300 && /opt/harness/migrate.sh" ]
+        resources:
+          {{- toYaml .Values.jobresources | nindent 10 }}
+        env:
+          - name: MONGODB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: harness-secrets
+                key: mongodbUsername
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mongodb-replicaset-chart
+                key: mongodb-root-password
+          - name: TI_SERVICE_MONGODB_CONN_STR
+            value: {{ include "harnesscommon.database.mongo" (dict "database" "ti-harness" "context" $) }}
+          - name: TI_SERVICE_TIMESCALE_USERNAME
+            value: "postgres"
+          - name: TI_SERVICE_TIMESCALE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: harness-secrets
+                key: "timescaledbPostgresPassword"
+          - name: TSDB_URL
+            value: 'postgres://postgres:$(TI_SERVICE_TIMESCALE_PASSWORD)@timescaledb-single-chart.{{ .Release.Namespace }}:5432/harnessti?sslmode=disable'
+      restartPolicy: Never
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.tolerations "context" $) | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ti-service.name" . }}
+  namespace: {{ .Release.Namespace }}
+data:
+  TI_SERVICE_TIMESCALE_HOST: timescaledb-single-chart.{{ .Release.Namespace }}
+  TI_SERVICE_TIMESCALE_PORT: {{ .Values.config.TI_SERVICE_TIMESCALE_PORT | quote }}
+  TI_SERVICE_DB_NAME: {{ .Values.config.TI_SERVICE_DB_NAME }}
+  TI_SERVICE_MONGODB_DB_NAME: {{ .Values.config.TI_SERVICE_MONGODB_DB_NAME }}
+  TI_SERVICE_HYPER_TABLE: {{ .Values.config.TI_SERVICE_HYPER_TABLE }}
+  TI_SERVICE_DISABLE_AUTH: "true"
+  TI_SERVICE_SELECTION_HYPER_TABLE: {{ .Values.config.TI_SERVICE_SELECTION_HYPER_TABLE }}
+  TI_SERVICE_COVERAGE_HYPER_TABLE: {{ .Values.config.TI_SERVICE_COVERAGE_HYPER_TABLE }}
+  {{- if .Values.useSSL }}
+  TI_SERVICE_TIMESCALE_SSL_MODE: "require"
+  {{- end }}
+  EVENTS_FRAMEWORK_REDIS_URL: default
+  EVENTS_FRAMEWORK_REDIS_USE_SENTINEL: 'true'
+  EVENTS_FRAMEWORK_REDIS_SENTINEL_MASTER_NAME: 'harness-redis'
+  EVENTS_FRAMEWORK_REDIS_SENTINEL_URLS: 'redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
+  TI_SERVICE_GLOBAL_TOKEN: 78d16b66-4b4c-11eb-8377-acde48001122
