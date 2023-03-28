@@ -167,7 +167,7 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
         .setAccountId(infrastructureMappingDTO.getAccountIdentifier())
         .setOrgId(connectorInfoDTO.getOrgIdentifier())
         .setProjectId(connectorInfoDTO.getProjectIdentifier())
-        .setConnectorInfoDto(ByteString.copyFrom(kryoSerializer.asBytes(connectorInfoDTO)))
+        .setConnectorInfoDto(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(connectorInfoDTO)))
         .build();
   }
 
