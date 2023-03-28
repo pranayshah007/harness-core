@@ -9,11 +9,16 @@ package io.harness.pms.approval.custom;
 
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -35,6 +40,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
+import io.harness.steps.approval.step.ApprovalProgressData;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
@@ -95,6 +101,7 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
     when(shellScriptHelperService.buildShellScriptTaskParametersNG(any(), any()))
         .thenReturn(ShellScriptTaskParametersNG.builder().build());
     when(ngDelegate2TaskExecutor.queueTask(any(), any(), eq(Duration.ofSeconds(0)))).thenReturn("__TASK_ID__");
+    doNothing().when(waitNotifyEngine).progressOn(any(), any());
     try (MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class)) {
       aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
           .thenReturn(TaskRequest.newBuilder().build());
@@ -102,6 +109,34 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
       verify(approvalInstanceService, never()).resetNextIterations(any(), any());
       verify(ngDelegate2TaskExecutor).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
       verify(waitNotifyEngine).waitForAllOn(any(), any(), any());
+      verify(waitNotifyEngine)
+          .progressOn("__ID__", ApprovalProgressData.builder().latestDelegateTaskId("__TASK_ID__").build());
+    }
+
+    // when progress update fails
+    when(ngDelegate2TaskExecutor.queueTask(any(), any(), eq(Duration.ofSeconds(0)))).thenReturn("__TASK_ID__");
+    doThrow(new RuntimeException()).when(waitNotifyEngine).progressOn(any(), any());
+    try (MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class)) {
+      aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
+          .thenReturn(TaskRequest.newBuilder().build());
+      assertThatCode(() -> customApprovalHelperService.handlePollingEvent(null, instance)).doesNotThrowAnyException();
+      verify(approvalInstanceService, never()).resetNextIterations(any(), any());
+      verify(ngDelegate2TaskExecutor, times(2)).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
+      verify(waitNotifyEngine, times(2)).waitForAllOn(any(), any(), any());
+      verify(waitNotifyEngine, times(2))
+          .progressOn("__ID__", ApprovalProgressData.builder().latestDelegateTaskId("__TASK_ID__").build());
+    }
+
+    // when task id is empty, progress update shouldn't be called
+    when(ngDelegate2TaskExecutor.queueTask(any(), any(), eq(Duration.ofSeconds(0)))).thenReturn("  ");
+    try (MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class)) {
+      aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
+          .thenReturn(TaskRequest.newBuilder().build());
+      assertThatCode(() -> customApprovalHelperService.handlePollingEvent(null, instance)).doesNotThrowAnyException();
+      verify(approvalInstanceService, never()).resetNextIterations(any(), any());
+      verify(ngDelegate2TaskExecutor, times(3)).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
+      verify(waitNotifyEngine, times(3)).waitForAllOn(any(), any(), any());
+      verifyNoMoreInteractions(waitNotifyEngine);
     }
   }
 
