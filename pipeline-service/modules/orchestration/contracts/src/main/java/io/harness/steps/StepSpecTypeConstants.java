@@ -32,6 +32,7 @@ public interface StepSpecTypeConstants {
   String SERVICENOW_IMPORT_SET = "ServiceNowImportSet";
   String APPROVAL_STAGE = "Approval";
   String PIPELINE_STAGE = "Pipeline";
+  String PIPELINE_ROLLBACK_STAGE = "PipelineRollback";
   String CUSTOM_STAGE = "Custom";
   String FEATURE_FLAG_STAGE = "FeatureFlag";
   String POLICY_STEP = "Policy";
