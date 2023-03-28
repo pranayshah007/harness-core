@@ -75,7 +75,6 @@ public class FilterCreatorMergeService {
   private final PipelineSetupUsageHelper pipelineSetupUsageHelper;
   private final PmsGitSyncHelper pmsGitSyncHelper;
   private final PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
-  private final IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   private final GitSyncSdkService gitSyncSdkService;
   private final PrincipalInfoHelper principalInfoHelper;
   private final TriggeredByHelper triggeredByHelper;
@@ -86,13 +85,12 @@ public class FilterCreatorMergeService {
   @Inject
   public FilterCreatorMergeService(PmsSdkHelper pmsSdkHelper, PipelineSetupUsageHelper pipelineSetupUsageHelper,
       PmsGitSyncHelper pmsGitSyncHelper, PMSPipelineTemplateHelper pmsPipelineTemplateHelper,
-      IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper, GitSyncSdkService gitSyncSdkService,
-      PrincipalInfoHelper principalInfoHelper, TriggeredByHelper triggeredByHelper) {
+      GitSyncSdkService gitSyncSdkService, PrincipalInfoHelper principalInfoHelper,
+      TriggeredByHelper triggeredByHelper) {
     this.pmsSdkHelper = pmsSdkHelper;
     this.pipelineSetupUsageHelper = pipelineSetupUsageHelper;
     this.pmsGitSyncHelper = pmsGitSyncHelper;
     this.pmsPipelineTemplateHelper = pmsPipelineTemplateHelper;
-    this.identifierRefProtoDTOHelper = identifierRefProtoDTOHelper;
     this.gitSyncSdkService = gitSyncSdkService;
     this.principalInfoHelper = principalInfoHelper;
     this.triggeredByHelper = triggeredByHelper;
@@ -287,7 +285,7 @@ public class FilterCreatorMergeService {
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
 
       IdentifierRefProtoDTO connectorReference =
-          identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(identifierRef.getAccountIdentifier(),
+          IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(identifierRef.getAccountIdentifier(),
               identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
       EntityDetailProtoDTO connectorDetails = EntityDetailProtoDTO.newBuilder()
                                                   .setIdentifierRef(connectorReference)

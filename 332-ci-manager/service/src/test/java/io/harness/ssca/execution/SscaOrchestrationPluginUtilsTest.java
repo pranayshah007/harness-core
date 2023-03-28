@@ -9,13 +9,13 @@ package io.harness.ssca.execution;
 
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.ssca.execution.SscaOrchestrationPluginUtils.getSscaOrchestrationSecretVars;
-import static io.harness.ssca.execution.SscaOrchestrationStepPluginUtils.ATTESTATION_PRIVATE_KEY;
-import static io.harness.ssca.execution.SscaOrchestrationStepPluginUtils.PLUGIN_FORMAT;
-import static io.harness.ssca.execution.SscaOrchestrationStepPluginUtils.PLUGIN_SBOMDESTINATION;
-import static io.harness.ssca.execution.SscaOrchestrationStepPluginUtils.PLUGIN_SBOMSOURCE;
-import static io.harness.ssca.execution.SscaOrchestrationStepPluginUtils.PLUGIN_TOOL;
-import static io.harness.ssca.execution.SscaOrchestrationStepPluginUtils.PLUGIN_TYPE;
-import static io.harness.ssca.execution.SscaOrchestrationStepPluginUtils.SKIP_NORMALISATION;
+import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.ATTESTATION_PRIVATE_KEY;
+import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_FORMAT;
+import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_SBOMDESTINATION;
+import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_SBOMSOURCE;
+import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_TOOL;
+import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_TYPE;
+import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.SKIP_NORMALISATION;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

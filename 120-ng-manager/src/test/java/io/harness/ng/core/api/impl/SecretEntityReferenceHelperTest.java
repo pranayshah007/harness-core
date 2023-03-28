@@ -40,6 +40,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 @Slf4j
@@ -49,15 +51,20 @@ public class SecretEntityReferenceHelperTest extends CategoryTest {
   @Mock EntitySetupUsageService entitySetupUsageService;
   @Mock Producer eventProducer;
   @Mock EntitySetupUsageHelper entityReferenceHelper;
-  @Mock IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    when(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(anyString(), anyString(), anyString(), anyString()))
+    MockedStatic<IdentifierRefProtoDTOHelper> mockedStatic = Mockito.mockStatic(IdentifierRefProtoDTOHelper.class);
+    mockedStatic
+        .when(()
+                  -> IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+                      anyString(), anyString(), anyString(), anyString()))
         .thenCallRealMethod();
-    when(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
-             anyString(), anyString(), anyString(), anyString(), any()))
+    mockedStatic
+        .when(()
+                  -> IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+                      anyString(), anyString(), anyString(), anyString(), any()))
         .thenCallRealMethod();
   }
 

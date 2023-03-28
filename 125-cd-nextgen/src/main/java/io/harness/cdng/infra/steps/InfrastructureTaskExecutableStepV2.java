@@ -84,6 +84,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.rbac.PipelineRbacHelper;
+import io.harness.pms.sdk.core.execution.invokers.StrategyHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
@@ -132,6 +133,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private InfrastructureValidator infrastructureValidator;
   @Inject private CDExpressionResolver resolver;
+  @Inject private StrategyHelper strategyHelper;
 
   @Override
   public Class<InfrastructureTaskExecutableStepV2Params> getStepParametersClass() {
@@ -206,8 +208,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
       if (isNotEmpty(failedResponses)) {
         log.error("Error notify response found for Infrastructure step " + failedResponses);
-        throw new InvalidRequestException(
-            "Failed to complete Infrastructure step. " + failedResponses.get(0).getErrorMessage());
+        return strategyHelper.handleException(failedResponses.get(0).getException());
       }
 
       Iterator<ResponseData> dataIterator = responseDataMap.values().iterator();

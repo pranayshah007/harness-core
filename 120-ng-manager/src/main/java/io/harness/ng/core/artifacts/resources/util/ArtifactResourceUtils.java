@@ -391,6 +391,11 @@ public class ArtifactResourceUtils {
     // node from service will have updated details
     YamlNode artifactSpecNode = artifactTagLeafNode.getParentNode().getParentNode();
 
+    // In case of Nexus2&3 configs, coz they have one more spec in their ArtifactConfig like no other artifact source.
+    if (artifactSpecNode.getFieldName().equals("spec")) {
+      artifactSpecNode = artifactSpecNode.getParentNode();
+    }
+
     if (artifactSpecNode.getParentNode() != null
         && "template".equals(artifactSpecNode.getParentNode().getFieldName())) {
       YamlNode templateNode = artifactSpecNode.getParentNode();

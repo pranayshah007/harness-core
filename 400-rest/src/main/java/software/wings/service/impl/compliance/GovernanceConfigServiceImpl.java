@@ -652,7 +652,6 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
     validateAppEnvFilterTypes(deploymentFreeze.getAppSelections());
     validateAppEnvFilterOneAppWhenEnvFilterTypeIsCustom(deploymentFreeze.getAppSelections());
     validateAppEnvFilterOneAppWhenServiceFilterTypeIsCustom(deploymentFreeze.getAppSelections());
-    validateAppEnvServiceFilterValues(deploymentFreeze.getExcludeAppSelections());
     validateAppEnvFilterTypes(deploymentFreeze.getExcludeAppSelections());
     validateAppEnvFilterOneAppWhenEnvFilterTypeIsCustom(deploymentFreeze.getExcludeAppSelections());
     validateAppEnvFilterOneAppWhenServiceFilterTypeIsCustom(deploymentFreeze.getExcludeAppSelections());

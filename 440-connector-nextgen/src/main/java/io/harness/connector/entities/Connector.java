@@ -7,6 +7,9 @@
 
 package io.harness.connector.entities;
 
+import static io.harness.connector.entities.Connector.ConnectorKeys;
+
+import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -63,6 +66,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("connectors")
 @Persistent
 @OwnedBy(HarnessTeam.DX)
+@ChangeDataCapture(table = "connectors", dataStore = "ng-harness",
+    fields = {ConnectorKeys.accountIdentifier, ConnectorKeys.orgIdentifier, ConnectorKeys.projectIdentifier,
+        ConnectorKeys.identifier, ConnectorKeys.name, ConnectorKeys.scope, ConnectorKeys.createdAt,
+        ConnectorKeys.createdBy, ConnectorKeys.lastUpdatedBy, ConnectorKeys.type, ConnectorKeys.categories},
+    handler = "Connectors")
 public abstract class Connector implements PersistentEntity, NGAccountAccess, GitSyncableEntity {
   @Id @dev.morphia.annotations.Id String id;
   @NotEmpty @EntityIdentifier String identifier;

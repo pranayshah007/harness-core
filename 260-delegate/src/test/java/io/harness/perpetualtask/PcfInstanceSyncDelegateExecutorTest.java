@@ -152,6 +152,9 @@ public class PcfInstanceSyncDelegateExecutorTest extends DelegateTestBase {
             .setEncryptedData(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(Collections.emptyList())))
             .setPcfConfig(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(CfInternalConfig.builder().build())))
             .build();
-    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
+    return PerpetualTaskExecutionParams.newBuilder()
+        .setCustomizedParams(Any.pack(message))
+        .setReferenceFalseKryoSerializer(true)
+        .build();
   }
 }

@@ -33,6 +33,10 @@ public class ThresholdServiceLevelIndicator extends ServiceLevelIndicator {
   Double thresholdValue;
   ThresholdType thresholdType;
 
+  Integer considerConsecutiveMinutes;
+
+  Boolean considerAllConsecutiveMinutesFromStartAsBad;
+
   @Override
   public SLIMetricType getSLIMetricType() {
     return SLIMetricType.THRESHOLD;
@@ -61,6 +65,18 @@ public class ThresholdServiceLevelIndicator extends ServiceLevelIndicator {
           ThresholdServiceLevelIndicatorKeys.thresholdValue, thresholdServiceLevelIndicator.getThresholdValue());
       updateOperations.set(
           ThresholdServiceLevelIndicatorKeys.thresholdType, thresholdServiceLevelIndicator.getThresholdType());
+      if (thresholdServiceLevelIndicator.getConsiderConsecutiveMinutes() != null) {
+        updateOperations.set(ThresholdServiceLevelIndicatorKeys.considerConsecutiveMinutes,
+            thresholdServiceLevelIndicator.getConsiderConsecutiveMinutes());
+      } else {
+        updateOperations.unset(ThresholdServiceLevelIndicatorKeys.considerConsecutiveMinutes);
+      }
+      if (thresholdServiceLevelIndicator.considerAllConsecutiveMinutesFromStartAsBad != null) {
+        updateOperations.set(ThresholdServiceLevelIndicatorKeys.considerAllConsecutiveMinutesFromStartAsBad,
+            thresholdServiceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad());
+      } else {
+        updateOperations.unset(ThresholdServiceLevelIndicatorKeys.considerAllConsecutiveMinutesFromStartAsBad);
+      }
     }
   }
 
@@ -83,6 +99,14 @@ public class ThresholdServiceLevelIndicator extends ServiceLevelIndicator {
           (ThresholdServiceLevelIndicator) serviceLevelIndicator;
       Preconditions.checkArgument(this.getThresholdValue().equals(thresholdServiceLevelIndicator.getThresholdValue()));
       Preconditions.checkArgument(this.getThresholdType().equals(thresholdServiceLevelIndicator.getThresholdType()));
+      if (this.getConsiderConsecutiveMinutes() != null) {
+        Preconditions.checkArgument(this.getConsiderConsecutiveMinutes().equals(
+            thresholdServiceLevelIndicator.getConsiderConsecutiveMinutes()));
+      }
+      if (this.getConsiderAllConsecutiveMinutesFromStartAsBad() != null) {
+        Preconditions.checkArgument(this.getConsiderAllConsecutiveMinutesFromStartAsBad().equals(
+            thresholdServiceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad()));
+      }
       return false;
     } catch (IllegalArgumentException ex) {
       return true;

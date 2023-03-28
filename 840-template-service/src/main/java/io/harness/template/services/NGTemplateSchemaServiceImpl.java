@@ -154,8 +154,8 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
     String orgIdentifier = templateEntity.getOrgIdentifier();
     String templateYaml = templateEntity.getYaml();
     long start = System.currentTimeMillis();
-    if (!TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
-            FeatureName.TEMPLATE_SCHEMA_VALIDATION, accountIdentifier, accountClient)) {
+    if (TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
+            FeatureName.DISABLE_TEMPLATE_SCHEMA_VALIDATION, accountIdentifier, accountClient)) {
       return;
     }
     try {

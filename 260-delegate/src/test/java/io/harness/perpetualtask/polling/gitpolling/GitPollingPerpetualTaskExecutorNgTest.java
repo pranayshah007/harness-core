@@ -89,7 +89,7 @@ public class GitPollingPerpetualTaskExecutorNgTest extends DelegateTestBase {
     PollingResponsePublisher pollingResponsePublisher =
         new PollingResponsePublisher(kryoSerializer, referenceFalseKryoSerializer, delegateAgentManagerClient);
     gitPollingPerpetualTaskExecutorNg = new GitPollingPerpetualTaskExecutorNg(
-        kryoSerializer, referenceFalseKryoSerializer, gitPollingService, pollingResponsePublisher);
+        gitPollingService, pollingResponsePublisher, kryoSerializer, referenceFalseKryoSerializer);
     perpetualTaskId = PerpetualTaskId.newBuilder().setId(UUIDGenerator.generateUuid()).build();
     polling_doc_id = UUIDGenerator.generateUuid();
   }

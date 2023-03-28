@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ssca.cd.beans.stepinfo;
+package io.harness.ssca.cd.beans.orchestration;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
@@ -41,7 +41,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(SscaConstants.CD_SSCA_ORCHESTRATION)
 @TypeAlias(SscaConstants.CD_SSCA_ORCHESTRATION_STEP_NODE)
 @OwnedBy(HarnessTeam.SSCA)
-@RecasterAlias("io.harness.ssca.cd.beans.stepinfo.CdSscaOrchestrationStepInfo")
+@RecasterAlias("io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationStepInfo")
 public class CdSscaOrchestrationStepInfo
     extends CdSscaOrchestrationBaseStepInfo implements PMSStepInfo, WithConnectorRef {
   @VariableExpression(skipVariableExpression = true) public static final int DEFAULT_RETRY = 1;

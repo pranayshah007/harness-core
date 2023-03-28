@@ -19,9 +19,9 @@ import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.ssca.beans.tools.syft.SyftSbomOrchestration;
-import io.harness.ssca.cd.beans.stepinfo.CdSscaOrchestrationSpecParameters;
+import io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationSpecParameters;
 import io.harness.ssca.client.SSCAServiceUtils;
-import io.harness.ssca.execution.SscaOrchestrationStepPluginUtils;
+import io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.yaml.core.variables.SecretNGVariable;
 

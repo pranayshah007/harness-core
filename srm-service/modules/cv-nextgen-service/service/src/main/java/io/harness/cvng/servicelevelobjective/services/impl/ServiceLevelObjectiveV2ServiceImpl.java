@@ -72,7 +72,6 @@ import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveKeys;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
@@ -83,7 +82,6 @@ import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorServ
 import io.harness.cvng.servicelevelobjective.services.api.SLOTimeScaleService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
-import io.harness.cvng.servicelevelobjective.transformer.SLOTargetTransformerOldAndNew;
 import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
@@ -261,8 +259,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
       SLOTarget target = sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveDTO.getSloTarget().getType())
                              .getSLOTarget(serviceLevelObjectiveDTO.getSloTarget().getSpec());
-      ServiceLevelObjective.SLOTarget sloTarget = SLOTargetTransformerOldAndNew.getOldSLOtargetFromNewSLOtarget(target);
-      TimePeriod timePeriod = sloTarget.getCurrentTimeRange(currentLocalDate);
+      TimePeriod timePeriod = target.getCurrentTimeRange(currentLocalDate);
       TimePeriod currentTimePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
 
       List<String> referencedCompositeSLOIdentifiers =
@@ -270,8 +267,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
               .stream()
               .map(CompositeServiceLevelObjective::getIdentifier)
               .collect(Collectors.toList());
-      if (isNotEmpty(referencedCompositeSLOIdentifiers)
-          && !sloTarget.equals(simpleServiceLevelObjective.getSloTarget())) {
+      if (isNotEmpty(referencedCompositeSLOIdentifiers) && !target.equals(simpleServiceLevelObjective.getTarget())) {
         throw new InvalidRequestException(String.format(
             "Can't update the compliance time period for SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s as it is associated with Composite SLO with identifier%s %s.",
             identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
@@ -640,9 +636,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .searchFilter(filter.getSearchFilter())
             .sloType(filter.getType())
             .sloTarget(filter.getSloTargetFilterDTO() != null
-                    ? SLOTargetTransformerOldAndNew.getOldSLOtargetFromNewSLOtarget(
-                        sloTargetTypeSLOTargetTransformerMap.get(filter.getSloTargetFilterDTO().getType())
-                            .getSLOTarget(filter.getSloTargetFilterDTO().getSpec()))
+                    ? sloTargetTypeSLOTargetTransformerMap.get(filter.getSloTargetFilterDTO().getType())
+                          .getSLOTarget(filter.getSloTargetFilterDTO().getSpec())
                     : null)
             .sliEvaluationType(filter.getEvaluationType())
             .childResource(filter.isChildResource())
@@ -954,8 +949,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                 .getSLOV2(projectParams, serviceLevelObjectiveV2DTO, isSLOEnabled));
     SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveV2DTO.getSloTarget().getType())
                               .getSLOTarget(serviceLevelObjectiveV2DTO.getSloTarget().getSpec());
-    updateOperations.set(ServiceLevelObjectiveV2Keys.sloTarget,
-        SLOTargetTransformerOldAndNew.getOldSLOtargetFromNewSLOtarget(sloTarget));
     updateOperations.set(ServiceLevelObjectiveV2Keys.target, sloTarget);
     if (abstractServiceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       updateOperations.set(SimpleServiceLevelObjectiveKeys.serviceLevelIndicators, serviceLevelIndicators);
@@ -1059,11 +1052,9 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                                       .build();
     AbstractServiceLevelObjective serviceLevelObjective = checkIfSLOPresentWithType(
         projectParams, serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef(), ServiceLevelObjectiveType.SIMPLE);
-    if (!SLOTargetTransformerOldAndNew
-             .getOldSLOtargetFromNewSLOtarget(
-                 sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveDTO.getSloTarget().getType())
-                     .getSLOTarget(serviceLevelObjectiveDTO.getSloTarget().getSpec()))
-             .equals(serviceLevelObjective.getSloTarget())) {
+    if (!sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveDTO.getSloTarget().getType())
+             .getSLOTarget(serviceLevelObjectiveDTO.getSloTarget().getSpec())
+             .equals(serviceLevelObjective.getTarget())) {
       throw new InvalidRequestException(String.format(
           "Composite SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can not be created/updated as the compliance time period of the SLO and the associated SLOs is different.",
           serviceLevelObjectiveDTO.getIdentifier(), serviceLevelObjectiveDetailsDTO.getAccountId(),
@@ -1155,11 +1146,11 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       sloQuery.field(SimpleServiceLevelObjectiveKeys.serviceLevelIndicatorType).in(filter.getSliTypes());
     }
     if (isNotEmpty(filter.getTargetTypes())) {
-      sloQuery.field(ServiceLevelObjectiveV2Keys.sloTarget + "." + SLOTargetDTO.SLOTargetKeys.type)
+      sloQuery.field(ServiceLevelObjectiveV2Keys.target + "." + SLOTargetDTO.SLOTargetKeys.type)
           .in(filter.getTargetTypes());
     }
     if (filter.getSloTarget() != null) {
-      sloQuery.filter(ServiceLevelObjectiveV2Keys.sloTarget, filter.getSloTarget());
+      sloQuery.filter(ServiceLevelObjectiveV2Keys.target, filter.getSloTarget());
     }
     if (filter.getSloType() != null) {
       sloQuery.filter(ServiceLevelObjectiveV2Keys.type, filter.getSloType());
@@ -1283,7 +1274,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     String monitoredServiceIdentifier;
     String notificationRuleRef;
     String searchFilter;
-    ServiceLevelObjective.SLOTarget sloTarget;
+    SLOTarget sloTarget;
     ServiceLevelObjectiveType sloType;
     SLIEvaluationType sliEvaluationType;
     boolean childResource;

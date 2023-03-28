@@ -27,10 +27,8 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.GoogleFunctionDeploymentRelease;
 import io.harness.perpetualtask.instancesync.GoogleFunctionInstanceSyncPerpetualTaskParams;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,9 +39,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(HarnessTeam.CDP)
-public class GoogleFunctionInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
+public class GoogleFunctionInstanceSyncPerpetualTaskExecutor
+    extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private GoogleFunctionTaskHelperBase googleFunctionTaskHelperBase;
 
@@ -53,13 +51,13 @@ public class GoogleFunctionInstanceSyncPerpetualTaskExecutor implements Perpetua
     log.info("Running the Google Cloud Function InstanceSync perpetual task executor for task id: {}", taskId);
     GoogleFunctionInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), GoogleFunctionInstanceSyncPerpetualTaskParams.class);
-    return executeGoogleFunctionInstanceSyncTask(taskId, taskParams);
+    return executeGoogleFunctionInstanceSyncTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
   }
 
-  public PerpetualTaskResponse executeGoogleFunctionInstanceSyncTask(
-      PerpetualTaskId taskId, GoogleFunctionInstanceSyncPerpetualTaskParams taskParams) {
+  public PerpetualTaskResponse executeGoogleFunctionInstanceSyncTask(PerpetualTaskId taskId,
+      GoogleFunctionInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
     List<GoogleFunctionDeploymentReleaseData> deploymentReleaseDataList =
-        getGoogleFunctionDeploymentReleaseData(taskParams);
+        getGoogleFunctionDeploymentReleaseData(taskParams, referenceFalseKryoSerializer);
 
     List<ServerInstanceInfo> serverInstanceInfos = deploymentReleaseDataList.stream()
                                                        .map(this::getServerInstanceInfoList)
@@ -84,18 +82,19 @@ public class GoogleFunctionInstanceSyncPerpetualTaskExecutor implements Perpetua
   }
 
   private List<GoogleFunctionDeploymentReleaseData> getGoogleFunctionDeploymentReleaseData(
-      GoogleFunctionInstanceSyncPerpetualTaskParams taskParams) {
+      GoogleFunctionInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
     return taskParams.getGoogleFunctionsDeploymentReleaseListList()
         .stream()
-        .map(this::toGoogleFunctionDeploymentReleaseData)
+        .map(data -> toGoogleFunctionDeploymentReleaseData(data, referenceFalseKryoSerializer))
         .collect(Collectors.toList());
   }
 
   private GoogleFunctionDeploymentReleaseData toGoogleFunctionDeploymentReleaseData(
-      GoogleFunctionDeploymentRelease googleFunctionDeploymentRelease) {
+      GoogleFunctionDeploymentRelease googleFunctionDeploymentRelease, boolean referenceFalseKryoSerializer) {
     return GoogleFunctionDeploymentReleaseData.builder()
-        .googleFunctionInfraConfig((GoogleFunctionInfraConfig) referenceFalseKryoSerializer.asObject(
-            googleFunctionDeploymentRelease.getGoogleFunctionsInfraConfig().toByteArray()))
+        .googleFunctionInfraConfig(
+            (GoogleFunctionInfraConfig) getKryoSerializer(referenceFalseKryoSerializer)
+                .asObject(googleFunctionDeploymentRelease.getGoogleFunctionsInfraConfig().toByteArray()))
         .function(googleFunctionDeploymentRelease.getFunction())
         .region(googleFunctionDeploymentRelease.getRegion())
         .build();

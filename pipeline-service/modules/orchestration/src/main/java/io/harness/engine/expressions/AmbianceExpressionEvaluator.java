@@ -22,6 +22,7 @@ import io.harness.engine.expressions.functors.NodeExecutionEntityType;
 import io.harness.engine.expressions.functors.NodeExecutionQualifiedFunctor;
 import io.harness.engine.expressions.functors.OutcomeFunctor;
 import io.harness.engine.expressions.functors.SecretFunctor;
+import io.harness.engine.expressions.functors.SecretFunctorWithRbac;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.exception.EngineExpressionEvaluationException;
@@ -40,6 +41,7 @@ import io.harness.expression.functors.NGJsonFunctor;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.ProcessorResult;
+import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterDocumentField;
 import io.harness.pms.yaml.ParameterDocumentFieldMapper;
@@ -86,12 +88,14 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   @Inject private PlanExpansionService planExpansionService;
 
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject private PipelineRbacHelper pipelineRbacHelper;
 
   protected final Ambiance ambiance;
   private final Set<NodeExecutionEntityType> entityTypes;
   private final boolean refObjectSpecific;
   private final Map<String, String> groupAliases;
   private NodeExecutionsCache nodeExecutionsCache;
+  private final String SECRETS = "secrets";
 
   @Builder
   public AmbianceExpressionEvaluator(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
@@ -114,7 +118,12 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
       addToContext("regex", new RegexFunctor());
       addToContext("json", new NGJsonFunctor());
       addToContext("xml", new XmlFunctor());
-      addToContext("secrets", new SecretFunctor(ambiance.getExpressionFunctorToken()));
+      if (pmsFeatureFlagService.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_USE_SECRET_FUNCTOR_WITH_RBAC)) {
+        addToContext(SECRETS, new SecretFunctorWithRbac(ambiance, pipelineRbacHelper));
+      } else {
+        addToContext(SECRETS, new SecretFunctor(ambiance.getExpressionFunctorToken()));
+      }
     }
 
     if (entityTypes.contains(NodeExecutionEntityType.OUTCOME)) {

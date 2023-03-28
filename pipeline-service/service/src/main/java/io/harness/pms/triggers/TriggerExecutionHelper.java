@@ -55,6 +55,7 @@ import io.harness.ngtriggers.expressions.TriggerExpressionEvaluator;
 import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
 import io.harness.ngtriggers.utils.WebhookTriggerFilterUtils;
 import io.harness.notification.bean.NotificationRules;
+import io.harness.opaclient.model.OpaConstants;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.IssuedBy;
@@ -327,7 +328,7 @@ public class TriggerExecutionHelper {
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
 
         String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
-            pipelineEntity, pipelineYamlWithTemplateRef, true, branch);
+            pipelineEntity, pipelineYamlWithTemplateRef, true, branch, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
 
         planExecutionMetadataBuilder.yaml(pipelineYaml);
         planExecutionMetadataBuilder.processedYaml(processedYaml);

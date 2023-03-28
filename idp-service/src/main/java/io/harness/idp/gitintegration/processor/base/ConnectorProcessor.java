@@ -76,7 +76,7 @@ public abstract class ConnectorProcessor {
             .branch(catalogConnectorInfo.getBranch())
             .unsureOrNonExistentBranch(true)
             .filePaths(Collections.singletonList(remoteFolder))
-            .connectorId(catalogConnectorInfo.getSourceConnector().getIdentifier())
+            .connectorId(catalogConnectorInfo.getInfraConnector().getIdentifier())
             .accountId(accountIdentifier)
             .recursive(true)
             .authRequest(
@@ -109,7 +109,7 @@ public abstract class ConnectorProcessor {
             .repoUrl(catalogConnectorInfo.getRepo())
             .branch(catalogConnectorInfo.getBranch())
             .unsureOrNonExistentBranch(true)
-            .connectorId(catalogConnectorInfo.getSourceConnector().getIdentifier())
+            .connectorId(catalogConnectorInfo.getInfraConnector().getIdentifier())
             .accountId(accountIdentifier)
             .authRequest(
                 UsernamePasswordAuthRequest.builder().username(username).password(password.toCharArray()).build())

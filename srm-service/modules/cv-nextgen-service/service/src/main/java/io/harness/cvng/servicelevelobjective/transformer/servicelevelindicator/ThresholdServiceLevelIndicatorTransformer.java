@@ -32,6 +32,9 @@ public class ThresholdServiceLevelIndicatorTransformer
         .sliMissingDataType(
             ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSliMissingDataType())
         .metric1(thresholdSLIMetricSpec.getMetric1())
+        .considerConsecutiveMinutes(thresholdSLIMetricSpec.getConsiderConsecutiveMinutes())
+        .considerAllConsecutiveMinutesFromStartAsBad(
+            thresholdSLIMetricSpec.getConsiderAllConsecutiveMinutesFromStartAsBad())
         .thresholdValue(thresholdSLIMetricSpec.getThresholdValue())
         .thresholdType(thresholdSLIMetricSpec.getThresholdType())
         .monitoredServiceIdentifier(monitoredServiceIdentifier)
@@ -49,6 +52,9 @@ public class ThresholdServiceLevelIndicatorTransformer
                   .metric1(serviceLevelIndicator.getMetric1())
                   .thresholdValue(serviceLevelIndicator.getThresholdValue())
                   .thresholdType(serviceLevelIndicator.getThresholdType())
+                  .considerConsecutiveMinutes(serviceLevelIndicator.getConsiderConsecutiveMinutes())
+                  .considerAllConsecutiveMinutesFromStartAsBad(
+                      serviceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad())
                   .build())
         .build();
   }

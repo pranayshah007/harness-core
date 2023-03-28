@@ -35,13 +35,23 @@ public class PollingResponsePublisher {
     this.delegateAgentManagerClient = delegateAgentManagerClient;
   }
 
-  public boolean publishToManger(String taskId, PollingDelegateResponse pollingDelegateResponse) {
+  public boolean publishToManger(
+      String taskId, PollingDelegateResponse pollingDelegateResponse, boolean useReferenceFalseKryoSerializer) {
     try {
-      byte[] responseSerialized = referenceFalseKryoSerializer.asBytes(pollingDelegateResponse);
+      if (useReferenceFalseKryoSerializer) {
+        byte[] referenceFalseResponseSerialized = referenceFalseKryoSerializer.asBytes(pollingDelegateResponse);
 
-      executeWithExceptions(
-          delegateAgentManagerClient.publishPollingResultV2(taskId, pollingDelegateResponse.getAccountId(),
-              RequestBody.create(MediaType.parse("application/octet-stream"), responseSerialized)));
+        executeWithExceptions(
+            delegateAgentManagerClient.publishPollingResultV2(taskId, pollingDelegateResponse.getAccountId(),
+                RequestBody.create(MediaType.parse("application/octet-stream"), referenceFalseResponseSerialized)));
+      } else {
+        byte[] responseSerialized = kryoSerializer.asBytes(pollingDelegateResponse);
+
+        executeWithExceptions(
+            delegateAgentManagerClient.publishPollingResult(taskId, pollingDelegateResponse.getAccountId(),
+                RequestBody.create(MediaType.parse("application/octet-stream"), responseSerialized)));
+      }
+
       return true;
     } catch (Exception ex) {
       log.error("Failed to publish polling response with status: {}",
