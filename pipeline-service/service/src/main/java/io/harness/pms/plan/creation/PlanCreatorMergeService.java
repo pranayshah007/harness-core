@@ -10,7 +10,6 @@ package io.harness.pms.plan.creation;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.async.plan.PlanNotifyEventConsumer.PMS_PLAN_CREATION;
 
-import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -287,7 +286,7 @@ public class PlanCreatorMergeService {
       for (Map.Entry<String, String> dependency : dependencyList) {
         dependencyBatch.put(dependency.getKey(), dependency.getValue());
         if (dependencyBatch.size() >= planCreatorMergeServiceDependencyBatch) {
-          Dependencies batchDependency = pmsSdkHelper.createBatchDependency(responseBuilder.getDeps(), dependencyBatch);
+          Dependencies batchDependency = PmsSdkHelper.createBatchDependency(responseBuilder.getDeps(), dependencyBatch);
           executeDependenciesAsync(completableFutures, serviceInfo, batchDependency, responseBuilder.getContextMap());
           dependencyBatch = new HashMap<>();
         }
@@ -295,7 +294,7 @@ public class PlanCreatorMergeService {
 
       // call completable future for leftover batch
       if (dependencyBatch.size() > 0) {
-        Dependencies batchDependency = pmsSdkHelper.createBatchDependency(responseBuilder.getDeps(), dependencyBatch);
+        Dependencies batchDependency = PmsSdkHelper.createBatchDependency(responseBuilder.getDeps(), dependencyBatch);
         executeDependenciesAsync(completableFutures, serviceInfo, batchDependency, responseBuilder.getContextMap());
       }
     }
@@ -311,26 +310,48 @@ public class PlanCreatorMergeService {
       serviceToDependencyMap.put(serviceEntry, new LinkedList<>());
     }
 
+    addDependencyToServiceDependencyMapBasedOnPriority(
+        services, responseBuilder, fullYamlField, serviceToDependencyMap, harnessVersion);
+  }
+
+  private void addDependencyToServiceDependencyMapBasedOnPriority(Map<String, PlanCreatorServiceInfo> services,
+      PlanCreationBlobResponse.Builder responseBuilder, YamlField fullYamlField,
+      Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap,
+      String harnessVersion) {
     for (Map.Entry<String, String> dependencyEntry : responseBuilder.getDeps().getDependenciesMap().entrySet()) {
-      // Always first check for pipeline-service dependencies
+      // Always first check  -
+      // 1. Affinity service
+      // 2. pipeline-service dependencies
       Map.Entry<String, PlanCreatorServiceInfo> pmsPlanCreatorService =
           services.entrySet()
               .stream()
-              .filter(this::isPipelineService)
+              .filter(PmsSdkHelper::isPipelineService)
               .findFirst()
               .orElseThrow(
                   () -> new InvalidRequestException("Pipeline Service service provider information is missing."));
 
-      if (pmsSdkHelper.containsSupportedSingleDependencyByYamlPath(
-              pmsPlanCreatorService.getValue(), fullYamlField, dependencyEntry, harnessVersion)) {
+      String affinityService =
+          PmsSdkHelper.getServiceAffinityForGivenDependency(responseBuilder.getDeps(), dependencyEntry);
+      Map.Entry<String, PlanCreatorServiceInfo> affinityServicePlanCreatorService =
+          services.entrySet()
+              .stream()
+              .filter(s -> PmsSdkHelper.getServiceForGivenAffinity(s, affinityService))
+              .findFirst()
+              .orElse(null);
+
+      if (PmsSdkHelper.checkIfGivenServiceSupportsPath(
+              affinityServicePlanCreatorService, dependencyEntry, fullYamlField, harnessVersion)) {
+        serviceToDependencyMap.get(affinityServicePlanCreatorService).add(dependencyEntry);
+      } else if (PmsSdkHelper.checkIfGivenServiceSupportsPath(
+                     pmsPlanCreatorService, dependencyEntry, fullYamlField, harnessVersion)) {
         serviceToDependencyMap.get(pmsPlanCreatorService).add(dependencyEntry);
       } else {
         for (Map.Entry<String, PlanCreatorServiceInfo> serviceInfoEntry : services.entrySet()) {
-          if (isPipelineService(serviceInfoEntry)) {
+          if (PmsSdkHelper.isPipelineService(serviceInfoEntry)) {
             continue;
           }
-          if (pmsSdkHelper.containsSupportedSingleDependencyByYamlPath(
-                  serviceInfoEntry.getValue(), fullYamlField, dependencyEntry, harnessVersion)) {
+          if (PmsSdkHelper.checkIfGivenServiceSupportsPath(
+                  serviceInfoEntry, dependencyEntry, fullYamlField, harnessVersion)) {
             serviceToDependencyMap.get(serviceInfoEntry).add(dependencyEntry);
           }
         }
@@ -361,9 +382,5 @@ public class PlanCreatorMergeService {
         }
       }
     });
-  }
-
-  private boolean isPipelineService(Map.Entry<String, PlanCreatorServiceInfo> serviceInfo) {
-    return serviceInfo.getKey().equals(ModuleType.PMS.name().toLowerCase());
   }
 }

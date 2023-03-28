@@ -167,7 +167,8 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     contextMap.put(key, value);
   }
 
-  private void addDependency(String yaml, String nodeId, String yamlPath) {
+  @Override
+  public void addDependency(String yaml, String nodeId, String yamlPath) {
     if ((dependencies != null && dependencies.getDependenciesMap().containsKey(nodeId))
         || (nodes != null && nodes.containsKey(nodeId))) {
       return;
@@ -177,6 +178,16 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
       return;
     }
     dependencies = dependencies.toBuilder().putDependencies(nodeId, yamlPath).build();
+  }
+  public void addAffinityToDependencyMetadata(String dependencyKey, String serviceAffinity) {
+    if (!dependencies.getDependencyMetadataMap().containsKey(dependencyKey)) {
+      Dependency dependency = Dependency.newBuilder().setServiceAffinity(serviceAffinity).build();
+      dependencies = dependencies.toBuilder().putDependencyMetadata(dependencyKey, dependency).build();
+    } else {
+      Dependency dependency = dependencies.getDependencyMetadataMap().get(dependencyKey);
+      Dependency dependencyWithAffinity = dependency.toBuilder().setServiceAffinity(serviceAffinity).build();
+      dependencies = dependencies.toBuilder().putDependencyMetadata(dependencyKey, dependencyWithAffinity).build();
+    }
   }
 
   private void mergeStartingNodeId(String otherStartingNodeId) {

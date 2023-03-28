@@ -15,15 +15,18 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.YamlFieldBlob;
+import io.harness.pms.sdk.PmsSdkModuleUtils;
+import io.harness.pms.sdk.core.plan.creation.creators.PlanCreatorServiceHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,6 +34,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public abstract class BaseCreatorService<R extends CreatorResponse, M, N> {
+  @Inject @Named(PmsSdkModuleUtils.SDK_SERVICE_NAME) String currentServiceName;
+
   public Map<String, YamlField> getInitialDependencies(Map<String, YamlFieldBlob> dependencyBlobs) {
     Map<String, YamlField> initialDependencies = new HashMap<>();
 
@@ -72,9 +77,11 @@ public abstract class BaseCreatorService<R extends CreatorResponse, M, N> {
   }
 
   private void processNodes(Dependencies.Builder dependencies, R finalResponse, M metadata, N request) {
-    List<String> yamlPathList = new ArrayList<>(dependencies.getDependenciesMap().values());
+    Map<String, String> currentDependenciesMap = new HashMap<>(dependencies.getDependenciesMap());
+    Map<String, Dependency> currentDependenciesMetadataMap = new HashMap<>(dependencies.getDependencyMetadataMap());
     String currentYaml = dependencies.getYaml();
     dependencies.clearDependencies();
+    dependencies.clearDependencyMetadata();
 
     YamlField fullYamlField;
     try {
@@ -84,7 +91,9 @@ public abstract class BaseCreatorService<R extends CreatorResponse, M, N> {
       log.error(message, ex);
       throw new InvalidRequestException(message);
     }
-    for (String yamlPath : yamlPathList) {
+
+    for (Map.Entry<String, String> dependencyEntry : currentDependenciesMap.entrySet()) {
+      String yamlPath = dependencyEntry.getValue();
       YamlField yamlField = null;
       try {
         yamlField = fullYamlField.fromYamlPath(yamlPath);
@@ -102,9 +111,12 @@ public abstract class BaseCreatorService<R extends CreatorResponse, M, N> {
       }
       mergeResponses(finalResponse, response, dependencies);
       finalResponse.addResolvedDependency(currentYaml, yamlField.getNode().getUuid(), yamlPath);
+      PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(
+          response, currentDependenciesMetadataMap.get(dependencyEntry.getKey()), currentServiceName, yamlField);
       if (isNotEmpty(response.getDependencies().getDependenciesMap())) {
-        for (Map.Entry<String, String> entry : response.getDependencies().getDependenciesMap().entrySet()) {
-          dependencies.putDependencies(entry.getKey(), entry.getValue());
+        dependencies.putAllDependencies(response.getDependencies().getDependenciesMap());
+        if (EmptyPredicate.isNotEmpty(response.getDependencies().getDependencyMetadataMap())) {
+          dependencies.putAllDependencyMetadata(response.getDependencies().getDependencyMetadataMap());
         }
       }
     }

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.PlanCreationServiceGrpc;
 import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -54,7 +55,8 @@ public class PmsSdkHelper {
   /**
    * Checks if the service supports any of the dependency mentioned.
    */
-  public boolean containsSupportedDependencyByYamlPath(PlanCreatorServiceInfo serviceInfo, Dependencies dependencies) {
+  public static boolean containsSupportedDependencyByYamlPath(
+      PlanCreatorServiceInfo serviceInfo, Dependencies dependencies) {
     if (dependencies == null || EmptyPredicate.isEmpty(dependencies.getDependenciesMap())) {
       return false;
     }
@@ -81,7 +83,7 @@ public class PmsSdkHelper {
   /**
    * Checks if the service supports any of the dependency mentioned.
    */
-  public boolean containsSupportedSingleDependencyByYamlPath(PlanCreatorServiceInfo serviceInfo,
+  public static boolean containsSupportedSingleDependencyByYamlPath(PlanCreatorServiceInfo serviceInfo,
       YamlField fullYamlField, Map.Entry<String, String> dependencyEntry, String harnessVersion) {
     if (dependencyEntry == null) {
       return false;
@@ -97,11 +99,42 @@ public class PmsSdkHelper {
     }
   }
 
-  public Dependencies createBatchDependency(Dependencies dependencies, Map<String, String> dependencyMap) {
+  public static String getServiceAffinityForGivenDependency(
+      Dependencies dependencies, Map.Entry<String, String> dependencyEntry) {
+    String affinityService = null;
+    Dependency dependency = dependencies.getDependencyMetadataMap().get(dependencyEntry.getKey());
+    if (dependency != null) {
+      affinityService = dependency.getServiceAffinity();
+    }
+    return affinityService;
+  }
+
+  public static boolean checkIfGivenServiceSupportsPath(Map.Entry<String, PlanCreatorServiceInfo> givenServiceInfo,
+      Map.Entry<String, String> dependencyEntry, YamlField fullYamlField, String harnessVersion) {
+    if (givenServiceInfo == null) {
+      return false;
+    }
+    return containsSupportedSingleDependencyByYamlPath(
+        givenServiceInfo.getValue(), fullYamlField, dependencyEntry, harnessVersion);
+  }
+
+  public static Dependencies createBatchDependency(Dependencies dependencies, Map<String, String> dependencyMap) {
     return Dependencies.newBuilder()
         .putAllDependencies(dependencyMap)
         .putAllDependencyMetadata(dependencies.getDependencyMetadataMap())
         .setYaml(dependencies.getYaml())
         .build();
+  }
+
+  public static boolean isPipelineService(Map.Entry<String, PlanCreatorServiceInfo> serviceInfo) {
+    return serviceInfo.getKey().equals(ModuleType.PMS.name().toLowerCase());
+  }
+
+  public static boolean getServiceForGivenAffinity(
+      Map.Entry<String, PlanCreatorServiceInfo> serviceInfo, String serviceName) {
+    if (EmptyPredicate.isEmpty(serviceName)) {
+      return false;
+    }
+    return serviceInfo.getKey().equals(serviceName.toLowerCase());
   }
 }

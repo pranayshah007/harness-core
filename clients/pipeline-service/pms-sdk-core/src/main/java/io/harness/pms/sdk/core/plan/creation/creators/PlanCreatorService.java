@@ -38,6 +38,7 @@ import io.harness.pms.contracts.plan.VariablesCreationResponse;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
+import io.harness.pms.sdk.PmsSdkModuleUtils;
 import io.harness.pms.sdk.core.pipeline.filters.FilterCreatorService;
 import io.harness.pms.sdk.core.plan.creation.PlanCreationResponseBlobHelper;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
@@ -68,6 +69,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PlanCreatorService extends PlanCreationServiceImplBase {
   @Inject @Named(PLAN_CREATOR_SERVICE_EXECUTOR) private Executor executor;
   @Inject ExceptionManager exceptionManager;
+  @Inject @Named(PmsSdkModuleUtils.SDK_SERVICE_NAME) String serviceName;
 
   private final FilterCreatorService filterCreatorService;
   private final VariableCreatorService variableCreatorService;
@@ -238,7 +240,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
         .build();
   }
 
-  // Method to create plan for single dependency
+  // Method to create plan for single dependency.
   // Dependency passed from parent to its children plan creator
   private PlanCreationResponse createPlanForDependencyInternal(
       String currentYaml, YamlField field, PlanCreationContext ctx, Dependency dependency) {
@@ -268,6 +270,8 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
             planForField.setExecutionInputTemplateInPlanNode(executionInputTemplate);
           }
           PlanCreatorServiceHelper.decorateNodesWithStageFqn(field, planForField, ctx.getYamlVersion());
+          PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(
+              planForField, dependency, serviceName, field);
           return planForField;
         } catch (Exception ex) {
           log.error(format("Error creating plan for node: %s", fullyQualifiedName), ex);
