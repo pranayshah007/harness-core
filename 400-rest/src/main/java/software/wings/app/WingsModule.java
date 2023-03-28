@@ -198,6 +198,7 @@ import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.module.AgentMtlsModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.notifications.AlertNotificationRuleChecker;
 import io.harness.notifications.AlertNotificationRuleCheckerImpl;
 import io.harness.notifications.AlertVisibilityChecker;
@@ -1507,6 +1508,9 @@ public class WingsModule extends AbstractModule implements ServersModule {
     }
 
     install(new PollResourceClientModule(configuration.getNgManagerServiceHttpClientConfig(),
+        configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
+
+    install(new NGSettingsClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
 
     // ng-usermembership Dependencies

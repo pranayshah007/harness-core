@@ -10,6 +10,7 @@ package io.harness.ccm.views.utils;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.Boolean.parseBoolean;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +18,7 @@ import io.harness.ccm.views.entities.AWSViewPreferenceCost;
 import io.harness.ccm.views.entities.AWSViewPreferences;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.GCPViewPreferences;
+import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.helper.ViewParametersHelper;
 import io.harness.ngsettings.SettingCategory;
@@ -29,6 +31,7 @@ import io.harness.remote.client.NGRestUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -76,12 +79,13 @@ public class CEViewPreferenceUtils {
   }
 
   private ViewPreferences getViewPreferencesFromCEView(final CEView ceView, final Map<String, String> settingsMap) {
+    final List<ViewFieldIdentifier> dataSources = firstNonNull(ceView.getDataSources(), Collections.emptyList());
     return ViewPreferences.builder()
         .includeOthers(getBooleanSettingValue(
             ceView.getViewPreferences().getIncludeOthers(), settingsMap, SettingIdentifiers.SHOW_OTHERS_IDENTIFIER))
         .includeUnallocatedCost(getBooleanSettingValue(ceView.getViewPreferences().getIncludeOthers(), settingsMap,
                                     SettingIdentifiers.SHOW_UNALLOCATED_CLUSTER_COST_IDENTIFIER)
-            && viewParametersHelper.isClusterDataSources(new HashSet<>(ceView.getDataSources())))
+            && viewParametersHelper.isClusterDataSources(new HashSet<>(dataSources)))
         .showAnomalies(getBooleanSettingValue(
             ceView.getViewPreferences().getShowAnomalies(), settingsMap, SettingIdentifiers.SHOW_ANOMALIES_IDENTIFIER))
         .awsPreferences(getAWSViewPreferences(ceView, settingsMap))
@@ -90,11 +94,12 @@ public class CEViewPreferenceUtils {
   }
 
   private ViewPreferences getDefaultViewPreferences(final CEView ceView, final Map<String, String> settingsMap) {
+    final List<ViewFieldIdentifier> dataSources = firstNonNull(ceView.getDataSources(), Collections.emptyList());
     return ViewPreferences.builder()
         .includeOthers(getBooleanSettingValue(settingsMap, SettingIdentifiers.SHOW_OTHERS_IDENTIFIER))
         .includeUnallocatedCost(
             getBooleanSettingValue(settingsMap, SettingIdentifiers.SHOW_UNALLOCATED_CLUSTER_COST_IDENTIFIER)
-            && viewParametersHelper.isClusterDataSources(new HashSet<>(ceView.getDataSources())))
+            && viewParametersHelper.isClusterDataSources(new HashSet<>(dataSources)))
         .showAnomalies(getBooleanSettingValue(settingsMap, SettingIdentifiers.SHOW_ANOMALIES_IDENTIFIER))
         .awsPreferences(getAWSViewPreferences(ceView, settingsMap))
         .gcpPreferences(getGCPViewPreferences(ceView, settingsMap))
