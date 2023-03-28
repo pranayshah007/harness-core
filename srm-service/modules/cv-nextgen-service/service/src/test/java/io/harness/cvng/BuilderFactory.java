@@ -228,14 +228,11 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO.Se
 import io.harness.cvng.servicelevelobjective.beans.UserJourneyDTO;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
-import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec.RatioSLIMetricSpecBuilder;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
-import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec.ThresholdSLIMetricSpecBuilder;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec.RequestBasedServiceLevelIndicatorSpecBuilder;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
@@ -244,11 +241,8 @@ import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicat
 import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicator.RequestServiceLevelIndicatorBuilder;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHealthIndicatorBuilder;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.RollingSLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveBuilder;
-import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator.ThresholdServiceLevelIndicatorBuilder;
 import io.harness.cvng.verificationjob.entities.AutoVerificationJob;
 import io.harness.cvng.verificationjob.entities.AutoVerificationJob.AutoVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
@@ -1356,9 +1350,6 @@ public class BuilderFactory {
         .type(changeSourceType);
   }
 
-  public ChangeSourceDTOBuilder getChangeSourceDTOBuilder_Deserialize(ChangeSourceType changeSourceType) {
-    return getChangeSourceDTOBuilder(changeSourceType);
-  }
   public ServiceLevelObjectiveV2DTOBuilder getSimpleServiceLevelObjectiveV2DTOBuilder() {
     return ServiceLevelObjectiveV2DTO.builder()
         .type(ServiceLevelObjectiveType.SIMPLE)
@@ -1468,7 +1459,6 @@ public class BuilderFactory {
         .name("sloName")
         .tags(Collections.singletonList(NGTag.builder().key("key").value("value").build()))
         .desc("slo description")
-        .sloTarget(RollingSLOTarget.builder().periodLengthDays(30).build())
         .target(io.harness.cvng.servicelevelobjective.entities.RollingSLOTarget.builder().periodLengthDays(30).build())
         .sloTargetPercentage(80.0)
         .serviceLevelIndicators(Collections.singletonList("sloIdentifier_metric1"))
@@ -1516,19 +1506,6 @@ public class BuilderFactory {
         .projectIdentifier(context.getProjectIdentifier())
         .metric1("metric1")
         .metric2("metric2")
-        .healthSourceIdentifier("healthSourceIdentifier")
-        .monitoredServiceIdentifier("monitoredServiceIdentifier");
-  }
-
-  public ThresholdServiceLevelIndicatorBuilder thresholdServiceLevelIndicatorBuilder() {
-    return ThresholdServiceLevelIndicator.builder()
-        .sliMissingDataType(SLIMissingDataType.GOOD)
-        .accountId(context.getAccountId())
-        .orgIdentifier(context.getOrgIdentifier())
-        .projectIdentifier(context.getProjectIdentifier())
-        .metric1("metric1")
-        .thresholdValue(80.0)
-        .thresholdType(ThresholdType.GREATER_THAN)
         .healthSourceIdentifier("healthSourceIdentifier")
         .monitoredServiceIdentifier("monitoredServiceIdentifier");
   }
@@ -1588,29 +1565,6 @@ public class BuilderFactory {
                   .metric2("Calls per Minute")
                   .eventType(RatioSLIMetricEventType.GOOD)
                   .build());
-  }
-
-  public ThresholdSLIMetricSpecBuilder getThresholdSLIMetricSpecBuilder() {
-    return ThresholdSLIMetricSpec.builder()
-        .metric1("metric1")
-        .thresholdType(ThresholdType.GREATER_THAN_EQUAL_TO)
-        .thresholdValue(500.0);
-  }
-
-  public RatioSLIMetricSpecBuilder getRatioSLIMetricSpecBuilder() {
-    return RatioSLIMetricSpec.builder()
-        .thresholdType(ThresholdType.GREATER_THAN)
-        .thresholdValue(100.0)
-        .eventType(RatioSLIMetricEventType.GOOD)
-        .metric1("metric1")
-        .metric2("metric2");
-  }
-
-  public RequestBasedServiceLevelIndicatorSpecBuilder getRequestBasedServiceLevelIndicatorSpecBuilder() {
-    return RequestBasedServiceLevelIndicatorSpec.builder()
-        .eventType(RatioSLIMetricEventType.GOOD)
-        .metric1("metric1")
-        .metric2("metric2");
   }
 
   private VerificationJob getVerificationJob(List<CVConfig> cvConfigs) {

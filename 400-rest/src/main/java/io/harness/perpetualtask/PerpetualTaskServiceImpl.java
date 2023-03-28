@@ -159,6 +159,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
                                        .state(PerpetualTaskState.TASK_UNASSIGNED)
                                        .assignIteration(currentTimeMillis())
                                        .taskDescription(taskDescription)
+                                       .referenceFalseKryoSerializer(true)
                                        .build();
 
       perpetualTaskCrudSubject.fireInform(PerpetualTaskCrudObserver::onPerpetualTaskCreated);
@@ -320,6 +321,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
       }
 
       return PerpetualTaskExecutionParams.newBuilder()
+          .setReferenceFalseKryoSerializer(perpetualTaskRecord.isReferenceFalseKryoSerializer())
           .setCustomizedParams(perpetualTaskExecutionBundle.getTaskParams())
           .build();
     }

@@ -30,7 +30,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
-import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.gitsync.beans.StoreType;
@@ -59,7 +58,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
-import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -140,15 +138,13 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
   @Mock PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
   @Mock PrincipalInfoHelper principalInfoHelper;
   @Mock TriggeredByHelper triggeredByHelper;
-  @Inject IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Mock GitSyncSdkService gitSyncSdkService;
   FilterCreatorMergeService filterCreatorMergeService;
 
   @Before
   public void init() {
     filterCreatorMergeService = spy(new FilterCreatorMergeService(pmsSdkHelper, pipelineSetupUsageHelper,
-        pmsGitSyncHelper, pmsPipelineTemplateHelper, identifierRefProtoDTOHelper, gitSyncSdkService,
-        principalInfoHelper, triggeredByHelper));
+        pmsGitSyncHelper, pmsPipelineTemplateHelper, gitSyncSdkService, principalInfoHelper, triggeredByHelper));
     when(
         pmsPipelineTemplateHelper.getTemplateReferencesForGivenYaml(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(new ArrayList<>());

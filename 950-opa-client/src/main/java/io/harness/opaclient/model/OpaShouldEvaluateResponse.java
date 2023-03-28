@@ -5,25 +5,19 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ssca.beans;
+package io.harness.opaclient.model;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Data;
-import lombok.experimental.FieldDefaults;
+import lombok.Value;
 
-@Data
-@JsonIgnoreProperties(ignoreUnknown = true)
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@Value
 @Builder
-@OwnedBy(HarnessTeam.SSCA)
-public class SBOMArtifactResponse {
-  Artifact artifact;
-  SbomDetails sbom;
-  AttestationDetails attestation;
-  String stepExecutionId;
+@JsonIgnoreProperties(ignoreUnknown = true)
+@OwnedBy(HarnessTeam.PIPELINE)
+public class OpaShouldEvaluateResponse {
+  boolean should_evaluate;
 }

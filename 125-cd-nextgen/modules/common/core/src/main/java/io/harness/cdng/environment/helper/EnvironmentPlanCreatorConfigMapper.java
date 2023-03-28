@@ -75,7 +75,7 @@ public class EnvironmentPlanCreatorConfigMapper {
         .serviceOverrideConfig(serviceOverrideConfig)
         .environmentGlobalOverride(config.getNgEnvironmentGlobalOverride())
         .gitOpsClusterRefs(getClusterRefs(envYaml))
-        .deployToAll(envYaml.getDeployToAll().getValue())
+        .deployToAll(envYaml.getDeployToAll().getValue() != null && envYaml.getDeployToAll().getValue())
         .build();
   }
 
@@ -100,7 +100,7 @@ public class EnvironmentPlanCreatorConfigMapper {
   }
 
   public List<String> getClusterRefs(EnvironmentYamlV2 environmentV2) {
-    if (!environmentV2.getDeployToAll().getValue()) {
+    if (environmentV2.getDeployToAll().getValue() == null || !environmentV2.getDeployToAll().getValue()) {
       return environmentV2.getGitOpsClusters()
           .getValue()
           .stream()

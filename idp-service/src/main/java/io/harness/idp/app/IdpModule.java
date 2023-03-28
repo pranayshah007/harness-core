@@ -25,7 +25,6 @@ import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.service.ConfigManagerServiceImpl;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvConfigVariableEntity.BackstageEnvConfigVariableMapper;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvSecretVariableEntity.BackstageEnvSecretVariableMapper;
-import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.BackstageEnvVariableMapper;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableType;
 import io.harness.idp.envvariable.resources.BackstageEnvVariableApiImpl;
@@ -34,6 +33,7 @@ import io.harness.idp.envvariable.service.BackstageEnvVariableServiceImpl;
 import io.harness.idp.events.EventsFrameworkModule;
 import io.harness.idp.events.eventlisteners.eventhandler.EntityCrudStreamListener;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
+import io.harness.idp.gitintegration.resources.ConnectorInfoApiImpl;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.gitintegration.service.GitIntegrationServiceImpl;
 import io.harness.idp.k8s.client.K8sApiClient;
@@ -54,6 +54,8 @@ import io.harness.idp.provision.resource.ProvisionApiImpl;
 import io.harness.idp.provision.service.ProvisionService;
 import io.harness.idp.provision.service.ProvisionServiceImpl;
 import io.harness.idp.proxy.layout.LayoutProxyApiImpl;
+import io.harness.idp.proxy.ngmanager.NgManagerProxyApi;
+import io.harness.idp.proxy.ngmanager.NgManagerProxyApiImpl;
 import io.harness.idp.serializer.IdpServiceRegistrars;
 import io.harness.idp.settings.resources.BackstagePermissionsApiImpl;
 import io.harness.idp.settings.service.BackstagePermissionsService;
@@ -80,6 +82,7 @@ import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ClientMode;
+import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.ServiceResourceClientModule;
@@ -87,6 +90,7 @@ import io.harness.spec.server.idp.v1.AccountInfoApi;
 import io.harness.spec.server.idp.v1.AppConfigApi;
 import io.harness.spec.server.idp.v1.BackstageEnvVariableApi;
 import io.harness.spec.server.idp.v1.BackstagePermissionsApi;
+import io.harness.spec.server.idp.v1.ConnectorInfoApi;
 import io.harness.spec.server.idp.v1.LayoutProxyApi;
 import io.harness.spec.server.idp.v1.NamespaceApi;
 import io.harness.spec.server.idp.v1.OnboardingResourceApi;
@@ -251,8 +255,10 @@ public class IdpModule extends AbstractModule {
     bind(OnboardingService.class).to(OnboardingServiceImpl.class);
     bind(GitClientV2.class).to(GitClientV2Impl.class);
     bind(LayoutProxyApi.class).to(LayoutProxyApiImpl.class);
+    bind(NgManagerProxyApi.class).to(NgManagerProxyApiImpl.class);
     bind(PluginInfoApi.class).to(PluginInfoApiImpl.class);
     bind(PluginInfoService.class).to(PluginInfoServiceImpl.class);
+    bind(ConnectorInfoApi.class).to(ConnectorInfoApiImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("backstageEnvVariableSyncer"))
         .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));
@@ -335,5 +341,19 @@ public class IdpModule extends AbstractModule {
   @Named("backstageServiceSecret")
   public String backstageServiceSecret() {
     return this.appConfig.getBackstageServiceSecret();
+  }
+
+  @Provides
+  @Singleton
+  @Named("ngManagerServiceHttpClientConfig")
+  public ServiceHttpClientConfig ngManagerServiceHttpClientConfig() {
+    return this.appConfig.getNgManagerServiceHttpClientConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("ngManagerServiceSecret")
+  public String ngManagerServiceSecret() {
+    return this.appConfig.getNgManagerServiceSecret();
   }
 }

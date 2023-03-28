@@ -14,7 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.idp.gitintegration.beans.CatalogInfraConnectorType;
 import io.harness.idp.gitintegration.beans.CatalogRepositoryDetails;
-import io.harness.mongo.index.FdUniqueIndex;
+import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
@@ -22,12 +23,13 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UuidAware;
-import io.harness.spec.server.idp.v1.model.ConnectorDetails;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
+import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -52,17 +54,28 @@ import org.springframework.data.annotation.LastModifiedDate;
 @Entity(value = "catalogConnector", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.IDP)
-public class CatalogConnector
+public class CatalogConnectorEntity
     implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware, CreatedByAware, UpdatedByAware {
   @Id private String uuid;
-  @FdUniqueIndex @NotNull String accountIdentifier;
+  @NotNull String accountIdentifier;
   @NotNull String identifier;
-  @NotNull ConnectorDetails infraConnector;
-  @NotNull ConnectorDetails sourceConnector;
+  @NotNull String connectorIdentifier;
+  @NotNull String connectorProviderType;
   @NotNull CatalogInfraConnectorType type;
-  @NotNull CatalogRepositoryDetails catalogRepositoryDetails;
+  CatalogRepositoryDetails catalogRepositoryDetails;
   @SchemaIgnore @CreatedBy private EmbeddedUser createdBy;
   @SchemaIgnore @LastModifiedBy private EmbeddedUser lastUpdatedBy;
   @CreatedDate private long createdAt;
   @LastModifiedDate private long lastUpdatedAt;
+
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("unique_accountId_connectorId")
+                 .field(CatalogConnectorKeys.accountIdentifier)
+                 .field(CatalogConnectorKeys.connectorIdentifier)
+                 .unique(true)
+                 .build())
+        .build();
+  }
 }

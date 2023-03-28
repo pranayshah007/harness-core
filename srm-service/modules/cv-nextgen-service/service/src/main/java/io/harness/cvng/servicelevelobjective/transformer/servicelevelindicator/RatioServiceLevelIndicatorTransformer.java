@@ -32,6 +32,9 @@ public class RatioServiceLevelIndicatorTransformer
         .name(serviceLevelIndicatorDTO.getName())
         .metric1(ratioSLIMetricSpec.getMetric1())
         .metric2(ratioSLIMetricSpec.getMetric2())
+        .considerConsecutiveMinutes(ratioSLIMetricSpec.getConsiderConsecutiveMinutes())
+        .considerAllConsecutiveMinutesFromStartAsBad(
+            ratioSLIMetricSpec.getConsiderAllConsecutiveMinutesFromStartAsBad())
         .eventType(ratioSLIMetricSpec.getEventType())
         .thresholdValue(ratioSLIMetricSpec.getThresholdValue())
         .thresholdType(ratioSLIMetricSpec.getThresholdType())
@@ -52,6 +55,9 @@ public class RatioServiceLevelIndicatorTransformer
                   .metric2(serviceLevelIndicator.getMetric2())
                   .thresholdValue(serviceLevelIndicator.getThresholdValue())
                   .thresholdType(serviceLevelIndicator.getThresholdType())
+                  .considerConsecutiveMinutes(serviceLevelIndicator.getConsiderConsecutiveMinutes())
+                  .considerAllConsecutiveMinutesFromStartAsBad(
+                      serviceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad())
                   .build())
         .build();
   }

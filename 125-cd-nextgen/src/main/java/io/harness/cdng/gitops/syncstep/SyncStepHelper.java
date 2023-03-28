@@ -35,7 +35,7 @@ public class SyncStepHelper {
   public static final String SYNC_RETRY_STRATEGY_DURATION_REGEX = "/^([\\d\\.]+[HMS])+$/i";
   public static final int NETWORK_CALL_RETRY_SLEEP_DURATION_MILLIS = 10;
   public static final int NETWORK_CALL_MAX_RETRY_ATTEMPTS = 3;
-  public static final long STOP_BEFORE_STEP_TIMEOUT_SECS = 10;
+  public static final long STOP_BEFORE_STEP_TIMEOUT_SECS = 25;
   public static final long POLLER_SLEEP_SECS = 5;
   public static final String APPLICATION_REFRESH_TYPE = "normal";
 
@@ -141,7 +141,7 @@ public class SyncStepHelper {
   }
 
   private static String getSyncOptionItem(String syncOptionKey, String value) {
-    return "\"" + syncOptionKey + "=" + value + "\"";
+    return syncOptionKey + "=" + value;
   }
 
   private static void getSyncOptionAsString(String syncOptionKey, boolean value, List<String> items) {

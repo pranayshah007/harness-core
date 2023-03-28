@@ -20,7 +20,7 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.ssca.beans.SscaConstants;
-import io.harness.ssca.cd.beans.stepnode.CdSscaOrchestrationStepNode;
+import io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationStepNode;
 import io.harness.steps.plugin.ContainerCommandUnitConstants;
 
 import java.util.Collections;

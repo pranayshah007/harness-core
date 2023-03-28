@@ -62,7 +62,7 @@ public class SLOHealthListView {
     return SLOHealthListView.builder()
         .sloIdentifier(serviceLevelObjective.getIdentifier())
         .name(serviceLevelObjective.getName())
-        .sloTargetType(serviceLevelObjective.getSloTarget().getType())
+        .sloTargetType(serviceLevelObjective.getTarget().getType())
         .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
         .userJourneys(userJourneys)
         .userJourneyName(userJourneys.get(0).getName())

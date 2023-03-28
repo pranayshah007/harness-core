@@ -75,7 +75,7 @@ public class GitlabConnectorProcessor extends ConnectorProcessor {
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
       String locationParentPath, String remoteFolder, List<String> filesToPush) {
     Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> connectorSecretsInfo = getConnectorAndSecretsInfo(
-        accountIdentifier, null, null, catalogConnectorInfo.getSourceConnector().getIdentifier());
+        accountIdentifier, null, null, catalogConnectorInfo.getInfraConnector().getIdentifier());
     BackstageEnvSecretVariable envSecretVariable =
         (BackstageEnvSecretVariable) connectorSecretsInfo.getSecond().get(GitIntegrationConstants.GITLAB_TOKEN);
     String gitlabConnectorSecret = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,

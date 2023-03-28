@@ -9,7 +9,7 @@ package io.harness.ssca.client;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ssca.beans.SBOMArtifactResponse;
+import io.harness.ssca.client.beans.SBOMArtifactResponse;
 import io.harness.ssca.utils.SSCACommonEndpointConstants;
 
 import retrofit2.Call;

@@ -67,8 +67,8 @@ public class SpotInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualT
         SpotinstAmiInstanceSyncPerpetualTaskParamsNg.newBuilder()
             .setAccountId(infrastructure.getAccountIdentifier())
             .setInfrastructureKey(infrastructure.getInfrastructureKey())
-            .setSpotinstConfig(ByteString.copyFrom(kryoSerializer.asBytes(spotConnectorDTO)))
-            .setSpotinstEncryptedData(ByteString.copyFrom(kryoSerializer.asBytes(encryptionDetails)))
+            .setSpotinstConfig(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(spotConnectorDTO)))
+            .setSpotinstEncryptedData(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(encryptionDetails)))
             .addAllElastigroupIds(elastigroupIds)
             .build();
 

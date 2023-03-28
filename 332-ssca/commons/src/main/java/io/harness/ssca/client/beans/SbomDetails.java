@@ -5,29 +5,24 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.beans.steps.outcome;
+package io.harness.ssca.client.beans;
 
-import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Value;
-import org.springframework.data.annotation.TypeAlias;
+import lombok.Data;
+import lombok.experimental.FieldDefaults;
 
-@Value
+@Data
+@JsonIgnoreProperties(ignoreUnknown = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 @OwnedBy(HarnessTeam.SSCA)
-@TypeAlias("publishedSbomArtifact")
-@RecasterAlias("io.harness.beans.execution.PublishedSbomArtifact")
-public class PublishedSbomArtifact {
-  String id;
+public class SbomDetails {
+  String name;
+  String data;
   String url;
-  String imageName;
-  String tag;
-  String digest;
-  String sbomName;
-  String sbomUrl;
-  String stepExecutionId;
-  boolean isSbomAttested;
 }

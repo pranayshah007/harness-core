@@ -93,7 +93,6 @@ import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
-import io.harness.cvng.servicelevelobjective.transformer.SLOTargetTransformerOldAndNew;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
@@ -282,8 +281,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
                               .getSLOTarget(sloDTO.getSloTarget().getSpec());
     assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
-    assertThat(serviceLevelObjective.getSloTarget())
-        .isEqualTo(SLOTargetTransformerOldAndNew.getOldSLOtargetFromNewSLOtarget(sloTarget));
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
     SimpleServiceLevelObjective simpleServiceLevelObjective =
         (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
@@ -323,8 +320,37 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
                     .getSLOTarget(sloDTO.getSloTarget().getSpec());
     assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
-    assertThat(serviceLevelObjective.getSloTarget())
-        .isEqualTo(SLOTargetTransformerOldAndNew.getOldSLOtargetFromNewSLOtarget(sloTarget));
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreateSimpleSLOWithConsecutiveMinutes_Success() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    SimpleServiceLevelObjectiveSpec spec = (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
+    WindowBasedServiceLevelIndicatorSpec sliSpec =
+        (WindowBasedServiceLevelIndicatorSpec) spec.getServiceLevelIndicators().get(0).getSpec();
+    RatioSLIMetricSpec sliMetricSpec = (RatioSLIMetricSpec) sliSpec.getSpec();
+    sliMetricSpec.setConsiderConsecutiveMinutes(5);
+    sliMetricSpec.setConsiderAllConsecutiveMinutesFromStartAsBad(false);
+    createMonitoredService();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+    SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
+                              .getSLOTarget(sloDTO.getSloTarget().getSpec());
+    assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
+    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+    assertThat((RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) ((SimpleServiceLevelObjectiveSpec)
+                                                                                 serviceLevelObjectiveResponse
+                                                                                     .getServiceLevelObjectiveV2DTO()
+                                                                                     .getSpec())
+                                         .getServiceLevelIndicators()
+                                         .get(0)
+                                         .getSpec())
+                   .getSpec())
+        .isEqualTo(sliMetricSpec);
   }
 
   @Test

@@ -29,6 +29,7 @@ import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.util.HashMap;
@@ -40,7 +41,8 @@ import lombok.AllArgsConstructor;
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactPerpetualTaskHelperNg {
-  KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+
   ArtifactStepHelper artifactStepHelper;
 
   public PerpetualTaskExecutionBundle createPerpetualTaskExecutionBundle(PollingDocument pollingDocument) {
@@ -79,7 +81,7 @@ public class ArtifactPerpetualTaskHelperNg {
     ArtifactCollectionTaskParamsNg artifactCollectionTaskParamsNg =
         ArtifactCollectionTaskParamsNg.newBuilder()
             .setPollingDocId(pollingDocument.getUuid())
-            .setArtifactCollectionParams(ByteString.copyFrom(kryoSerializer.asBytes(taskParameters)))
+            .setArtifactCollectionParams(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(taskParameters)))
             .build();
 
     Any perpetualTaskParams = Any.pack(artifactCollectionTaskParamsNg);
@@ -88,10 +90,10 @@ public class ArtifactPerpetualTaskHelperNg {
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();
     executionCapabilities.forEach(executionCapability
         -> builder
-               .addCapabilities(
-                   Capability.newBuilder()
-                       .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionCapability)))
-                       .build())
+               .addCapabilities(Capability.newBuilder()
+                                    .setKryoCapability(ByteString.copyFrom(
+                                        referenceFalseKryoSerializer.asDeflatedBytes(executionCapability)))
+                                    .build())
                .build());
     return builder.setTaskParams(perpetualTaskParams).putAllSetupAbstractions(ngTaskSetupAbstractionsWithOwner).build();
   }

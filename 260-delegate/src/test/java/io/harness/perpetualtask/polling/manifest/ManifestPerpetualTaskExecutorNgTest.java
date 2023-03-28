@@ -83,7 +83,7 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
     PollingResponsePublisher pollingResponsePublisher =
         new PollingResponsePublisher(kryoSerializer, referenceFalseKryoSerializer, delegateAgentManagerClient);
     manifestPerpetualTaskExecutor = new ManifestPerpetualTaskExecutorNg(
-        kryoSerializer, referenceFalseKryoSerializer, manifestCollectionService, pollingResponsePublisher);
+        manifestCollectionService, pollingResponsePublisher, kryoSerializer, referenceFalseKryoSerializer);
     perpetualTaskId = PerpetualTaskId.newBuilder().setId(UUIDGenerator.generateUuid()).build();
     polling_doc_id = UUIDGenerator.generateUuid();
   }
@@ -97,12 +97,12 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
     verify(manifestCollectionService).collectManifests(any(ManifestDelegateConfig.class));
 
     ArgumentCaptor<RequestBody> captor = ArgumentCaptor.forClass(RequestBody.class);
-    verify(delegateAgentManagerClient).publishPollingResultV2(anyString(), anyString(), captor.capture());
+    verify(delegateAgentManagerClient).publishPollingResult(anyString(), anyString(), captor.capture());
 
     Buffer bufferedSink = new Buffer();
     captor.getValue().writeTo(bufferedSink);
     PollingDelegateResponse pollingDelegateResponse =
-        (PollingDelegateResponse) referenceFalseKryoSerializer.asObject(bufferedSink.readByteArray());
+        (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
 
     validateRunOnceOutput(pollingDelegateResponse, 10001, 10001, 0, true);
   }
@@ -117,21 +117,21 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
     // initially repo has 0-10000 versions.
     assertThat(runOnce(0, 10000, false, false).getResponseCode()).isEqualTo(200);
 
-    verify(delegateAgentManagerClient, times(1)).publishPollingResultV2(anyString(), anyString(), captor.capture());
+    verify(delegateAgentManagerClient, times(1)).publishPollingResult(anyString(), anyString(), captor.capture());
     captor.getValue().writeTo(bufferedSink);
     PollingDelegateResponse pollingDelegateResponse1 =
-        (PollingDelegateResponse) referenceFalseKryoSerializer.asObject(bufferedSink.readByteArray());
+        (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
     validateRunOnceOutput(pollingDelegateResponse1, 10001, 10001, 0, true);
 
     // now repo has 2-10005 versions.
     assertThat(runOnce(2, 10005, false, false).getResponseCode()).isEqualTo(200);
 
-    verify(delegateAgentManagerClient, times(2)).publishPollingResultV2(anyString(), anyString(), captor.capture());
+    verify(delegateAgentManagerClient, times(2)).publishPollingResult(anyString(), anyString(), captor.capture());
     verify(manifestCollectionService, times(2)).collectManifests(any(ManifestDelegateConfig.class));
 
     captor.getValue().writeTo(bufferedSink);
     PollingDelegateResponse pollingDelegateResponse2 =
-        (PollingDelegateResponse) referenceFalseKryoSerializer.asObject(bufferedSink.readByteArray());
+        (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
 
     validateRunOnceOutput(pollingDelegateResponse2, 10004, 5, 2, false);
   }
@@ -144,12 +144,12 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
     verify(manifestCollectionService, times(1)).collectManifests(any(ManifestDelegateConfig.class));
 
     ArgumentCaptor<RequestBody> captor = ArgumentCaptor.forClass(RequestBody.class);
-    verify(delegateAgentManagerClient).publishPollingResultV2(anyString(), anyString(), captor.capture());
+    verify(delegateAgentManagerClient).publishPollingResult(anyString(), anyString(), captor.capture());
 
     Buffer bufferedSink = new Buffer();
     captor.getValue().writeTo(bufferedSink);
     PollingDelegateResponse pollingDelegateResponse =
-        (PollingDelegateResponse) referenceFalseKryoSerializer.asObject(bufferedSink.readByteArray());
+        (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
     assertThat(pollingDelegateResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     assertThat(pollingDelegateResponse.getErrorMessage()).isEqualTo("COLLECTION_ERROR");
   }
@@ -161,7 +161,7 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
     assertThat(runOnce(0, 10000, true, false).getResponseCode()).isEqualTo(200);
 
     verify(manifestCollectionService).collectManifests(any(ManifestDelegateConfig.class));
-    verify(delegateAgentManagerClient).publishPollingResultV2(anyString(), anyString(), any(RequestBody.class));
+    verify(delegateAgentManagerClient).publishPollingResult(anyString(), anyString(), any(RequestBody.class));
     ManifestsCollectionCache manifestsCollectionCache =
         manifestPerpetualTaskExecutor.getCache().getIfPresent(polling_doc_id);
     assertThat(manifestsCollectionCache).isNotNull();
@@ -182,8 +182,7 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
         ManifestCollectionTaskParamsNg.newBuilder()
             .setAccountId(ACCOUNT_ID)
             .setPollingDocId(polling_doc_id)
-            .setManifestCollectionParams(
-                ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(manifestDelegateConfig)))
+            .setManifestCollectionParams(ByteString.copyFrom(kryoSerializer.asBytes(manifestDelegateConfig)))
             .build();
 
     PerpetualTaskExecutionParams executionParams =
@@ -227,14 +226,13 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
         ManifestCollectionTaskParamsNg.newBuilder()
             .setAccountId(ACCOUNT_ID)
             .setPollingDocId(polling_doc_id)
-            .setManifestCollectionParams(
-                ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(manifestDelegateConfig)))
+            .setManifestCollectionParams(ByteString.copyFrom(kryoSerializer.asBytes(manifestDelegateConfig)))
             .build();
 
     PerpetualTaskExecutionParams executionParams =
         PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(manifestCollectionTaskParamsNg)).build();
 
-    when(delegateAgentManagerClient.publishPollingResultV2(anyString(), anyString(), any(RequestBody.class)))
+    when(delegateAgentManagerClient.publishPollingResult(anyString(), anyString(), any(RequestBody.class)))
         .thenReturn(call);
     when(call.execute())
         .thenReturn(throwErrorWhilePublishing

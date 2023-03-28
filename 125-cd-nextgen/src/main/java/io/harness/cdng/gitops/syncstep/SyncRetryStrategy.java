@@ -18,7 +18,6 @@ import io.harness.yaml.YamlSchemaTypes;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
 
@@ -34,7 +33,6 @@ public class SyncRetryStrategy {
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Pattern(regexp = SyncStepHelper.SYNC_RETRY_STRATEGY_DURATION_REGEX)
   @NotNull
   public ParameterField<String> baseBackoffDuration;
 
@@ -46,7 +44,6 @@ public class SyncRetryStrategy {
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Pattern(regexp = SyncStepHelper.SYNC_RETRY_STRATEGY_DURATION_REGEX)
   @NotNull
   public ParameterField<String> maxBackoffDuration;
 }

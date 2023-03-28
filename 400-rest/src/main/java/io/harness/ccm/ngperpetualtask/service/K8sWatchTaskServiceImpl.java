@@ -43,6 +43,7 @@ import io.harness.utils.IdentifierRefHelper;
 
 import com.google.api.client.util.Preconditions;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.util.Durations;
@@ -59,7 +60,7 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 @OwnedBy(HarnessTeam.CE)
 public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private PerpetualTaskService perpetualTaskService;
   @Inject private SecretManagerClientService ngSecretService;
   @Inject private ConnectorResourceClient connectorResourceClient;
@@ -141,7 +142,7 @@ public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
             .setClusterId(bundle.getClusterId())
             .setClusterName(bundle.getClusterName())
             .setCloudProviderId(bundle.getCloudProviderId())
-            .setK8SClusterInfo(ByteString.copyFrom(kryoSerializer.asBytes(k8sClusterInfo)))
+            .setK8SClusterInfo(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(k8sClusterInfo)))
             .build();
 
     return Any.pack(k8sWatchTaskParams);
@@ -165,10 +166,10 @@ public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();
     executionCapabilities.forEach(executionCapability
         -> builder
-               .addCapabilities(
-                   Capability.newBuilder()
-                       .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionCapability)))
-                       .build())
+               .addCapabilities(Capability.newBuilder()
+                                    .setKryoCapability(ByteString.copyFrom(
+                                        referenceFalseKryoSerializer.asDeflatedBytes(executionCapability)))
+                                    .build())
                .build());
     return builder.setTaskParams(perpetualTaskPack).putAllSetupAbstractions(ngTaskSetupAbstractionsWithOwner).build();
   }

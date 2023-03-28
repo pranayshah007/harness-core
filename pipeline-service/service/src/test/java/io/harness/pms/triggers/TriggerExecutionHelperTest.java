@@ -51,6 +51,7 @@ import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubPRSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubTriggerEvent;
 import io.harness.ngtriggers.beans.target.TargetType;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
+import io.harness.opaclient.model.OpaConstants;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.TriggeredBy;
@@ -352,7 +353,8 @@ public class TriggerExecutionHelperTest extends CategoryTest {
     doCallRealMethod()
         .when(pipelineGovernanceService)
         .fetchExpandedPipelineJSONFromYaml(pipelineEntityV1.getAccountId(), pipelineEntityV1.getOrgIdentifier(),
-            pipelineEntityV1.getProjectIdentifier(), pipelineEntityV1.getYaml(), true);
+            pipelineEntityV1.getProjectIdentifier(), pipelineEntityV1.getYaml(), true,
+            OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
     triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
         triggerDetails, payloadBuilder.build(), triggerWebhookEvent, null, null);
   }

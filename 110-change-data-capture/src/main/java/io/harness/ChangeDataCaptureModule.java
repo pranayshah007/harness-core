@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.AccountEntity;
 import io.harness.entities.CDCEntity;
 import io.harness.entities.CECloudAccountCDCEntity;
+import io.harness.entities.ConnectorCDCEntity;
 import io.harness.entities.EnvironmentCDCEntity;
 import io.harness.entities.InfrastructureEntityTimeScale;
 import io.harness.entities.OrganizationEntity;
@@ -20,6 +21,7 @@ import io.harness.entities.PipelineExecutionSummaryEntityCDCEntity;
 import io.harness.entities.PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled;
 import io.harness.entities.ProjectEntity;
 import io.harness.entities.ServiceCDCEntity;
+import io.harness.entities.UserEntity;
 import io.harness.persistence.HPersistence;
 import io.harness.threading.ExecutorModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
@@ -90,8 +92,10 @@ public class ChangeDataCaptureModule extends AbstractModule {
     cdcEntityMultibinder.addBinding().to(AccountEntity.class);
     cdcEntityMultibinder.addBinding().to(PipelineCDCEntity.class);
     cdcEntityMultibinder.addBinding().to(ServiceCDCEntity.class);
+    cdcEntityMultibinder.addBinding().to(ConnectorCDCEntity.class);
     cdcEntityMultibinder.addBinding().to(EnvironmentCDCEntity.class);
     cdcEntityMultibinder.addBinding().to(InfrastructureEntityTimeScale.class);
+    cdcEntityMultibinder.addBinding().to(UserEntity.class);
   }
 
   @Provides
