@@ -83,7 +83,7 @@ public class CEViewPreferenceUtils {
                                     SettingIdentifiers.SHOW_UNALLOCATED_CLUSTER_COST_IDENTIFIER)
             && viewParametersHelper.isClusterDataSources(new HashSet<>(ceView.getDataSources())))
         .showAnomalies(getBooleanSettingValue(
-            ceView.getViewPreferences().getIncludeOthers(), settingsMap, SettingIdentifiers.SHOW_ANOMALIES_IDENTIFIER))
+            ceView.getViewPreferences().getShowAnomalies(), settingsMap, SettingIdentifiers.SHOW_ANOMALIES_IDENTIFIER))
         .awsPreferences(getAWSViewPreferences(ceView, settingsMap))
         .gcpPreferences(getGCPViewPreferences(ceView, settingsMap))
         .build();
