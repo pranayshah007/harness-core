@@ -61,7 +61,6 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.remote.GovernanceConfig;
 import io.harness.security.annotations.InternalApi;
-import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.yaml.schema.YamlSchemaProvider;
@@ -135,9 +134,6 @@ import org.springframework.transaction.support.TransactionTemplate;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-
-@NextGenManagerAuth
-
 public class GovernanceRuleResource {
   private final GovernanceRuleService governanceRuleService;
   private final RuleSetService ruleSetService;
