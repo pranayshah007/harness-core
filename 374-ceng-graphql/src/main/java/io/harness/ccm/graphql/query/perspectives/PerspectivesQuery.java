@@ -26,12 +26,12 @@ import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.dto.PerspectiveTimeSeriesData;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
-import io.harness.ccm.views.graphql.QLCEViewPreferences;
 import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
 import io.harness.ccm.views.graphql.QLCEViewTrendData;
 import io.harness.ccm.views.graphql.QLCEViewTrendInfo;
@@ -80,6 +80,7 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "filters") List<QLCEViewFilterWrapper> filters,
       @GraphQLArgument(name = "groupBy") List<QLCEViewGroupBy> groupBy,
       @GraphQLArgument(name = "aggregateFunction") List<QLCEViewAggregation> aggregateFunction,
+      @GraphQLArgument(name = "preferences") ViewPreferences preferences,
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
@@ -143,6 +144,7 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "groupBy") List<QLCEViewGroupBy> groupBy,
       @GraphQLArgument(name = "sortCriteria") List<QLCEViewSortCriteria> sortCriteria,
       @GraphQLArgument(name = "limit") Integer limit, @GraphQLArgument(name = "offset") Integer offset,
+      @GraphQLArgument(name = "preferences") ViewPreferences preferences,
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLArgument(name = "skipRoundOff") Boolean skipRoundOff,
       @GraphQLEnvironment final ResolutionEnvironment env) {
@@ -190,7 +192,7 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "groupBy") List<QLCEViewGroupBy> groupBy,
       @GraphQLArgument(name = "sortCriteria") List<QLCEViewSortCriteria> sortCriteria,
       @GraphQLArgument(name = "limit") Integer limit, @GraphQLArgument(name = "offset") Integer offset,
-      @GraphQLArgument(name = "preferences") QLCEViewPreferences preferences,
+      @GraphQLArgument(name = "preferences") ViewPreferences preferences,
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);

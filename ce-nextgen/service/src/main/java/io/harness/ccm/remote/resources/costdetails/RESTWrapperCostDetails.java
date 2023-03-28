@@ -30,10 +30,10 @@ import io.harness.ccm.remote.utils.GraphQLToRESTHelper;
 import io.harness.ccm.remote.utils.RESTToGraphQLHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.PerspectiveTimeSeriesData;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
-import io.harness.ccm.views.graphql.QLCEViewPreferences;
 import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -151,9 +151,10 @@ public class RESTWrapperCostDetails {
 
     log.info("Aggregations: {}", aggregationList);
 
+    ViewPreferences viewPreferences = ViewPreferences.builder().build();
     PerspectiveEntityStatsData perspectiveGridData = perspectivesQuery.perspectiveGrid(aggregationList, filters,
-        groupBy, sortList, firstNonNull(limit, (int) DEFAULT_LIMIT), firstNonNull(offset, (int) DEFAULT_OFFSET), false,
-        skipRoundOff != null && skipRoundOff, env);
+        groupBy, sortList, firstNonNull(limit, (int) DEFAULT_LIMIT), firstNonNull(offset, (int) DEFAULT_OFFSET),
+        viewPreferences, false, skipRoundOff != null && skipRoundOff, env);
 
     return ResponseDTO.newResponse(perspectiveGridData);
   }
@@ -216,12 +217,12 @@ public class RESTWrapperCostDetails {
       throw new InvalidArgumentsException(e.getMessage());
     }
 
-    QLCEViewPreferences qlCEViewPreferences =
-        QLCEViewPreferences.builder().includeOthers(false).includeUnallocatedCost(false).build();
+    ViewPreferences viewPreferences =
+        ViewPreferences.builder().includeOthers(false).includeUnallocatedCost(false).build();
 
     PerspectiveTimeSeriesData perspectiveTimeSeriesData = perspectivesQuery.perspectiveTimeSeriesStats(aggregationList,
         filters, groupBy, sortList, firstNonNull(limit, (int) DEFAULT_LIMIT),
-        firstNonNull(offset, (int) DEFAULT_OFFSET), qlCEViewPreferences, false, env);
+        firstNonNull(offset, (int) DEFAULT_OFFSET), viewPreferences, false, env);
     return ResponseDTO.newResponse(perspectiveTimeSeriesData);
   }
 
@@ -273,8 +274,9 @@ public class RESTWrapperCostDetails {
       throw new InvalidArgumentsException(e.getMessage());
     }
 
-    PerspectiveTrendStats perspectiveTrendStats =
-        perspectivesQuery.perspectiveTrendStats(filters, Collections.emptyList(), aggregationList, false, env);
+    ViewPreferences viewPreferences = ViewPreferences.builder().build();
+    PerspectiveTrendStats perspectiveTrendStats = perspectivesQuery.perspectiveTrendStats(
+        filters, Collections.emptyList(), aggregationList, viewPreferences, false, env);
     return ResponseDTO.newResponse(perspectiveTrendStats.getCost());
   }
 
@@ -334,9 +336,10 @@ public class RESTWrapperCostDetails {
       throw new InvalidArgumentsException(e.getMessage());
     }
 
+    ViewPreferences viewPreferences = ViewPreferences.builder().build();
     PerspectiveEntityStatsData perspectiveGridData = perspectivesQuery.perspectiveGrid(aggregationList, filters,
         groupBy, sortList, firstNonNull(limit, (int) DEFAULT_LIMIT_CLUSTER_DATA),
-        firstNonNull(offset, (int) DEFAULT_OFFSET), true, skipRoundOff != null && skipRoundOff, env);
+        firstNonNull(offset, (int) DEFAULT_OFFSET), viewPreferences, true, skipRoundOff != null && skipRoundOff, env);
 
     // List of workloads in case data is grouped by workload
     Set<String> workloads = costDetailsQueryHelper.getWorkloadsFromCostDetailsResponse(perspectiveGridData, groupBy);
