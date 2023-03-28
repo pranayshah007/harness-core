@@ -1,0 +1,174 @@
+# Default values for harness-ui
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  ha: false
+  loadbalancerURL: ""
+  airgap: false
+  imagePullSecrets: []
+  ingress:
+    hosts:
+      - "*"
+    enabled: false
+    objects:
+      annotations: {}
+    className: harness
+    tls:
+      enabled: false
+      secretName: harness-cert
+    additionalPaths:
+      # - path: abc
+      #   pathType: ImplementationSpecific
+      #     backend:
+      #         service:
+      #           name: release-name-harness-ui
+      #           port:
+      #             number: 80
+  istio:
+    enabled: false
+    gateway:
+      create: false
+    virtualService:
+      gateways:
+      hosts:
+replicaCount: 1
+maxSurge: 1
+maxUnavailable: 0
+
+image:
+  registry: docker.io
+  repository: harness/verification-service-signed
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "77629"
+  digest: ""
+  imagePullSecrets: []
+
+waitForInitContainer:
+  image:
+    registry: docker.io
+    repository: harness/helm-init-container
+    pullPolicy: IfNotPresent
+    tag: "latest"
+    digest: ""
+    imagePullSecrets: []
+
+# -- Configurations for Harness application
+config:
+  DEPLOY_MODE: "KUBERNETES_ONPREM"
+  MANAGER_URL: "http://harness-manager:9090/api/"
+  VERSION: 1.0.77622
+
+mongoSecrets:
+  userName:
+    name: harness-secrets
+    key: mongodbUsername
+  password:
+    name: mongodb-replicaset-chart
+    key: mongodb-root-password
+
+# --nameOverride String to partially override common.names.fullname template (will maintain the release name)
+##
+nameOverride: ""
+# --fullnameOverride String to fully override common.names.fullname template
+##
+fullnameOverride: ""
+
+## Specifies whether a ServiceAccount should be created
+##
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "harness-default"
+
+# -- provisioning.podAnnotations Provisioning Pod annotations.
+##
+podAnnotations: {}
+
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+## @param provisioning.podSecurityContext.enabled Enable pod Security Context
+## @param provisioning.podSecurityContext.fsGroup Group ID for the container
+##
+# e.g.:
+## fsGroup: 2000
+podSecurityContext: {}
+  # fsGroup: 2000
+
+# -- containerSecurityContext
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+## @param provisioning.containerSecurityContext.enabled Enable container Security Context
+## @param provisioning.containerSecurityContext.runAsUser User ID for the container
+## @param provisioning.containerSecurityContext.runAsNonRoot Avoid running as root User
+##
+securityContext:
+  runAsNonRoot: true
+  # runAsUser: 999
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+#-- Service properties
+##
+service:
+  # -- service type
+  ##
+  type: ClusterIP
+  ## -- service.ports application service port
+  ##
+  port: 7070
+
+## Pod resource requests and limits
+## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+# --resources.limits The resources limits for the containers
+# --resources.requests The requested resources for the containers
+##
+resources:
+  limits:
+    cpu: 500m
+    memory: 3000Mi
+  requests:
+    cpu: 500m
+    memory: 3000Mi
+
+ingress:
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: ""
+      paths:
+        - path: /verification
+          pathType: ImplementationSpecific
+  tls: []
+
+## Autoscaling configuration
+# --autoscaling.enabled Enable autoscaling for pods
+# --autoscaling.minReplicas Minimum number of replicas
+# --autoscaling.maxReplicas Maximum number of replicas
+# --autoscaling.targetCPU Target CPU utilization percentage
+# --autoscaling.targetMemory Target Memory utilization percentage
+##
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+# -- appLogInfo can be INFO DEBUG WARN ERROR
+appLogInfo: INFO
+# -- Specify Java memory to be used
+java:
+  memory: 2048

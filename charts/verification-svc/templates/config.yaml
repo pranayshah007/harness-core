@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "verification-svc.name" . }}
+  namespace: {{ .Release.Namespace }}
+data:
+  DEPLOY_MODE: {{ .Values.config.DEPLOY_MODE }}
+  LOGGING_LEVEL: {{ .Values.appLogInfo | quote }}
+  MANAGER_URL: {{ .Values.config.MANAGER_URL }}
+  MEMORY: {{ .Values.config.MEMORY | quote }}
+  VERIFICATION_PORT: {{ .Values.service.port | quote }}
+  VERSION: {{ .Values.service.VERSION }}
+  VERIFICATION_SERVICE_SECRET: 59MR5RlVARcdH7zb7pNx6GzqiglBmXR8
+  {{ if .Values.global.mongoSSL }}
+  MONGO_SSL_CONFIG: "true"
+  MONGO_SSL_CA_TRUST_STORE_PATH: /opt/harness/keystore.jks
+  MONGO_SSL_CA_TRUST_STORE_PASSWORD: password
+  {{ end }}
