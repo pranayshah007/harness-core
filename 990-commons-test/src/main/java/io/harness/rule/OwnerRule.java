@@ -192,7 +192,6 @@ public class OwnerRule implements TestRule {
   public static final String SANYASI_NAIDU = "sanyasi.naidu";
   public static final String SARTHAK_KASAT = "sarthak.kasat";
   public static final String SARVAGNYA_JATTI = "sarvagnya.jatti";
-
   public static final String SATHISH = "sathish.soundarapandian";
   public static final String SEAN = "sean.dunne";
   public static final String SHALINI = "shalini.agrawal";
