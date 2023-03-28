@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorCategory;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.remote.SecretValidationMetaData;
@@ -36,8 +37,8 @@ public interface SecretCrudService {
 
   Page<SecretResponseWrapper> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<String> identifiers, List<SecretType> secretTypes, boolean includeSecretsFromEverySubScope,
-      String searchTerm, int page, int size, ConnectorCategory sourceCategory,
-      boolean includeAllSecretsAccessibleAtScope);
+      String searchTerm, ConnectorCategory sourceCategory, boolean includeAllSecretsAccessibleAtScope,
+      PageRequest pageRequest);
 
   boolean delete(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, boolean forceDelete);

@@ -12,6 +12,7 @@ import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.secrets.SecretPermissions.SECRET_ACCESS_PERMISSION;
 import static io.harness.secrets.SecretPermissions.SECRET_DELETE_PERMISSION;
@@ -19,6 +20,7 @@ import static io.harness.secrets.SecretPermissions.SECRET_EDIT_PERMISSION;
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
 import static io.harness.utils.PageUtils.getNGPageResponse;
+import static io.harness.utils.PageUtils.getPageRequest;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
@@ -33,6 +35,7 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.DecryptableEntityWithEncryptionConsumers;
 import io.harness.ng.core.NGAccess;
@@ -55,6 +58,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.service.impl.security.NGEncryptorService;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import io.swagger.annotations.Api;
@@ -80,6 +84,7 @@ import javax.validation.Valid;
 import javax.validation.Validator;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -301,18 +306,13 @@ public class NGSecretResourceV2 {
               + " accessible at the scope. For eg if set as true, at the Project scope we will get"
               + " org and account Secrets also in the response") @QueryParam("includeAllSecretsAccessibleAtScope")
       @DefaultValue("false") boolean includeAllSecretsAccessibleAtScope,
-      @Parameter(description = "Navigation page number. By default, it is set to 0.") @QueryParam(
-          NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(
-          description =
-              "Number of entries per page. The default number of entries per page is 100, while the maximum number allowed is 1000.")
-      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(1000) int size) {
+      @BeanParam PageRequest pageRequest) {
     if (secretType != null) {
       secretTypes.add(secretType);
     }
     return ResponseDTO.newResponse(getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier,
-        projectIdentifier, identifiers, secretTypes, includeSecretsFromEverySubScope, searchTerm, page, size,
-        sourceCategory, includeAllSecretsAccessibleAtScope)));
+        projectIdentifier, identifiers, secretTypes, includeSecretsFromEverySubScope, searchTerm, sourceCategory,
+        includeAllSecretsAccessibleAtScope, pageRequest)));
   }
 
   @POST
@@ -329,19 +329,14 @@ public class NGSecretResourceV2 {
   listSecrets(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                   NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
-      String projectIdentifier, @Body SecretResourceFilterDTO secretResourceFilterDTO,
-      @Parameter(description = "Navigation page number. By default, it is set to 0.") @QueryParam(
-          NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(
-          description =
-              "Number of entries per page. The default number of entries per page is 100, while the maximum number allowed is 1000.")
-      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(1000) int size) {
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Body SecretResourceFilterDTO secretResourceFilterDTO, @BeanParam PageRequest pageRequest) {
     return ResponseDTO.newResponse(getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier,
         projectIdentifier, secretResourceFilterDTO.getIdentifiers(), secretResourceFilterDTO.getSecretTypes(),
-        secretResourceFilterDTO.isIncludeSecretsFromEverySubScope(), secretResourceFilterDTO.getSearchTerm(), page,
-        size, secretResourceFilterDTO.getSourceCategory(),
-        secretResourceFilterDTO.isIncludeAllSecretsAccessibleAtScope())));
+        secretResourceFilterDTO.isIncludeSecretsFromEverySubScope(), secretResourceFilterDTO.getSearchTerm(),
+        secretResourceFilterDTO.getSourceCategory(), secretResourceFilterDTO.isIncludeAllSecretsAccessibleAtScope(),
+        pageRequest)));
   }
 
   @GET
