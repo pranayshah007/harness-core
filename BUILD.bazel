@@ -97,8 +97,8 @@ load(
 
 default_java_toolchain(
     name = "harness_no_fdLimit_jdk11_toolchain",
-    java_runtime = "@bazel_tools//tools/jdk:remotejdk_17",
     configuration = DEFAULT_TOOLCHAIN_CONFIGURATION,  # One of predefined configurations
+    java_runtime = "@bazel_tools//tools/jdk:remotejdk_17",
     #configuration = dict(),
     jvm_opts = BASE_JDK9_JVM_OPTS + ["-XX:-MaxFDLimit"],  # Additional JDK options
     source_version = "17",
