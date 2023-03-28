@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
+import static software.wings.ngmigration.NGMigrationEntityType.INFRA;
 import static software.wings.ngmigration.NGMigrationEntityType.PIPELINE;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
 import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
@@ -120,6 +121,8 @@ import retrofit2.Response;
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class PipelineMigrationService extends NgMigrationService {
+  private static final String SERVICE_INPUTS = "serviceInputs";
+  private static final String INFRASTRUCTURE_DEFINITIONS = "infrastructureDefinitions";
   private static final Pattern VARIABLE_PATTERN = Pattern.compile("[a-zA-Z_]+\\w*");
 
   @Inject private PipelineService pipelineService;
@@ -376,7 +379,7 @@ public class PipelineMigrationService extends NgMigrationService {
 
   private StageElementWrapperConfig buildApprovalStage(
       MigrationContext migrationContext, PipelineStageElement stageElement, CaseFormat caseFormat) {
-    AbstractStepNode stepNode = approvalStepMapper.getSpec(stageElement, caseFormat);
+    AbstractStepNode stepNode = approvalStepMapper.getSpec(migrationContext, stageElement);
     ExecutionWrapperConfig stepWrapper =
         ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(stepNode)).build();
 
@@ -527,7 +530,7 @@ public class PipelineMigrationService extends NgMigrationService {
         stageServiceRef = MigratorUtility.getIdentifierWithScope(serviceDetails);
         serviceInputs = migrationTemplateUtils.getServiceInput(serviceDetails, accountId);
         if (serviceInputs != null) {
-          serviceInputs = serviceInputs.get("serviceInputs");
+          serviceInputs = serviceInputs.get(SERVICE_INPUTS);
         }
       }
     }
@@ -538,6 +541,19 @@ public class PipelineMigrationService extends NgMigrationService {
       CgEntityId envEntityId = CgEntityId.builder().id(envId).type(ENVIRONMENT).build();
       if (migratedEntities.containsKey(envEntityId)) {
         stageEnvRef = MigratorUtility.getIdentifierWithScope(migratedEntities.get(envEntityId).getNgEntityDetail());
+      }
+    }
+
+    String infraId = getInfra(workflow, stageElement);
+    JsonNode infraInputs = null;
+    if (StringUtils.isNotBlank(infraId) && !RUNTIME_INPUT.equals(stageEnvRef)) {
+      CgEntityId infraEntityId = CgEntityId.builder().id(infraId).type(INFRA).build();
+      if (migratedEntities.containsKey(infraEntityId)) {
+        NgEntityDetail infraDetails = migratedEntities.get(infraEntityId).getNgEntityDetail();
+        infraInputs = migrationTemplateUtils.getInfraInput(accountId, stageEnvRef, infraDetails);
+        if (infraInputs != null) {
+          infraInputs = infraInputs.get(INFRASTRUCTURE_DEFINITIONS);
+        }
       }
     }
 
@@ -613,9 +629,9 @@ public class PipelineMigrationService extends NgMigrationService {
         ObjectNode service = (ObjectNode) templateInputs.get("spec").get("service");
         service.put("serviceRef", stageServiceRef);
         if (serviceInputs == null) {
-          service.remove("serviceInputs");
+          service.remove(SERVICE_INPUTS);
         } else {
-          service.set("serviceInputs", serviceInputs);
+          service.set(SERVICE_INPUTS, serviceInputs);
         }
       }
       String envRef = templateInputs.at("/spec/environment/environmentRef").asText();
@@ -623,6 +639,9 @@ public class PipelineMigrationService extends NgMigrationService {
         ObjectNode environment = (ObjectNode) templateInputs.get("spec").get("environment");
         environment.put("environmentRef", stageEnvRef);
         environment.remove("environmentInputs");
+        if (infraInputs != null) {
+          environment.set(INFRASTRUCTURE_DEFINITIONS, infraInputs);
+        }
       }
     }
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
@@ -639,7 +658,7 @@ public class PipelineMigrationService extends NgMigrationService {
   }
 
   private String getServiceId(Workflow workflow, PipelineStageElement stageElement) {
-    if (workflow == null || EmptyPredicate.isEmpty(workflow.getServices())) {
+    if (workflow == null) {
       return null;
     }
     CanaryOrchestrationWorkflow orchestrationWorkflow =
@@ -683,8 +702,8 @@ public class PipelineMigrationService extends NgMigrationService {
     }
     CanaryOrchestrationWorkflow orchestrationWorkflow =
         (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
-    if (EmptyPredicate.isEmpty(orchestrationWorkflow.getWorkflowPhases())
-        || orchestrationWorkflow.getWorkflowPhases().size() > 1) {
+    if (orchestrationWorkflow.getOrchestrationWorkflowType().equals(OrchestrationWorkflowType.MULTI_SERVICE)
+        || EmptyPredicate.isEmpty(orchestrationWorkflow.getWorkflowPhases())) {
       return null;
     }
     WorkflowPhase workflowPhase = orchestrationWorkflow.getWorkflowPhases().get(0);

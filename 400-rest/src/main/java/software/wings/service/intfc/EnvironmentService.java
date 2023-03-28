@@ -72,11 +72,14 @@ public interface EnvironmentService extends OwnedByApplication {
 
   /**
    * Gets the environment and does not throw exception if not found
+   *
    * @param appId
    * @param envId
    * @return
    */
   Environment get(@NotEmpty String appId, @NotEmpty String envId);
+
+  Environment getWithTags(@NotEmpty String appId, @NotEmpty String envId);
 
   Environment getEnvironmentByName(String appId, String environmentName);
 
@@ -144,6 +147,7 @@ public interface EnvironmentService extends OwnedByApplication {
 
   /**
    * Gets env ids by app.
+   *
    * @param appId
    * @return
    */
@@ -152,9 +156,10 @@ public interface EnvironmentService extends OwnedByApplication {
   Map<String, List<Base>> getAppIdEnvMap(Set<String> appIds, String accountId);
 
   /**
-   * @param appIds the applicationIds for which we need to fetch the environments
+   * @param appIds          the applicationIds for which we need to fetch the environments
    * @param environmentType The type of environment needed
-   * @return A map of the ids of environments in the given application and of the given type grouped by applications
+   * @return A map of the ids of environments in the given application and of the given type grouped
+   * by applications
    */
   Map<String, Set<String>> getAppIdEnvIdMap(Set<String> appIds);
 

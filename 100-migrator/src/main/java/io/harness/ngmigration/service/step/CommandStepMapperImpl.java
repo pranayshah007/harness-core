@@ -30,6 +30,7 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.CommandState;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -114,5 +115,13 @@ public class CommandStepMapperImpl extends StepMapper {
   @Override
   public boolean loopingSupported() {
     return true;
+  }
+
+  @Override
+  public void overrideTemplateInputs(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, GraphNode graphNode, NGYamlFile templateFile, JsonNode templateInputs) {
+    // Fix delegate selectors in the workflow
+    CommandState state = new CommandState(graphNode.getName());
+    overrideTemplateDelegateSelectorInputs(templateInputs, state.getDelegateSelectors());
   }
 }

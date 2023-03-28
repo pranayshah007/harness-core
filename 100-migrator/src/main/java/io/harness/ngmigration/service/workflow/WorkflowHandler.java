@@ -224,7 +224,7 @@ public abstract class WorkflowHandler {
     throw new NotImplementedException("Getting stages is only supported for multi service workflows right now");
   }
 
-  public abstract JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow, CaseFormat caseFormat);
+  public abstract JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow);
 
   List<WorkflowPhase> getPhases(Workflow workflow) {
     CanaryOrchestrationWorkflow orchestrationWorkflow =

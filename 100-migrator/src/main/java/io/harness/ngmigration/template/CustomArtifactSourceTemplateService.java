@@ -21,6 +21,7 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.yaml.core.timeout.Timeout;
@@ -97,6 +98,7 @@ public class CustomArtifactSourceTemplateService implements NgTemplateService {
 
     CustomArtifactConfig customArtifactConfig =
         CustomArtifactConfig.builder()
+            .delegateSelectors(MigratorUtility.getDelegateSelectors(new ArrayList<>()))
             .version(ParameterField.createValueField("<+input>"))
             .timeout(ParameterField.createValueField(Timeout.fromString(artifactSource.getTimeoutSeconds() + "s")))
             .inputs(inputs)

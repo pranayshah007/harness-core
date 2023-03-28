@@ -90,7 +90,11 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class MigratorUtility {
-  public static final ParameterField<String> RUNTIME_INPUT = ParameterField.createValueField("<+input>");
+  public static final ParameterField<String> RUNTIME_INPUT =
+      ParameterField.createValueField(NGMigrationConstants.RUNTIME_INPUT);
+  public static final ParameterField<List<TaskSelectorYaml>> RUNTIME_DELEGATE_INPUT =
+      ParameterField.createExpressionField(true, NGMigrationConstants.RUNTIME_INPUT, null, false);
+
   public static final Pattern cgPattern = Pattern.compile("\\$\\{[\\w-.\"()]+}");
   public static final Pattern ngPattern = Pattern.compile("<\\+[\\w-.\"()]+>");
 
@@ -221,13 +225,18 @@ public class MigratorUtility {
         .build();
   }
 
-  public static String getIdentifierWithScopeDefaults(
-      Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+  public static String getIdentifierWithScopeDefaults(Map<CgEntityId, NGYamlFile> migratedEntities, String entityId,
+      NGMigrationEntityType entityType, String defaultValue) {
     NGYamlFile detail = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
     if (detail == null) {
-      return PLEASE_FIX_ME;
+      return defaultValue;
     }
     return getIdentifierWithScope(detail.getNgEntityDetail());
+  }
+
+  public static String getIdentifierWithScopeDefaults(
+      Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+    return getIdentifierWithScopeDefaults(migratedEntities, entityId, entityType, PLEASE_FIX_ME);
   }
 
   public static String getIdentifierWithScope(
