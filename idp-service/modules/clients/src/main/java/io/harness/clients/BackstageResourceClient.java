@@ -52,5 +52,6 @@ public interface BackstageResourceClient {
   Call<Object> deleteLayout(@Body LayoutRequest body, @Header("Authorization") String authorization,
       @Path("accountIdentifier") String accountIdentifier);
 
-  @GET(HARNESS_REFRESH_API + "/refresh") Call<Object> providerRefresh();
+  @GET(HARNESS_REFRESH_API + "/refresh")
+  Call<Object> providerRefresh(@Path("accountIdentifier") String accountIdentifier);
 }
