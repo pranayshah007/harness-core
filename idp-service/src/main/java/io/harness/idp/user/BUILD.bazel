@@ -17,11 +17,11 @@ java_library(
         "//930-ng-core-clients:module",
         "//960-persistence/src/main/java/io/harness/annotation:module",
         "//960-persistence/src/main/java/io/harness/mongo/index:module",
+        "//idp-service/modules/clients:module",
         "//idp-service/src/main/java/io/harness/idp/namespace:module",
         "@maven//:com_google_inject_guice",
         "@maven//:org_mongodb_morphia_morphia",
         "@maven//:org_springframework_data_spring_data_commons",
         "@maven//:org_springframework_data_spring_data_mongodb",
-        "//idp-service/modules/clients:module",
     ],
 )
