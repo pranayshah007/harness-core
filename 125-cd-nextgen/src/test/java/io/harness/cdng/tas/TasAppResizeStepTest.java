@@ -7,6 +7,7 @@
 
 package io.harness.cdng.tas;
 
+import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -317,6 +318,68 @@ public class TasAppResizeStepTest extends CategoryTest {
     assertThat(taskData.getResizeStrategy()).isEqualTo(TasResizeStrategyType.UPSCALE_NEW_FIRST);
     assertThat(taskData.getDownSizeCount()).isEqualTo(2);
     assertThat(taskData.getUpsizeCount()).isZero();
+    assertThat(taskData.getNewReleaseName()).isEqualTo("app");
+    assertThat(taskData.getTasInfraConfig().getSpace()).isEqualTo(SPACE);
+    assertThat(taskData.getTasInfraConfig().getOrganization()).isEqualTo(ORG);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacIgnoreInstanceCountManifest() {
+    TasCountInstanceSelection tasCountInstanceSelection =
+        TasCountInstanceSelection.builder().value(ParameterField.createValueField("2")).build();
+    TasPercentageInstanceSelection tasPercentageInstanceSelection =
+        TasPercentageInstanceSelection.builder().value(ParameterField.createValueField("2")).build();
+    TasAppResizeStepParameters tasAppResizeStepParameters =
+        TasAppResizeStepParameters.infoBuilder()
+            .newAppInstances(TasInstanceSelectionWrapper.builder()
+                                 .type(TasInstanceUnitType.COUNT)
+                                 .spec(tasCountInstanceSelection)
+                                 .build())
+            .oldAppInstances(TasInstanceSelectionWrapper.builder()
+                                 .type(TasInstanceUnitType.PERCENTAGE)
+                                 .spec(tasPercentageInstanceSelection)
+                                 .build())
+            .ignoreInstanceCountManifest(ParameterField.<Boolean>builder().value(true).build())
+            .build();
+    TasSetupDataOutcome tasSetupDataOutcome =
+        TasSetupDataOutcome.builder()
+            .cfCliVersion(CfCliVersion.V7)
+            .activeApplicationDetails(
+                TasApplicationInfo.builder().applicationGuid(APP_ID).applicationName("app").build())
+            .desiredActualFinalCount(4)
+            .isBlueGreen(true)
+            .newReleaseName("app")
+            .resizeStrategy(TasResizeStrategyType.DOWNSCALE_OLD_FIRST)
+            .instanceCountType(TasInstanceCountType.FROM_MANIFEST)
+            .build();
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorConfig(TasConnectorDTO.builder().build()).build();
+    TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
+        TanzuApplicationServiceInfrastructureOutcome.builder().organization(ORG).space(SPACE).build();
+    OptionalSweepingOutput optionalSweepingOutput =
+        OptionalSweepingOutput.builder().output(tasSetupDataOutcome).found(true).build();
+
+    doReturn(optionalSweepingOutput).when(tasEntityHelper).getSetupOutcome(any(), any(), any(), any(), any(), any());
+    doReturn(infrastructureOutcome).when(outcomeService).resolve(any(), any());
+    doReturn(connectorInfoDTO).when(tasEntityHelper).getConnectorInfoDTO(any(), any(), any(), any());
+    doReturn(null).when(tasEntityHelper).getEncryptionDataDetails(any(), any());
+    doReturn(null).when(stepHelper).getEnvironmentType(any());
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+
+    stepElementParameters.setSpec(tasAppResizeStepParameters);
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    tasAppResizeStep.obtainTaskAfterRbac(ambiance, stepElementParameters, null);
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    CfDeployCommandRequestNG taskData = (CfDeployCommandRequestNG) taskDataArgumentCaptor.getValue().getParameters()[0];
+
+    assertThat(taskData.getResizeStrategy()).isEqualTo(TasResizeStrategyType.DOWNSCALE_OLD_FIRST);
+    assertThat(taskData.getDownSizeCount()).isEqualTo(0);
+    assertThat(taskData.getUpsizeCount()).isEqualTo(2);
     assertThat(taskData.getNewReleaseName()).isEqualTo("app");
     assertThat(taskData.getTasInfraConfig().getSpace()).isEqualTo(SPACE);
     assertThat(taskData.getTasInfraConfig().getOrganization()).isEqualTo(ORG);

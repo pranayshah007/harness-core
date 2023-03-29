@@ -86,5 +86,7 @@ public class SLIRecord extends VerificationTaskBase implements PersistentEntity,
   public static class SLIRecordParam {
     private SLIState sliState;
     private Instant timeStamp;
+    private Long goodEventCount;
+    private Long badEventCount;
   }
 }

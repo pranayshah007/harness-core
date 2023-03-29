@@ -825,6 +825,15 @@ message RefreshTokenResponse {
   string refreshToken = 4;
 }
 
+message GenerateYamlRequest {
+  string clientID = 1;
+  string clientSecret = 2;
+  string url = 3;
+}
+message GenerateYamlResponse {
+  string yaml = 1;
+}
+
 service SCM {
   // RPC to stop tailing on a file.
   rpc ParseWebhook(ParseWebhookRequest) returns (ParseWebhookResponse);
@@ -869,4 +878,5 @@ service SCM {
   rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse);
 
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc GenerateStageYamlForCI(GenerateYamlRequest) returns (GenerateYamlResponse);
 }

@@ -27,8 +27,8 @@ import io.harness.git.model.GitFileChange;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
-import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -38,6 +38,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.util.Pair;
@@ -61,7 +62,7 @@ public abstract class ConnectorProcessor {
     return connectorDTO.get().getConnectorInfo();
   }
 
-  public abstract Pair<ConnectorInfoDTO, List<EnvironmentSecret>> getConnectorAndSecretsInfo(
+  public abstract Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> getConnectorAndSecretsInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier);
 
   public abstract void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
@@ -73,8 +74,9 @@ public abstract class ConnectorProcessor {
         DownloadFilesRequest.builder()
             .repoUrl(catalogConnectorInfo.getRepo())
             .branch(catalogConnectorInfo.getBranch())
+            .unsureOrNonExistentBranch(true)
             .filePaths(Collections.singletonList(remoteFolder))
-            .connectorId(catalogConnectorInfo.getSourceConnector().getIdentifier())
+            .connectorId(catalogConnectorInfo.getInfraConnector().getIdentifier())
             .accountId(accountIdentifier)
             .recursive(true)
             .authRequest(
@@ -106,7 +108,8 @@ public abstract class ConnectorProcessor {
         CommitAndPushRequest.builder()
             .repoUrl(catalogConnectorInfo.getRepo())
             .branch(catalogConnectorInfo.getBranch())
-            .connectorId(catalogConnectorInfo.getSourceConnector().getIdentifier())
+            .unsureOrNonExistentBranch(true)
+            .connectorId(catalogConnectorInfo.getInfraConnector().getIdentifier())
             .accountId(accountIdentifier)
             .authRequest(
                 UsernamePasswordAuthRequest.builder().username(username).password(password.toCharArray()).build())

@@ -302,25 +302,27 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
 
   @Override
   public void endNodeExecution(Ambiance ambiance) {
-    String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    NodeExecution nodeExecution =
-        nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForExecutionStrategy);
-    if (isNotEmpty(nodeExecution.getNotifyId())) {
-      Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
-      StepResponseNotifyData responseData = StepResponseNotifyData.builder()
-                                                .nodeUuid(level.getSetupId())
-                                                .stepOutcomeRefs(outcomeService.fetchOutcomeRefs(nodeExecutionId))
-                                                .failureInfo(nodeExecution.getFailureInfo())
-                                                .identifier(level.getIdentifier())
-                                                .nodeExecutionId(level.getRuntimeId())
-                                                .status(nodeExecution.getStatus())
-                                                .adviserResponse(nodeExecution.getAdviserResponse())
-                                                .nodeExecutionEndTs(nodeExecution.getEndTs())
-                                                .build();
-      waitNotifyEngine.doneWith(nodeExecution.getNotifyId(), responseData);
-    } else {
-      log.info("Ending Execution");
-      orchestrationEngine.endNodeExecution(AmbianceUtils.cloneForFinish(ambiance));
+    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
+      String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+      NodeExecution nodeExecution =
+          nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForExecutionStrategy);
+      if (isNotEmpty(nodeExecution.getNotifyId())) {
+        Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
+        StepResponseNotifyData responseData = StepResponseNotifyData.builder()
+                                                  .nodeUuid(level.getSetupId())
+                                                  .stepOutcomeRefs(outcomeService.fetchOutcomeRefs(nodeExecutionId))
+                                                  .failureInfo(nodeExecution.getFailureInfo())
+                                                  .identifier(level.getIdentifier())
+                                                  .nodeExecutionId(level.getRuntimeId())
+                                                  .status(nodeExecution.getStatus())
+                                                  .adviserResponse(nodeExecution.getAdviserResponse())
+                                                  .nodeExecutionEndTs(nodeExecution.getEndTs())
+                                                  .build();
+        waitNotifyEngine.doneWith(nodeExecution.getNotifyId(), responseData);
+      } else {
+        log.info("Ending Execution");
+        orchestrationEngine.endNodeExecution(AmbianceUtils.cloneForFinish(ambiance));
+      }
     }
   }
 

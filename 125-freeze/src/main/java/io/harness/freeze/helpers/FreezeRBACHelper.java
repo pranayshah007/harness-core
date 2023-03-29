@@ -66,7 +66,7 @@ public class FreezeRBACHelper {
     }
   }
 
-  public boolean checkIfUserHasFreezeOverrideAccessWithPrincipal(NGFeatureFlagHelperService featureFlagHelperService,
+  public boolean checkIfUserHasFreezeOverrideAccessWithoutPrincipal(NGFeatureFlagHelperService featureFlagHelperService,
       String accountId, String projectId, String orgId, AccessControlClient accessControlClient) {
     Principal principal = getPrincipalInfoFromSecurityContext();
     PrincipalType principalType = getPrincipalTypeFromSecurityContext(principal);

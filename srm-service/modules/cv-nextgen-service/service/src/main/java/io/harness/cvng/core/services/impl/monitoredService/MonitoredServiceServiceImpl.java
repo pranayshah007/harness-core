@@ -1778,6 +1778,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     List<String> notificationRuleRefs = monitoredService.getNotificationRuleRefs()
                                             .stream()
                                             .filter(ref -> ref.isEligible(clock.instant(), COOL_OFF_DURATION))
+                                            .filter(ref -> ref.isEnabled())
                                             .map(NotificationRuleRef::getNotificationRuleRef)
                                             .collect(Collectors.toList());
     return notificationRuleService.getEntities(projectParams, notificationRuleRefs);

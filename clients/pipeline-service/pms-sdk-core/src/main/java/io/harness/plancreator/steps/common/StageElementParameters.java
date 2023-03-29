@@ -52,7 +52,7 @@ public class StageElementParameters implements StepParameters {
   public String toViewJson() {
     StageElementParameters stageElementParameters = cloneParameters();
     stageElementParameters.setSpecConfig(specConfig.getViewJsonObject());
-    return RecastOrchestrationUtils.pruneRecasterAdditions(stageElementParameters);
+    return RecastOrchestrationUtils.toJson(stageElementParameters);
   }
 
   public StageElementParameters cloneParameters() {

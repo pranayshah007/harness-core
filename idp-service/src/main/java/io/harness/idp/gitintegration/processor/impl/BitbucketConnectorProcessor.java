@@ -20,11 +20,13 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
-import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.math3.util.Pair;
 
 @OwnedBy(HarnessTeam.IDP)
@@ -37,7 +39,7 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
   }
 
   @Override
-  public Pair<ConnectorInfoDTO, List<EnvironmentSecret>> getConnectorAndSecretsInfo(
+  public Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> getConnectorAndSecretsInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
     ConnectorInfoDTO connectorInfoDTO = getConnectorInfo(accountIdentifier, connectorIdentifier);
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.BITBUCKET_CONNECTOR_TYPE)) {
@@ -62,19 +64,23 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
           "Secret identifier not found for connector: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
     }
 
-    List<EnvironmentSecret> resultList = new ArrayList<>();
+    Map<String, BackstageEnvVariable> secrets = new HashMap<>();
 
-    resultList.add(GitIntegrationUtils.getEnvironmentSecret(ngSecretService, accountIdentifier, orgIdentifier,
-        projectIdentifier, pwdSecretIdentifier, connectorIdentifier, GitIntegrationConstants.BITBUCKET_TOKEN));
-    return new Pair<>(connectorInfoDTO, resultList);
+    secrets.put(GitIntegrationConstants.BITBUCKET_TOKEN,
+        GitIntegrationUtils.getBackstageEnvSecretVariable(
+            pwdSecretIdentifier, GitIntegrationConstants.BITBUCKET_TOKEN));
+    return new Pair<>(connectorInfoDTO, secrets);
   }
 
   @Override
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
       String locationParentPath, String remoteFolder, List<String> filesToPush) {
-    Pair<ConnectorInfoDTO, List<EnvironmentSecret>> connectorSecretsInfo = getConnectorAndSecretsInfo(
-        accountIdentifier, null, null, catalogConnectorInfo.getSourceConnector().getIdentifier());
-    String bitbucketConnectorSecret = connectorSecretsInfo.getSecond().get(0).getDecryptedValue();
+    Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> connectorSecretsInfo = getConnectorAndSecretsInfo(
+        accountIdentifier, null, null, catalogConnectorInfo.getInfraConnector().getIdentifier());
+    BackstageEnvSecretVariable envSecretVariable =
+        (BackstageEnvSecretVariable) connectorSecretsInfo.getSecond().get(GitIntegrationConstants.BITBUCKET_TOKEN);
+    String bitbucketConnectorSecret = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
+        envSecretVariable.getHarnessSecretIdentifier(), catalogConnectorInfo.getSourceConnector().getIdentifier());
 
     BitbucketConnectorDTO config = (BitbucketConnectorDTO) connectorSecretsInfo.getFirst().getConnectorConfig();
     BitbucketHttpCredentialsOutcomeDTO outcome =

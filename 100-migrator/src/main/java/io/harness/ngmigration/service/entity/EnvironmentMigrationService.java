@@ -173,7 +173,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
 
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
-    return discover(environmentService.get(appId, entityId));
+    return discover(environmentService.getWithTags(appId, entityId));
   }
 
   @Override
@@ -264,6 +264,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
                                 .filename(String.format("environment/%s/%s.yaml", environment.getAppId(), name))
                                 .yaml(environmentConfig)
                                 .ngEntityDetail(NgEntityDetail.builder()
+                                                    .entityType(NGMigrationEntityType.ENVIRONMENT)
                                                     .identifier(identifier)
                                                     .orgIdentifier(inputDTO.getOrgIdentifier())
                                                     .projectIdentifier(inputDTO.getProjectIdentifier())
@@ -272,8 +273,8 @@ public class EnvironmentMigrationService extends NgMigrationService {
                                 .cgBasicInfo(environment.getCgBasicInfo())
                                 .build();
     files.add(ngYamlFile);
-
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
+    files.add(getFolder(name, identifier, projectIdentifier, orgIdentifier));
     return YamlGenerationDetails.builder().yamlFileList(files).build();
   }
 

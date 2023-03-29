@@ -70,7 +70,8 @@ public class EntityCrudStreamListener implements MessageListener {
       }
       return true;
     } catch (Exception e) {
-      log.error("Error processing the crud event with the id {}", messageId, e);
+      log.error("Error processing the crud event with the id {} for entity type {}", messageId,
+          message.getMessage().getMetadataMap().get(ENTITY_TYPE), e);
     }
     return true;
   }

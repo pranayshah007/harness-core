@@ -35,4 +35,5 @@ public class TerraformPlanExecutionDataParameters {
   ParameterField<Boolean> exportTerraformHumanReadablePlan;
   ParameterField<Boolean> isTerraformCloudCli;
   ParameterField<Boolean> skipTerraformRefresh;
+  List<TerraformCliOptionFlag> cliOptionFlags;
 }

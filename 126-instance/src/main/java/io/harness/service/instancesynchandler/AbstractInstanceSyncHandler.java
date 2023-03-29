@@ -28,6 +28,10 @@ public abstract class AbstractInstanceSyncHandler implements IInstanceSyncHandle
    */
   public abstract String getPerpetualTaskType();
 
+  public String getPerpetualTaskV2Type() {
+    throw new UnsupportedOperationException();
+  }
+
   public abstract InstanceType getInstanceType();
 
   /**

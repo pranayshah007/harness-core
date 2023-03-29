@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.PublishedFileArtifact;
 import io.harness.beans.execution.PublishedImageArtifact;
 import io.harness.pms.sdk.core.data.Outcome;
+import io.harness.ssca.execution.orchestration.outcome.PublishedSbomArtifact;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Set;
@@ -32,4 +33,5 @@ import org.springframework.data.annotation.TypeAlias;
 public class IntegrationStageOutcome implements Outcome {
   @Singular Set<PublishedImageArtifact> imageArtifacts;
   @Singular Set<PublishedFileArtifact> fileArtifacts;
+  @Singular Set<PublishedSbomArtifact> sbomArtifacts;
 }

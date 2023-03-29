@@ -16,6 +16,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import java.util.List;
@@ -39,6 +40,7 @@ public class PublishedMessageDaoImpl implements PublishedMessageDao {
 
     query.and(query.criteria(PublishedMessageKeys.createdAt).greaterThanOrEq(startTime),
         query.criteria(PublishedMessageKeys.createdAt).lessThan(endTime));
+    query.useReadPreference(ReadPreference.secondaryPreferred());
     return query.asList(new FindOptions().limit(batchSize));
   }
 }

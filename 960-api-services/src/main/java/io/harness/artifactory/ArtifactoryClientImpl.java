@@ -427,7 +427,6 @@ public class ArtifactoryClientImpl {
           log.debug("Artifact paths order from Artifactory Server" + artifactPaths);
         }
 
-        Collections.reverse(artifactPaths);
         String finalArtifactPath = artifactPath;
         return artifactPaths.stream()
             .map(path

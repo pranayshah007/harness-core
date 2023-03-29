@@ -10,16 +10,19 @@ package io.harness.ci.buildstate;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_AWS_REGION;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_LINK;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AUTHOR;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AUTHOR_AVATAR;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AUTHOR_EMAIL;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BEFORE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_MESSAGE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_REF;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_PORT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_USERNAME;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_PULL_REQUEST_TITLE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REMOTE_URL;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_SOURCE_BRANCH;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TAG;
@@ -40,6 +43,7 @@ import static java.lang.String.format;
 
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
+import io.harness.ci.execution.GitBuildStatusUtility;
 import io.harness.ci.integrationstage.BuildEnvironmentUtils;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -91,6 +95,7 @@ import org.apache.commons.lang3.StringUtils;
 public class CodebaseUtils {
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
+  @Inject private GitBuildStatusUtility gitBuildStatusUtility;
   private final String PRMergeStatus = "merged";
 
   public Map<String, String> getCodebaseVars(
@@ -126,6 +131,20 @@ public class CodebaseUtils {
       } else {
         commitRef = format("+refs/heads/%s", codebaseSweeping.getSourceBranch());
       }
+    }
+
+    String commitMessage = codebaseSweeping.getCommitMessage();
+    if (isNotEmpty(commitMessage)) {
+      codebaseRuntimeVars.put(DRONE_COMMIT_MESSAGE, commitMessage);
+    }
+
+    String buildLink = gitBuildStatusUtility.getBuildDetailsUrl(ambiance);
+    if (isNotEmpty(buildLink)) {
+      codebaseRuntimeVars.put(DRONE_BUILD_LINK, buildLink);
+    }
+
+    if (isNotEmpty(codebaseSweeping.getPrTitle())) {
+      codebaseRuntimeVars.put(DRONE_PULL_REQUEST_TITLE, codebaseSweeping.getPrTitle());
     }
 
     if (isNotEmpty(commitRef)) {

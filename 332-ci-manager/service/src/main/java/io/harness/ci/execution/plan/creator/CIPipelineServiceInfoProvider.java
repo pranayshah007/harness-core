@@ -12,6 +12,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 import static io.harness.ssca.SscaBeansRegistrar.sscaStepPaletteSteps;
 
+import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.StepSpecTypeConstants;
@@ -359,7 +360,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(actionStepInfo);
     stepInfos.add(bitriseStepInfo);
 
-    stepInfos.addAll(STOStepType.getStepInfos());
+    stepInfos.addAll(STOStepType.getStepInfos(ModuleType.CI));
 
     stepInfos.addAll(sscaStepPaletteSteps);
 

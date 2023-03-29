@@ -35,6 +35,7 @@ import io.harness.product.ci.scm.proto.FileContent;
 import io.harness.product.ci.scm.proto.FindCommitResponse;
 import io.harness.product.ci.scm.proto.FindFilesInBranchResponse;
 import io.harness.product.ci.scm.proto.FindFilesInCommitResponse;
+import io.harness.product.ci.scm.proto.GenerateYamlResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
@@ -230,6 +231,11 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
   public RefreshTokenResponse refreshToken(
       ScmConnector scmConnector, String clientId, String clientSecret, String endpoint, String refreshToken) {
     return scmServiceGitClient.refreshToken(scmConnector, clientId, clientSecret, endpoint, refreshToken);
+  }
+
+  @Override
+  public GenerateYamlResponse autogenerateStageYamlForCI(String cloneUrl) {
+    return scmServiceGitClient.autogenerateStageYamlForCI(cloneUrl);
   }
 
   @Override

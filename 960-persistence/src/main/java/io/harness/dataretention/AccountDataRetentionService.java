@@ -39,6 +39,7 @@ public class AccountDataRetentionService {
       Class<? extends AccountDataRetentionEntity> clz, Map<String, Long> accounts, long now, long assureTo) {
     log.info("Account data Retention for {} from {} assuredTo {}", clz.getName(), now, assureTo);
     Query<T> query = persistence.createQuery((Class<T>) clz, excludeAuthority);
+
     query.or(query.criteria(AccountDataRetentionEntity.VALID_UNTIL_KEY).equal(null),
         query.criteria(AccountDataRetentionEntity.VALID_UNTIL_KEY).lessThan(new Date(assureTo)));
     query.order(Sort.ascending(AccountDataRetentionEntity.VALID_UNTIL_KEY));

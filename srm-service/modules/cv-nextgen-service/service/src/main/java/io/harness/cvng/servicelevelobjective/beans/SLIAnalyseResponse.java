@@ -20,4 +20,6 @@ public class SLIAnalyseResponse {
   private SLIState sliState;
   private long runningBadCount;
   private long runningGoodCount;
+  private Long goodEventCount;
+  private Long badEventCount;
 }

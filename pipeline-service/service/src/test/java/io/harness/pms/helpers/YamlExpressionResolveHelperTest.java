@@ -98,7 +98,7 @@ public class YamlExpressionResolveHelperTest extends CategoryTest {
 
   public static class SampleEngineExpressionEvaluator extends AmbianceExpressionEvaluator {
     public SampleEngineExpressionEvaluator() {
-      super(null, Ambiance.newBuilder().build(), null, false);
+      super(null, Ambiance.newBuilder().build(), null, false, null);
     }
 
     public void addToContextMap(@NotNull String name, @NotNull Object object) {

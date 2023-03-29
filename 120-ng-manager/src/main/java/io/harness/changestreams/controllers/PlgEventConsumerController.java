@@ -7,7 +7,8 @@
 
 package io.harness.changestreams.controllers;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.GTM;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.events.base.PmsRedisConsumer;
 
@@ -24,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 public class PlgEventConsumerController implements Managed {
   private ExecutorService executorService =
       Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("plg-event-consumer-%d").build());

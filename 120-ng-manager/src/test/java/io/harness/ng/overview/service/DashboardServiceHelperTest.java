@@ -39,6 +39,9 @@ public class DashboardServiceHelperTest {
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projectId";
   private static final String SERVICE_ID = "serviceId";
+  private static final String IMAGE = "image";
+  private static final String TAG = "tag";
+  private static final String STATUS = "status";
 
   private Map<String, String> envIdToNameMap;
   private Map<String, String> infraIdToNameMap;
@@ -510,5 +513,41 @@ public class DashboardServiceHelperTest {
         "select pipeline_execution_summary_cd_id from service_infra_info where accountid = 'accountId' and orgidentifier = 'orgId' and projectidentifier = 'projectId' and service_id = 'serviceId' and service_startts > 1000";
     assertThat(query).isEqualTo(
         DashboardServiceHelper.buildOpenTaskQuery(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, 1000l));
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_queryToFetchExecutionIdAndArtifactDetails() {
+    String query =
+        "select accountid, orgidentifier, projectidentifier, service_id, service_name, artifact_display_name, artifact_image, tag, pipeline_execution_summary_cd_id, service_startts from service_infra_info where accountid = 'accountId' and orgidentifier = 'orgId' and projectidentifier = 'projectId' and service_id is not null and service_startts >= 3 and service_startts <= 6 and service_id = 'serviceId' and artifact_display_name = 'displayName1' and artifact_image = 'image' and tag = 'tag'";
+    String queryResult = DashboardServiceHelper.queryToFetchExecutionIdAndArtifactDetails(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, 3l, 6l, IMAGE, TAG, DISPLAY_NAME_1);
+    assertThat(query).isEqualTo(queryResult);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_queryToFetchStatusOfExecution() {
+    String query =
+        "select id, status from pipeline_execution_summary_cd where accountid = 'accountId' and orgidentifier = 'orgId' and projectidentifier = 'projectId' and id = any (?) and status = 'status'";
+    String queryResult = DashboardServiceHelper.queryToFetchStatusOfExecution(ACCOUNT_ID, ORG_ID, PROJECT_ID, STATUS);
+    assertThat(query).isEqualTo(queryResult);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getScopeEqualityCriteria() {
+    String criteria = "accountid = 'accountId' and orgidentifier = 'orgId' and projectidentifier = 'projectId'";
+    String criteriaResult = DashboardServiceHelper.getScopeEqualityCriteria(ACCOUNT_ID, ORG_ID, PROJECT_ID);
+    assertThat(criteria).isEqualTo(criteriaResult);
+    criteria = "accountid = 'accountId' and orgidentifier = 'orgId'";
+    criteriaResult = DashboardServiceHelper.getScopeEqualityCriteria(ACCOUNT_ID, ORG_ID, null);
+    assertThat(criteria).isEqualTo(criteriaResult);
+    criteria = "accountid = 'accountId'";
+    criteriaResult = DashboardServiceHelper.getScopeEqualityCriteria(ACCOUNT_ID, null, null);
+    assertThat(criteria).isEqualTo(criteriaResult);
   }
 }

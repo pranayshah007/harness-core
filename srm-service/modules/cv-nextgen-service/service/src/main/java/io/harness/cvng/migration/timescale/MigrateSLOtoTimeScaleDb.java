@@ -8,6 +8,7 @@
 package io.harness.cvng.migration.timescale;
 
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.SLOTimeScaleService;
 import io.harness.migration.NGMigration;
 import io.harness.persistence.HIterator;
@@ -34,6 +35,12 @@ public class MigrateSLOtoTimeScaleDb implements NGMigration {
       try (HIterator<AbstractServiceLevelObjective> iterator = new HIterator<>(serviceLevelObjectiveQuery.fetch())) {
         while (iterator.hasNext()) {
           sloTimeScaleService.upsertServiceLevelObjective(iterator.next());
+        }
+      }
+      Query<SLOHealthIndicator> sloHealthIndicator = hPersistence.createQuery(SLOHealthIndicator.class);
+      try (HIterator<SLOHealthIndicator> iterator = new HIterator<>(sloHealthIndicator.fetch())) {
+        while (iterator.hasNext()) {
+          sloTimeScaleService.upsertSloHealthIndicator(iterator.next());
         }
       }
     }

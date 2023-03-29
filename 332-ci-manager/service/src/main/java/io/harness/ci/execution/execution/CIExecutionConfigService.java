@@ -7,6 +7,7 @@
 
 package io.harness.ci.execution;
 
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.beans.steps.CIStepInfoType;
@@ -19,6 +20,7 @@ import io.harness.ci.config.CIStepConfig;
 import io.harness.ci.config.Operation;
 import io.harness.ci.config.PluginField;
 import io.harness.ci.config.StepImageConfig;
+import io.harness.ci.config.VmContainerlessStepConfig;
 import io.harness.ci.config.VmImageConfig;
 import io.harness.repositories.CIExecutionConfigRepository;
 
@@ -34,6 +36,7 @@ public class CIExecutionConfigService {
   @Inject CIExecutionConfigRepository configRepository;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
 
+  private static final String unexpectedErrFormat = "Unexpected value: %s";
   public CIExecutionServiceConfig getCiExecutionServiceConfig() {
     return ciExecutionServiceConfig;
   }
@@ -129,7 +132,7 @@ public class CIExecutionConfigService {
         executionConfig.setSscaOrchestrationTag(value);
         break;
       default:
-        throw new BadRequestException(String.format("Field %s does not exist for infra type: K8", field));
+        throw new BadRequestException(format("Field %s does not exist for infra type: K8", field));
     }
   }
 
@@ -177,7 +180,7 @@ public class CIExecutionConfigService {
         vmImageConfig.setSecurity(value);
         break;
       default:
-        throw new BadRequestException(String.format("Field %s does not exist for infra type: VM", field));
+        throw new BadRequestException(format("Field %s does not exist for infra type: VM", field));
     }
   }
 
@@ -508,7 +511,7 @@ public class CIExecutionConfigService {
         }
         break;
       default:
-        throw new BadRequestException("Unexpected value: " + stepInfoType);
+        throw new BadRequestException(format(unexpectedErrFormat, stepInfoType));
     }
     return StepImageConfig.builder()
         .entrypoint(stepImageConfig.getEntrypoint())
@@ -547,7 +550,7 @@ public class CIExecutionConfigService {
       case SSCA_ORCHESTRATION:
         return ciExecutionServiceConfig.getStepConfig().getSscaOrchestrationConfig();
       default:
-        throw new BadRequestException("Unexpected value: " + stepInfoType);
+        throw new BadRequestException(format(unexpectedErrFormat, stepInfoType));
     }
   }
 
@@ -633,9 +636,46 @@ public class CIExecutionConfigService {
         }
         break;
       default:
-        throw new BadRequestException("Unexpected value: " + stepInfoType);
+        throw new BadRequestException(format(unexpectedErrFormat, stepInfoType));
     }
     return image;
+  }
+
+  public String getContainerlessPluginNameForVM(CIStepInfoType stepInfoType) {
+    VmContainerlessStepConfig vmContainerlessStepConfig =
+        ciExecutionServiceConfig.getStepConfig().getVmContainerlessStepConfig();
+    String name = null;
+    switch (stepInfoType) {
+      case UPLOAD_S3:
+        name = vmContainerlessStepConfig.getS3UploadConfig().getName();
+        break;
+      case UPLOAD_GCS:
+        name = vmContainerlessStepConfig.getGcsUploadConfig().getName();
+        break;
+      case SAVE_CACHE_S3:
+      case RESTORE_CACHE_S3:
+        name = vmContainerlessStepConfig.getCacheS3Config().getName();
+        break;
+      case SAVE_CACHE_GCS:
+      case RESTORE_CACHE_GCS:
+        name = vmContainerlessStepConfig.getCacheGCSConfig().getName();
+        break;
+      case GIT_CLONE:
+        name = vmContainerlessStepConfig.getGitCloneConfig().getName();
+        break;
+      case DOCKER:
+      case GCR:
+      case ECR:
+      case ACR:
+      case SECURITY:
+      case UPLOAD_ARTIFACTORY:
+      case IACM:
+      case SSCA_ORCHESTRATION:
+        break;
+      default:
+        throw new BadRequestException(format(unexpectedErrFormat, stepInfoType));
+    }
+    return name;
   }
 
   private String getStepImageConfigForVM(
@@ -671,7 +711,7 @@ public class CIExecutionConfigService {
       case SSCA_ORCHESTRATION:
         return vmImageConfig.getSscaOrchestration();
       default:
-        throw new BadRequestException("Unexpected value: " + stepInfoType);
+        throw new BadRequestException(format(unexpectedErrFormat, stepInfoType));
     }
   }
 }

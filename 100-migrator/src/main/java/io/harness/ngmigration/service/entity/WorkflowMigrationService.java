@@ -293,13 +293,14 @@ public class WorkflowMigrationService extends NgMigrationService {
                                             .stages(stages)
                                             .allowStageExecutions(true)
                                             .tags(MigratorUtility.getTags(workflow.getTagLinks()))
+                                            .variables(workflowHandler.getVariables(workflow))
                                             .build())
                     .build();
       ngType = PIPELINE;
     } else {
       JsonNode templateSpec;
       try {
-        templateSpec = workflowHandler.getTemplateSpec(migrationContext, workflow, inputDTO.getIdentifierCaseFormat());
+        templateSpec = workflowHandler.getTemplateSpec(migrationContext, workflow);
       } catch (Exception e) {
         log.error("Exception during migrating workflow ", e);
         return YamlGenerationDetails.builder()
@@ -333,6 +334,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                             .orgIdentifier(orgIdentifier)
                                             .versionLabel(VERSION)
                                             .spec(templateSpec)
+                                            .tags(MigratorUtility.getTags(workflow.getTagLinks()))
                                             .build())
                     .build();
       ngType = TEMPLATE;

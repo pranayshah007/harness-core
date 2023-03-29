@@ -338,7 +338,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
     return ApplicationAutoScalingClient.builder()
         .credentialsProvider(getAwsCredentialsProvider(awsConfig))
         .region(Region.of(region))
-        .overrideConfiguration(getClientOverrideConfiguration(awsConfig))
+        .overrideConfiguration(getClientOverrideFromBackoffOverride(awsConfig))
         .build();
   }
 
@@ -347,7 +347,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
     return software.amazon.awssdk.services.ecs.EcsClient.builder()
         .credentialsProvider(getAwsCredentialsProvider(awsConfig))
         .region(Region.of(region))
-        .overrideConfiguration(getClientOverrideConfiguration(awsConfig))
+        .overrideConfiguration(getClientOverrideFromBackoffOverride(awsConfig))
         .build();
   }
 

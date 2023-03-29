@@ -20,6 +20,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateSetupDetails;
+import io.harness.delegate.beans.SupportedDelegateVersion;
 import io.harness.delegate.utilities.DelegateDeleteResponse;
 import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
 import io.harness.exception.InvalidRequestException;
@@ -48,8 +49,10 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -57,6 +60,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.hibernate.validator.constraints.Range;
 
 @Api("delegate-setup")
 @Path("/delegate-setup")
@@ -189,5 +193,49 @@ public class DelegateSetupNgResource {
       throw new InvalidRequestException(groupDeleteResponse.getErrorMsg());
     }
     return new RestResponse<>(new DelegateDeleteResponse("Successfully deleted delegate."));
+  }
+
+  @GET
+  @Timed
+  @Path("latest-supported-version")
+  @ExceptionMetered
+  @ApiOperation(value = "Gets the latest supported delegate version", nickname = "publishedDelegateVersion")
+  @Operation(operationId = "publishedDelegateVersion",
+      summary =
+          "Gets the latest supported delegate version. The version has YY.MM.XXXXX format. You can use any version lower than the returned results(upto 3 months old)",
+      responses =
+      { @ApiResponse(responseCode = "default", description = "Gets the latest supported delegate version") })
+  public RestResponse<SupportedDelegateVersion>
+  publishedDelegateVersion(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+      NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier) throws IOException {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, null, null),
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
+    SupportedDelegateVersion supportedDelegateVersion =
+        CGRestUtils.getResponse(delegateNgManagerCgManagerClient.getPublishedDelegateVersion(accountIdentifier));
+
+    return new RestResponse<>(supportedDelegateVersion);
+  }
+
+  @PUT
+  @Path("/override-delegate-tag")
+  @ApiOperation(value = "Overrides delegate image tag for account", nickname = "overrideDelegateImageTag")
+  @Timed
+  @ExceptionMetered
+  @Operation(operationId = "overrideDelegateImageTag", summary = "Overrides delegate image tag for account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Delegate Image Tag")
+      })
+  public RestResponse<String>
+  setDelegateTagOverride(@NotEmpty @QueryParam("accountIdentifier") final String accountId,
+      @NotEmpty @QueryParam("delegateTag") final String delegateTag,
+      @QueryParam("validTillNextRelease") @DefaultValue("false") final Boolean validTillNextRelease,
+      @Range(max = 90) @QueryParam("validForDays") @DefaultValue("30") final int validForDays) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountId, null, null), Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
+    String delegateImage = CGRestUtils.getResponse(delegateNgManagerCgManagerClient.overrideDelegateImage(
+        accountId, delegateTag, validTillNextRelease, validForDays));
+    return new RestResponse<>(String.format("Updated Delegate image tag to %s", delegateImage));
   }
 }

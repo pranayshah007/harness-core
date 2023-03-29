@@ -7,11 +7,7 @@
 
 package io.harness.cdng.provision.terraform.steps.rolllback;
 
-import static io.harness.cdng.provision.terraform.TerraformStepHelper.SKIP_REFRESH_COMMAND;
-import static io.harness.cdng.provision.terraform.TerraformStepHelper.TERRAFORM_CLOUD_CLI;
-
-import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V3;
-import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V4;
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
 
 import static java.lang.String.format;
 
@@ -169,9 +165,10 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
 
       if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CD_TERRAFORM_CLOUD_CLI_NG)) {
         builder.isTerraformCloudCli(rollbackConfig.isTerraformCloudCli());
-        io.harness.delegate.TaskType taskTypeV3 =
-            io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V3.name()).build();
-        terraformStepHelper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV3, TERRAFORM_CLOUD_CLI);
+      }
+
+      if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_CLI_OPTIONS_NG)) {
+        builder.terraformCommandFlags(terraformStepHelper.getTerraformCliFlags(stepParametersSpec.getCommandFlags()));
       }
 
       builder.backendConfig(rollbackConfig.getBackendConfig())
@@ -185,12 +182,6 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
 
       boolean skipRefreshCommand =
           ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommandParameter);
-
-      if (skipRefreshCommand) {
-        io.harness.delegate.TaskType taskTypeV4 =
-            io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V4.name()).build();
-        terraformStepHelper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV4, SKIP_REFRESH_COMMAND);
-      }
 
       builder.skipTerraformRefresh(skipRefreshCommand);
 

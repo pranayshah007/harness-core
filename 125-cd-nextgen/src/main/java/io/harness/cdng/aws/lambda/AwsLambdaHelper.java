@@ -9,6 +9,7 @@ package io.harness.cdng.aws.lambda;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
 
@@ -191,7 +192,7 @@ public class AwsLambdaHelper extends CDStepHelper {
     return taskChainResponse;
   }
 
-  private TaskChainResponse handlePrepareRollbackDataResponse(
+  protected TaskChainResponse handlePrepareRollbackDataResponse(
       AwsLambdaPrepareRollbackResponse awsLambdaPrepareRollbackResponse, Ambiance ambiance,
       StepElementParameters stepElementParameters, AwsLambdaStepPassThroughData awsLambdaStepPassThroughData) {
     if (awsLambdaPrepareRollbackResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
@@ -218,9 +219,12 @@ public class AwsLambdaHelper extends CDStepHelper {
             .functionConfiguration(awsLambdaPrepareRollbackResponse.getFunctionConfiguration())
             .build();
 
-    executionSweepingOutputService.consume(ambiance,
-        OutcomeExpressionConstants.AWS_LAMBDA_FUNCTION_PREPARE_ROLLBACK_OUTCOME, awsLambdaPrepareRollbackOutcome,
-        StepOutcomeGroup.STEP.name());
+    if (awsLambdaPrepareRollbackResponse.isFirstDeployment()
+        || isNotEmpty(awsLambdaPrepareRollbackResponse.getFunctionConfiguration())) {
+      executionSweepingOutputService.consume(ambiance,
+          OutcomeExpressionConstants.AWS_LAMBDA_FUNCTION_PREPARE_ROLLBACK_OUTCOME, awsLambdaPrepareRollbackOutcome,
+          StepOutcomeGroup.STEP.name());
+    }
 
     return executeTask(ambiance, stepElementParameters, awsLambdaStepPassThroughData,
         awsLambdaPrepareRollbackResponse.getUnitProgressData());

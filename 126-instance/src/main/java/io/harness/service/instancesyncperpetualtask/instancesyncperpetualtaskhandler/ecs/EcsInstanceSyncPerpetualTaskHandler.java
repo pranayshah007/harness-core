@@ -109,7 +109,7 @@ public class EcsInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
   private EcsDeploymentRelease toEcsDeploymentRelease(EcsDeploymentReleaseData releaseData) {
     return EcsDeploymentRelease.newBuilder()
         .setServiceName(releaseData.getServiceName())
-        .setEcsInfraConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getEcsInfraConfig())))
+        .setEcsInfraConfig(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(releaseData.getEcsInfraConfig())))
         .build();
   }
 

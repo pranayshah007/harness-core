@@ -45,6 +45,7 @@ public class AwsLambdaServiceV2Mapper implements ServiceV2Mapper {
       + "   \"Runtime\": \"%s\",\n"
       + "   \"Timeout\": %d\n"
       + "}";
+
   @Override
   public ServiceDefinition getServiceDefinition(MigrationContext migrationContext, Service service,
       List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
@@ -58,7 +59,7 @@ public class AwsLambdaServiceV2Mapper implements ServiceV2Mapper {
       serviceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
     if (EmptyPredicate.isNotEmpty(manifests)) {
-      serviceSpecBuilder.manifests(manifests);
+      serviceSpecBuilder.manifests(changeIdentifier(manifests, "aws_lambda_"));
     }
 
     serviceSpecBuilder.variables(MigratorUtility.getServiceVariables(migrationContext, service.getServiceVariables()));

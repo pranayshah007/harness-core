@@ -8,6 +8,7 @@
 package io.harness.delegate.task.artifacts.custom;
 
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -16,12 +17,15 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.SecretDetail;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.shell.CustomArtifactScriptExecutionOnDelegateNG;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptionConfig;
 
@@ -46,6 +50,9 @@ public class CustomArtifactServiceTest extends CategoryTest {
   @Mock CustomArtifactScriptExecutionOnDelegateNG customArtifactScriptExecutionOnDelegateNG;
   private static final String ARTIFACT_RESULT_PATH = "HARNESS_ARTIFACT_RESULT_PATH";
 
+  private final LogCallback logCallback =
+      new NGDelegateLogCallback(null, "Execute", false, CommandUnitsProgress.builder().build());
+
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
@@ -62,9 +69,32 @@ public class CustomArtifactServiceTest extends CategoryTest {
         .executeOnDelegate(any(), any());
     doReturn(Collections.singletonList(BuildDetails.Builder.aBuildDetails().withNumber("version").build()))
         .when(customArtifactScriptExecutionOnDelegateNG)
-        .getBuildDetails(any(), any());
+        .getBuildDetails(any(), any(), any());
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse1 =
-        customArtifactService.getBuilds(customArtifactDelegateRequest);
+        customArtifactService.getBuilds(customArtifactDelegateRequest, logCallback);
+    assertThat(artifactTaskExecutionResponse1).isNotNull();
+    assertThat(artifactTaskExecutionResponse1.getBuildDetails().get(0).getNumber()).isEqualTo("version");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsWithNullLogCallBack() {
+    CustomArtifactDelegateRequest customArtifactDelegateRequest = CustomArtifactDelegateRequest.builder()
+                                                                      .artifactsArrayPath("results")
+                                                                      .versionPath("version")
+                                                                      .script("echo script")
+                                                                      .workingDirectory("/tmp")
+                                                                      .build();
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
+    doReturn(ShellScriptTaskResponseNG.builder().status(CommandExecutionStatus.SUCCESS).build())
+        .when(customArtifactScriptExecutionOnDelegateNG)
+        .executeOnDelegate(any(), any());
+    doReturn(Collections.singletonList(BuildDetails.Builder.aBuildDetails().withNumber("version").build()))
+        .when(customArtifactScriptExecutionOnDelegateNG)
+        .getBuildDetails(any(), any(), any());
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse1 =
+        customArtifactService.getBuilds(customArtifactDelegateRequest, null);
     assertThat(artifactTaskExecutionResponse1).isNotNull();
     assertThat(artifactTaskExecutionResponse1.getBuildDetails().get(0).getNumber()).isEqualTo("version");
   }
@@ -93,9 +123,9 @@ public class CustomArtifactServiceTest extends CategoryTest {
         .executeOnDelegate(any(), any());
     doReturn(Collections.singletonList(BuildDetails.Builder.aBuildDetails().withNumber("version").build()))
         .when(customArtifactScriptExecutionOnDelegateNG)
-        .getBuildDetails(any(), any());
+        .getBuildDetails(any(), any(), any());
     try {
-      customArtifactService.getBuilds(customArtifactDelegateRequest);
+      customArtifactService.getBuilds(customArtifactDelegateRequest, logCallback);
     } catch (ArtifactoryRegistryException e) {
       assertThat(e.getMessage()).contains("Failed to resolve the expression");
     }
@@ -117,7 +147,7 @@ public class CustomArtifactServiceTest extends CategoryTest {
         .executeOnDelegate(any(), any());
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse1 =
-          customArtifactService.getBuilds(customArtifactDelegateRequest);
+          customArtifactService.getBuilds(customArtifactDelegateRequest, logCallback);
     } catch (InvalidArtifactServerException ex) {
       assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
     }
@@ -140,9 +170,33 @@ public class CustomArtifactServiceTest extends CategoryTest {
         .executeOnDelegate(any(), any());
     doReturn(Collections.singletonList(BuildDetails.Builder.aBuildDetails().withNumber("version").build()))
         .when(customArtifactScriptExecutionOnDelegateNG)
-        .getBuildDetails(any(), any());
+        .getBuildDetails(any(), any(), any());
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse1 =
-        customArtifactService.getLastSuccessfulBuild(customArtifactDelegateRequest);
+        customArtifactService.getLastSuccessfulBuild(customArtifactDelegateRequest, logCallback);
+    assertThat(artifactTaskExecutionResponse1).isNotNull();
+    assertThat(artifactTaskExecutionResponse1.getBuildDetails().get(0).getNumber()).isEqualTo("version");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuildDetailsWithNullLogCallback() {
+    CustomArtifactDelegateRequest customArtifactDelegateRequest = CustomArtifactDelegateRequest.builder()
+                                                                      .artifactsArrayPath("results")
+                                                                      .versionPath("version")
+                                                                      .script("echo script")
+                                                                      .workingDirectory("/tmp")
+                                                                      .version("version")
+                                                                      .build();
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
+    doReturn(ShellScriptTaskResponseNG.builder().status(CommandExecutionStatus.SUCCESS).build())
+        .when(customArtifactScriptExecutionOnDelegateNG)
+        .executeOnDelegate(any(), any());
+    doReturn(Collections.singletonList(BuildDetails.Builder.aBuildDetails().withNumber("version").build()))
+        .when(customArtifactScriptExecutionOnDelegateNG)
+        .getBuildDetails(any(), any(), any());
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse1 =
+        customArtifactService.getLastSuccessfulBuild(customArtifactDelegateRequest, null);
     assertThat(artifactTaskExecutionResponse1).isNotNull();
     assertThat(artifactTaskExecutionResponse1.getBuildDetails().get(0).getNumber()).isEqualTo("version");
   }
@@ -163,10 +217,10 @@ public class CustomArtifactServiceTest extends CategoryTest {
         .executeOnDelegate(any(), any());
     doReturn(Collections.singletonList(BuildDetails.Builder.aBuildDetails().withNumber("version2").build()))
         .when(customArtifactScriptExecutionOnDelegateNG)
-        .getBuildDetails(any(), any());
+        .getBuildDetails(any(), any(), any());
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse1 =
-          customArtifactService.getLastSuccessfulBuild(customArtifactDelegateRequest);
+          customArtifactService.getLastSuccessfulBuild(customArtifactDelegateRequest, logCallback);
     } catch (InvalidArtifactServerException ex) {
       assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
     }

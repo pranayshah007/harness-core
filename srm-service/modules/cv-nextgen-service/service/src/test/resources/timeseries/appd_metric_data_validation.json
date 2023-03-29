@@ -30,7 +30,13 @@
 	  "metricIdentifier" : "identifier",
 	  "metricValue" : 343.0,
 	  "timestamp" : 1595760660000
-  } ],
+  },{
+	  "txnName" : "Overall Application Performance",
+	  "metricName" : "zero metric",
+	  "metricIdentifier" : "zero metric identifier",
+	  "metricValue" : 0.0,
+	  "timestamp" : 1595760660000
+  }  ],
   "projectIdentifier" : "raghu_p",
   "orgIdentifier" : "harness_test",
   "connectorIdentifier" : "AppdUITest",

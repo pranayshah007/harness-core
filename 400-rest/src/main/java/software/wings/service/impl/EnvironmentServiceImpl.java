@@ -246,6 +246,15 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   }
 
   @Override
+  public Environment getWithTags(String appId, String envId) {
+    Environment environment = get(appId, envId);
+    if (environment != null) {
+      environment.setTagLinks(harnessTagService.getTagLinksWithEntityId(environment.getAccountId(), envId));
+    }
+    return environment;
+  }
+
+  @Override
   public Environment getEnvironmentByName(String appId, String environmentName) {
     return getEnvironmentByName(appId, environmentName, true);
   }

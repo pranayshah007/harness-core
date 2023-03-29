@@ -20,10 +20,8 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
-import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.environment.beans.Environment;
@@ -51,7 +49,6 @@ import org.mockito.MockitoAnnotations;
 public class EnvironmentEntitySetupUsageHelperTest extends CategoryTest {
   @Mock private SimpleVisitorFactory mockedFactory;
   @Mock private EnvironmentSetupUsagePublisher environmentSetupUsagePublisher;
-  @Mock private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Mock EntityReferenceExtractorVisitor mockedVisitor;
   @Mock EntitySetupUsageService setupUsageService;
   private static final String ACCOUNT = "ACCOUNT";
@@ -82,9 +79,6 @@ public class EnvironmentEntitySetupUsageHelperTest extends CategoryTest {
         EntityDetailProtoDTO.newBuilder().setType(EntityTypeProtoEnum.CONNECTORS).setName("connectorName").build();
     doReturn(mockedVisitor).when(mockedFactory).obtainEntityReferenceExtractorVisitor(any(), any(), any(), any());
     doReturn(Collections.singleton(referredEntityDetail)).when(mockedVisitor).getEntityReferenceSet();
-    doReturn(IdentifierRefProtoDTO.newBuilder().build())
-        .when(identifierRefProtoDTOHelper)
-        .createIdentifierRefProtoDTO(ACCOUNT, ORG, PROJECT, "environmentId");
     environmentEntitySetupUsageHelper.updateSetupUsages(environment, Collections.singleton(referredEntityDetail), null);
 
     ArgumentCaptor<EntityDetailProtoDTO> referredByCaptor = ArgumentCaptor.forClass(EntityDetailProtoDTO.class);
@@ -108,10 +102,6 @@ public class EnvironmentEntitySetupUsageHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteSetupUsages() {
     final Environment environment = getEnvironmentEntity();
-
-    doReturn(IdentifierRefProtoDTO.newBuilder().build())
-        .when(identifierRefProtoDTOHelper)
-        .createIdentifierRefProtoDTO(ACCOUNT, ORG, PROJECT, "environmentId");
     environmentEntitySetupUsageHelper.deleteSetupUsages(environment);
 
     ArgumentCaptor<EntityDetailProtoDTO> captor = ArgumentCaptor.forClass(EntityDetailProtoDTO.class);

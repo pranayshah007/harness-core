@@ -9,6 +9,7 @@ package io.harness.cvng.core.entities;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
@@ -30,7 +31,7 @@ import lombok.experimental.FieldNameConstants;
 public class LogFeedbackHistoryEntity implements PersistentEntity {
   @Id String historyId;
   @FdIndex String feedbackId;
-  LogFeedbackEntity logFeedbackEntity;
+  LogFeedback logFeedbackEntity;
   String createdByUser;
   String updatedByUser;
   @FdIndex String accountIdentifier;

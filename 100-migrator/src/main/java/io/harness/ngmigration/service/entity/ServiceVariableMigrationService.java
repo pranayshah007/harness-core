@@ -218,8 +218,11 @@ public class ServiceVariableMigrationService extends NgMigrationService {
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
-    NgEntityDetail ngEntityDetail =
-        NgEntityDetail.builder().orgIdentifier(orgIdentifier).projectIdentifier(projectIdentifier).build();
+    NgEntityDetail ngEntityDetail = NgEntityDetail.builder()
+                                        .entityType(SERVICE_VARIABLE)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .build();
     String environmentRef = MigratorUtility.getIdentifierWithScope(migratedEntities, envId, ENVIRONMENT);
     String serviceRef = MigratorUtility.getIdentifierWithScope(migratedEntities, serviceId, SERVICE);
     NGServiceOverrideConfig serviceOverride = NGServiceOverrideConfig.builder()

@@ -45,6 +45,7 @@ import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.ServiceNowTicketNG.ServiceNowTicketNGBuilder;
+import io.harness.servicenow.ServiceNowTicketTypeDTO;
 import io.harness.servicenow.ServiceNowTicketTypeNG;
 import io.harness.servicenow.ServiceNowUtils;
 
@@ -123,6 +124,8 @@ public class ServiceNowTaskNgHelper {
         return createImportSet(serviceNowTaskNGParameters, executionLogCallback);
       case GET_IMPORT_SET_STAGING_TABLES:
         return getStagingTableList(serviceNowTaskNGParameters);
+      case GET_TICKET_TYPES:
+        return getTicketTypes(serviceNowTaskNGParameters);
       default:
         throw new InvalidRequestException(
             String.format("Invalid servicenow task action: %s", serviceNowTaskNGParameters.getAction()));
@@ -131,11 +134,9 @@ public class ServiceNowTaskNgHelper {
 
   private void validateServiceNowTaskInputs(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
     String ticketType = serviceNowTaskNGParameters.getTicketType();
-    List<String> validTicketTypes = Arrays.stream(ServiceNowTicketTypeNG.values())
-                                        .map(entry -> entry.toString().toLowerCase())
-                                        .collect(Collectors.toList());
-    if (EmptyPredicate.isEmpty(ticketType) || !validTicketTypes.contains(ticketType.toLowerCase())) {
-      throw new InvalidRequestException(String.format("Invalid ticketType for ServiceNow: %s", ticketType));
+    // allowing custom tables too , hence ticketType is not validated to be in ServiceNowTicketTypeNG
+    if (StringUtils.isBlank(ticketType)) {
+      throw new InvalidRequestException("Blank ticketType provided for ServiceNow");
     }
   }
 
@@ -727,6 +728,41 @@ public class ServiceNowTaskNgHelper {
       throw new ServiceNowException(
           String.format("Error occurred while fetching serviceNow staging tables: %s", ExceptionUtils.getMessage(ex)),
           SERVICENOW_ERROR, USER, ex);
+    }
+  }
+
+  private ServiceNowTaskNGResponse getTicketTypes(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+    ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
+    ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
+    List<ServiceNowTicketTypeDTO> standardTicketTypes =
+        Arrays.stream(ServiceNowTicketTypeNG.values())
+            .map(ticketType -> new ServiceNowTicketTypeDTO(ticketType.name(), ticketType.getDisplayName()))
+            .collect(Collectors.toList());
+    ServiceNowTaskNGResponse standardTicketTypeServiceResponse =
+        ServiceNowTaskNGResponse.builder().serviceNowTicketTypeList(standardTicketTypes).build();
+    final Call<JsonNode> request =
+        serviceNowRestClient.getTicketTypes(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO));
+    Response<JsonNode> response = null;
+    try {
+      response = Retry.decorateCallable(retry, () -> request.clone().execute()).call();
+      log.info("Response received from serviceNow: {}", response);
+      handleResponse(response, "Failed to get ServiceNow ticket types");
+      JsonNode responseObj = response.body().get("result");
+      List<ServiceNowTicketTypeDTO> ticketTypes = new ArrayList<>();
+      if (responseObj != null && responseObj.isArray()) {
+        for (final JsonNode ticketType : responseObj) {
+          ticketTypes.add(new ServiceNowTicketTypeDTO(ticketType));
+        }
+        return ServiceNowTaskNGResponse.builder().serviceNowTicketTypeList(ticketTypes).build();
+      } else {
+        log.warn("Failed to fetch ticket types, received response: {}, defaulting to standard ticket types",
+            response.body());
+        return standardTicketTypeServiceResponse;
+      }
+    } catch (Exception e) {
+      log.warn(
+          "Failed to fetch ticket types, defaulting to standard ticket types: {}", ExceptionUtils.getMessage(e), e);
+      return standardTicketTypeServiceResponse;
     }
   }
 

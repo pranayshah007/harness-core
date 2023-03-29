@@ -6,6 +6,9 @@
  */
 package io.harness.idp.configmanager.repositories;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity.AppConfigEntityKeys;
 
@@ -18,13 +21,15 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 public class AppConfigRepositoryCustomImpl implements AppConfigRepositoryCustom {
   private MongoTemplate mongoTemplate;
 
   @Override
-  public AppConfigEntity updateConfig(AppConfigEntity appConfigEntity) {
-    Criteria criteria = getCriteriaForPlugin(appConfigEntity.getAccountIdentifier(), appConfigEntity.getPluginId());
+  public AppConfigEntity updateConfig(AppConfigEntity appConfigEntity, ConfigType configType) {
+    Criteria criteria =
+        getCriteriaForConfig(appConfigEntity.getAccountIdentifier(), appConfigEntity.getConfigId(), configType);
     Query query = new Query(criteria);
     Update update = new Update();
     update.set(AppConfigEntityKeys.configs, appConfigEntity.getConfigs());
@@ -34,8 +39,9 @@ public class AppConfigRepositoryCustomImpl implements AppConfigRepositoryCustom 
   }
 
   @Override
-  public AppConfigEntity updatePluginEnablement(String accountIdentifier, String pluginId, Boolean enabled) {
-    Criteria criteria = getCriteriaForPlugin(accountIdentifier, pluginId);
+  public AppConfigEntity updateConfigEnablement(
+      String accountIdentifier, String configId, Boolean enabled, ConfigType configType) {
+    Criteria criteria = getCriteriaForConfig(accountIdentifier, configId, configType);
     Query query = new Query(criteria);
     Update update = new Update();
     update.set(AppConfigEntityKeys.enabled, enabled);
@@ -44,10 +50,12 @@ public class AppConfigRepositoryCustomImpl implements AppConfigRepositoryCustom 
     return mongoTemplate.findAndModify(query, update, options, AppConfigEntity.class);
   }
 
-  private Criteria getCriteriaForPlugin(String accountIdentifier, String pluginId) {
+  private Criteria getCriteriaForConfig(String accountIdentifier, String configId, ConfigType configType) {
     return Criteria.where(AppConfigEntityKeys.accountIdentifier)
         .is(accountIdentifier)
-        .and(AppConfigEntityKeys.pluginId)
-        .is(pluginId);
+        .and(AppConfigEntityKeys.configId)
+        .is(configId)
+        .and(AppConfigEntityKeys.configType)
+        .is(configType);
   }
 }

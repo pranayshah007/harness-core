@@ -9,6 +9,10 @@ package io.harness.ng.trialsignup;
 
 import static io.harness.beans.FeatureName.HOSTED_BUILDS;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
+import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
+import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
+import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
 import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
 import static io.harness.ng.NextGenModule.CONNECTOR_DECORATOR_SERVICE;
 import static io.harness.telemetry.Destination.AMPLITUDE;
@@ -25,6 +29,7 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.helper.DecryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateSetupDetails;
@@ -36,6 +41,30 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.Edition;
@@ -45,15 +74,20 @@ import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.services.LicenseService;
 import io.harness.network.Http;
 import io.harness.ng.NextGenConfiguration;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClient;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
+import io.harness.ng.trialsignup.AutogenInput.AutogenInputBuilder;
 import io.harness.ng.trialsignup.ProvisionResponse.DelegateStatus;
 import io.harness.rest.RestResponse;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.ScmClient;
 import io.harness.telemetry.TelemetryReporter;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -61,6 +95,8 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -70,6 +106,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeroturnaround.exec.ProcessExecutor;
@@ -79,13 +117,17 @@ import retrofit2.Response;
 @Slf4j
 public class ProvisionService {
   @Inject SecretCrudService ngSecretService;
+
+  @Inject private SecretManagerClientService secretManagerClientService;
+  @Inject private SecretManagerClientService ngSecret;
   @Inject FeatureFlagService featureFlagService;
   @Inject DelegateNgManagerCgManagerClient delegateTokenNgClient;
   @Inject NextGenConfiguration configuration;
   @Inject LicenseService licenseService;
   @Inject @Named(CONNECTOR_DECORATOR_SERVICE) private ConnectorService connectorService;
-  @Inject private ScmClient scmClient;
+  @Inject ScmClient scmClient;
   @Inject TelemetryReporter telemetryReporter;
+  @Inject DecryptionHelper decryptionHelper;
 
   private static final String K8S_CONNECTOR_NAME = "Harness Kubernetes Cluster";
   private static final String K8S_CONNECTOR_DESC =
@@ -317,8 +359,7 @@ public class ProvisionService {
     SecretDTOV2 secretDTOV2 = scmConnectorDTO.getSecret();
     ConnectorInfoDTO connectorInfoDTO = scmConnectorDTO.getConnectorInfo();
 
-    if (connectorInfoDTO.getConnectorType() != ConnectorType.GITHUB
-        && connectorInfoDTO.getConnectorType() != ConnectorType.BITBUCKET
+    if (connectorInfoDTO.getConnectorType() != GITHUB && connectorInfoDTO.getConnectorType() != ConnectorType.BITBUCKET
         && connectorInfoDTO.getConnectorType() != ConnectorType.GITLAB) {
       log.error("Connector type for SCM not valid: {}", connectorInfoDTO.getConnectorType());
       return ScmConnectorResponse.builder()
@@ -360,6 +401,141 @@ public class ProvisionService {
         .build();
   }
 
+  // project / org and account information will always come from UI.
+  // based on the connectorIdentifier, decide the type of connector.
+  // for account type connectors expecting repo to come like : harness-core or harness/harness-core
+  // for repo type connectors expecting repo to be empty.
+  public String generateYaml(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String connectorIdentifier, String repo) {
+    BaseNGAccess build = BaseNGAccess.builder()
+                             .accountIdentifier(accountIdentifier)
+                             .orgIdentifier(orgIdentifier)
+                             .projectIdentifier(projectIdentifier)
+                             .build();
+    // check if `account.` needs to be trimmed in case of
+    Optional<ConnectorResponseDTO> connectorResponseDTO =
+        connectorService.get(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+    if (!connectorResponseDTO.isPresent()) {
+      throw new InvalidRequestException(String.format("connector %s doesn't exists", connectorIdentifier));
+    }
+    AutogenInputBuilder builder;
+    ConnectorInfoDTO connectorConfig = connectorResponseDTO.get().getConnector();
+    if (connectorResponseDTO.get().getConnector().getConnectorType() == GITHUB) {
+      builder = getGithubCredentials(build, connectorConfig);
+    } else if (connectorResponseDTO.get().getConnector().getConnectorType() == GITLAB) {
+      builder = getGitlabCredentials(build, connectorConfig);
+    } else if (connectorResponseDTO.get().getConnector().getConnectorType() == BITBUCKET) {
+      builder = getBitbucketCredentials(build, connectorConfig);
+    } else if (connectorResponseDTO.get().getConnector().getConnectorType() == AZURE_REPO) {
+      builder = getAzureCredentials(build, connectorConfig);
+    } else {
+      builder = AutogenInput.builder();
+    }
+    AutogenInput autogenInput = builder.build();
+    return scmClient.autogenerateStageYamlForCI(updateUrl(autogenInput, repo)).getYaml();
+  }
+
+  @NotNull
+  private AutogenInputBuilder getAzureCredentials(BaseNGAccess build, ConnectorInfoDTO connectorConfig) {
+    AutogenInputBuilder builder;
+    builder = AutogenInput.builder();
+    AzureRepoConnectorDTO connectorDTO = (AzureRepoConnectorDTO) connectorConfig.getConnectorConfig();
+    AzureRepoAuthenticationDTO credential = connectorDTO.getAuthentication();
+    AzureRepoHttpCredentialsDTO credentials = (AzureRepoHttpCredentialsDTO) credential.getCredentials();
+    AzureRepoUsernameTokenDTO httpCredentialsSpec = (AzureRepoUsernameTokenDTO) credentials.getHttpCredentialsSpec();
+    List<EncryptedDataDetail> authenticationEncryptedDataDetails =
+        ngSecret.getEncryptionDetails(build, httpCredentialsSpec);
+    AzureRepoUsernameTokenDTO decrypt =
+        (AzureRepoUsernameTokenDTO) decryptionHelper.decrypt(httpCredentialsSpec, authenticationEncryptedDataDetails);
+    builder.username(httpCredentialsSpec.getUsername())
+        .password(String.copyValueOf(decrypt.getTokenRef().getDecryptedValue()))
+        .repo(connectorDTO.getGitConnectionUrl());
+    return builder;
+  }
+
+  private AutogenInputBuilder getGithubCredentials(BaseNGAccess ngAccess, ConnectorInfoDTO connectorConfig) {
+    GithubConnectorDTO connectorConfig1 = (GithubConnectorDTO) connectorConfig.getConnectorConfig();
+    AutogenInputBuilder inputBuilder = AutogenInput.builder();
+    inputBuilder.repo(connectorConfig1.getUrl());
+    GithubAuthenticationDTO authentication = connectorConfig1.getAuthentication();
+    GithubHttpCredentialsDTO credentials = (GithubHttpCredentialsDTO) authentication.getCredentials();
+    GithubHttpAuthenticationType type = credentials.getType();
+    if (type == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD) {
+      GithubUsernamePasswordDTO httpCredentialsSpec = (GithubUsernamePasswordDTO) credentials.getHttpCredentialsSpec();
+      List<EncryptedDataDetail> authenticationEncryptedDataDetails =
+          ngSecret.getEncryptionDetails(ngAccess, httpCredentialsSpec);
+      GithubUsernamePasswordDTO decrypt =
+          (GithubUsernamePasswordDTO) decryptionHelper.decrypt(httpCredentialsSpec, authenticationEncryptedDataDetails);
+      inputBuilder.password(String.copyValueOf(decrypt.getPasswordRef().getDecryptedValue()));
+    } else if (type == GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
+      GithubUsernameTokenDTO httpCredentialsSpec = (GithubUsernameTokenDTO) credentials.getHttpCredentialsSpec();
+      List<EncryptedDataDetail> authenticationEncryptedDataDetails =
+          ngSecret.getEncryptionDetails(ngAccess, httpCredentialsSpec);
+      GithubUsernameTokenDTO decrypt =
+          (GithubUsernameTokenDTO) decryptionHelper.decrypt(httpCredentialsSpec, authenticationEncryptedDataDetails);
+      inputBuilder.password(String.copyValueOf(decrypt.getTokenRef().getDecryptedValue()));
+    } else if (type == GithubHttpAuthenticationType.OAUTH) {
+      GithubOauthDTO httpCredentialsSpec = (GithubOauthDTO) credentials.getHttpCredentialsSpec();
+      List<EncryptedDataDetail> authenticationEncryptedDataDetails =
+          ngSecret.getEncryptionDetails(ngAccess, httpCredentialsSpec);
+      GithubOauthDTO decrypt =
+          (GithubOauthDTO) decryptionHelper.decrypt(httpCredentialsSpec, authenticationEncryptedDataDetails);
+      inputBuilder.password(String.copyValueOf(decrypt.getTokenRef().getDecryptedValue()));
+    }
+    return inputBuilder;
+  }
+
+  private AutogenInputBuilder getGitlabCredentials(BaseNGAccess ngAccess, ConnectorInfoDTO connectorConfig) {
+    AutogenInputBuilder inputBuilder = AutogenInput.builder();
+    GitlabConnectorDTO connectorConfig1 = (GitlabConnectorDTO) connectorConfig.getConnectorConfig();
+    inputBuilder.repo(connectorConfig1.getUrl());
+    GitlabAuthenticationDTO authentication = connectorConfig1.getAuthentication();
+    GitlabHttpCredentialsDTO credentials = (GitlabHttpCredentialsDTO) authentication.getCredentials();
+    GitlabHttpAuthenticationType type = credentials.getType();
+    if (type == GitlabHttpAuthenticationType.USERNAME_AND_PASSWORD) {
+      GitlabUsernamePasswordDTO httpCredentialsSpec = (GitlabUsernamePasswordDTO) credentials.getHttpCredentialsSpec();
+      List<EncryptedDataDetail> authenticationEncryptedDataDetails =
+          ngSecret.getEncryptionDetails(ngAccess, httpCredentialsSpec);
+      GitlabUsernamePasswordDTO decrypt =
+          (GitlabUsernamePasswordDTO) decryptionHelper.decrypt(httpCredentialsSpec, authenticationEncryptedDataDetails);
+      inputBuilder.password(String.copyValueOf(decrypt.getPasswordRef().getDecryptedValue()));
+    } else if (type == GitlabHttpAuthenticationType.USERNAME_AND_TOKEN) {
+      GitlabUsernameTokenDTO httpCredentialsSpec = (GitlabUsernameTokenDTO) credentials.getHttpCredentialsSpec();
+      List<EncryptedDataDetail> authenticationEncryptedDataDetails =
+          ngSecret.getEncryptionDetails(ngAccess, httpCredentialsSpec);
+      GitlabUsernameTokenDTO decrypt =
+          (GitlabUsernameTokenDTO) decryptionHelper.decrypt(httpCredentialsSpec, authenticationEncryptedDataDetails);
+      inputBuilder.password(String.copyValueOf(decrypt.getTokenRef().getDecryptedValue()));
+    } else if (type == GitlabHttpAuthenticationType.OAUTH) {
+      GitlabOauthDTO httpCredentialsSpec = (GitlabOauthDTO) credentials.getHttpCredentialsSpec();
+      List<EncryptedDataDetail> authenticationEncryptedDataDetails =
+          ngSecret.getEncryptionDetails(ngAccess, httpCredentialsSpec);
+      GitlabOauthDTO decrypt =
+          (GitlabOauthDTO) decryptionHelper.decrypt(httpCredentialsSpec, authenticationEncryptedDataDetails);
+      inputBuilder.password(String.copyValueOf(decrypt.getTokenRef().getDecryptedValue()));
+    }
+    return inputBuilder;
+  }
+
+  private AutogenInputBuilder getBitbucketCredentials(BaseNGAccess ngAccess, ConnectorInfoDTO connectorConfig) {
+    AutogenInputBuilder inputBuilder = AutogenInput.builder();
+    BitbucketConnectorDTO connectorConfig1 = (BitbucketConnectorDTO) connectorConfig.getConnectorConfig();
+    inputBuilder.repo(connectorConfig1.getUrl());
+    BitbucketAuthenticationDTO authentication = connectorConfig1.getAuthentication();
+    BitbucketHttpCredentialsDTO credentials = (BitbucketHttpCredentialsDTO) authentication.getCredentials();
+    BitbucketHttpAuthenticationType type = credentials.getType();
+    if (type == BitbucketHttpAuthenticationType.USERNAME_AND_PASSWORD) {
+      BitbucketUsernamePasswordDTO httpCredentialsSpec =
+          (BitbucketUsernamePasswordDTO) credentials.getHttpCredentialsSpec();
+      List<EncryptedDataDetail> authenticationEncryptedDataDetails =
+          ngSecret.getEncryptionDetails(ngAccess, httpCredentialsSpec);
+      BitbucketUsernamePasswordDTO decrypt = (BitbucketUsernamePasswordDTO) decryptionHelper.decrypt(
+          httpCredentialsSpec, authenticationEncryptedDataDetails);
+      inputBuilder.password(String.copyValueOf(decrypt.getPasswordRef().getDecryptedValue()));
+    }
+    return inputBuilder;
+  }
+
   public void refreshCode(String clientId, String clientSecret, String endpoint, String refreshCode) {
     scmClient.refreshToken(null, clientId, clientSecret, endpoint, refreshCode);
   }
@@ -385,5 +561,41 @@ public class ProvisionService {
         moduleLicenseDTO.getLicenseType(), moduleLicenseDTO.getStatus());
 
     return false;
+  }
+
+  @VisibleForTesting
+  String updateUrl(AutogenInput input, String inputRepo) {
+    String cloneUrl = "";
+    String userName = input.getUsername();
+    if (StringUtils.isEmpty(userName)) {
+      userName = "default";
+    }
+    String repo = input.getRepo();
+    URI uri;
+    try {
+      uri = new URI(repo);
+    } catch (URISyntaxException e) {
+      throw new InvalidRequestException("format of url is incorrect");
+    }
+
+    String urlPath = uri.getPath();
+    String[] split = urlPath.split("/");
+    if (StringUtils.isEmpty(urlPath) || urlPath.equals("/")) {
+      cloneUrl = input.getRepo() + "/" + inputRepo;
+    } else if (split.length == 2) {
+      // account level
+      cloneUrl = input.getRepo() + inputRepo.substring(inputRepo.lastIndexOf('/'));
+    } else {
+      // repo level
+      // do nothing as the url already contains complete path
+      cloneUrl = input.getRepo();
+    }
+
+    cloneUrl = cloneUrl.replace("https://", "");
+
+    // sanity to remove multiple // in url path
+    cloneUrl = cloneUrl.replace("//", "/");
+    cloneUrl = "https://" + userName + ":" + input.getPassword() + "@" + cloneUrl;
+    return cloneUrl;
   }
 }

@@ -19,6 +19,8 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackParameters;
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserWithRollback;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
 import io.harness.advisers.retry.RetryAdviserRollbackParameters;
 import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
@@ -365,11 +367,12 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
                   .build());
           break;
         case PIPELINE_ROLLBACK:
-          rollbackParameters = PlanCreatorUtilsCommon.getRollbackParameters(
-              currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
-          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
-                                        .build());
+          OnFailPipelineRollbackParameters onFailPipelineRollbackParameters =
+              GenericPlanCreatorUtils.buildOnFailPipelineRollbackParameters(failureTypes);
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(OnFailPipelineRollbackAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(onFailPipelineRollbackParameters)))
+                  .build());
           break;
         case MARK_AS_FAILURE:
           adviserObtainmentList.add(

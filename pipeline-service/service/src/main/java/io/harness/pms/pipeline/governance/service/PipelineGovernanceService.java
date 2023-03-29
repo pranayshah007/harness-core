@@ -17,8 +17,10 @@ public interface PipelineGovernanceService {
   GovernanceMetadata validateGovernanceRulesAndThrowExceptionIfDenied(
       String accountId, String orgIdentifier, String projectIdentifier, String yamlWithResolvedTemplates);
 
+  String fetchExpandedPipelineJSONFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineYaml, boolean isExecution, String action);
   String fetchExpandedPipelineJSONFromYaml(
-      String accountId, String orgIdentifier, String projectIdentifier, String pipelineYaml, boolean isExecution);
-  String fetchExpandedPipelineJSONFromYaml(
-      PipelineEntity pipelineEntity, String pipelineYaml, boolean isExecution, String branch);
+      PipelineEntity pipelineEntity, String pipelineYaml, boolean isExecution, String branch, String action);
+  String getExpandedPipelineJSONFromYaml(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineYaml, boolean isExecution, String branch, PipelineEntity pipelineEntity);
 }

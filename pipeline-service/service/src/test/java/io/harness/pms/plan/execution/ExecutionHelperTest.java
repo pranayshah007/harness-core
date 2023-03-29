@@ -43,6 +43,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.opaclient.model.OpaConstants;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
@@ -314,7 +315,8 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getStagesExecutionMetadata().isStagesExecution()).isEqualTo(false);
     assertThat(planExecutionMetadata.getProcessedYaml()).isEqualTo(YamlUtils.injectUuid(mergedPipelineYaml));
     verify(pipelineGovernanceService, times(1))
-        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYaml, true);
+        .fetchExpandedPipelineJSONFromYaml(
+            accountId, orgId, projectId, mergedPipelineYaml, true, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
 
     buildExecutionMetadataVerifications(pipelineEntity);
   }
@@ -349,7 +351,8 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getStagesExecutionMetadata().isStagesExecution()).isEqualTo(false);
     assertThat(planExecutionMetadata.getProcessedYaml()).isEqualTo(YamlUtils.injectUuid(mergedPipelineYaml));
     verify(pipelineGovernanceService, times(1))
-        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYaml, true);
+        .fetchExpandedPipelineJSONFromYaml(
+            accountId, orgId, projectId, mergedPipelineYaml, true, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
 
     buildExecutionMetadataVerifications(inlinePipeline);
   }
@@ -384,7 +387,8 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getStagesExecutionMetadata().isStagesExecution()).isEqualTo(false);
     assertThat(planExecutionMetadata.getProcessedYaml()).isEqualTo(YamlUtils.injectUuid(mergedPipelineYaml));
     verify(pipelineGovernanceService, times(1))
-        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYaml, true);
+        .fetchExpandedPipelineJSONFromYaml(
+            accountId, orgId, projectId, mergedPipelineYaml, true, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
 
     buildExecutionMetadataVerifications(remotePipeline);
   }
@@ -427,7 +431,8 @@ public class ExecutionHelperTest extends CategoryTest {
         .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, pipelineYaml);
     verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
     verify(pipelineGovernanceService, times(1))
-        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYaml, true);
+        .fetchExpandedPipelineJSONFromYaml(
+            accountId, orgId, projectId, mergedPipelineYaml, true, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
   }
 
   @Test
@@ -463,7 +468,8 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getStagesExecutionMetadata().getExpressionValues()).isNull();
     assertThat(planExecutionMetadata.getProcessedYaml()).isEqualTo(YamlUtils.injectUuid(mergedPipelineYamlForS2));
     verify(pipelineGovernanceService, times(1))
-        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYamlForS2, true);
+        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYamlForS2, true,
+            OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
 
     verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
     verify(pmsGitSyncHelper, times(1))
@@ -522,7 +528,8 @@ public class ExecutionHelperTest extends CategoryTest {
             accountId, orgId, projectId, pipelineId, pipelineYamlWithExpressions);
     verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
     verify(pipelineGovernanceService, times(1))
-        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYamlForS2WithExpression, true);
+        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYamlForS2WithExpression, true,
+            OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
   }
 
   @Test
@@ -772,8 +779,10 @@ public class ExecutionHelperTest extends CategoryTest {
                                               .build();
     PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().build();
     String startingNodeId = "startingNodeId";
-    PlanCreationBlobResponse planCreationBlobResponse =
-        PlanCreationBlobResponse.newBuilder().setStartingNodeId(startingNodeId).build();
+    PlanCreationBlobResponse planCreationBlobResponse = PlanCreationBlobResponse.newBuilder()
+                                                            .setStartingNodeId(startingNodeId)
+                                                            .addPreservedNodesInRollbackMode("n1")
+                                                            .build();
     doReturn(planCreationBlobResponse)
         .when(planCreatorMergeService)
         .createPlanVersioned(accountId, orgId, projectId, PipelineVersion.V0, executionMetadata, planExecutionMetadata);
@@ -789,7 +798,8 @@ public class ExecutionHelperTest extends CategoryTest {
                                                     .build();
     doReturn(plan)
         .when(rollbackModeExecutionHelper)
-        .transformPlanForRollbackMode(plan, "prevId", Collections.emptyList(), ExecutionMode.POST_EXECUTION_ROLLBACK);
+        .transformPlanForRollbackMode(
+            plan, "prevId", Collections.singletonList("n1"), ExecutionMode.POST_EXECUTION_ROLLBACK);
     doReturn(planExecution)
         .when(orchestrationService)
         .startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
@@ -800,7 +810,8 @@ public class ExecutionHelperTest extends CategoryTest {
         .createPlanVersioned(accountId, orgId, projectId, PipelineVersion.V0, executionMetadata, planExecutionMetadata);
     verify(orchestrationService, times(1)).startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
     verify(rollbackModeExecutionHelper, times(1))
-        .transformPlanForRollbackMode(plan, "prevId", Collections.emptyList(), ExecutionMode.POST_EXECUTION_ROLLBACK);
+        .transformPlanForRollbackMode(
+            plan, "prevId", Collections.singletonList("n1"), ExecutionMode.POST_EXECUTION_ROLLBACK);
   }
 
   @Test
@@ -862,7 +873,8 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getYaml()).isEqualTo(pipelineYamlV1);
     assertThat(planExecutionMetadata.getStagesExecutionMetadata().isStagesExecution()).isFalse();
     verify(pipelineGovernanceService, times(1))
-        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, pipelineYamlV1, true);
+        .fetchExpandedPipelineJSONFromYaml(
+            accountId, orgId, projectId, pipelineYamlV1, true, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
     verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
     verify(pmsGitSyncHelper, times(1))
         .getGitSyncBranchContextBytesThreadLocal(pipelineEntity, pipelineEntity.getStoreType(), null, null);

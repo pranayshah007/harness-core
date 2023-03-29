@@ -655,13 +655,16 @@ public class StateMachineExecutor implements StateInspectionListener {
 
       handleResponse(context, executionResponse);
     } catch (StateExecutionInstanceUpdateException exception) {
-      log.error("Exception occurred while updating state execution instance : {}", exception);
+      log.error(
+          String.format("Exception occurred while updating state execution instance : %s", stateExecutionInstance),
+          exception);
     } catch (WingsException exception) {
       ex = exception;
-      log.error("Exception occurred while starting state execution : {}", exception);
+      log.error(
+          String.format("Exception occurred while starting state execution : %s", stateExecutionInstance), exception);
     } catch (Exception exception) {
       ex = new WingsException(exception);
-      log.error("Exception occurred while starting state execution : {}", ex);
+      log.error(String.format("Exception occurred while starting state execution : %s", stateExecutionInstance), ex);
     }
 
     if (ex != null) {

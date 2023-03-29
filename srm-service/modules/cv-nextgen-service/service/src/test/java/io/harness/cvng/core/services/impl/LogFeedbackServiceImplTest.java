@@ -23,6 +23,7 @@ import io.harness.cvng.core.services.api.LogFeedbackService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.UserPrincipal;
@@ -43,8 +44,10 @@ import org.mockito.MockitoAnnotations;
 public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
   @Inject private LogFeedbackService logFeedbackService;
   @Inject private VerificationTaskService verificationTaskService;
+  @Inject private HPersistence hPersistence;
 
   VerificationJobInstance verificationJobInstance;
+  String verificationTaskUuid;
 
   @Mock private VerificationJobInstanceService verificationJobInstanceService;
   private ProjectPathParams projectPathParams;
@@ -69,7 +72,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
         new UserPrincipal("test", "test@harness.io", "test", projectPathParams.getAccountIdentifier());
     SecurityContextBuilder.setContext(userPrincipal);
     FieldUtils.writeField(logFeedbackService, "verificationJobInstanceService", verificationJobInstanceService, true);
-    verificationTaskService.createDeploymentVerificationTask(
+    verificationTaskUuid = verificationTaskService.createDeploymentVerificationTask(
         projectPathParams.getAccountIdentifier(), "", "abcd", new HashMap<>());
   }
 
@@ -94,7 +97,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
     assertThat(logFeedbackHistoryList.size()).isEqualTo(1);
     LogFeedbackHistory logFeedbackHistory = logFeedbackHistoryList.get(0);
     assertThat(logFeedbackHistory.getCreatedBy()).isEqualTo("test@harness.io");
-    assertThat(logFeedbackHistory.getUpdatedBy()).isNull();
+    assertThat(logFeedbackHistory.getUpdatedBy()).isEqualTo("test@harness.io");
     assertThat(getLogFeedback.getFeedbackId()).isEqualTo(createLogFeedback.getFeedbackId());
     assertThat(getLogFeedback.getFeedbackScore()).isEqualTo(logFeedback.getFeedbackScore());
     assertThat(getLogFeedback.getDescription()).isEqualTo(logFeedback.getDescription());
@@ -104,7 +107,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(verificationJobInstance.getResolvedJob().getEnvIdentifier());
     assertThat(getLogFeedback.getSampleMessage()).isEqualTo(logFeedback.getSampleMessage());
     assertThat(getLogFeedback.getCreatedBy()).isEqualTo("test");
-    assertThat(getLogFeedback.getUpdatedby()).isNull();
+    assertThat(getLogFeedback.getUpdatedBy()).isEqualTo("test");
     assertThat(getLogFeedback.getCreatedAt()).isNotNull();
   }
 
@@ -132,6 +135,12 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
         logFeedbackBuilder.feedbackScore(LogFeedback.FeedbackScore.NO_RISK_CONSIDER_FREQUENCY).build();
     logFeedbackService.update(projectPathParams, logFeedback.getFeedbackId(), updateLogFeedback);
 
+    List<LogFeedbackHistory> logFeedbackHistoryList =
+        logFeedbackService.history(projectPathParams, logFeedback.getFeedbackId());
+    assertThat(logFeedbackHistoryList.get(0).getLogFeedback().getFeedbackScore())
+        .isEqualTo(LogFeedback.FeedbackScore.HIGH_RISK);
+    assertThat(logFeedbackHistoryList.get(1).getLogFeedback().getFeedbackScore())
+        .isEqualTo(LogFeedback.FeedbackScore.NO_RISK_CONSIDER_FREQUENCY);
     LogFeedback updatedLogFeedback = logFeedbackService.get(projectPathParams, logFeedback.getFeedbackId());
     assertThat(updatedLogFeedback.getFeedbackId()).isEqualTo(logFeedback.getFeedbackId());
     assert updateLogFeedback != null;
@@ -143,7 +152,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(verificationJobInstance.getResolvedJob().getEnvIdentifier());
     assertThat(updatedLogFeedback.getSampleMessage()).isEqualTo(updateLogFeedback.getSampleMessage());
     assertThat(updatedLogFeedback.getCreatedBy()).isEqualTo("test");
-    assertThat(updatedLogFeedback.getUpdatedby()).isEqualTo("test");
+    assertThat(updatedLogFeedback.getUpdatedBy()).isEqualTo("test");
     assertThat(updatedLogFeedback.getCreatedAt()).isNotNull();
     assertThat(updatedLogFeedback.getUpdatedAt()).isNotNull();
   }
@@ -213,7 +222,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
     assertThat(logFeedbackHistoryList.size()).isEqualTo(2);
     LogFeedbackHistory logFeedbackHistory1 = logFeedbackHistoryList.get(0);
     assertThat(logFeedbackHistory1.getCreatedBy()).isEqualTo("test@harness.io");
-    assertThat(logFeedbackHistory1.getUpdatedBy()).isNull();
+    assertThat(logFeedbackHistory1.getUpdatedBy()).isEqualTo("test@harness.io");
 
     LogFeedbackHistory logFeedbackHistory2 = logFeedbackHistoryList.get(1);
     assertThat(logFeedbackHistory2.getCreatedBy()).isNull();
@@ -275,28 +284,33 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                                 .description("feedback as high risk");
 
     LogFeedback logFeedback = logFeedbackService.create(projectParams, logFeedbackBuilder.build());
-
     LogFeedback updateLogFeedback = logFeedbackBuilder.sampleMessage("updated sample message").build();
     logFeedbackService.update(projectParams, logFeedback.getFeedbackId(), updateLogFeedback);
-
     updateLogFeedback = logFeedbackBuilder.sampleMessage("next updated sample message").build();
     logFeedbackService.update(projectParams, logFeedback.getFeedbackId(), updateLogFeedback);
 
     List<LogFeedbackHistory> logFeedbackHistoryList =
         logFeedbackService.history(projectParams, logFeedback.getFeedbackId());
     assertThat(logFeedbackHistoryList.size()).isEqualTo(3);
-
     LogFeedbackHistory logFeedbackHistory1 = logFeedbackHistoryList.get(0);
     assertThat(logFeedbackHistory1.getCreatedBy()).isEqualTo("test@harness.io");
-    assertThat(logFeedbackHistory1.getUpdatedBy()).isNull();
+    assertThat(logFeedbackHistory1.getUpdatedBy()).isEqualTo("test@harness.io");
+    LogFeedback logFeedback1 = logFeedbackHistory1.getLogFeedback();
+    long updateTime1 = logFeedback1.getUpdatedAt();
 
     LogFeedbackHistory logFeedbackHistory2 = logFeedbackHistoryList.get(1);
     assertThat(logFeedbackHistory2.getCreatedBy()).isNull();
     assertThat(logFeedbackHistory2.getUpdatedBy()).isEqualTo("test@harness.io");
+    LogFeedback logFeedback2 = logFeedbackHistory2.getLogFeedback();
+    long updateTime2 = logFeedback2.getUpdatedAt();
 
     LogFeedbackHistory logFeedbackHistory3 = logFeedbackHistoryList.get(2);
     assertThat(logFeedbackHistory3.getCreatedBy()).isNull();
     assertThat(logFeedbackHistory3.getUpdatedBy()).isEqualTo("test@harness.io");
+    LogFeedback logFeedback3 = logFeedbackHistory3.getLogFeedback();
+    long updateTime3 = logFeedback3.getUpdatedAt();
+
+    assertThat(updateTime3).isGreaterThan(updateTime2).isGreaterThan(updateTime1);
   }
 
   @Test

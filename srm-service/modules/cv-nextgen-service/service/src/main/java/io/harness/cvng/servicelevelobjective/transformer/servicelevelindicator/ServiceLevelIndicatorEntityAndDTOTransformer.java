@@ -32,7 +32,7 @@ public class ServiceLevelIndicatorEntityAndDTOTransformer {
   public ServiceLevelIndicatorDTO getDto(ServiceLevelIndicator serviceLevelIndicator) {
     ServiceLevelIndicatorTransformer serviceLevelIndicatorTransformer =
         serviceLevelIndicatorFQDITransformerMapBinder.get(ServiceLevelIndicator.getEvaluationAndMetricType(
-            serviceLevelIndicator.getSLIExecutionType(), serviceLevelIndicator.getSLIMetricType()));
+            serviceLevelIndicator.getSLIEvaluationType(), serviceLevelIndicator.getSLIMetricType()));
     return serviceLevelIndicatorTransformer.getDTO(serviceLevelIndicator);
   }
 

@@ -8,9 +8,11 @@
 package io.harness.enforcement.client.services.impl;
 
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.ZHUO;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -29,6 +31,7 @@ import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.enforcement.client.services.EnforcementSdkRegisterService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.enforcement.constants.RestrictionType;
+import io.harness.enforcement.exceptions.FeatureNotSupportedException;
 import io.harness.enforcement.exceptions.LimitExceededException;
 import io.harness.licensing.Edition;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -198,5 +201,22 @@ public class EnforcementClientServiceImplTest extends CategoryTest {
             .build()));
 
     enforcementClientService.checkAvailabilityWithIncrement(featureRestrictionName, accountId, 2);
+  }
+
+  @Test()
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void checkAvailabilityWithIncrementWithAvailabilityDisabled() {
+    dto.setRestrictionMetadata(ImmutableMap.of(Edition.ENTERPRISE,
+        AvailabilityRestrictionMetadataDTO.builder()
+            .restrictionType(RestrictionType.AVAILABILITY)
+            .enabled(false)
+            .build()));
+
+    FeatureRestrictionName templateFeatureRestriction = FeatureRestrictionName.TEMPLATE_SERVICE;
+    assertThatThrownBy(
+        () -> enforcementClientService.checkAvailabilityWithIncrement(templateFeatureRestriction, accountId, 2))
+        .hasMessage("[Template Library] Feature is not enabled. Please contact Harness Support")
+        .isInstanceOf(FeatureNotSupportedException.class);
   }
 }

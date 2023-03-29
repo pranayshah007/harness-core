@@ -72,7 +72,8 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
   public static final String TABLE_NAME = "costAggregated";
   public static final String QUERY_TEMPLATE =
       "SELECT SUM(cost) AS cost, TIMESTAMP_TRUNC(day, month) AS month, cloudProvider FROM `%s` "
-      + "WHERE day >= TIMESTAMP_MILLIS(%s) AND day <= TIMESTAMP_MILLIS(%s) AND accountId = '%s' GROUP BY month, cloudProvider";
+      + "WHERE day >= TIMESTAMP_MILLIS(%s) AND day <= TIMESTAMP_MILLIS(%s) AND accountId = '%s' "
+      + "GROUP BY month, cloudProvider";
 
   public HashMap<String, Object> getReportMetrics(String accountId) {
     HashMap<String, Object> properties = new HashMap<>();
@@ -122,7 +123,9 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
       return null;
     }
     HashMap<String, Object> properties = new HashMap<>();
-    properties.put("ccm_license_cloud_spend_used", CCMLicenseUsageHelper.computeDeduplicatedActiveSpend(result));
+    properties.put("ccm_license_cloud_spend_used",
+        CCMLicenseUsageHelper.computeDeduplicatedActiveSpend(
+            CCMLicenseUsageHelper.getActiveSpendResultSetDTOs(result)));
     properties.put("ccm_license_startTime", licenseStartTime);
     return properties;
   }

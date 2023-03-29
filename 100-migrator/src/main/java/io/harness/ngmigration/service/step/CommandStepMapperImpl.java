@@ -23,12 +23,14 @@ import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.steps.template.TemplateStepNode;
 
 import software.wings.beans.GraphNode;
+import software.wings.beans.PhaseStep;
 import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.CommandState;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -78,8 +80,8 @@ public class CommandStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public TemplateStepNode getTemplateSpec(
-      MigrationContext migrationContext, WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
+  public TemplateStepNode getTemplateSpec(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode, String skipCondition) {
     String templateId = graphNode.getTemplateUuid();
     if (isEmpty(templateId)) {
       WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(context.getWorkflow());
@@ -91,9 +93,9 @@ public class CommandStepMapperImpl extends StepMapper {
                                                 .id(serviceId + SERVICE_COMMAND_TEMPLATE_SEPARATOR + commandName)
                                                 .type(NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE)
                                                 .build());
-      return getTemplateStepNode(migrationContext, context, phase, graphNode, template);
+      return getTemplateStepNode(migrationContext, context, phase, phaseStep, graphNode, template, skipCondition);
     } else {
-      return defaultTemplateSpecMapper(migrationContext, context, phase, graphNode);
+      return defaultTemplateSpecMapper(migrationContext, context, phase, phaseStep, graphNode, skipCondition);
     }
   }
 
@@ -113,5 +115,13 @@ public class CommandStepMapperImpl extends StepMapper {
   @Override
   public boolean loopingSupported() {
     return true;
+  }
+
+  @Override
+  public void overrideTemplateInputs(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, GraphNode graphNode, NGYamlFile templateFile, JsonNode templateInputs) {
+    // Fix delegate selectors in the workflow
+    CommandState state = new CommandState(graphNode.getName());
+    overrideTemplateDelegateSelectorInputs(templateInputs, state.getDelegateSelectors());
   }
 }

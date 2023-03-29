@@ -72,7 +72,7 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(CV)
 public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskService {
   @Inject private PerpetualTaskService perpetualTaskService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject @Named("PRIVILEGED") private SecretNGManagerClient secretNGManagerClient;
   @Inject private DelegateProxyFactory delegateProxyFactory;
 
@@ -127,7 +127,7 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
             DataCollectionPerpetualTaskParams.newBuilder()
                 .setAccountId(accountId)
                 .setDataCollectionWorkerId(bundle.getDataCollectionWorkerId())
-                .setDataCollectionInfo(ByteString.copyFrom(kryoSerializer.asBytes(cvDataCollectionInfo)))
+                .setDataCollectionInfo(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(cvDataCollectionInfo)))
                 .build();
         perpetualTaskPack = Any.pack(params);
         break;
@@ -147,7 +147,7 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
             K8ActivityCollectionPerpetualTaskParams.newBuilder()
                 .setAccountId(accountId)
                 .setDataCollectionWorkerId(bundle.getDataCollectionWorkerId())
-                .setDataCollectionInfo(ByteString.copyFrom(kryoSerializer.asBytes(cvDataCollectionInfo)))
+                .setDataCollectionInfo(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(cvDataCollectionInfo)))
                 .build();
         perpetualTaskPack = Any.pack(k8ActivityCollectionPerpetualTaskParams);
         break;
@@ -174,10 +174,10 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();
     executionCapabilities.forEach(executionCapability
         -> builder
-               .addCapabilities(
-                   Capability.newBuilder()
-                       .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionCapability)))
-                       .build())
+               .addCapabilities(Capability.newBuilder()
+                                    .setKryoCapability(ByteString.copyFrom(
+                                        referenceFalseKryoSerializer.asDeflatedBytes(executionCapability)))
+                                    .build())
                .build());
     return builder.setTaskParams(perpetualTaskPack)
         .putAllSetupAbstractions(Maps.of(NG, "true", OWNER, orgIdentifier + "/" + projectIdentifier))

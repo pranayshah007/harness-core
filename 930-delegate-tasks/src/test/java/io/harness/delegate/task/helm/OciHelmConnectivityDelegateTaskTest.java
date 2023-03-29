@@ -39,7 +39,9 @@ import io.harness.rule.OwnerRule;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -62,6 +64,9 @@ public class OciHelmConnectivityDelegateTaskTest extends CategoryTest {
 
   private static ConnectorValidationResult SUCCESS =
       ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build();
+
+  private static final List<String> urlList =
+      Arrays.asList("localhost", "localhost:443", "oci://localhost", "oci://localhost:443");
 
   @Before
   public void setUp() {
@@ -144,11 +149,35 @@ public class OciHelmConnectivityDelegateTaskTest extends CategoryTest {
   @Owner(developers = OwnerRule.PRATYUSH)
   @Category(UnitTests.class)
   public void testGetParsedURI() throws URISyntaxException {
-    String ociUrl = "localhost";
+    for (String url : urlList) {
+      testGetParsedURIHelper(url);
+    }
+  }
+
+  private void testGetParsedURIHelper(String ociUrl) throws URISyntaxException {
     URI uri = helmTaskHelperBase.getParsedURI(ociUrl);
     assertThat(uri.getScheme()).isEqualTo("oci");
-    assertThat(uri.getHost()).isEqualTo(ociUrl);
+    assertThat(uri.getHost()).isEqualTo("localhost");
     assertThat(uri.getPort()).isEqualTo(443);
     assertThat(uri.toString()).isEqualTo("oci://localhost:443");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetParsedUrlForUsernamePwd() {
+    int i = 0;
+    for (String url : urlList) {
+      testGetParsedUrlUsernamePwdHelper(url, i++ % 2);
+    }
+  }
+
+  private void testGetParsedUrlUsernamePwdHelper(String ociUrl, int rem) {
+    String url = helmTaskHelperBase.getParsedUrlForUserNamePwd(ociUrl);
+    if (rem == 0) {
+      assertThat(url).isEqualTo("localhost");
+    } else {
+      assertThat(url).isEqualTo("localhost:443");
+    }
   }
 }

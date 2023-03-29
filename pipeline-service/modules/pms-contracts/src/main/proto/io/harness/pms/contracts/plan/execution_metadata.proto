@@ -45,6 +45,7 @@ message PipelineStageInfo {
   string projectId = 5;
   string orgId = 6;
   int32 runSequence = 7;
+  string triggerJsonPayload = 8;
 }
 
 enum PipelineStoreType {

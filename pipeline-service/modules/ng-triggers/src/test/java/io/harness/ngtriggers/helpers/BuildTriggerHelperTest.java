@@ -40,7 +40,9 @@ import io.harness.pms.inputset.InputSetErrorDTOPMS;
 import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.polling.contracts.AcrPayload;
+import io.harness.polling.contracts.ArtifactPathList;
 import io.harness.polling.contracts.ArtifactoryRegistryPayload;
+import io.harness.polling.contracts.BambooPayload;
 import io.harness.polling.contracts.DockerHubPayload;
 import io.harness.polling.contracts.EcrPayload;
 import io.harness.polling.contracts.GcrPayload;
@@ -55,8 +57,11 @@ import io.harness.polling.contracts.S3HelmPayload;
 import io.harness.rule.Owner;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.util.Strings;
 import org.junit.Before;
@@ -922,6 +927,33 @@ public class BuildTriggerHelperTest extends CategoryTest {
         .hasMessage("packageName can not be blank. Needs to have concrete value");
   }
 
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testValidatePollingItemForArtifact_Bamboo() {
+    final PollingItem pollingItem = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setBambooPayload(BambooPayload.newBuilder()
+                                  .setPlanKey("plan")
+                                  .addAllArtifactPath(mapToArtifactPathList(Collections.singletonList("Path")))
+                                  .build())
+            .build());
+    validatePollingItemForArtifact(pollingItem);
+
+    final PollingItem pollingItem2 = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setBambooPayload(BambooPayload.newBuilder()
+                                  .addAllArtifactPath(mapToArtifactPathList(Collections.singletonList("Path")))
+                                  .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItem2))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("planKey can not be blank. Needs to have concrete value");
+  }
+
   private void validatePollingItemForArtifact(PollingItem pollingItem) {
     try {
       buildTriggerHelper.validatePollingItemForArtifact(pollingItem);
@@ -946,5 +978,13 @@ public class BuildTriggerHelperTest extends CategoryTest {
         .setSignature("sig1")
         .setPollingPayloadData(pollingPayloadData)
         .build();
+  }
+
+  public List<ArtifactPathList> mapToArtifactPathList(List<String> variables) {
+    List<ArtifactPathList> inputs = new ArrayList<>();
+    for (String variable : variables) {
+      inputs.add(ArtifactPathList.newBuilder().setArtifactPath(variable).build());
+    }
+    return inputs;
   }
 }

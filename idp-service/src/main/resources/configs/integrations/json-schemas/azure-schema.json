@@ -1,0 +1,56 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1679651630.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "integrations"
+  ],
+  "properties": {
+    "integrations": {
+      "$id": "#root/integrations",
+      "title": "Integrations",
+      "type": "object",
+      "required": [
+        "azure"
+      ],
+      "properties": {
+        "azure": {
+          "$id": "#root/integrations/azure",
+          "title": "Azure",
+          "type": "array",
+          "default": [],
+          "items":{
+            "$id": "#root/integrations/azure/items",
+            "title": "Items",
+            "type": "object",
+            "required": [
+              "host",
+              "token"
+            ],
+            "properties": {
+              "host": {
+                "$id": "#root/integrations/azure/items/host",
+                "title": "Host",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "token": {
+                "$id": "#root/integrations/azure/items/token",
+                "title": "Token",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              }
+            }
+          }
+
+        }
+      }
+    }
+
+  }
+}
