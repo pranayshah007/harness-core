@@ -29,8 +29,11 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 
+@Slf4j
 @OwnedBy(PL)
 public abstract class JWTAuthenticationFilter implements ContainerRequestFilter, ContainerResponseFilter {
   @Context private ResourceInfo resourceInfo;
@@ -68,8 +71,11 @@ public abstract class JWTAuthenticationFilter implements ContainerRequestFilter,
       if (sourcePrincipalToken.isPresent()) {
         Pair<Boolean, Map<String, Claim>> validate =
             serviceToJWTTokenHandlerMapping
-                .getOrDefault(sourcePrincipalServiceId.get(), JWTTokenServiceUtils::isServiceAuthorizationValid)
+                .getOrDefault(sourcePrincipalServiceId.get(),
+                    (serviceToken, serviceSecret)
+                        -> getIsServiceAuthorizationValid(serviceToken, serviceSecret, sourcePrincipalServiceId.get()))
                 .validate(sourcePrincipalToken.get(), secret);
+
         if (Boolean.TRUE.equals(validate.getLeft())) {
           SourcePrincipalContextBuilder.setSourcePrincipal(
               SecurityContextBuilder.getPrincipalFromClaims(validate.getRight()));
@@ -80,14 +86,29 @@ public abstract class JWTAuthenticationFilter implements ContainerRequestFilter,
     SourcePrincipalContextBuilder.setSourcePrincipal(principalInContext);
   }
 
+  @NotNull
+  private static Pair<Boolean, Map<String, Claim>> getIsServiceAuthorizationValid(
+      String serviceToken, String serviceSecret, String sourceServiceId) {
+    try {
+      return JWTTokenServiceUtils.isServiceAuthorizationValid(serviceToken, serviceSecret);
+    } catch (InvalidRequestException ex) {
+      log.error("sourceServiceId: " + sourceServiceId, ex);
+      throw ex;
+    }
+  }
+
   public static void filter(ContainerRequestContext containerRequestContext,
       Map<String, JWTTokenHandler> serviceToJWTTokenHandlerMapping, Map<String, String> serviceToSecretMapping) {
     String sourceServiceId = JWTTokenServiceUtils.extractSource(containerRequestContext);
     String secret = JWTTokenServiceUtils.extractSecret(serviceToSecretMapping, sourceServiceId);
     String token = JWTTokenServiceUtils.extractToken(containerRequestContext, sourceServiceId + SPACE);
     Pair<Boolean, Map<String, Claim>> validate =
-        serviceToJWTTokenHandlerMapping.getOrDefault(sourceServiceId, JWTTokenServiceUtils::isServiceAuthorizationValid)
+        serviceToJWTTokenHandlerMapping
+            .getOrDefault(sourceServiceId,
+                (serviceToken,
+                    serviceSecret) -> getIsServiceAuthorizationValid(serviceToken, serviceSecret, sourceServiceId))
             .validate(token, secret);
+
     if (Boolean.TRUE.equals(validate.getLeft())) {
       SecurityContextBuilder.setContext(validate.getRight());
       setSourcePrincipalInContext(containerRequestContext, serviceToJWTTokenHandlerMapping, serviceToSecretMapping,
