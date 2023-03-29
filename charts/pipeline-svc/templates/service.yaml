@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    {{- include "pipeline-service.labels" . | nindent 4 }}
+  name: pipeline-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+  - name: grpc-pms
+    port: {{ .Values.service.grpcport }}
+    protocol: TCP
+    targetPort: {{ .Values.service.grpcport }}
+  - name: http-pms
+    port: {{ .Values.service.port }}
+    protocol: TCP
+    targetPort: {{ .Values.service.port }}
+  - name: grpc-gitsync
+    port: {{ .Values.service.gitsyncgrpcport }}
+    protocol: TCP
+    targetPort: {{ .Values.service.gitsyncgrpcport }}
+  selector:
+    {{- include "pipeline-service.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
+  type: {{.Values.service.type}}

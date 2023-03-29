@@ -1,0 +1,121 @@
+# Default values for pipeline-service
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  loadbalancerURL: ""
+  imagePullSecrets: []
+  opa:
+    enabled: false
+replicaCount: 1
+maxSurge: 1
+maxUnavailable: 0
+
+image:
+  registry: docker.io
+  digest: ""
+  repository: harness/pipeline-service-signed
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "76019"
+  imagePullSecrets: []
+
+waitForInitContainer:
+  image:
+    registry: docker.io
+    repository: harness/helm-init-container
+    pullPolicy: IfNotPresent
+    tag: "latest"
+    digest: ""
+    imagePullSecrets: []
+
+mongoSecrets:
+  userName:
+    name: harness-secrets
+    key: mongodbUsername
+  password:
+    name: mongodb-replicaset-chart
+    key: mongodb-root-password
+
+timescaleSecret:
+  password:
+    name: harness-secrets
+    key: timescaledbPostgresPassword
+
+appLogLevel: INFO
+
+java:
+  memory: "4096m"
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "harness-default"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  runAsUser: 65534
+  runAsNonRoot: true
+
+probes:
+  readinessProbe:
+    httpGet:
+      path: /api/health
+      port: http-pms
+    timeoutSeconds: 2
+    periodSeconds: 5
+    failureThreshold: 5
+  livenessProbe:
+    httpGet:
+      path: /api/health
+      port: http-pms
+    timeoutSeconds: 2
+    periodSeconds: 10
+    failureThreshold: 5
+  startupProbe:
+    httpGet:
+      path: /api/health
+      port: http-pms
+    timeoutSeconds: 2
+    periodSeconds: 10
+    failureThreshold: 25
+
+service:
+  type: ClusterIP
+  protocol: TCP
+  port: 12001
+  grpcport: 12011
+  gitsyncgrpcport: 14002
+
+resources:
+  limits:
+    cpu: 1
+    memory: 6144Mi
+  requests:
+    cpu: 1
+    memory: 6144Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+imagePullSecrets: {}
