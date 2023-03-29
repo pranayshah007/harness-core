@@ -140,7 +140,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     containerStepCleanupHelper.sendCleanupRequest(ambiance);
     ResponseData responseData = responseDataSupplier.get();
-    executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData);
+    executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData, null);
     return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
 
