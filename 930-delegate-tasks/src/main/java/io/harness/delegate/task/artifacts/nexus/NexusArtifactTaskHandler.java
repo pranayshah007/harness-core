@@ -49,7 +49,7 @@ public class NexusArtifactTaskHandler extends DelegateArtifactTaskHandler<NexusA
     NexusRequest nexusConfig = NexusRequestResponseMapper.toNexusInternalConfig(attributesRequest);
     if (isRegex(attributesRequest) || attributesRequest.getTag().equals(ACCEPT_ALL_REGEX)) {
       String tagRegex =
-              isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag().replace("*", ".*?");
+          isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag().replace("*", ".*?");
       lastSuccessfulBuild =
           nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, attributesRequest.getRepositoryName(),
               attributesRequest.getRepositoryPort(), attributesRequest.getArtifactPath(),
