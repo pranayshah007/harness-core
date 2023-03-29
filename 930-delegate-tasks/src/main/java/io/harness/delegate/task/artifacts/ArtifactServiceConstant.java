@@ -7,4 +7,4 @@
 
 package io.harness.delegate.task.artifacts;
 
-public final class ArtifactServiceConstant { public static final String ACCEPT_ALL_REGEX = ".*?"; }
+public final class ArtifactServiceConstant { public static final String ACCEPT_ALL_REGEX = "*"; }
