@@ -31,6 +31,7 @@ import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.AccountId;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -741,18 +742,32 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                      .build())
           .collect(Collectors.toList());
     }
-
     if (isNotEmpty(gitRepository.getName())) {
       return Collections.singletonList(GitRepositoryResponseDTO.builder().name(gitRepository.getName()).build());
     } else if (isNotEmpty(gitRepository.getOrg()) && isNamespaceNotEmpty(response)) {
+      return prepareListRepoResponseWithNamespace(scmConnector, response, gitRepository);
+    } else {
       return emptyIfNull(response.getReposList())
           .stream()
-          .filter(repository -> repository.getNamespace().equals(gitRepository.getOrg()))
           .map(repository -> GitRepositoryResponseDTO.builder().name(repository.getName()).build())
+          .collect(Collectors.toList());
+    }
+  }
+
+  private List<GitRepositoryResponseDTO> prepareListRepoResponseWithNamespace(
+      ScmConnector scmConnector, GetUserReposResponse response, GitRepositoryDTO gitRepository) {
+    if (ConnectorType.GITLAB.equals(scmConnector.getConnectorType())) {
+      return emptyIfNull(response.getReposList())
+          .stream()
+          .map(repository
+              -> GitRepositoryResponseDTO.builder()
+                     .name(GitProviderUtils.buildRepoForGitlab(repository.getNamespace(), repository.getName()))
+                     .build())
           .collect(Collectors.toList());
     } else {
       return emptyIfNull(response.getReposList())
           .stream()
+          .filter(repository -> repository.getNamespace().equals(gitRepository.getOrg()))
           .map(repository -> GitRepositoryResponseDTO.builder().name(repository.getName()).build())
           .collect(Collectors.toList());
     }
