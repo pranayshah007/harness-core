@@ -31,18 +31,16 @@ import lombok.AllArgsConstructor;
 public class DockerArtifactTaskHandler extends DelegateArtifactTaskHandler<DockerArtifactDelegateRequest> {
   private final DockerRegistryService dockerRegistryService;
   private final SecretDecryptionService secretDecryptionService;
-  private final String ACCEPT_ALL_REGEX = "*";
 
   @Override
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(DockerArtifactDelegateRequest attributesRequest) {
     BuildDetailsInternal lastSuccessfulBuild;
     ArtifactMetaInfo artifactMetaInfo = null;
     List<Map<String, String>> labels;
-    if (isRegex(attributesRequest) || attributesRequest.getTag().equals(ACCEPT_ALL_REGEX)) {
-      String tagRegex = isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag();
+    if (isRegex(attributesRequest)) {
       lastSuccessfulBuild = dockerRegistryService.getLastSuccessfulBuildFromRegex(
           DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest), attributesRequest.getImagePath(),
-          tagRegex);
+          attributesRequest.getTagRegex());
       labels = dockerRegistryService.getLabels(DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest),
           attributesRequest.getImagePath(), Collections.singletonList(lastSuccessfulBuild.getNumber()));
     } else {
