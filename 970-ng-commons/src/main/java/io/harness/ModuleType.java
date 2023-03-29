@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -42,6 +42,7 @@ public enum ModuleType {
   @JsonProperty("TEMPLATESERVICE") TEMPLATESERVICE("TemplateService", INTERNAL, ONBOARDED),
 
   // Internal modules which have not been onboarded yet
+  @JsonProperty("CET") CET("Continuous Error Tracking", INTERNAL, ONBOARDING_IN_PROGRESS),
   @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", INTERNAL, ONBOARDING_IN_PROGRESS),
   @JsonProperty("IDP") IDP("Internal Developer Portal", INTERNAL, ONBOARDING_IN_PROGRESS);
   String displayName;

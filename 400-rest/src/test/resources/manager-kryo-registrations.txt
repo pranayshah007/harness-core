@@ -2954,6 +2954,7 @@
 930010:io.harness.cd.CDLicenseType
 930011:io.harness.licensing.beans.modules.STOModuleLicenseDTO
 930012:io.harness.licensing.beans.modules.IACMModuleLicenseDTO
+930013:io.harness.licensing.beans.modules.CETModuleLicenseDTO
 954001:io.harness.pms.contracts.advisers.AdviserObtainment
 955000:io.harness.beans.CommitDetails
 955001:io.harness.beans.Repository

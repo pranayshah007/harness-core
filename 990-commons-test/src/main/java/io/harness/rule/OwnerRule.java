@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -66,6 +66,7 @@ public class OwnerRule implements TestRule {
   public static final String CDC = "CDC";
   public static final String CDP = "CDP";
   public static final String CE = "CE";
+  public static final String CET = "CET";
   public static final String CI = "CI";
   public static final String CIT = "CIT";
   public static final String CV = "CV";
@@ -316,6 +317,7 @@ public class OwnerRule implements TestRule {
   public static final String MEENA = "meena.ravichandran";
   public static final String FJUNIOR = "francisco.junior";
   public static final String RAJENDRA_BAVISKAR = "rajendra.baviskar";
+  public static final String COREY = "corey.severino";
   @Deprecated public static final String UNKNOWN = "unknown";
 
   private static UserInfoBuilder defaultUserInfo(String user) {
@@ -544,7 +546,7 @@ public class OwnerRule implements TestRule {
           .put(SOURABH, defaultUserInfo(SOURABH).slack("U03J4CFGQH1").team(CDP).build())
           .put(VIKYATH_HAREKAL, defaultUserInfo(VIKYATH_HAREKAL).slack("U03JNRMSLSK").team(CDP).build())
           .put(VINICIUS, defaultUserInfo(VINICIUS).slack("U03N9NKBLS3").team(SPG).build())
-          .put(JAMES_RICKS, defaultUserInfo(JAMES_RICKS).slack("U03FVTUD5J7").team(CI).build())
+          .put(JAMES_RICKS, defaultUserInfo(JAMES_RICKS).slack("U03FVTUD5J7").team(CET).build())
           .put(GAURAV_NANDA, defaultUserInfo(GAURAV_NANDA).slack("U03E7JHB70C").team(PL).build())
           .put(ANKIT_TIWARI, defaultUserInfo(ANKIT_TIWARI).slack("U03S7RGTEBS").team(CDC).build())
           .put(VARSHA_LALWANI, defaultUserInfo(VARSHA_LALWANI).slack("U03U3QQDQL8").team(CV).build())
@@ -559,6 +561,7 @@ public class OwnerRule implements TestRule {
           .put(FJUNIOR, defaultUserInfo(FJUNIOR).slack("U01UH89MKA9").team(SPG).build())
           .put(RAJENDRA_BAVISKAR, defaultUserInfo(RAJENDRA_BAVISKAR).slack("U03V43NCYTF").team(SPG).build())
           .put(NEELAM, defaultUserInfo(NEELAM).slack("U0469RPLXB3").team(PLG).build())
+          .put(COREY, defaultUserInfo(COREY).slack("U02N2QDLC9W").team(CET).build())
           .build();
 
   private static String prDeveloperId = findDeveloperId(System.getenv(GHPRB_PULL_AUTHOR_EMAIL));
@@ -568,6 +571,7 @@ public class OwnerRule implements TestRule {
           .put(CDC, TeamInfo.builder().team(CDC).leader(PRASHANT).leader(POOJA).build())
           .put(CDP, TeamInfo.builder().team(CDP).leader(ANSHUL).build())
           .put(CE, TeamInfo.builder().team(CE).leader(PUNEET).leader(AVMOHAN).build())
+          .put(CET, TeamInfo.builder().team(CE).leader(COREY).build())
           .put(CI, TeamInfo.builder().team(CI).leader(SHIVAKUMAR).build())
           .put(CIT, TeamInfo.builder().team(CIT).leader(ROGER).build())
           .put(CV, TeamInfo.builder().team(CV).leader(RAGHU).build())

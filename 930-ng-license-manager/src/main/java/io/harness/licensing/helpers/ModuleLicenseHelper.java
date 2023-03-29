@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -16,6 +16,7 @@ import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.checks.ModuleLicenseState;
 import io.harness.licensing.entities.modules.CDModuleLicense;
 import io.harness.licensing.entities.modules.CEModuleLicense;
+import io.harness.licensing.entities.modules.CETModuleLicense;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.CIModuleLicense;
 import io.harness.licensing.entities.modules.ChaosModuleLicense;
@@ -294,6 +295,14 @@ public class ModuleLicenseHelper {
         if (iacmLicense.getNumberOfDevelopers() != null
             && !iacmLicense.getNumberOfDevelopers().equals(currentIACMLicense.getNumberOfDevelopers())) {
           currentIACMLicense.setNumberOfDevelopers(iacmLicense.getNumberOfDevelopers());
+        }
+        break;
+      case CET:
+        CETModuleLicense cetLicense = (CETModuleLicense) update;
+        CETModuleLicense currentCETLicense = (CETModuleLicense) current;
+        if (cetLicense.getNumberOfAgents() != null
+            && !cetLicense.getNumberOfAgents().equals(currentCETLicense.getNumberOfAgents())) {
+          currentCETLicense.setNumberOfAgents(cetLicense.getNumberOfAgents());
         }
         break;
       default:

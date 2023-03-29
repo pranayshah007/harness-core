@@ -1157,6 +1157,7 @@ components:
         - TEMPLATESERVICE
         - GOVERNANCE
         - CHAOS
+        - CET
     CreateProjectRequest:
       description: Create project request
       type: object
