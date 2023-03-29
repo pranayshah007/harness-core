@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ci-manager
+  namespace: {{ .Release.Namespace }}
+data:
+  CACHE_BACKEND: {{ .Values.config.CACHE_BACKEND }}
+  CACHE_CONFIG_REDIS_SENTINELS: {{ .Values.config.CACHE_CONFIG_REDIS_SENTINELS | default ("redis://redis-sentinel-harness-announce-0.NAMESPACE:26379,redis://redis-sentinel-harness-announce-1.NAMESPACE:26379,redis://redis-sentinel-harness-announce-2.NAMESPACE:26379" | replace "NAMESPACE" .Release.Namespace ) }}
+  CACHE_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.CACHE_CONFIG_SENTINEL_MASTER_NAME }}
+  CACHE_CONFIG_USE_SENTINEL: {{ .Values.config.CACHE_CONFIG_USE_SENTINEL }}
+  DEPLOY_MODE: {{ .Values.config.DEPLOY_MODE }}
+  MANAGER_TARGET: {{ .Values.config.MANAGER_TARGET | default "harness-manager:9879" }}
+  MANAGER_AUTHORITY: {{ .Values.config.MANAGER_AUTHORITY | default "harness-manager:9879" }}
+  GRPC_SERVER_PORT: {{.Values.service.grpcport | quote}}
+  SCM_SERVICE_URI: {{ .Values.config.SCM_SERVICE_URI | default "scm-service:8091" }}
+  ADDON_IMAGE: '{{ .Values.ci_images.addon.image.repository }}:{{ .Values.ci_images.addon.image.tag }}'
+  LE_IMAGE: '{{ .Values.ci_images.lite_engine.image.repository }}:{{ .Values.ci_images.lite_engine.image.tag }}'
+  GIT_CLONE_IMAGE: '{{ .Values.ci_images.git_clone.image.repository }}:{{ .Values.ci_images.git_clone.image.tag }}'
+  DOCKER_PUSH_IMAGE: '{{ .Values.ci_images.kaniko.image.repository }}:{{ .Values.ci_images.kaniko.image.tag }}'
+  ECR_PUSH_IMAGE: '{{ .Values.ci_images.kaniko_ecr.image.repository }}:{{ .Values.ci_images.kaniko_ecr.image.tag }}'
+  GCR_PUSH_IMAGE: '{{ .Values.ci_images.kaniko_gcr.image.repository }}:{{ .Values.ci_images.kaniko_gcr.image.tag }}'
+  ACR_PUSH_IMAGE: '{{ .Values.ci_images.kaniko_acr.image.repository }}:{{ .Values.ci_images.kaniko_acr.image.tag }}'  
+  GCS_UPLOAD_IMAGE: '{{ .Values.ci_images.gcs_upload.image.repository }}:{{ .Values.ci_images.gcs_upload.image.tag }}'
+  S3_UPLOAD_IMAGE: '{{ .Values.ci_images.s3_upload.image.repository }}:{{ .Values.ci_images.s3_upload.image.tag }}'
+  ARTIFACTORY_UPLOAD_IMAGE: '{{ .Values.ci_images.artifactory_upload.image.repository }}:{{ .Values.ci_images.artifactory_upload.image.tag }}'
+  GCS_CACHE_IMAGE: '{{ .Values.ci_images.gcs_cache.image.repository }}:{{ .Values.ci_images.gcs_cache.image.tag }}'
+  S3_CACHE_IMAGE: '{{ .Values.ci_images.s3_cache.image.repository }}:{{ .Values.ci_images.s3_cache.image.tag }}'
+  SECURITY_IMAGE: '{{ .Values.securityImage.image.repository }}:{{ .Values.securityImage.image.tag }}'
+  PMS_TARGET: {{ .Values.config.PMS_TARGET | default "pipeline-service:12011" }}
+  PMS_AUTHORITY: {{ .Values.config.PMS_AUTHORITY | default "pipeline-service:12011" }}
+  LOGGING_LEVEL: {{ .Values.appLogLevel }}
+  EVENTS_FRAMEWORK_REDIS_URL: {{ .Values.config.EVENTS_FRAMEWORK_REDIS_URL | default "redis://localhost:6379" }}
+  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.config.EVENTS_FRAMEWORK_USE_SENTINEL }}
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: {{ .Values.config.EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME }}
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ .Values.config.EVENTS_FRAMEWORK_REDIS_SENTINELS | default ("redis://redis-sentinel-harness-announce-0.NAMESPACE:26379,redis://redis-sentinel-harness-announce-1.NAMESPACE:26379,redis://redis-sentinel-harness-announce-2.NAMESPACE:26379" | replace "NAMESPACE" .Release.Namespace ) }}
+  SHOULD_CONFIGURE_WITH_PMS: {{ .Values.config.SHOULD_CONFIGURE_WITH_PMS }}
+  ENABLE_DASHBOARD_TIMESCALE: {{ .Values.config.ENABLE_DASHBOARD_TIMESCALE }}
+  MEMORY: {{ .Values.java.memory | quote }}
+  USE_REDIS_FOR_SDK_RESPONSE_EVENTS: {{ .Values.config.USE_REDIS_FOR_SDK_RESPONSE_EVENTS }}
+ {{- if .Values.global.airgap }}
+  DEFAULT_INTERNAL_IMAGE_CONNECTOR: "account.harnessImage"
+ {{- end }}
+  NG_MANAGER_URL: 'http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090/'
+  MANAGER_URL: {{ .Values.config.MANAGER_URL | default "http://harness-manager:9090/api/" }}
+  LOG_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/gateway/log-service/'
+  TI_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/gateway/ti-service/'
+  LOG_SERVICE_INTERNAL_URL: 'http://gateway.{{ .Release.Namespace }}.svc.cluster.local/log-service/'
+  TI_SERVICE_INTERNAL_URL: 'http://gateway.{{ .Release.Namespace }}.svc.cluster.local/ti-service/'
+  API_URL: '{{ .Values.global.loadbalancerURL }}/ng/#/'
+  STO_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/sto/'
+  LOG_SERVICE_GLOBAL_TOKEN: {{ .Values.config.LOG_SERVICE_GLOBAL_TOKEN }}
+  TI_SERVICE_GLOBAL_TOKEN: {{ .Values.config.TI_SERVICE_GLOBAL_TOKEN }}
