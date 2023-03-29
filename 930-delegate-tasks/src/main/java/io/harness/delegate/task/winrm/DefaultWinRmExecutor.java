@@ -96,34 +96,35 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
   }
 
   @Override
-  public CommandExecutionStatus executeCommandString(String command) {
-    return executeCommandString(command, null, false);
+  public CommandExecutionStatus executeCommandString(String command, boolean useSshAgent) {
+    return executeCommandString(command, null, false, useSshAgent);
   }
 
   @Override
-  public CommandExecutionStatus executeCommandString(String command, boolean displayCommand) {
-    return executeCommandString(command, null, displayCommand);
-  }
-
-  @Override
-  public CommandExecutionStatus executeCommandString(
-      String command, boolean displayCommand, boolean winrmScriptCommandSplit) {
-    return executeCommandString(command, winrmScriptCommandSplit, null, displayCommand);
-  }
-
-  @Override
-  public CommandExecutionStatus executeCommandString(String command, StringBuffer output) {
-    return executeCommandString(command, output, false);
-  }
-
-  @Override
-  public CommandExecutionStatus executeCommandString(String command, StringBuffer output, boolean displayCommand) {
-    return executeCommandString(command, winrmScriptCommandSplit, output, displayCommand);
+  public CommandExecutionStatus executeCommandString(String command, boolean displayCommand, boolean useSshAgent) {
+    return executeCommandString(command, null, displayCommand, useSshAgent);
   }
 
   @Override
   public CommandExecutionStatus executeCommandString(
-      String command, boolean winrmScriptCommandSplit, StringBuffer output, boolean displayCommand) {
+      String command, boolean displayCommand, boolean winrmScriptCommandSplit, boolean useSshAgent) {
+    return executeCommandString(command, winrmScriptCommandSplit, null, displayCommand, useSshAgent);
+  }
+
+  @Override
+  public CommandExecutionStatus executeCommandString(String command, StringBuffer output, boolean useSshAgent) {
+    return executeCommandString(command, output, false, useSshAgent);
+  }
+
+  @Override
+  public CommandExecutionStatus executeCommandString(
+      String command, StringBuffer output, boolean displayCommand, boolean useSshAgent) {
+    return executeCommandString(command, winrmScriptCommandSplit, output, displayCommand, useSshAgent);
+  }
+
+  @Override
+  public CommandExecutionStatus executeCommandString(String command, boolean winrmScriptCommandSplit,
+      StringBuffer output, boolean displayCommand, boolean useSshAgent) {
     CommandExecutionStatus commandExecutionStatus;
     saveExecutionLog(format("Initializing WinRM connection to %s ...", config.getHostname()), INFO);
 
@@ -216,13 +217,14 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
   }
 
   @Override
-  public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect) {
-    return executeCommandString(command, envVariablesToCollect, Collections.emptyList(), null);
+  public ExecuteCommandResponse executeCommandString(
+      String command, List<String> envVariablesToCollect, boolean useSshAgent) {
+    return executeCommandString(command, envVariablesToCollect, Collections.emptyList(), null, useSshAgent);
   }
 
   @Override
   public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
-      List<String> secretEnvVariablesToCollect, Long timeoutInMillis) {
+      List<String> secretEnvVariablesToCollect, Long timeoutInMillis, boolean useSshAgent) {
     ShellExecutionDataBuilder executionDataBuilder = ShellExecutionData.builder();
     ExecuteCommandResponseBuilder executeCommandResponseBuilder = ExecuteCommandResponse.builder();
     CommandExecutionStatus commandExecutionStatus;

@@ -142,7 +142,8 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
 
       success = k8sTaskHelper.fetchManifestFilesAndWriteToDirectory(
           k8sBlueGreenDeployTaskParameters.getK8sDelegateManifestConfig(),
-          k8sBlueGreenHandlerConfig.getManifestFilesDirectory(), executionLogCallback, timeoutInMillis);
+          k8sBlueGreenHandlerConfig.getManifestFilesDirectory(), executionLogCallback, timeoutInMillis,
+          k8sTaskParameters.isUseSshAgent());
       if (!success) {
         return getFailureResponse(null);
       }

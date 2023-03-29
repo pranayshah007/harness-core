@@ -42,6 +42,7 @@ public class CustomManifestValuesFetchParams
   @Expression(ALLOW_SECRETS) private CustomManifestSource customManifestSource;
   boolean shouldOpenLogStream;
   boolean shouldCloseLogStream;
+  boolean useSshAgent;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

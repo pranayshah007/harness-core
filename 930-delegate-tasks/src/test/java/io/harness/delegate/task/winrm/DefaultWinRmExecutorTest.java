@@ -291,7 +291,7 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
     try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenReturn(true);
-      CommandExecutionStatus status = spyDefaultWinRmExecutor.executeCommandString("cmd", null, true);
+      CommandExecutionStatus status = spyDefaultWinRmExecutor.executeCommandString("cmd", null, true, false);
       assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     }
   }
@@ -317,7 +317,7 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
     try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenReturn(true);
-      CommandExecutionStatus status = spyDefaultWinRmExecutor.executeCommandString("cmd", true);
+      CommandExecutionStatus status = spyDefaultWinRmExecutor.executeCommandString("cmd", true, false);
       assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     }
   }
@@ -343,36 +343,8 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
     try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenReturn(true);
-      CommandExecutionStatus status = spyDefaultWinRmExecutor.executeCommandString("cmd");
+      CommandExecutionStatus status = spyDefaultWinRmExecutor.executeCommandString("cmd", false);
       assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
-    }
-  }
-
-  @Test
-  @Owner(developers = VITALIE)
-  @Category(UnitTests.class)
-  public void testExecuteCommandStringThrowsException() {
-    WinRmSessionConfig config = WinRmSessionConfig.builder()
-                                    .domain("KRB.LOCAL")
-                                    .skipCertChecks(true)
-                                    .password("pwd")
-                                    .username("TestUser")
-                                    .environment(new HashMap<>())
-                                    .hostname("localhost")
-                                    .authenticationScheme(AuthenticationScheme.KERBEROS)
-                                    .build();
-    spyDefaultWinRmExecutor = new DefaultWinRmExecutor(logCallback, true, config, false, false);
-
-    mockStatic(InstallUtils.class);
-    PowerMockito.when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
-
-    try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
-      mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
-          .thenThrow(new RuntimeException("test"));
-      StringBuffer stringBuffer = mock(StringBuffer.class);
-      assertThatThrownBy(() -> spyDefaultWinRmExecutor.executeCommandString("cmd", stringBuffer))
-          .isInstanceOf(RuntimeException.class)
-          .hasMessage("test");
     }
   }
 
@@ -397,7 +369,8 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
     try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenReturn(true);
-      ExecuteCommandResponse response = spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST);
+      ExecuteCommandResponse response =
+          spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST, false);
       assertThat(response.getStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     }
   }
@@ -423,7 +396,8 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
     try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenReturn(true);
-      ExecuteCommandResponse response = spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST);
+      ExecuteCommandResponse response =
+          spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST, false);
       assertThat(response.getStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     }
   }
@@ -449,7 +423,8 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
     try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenReturn(true);
-      ExecuteCommandResponse response = spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST);
+      ExecuteCommandResponse response =
+          spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST, false);
       assertThat(response.getStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     }
   }
@@ -475,7 +450,7 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
     try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
           .thenThrow(new RuntimeException("test"));
-      assertThatThrownBy(() -> spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST))
+      assertThatThrownBy(() -> spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST, false))
           .isInstanceOf(RuntimeException.class)
           .hasMessage("test");
     }

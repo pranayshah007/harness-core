@@ -315,6 +315,7 @@ public class K8sHelmCommonStepHelper {
             .shouldOpenLogStream(k8sStepPassThroughData.getShouldOpenFetchFilesStream())
             .shouldCloseLogStream(k8sStepPassThroughData.isShouldCloseFetchFilesStream())
             .customManifestSource(customManifestSource)
+            .useSshAgent(cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_SSH_AGENT))
             .build();
 
     final TaskData taskData = TaskData.builder()

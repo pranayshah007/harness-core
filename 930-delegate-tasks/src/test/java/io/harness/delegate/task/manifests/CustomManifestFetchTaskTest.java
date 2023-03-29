@@ -173,7 +173,7 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
 
     doReturn(DEFAULT_DIR)
         .when(customManifestService)
-        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource, true);
+        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource, true, );
 
     doReturn(TEMP_DIR).when(customManifestService).getWorkingDirectory();
 
@@ -213,7 +213,7 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
 
     doThrow(new ShellScriptException("shell script failed", GIT_ERROR, Level.ERROR, WingsException.USER))
         .when(customManifestService)
-        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource, true);
+        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource, true, );
 
     CustomManifestValuesFetchResponse response = doRun(taskParams);
     ArgumentCaptor<String> logCaptor = ArgumentCaptor.forClass(String.class);
@@ -222,7 +222,7 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
 
     doThrow(new InvalidRequestException("auth failed"))
         .when(customManifestService)
-        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource, true);
+        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource, true, );
 
     response = doRun(taskParams);
     verify(logCallback, times(2))
@@ -233,7 +233,7 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
     assertThat(response.getErrorMessage()).isEqualTo("INVALID_REQUEST");
 
     verify(delegateFileManagerBase, never()).uploadAsFile(any(DelegateFile.class), any(File.class));
-    verify(customManifestService, never()).fetchValues(any(), any(), any(), any(), eq(true));
+    verify(customManifestService, never()).fetchValues(any(), any(), any(), any(), eq(true), );
   }
 
   @Test
@@ -252,7 +252,7 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
     doReturn(TEMP_DIR).when(customManifestService).getWorkingDirectory();
     doReturn(DEFAULT_DIR)
         .when(customManifestService)
-        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource, true);
+        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource, true, );
     doThrow(new AccessDeniedException("access denied", WingsException.USER))
         .when(delegateFileManagerBase)
         .uploadAsFile(any(), any());

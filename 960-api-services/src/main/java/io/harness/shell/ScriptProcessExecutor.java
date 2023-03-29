@@ -90,7 +90,8 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
   }
 
   @Override
-  public CommandExecutionStatus executeCommandString(String command, StringBuffer output, boolean displayCommand) {
+  public CommandExecutionStatus executeCommandString(
+      String command, StringBuffer output, boolean displayCommand, boolean useSshAgent) {
     CommandExecutionStatus commandExecutionStatus = FAILURE;
     File workingDirectory;
     try {
@@ -184,13 +185,14 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
   }
 
   @Override
-  public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect) {
-    return executeCommandString(command, envVariablesToCollect, Collections.emptyList(), null);
+  public ExecuteCommandResponse executeCommandString(
+      String command, List<String> envVariablesToCollect, boolean useSshAgent) {
+    return executeCommandString(command, envVariablesToCollect, Collections.emptyList(), null, useSshAgent);
   }
 
   @Override
   public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
-      List<String> secretEnvVariablesToCollect, Long timeoutInMillis) {
+      List<String> secretEnvVariablesToCollect, Long timeoutInMillis, boolean useSshAgent) {
     try {
       ExecuteCommandResponse executeCommandResponse = null;
 

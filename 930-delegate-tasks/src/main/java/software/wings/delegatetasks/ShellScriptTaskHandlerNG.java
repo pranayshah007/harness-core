@@ -47,7 +47,7 @@ public class ShellScriptTaskHandlerNG {
       ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(taskParameters);
       ScriptProcessExecutor executor = shellExecutorFactory.getExecutor(shellExecutorConfig, commandUnitsProgress);
       ExecuteCommandResponse executeCommandResponse =
-          executor.executeCommandString(taskParameters.getScript(), taskParameters.getOutputVars());
+          executor.executeCommandString(taskParameters.getScript(), taskParameters.getOutputVars(), );
       return ShellScriptTaskResponseNG.builder()
           .executeCommandResponse(executeCommandResponse)
           .status(executeCommandResponse.getStatus())
@@ -59,7 +59,7 @@ public class ShellScriptTaskHandlerNG {
         SshSessionConfig sshSessionConfig = getSshSessionConfig(taskParameters);
         ScriptSshExecutor executor = sshExecutorFactoryNG.getExecutor(sshSessionConfig, commandUnitsProgress);
         ExecuteCommandResponse executeCommandResponse =
-            executor.executeCommandString(taskParameters.getScript(), taskParameters.getOutputVars());
+            executor.executeCommandString(taskParameters.getScript(), taskParameters.getOutputVars(), );
         return ShellScriptTaskResponseNG.builder()
             .executeCommandResponse(executeCommandResponse)
             .status(executeCommandResponse.getStatus())

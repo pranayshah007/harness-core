@@ -101,9 +101,9 @@ public class K8sApplyTaskHandler extends K8sTaskHandler {
           k8sTaskHelper.getExecutionLogCallback(k8sApplyTaskParameters, FetchFiles);
       executionLogCallback.saveExecutionLog(color("\nStarting Kubernetes Apply", LogColor.White, LogWeight.Bold));
 
-      success =
-          k8sTaskHelper.fetchManifestFilesAndWriteToDirectory(k8sApplyTaskParameters.getK8sDelegateManifestConfig(),
-              k8sApplyHandlerConfig.getManifestFilesDirectory(), executionLogCallback, timeoutInMillis);
+      success = k8sTaskHelper.fetchManifestFilesAndWriteToDirectory(
+          k8sApplyTaskParameters.getK8sDelegateManifestConfig(), k8sApplyHandlerConfig.getManifestFilesDirectory(),
+          executionLogCallback, timeoutInMillis, k8sTaskParameters.isUseSshAgent());
       if (!success) {
         return getFailureResponse();
       }

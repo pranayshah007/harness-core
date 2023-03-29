@@ -112,8 +112,8 @@ public class CustomManifestValuesFetchTask extends AbstractDelegateRunnableTask 
         logCallback.saveExecutionLog("Fetching following files:");
         logFilePathList(customManifestSource.getFilePaths(), logCallback);
 
-        Collection<CustomSourceFile> valuesContent =
-            customManifestService.fetchValues(customManifestSource, workingDirectory, activityId, logCallback, true);
+        Collection<CustomSourceFile> valuesContent = customManifestService.fetchValues(
+            customManifestSource, workingDirectory, activityId, logCallback, true, fetchParams.isUseSshAgent());
         fetchedFilesContent.put(fetchFileConfig.getKey(), valuesContent);
       } catch (IOException e) {
         Throwable cause = e.getCause();

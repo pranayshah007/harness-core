@@ -99,7 +99,7 @@ public class CustomDeploymentPerpetualTaskExecutor implements PerpetualTaskExecu
 
       final ScriptProcessExecutor executor = shellExecutorFactory.getExecutor(shellExecutorConfig);
       final ExecuteCommandResponse executeCommandResponse =
-          executor.executeCommandString(taskParams.getScript(), emptyList(), emptyList(), null);
+          executor.executeCommandString(taskParams.getScript(), emptyList(), emptyList(), null, );
 
       if (CommandExecutionStatus.SUCCESS == executeCommandResponse.getStatus()) {
         return ShellScriptProvisionExecutionData.builder()

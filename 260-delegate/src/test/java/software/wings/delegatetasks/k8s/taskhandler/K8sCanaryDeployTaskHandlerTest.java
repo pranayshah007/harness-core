@@ -118,7 +118,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
   public void setup() throws Exception {
     deployment = K8sTestHelper.deployment();
 
-    doReturn(true).when(k8sTaskHelper).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong());
+    doReturn(true).when(k8sTaskHelper).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), );
     doReturn(true).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     doReturn(true).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
     doReturn(Mockito.mock(ExecutionLogCallback.class)).when(k8sTaskHelper).getExecutionLogCallback(any(), any());
@@ -236,7 +236,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
     doReturn(false)
         .when(k8sTaskHelper)
         .fetchManifestFilesAndWriteToDirectory(
-            any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong());
+            any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong(), );
 
     K8sTaskExecutionResponse response;
     response = k8sCanaryDeployTaskHandler.executeTask(

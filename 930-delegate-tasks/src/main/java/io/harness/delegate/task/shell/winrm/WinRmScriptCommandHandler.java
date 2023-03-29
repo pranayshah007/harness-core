@@ -89,7 +89,7 @@ public class WinRmScriptCommandHandler implements CommandHandler {
 
     try {
       final ExecuteCommandResponse executeCommandResponse =
-          executor.executeCommandString(scriptCommandUnit.getCommand(), taskParameters.getOutputVariables());
+          executor.executeCommandString(scriptCommandUnit.getCommand(), taskParameters.getOutputVariables(), );
 
       executor.getLogCallback().saveExecutionLog("Command finished with status " + getStatus(executeCommandResponse),
           LogLevel.INFO, getStatus(executeCommandResponse));
@@ -111,6 +111,6 @@ public class WinRmScriptCommandHandler implements CommandHandler {
         winRmExecutorFactoryNG.getExecutor(config, winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(),
             winRmCommandTaskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
 
-    return executor.executeCommandString(commandUnit.getCommand(), winRmCommandTaskParameters.getOutputVariables());
+    return executor.executeCommandString(commandUnit.getCommand(), winRmCommandTaskParameters.getOutputVariables(), );
   }
 }

@@ -77,7 +77,7 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
         //   taskParameters.setScript(delegateLocalConfigService.replacePlaceholdersWithLocalConfig(taskParameters.getScript()));
         // }
         ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
-            taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null);
+            taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null, );
         return ShellScriptTaskResponseNG.builder()
             .executeCommandResponse(executeCommandResponse)
             .status(executeCommandResponse.getStatus())
@@ -102,7 +102,7 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
         ScriptSshExecutor executor =
             sshExecutorFactoryNG.getExecutor(sshSessionConfig, this.getLogStreamingTaskClient(), commandUnitsProgress);
         ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
-            taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null);
+            taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null, );
         return ShellScriptTaskResponseNG.builder()
             .executeCommandResponse(executeCommandResponse)
             .status(executeCommandResponse.getStatus())

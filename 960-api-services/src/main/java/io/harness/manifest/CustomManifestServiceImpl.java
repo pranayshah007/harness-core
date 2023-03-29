@@ -44,11 +44,11 @@ public class CustomManifestServiceImpl implements CustomManifestService {
   private static final String SHELL_SCRIPT_TASK_ID = "custom-source";
 
   @Override
-  public void downloadCustomSource(
-      @NotNull CustomManifestSource source, String outputDirectory, LogCallback logCallback) throws IOException {
+  public void downloadCustomSource(@NotNull CustomManifestSource source, String outputDirectory,
+      LogCallback logCallback, boolean useSshAgent) throws IOException {
     String workingDirectory = getWorkingDirectory();
     try {
-      downloadCustomSource(source, outputDirectory, workingDirectory, logCallback);
+      downloadCustomSource(source, outputDirectory, workingDirectory, logCallback, useSshAgent);
     } finally {
       cleanup(workingDirectory);
     }
@@ -56,9 +56,9 @@ public class CustomManifestServiceImpl implements CustomManifestService {
 
   @Override
   public Collection<CustomSourceFile> fetchValues(@NotNull CustomManifestSource source, String workingDirectory,
-      String activityId, LogCallback logCallback, boolean closeLogStream) throws IOException {
+      String activityId, LogCallback logCallback, boolean closeLogStream, boolean useSshAgent) throws IOException {
     if (isNotEmpty(source.getScript())) {
-      executeScript(source.getScript(), workingDirectory, activityId, logCallback, closeLogStream);
+      executeScript(source.getScript(), workingDirectory, activityId, logCallback, closeLogStream, useSshAgent);
     }
     return readFilesContent(workingDirectory, source.getFilePaths());
   }
@@ -71,23 +71,24 @@ public class CustomManifestServiceImpl implements CustomManifestService {
   @Override
   @NotNull
   public String executeCustomSourceScript(String activityId, LogCallback logCallback,
-      @NotNull CustomManifestSource customManifestSource, boolean closeLogStream) throws IOException {
+      @NotNull CustomManifestSource customManifestSource, boolean closeLogStream, boolean useSshAgent)
+      throws IOException {
     String defaultSourceWorkingDirectory = getWorkingDirectory();
-    executeScript(
-        customManifestSource.getScript(), defaultSourceWorkingDirectory, activityId, logCallback, closeLogStream);
+    executeScript(customManifestSource.getScript(), defaultSourceWorkingDirectory, activityId, logCallback,
+        closeLogStream, useSshAgent);
     return defaultSourceWorkingDirectory;
   }
 
   private void downloadCustomSource(CustomManifestSource source, String outputDirectory, String workingDirectory,
-      LogCallback logCallback) throws IOException {
+      LogCallback logCallback, boolean useSshAgent) throws IOException {
     if (isNotEmpty(source.getScript())) {
-      executeScript(source.getScript(), workingDirectory, SHELL_SCRIPT_TASK_ID, logCallback, true);
+      executeScript(source.getScript(), workingDirectory, SHELL_SCRIPT_TASK_ID, logCallback, true, useSshAgent);
     }
     copyFiles(workingDirectory, outputDirectory, source.getFilePaths());
   }
 
-  private void executeScript(
-      String script, String workingDirectory, String executionId, LogCallback logCallback, boolean closeLogStream) {
+  private void executeScript(String script, String workingDirectory, String executionId, LogCallback logCallback,
+      boolean closeLogStream, boolean useSshAgent) {
     final ShellExecutorConfig shellExecutorConfig = ShellExecutorConfig.builder()
                                                         .environment(ImmutableMap.of())
                                                         .workingDirectory(workingDirectory)
@@ -96,7 +97,8 @@ public class CustomManifestServiceImpl implements CustomManifestService {
                                                         .closeLogStream(closeLogStream)
                                                         .build();
     final ScriptProcessExecutor executor = createExecutor(shellExecutorConfig, logCallback);
-    final ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(script, emptyList());
+    final ExecuteCommandResponse executeCommandResponse =
+        executor.executeCommandString(script, emptyList(), useSshAgent);
 
     if (CommandExecutionStatus.SUCCESS != executeCommandResponse.getStatus()) {
       throw new ShellExecutionException("Custom shell script failed");

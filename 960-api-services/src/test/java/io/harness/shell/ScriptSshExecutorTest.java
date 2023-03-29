@@ -85,7 +85,7 @@ public class ScriptSshExecutorTest extends CategoryTest {
         .when(scriptSshExecutor)
         .getExecuteCommandResponse(command, new ArrayList<>(), new ArrayList<>(), false);
 
-    ExecuteCommandResponse response = scriptSshExecutor.executeCommandString(command, new ArrayList<>());
+    ExecuteCommandResponse response = scriptSshExecutor.executeCommandString(command, new ArrayList<>(), );
 
     assertThat(response.getStatus()).isEqualTo(executeCommandResponse.getStatus());
   }

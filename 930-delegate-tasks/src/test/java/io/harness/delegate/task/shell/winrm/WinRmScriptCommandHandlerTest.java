@@ -74,7 +74,7 @@ public class WinRmScriptCommandHandlerTest {
                                                   .build();
     WinRmExecutor executor = mock(WinRmExecutor.class);
     when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), anyBoolean(), any(), any())).thenReturn(executor);
-    when(executor.executeCommandString(command, outputVariables))
+    when(executor.executeCommandString(command, outputVariables, ))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
     CommandExecutionStatus result = winRmScriptCommandHandler
                                         .handle(winrmTaskParameters, scriptCommandUnit, iLogStreamingTaskClient,
@@ -101,7 +101,7 @@ public class WinRmScriptCommandHandlerTest {
                                                   .build();
     ScriptProcessExecutor executor = mock(ScriptProcessExecutor.class);
     when(shellExecutorFactory.getExecutor(any(), any(), any(), anyBoolean())).thenReturn(executor);
-    when(executor.executeCommandString(command, outputVariables))
+    when(executor.executeCommandString(command, outputVariables, ))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
     when(executor.getLogCallback()).thenReturn(mock(LogCallback.class));
     CommandExecutionStatus result = winRmScriptCommandHandler

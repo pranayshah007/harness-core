@@ -71,8 +71,8 @@ public class K8sWatchPerpetualTaskServiceClient extends PerpetualTaskClientBase 
     K8sClusterConfig k8sClusterConfig =
         (K8sClusterConfig) getKryoSerializer(true).asObject(params.getK8SClusterConfig().toByteArray());
 
-    K8sTaskParameters k8sTaskParameters =
-        new K8sTaskParameters("", "", "", "", k8sClusterConfig, "", "", 0, APPLY, null, null, false, false, true);
+    K8sTaskParameters k8sTaskParameters = new K8sTaskParameters(
+        "", "", "", "", k8sClusterConfig, "", "", 0, APPLY, null, null, false, false, true, false);
 
     return DelegateTask.builder()
         .accountId(accountId)

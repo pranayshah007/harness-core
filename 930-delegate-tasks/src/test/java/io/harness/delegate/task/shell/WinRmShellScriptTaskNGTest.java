@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -108,11 +109,12 @@ public class WinRmShellScriptTaskNGTest extends CategoryTest {
                                     .executeOnDelegate(true)
                                     .outputVars(emptyList())
                                     .secretOutputVars(emptyList())
+                                    .useSSHAgent(false)
                                     .build();
 
-    when(executor.executeCommandString(any(), anyList()))
+    when(executor.executeCommandString(any(), anyList(), eq(false)))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
-    when(executor.executeCommandString(any(), anyList(), anyList(), any()))
+    when(executor.executeCommandString(any(), anyList(), anyList(), any(), eq(false)))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
 
     // when
@@ -131,10 +133,13 @@ public class WinRmShellScriptTaskNGTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldReturnFailureWhenExecutorReturnFailureOnDelegate() {
     // given
-    TaskParameters parameters =
-        WinRmShellScriptTaskParametersNG.builder().executeOnDelegate(true).outputVars(emptyList()).build();
+    TaskParameters parameters = WinRmShellScriptTaskParametersNG.builder()
+                                    .executeOnDelegate(true)
+                                    .outputVars(emptyList())
+                                    .useSSHAgent(false)
+                                    .build();
 
-    when(executor.executeCommandString(any(), anyList()))
+    when(executor.executeCommandString(any(), anyList(), eq(false)))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.FAILURE).build());
 
     // when
@@ -158,10 +163,11 @@ public class WinRmShellScriptTaskNGTest extends CategoryTest {
                                     .outputVars(emptyList())
                                     .secretOutputVars(emptyList())
                                     .script("echo test")
+                                    .useSSHAgent(false)
                                     .build();
 
-    when(winRmExecutor.executeCommandString(anyString())).thenReturn(CommandExecutionStatus.SUCCESS);
-    when(winRmExecutor.executeCommandString(any(), anyList(), anyList(), any()))
+    when(winRmExecutor.executeCommandString(anyString(), eq(false))).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(winRmExecutor.executeCommandString(any(), anyList(), anyList(), any(), eq(false)))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
 
     // when
@@ -180,11 +186,15 @@ public class WinRmShellScriptTaskNGTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldReturnFailureWhenExecutorReturnFailureOnRemote() {
     // given
-    TaskParameters parameters =
-        WinRmShellScriptTaskParametersNG.builder().executeOnDelegate(false).outputVars(emptyList()).build();
+    TaskParameters parameters = WinRmShellScriptTaskParametersNG.builder()
+                                    .executeOnDelegate(false)
+                                    .outputVars(emptyList())
+                                    .useSSHAgent(false)
+                                    .build();
 
-    when(winRmExecutor.executeCommandString(anyString(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
-    when(winRmExecutor.executeCommandString(anyString(), anyList()))
+    when(winRmExecutor.executeCommandString(anyString(), anyBoolean(), eq(false)))
+        .thenReturn(CommandExecutionStatus.SUCCESS);
+    when(winRmExecutor.executeCommandString(anyString(), anyList(), eq(false)))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.FAILURE).build());
 
     // when

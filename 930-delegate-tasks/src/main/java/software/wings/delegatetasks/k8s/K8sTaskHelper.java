@@ -357,10 +357,10 @@ public class K8sTaskHelper {
   }
 
   private boolean downloadManifestFilesFromCustomSource(K8sDelegateManifestConfig delegateManifestConfig,
-      String manifestFilesDirectory, ExecutionLogCallback executionLogCallback) {
+      String manifestFilesDirectory, ExecutionLogCallback executionLogCallback, boolean useSshAgent) {
     try {
       customManifestService.downloadCustomSource(
-          delegateManifestConfig.getCustomManifestSource(), manifestFilesDirectory, executionLogCallback);
+          delegateManifestConfig.getCustomManifestSource(), manifestFilesDirectory, executionLogCallback, useSshAgent);
       executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
       executionLogCallback.saveExecutionLog(k8sTaskHelperBase.getManifestFileNamesInLogFormat(manifestFilesDirectory));
       executionLogCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
@@ -421,7 +421,8 @@ public class K8sTaskHelper {
   }
 
   public boolean fetchManifestFilesAndWriteToDirectory(K8sDelegateManifestConfig delegateManifestConfig,
-      String manifestFilesDirectory, ExecutionLogCallback executionLogCallback, long timeoutInMillis) {
+      String manifestFilesDirectory, ExecutionLogCallback executionLogCallback, long timeoutInMillis,
+      boolean useSshAgent) {
     StoreType storeType = delegateManifestConfig.getManifestStoreTypes();
     switch (storeType) {
       case Local:
@@ -445,7 +446,7 @@ public class K8sTaskHelper {
                 delegateManifestConfig, manifestFilesDirectory, executionLogCallback);
           }
           return downloadManifestFilesFromCustomSource(
-              delegateManifestConfig, manifestFilesDirectory, executionLogCallback);
+              delegateManifestConfig, manifestFilesDirectory, executionLogCallback, useSshAgent);
         }
 
       // fallthrough to ignore branch if FF is not enabled

@@ -127,7 +127,7 @@ public class K8sDeleteTaskHandler extends K8sTaskHandler {
 
     boolean success =
         k8sTaskHelper.fetchManifestFilesAndWriteToDirectory(k8sDeleteTaskParameters.getK8sDelegateManifestConfig(),
-            manifestFilesDirectory, logCallback, steadyStateTimeoutInMillis);
+            manifestFilesDirectory, logCallback, steadyStateTimeoutInMillis, k8sDeleteTaskParameters.isUseSshAgent());
     if (!success) {
       return k8sTaskHelper.getK8sTaskExecutionResponse(
           K8sDeleteResponse.builder().build(), CommandExecutionStatus.FAILURE);

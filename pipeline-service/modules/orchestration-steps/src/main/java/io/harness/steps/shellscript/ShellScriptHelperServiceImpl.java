@@ -231,7 +231,8 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         .disableCommandEncoding(pmsFeatureFlagService.isEnabled(
             AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_WINRM_COMMAND_ENCODING_NG))
         .winrmScriptCommandSplit(pmsFeatureFlagService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.WINRM_SCRIPT_COMMAND_SPLIT_NG));
+            AmbianceUtils.getAccountId(ambiance), FeatureName.WINRM_SCRIPT_COMMAND_SPLIT_NG))
+        .useSSHAgent(pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_SSH_AGENT));
 
     return taskParametersNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
         .executeOnDelegate(shellScriptStepParameters.onDelegate.getValue())

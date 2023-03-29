@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.BIND_CUSTOM_VALUE_AND_MANIFEST_FETCH_TASK;
 import static io.harness.beans.FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_CG;
+import static io.harness.beans.FeatureName.CDS_SSH_AGENT;
 import static io.harness.beans.FeatureName.KUSTOMIZE_PATCHES_CG;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.beans.FeatureName.OVERRIDE_VALUES_YAML_FROM_HELM_CHART;
@@ -674,6 +675,8 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
             : getDelegateSelectors(
                 (applicationManifestMap == null) ? null : applicationManifestMap.get(K8sValuesLocation.Service),
                 context));
+
+    k8sTaskParameters.setUseSshAgent(featureFlagService.isEnabled(CDS_SSH_AGENT, context.getAccountId()));
 
     long taskTimeoutInMillis = DEFAULT_ASYNC_CALL_TIMEOUT;
 

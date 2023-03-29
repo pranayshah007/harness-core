@@ -128,14 +128,14 @@ public class ShellScriptProvisionTaskTest extends WingsBaseTest {
         ExecuteCommandResponse.builder().status(CommandExecutionStatus.FAILURE).build();
 
     ScriptProcessExecutor scriptProcessExecutor = mock(ScriptProcessExecutor.class);
-    when(scriptProcessExecutor.executeCommandString(anyString(), anyList(), anyList(), any()))
+    when(scriptProcessExecutor.executeCommandString(anyString(), anyList(), anyList(), any(), ))
         .thenReturn(executeCommandResponse);
     when(shellExecutorFactory.getExecutor(any(ShellExecutorConfig.class))).thenReturn(scriptProcessExecutor);
 
     ShellScriptProvisionExecutionData shellScriptProvisionExecutionData = shellScriptProvisionTask.run(taskParameters);
     assertThat(shellScriptProvisionExecutionData.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
     verify(scriptProcessExecutor, times(1))
-        .executeCommandString(eq(scriptBody), eq(emptyList()), eq(emptyList()), eq(null));
+        .executeCommandString(eq(scriptBody), eq(emptyList()), eq(emptyList()), eq(null), );
   }
 
   @Test

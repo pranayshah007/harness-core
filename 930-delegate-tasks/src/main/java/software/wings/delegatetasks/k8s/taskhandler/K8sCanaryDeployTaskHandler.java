@@ -118,7 +118,7 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
 
       success = k8sTaskHelper.fetchManifestFilesAndWriteToDirectory(
           k8sCanaryDeployTaskParameters.getK8sDelegateManifestConfig(), canaryHandlerConfig.getManifestFilesDirectory(),
-          executionLogCallback, timeoutInMillis);
+          executionLogCallback, timeoutInMillis, k8sTaskParameters.isUseSshAgent());
       if (!success) {
         return getFailureResponse();
       }

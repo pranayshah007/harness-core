@@ -111,7 +111,7 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
     if (customManifestSource != null) {
       try {
         defaultSourceWorkingDirectory = customManifestService.executeCustomSourceScript(
-            fetchParams.getActivityId(), logCallback, customManifestSource, false);
+            fetchParams.getActivityId(), logCallback, customManifestSource, false, fetchParams.isUseSshAgent());
 
         logCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
         logCallback.saveExecutionLog(k8sTaskHelperBase.getManifestFileNamesInLogFormat(defaultSourceWorkingDirectory));

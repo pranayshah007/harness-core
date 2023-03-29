@@ -94,7 +94,7 @@ public class WinRmInitCommandHandler implements CommandHandler {
         shellExecutorFactory.getExecutor(config, logStreamingTaskClient, commandUnitsProgress, true);
     try {
       ExecuteCommandResponse executeCommandResponse =
-          executor.executeCommandString(getInitCommand("/tmp"), Collections.emptyList());
+          executor.executeCommandString(getInitCommand("/tmp"), Collections.emptyList(), );
 
       final CommandExecutionStatus status = getStatus(executeCommandResponse);
 
@@ -117,7 +117,8 @@ public class WinRmInitCommandHandler implements CommandHandler {
         winRmExecutorFactoryNG.getExecutor(config, winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(),
             winRmCommandTaskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
 
-    return executor.executeCommandString(getInitCommand(getWorkingDir(commandUnit.getDestinationPath())), false, false);
+    return executor.executeCommandString(
+        getInitCommand(getWorkingDir(commandUnit.getDestinationPath())), false, false, );
   }
 
   private String getInitCommand(String workingDirectory) {

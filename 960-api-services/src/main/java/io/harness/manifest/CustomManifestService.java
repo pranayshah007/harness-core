@@ -18,17 +18,17 @@ import javax.validation.constraints.NotNull;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface CustomManifestService {
-  void downloadCustomSource(@NotNull CustomManifestSource source, String outputDirectory, LogCallback logCallback)
-      throws IOException;
+  void downloadCustomSource(@NotNull CustomManifestSource source, String outputDirectory, LogCallback logCallback,
+      boolean useSshAgent) throws IOException;
 
   Collection<CustomSourceFile> fetchValues(@NotNull CustomManifestSource source, String workingDirectory,
-      String activityId, LogCallback logCallback, boolean closeLogStream) throws IOException;
+      String activityId, LogCallback logCallback, boolean closeLogStream, boolean useSshAgent) throws IOException;
 
   String getWorkingDirectory() throws IOException;
 
   @NotNull
   String executeCustomSourceScript(String activityId, LogCallback logCallback,
-      CustomManifestSource customManifestSource, boolean closeLogStream) throws IOException;
+      CustomManifestSource customManifestSource, boolean closeLogStream, boolean useSshAgent) throws IOException;
 
   Collection<CustomSourceFile> readFilesContent(String parentDirectory, List<String> filesPath) throws IOException;
 

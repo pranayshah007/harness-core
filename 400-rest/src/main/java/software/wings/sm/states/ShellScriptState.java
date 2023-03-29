@@ -8,6 +8,7 @@
 package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.CDS_SSH_AGENT;
 import static io.harness.beans.FeatureName.DISABLE_WINRM_COMMAND_ENCODING;
 import static io.harness.beans.FeatureName.LOCAL_DELEGATE_CONFIG_OVERRIDE;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
@@ -515,6 +516,7 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
             .keyName(keyName)
             .disableWinRMCommandEncodingFFSet(
                 featureFlagService.isEnabled(DISABLE_WINRM_COMMAND_ENCODING, executionContext.getApp().getAccountId()))
+            .useSshAgent(featureFlagService.isEnabled(CDS_SSH_AGENT, executionContext.getApp().getAccountId()))
             .winrmScriptCommandSplit(
                 featureFlagService.isEnabled(WINRM_SCRIPT_COMMAND_SPLIT, executionContext.getApp().getAccountId()))
             .disableWinRMEnvVariables(featureFlagService.isNotEnabled(

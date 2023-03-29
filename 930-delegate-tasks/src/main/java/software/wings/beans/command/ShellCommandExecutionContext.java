@@ -58,15 +58,15 @@ public class ShellCommandExecutionContext extends CommandExecutionContext {
   }
 
   public CommandExecutionStatus executeCommandString(String commandString) {
-    return executor.executeCommandString(commandString, false);
+    return executor.executeCommandString(commandString, false, );
   }
 
   public CommandExecutionStatus executeCommandString(String commandString, boolean displayCommand) {
-    return executor.executeCommandString(commandString, displayCommand, false);
+    return executor.executeCommandString(commandString, displayCommand, false, );
   }
 
   public CommandExecutionStatus executeCommandString(String commandString, StringBuffer output) {
-    return executor.executeCommandString(commandString, output);
+    return executor.executeCommandString(commandString, output, );
   }
 
   public void setExecutor(BaseScriptExecutor executor) {

@@ -137,7 +137,8 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
 
       success = k8sTaskHelper.fetchManifestFilesAndWriteToDirectory(
           k8sRollingDeployTaskParameters.getK8sDelegateManifestConfig(),
-          k8sRollingHandlerConfig.getManifestFilesDirectory(), executionLogCallback, steadyStateTimeoutInMillis);
+          k8sRollingHandlerConfig.getManifestFilesDirectory(), executionLogCallback, steadyStateTimeoutInMillis,
+          k8sTaskParameters.isUseSshAgent());
 
       if (!success) {
         return getFailureResponse();

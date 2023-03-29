@@ -103,10 +103,10 @@ public class CustomManifestFetchTaskHelperTest extends CategoryTest {
     initMocks(this);
     doReturn(SAMPLE_1_RESULT)
         .when(customManifestService)
-        .fetchValues(eq(SAMPLE_1), anyString(), eq(ACTIVITY_ID), eq(logCallback), eq(true));
+        .fetchValues(eq(SAMPLE_1), anyString(), eq(ACTIVITY_ID), eq(logCallback), eq(true), );
     doReturn(SAMPLE_2_RESULT)
         .when(customManifestService)
-        .fetchValues(eq(SAMPLE_2), anyString(), eq(ACTIVITY_ID), eq(logCallback), eq(true));
+        .fetchValues(eq(SAMPLE_2), anyString(), eq(ACTIVITY_ID), eq(logCallback), eq(true), );
     doReturn(SAMPLE_EMPTY_SCRIPT_RESULT)
         .when(customManifestService)
         .readFilesContent(eq(DEFAULT_DIRECTORY), eq(singletonList("file4.yaml")));
@@ -115,13 +115,13 @@ public class CustomManifestFetchTaskHelperTest extends CategoryTest {
         .readFilesContent(eq(DEFAULT_DIRECTORY), eq(singletonList("file1.yaml")));
     doThrow(new AccessDeniedException("file not accessible"))
         .when(customManifestService)
-        .fetchValues(eq(NOT_ACCESSIBLE), anyString(), eq(ACTIVITY_ID), eq(logCallback), eq(true));
+        .fetchValues(eq(NOT_ACCESSIBLE), anyString(), eq(ACTIVITY_ID), eq(logCallback), eq(true), );
     doThrow(new RuntimeException("something went wrong"))
         .when(customManifestService)
-        .fetchValues(eq(EXECUTION_EXCEPTION), anyString(), eq(ACTIVITY_ID), eq(logCallback), eq(true));
+        .fetchValues(eq(EXECUTION_EXCEPTION), anyString(), eq(ACTIVITY_ID), eq(logCallback), eq(true), );
     doThrow(new FileNotFoundException())
         .when(customManifestService)
-        .fetchValues(eq(MISSING_FILE), anyString(), eq(ACTIVITY_ID), eq(logCallback), eq(true));
+        .fetchValues(eq(MISSING_FILE), anyString(), eq(ACTIVITY_ID), eq(logCallback), eq(true), );
     doReturn("WORK_DIR").when(customManifestService).getWorkingDirectory();
   }
 
@@ -183,7 +183,7 @@ public class CustomManifestFetchTaskHelperTest extends CategoryTest {
         CustomManifestValuesFetchParams.builder().fetchFilesList(emptyList()).commandUnitName("Fetch files").build();
     CustomManifestValuesFetchResponse response =
         manifestFetchTaskHelper.fetchValuesTask(taskParams, logCallback, DEFAULT_DIRECTORY, true);
-    verify(customManifestService, never()).fetchValues(any(), any(), any(), any(), eq(true));
+    verify(customManifestService, never()).fetchValues(any(), any(), any(), any(), eq(true), );
     verify(customManifestService, never()).readFilesContent(any(), any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(response.getValuesFilesContentMap()).isEmpty();
@@ -214,7 +214,7 @@ public class CustomManifestFetchTaskHelperTest extends CategoryTest {
 
     CustomManifestValuesFetchResponse response =
         manifestFetchTaskHelper.fetchValuesTask(taskParams, logCallback, DEFAULT_DIRECTORY, true);
-    verify(customManifestService, times(1)).fetchValues(any(), any(), any(), any(), eq(true));
+    verify(customManifestService, times(1)).fetchValues(any(), any(), any(), any(), eq(true), );
     verify(customManifestService, times(2)).readFilesContent(any(), any());
 
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -243,7 +243,7 @@ public class CustomManifestFetchTaskHelperTest extends CategoryTest {
     CustomManifestValuesFetchResponse response =
         manifestFetchTaskHelper.fetchValuesTask(taskParams, logCallback, DEFAULT_DIRECTORY, true);
 
-    verify(customManifestService, times(1)).fetchValues(any(), any(), any(), any(), eq(true));
+    verify(customManifestService, times(1)).fetchValues(any(), any(), any(), any(), eq(true), );
     verify(customManifestService, times(1)).readFilesContent(any(), any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(response.getValuesFilesContentMap()).isEqualTo(ImmutableMap.of("Sample", SAMPLE_1_READ_FILE_RESULT));
@@ -268,7 +268,7 @@ public class CustomManifestFetchTaskHelperTest extends CategoryTest {
 
     CustomManifestValuesFetchResponse response =
         manifestFetchTaskHelper.fetchValuesTask(taskParams, logCallback, DEFAULT_DIRECTORY, true);
-    verify(customManifestService, times(1)).fetchValues(any(), any(), any(), any(), eq(true));
+    verify(customManifestService, times(1)).fetchValues(any(), any(), any(), any(), eq(true), );
     verify(customManifestService, never()).readFilesContent(any(), any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     assertThat(response.getValuesFilesContentMap()).isNullOrEmpty();
@@ -292,7 +292,7 @@ public class CustomManifestFetchTaskHelperTest extends CategoryTest {
             .build()));
     CustomManifestValuesFetchResponse response =
         manifestFetchTaskHelper.fetchValuesTask(taskParams, logCallback, DEFAULT_DIRECTORY, true);
-    verify(customManifestService, times(1)).fetchValues(any(), any(), any(), any(), eq(true));
+    verify(customManifestService, times(1)).fetchValues(any(), any(), any(), any(), eq(true), );
     verify(customManifestService, never()).readFilesContent(any(), any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     assertThat(response.getValuesFilesContentMap()).isNullOrEmpty();
@@ -317,7 +317,7 @@ public class CustomManifestFetchTaskHelperTest extends CategoryTest {
 
     CustomManifestValuesFetchResponse response =
         manifestFetchTaskHelper.fetchValuesTask(taskParams, logCallback, DEFAULT_DIRECTORY, true);
-    verify(customManifestService, times(1)).fetchValues(any(), any(), any(), any(), eq(true));
+    verify(customManifestService, times(1)).fetchValues(any(), any(), any(), any(), eq(true), );
     verify(customManifestService, never()).readFilesContent(any(), any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     assertThat(response.getValuesFilesContentMap()).isNullOrEmpty();
@@ -336,7 +336,7 @@ public class CustomManifestFetchTaskHelperTest extends CategoryTest {
 
     doThrow(new RuntimeException("Unhandled exception"))
         .when(customManifestService)
-        .fetchValues(any(), any(), any(), any(), eq(true));
+        .fetchValues(any(), any(), any(), any(), eq(true), );
 
     CustomManifestValuesFetchResponse response =
         manifestFetchTaskHelper.fetchValuesTask(taskParams, logCallback, DEFAULT_DIRECTORY, true);

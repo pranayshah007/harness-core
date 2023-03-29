@@ -64,14 +64,15 @@ public abstract class AbstractScriptExecutor implements BaseScriptExecutor {
 
   @Override
   public abstract CommandExecutionStatus executeCommandString(
-      String command, StringBuffer output, boolean displayCommand);
+      String command, StringBuffer output, boolean displayCommand, boolean useSshAgent);
 
   @Override
-  public abstract ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect);
+  public abstract ExecuteCommandResponse executeCommandString(
+      String command, List<String> envVariablesToCollect, boolean useSshAgent);
 
   @Override
   public abstract ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
-      List<String> secretEnvVariablesToCollect, Long timeoutInMillis);
+      List<String> secretEnvVariablesToCollect, Long timeoutInMillis, boolean useSshAgent);
 
   public abstract String getAccountId();
 
@@ -82,30 +83,30 @@ public abstract class AbstractScriptExecutor implements BaseScriptExecutor {
   public abstract String getHost();
 
   @Override
-  public CommandExecutionStatus executeCommandString(String command) {
-    return executeCommandString(command, null, false);
+  public CommandExecutionStatus executeCommandString(String command, boolean useSshAgent) {
+    return executeCommandString(command, null, false, useSshAgent);
   }
 
   @Override
-  public CommandExecutionStatus executeCommandString(String command, boolean displayCommand) {
-    return executeCommandString(command, null, displayCommand);
+  public CommandExecutionStatus executeCommandString(String command, boolean displayCommand, boolean useSshAgent) {
+    return executeCommandString(command, null, displayCommand, useSshAgent);
   }
 
   @Override
-  public CommandExecutionStatus executeCommandString(String command, StringBuffer output) {
-    return executeCommandString(command, output, false);
-  }
-
-  @Override
-  public CommandExecutionStatus executeCommandString(
-      String command, boolean displayCommand, boolean winrmScriptCommandSplit) {
-    return executeCommandString(command, null, displayCommand);
+  public CommandExecutionStatus executeCommandString(String command, StringBuffer output, boolean useSshAgent) {
+    return executeCommandString(command, output, false, useSshAgent);
   }
 
   @Override
   public CommandExecutionStatus executeCommandString(
-      String command, boolean winrmScriptCommandSplit, StringBuffer output, boolean displayComman) {
-    return executeCommandString(command, output, displayComman);
+      String command, boolean displayCommand, boolean winrmScriptCommandSplit, boolean useSshAgent) {
+    return executeCommandString(command, null, displayCommand, useSshAgent);
+  }
+
+  @Override
+  public CommandExecutionStatus executeCommandString(String command, boolean winrmScriptCommandSplit,
+      StringBuffer output, boolean displayCommand, boolean useSshAgent) {
+    return executeCommandString(command, output, displayCommand, useSshAgent);
   }
 
   protected String addEnvVariablesCollector(

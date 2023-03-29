@@ -84,7 +84,7 @@ public class SshCleanupCommandHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldCleanupStagingDirWithSshExecutor() {
     doReturn(scriptSshExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptSshExecutor.executeCommandString("rm -rf /tmp/testExecution"))
+    when(scriptSshExecutor.executeCommandString("rm -rf /tmp/testExecution", false))
         .thenReturn(CommandExecutionStatus.SUCCESS);
 
     CommandExecutionStatus status =
@@ -104,7 +104,7 @@ public class SshCleanupCommandHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldCleanupStagingDirWithProcessExecutorOnDelegate() {
     doReturn(scriptProcessExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptProcessExecutor.executeCommandString("rm -rf /tmp/testExecution"))
+    when(scriptProcessExecutor.executeCommandString("rm -rf /tmp/testExecution", false))
         .thenReturn(CommandExecutionStatus.SUCCESS);
     when(scriptProcessExecutor.getLogCallback()).thenReturn(logCallback);
 

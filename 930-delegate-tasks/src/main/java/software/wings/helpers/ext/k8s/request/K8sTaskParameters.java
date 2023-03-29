@@ -53,6 +53,7 @@ public class K8sTaskParameters implements TaskParameters, ActivityAccess, Execut
   private boolean useLatestChartMuseumVersion;
   private boolean useLatestKustomizeVersion;
   private boolean useNewKubectlVersion;
+  private boolean useSshAgent;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

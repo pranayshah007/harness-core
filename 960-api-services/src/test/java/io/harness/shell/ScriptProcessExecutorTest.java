@@ -74,7 +74,7 @@ public class ScriptProcessExecutorTest extends CategoryTest {
     String command = "export A=\"aaa\"\n"
         + "export B=\"bbb\"";
     ExecuteCommandResponse executeCommandResponse = scriptProcessExecutor.executeCommandString(
-        command, asList("A", "B", "${C}", "${A}"), Collections.emptyList(), null);
+        command, asList("A", "B", "${C}", "${A}"), Collections.emptyList(), null, );
     assertThat(executeCommandResponse).isNotNull();
     assertThat(executeCommandResponse.getStatus()).isEqualTo(SUCCESS);
     assertThat(executeCommandResponse.getCommandExecutionData()).isNotNull();
@@ -106,7 +106,7 @@ public class ScriptProcessExecutorTest extends CategoryTest {
 
     String command = "exit 1";
     ExecuteCommandResponse executeCommandResponse =
-        scriptProcessExecutor.executeCommandString(command, asList("A", "B"));
+        scriptProcessExecutor.executeCommandString(command, asList("A", "B"), );
     assertThat(executeCommandResponse).isNotNull();
     assertThat(executeCommandResponse.getStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     assertThat(executeCommandResponse.getCommandExecutionData()).isNotNull();
@@ -306,7 +306,7 @@ public class ScriptProcessExecutorTest extends CategoryTest {
     String command = "export A=\"aaa\"\n"
         + "export B=\"bbb\"";
     ExecuteCommandResponse executeCommandResponse = scriptProcessExecutor.executeCommandString(
-        command, asList("A", "B", "${C}", "${A}"), Collections.emptyList(), null);
+        command, asList("A", "B", "${C}", "${A}"), Collections.emptyList(), null, );
     assertThat(executeCommandResponse).isNotNull();
     assertThat(executeCommandResponse.getStatus()).isEqualTo(SUCCESS);
     assertThat(executeCommandResponse.getCommandExecutionData()).isNotNull();
@@ -341,7 +341,7 @@ public class ScriptProcessExecutorTest extends CategoryTest {
     String command = "export A=\"aaa\"\n"
         + "export B=\"bbb\"";
     ExecuteCommandResponse executeCommandResponse = scriptProcessExecutor.executeCommandString(
-        command, asList("A", "B", "${C}", "${A}", "hyphen-var", "nonExistentVar"), Collections.emptyList(), null);
+        command, asList("A", "B", "${C}", "${A}", "hyphen-var", "nonExistentVar"), Collections.emptyList(), null, );
     assertThat(executeCommandResponse).isNotNull();
     assertThat(executeCommandResponse.getStatus()).isEqualTo(SUCCESS);
     assertThat(executeCommandResponse.getCommandExecutionData()).isNotNull();

@@ -62,6 +62,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
@@ -86,6 +87,7 @@ import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.tas.TasStageExecutionDetails;
 import io.harness.cdng.execution.tas.TasStageExecutionDetails.TasStageExecutionDetailsKeys;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
@@ -234,6 +236,7 @@ public class TasStepHelper {
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
 
   private static final Splitter lineSplitter = Splitter.onPattern("\\r?\\n").trimResults().omitEmptyStrings();
 
@@ -1099,6 +1102,7 @@ public class TasStepHelper {
             .shouldOpenLogStream(true)
             .shouldCloseLogStream(true)
             .customManifestSource(customManifestSource)
+            .useSshAgent(cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_SSH_AGENT))
             .build();
 
     final TaskData taskData = TaskData.builder()

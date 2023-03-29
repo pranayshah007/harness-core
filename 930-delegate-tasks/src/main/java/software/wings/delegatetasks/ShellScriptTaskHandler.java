@@ -75,8 +75,8 @@ public class ShellScriptTaskHandler {
       if (parameters.isLocalOverrideFeatureFlag()) {
         parameters.setScript(delegateLocalConfigService.replacePlaceholdersWithLocalConfig(parameters.getScript()));
       }
-      return CommandExecutionResultMapper.from(
-          executor.executeCommandString(parameters.getScript(), items, secretItems, timeoutInMillis));
+      return CommandExecutionResultMapper.from(executor.executeCommandString(
+          parameters.getScript(), items, secretItems, timeoutInMillis, parameters.isUseSshAgent()));
     }
 
     switch (parameters.getConnectionType()) {
@@ -87,8 +87,8 @@ public class ShellScriptTaskHandler {
           BaseScriptExecutor executor =
               sshExecutorFactory.getExecutor(expectedSshConfig, parameters.isSaveExecutionLogs());
           enableJSchLogsPerSSHTaskExecution(parameters.isEnableJSchLogs());
-          return CommandExecutionResultMapper.from(
-              executor.executeCommandString(parameters.getScript(), items, secretItems, timeoutInMillis));
+          return CommandExecutionResultMapper.from(executor.executeCommandString(
+              parameters.getScript(), items, secretItems, timeoutInMillis, parameters.isUseSshAgent()));
         } catch (Exception e) {
           throw new CommandExecutionException("Bash Script Failed to execute", e);
         } finally {
@@ -103,8 +103,8 @@ public class ShellScriptTaskHandler {
           WinRmExecutor executor =
               winrmExecutorFactory.getExecutor(winRmSessionConfig, parameters.isDisableWinRMCommandEncodingFFSet(),
                   parameters.isSaveExecutionLogs(), parameters.isWinrmScriptCommandSplit());
-          return CommandExecutionResultMapper.from(
-              executor.executeCommandString(parameters.getScript(), items, secretItems, timeoutInMillis));
+          return CommandExecutionResultMapper.from(executor.executeCommandString(
+              parameters.getScript(), items, secretItems, timeoutInMillis, parameters.isUseSshAgent()));
         } catch (Exception e) {
           throw new CommandExecutionException("Powershell script Failed to execute", e);
         }

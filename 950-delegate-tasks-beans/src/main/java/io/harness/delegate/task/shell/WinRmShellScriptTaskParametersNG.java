@@ -53,6 +53,7 @@ public class WinRmShellScriptTaskParametersNG implements TaskParameters, Executi
   boolean disableCommandEncoding;
   boolean winrmScriptCommandSplit;
   boolean useWinRMKerberosUniqueCacheFile;
+  boolean useSSHAgent;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

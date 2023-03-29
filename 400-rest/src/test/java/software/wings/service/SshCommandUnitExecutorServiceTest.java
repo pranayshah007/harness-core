@@ -403,7 +403,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
     when(sshExecutorFactory.getExecutor(any(SshSessionConfig.class))).thenReturn(scriptSshExecutor);
     sshCommandUnitExecutorService.execute(EXEC_COMMAND_UNIT,
         commandExecutionContextBuider.but().hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO()).build());
-    verify(scriptSshExecutor).executeCommandString(EXEC_COMMAND_UNIT.getPreparedCommand(), false);
+    verify(scriptSshExecutor).executeCommandString(EXEC_COMMAND_UNIT.getPreparedCommand(), false, );
   }
 
   /**
@@ -454,13 +454,14 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
 
     when(sshExecutorFactory.getExecutor(any(SshSessionConfig.class))).thenReturn(scriptSshExecutor);
     when(sshExecutorFactory.getFileBasedExecutor(any(SshSessionConfig.class))).thenReturn(fileBasedSshScriptExecutor);
-    when(scriptSshExecutor.executeCommandString(anyString(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptSshExecutor.executeCommandString(anyString(), anyBoolean(), ))
+        .thenReturn(CommandExecutionStatus.SUCCESS);
     when(fileBasedSshScriptExecutor.copyFiles(anyString(), anyListOf(String.class)))
         .thenReturn(CommandExecutionStatus.SUCCESS);
 
     sshCommandUnitExecutorService.execute(
         commandUnit, commandExecutionContextBuider.but().hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO()).build());
-    verify(scriptSshExecutor).executeCommandString("mkdir -p /tmp/ACTIVITY_ID", false);
+    verify(scriptSshExecutor).executeCommandString("mkdir -p /tmp/ACTIVITY_ID", false, );
 
     String actualLauncherScript =
         new File(System.getProperty("java.io.tmpdir"), "harnesslauncherACTIVITY_ID.sh").getAbsolutePath();
@@ -471,7 +472,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
         new File(System.getProperty("java.io.tmpdir"), "harness" + DigestUtils.md5Hex("dolsACTIVITY_ID"))
             .getAbsolutePath();
     verify(fileBasedSshScriptExecutor).copyFiles("/tmp/ACTIVITY_ID", asList(expectedExecCommandUnitScript));
-    verify(scriptSshExecutor).executeCommandString("chmod 0700 /tmp/ACTIVITY_ID/*", false);
+    verify(scriptSshExecutor).executeCommandString("chmod 0700 /tmp/ACTIVITY_ID/*", false, );
 
     assertThat(new File(expectedExecCommandUnitScript)).doesNotExist();
     assertThat((ExecCommandUnit) command.getCommandUnits().get(1))
@@ -499,14 +500,15 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
     commandUnit.setCommand(command);
 
     when(sshExecutorFactory.getExecutor(any(SshSessionConfig.class))).thenReturn(scriptSshExecutor);
-    when(scriptSshExecutor.executeCommandString(anyString(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptSshExecutor.executeCommandString(anyString(), anyBoolean(), ))
+        .thenReturn(CommandExecutionStatus.SUCCESS);
 
     sshCommandUnitExecutorService.execute(commandUnit,
         commandExecutionContextBuider.but()
             .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
             .inlineSshCommand(true)
             .build());
-    verify(scriptSshExecutor).executeCommandString("mkdir -p /tmp/ACTIVITY_ID", false);
+    verify(scriptSshExecutor).executeCommandString("mkdir -p /tmp/ACTIVITY_ID", false, );
     assertThat(((ExecCommandUnit) command.getCommandUnits().get(1)).getPreparedCommand()).contains("ls");
   }
 
@@ -539,7 +541,8 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
 
     when(sshExecutorFactory.getExecutor(any(SshSessionConfig.class))).thenReturn(scriptSshExecutor);
     when(sshExecutorFactory.getFileBasedExecutor(any(SshSessionConfig.class))).thenReturn(fileBasedSshScriptExecutor);
-    when(scriptSshExecutor.executeCommandString(anyString(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptSshExecutor.executeCommandString(anyString(), anyBoolean(), ))
+        .thenReturn(CommandExecutionStatus.SUCCESS);
     when(fileBasedSshScriptExecutor.copyFiles(anyString(), anyListOf(String.class)))
         .thenReturn(CommandExecutionStatus.SUCCESS);
     sshCommandUnitExecutorService.execute(
@@ -567,7 +570,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
         .isEqualTo("/tmp/ACTIVITY_ID/harnesslauncherACTIVITY_ID.sh -w '/home/tomcat' harness"
             + DigestUtils.md5Hex("start1startscriptACTIVITY_ID"));
 
-    verify(scriptSshExecutor).executeCommandString("chmod 0700 /tmp/ACTIVITY_ID/*", false);
+    verify(scriptSshExecutor).executeCommandString("chmod 0700 /tmp/ACTIVITY_ID/*", false, );
   }
 
   /**
@@ -597,7 +600,8 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
     commandUnit.setCommand(command);
 
     when(sshExecutorFactory.getExecutor(any(SshSessionConfig.class))).thenReturn(scriptSshExecutor);
-    when(scriptSshExecutor.executeCommandString(anyString(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptSshExecutor.executeCommandString(anyString(), anyBoolean(), ))
+        .thenReturn(CommandExecutionStatus.SUCCESS);
     sshCommandUnitExecutorService.execute(commandUnit,
         commandExecutionContextBuider.but()
             .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
@@ -609,7 +613,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
         ((ExecCommandUnit) ((Command) command.getCommandUnits().get(2)).getCommandUnits().get(0)).getPreparedCommand())
         .contains("start.sh");
 
-    verify(scriptSshExecutor).executeCommandString("mkdir -p /tmp/ACTIVITY_ID", false);
+    verify(scriptSshExecutor).executeCommandString("mkdir -p /tmp/ACTIVITY_ID", false, );
   }
 
   /**
@@ -635,7 +639,8 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
 
     when(sshExecutorFactory.getExecutor(any(SshSessionConfig.class))).thenReturn(scriptSshExecutor);
     when(sshExecutorFactory.getFileBasedExecutor(any(SshSessionConfig.class))).thenReturn(fileBasedSshScriptExecutor);
-    when(scriptSshExecutor.executeCommandString(anyString(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptSshExecutor.executeCommandString(anyString(), anyBoolean(), ))
+        .thenReturn(CommandExecutionStatus.SUCCESS);
     when(fileBasedSshScriptExecutor.copyFiles(anyString(), anyListOf(String.class)))
         .thenReturn(CommandExecutionStatus.SUCCESS);
 
@@ -675,7 +680,8 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
 
     when(sshExecutorFactory.getExecutor(any(SshSessionConfig.class))).thenReturn(scriptSshExecutor);
     when(sshExecutorFactory.getFileBasedExecutor(any(SshSessionConfig.class))).thenReturn(fileBasedSshScriptExecutor);
-    when(scriptSshExecutor.executeCommandString(anyString(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptSshExecutor.executeCommandString(anyString(), anyBoolean(), ))
+        .thenReturn(CommandExecutionStatus.SUCCESS);
     when(fileBasedSshScriptExecutor.copyFiles(anyString(), anyListOf(String.class)))
         .thenReturn(CommandExecutionStatus.SUCCESS);
 

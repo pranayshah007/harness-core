@@ -102,7 +102,7 @@ public class SshInitCommandHandlerTest extends CategoryTest {
                                            .build();
 
     doReturn(scriptSshExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptSshExecutor.executeCommandString(PRE_INIT_CMD, true)).thenReturn(CommandExecutionStatus.FAILURE);
+    when(scriptSshExecutor.executeCommandString(PRE_INIT_CMD, true, )).thenReturn(CommandExecutionStatus.FAILURE);
 
     CommandExecutionStatus status =
         sshInitCommandHandler
@@ -123,7 +123,7 @@ public class SshInitCommandHandlerTest extends CategoryTest {
                                            .build();
 
     doReturn(scriptProcessExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptProcessExecutor.executeCommandString(PRE_INIT_CMD, true)).thenReturn(CommandExecutionStatus.FAILURE);
+    when(scriptProcessExecutor.executeCommandString(PRE_INIT_CMD, true, )).thenReturn(CommandExecutionStatus.FAILURE);
     when(scriptProcessExecutor.getLogCallback()).thenReturn(logCallback);
 
     CommandExecutionStatus status =
@@ -145,8 +145,8 @@ public class SshInitCommandHandlerTest extends CategoryTest {
                                               .build();
 
     doReturn(scriptSshExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptSshExecutor.executeCommandString(PRE_INIT_CMD, true)).thenReturn(CommandExecutionStatus.SUCCESS);
-    when(scriptSshExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class)))
+    when(scriptSshExecutor.executeCommandString(PRE_INIT_CMD, true, )).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptSshExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class), ))
         .thenReturn(CommandExecutionStatus.SUCCESS);
 
     CommandExecutionStatus status =
@@ -177,8 +177,8 @@ public class SshInitCommandHandlerTest extends CategoryTest {
                                               .build();
 
     doReturn(scriptProcessExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptProcessExecutor.executeCommandString(PRE_INIT_CMD, true)).thenReturn(CommandExecutionStatus.SUCCESS);
-    when(scriptProcessExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class)))
+    when(scriptProcessExecutor.executeCommandString(PRE_INIT_CMD, true, )).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptProcessExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class), ))
         .thenReturn(CommandExecutionStatus.SUCCESS);
     when(scriptProcessExecutor.getLogCallback()).thenReturn(logCallback);
 
@@ -210,8 +210,8 @@ public class SshInitCommandHandlerTest extends CategoryTest {
                                               .build();
 
     doReturn(scriptSshExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptSshExecutor.executeCommandString(PRE_INIT_CMD, true)).thenReturn(CommandExecutionStatus.SUCCESS);
-    when(scriptSshExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class)))
+    when(scriptSshExecutor.executeCommandString(PRE_INIT_CMD, true, )).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptSshExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class), ))
         .thenReturn(CommandExecutionStatus.SUCCESS);
 
     CommandExecutionStatus status =
@@ -244,8 +244,8 @@ public class SshInitCommandHandlerTest extends CategoryTest {
                                               .build();
 
     doReturn(scriptProcessExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptProcessExecutor.executeCommandString(PRE_INIT_CMD, true)).thenReturn(CommandExecutionStatus.SUCCESS);
-    when(scriptProcessExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class)))
+    when(scriptProcessExecutor.executeCommandString(PRE_INIT_CMD, true, )).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptProcessExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class), ))
         .thenReturn(CommandExecutionStatus.SUCCESS);
     when(scriptProcessExecutor.getLogCallback()).thenReturn(logCallback);
 
@@ -280,8 +280,8 @@ public class SshInitCommandHandlerTest extends CategoryTest {
             .build();
 
     doReturn(scriptSshExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptSshExecutor.executeCommandString(PRE_INIT_CMD, true)).thenReturn(CommandExecutionStatus.SUCCESS);
-    when(scriptSshExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class)))
+    when(scriptSshExecutor.executeCommandString(PRE_INIT_CMD, true, )).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptSshExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class), ))
         .thenReturn(CommandExecutionStatus.SUCCESS);
 
     CommandExecutionStatus status =
@@ -315,8 +315,8 @@ public class SshInitCommandHandlerTest extends CategoryTest {
             .build();
 
     doReturn(scriptProcessExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptProcessExecutor.executeCommandString(PRE_INIT_CMD, true)).thenReturn(CommandExecutionStatus.SUCCESS);
-    when(scriptProcessExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class)))
+    when(scriptProcessExecutor.executeCommandString(PRE_INIT_CMD, true, )).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptProcessExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class), ))
         .thenReturn(CommandExecutionStatus.SUCCESS);
     when(scriptProcessExecutor.getLogCallback()).thenReturn(logCallback);
 

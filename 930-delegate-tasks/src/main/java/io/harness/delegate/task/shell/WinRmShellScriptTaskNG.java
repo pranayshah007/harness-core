@@ -115,8 +115,8 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
     AbstractScriptExecutor executor =
         shellExecutorFactory.getExecutor(config, getLogStreamingTaskClient(), commandUnitsProgress);
 
-    ExecuteCommandResponse executeCommandResponse =
-        executor.executeCommandString(getInitCommand(taskParameters.getWorkingDirectory()), Collections.emptyList());
+    ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
+        getInitCommand(taskParameters.getWorkingDirectory()), Collections.emptyList(), taskParameters.isUseSSHAgent());
 
     updateStatus(commandUnitsProgress, INIT_UNIT, executeCommandResponse);
 
@@ -142,8 +142,8 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
     AbstractScriptExecutor executor =
         shellExecutorFactory.getExecutor(config, getLogStreamingTaskClient(), commandUnitsProgress);
 
-    ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
-        taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null);
+    ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(taskParameters.getScript(),
+        taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null, taskParameters.isUseSSHAgent());
 
     updateStatus(commandUnitsProgress, COMMAND_UNIT, executeCommandResponse);
 
@@ -174,8 +174,8 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
     WinRmExecutor executor = winRmExecutorFactoryNG.getExecutor(config, taskParameters.isDisableCommandEncoding(),
         taskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
 
-    CommandExecutionStatus commandExecutionStatus =
-        executor.executeCommandString(getInitCommand(taskParameters.getWorkingDirectory()));
+    CommandExecutionStatus commandExecutionStatus = executor.executeCommandString(
+        getInitCommand(taskParameters.getWorkingDirectory()), taskParameters.isUseSSHAgent());
 
     return ShellScriptTaskResponseNG.builder()
         .status(commandExecutionStatus)
@@ -203,8 +203,8 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
     WinRmExecutor executor = winRmExecutorFactoryNG.getExecutor(config, taskParameters.isDisableCommandEncoding(),
         taskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
 
-    ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
-        taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null);
+    ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(taskParameters.getScript(),
+        taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null, taskParameters.isUseSSHAgent());
 
     return ShellScriptTaskResponseNG.builder()
         .executeCommandResponse(executeCommandResponse)

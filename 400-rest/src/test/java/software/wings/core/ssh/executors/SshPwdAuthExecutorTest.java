@@ -153,7 +153,7 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldThrowUnknownHostExceptionForInvalidHost() {
     executor = new ScriptSshExecutor(logCallback, true, configBuilder.but().withHost("INVALID_HOST").build());
-    assertThatThrownBy(() -> executor.executeCommandString("ls"))
+    assertThatThrownBy(() -> executor.executeCommandString("ls", false))
         .isInstanceOf(WingsException.class)
         .hasMessage(UNKNOWN_HOST.name());
   }
@@ -166,7 +166,7 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldThrowUnknownHostExceptionForInvalidPort() {
     executor = new ScriptSshExecutor(logCallback, true, configBuilder.but().withPort(3333).build());
-    assertThatThrownBy(() -> executor.executeCommandString("ls"))
+    assertThatThrownBy(() -> executor.executeCommandString("ls", false))
         .isInstanceOf(WingsException.class)
         .hasMessage(SOCKET_CONNECTION_ERROR.name());
   }
@@ -181,7 +181,7 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
   public void shouldThrowExceptionForInvalidCredential() {
     executor = new ScriptSshExecutor(
         logCallback, true, configBuilder.but().withPassword("INVALID_PASSWORD".toCharArray()).build());
-    assertThatThrownBy(() -> executor.executeCommandString("ls"))
+    assertThatThrownBy(() -> executor.executeCommandString("ls", false))
         .isInstanceOf(WingsException.class)
         .hasMessageContaining(INVALID_CREDENTIAL.name());
   }
@@ -198,7 +198,7 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
     executor = new ScriptSshExecutor(logCallback, true, configBuilder.but().build());
 
     String fileName = generateUuid();
-    CommandExecutionStatus execute = executor.executeCommandString("pwd && whoami");
+    CommandExecutionStatus execute = executor.executeCommandString("pwd && whoami", false);
     assertThat(execute).isEqualTo(SUCCESS);
   }
 
@@ -210,7 +210,7 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldReturnFailureForFailedCommandExecution() {
     executor = new ScriptSshExecutor(logCallback, true, configBuilder.but().build());
-    CommandExecutionStatus execute = executor.executeCommandString(format("rm %s", "FILE_DOES_NOT_EXIST"));
+    CommandExecutionStatus execute = executor.executeCommandString(format("rm %s", "FILE_DOES_NOT_EXIST"), false);
     assertThat(execute).isEqualTo(FAILURE);
   }
 
@@ -224,7 +224,7 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
     for (int i = 0; i < 10; ++i) {
       try {
         executor = new ScriptSshExecutor(logCallback, true, configBuilder.but().withSshConnectionTimeout(1).build());
-        executor.executeCommandString("sleep 10");
+        executor.executeCommandString("sleep 10", false);
       } catch (WingsException exception) {
         if (exception.getMessage().equals(SOCKET_CONNECTION_TIMEOUT.name())) {
           break;
@@ -242,7 +242,7 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
   @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void shouldThrowExceptionForSessionTimeout() {
     executor = new ScriptSshExecutor(logCallback, true, configBuilder.but().withSshSessionTimeout(1).build());
-    assertThatThrownBy(() -> executor.executeCommandString("sleep 10"))
+    assertThatThrownBy(() -> executor.executeCommandString("sleep 10", false))
         .isInstanceOf(WingsException.class)
         .hasMessage(SSH_SESSION_TIMEOUT.name());
   }
@@ -256,7 +256,7 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
   public void shouldThrowExceptionForConnectTimeout() {
     executor = new ScriptSshExecutor(logCallback, true,
         configBuilder.but().withHost("host1.app.com").withPort(22).withSocketConnectTimeout(2000).build());
-    assertThatThrownBy(() -> executor.executeCommandString("ls"))
+    assertThatThrownBy(() -> executor.executeCommandString("ls", false))
         .isInstanceOf(WingsException.class)
         .hasMessage(SOCKET_CONNECTION_TIMEOUT.name());
   }
@@ -354,7 +354,7 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
                                          .withSshPassword("TEST_PASS".toCharArray())
                                          .build();
     executor = new ScriptSshExecutor(logCallback, true, sessionConfig);
-    assertThatThrownBy(() -> executor.executeCommandString("ls"))
+    assertThatThrownBy(() -> executor.executeCommandString("ls", false))
         .isInstanceOf(WingsException.class)
         .hasMessage(UNKNOWN_HOST.name());
   }

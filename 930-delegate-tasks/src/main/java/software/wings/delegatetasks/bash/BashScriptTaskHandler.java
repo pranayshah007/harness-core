@@ -37,6 +37,6 @@ public class BashScriptTaskHandler {
     final ScriptProcessExecutor executor = shellExecutorFactory.getExecutor(executorConfig);
 
     return executor.executeCommandString(
-        parameters.getScript(), parameters.getOutputVars(), parameters.getSecretOutputVars(), null);
+        parameters.getScript(), parameters.getOutputVars(), parameters.getSecretOutputVars(), null, false);
   }
 }

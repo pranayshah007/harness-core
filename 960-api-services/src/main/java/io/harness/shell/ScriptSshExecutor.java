@@ -101,19 +101,20 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
   }
 
   @Override
-  public CommandExecutionStatus executeCommandString(String command, StringBuffer output, boolean displayCommand) {
+  public CommandExecutionStatus executeCommandString(
+      String command, StringBuffer output, boolean displayCommand, boolean useSshAgent) {
     try {
-      return executeCommandString(command, output, displayCommand, false);
+      return executeCommandStringWithRetry(command, output, displayCommand, false);
     } catch (SshRetryableException ex) {
       log.info("As MaxSessions limit reached, fetching new session for executionId: {}, hostName: {}",
           config.getExecutionId(), config.getHost());
       saveExecutionLog(format("Retry connecting to %s ....", config.getHost()));
-      return executeCommandString(command, output, displayCommand, true);
+      return executeCommandStringWithRetry(command, output, displayCommand, true);
     }
   }
 
   @NotNull
-  private CommandExecutionStatus executeCommandString(
+  private CommandExecutionStatus executeCommandStringWithRetry(
       String command, StringBuffer output, boolean displayCommand, boolean isRetry) {
     CommandExecutionStatus commandExecutionStatus = FAILURE;
     Channel channel = null;
@@ -202,13 +203,14 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
   }
 
   @Override
-  public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect) {
-    return executeCommandString(command, envVariablesToCollect, Collections.emptyList(), null);
+  public ExecuteCommandResponse executeCommandString(
+      String command, List<String> envVariablesToCollect, boolean useSshAgent) {
+    return executeCommandString(command, envVariablesToCollect, Collections.emptyList(), null, useSshAgent);
   }
 
   @Override
   public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
-      List<String> secretEnvVariablesToCollect, Long timeoutInMillis) {
+      List<String> secretEnvVariablesToCollect, Long timeoutInMillis, boolean useSshAgent) {
     try {
       return getExecuteCommandResponse(command, envVariablesToCollect,
           secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect, false);

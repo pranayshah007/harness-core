@@ -91,13 +91,13 @@ public class CustomArtifactScriptExecutionOnDelegateNGTest extends CategoryTest 
     doReturn(scriptProcessExecutor)
         .when(shellExecutorFactory)
         .getExecutorForCustomArtifactScriptExecution(any(), any());
-    when(scriptProcessExecutor.executeCommandString(any(), anyList()))
+    when(scriptProcessExecutor.executeCommandString(any(), anyList(), ))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
     ShellScriptTaskResponseNG shellScriptTaskResponseNG =
         customArtifactScriptExecutionOnDelegateNG.executeOnDelegate(shellScriptTaskParametersNG, logCallback);
     assertThat(shellScriptTaskResponseNG).isNotNull();
     verify(shellExecutorFactory).getExecutorForCustomArtifactScriptExecution(any(), any());
-    verify(scriptProcessExecutor).executeCommandString(any(), anyList());
+    verify(scriptProcessExecutor).executeCommandString(any(), anyList(), );
   }
 
   @Test

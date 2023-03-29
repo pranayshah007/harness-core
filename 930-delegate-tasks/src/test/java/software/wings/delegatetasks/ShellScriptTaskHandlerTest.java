@@ -99,7 +99,8 @@ public class ShellScriptTaskHandlerTest {
                                           .commandExecutionData(ShellExecutionData.builder().build())
                                           .status(CommandExecutionStatus.SUCCESS)
                                           .build();
-    when(executor.executeCommandString(anyString(), any(List.class), any(List.class), eq(1410L))).thenReturn(response);
+    when(executor.executeCommandString(anyString(), any(List.class), any(List.class), eq(1410L), eq(false)))
+        .thenReturn(response);
 
     final CommandExecutionResult result = handler.handle(spyParameters);
     assertThat(result).isNotNull();

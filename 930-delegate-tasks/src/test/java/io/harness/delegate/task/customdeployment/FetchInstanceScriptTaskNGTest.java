@@ -86,7 +86,7 @@ public class FetchInstanceScriptTaskNGTest extends CategoryTest {
     doReturn(mock(LogCallback.class)).when(fetchInstanceScriptTaskNG).getLogCallback(any(), any(), anyBoolean(), any());
     doReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build())
         .when(scriptProcessExecutor)
-        .executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), any());
+        .executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), any(), );
     ArgumentCaptor<ShellExecutorConfig> shellExecutorConfigArgumentCaptor =
         ArgumentCaptor.forClass(ShellExecutorConfig.class);
 
@@ -94,7 +94,7 @@ public class FetchInstanceScriptTaskNGTest extends CategoryTest {
 
     verify(shellExecutorFactory).getExecutor(shellExecutorConfigArgumentCaptor.capture(), any(), any());
     verify(scriptProcessExecutor)
-        .executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), eq(ofMinutes(10).toMillis()));
+        .executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), eq(ofMinutes(10).toMillis()), );
     ShellExecutorConfig shellExecutorConfig = shellExecutorConfigArgumentCaptor.getValue();
     assertThat(shellExecutorConfig.getScriptType()).isEqualTo(ScriptType.BASH);
     assertThat(shellExecutorConfig.getExecutionId()).isEqualTo("executionId");
@@ -124,7 +124,7 @@ public class FetchInstanceScriptTaskNGTest extends CategoryTest {
     doReturn(mock(LogCallback.class)).when(fetchInstanceScriptTaskNG).getLogCallback(any(), any(), anyBoolean(), any());
     doReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.FAILURE).build())
         .when(scriptProcessExecutor)
-        .executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), eq(ofMinutes(10).toMillis()));
+        .executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), eq(ofMinutes(10).toMillis()), );
     ArgumentCaptor<ShellExecutorConfig> shellExecutorConfigArgumentCaptor =
         ArgumentCaptor.forClass(ShellExecutorConfig.class);
 
@@ -132,7 +132,7 @@ public class FetchInstanceScriptTaskNGTest extends CategoryTest {
 
     verify(shellExecutorFactory).getExecutor(shellExecutorConfigArgumentCaptor.capture(), any(), any());
     verify(scriptProcessExecutor)
-        .executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), eq(ofMinutes(10).toMillis()));
+        .executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), eq(ofMinutes(10).toMillis()), );
     ShellExecutorConfig shellExecutorConfig = shellExecutorConfigArgumentCaptor.getValue();
     assertThat(shellExecutorConfig.getScriptType()).isEqualTo(ScriptType.BASH);
     assertThat(shellExecutorConfig.getExecutionId()).isEqualTo("executionId");

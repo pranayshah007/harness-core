@@ -93,7 +93,7 @@ public class FetchInstanceScriptTaskNG extends AbstractDelegateRunnableTask {
       ScriptProcessExecutor executor =
           shellExecutorFactory.getExecutor(shellExecutorConfig, getLogStreamingTaskClient(), commandUnitsProgress);
       ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
-          parameters.getScriptBody(), emptyList(), emptyList(), parameters.getTimeoutInMillis());
+          parameters.getScriptBody(), emptyList(), emptyList(), parameters.getTimeoutInMillis(), );
 
       String message = String.format("Execution finished with status: %s", executeCommandResponse.getStatus());
       logCallback.saveExecutionLog(message, INFO, SUCCESS);

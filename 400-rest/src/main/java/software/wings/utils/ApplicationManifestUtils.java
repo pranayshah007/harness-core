@@ -7,6 +7,7 @@
 
 package software.wings.utils;
 
+import static io.harness.beans.FeatureName.CDS_SSH_AGENT;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -654,6 +655,7 @@ public class ApplicationManifestUtils {
         .fetchFilesList(getCustomManifestFetchFilesList(context, appManifestMap, varFileKey))
         .accountId(context.getAccountId())
         .appId(context.getAppId())
+        .useSshAgent(featureFlagService.isEnabled(CDS_SSH_AGENT, context.getAccountId()))
         .build();
   }
 

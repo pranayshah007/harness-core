@@ -126,7 +126,7 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuterTest extends Deleg
 
     ScriptProcessExecutor scriptProcessExecutor = mock(ScriptProcessExecutor.class);
     doReturn(scriptProcessExecutor).when(shellExecutorFactory).getExecutor(any(), any(), any());
-    doReturn(commandResponse).when(scriptProcessExecutor).executeCommandString(any(), any(), any(), any());
+    doReturn(commandResponse).when(scriptProcessExecutor).executeCommandString(any(), any(), any(), any(), );
 
     ArgumentCaptor<CustomDeploymentInstanceSyncPerpetualTaskResponse> argumentCaptor =
         ArgumentCaptor.forClass(CustomDeploymentInstanceSyncPerpetualTaskResponse.class);
@@ -164,7 +164,7 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuterTest extends Deleg
 
     ScriptProcessExecutor scriptProcessExecutor = mock(ScriptProcessExecutor.class);
     doReturn(scriptProcessExecutor).when(shellExecutorFactory).getExecutor(any(), any(), any());
-    doReturn(commandResponse).when(scriptProcessExecutor).executeCommandString(any(), any(), any(), any());
+    doReturn(commandResponse).when(scriptProcessExecutor).executeCommandString(any(), any(), any(), any(), );
 
     ArgumentCaptor<CustomDeploymentInstanceSyncPerpetualTaskResponse> argumentCaptor =
         ArgumentCaptor.forClass(CustomDeploymentInstanceSyncPerpetualTaskResponse.class);
@@ -198,7 +198,7 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuterTest extends Deleg
 
     ScriptProcessExecutor scriptProcessExecutor = mock(ScriptProcessExecutor.class);
     doReturn(scriptProcessExecutor).when(shellExecutorFactory).getExecutor(any(), any(), any());
-    doReturn(commandResponse).when(scriptProcessExecutor).executeCommandString(any(), any(), any(), any());
+    doReturn(commandResponse).when(scriptProcessExecutor).executeCommandString(any(), any(), any(), any(), );
 
     ArgumentCaptor<CustomDeploymentInstanceSyncPerpetualTaskResponse> argumentCaptor =
         ArgumentCaptor.forClass(CustomDeploymentInstanceSyncPerpetualTaskResponse.class);
@@ -227,7 +227,7 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuterTest extends Deleg
     doReturn(scriptProcessExecutor).when(shellExecutorFactory).getExecutor(any(), any(), any());
     doThrow(new RuntimeException("Error occurred"))
         .when(scriptProcessExecutor)
-        .executeCommandString(any(), any(), any(), any());
+        .executeCommandString(any(), any(), any(), any(), );
 
     ArgumentCaptor<CustomDeploymentInstanceSyncPerpetualTaskResponse> argumentCaptor =
         ArgumentCaptor.forClass(CustomDeploymentInstanceSyncPerpetualTaskResponse.class);
@@ -258,7 +258,7 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuterTest extends Deleg
 
     ScriptProcessExecutor scriptProcessExecutor = mock(ScriptProcessExecutor.class);
     doReturn(scriptProcessExecutor).when(shellExecutorFactory).getExecutor(any(), any(), any());
-    doReturn(commandResponse).when(scriptProcessExecutor).executeCommandString(any(), any(), any(), any());
+    doReturn(commandResponse).when(scriptProcessExecutor).executeCommandString(any(), any(), any(), any(), );
 
     ArgumentCaptor<CustomDeploymentInstanceSyncPerpetualTaskResponse> argumentCaptor =
         ArgumentCaptor.forClass(CustomDeploymentInstanceSyncPerpetualTaskResponse.class);
@@ -295,7 +295,7 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuterTest extends Deleg
 
     ScriptProcessExecutor scriptProcessExecutor = mock(ScriptProcessExecutor.class);
     doReturn(scriptProcessExecutor).when(shellExecutorFactory).getExecutor(any(), any(), any());
-    doReturn(commandResponse).when(scriptProcessExecutor).executeCommandString(any(), any(), any(), any());
+    doReturn(commandResponse).when(scriptProcessExecutor).executeCommandString(any(), any(), any(), any(), );
 
     ArgumentCaptor<CustomDeploymentInstanceSyncPerpetualTaskResponse> argumentCaptor =
         ArgumentCaptor.forClass(CustomDeploymentInstanceSyncPerpetualTaskResponse.class);

@@ -61,6 +61,7 @@ public class CustomArtifactDelegateRequest
   List<String> delegateSelectors;
   Map<String, EncryptionConfig> encryptionConfigs;
   Map<String, SecretDetail> secretDetails;
+  boolean useSshAgent;
   int expressionFunctorToken;
 
   public Set<String> getDelegateSelectors() {

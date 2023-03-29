@@ -158,8 +158,8 @@ public class CustomManifestFetchTaskHelper {
         logFilePathList(customManifestSource.getFilePaths(), logCallback);
 
         Collection<CustomSourceFile> valuesContent = isScriptExecutionRequired(fetchFileConfig, customManifestSource)
-            ? customManifestService.fetchValues(
-                customManifestSource, workingDirectory, activityId, logCallback, closeLogStream)
+            ? customManifestService.fetchValues(customManifestSource, workingDirectory, activityId, logCallback,
+                closeLogStream, fetchParams.isUseSshAgent())
             : customManifestService.readFilesContent(
                 defaultSourceWorkingDirectory, customManifestSource.getFilePaths());
 
