@@ -65,8 +65,8 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
           "Refresh Token might be not getting generated", new InvalidArtifactServerException(e.getMessage(), USER));
     }
     if (isRegex(attributesRequest) || attributesRequest.getVersion().equals(ACCEPT_ALL_REGEX)) {
-      String versionRegex =
-          isRegex(attributesRequest) ? attributesRequest.getVersionRegex() : attributesRequest.getVersion().replace("*", ".*?");
+      String versionRegex = isRegex(attributesRequest) ? attributesRequest.getVersionRegex()
+                                                       : attributesRequest.getVersion().replace("*", ".*?");
       lastSuccessfulBuild = garApiService.getLastSuccessfulBuildFromRegex(garInternalConfig, versionRegex);
     } else {
       lastSuccessfulBuild = garApiService.verifyBuildNumber(garInternalConfig, attributesRequest.getVersion());

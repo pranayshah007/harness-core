@@ -57,7 +57,8 @@ public class AcrArtifactTaskHandler extends DelegateArtifactTaskHandler<AcrArtif
           AcrRequestResponseMapper.toAzureInternalConfig(attributesRequest, secretDecryptionService, workingDirectory);
 
       if (isRegex(attributesRequest) || attributesRequest.getTag().equals(ACCEPT_ALL_REGEX)) {
-        String tagRegex = isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag().replace("*", ".*?");
+        String tagRegex = isRegex(attributesRequest) ? attributesRequest.getTagRegex()
+                                                     : attributesRequest.getTag().replace("*", ".*?");
         lastSuccessfulBuild =
             azureAsyncTaskHelper.getLastSuccessfulBuildFromRegex(azureConfig, attributesRequest.getSubscription(),
                 attributesRequest.getRegistry(), attributesRequest.getRepository(), tagRegex);
