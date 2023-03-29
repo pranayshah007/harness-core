@@ -58,7 +58,7 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
   @Schema(description = "The Azure Active Directory (AAD) directory ID where you created your application.")
   private String tenantId;
   @Schema(description = "The Azure Vault name") private String vaultName;
-  @Schema(description = "Azure Subscription ID.") private String subscription;
+  @NotNull @Schema(description = "Azure Subscription ID.") private String subscription;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
 
   @Builder.Default
@@ -70,11 +70,6 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
   @Schema(description = "Managed Identity Type") private AzureManagedIdentityType azureManagedIdentityType;
   @Schema(description = "Client Id of the ManagedIdentity resource") String managedClientId;
 
-  // TODO Richa: Where is this used?
-  public AzureCredentialType getCredentialType() {
-    return useManagedIdentity ? AzureCredentialType.INHERIT_FROM_DELEGATE : AzureCredentialType.MANUAL_CREDENTIALS;
-  }
-
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     return Collections.singletonList(this);
@@ -82,6 +77,7 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
 
   @Override
   public void validate() {
+    Preconditions.checkNotNull(this.subscription, "subscription cannot be empty");
     if (BooleanUtils.isTrue(useManagedIdentity)) {
       Preconditions.checkNotNull(this.azureManagedIdentityType, "managedIdentityType cannot be empty");
       if (AzureManagedIdentityType.USER_ASSIGNED_MANAGED_IDENTITY.equals(this.azureManagedIdentityType)) {
@@ -91,7 +87,6 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
       Preconditions.checkNotNull(this.clientId, "clientId cannot be empty");
       Preconditions.checkNotNull(this.tenantId, "tenantId cannot be empty");
       Preconditions.checkNotNull(this.vaultName, "vaultName cannot be empty");
-      Preconditions.checkNotNull(this.subscription, "subscription cannot be empty");
     }
   }
 }

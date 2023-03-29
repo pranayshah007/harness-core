@@ -33,7 +33,7 @@ public class AzureKeyVaultMetadataRequestSpecDTO extends SecretManagerMetadataRe
   private String clientId;
   private String tenantId;
   @ApiModelProperty(dataType = "string") private SecretRefData secretKey;
-  private String subscription;
+  @NotNull private String subscription;
   private AzureEnvironmentType azureEnvironmentType = AZURE;
   private Set<String> delegateSelectors;
   private Boolean useManagedIdentity;

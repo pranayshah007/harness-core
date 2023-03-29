@@ -375,8 +375,10 @@ public class NGVaultServiceImpl implements NGVaultService {
     if (isNotEmpty(secretRefDataList)) {
       // get Decrypted SecretRefData
       for (SecretRefData secretRefData : secretRefDataList) {
-        decryptSecretRefData(
-            accountIdentifier, requestDTO.getOrgIdentifier(), requestDTO.getProjectIdentifier(), secretRefData);
+        if (secretRefData != null) {
+          decryptSecretRefData(
+              accountIdentifier, requestDTO.getOrgIdentifier(), requestDTO.getProjectIdentifier(), secretRefData);
+        }
       }
     }
     EncryptionConfig existingVaultEncryptionConfig = getDecryptedEncryptionConfig(accountIdentifier,
