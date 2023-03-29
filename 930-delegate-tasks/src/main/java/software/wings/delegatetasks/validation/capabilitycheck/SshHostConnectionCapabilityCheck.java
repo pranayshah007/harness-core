@@ -26,17 +26,18 @@ import io.harness.delegate.task.executioncapability.CapabilityCheck;
 import io.harness.delegate.task.executioncapability.SocketConnectivityCapabilityCheck;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.logging.CommandExecutionStatus;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHAuthDTO;
 import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.ssh.SshFactory;
-import io.harness.shell.ssh.connection.TestResponse;
+import io.harness.shell.SshSessionFactory;
 
 import com.google.inject.Inject;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -69,14 +70,25 @@ public class SshHostConnectionCapabilityCheck implements CapabilityCheck {
           host, kerberosConfigDTO, sshInfraDelegateConfig.getEncryptionDataDetails(), port);
       log.info("Validating ssh Session to Host: {}, Port: {}", config.getHost(), config.getPort());
 
-      TestResponse testResponse = SshFactory.getSshClient(config).test();
-      capabilityResponseBuilder.validated(testResponse.getStatus() == CommandExecutionStatus.SUCCESS);
+      try {
+        connect(config);
+        capabilityResponseBuilder.validated(true);
+      } catch (Exception e) {
+        log.info("Exception in SshSession Connection: ", ExceptionMessageSanitizer.sanitizeException(e));
+        capabilityResponseBuilder.validated(false);
+      }
     } else {
       // just check socket connectivity
       capabilityResponseBuilder.validated(SocketConnectivityCapabilityCheck.connectableHost(host, port));
     }
 
     return capabilityResponseBuilder.build();
+  }
+
+  Session connect(SshSessionConfig config) throws JSchException {
+    Session session = SshSessionFactory.getSSHSession(config);
+    session.disconnect();
+    return session;
   }
 
   private SshSessionConfig generateSshSessionConfigForKerberos(

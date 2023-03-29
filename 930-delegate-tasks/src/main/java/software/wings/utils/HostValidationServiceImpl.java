@@ -10,6 +10,7 @@ package software.wings.utils;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.utils.PhysicalDataCenterUtils.extractHostnameFromHost;
 import static io.harness.govern.Switch.noop;
+import static io.harness.shell.SshHelperUtils.normalizeError;
 import static io.harness.winrm.WinRmHelperUtils.buildErrorDetailsFromWinRmClientException;
 
 import static software.wings.beans.command.CommandExecutionContext.Builder.aCommandExecutionContext;
@@ -25,12 +26,10 @@ import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.ssh.SshFactory;
-import io.harness.shell.ssh.connection.TestResponse;
+import io.harness.shell.SshSessionFactory;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.ExecutionCredential;
@@ -50,6 +49,8 @@ import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -163,12 +164,15 @@ public class HostValidationServiceImpl implements HostValidationService {
                                           .withHostName(hostName)
                                           .withStatus(ExecutionStatus.SUCCESS.name())
                                           .build();
-    TestResponse testResponse = SshFactory.getSshClient(sshSessionConfig).test();
-    if (testResponse.getStatus() != CommandExecutionStatus.SUCCESS) {
-      ErrorCode errorCode = testResponse.getErrorCode();
+    try {
+      Session sshSession = SshSessionFactory.getSSHSession(sshSessionConfig);
+      sshSession.disconnect();
+    } catch (JSchException jschEx) {
+      ErrorCode errorCode = normalizeError(jschEx);
       response.setStatus(ExecutionStatus.FAILED.name());
       response.setErrorCode(errorCode.name());
       response.setErrorDescription(errorCode.getDescription());
+      log.error("Failed to validate Host: ", jschEx);
     }
     return response;
   }

@@ -26,10 +26,11 @@ import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.ssh.SshFactory;
-import io.harness.shell.ssh.exception.SshException;
+import io.harness.shell.SshSessionFactory;
 
 import com.google.inject.Inject;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -82,9 +83,10 @@ public class SSHConfigValidationDelegateTask extends AbstractDelegateRunnableTas
     sshSessionConfig.setHost(sshTaskParams.getHost());
     sshSessionConfig.setPort(sshTaskParams.getSshKeySpec().getPort());
     try {
-      SshFactory.getSshClient(sshSessionConfig).test();
+      Session session = SshSessionFactory.getSSHSession(sshSessionConfig);
+      session.disconnect();
       return SSHConfigValidationTaskResponse.builder().connectionSuccessful(true).build();
-    } catch (SshException e) {
+    } catch (JSchException e) {
       return SSHConfigValidationTaskResponse.builder().connectionSuccessful(false).errorMessage(e.getMessage()).build();
     }
   }

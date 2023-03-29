@@ -7,6 +7,8 @@
 
 package software.wings.delegatetasks.validation.capabilitycheck;
 
+import static io.harness.shell.SshSessionFactory.getSSHSession;
+
 import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -16,18 +18,17 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.executioncapability.CapabilityCheck;
 import io.harness.delegate.task.winrm.WinRmSession;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.ssh.SshFactory;
-import io.harness.shell.ssh.connection.TestResponse;
 
 import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.delegatetasks.validation.capabilities.ShellConnectionCapability;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.security.SecretManagementDelegateService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.jcraft.jsch.JSchException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -80,15 +81,16 @@ public class ShellConnectionCapabilityCheck implements CapabilityCheck {
       expectedSshConfig.setSocketConnectTimeout(timeout);
       expectedSshConfig.setSshConnectionTimeout(timeout);
       expectedSshConfig.setSshSessionTimeout(timeout);
-      TestResponse testResponse = SshFactory.getSshClient(expectedSshConfig).test();
-      boolean validated = true;
-      if (testResponse.getStatus() != CommandExecutionStatus.SUCCESS) {
-        validated = false;
-      }
-      return CapabilityResponse.builder().validated(validated).delegateCapability(capability).build();
+      performTest(expectedSshConfig);
+      return CapabilityResponse.builder().validated(true).delegateCapability(capability).build();
     } catch (Exception ex) {
       log.info("Exception in sshSession Validation", ex);
       return CapabilityResponse.builder().validated(false).delegateCapability(capability).build();
     }
+  }
+
+  @VisibleForTesting
+  void performTest(SshSessionConfig expectedSshConfig) throws JSchException {
+    getSSHSession(expectedSshConfig).disconnect();
   }
 }
