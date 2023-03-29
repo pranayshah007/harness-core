@@ -75,6 +75,8 @@ import io.harness.product.ci.scm.proto.FindFilesInPRRequest;
 import io.harness.product.ci.scm.proto.FindFilesInPRResponse;
 import io.harness.product.ci.scm.proto.FindPRRequest;
 import io.harness.product.ci.scm.proto.FindPRResponse;
+import io.harness.product.ci.scm.proto.GenerateYamlRequest;
+import io.harness.product.ci.scm.proto.GenerateYamlResponse;
 import io.harness.product.ci.scm.proto.GetAuthenticatedUserRequest;
 import io.harness.product.ci.scm.proto.GetAuthenticatedUserResponse;
 import io.harness.product.ci.scm.proto.GetBatchFileRequest;
@@ -1008,6 +1010,11 @@ public class ScmServiceClientImpl implements ScmServiceClient {
                                             .setRefreshToken(refreshToken)
                                             .setEndpoint(endpoint)
                                             .build());
+  }
+
+  @Override
+  public GenerateYamlResponse autogenerateStageYamlForCI(String cloneUrl, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    return scmBlockingStub.generateStageYamlForCI(GenerateYamlRequest.newBuilder().setUrl(cloneUrl).build());
   }
 
   public GetLatestCommitOnFileResponse getLatestCommitOnFile(

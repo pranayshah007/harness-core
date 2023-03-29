@@ -86,4 +86,20 @@ public class CIProvisionResource {
     return ResponseDTO.newResponse(
         provisionService.createDefaultScm(accountIdentifier, orgIdentifier, projectIdentifier, scmConnectorDTO));
   }
+
+  @GET
+  @Path("generate-yaml")
+  @ApiOperation(value = "generate yaml", nickname = "generateYaml")
+  public ResponseDTO<String> autogenerateYaml(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank
+                                              @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "connectorIdentifier") @QueryParam("connectorIdentifier") String connectorIdentifier,
+      @Parameter(description = "repo") @QueryParam("repo") String repo,
+      @Parameter(description = "inline") @QueryParam("inline") Boolean inline) {
+    return ResponseDTO.newResponse(
+        provisionService.generateYaml(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, repo));
+  }
 }

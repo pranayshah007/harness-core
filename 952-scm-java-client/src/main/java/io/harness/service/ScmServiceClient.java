@@ -36,6 +36,7 @@ import io.harness.product.ci.scm.proto.FindFilesInBranchResponse;
 import io.harness.product.ci.scm.proto.FindFilesInCommitResponse;
 import io.harness.product.ci.scm.proto.FindFilesInPRResponse;
 import io.harness.product.ci.scm.proto.FindPRResponse;
+import io.harness.product.ci.scm.proto.GenerateYamlResponse;
 import io.harness.product.ci.scm.proto.GetAuthenticatedUserResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
@@ -160,6 +161,7 @@ public interface ScmServiceClient {
   RefreshTokenResponse refreshToken(ScmConnector scmConnector, String clientId, String clientSecret, String endpoint,
       String refreshToken, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
+  GenerateYamlResponse autogenerateStageYamlForCI(String cloneUrl, SCMGrpc.SCMBlockingStub scmBlockingStub);
   GetLatestCommitOnFileResponse getLatestCommitOnFile(
       ScmConnector scmConnector, String branchName, String filepath, SCMGrpc.SCMBlockingStub scmBlockingStub);
 

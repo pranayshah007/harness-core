@@ -11,6 +11,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"io/ioutil"
+	"os"
 
 	"github.com/drone/go-scm/scm"
 	"github.com/drone/go-scm/scm/driver/github"
@@ -19,6 +21,9 @@ import (
 	"github.com/harness/harness-core/product/ci/scm/converter"
 	"github.com/harness/harness-core/product/ci/scm/gitclient"
 	pb "github.com/harness/harness-core/product/ci/scm/proto"
+	"github.com/wings-software/autogen-go/cloner"
+    "github.com/wings-software/autogen-go/builder"
+    "github.com/wings-software/autogen-go/chroot"
 	"go.uber.org/zap"
 )
 
@@ -54,6 +59,49 @@ func RefreshToken(ctx context.Context, request *pb.RefreshTokenRequest, log *zap
 	}
 
 	return out, err
+}
+
+func GenerateStageYamlForCI(ctx context.Context, request *pb.GenerateYamlRequest, log *zap.SugaredLogger) (out *pb.GenerateYamlResponse, err error) {
+    log.Infow("GenerateYaml starting")
+    path := request.Url
+    temp, err := ioutil.TempDir("", "")
+    log.Infow("temp dir" , "dir", temp)
+    if err != nil {
+        return nil, err
+    }
+
+    params := cloner.Params{
+        Dir:        temp,
+        Repo:       path,
+    }
+
+    cloner := cloner.New(1, os.Stdout) // 1 depth, discard git clone logs
+    cloner.Clone(context.Background(), params)
+
+    // change the path to the temp directory
+    path = temp
+
+    defer os.RemoveAll(temp)
+
+    // create a chroot virtual filesystem that we
+    // pass to the builder for isolation purposes.
+    chroot, err := chroot.New(path)
+    if err != nil {
+        return nil, err
+    }
+
+    // builds the pipeline configuration based on
+    // the contents of the virtual filesystem.
+    builder := builder.New("harness")
+    yml, err := builder.Build(chroot)
+    if err != nil {
+        return nil, err
+    }
+
+	out = &pb.GenerateYamlResponse{
+		Yaml: string(yml[:]),
+	}
+    return out, nil
 }
 
 func CreatePR(ctx context.Context, request *pb.CreatePRRequest, log *zap.SugaredLogger) (out *pb.CreatePRResponse, err error) {
