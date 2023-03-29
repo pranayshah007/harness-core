@@ -48,10 +48,12 @@ public class NexusArtifactTaskHandler extends DelegateArtifactTaskHandler<NexusA
     BuildDetailsInternal lastSuccessfulBuild;
     NexusRequest nexusConfig = NexusRequestResponseMapper.toNexusInternalConfig(attributesRequest);
     if (isRegex(attributesRequest) || attributesRequest.getTag().equals(ACCEPT_ALL_REGEX)) {
+      String tagRegex =
+              isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag().replace("*", ".*?");
       lastSuccessfulBuild =
           nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, attributesRequest.getRepositoryName(),
               attributesRequest.getRepositoryPort(), attributesRequest.getArtifactPath(),
-              attributesRequest.getRepositoryFormat(), attributesRequest.getTagRegex(), attributesRequest.getGroupId(),
+              attributesRequest.getRepositoryFormat(), tagRegex, attributesRequest.getGroupId(),
               attributesRequest.getArtifactName(), attributesRequest.getExtension(), attributesRequest.getClassifier(),
               attributesRequest.getPackageName(), attributesRequest.getGroup(), attributesRequest.getMaxBuilds());
     } else {
