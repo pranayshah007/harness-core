@@ -7,18 +7,9 @@
 
 package io.harness.ng.core.environment.resources;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.experimental.UtilityClass;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-class EnvironmentTypeFilteredResponse {
-  boolean hasPreProdAccess;
-  boolean hasProdAccess;
+@UtilityClass
+class EnvironmentResourceConstants {
+  static final String UNAUTHORIZED_TO_LIST_ENVIRONMENTS_MESSAGE = "Unauthorized to list environments";
 }

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.core.environment.resources;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -13,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.EntityScopeInfo;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rbac.CDNGRbacPermissions;
 
@@ -30,12 +38,11 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
-public class EnvironmentRbacHelper {
+class EnvironmentRbacHelper {
   @Inject private AccessControlClient accessControlClient;
 
-  public List<Environment> getPermittedEnvironmentsList(List<Environment> environments) {
-    final boolean hasProdAccess;
-    final boolean hasPreProdAccess;
+  // This assumes that all environments are at the same scope
+  List<Environment> getPermittedEnvironmentsList(List<Environment> environments) {
     if (isEmpty(environments)) {
       return Collections.emptyList();
     }
@@ -43,7 +50,7 @@ public class EnvironmentRbacHelper {
     Map<EntityScopeInfo, Environment> environmentMap = environments.stream().collect(
         Collectors.toMap(EnvironmentRbacHelper::getEntityScopeInfoFromEnvironment, Function.identity()));
 
-    List<PermissionCheckDTO> permissionChecks =
+    final List<PermissionCheckDTO> permissionChecks =
         environments.stream()
             .map(environment
                 -> PermissionCheckDTO.builder()
@@ -55,69 +62,67 @@ public class EnvironmentRbacHelper {
                        .build())
             .collect(Collectors.toList());
 
+    // pre-prod permission check
     permissionChecks.add(PermissionCheckDTO.builder()
                              .permission(CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION)
-                             .resourceAttributes(getEnvironmentAttributesMap("PreProduction"))
+                             .resourceAttributes(getEnvironmentAttributesMap(EnvironmentType.PreProduction.name()))
                              .resourceScope(ResourceScope.of(environments.get(0).getAccountId(),
                                  environments.get(0).getOrgIdentifier(), environments.get(0).getProjectIdentifier()))
                              .resourceType(NGResourceType.ENVIRONMENT)
                              .build());
 
+    // prod permission check
     permissionChecks.add(PermissionCheckDTO.builder()
                              .permission(CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION)
-                             .resourceAttributes(getEnvironmentAttributesMap("Production"))
+                             .resourceAttributes(getEnvironmentAttributesMap(EnvironmentType.Production.name()))
                              .resourceScope(ResourceScope.of(environments.get(0).getAccountId(),
                                  environments.get(0).getOrgIdentifier(), environments.get(0).getProjectIdentifier()))
                              .resourceType(NGResourceType.ENVIRONMENT)
                              .build());
 
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+    final AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+    final EnvironmentTypeFilteredResponse environmentTypeFilteredResponse =
+        checkingTypeBasedFilters(accessCheckResponse.getAccessControlList());
+    final List<AccessControlDTO> onlyIdentifierBasedAccessCheckList =
+        removeTypeBasedAccessControlDTOs(accessCheckResponse.getAccessControlList());
 
-    List<AccessControlDTO> accessControlDTOList = accessCheckResponse.getAccessControlList();
-
-    EnvironmentTypeFilteredResponse environmentTypeFilteredResponse =
-        CheckingTypeBasedFilters(accessControlDTOList, false, false);
-
-    accessControlDTOList = environmentTypeFilteredResponse.getAccessControlDTOList();
-    hasPreProdAccess = environmentTypeFilteredResponse.hasPreProdAccess;
-    hasProdAccess = environmentTypeFilteredResponse.hasProdAccess;
+    final boolean hasPreProdAccess = environmentTypeFilteredResponse.hasPreProdAccess;
+    final boolean hasProdAccess = environmentTypeFilteredResponse.hasProdAccess;
 
     List<Environment> permittedEnvironments = new ArrayList<>();
-
-    for (AccessControlDTO accessControlDTO : accessControlDTOList) {
-      Environment environment =
-          environmentMap.get(EnvironmentRbacHelper.getEntityScopeInfoFromAccessControlDTO(accessControlDTO));
-
+    for (AccessControlDTO accessControlDTO : onlyIdentifierBasedAccessCheckList) {
+      Environment environment = environmentMap.get(getEntityScopeInfoFromAccessControlDTO(accessControlDTO));
       if (environment == null) {
         continue;
       }
-
-      if (accessControlDTO.isPermitted() || (environment.getType().toString() == "PreProduction" && hasPreProdAccess)
-          || (environment.getType().toString() == "Production" && hasProdAccess)) {
+      if (accessControlDTO.isPermitted() || (EnvironmentType.PreProduction == environment.getType() && hasPreProdAccess)
+          || (EnvironmentType.Production == environment.getType() && hasProdAccess)) {
         permittedEnvironments.add(environment);
       }
     }
     return permittedEnvironments;
   }
 
-  private EnvironmentTypeFilteredResponse CheckingTypeBasedFilters(
-      List<AccessControlDTO> accessControlDTOList, boolean hasPreProdAccess, boolean hasProdAccess) {
+  private List<AccessControlDTO> removeTypeBasedAccessControlDTOs(List<AccessControlDTO> accessControlDTOList) {
+    return accessControlDTOList.stream()
+        .filter(dto -> isEmpty(dto.getResourceAttributes()) || isEmpty(dto.getResourceAttributes().get("type")))
+        .collect(Collectors.toList());
+  }
+
+  private EnvironmentTypeFilteredResponse checkingTypeBasedFilters(List<AccessControlDTO> accessControlDTOList) {
+    boolean hasPreProdAccess = false;
+    boolean hasProdAccess = false;
     for (AccessControlDTO accessControlDTO : accessControlDTOList) {
-      if (accessControlDTO.getResourceAttributes() != null) {
-        if (accessControlDTO.isPermitted()) {
-          if ("PreProduction".equals(accessControlDTO.getResourceAttributes().get("type"))) {
-            hasPreProdAccess = true;
-
-          } else if ("Production".equals(accessControlDTO.getResourceAttributes().get("type"))) {
-            hasProdAccess = true;
-          }
+      if (accessControlDTO.getResourceAttributes() != null && accessControlDTO.isPermitted()) {
+        if (EnvironmentType.PreProduction.name().equals(accessControlDTO.getResourceAttributes().get("type"))) {
+          hasPreProdAccess = true;
+        } else if (EnvironmentType.Production.name().equals(accessControlDTO.getResourceAttributes().get("type"))) {
+          hasProdAccess = true;
         }
-
-        accessControlDTOList.remove(accessControlDTO);
       }
     }
 
-    return new EnvironmentTypeFilteredResponse(accessControlDTOList, hasPreProdAccess, hasProdAccess);
+    return new EnvironmentTypeFilteredResponse(hasPreProdAccess, hasProdAccess);
   }
 
   private static EntityScopeInfo getEntityScopeInfoFromEnvironment(Environment environmentEntity) {
