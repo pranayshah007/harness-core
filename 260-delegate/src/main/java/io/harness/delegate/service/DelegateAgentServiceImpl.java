@@ -237,6 +237,7 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody.Part;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
+import okhttp3.internal.http2.StreamResetException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -317,6 +318,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private static volatile String delegateId;
   private static final String delegateInstanceId = generateUuid();
+  private final int MAX_ATTEMPTS = 3;
 
   @Inject
   @Getter(value = PACKAGE, onMethod = @__({ @VisibleForTesting }))
@@ -1016,26 +1018,62 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.error("error executing rest call", e);
       throw e;
     } finally {
-      if (response != null && !response.isSuccessful()) {
-        String errorResponse = response.errorBody().string();
+      handleResponse(response);
+    }
+  }
 
-        log.warn("Received Error Response: {}", errorResponse);
-
-        if (errorResponse.contains(INVALID_TOKEN.name())) {
-          log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
-          initiateSelfDestruct();
-        } else if (errorResponse.contains(format(DUPLICATE_DELEGATE_ERROR_MESSAGE, delegateId, delegateConnectionId))) {
-          initiateSelfDestruct();
-        } else if (errorResponse.contains(EXPIRED_TOKEN.name())) {
-          log.warn("Delegate used expired token. It will be frozen and drained.");
-          freeze();
-        } else if (errorResponse.contains(REVOKED_TOKEN.name()) || errorResponse.contains("Revoked Delegate Token")) {
-          log.warn("Delegate used revoked token. It will be frozen and drained.");
-          freeze();
+  private <T> T executeCallWithRetryableException(Call<T> call, String failureMessage) throws IOException {
+    T responseBody = null;
+    Response<T> response = null;
+    int attempt = 1;
+    while (attempt <= MAX_ATTEMPTS && responseBody == null) {
+      try {
+        response = call.clone().execute();
+        responseBody = response.body();
+      } catch (Exception exception) {
+        if (exception instanceof StreamResetException && attempt < MAX_ATTEMPTS) {
+          attempt++;
+          log.warn(String.format("%s : Attempt: %d", failureMessage, attempt));
+        } else {
+          throw exception;
         }
-
-        response.errorBody().close();
       }
+    }
+    return responseBody;
+  }
+
+  private <T> T executeAcquireCallWithRetry(Call<T> call, String failureMessage) throws IOException {
+    Response<T> response = null;
+    try {
+      return executeCallWithRetryableException(call, failureMessage);
+    } catch (Exception e) {
+      log.error("error executing rest call", e);
+      throw e;
+    } finally {
+      handleResponse(response);
+    }
+  }
+
+  private <T> void handleResponse(Response<T> response) throws IOException {
+    if (response != null && !response.isSuccessful()) {
+      String errorResponse = response.errorBody().string();
+
+      log.warn("Received Error Response: {}", errorResponse);
+
+      if (errorResponse.contains(INVALID_TOKEN.name())) {
+        log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
+        initiateSelfDestruct();
+      } else if (errorResponse.contains(format(DUPLICATE_DELEGATE_ERROR_MESSAGE, delegateId, delegateConnectionId))) {
+        initiateSelfDestruct();
+      } else if (errorResponse.contains(EXPIRED_TOKEN.name())) {
+        log.warn("Delegate used expired token. It will be frozen and drained.");
+        freeze();
+      } else if (errorResponse.contains(REVOKED_TOKEN.name()) || errorResponse.contains("Revoked Delegate Token")) {
+        log.warn("Delegate used revoked token. It will be frozen and drained.");
+        freeze();
+      }
+
+      response.errorBody().close();
     }
   }
 
@@ -1964,9 +2002,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         currentlyAcquiringTasks.add(delegateTaskId);
 
         log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
+        Call<DelegateTaskPackage> acquireCall =
+            delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId);
 
-        DelegateTaskPackage delegateTaskPackage = executeRestCall(
-            delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId));
+        DelegateTaskPackage delegateTaskPackage = executeAcquireCallWithRetry(
+            acquireCall, String.format("Failed acquiring delegate task %s by delegate %s", delegateTaskId, delegateId));
+
         if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
           if (delegateTaskPackage == null) {
             log.warn("Delegate task package is null");
