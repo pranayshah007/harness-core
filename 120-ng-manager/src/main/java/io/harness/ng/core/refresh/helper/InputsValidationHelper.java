@@ -18,6 +18,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.ng.core.yaml.CDYamlFacade;
 import io.harness.persistence.PersistentEntity;
@@ -26,6 +27,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.template.yaml.TemplateRefHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -168,7 +170,15 @@ public class InputsValidationHelper {
 
     String serviceYaml = serviceEntity.fetchNonEmptyYaml();
 
-    // TODO: call Template service to resolve artifact source templates. If inputs issue, add service as nodeError.
+    // check template inputs are updated
+    if (TemplateRefHelper.hasTemplateRef(serviceYaml)) {
+      ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO = serviceEntityService.validateTemplateInputs(
+          context.getAccountId(), context.getOrgId(), context.getProjectId(), serviceRef, "true");
+      if (!validateTemplateInputsResponseDTO.isValidYaml()) {
+        errorNodeSummary.setValid(false);
+        return;
+      }
+    }
 
     YamlNode primaryArtifactRefNode = YamlNodeUtils.goToPathUsingFqn(
         entityNode, "serviceInputs.serviceDefinition.spec.artifacts.primary.primaryArtifactRef");

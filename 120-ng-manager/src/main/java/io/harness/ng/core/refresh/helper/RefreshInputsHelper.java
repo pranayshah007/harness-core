@@ -18,6 +18,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.yaml.CDYamlFacade;
 import io.harness.persistence.PersistentEntity;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
@@ -25,6 +27,9 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
+import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.yaml.TemplateRefHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,6 +50,8 @@ public class RefreshInputsHelper {
   @Inject EntityFetchHelper entityFetchHelper;
   @Inject EnvironmentRefreshHelper environmentRefreshHelper;
   @Inject private CDYamlFacade cdYamlFacade;
+
+  @Inject private TemplateResourceClient templateResourceClient;
 
   public String refreshInputs(
       String accountId, String orgId, String projectId, String yaml, String resolvedTemplatesYaml) {
@@ -152,6 +159,15 @@ public class RefreshInputsHelper {
 
     JsonNode serviceInputs = serviceNodeValue.get(YamlTypes.SERVICE_INPUTS);
     String serviceYaml = serviceEntity.fetchNonEmptyYaml();
+
+    if (TemplateRefHelper.hasTemplateRef(serviceYaml)) {
+      RefreshResponseDTO refreshResponseDTO = NGRestUtils.getResponse(templateResourceClient.getRefreshedYaml(
+          context.getAccountId(), context.getOrgId(), context.getProjectId(), null, null, null, null, null, null, null,
+          null, "true", RefreshRequestDTO.builder().yaml(serviceYaml).build()));
+
+      serviceYaml = refreshResponseDTO.getRefreshedYaml();
+    }
+
     YamlNode primaryArtifactRefNode = YamlNodeUtils.goToPathUsingFqn(
         entityNode, "serviceInputs.serviceDefinition.spec.artifacts.primary.primaryArtifactRef");
     String serviceRuntimeInputYaml = serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(
