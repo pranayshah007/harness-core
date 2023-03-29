@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
@@ -71,6 +72,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineEnforcementService;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.plan.execution.ExecutionHelper;
+import io.harness.pms.triggers.beans.TriggerPlanExecArgs;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequestHook;
@@ -78,6 +80,7 @@ import io.harness.product.ci.scm.proto.PushHook;
 import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.User;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -122,6 +125,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
   @Mock PipelineEnforcementService pipelineEnforcementService;
   @Mock PipelineGovernanceServiceImpl pipelineGovernanceService;
   @Mock ExecutionHelper executionHelper;
+  @Mock PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Before
   public void setUp() {
     triggerWebhookEvent =
@@ -161,6 +165,45 @@ public class TriggerExecutionHelperTest extends CategoryTest {
     } catch (IOException e) {
       throw new InvalidRequestException("Could not read resource file: " + filename);
     }
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerPlanExecArgs() throws Exception {
+    PipelineEntity pipelineEntity =
+        PipelineEntity.builder().repo("repo").filePath("filePath").connectorRef("connectorRef").build();
+
+    NGTriggerEntity ngTriggerEntityGitSync = NGTriggerEntity.builder()
+                                                 .accountId("ACCOUNT_ID")
+                                                 .orgIdentifier("ORG_IDENTIFIER")
+                                                 .projectIdentifier("PROJ_IDENTIFIER")
+                                                 .targetIdentifier("PIPELINE_IDENTIFIER")
+                                                 .identifier("IDENTIFIER")
+                                                 .name("NAME")
+                                                 .targetType(TargetType.PIPELINE)
+                                                 .type(NGTriggerType.WEBHOOK)
+                                                 .version(0L)
+                                                 .build();
+
+    TriggerDetails triggerDetails = TriggerDetails.builder()
+                                        .ngTriggerEntity(ngTriggerEntityGitSync)
+                                        .ngTriggerConfigV2(NGTriggerConfigV2.builder()
+                                                               .inputSetRefs(Arrays.asList("inputSet1", "inputSet2"))
+                                                               .pipelineBranchName("pipelineBranchName")
+                                                               .build())
+                                        .build();
+
+    when(ngTriggerElementMapper.toTriggerConfigV2(ngTriggerEntityGitSync))
+        .thenReturn(triggerDetails.getNgTriggerConfigV2());
+    doReturn(Optional.of(pipelineEntity))
+        .when(pmsPipelineService)
+        .getPipeline("ACCOUNT_ID", "ORG_IDENTIFIER", "PROJ_IDENTIFIER", "PIPELINE_IDENTIFIER", false, false);
+    when(pmsGitSyncHelper.serializeGitSyncBranchContext(any())).thenReturn(ByteString.copyFrom(new byte[2]));
+    TriggerPlanExecArgs triggerPlanExecArgs =
+        triggerExecutionHelper.getTriggerPlanExecArgs(triggerDetails, triggerWebhookEvent);
+    assertThat(triggerPlanExecArgs.getPipelineEntity()).isEqualToComparingFieldByField(pipelineEntity);
+    assertThat(triggerPlanExecArgs.getGitSyncBranchContextByteString()).isNotNull();
   }
 
   @Test
@@ -379,6 +422,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                        .setRepo(Repository.newBuilder().setLink("https://github.com").build())
                        .build())
             .build());
+    doReturn(false).when(pmsFeatureFlagHelper).isEnabled("acc", FeatureName.CDS_NG_TRIGGER_EXECUTION_REFACTOR);
     doReturn(Optional.of(pipelineEntityV1))
         .when(pmsPipelineService)
         .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
