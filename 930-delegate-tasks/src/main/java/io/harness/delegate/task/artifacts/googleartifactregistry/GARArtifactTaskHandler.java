@@ -7,7 +7,6 @@
 
 package io.harness.delegate.task.artifacts.googleartifactregistry;
 
-import static io.harness.delegate.task.artifacts.ArtifactServiceConstant.ACCEPT_ALL_REGEX;
 import static io.harness.delegate.task.artifacts.mappers.GarRequestResponseMapper.toGarInternalConfig;
 import static io.harness.delegate.task.artifacts.mappers.GarRequestResponseMapper.toGarResponse;
 import static io.harness.exception.WingsException.USER;
@@ -64,10 +63,10 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
       throw NestedExceptionUtils.hintWithExplanationException("Google Artifact Registry: Could not get Bearer Token",
           "Refresh Token might be not getting generated", new InvalidArtifactServerException(e.getMessage(), USER));
     }
-    if (isRegex(attributesRequest) || attributesRequest.getVersion().equals(ACCEPT_ALL_REGEX)) {
-      String versionRegex =
-          isRegex(attributesRequest) ? attributesRequest.getVersionRegex() : attributesRequest.getVersion();
-      lastSuccessfulBuild = garApiService.getLastSuccessfulBuildFromRegex(garInternalConfig, versionRegex);
+
+    if (isRegex(attributesRequest)) {
+      lastSuccessfulBuild =
+          garApiService.getLastSuccessfulBuildFromRegex(garInternalConfig, attributesRequest.getVersionRegex());
     } else {
       lastSuccessfulBuild = garApiService.verifyBuildNumber(garInternalConfig, attributesRequest.getVersion());
     }

@@ -24,5 +24,4 @@ public class SetupAbstractionKeys {
   public final String triggerInfo = "triggerInfo";
   public final String runSequence = "runSequence";
   public final String trigger = "trigger";
-  public final String lastPublished = "lastPublished";
 }
