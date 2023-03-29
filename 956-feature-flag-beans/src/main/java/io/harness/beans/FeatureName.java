@@ -672,7 +672,10 @@ public enum FeatureName {
   CDS_SERVICENOW_TICKET_TYPE_V2("FF to use servicenow ticketTypesV2 endpoint", HarnessTeam.CDC),
   FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE),
   CD_ONBOARDING_HELP_ENABLED("Enables help panel for CD onboarding ", HarnessTeam.CDP),
-  BAMBOO_BUILD("Bamboo Build Step", HarnessTeam.CDC);
+  BAMBOO_BUILD("Bamboo Build Step", HarnessTeam.CDC),
+  PL_SKIP_SECRETS_USAGE_CHECK_IF_USAGE_RESTRICTIONS_ARE_NOT_UPDATED(
+      "This flag helps to skip the secrets usage scope check with usage restrictions of SM when updating",
+      HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {

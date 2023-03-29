@@ -8,6 +8,7 @@
 package software.wings.service.impl.security;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.PL_SKIP_SECRETS_USAGE_CHECK_IF_USAGE_RESTRICTIONS_ARE_NOT_UPDATED;
 import static io.harness.beans.SecretManagerCapabilities.TRANSITION_SECRET_FROM_SM;
 import static io.harness.beans.SecretManagerCapabilities.TRANSITION_SECRET_TO_SM;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -123,7 +124,13 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
     } else {
       SecretManagerConfig oldConfig = wingsPersistence.get(SecretManagerConfig.class, secretManagerConfig.getUuid());
       secretsManagerRBACService.canChangePermissions(accountId, secretManagerConfig, oldConfig);
-      secretService.updateConflictingSecretsToInheritScopes(accountId, secretManagerConfig);
+      if (!(accountService.isFeatureFlagEnabled(
+                PL_SKIP_SECRETS_USAGE_CHECK_IF_USAGE_RESTRICTIONS_ARE_NOT_UPDATED.name(), accountId)
+              && oldConfig.getUsageRestrictions() != null && secretManagerConfig.getUsageRestrictions() != null
+              && oldConfig.getUsageRestrictions().getAppEnvRestrictions().equals(
+                  secretManagerConfig.getUsageRestrictions().getAppEnvRestrictions()))) {
+        secretService.updateConflictingSecretsToInheritScopes(accountId, secretManagerConfig);
+      }
     }
 
     //[PL-11328] DO NOT remove this innocent redundant looking line which is actually setting the encryptionType.
