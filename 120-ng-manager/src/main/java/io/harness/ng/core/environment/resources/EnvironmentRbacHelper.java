@@ -32,9 +32,10 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDC)
 public class EnvironmentRbacHelper {
   @Inject private AccessControlClient accessControlClient;
-  private boolean hasProdAccess = false;
-  private boolean hasPreProdAccess = false;
+
   public List<Environment> getPermittedEnvironmentsList(List<Environment> environments) {
+    final boolean hasProdAccess;
+    final boolean hasPreProdAccess;
     if (isEmpty(environments)) {
       return Collections.emptyList();
     }
@@ -74,7 +75,12 @@ public class EnvironmentRbacHelper {
 
     List<AccessControlDTO> accessControlDTOList = accessCheckResponse.getAccessControlList();
 
-    accessControlDTOList = CheckingTypeBasedFilters(accessControlDTOList);
+    EnvironmentTypeFilteredResponse environmentTypeFilteredResponse =
+        CheckingTypeBasedFilters(accessControlDTOList, false, false);
+
+    accessControlDTOList = environmentTypeFilteredResponse.getAccessControlDTOList();
+    hasPreProdAccess = environmentTypeFilteredResponse.hasPreProdAccess;
+    hasProdAccess = environmentTypeFilteredResponse.hasProdAccess;
 
     List<Environment> permittedEnvironments = new ArrayList<>();
 
@@ -94,14 +100,15 @@ public class EnvironmentRbacHelper {
     return permittedEnvironments;
   }
 
-  private List<AccessControlDTO> CheckingTypeBasedFilters(List<AccessControlDTO> accessControlDTOList) {
+  private EnvironmentTypeFilteredResponse CheckingTypeBasedFilters(
+      List<AccessControlDTO> accessControlDTOList, boolean hasPreProdAccess, boolean hasProdAccess) {
     for (AccessControlDTO accessControlDTO : accessControlDTOList) {
       if (accessControlDTO.getResourceAttributes() != null) {
         if (accessControlDTO.isPermitted()) {
-          if (accessControlDTO.getResourceAttributes().get("type") == "PreProduction") {
+          if ("PreProduction".equals(accessControlDTO.getResourceAttributes().get("type"))) {
             hasPreProdAccess = true;
 
-          } else if (accessControlDTO.getResourceAttributes().get("type") == "Production") {
+          } else if ("Production".equals(accessControlDTO.getResourceAttributes().get("type"))) {
             hasProdAccess = true;
           }
         }
@@ -110,7 +117,7 @@ public class EnvironmentRbacHelper {
       }
     }
 
-    return accessControlDTOList;
+    return new EnvironmentTypeFilteredResponse(accessControlDTOList, hasPreProdAccess, hasProdAccess);
   }
 
   private static EntityScopeInfo getEntityScopeInfoFromEnvironment(Environment environmentEntity) {
