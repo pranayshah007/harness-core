@@ -670,6 +670,7 @@ public enum FeatureName {
   SPG_SERVICES_OVERVIEW_RBAC(
       "Applies RBAC on services overview page, only displays services which the user has access to read",
       HarnessTeam.SPG),
+  CDS_ENABLE_TRIGGER_YAML_VALIDATION("Enables trigger yaml validation", HarnessTeam.SPG),
   CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG(
       "Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP),
   SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
