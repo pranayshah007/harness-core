@@ -24,7 +24,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(HarnessTeam.CDP)
-public class EnvVariables {
+public class EnvVariable {
   @JsonProperty(K8sConstants.KUBECFG_NAME) private String name;
   @JsonProperty(K8sConstants.KUBECFG_VALUE) private String value;
 }

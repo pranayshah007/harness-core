@@ -42,6 +42,8 @@ import io.harness.aws.v2.ecs.EcsV2Client;
 import io.harness.aws.v2.ecs.EcsV2ClientImpl;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.aws.v2.ecs.ElbV2ClientImpl;
+import io.harness.aws.v2.eks.EksV2Client;
+import io.harness.aws.v2.eks.EksV2ClientImpl;
 import io.harness.aws.v2.lambda.AwsLambdaClient;
 import io.harness.aws.v2.lambda.AwsLambdaClientImpl;
 import io.harness.awscli.AwsCliClient;
@@ -2129,6 +2131,7 @@ public class DelegateModule extends AbstractModule {
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);
     bind(GoogleCloudFunctionClient.class).to(GoogleCloudFunctionClientImpl.class);
     bind(GoogleCloudRunClient.class).to(GoogleCloudRunClientImpl.class);
+    bind(EksV2Client.class).to(EksV2ClientImpl.class);
 
     // AWS Lambda NG
     bind(AwsLambdaClient.class).to(AwsLambdaClientImpl.class);

@@ -2373,7 +2373,8 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     return exponentialRetry;
   }
 
-  private String generateExecFormatKubeconfig(KubernetesConfig config) {
+  @Override
+  public String generateExecFormatKubeconfig(KubernetesConfig config) {
     String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";
     String certificateAuthorityData =
         isNotEmpty(config.getCaCert()) ? "certificate-authority-data: " + String.valueOf(config.getCaCert()) : "";

@@ -5496,6 +5496,7 @@ amazon_v2_artifacts = [
         "health",
         "elasticloadbalancingv2",
         "lambda",
+        "eks",
     ]
 ]
 

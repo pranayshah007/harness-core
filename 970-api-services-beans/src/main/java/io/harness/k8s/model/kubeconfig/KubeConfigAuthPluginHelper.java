@@ -7,6 +7,8 @@
 
 package io.harness.k8s.model.kubeconfig;
 
+import static io.harness.k8s.K8sConstants.EKS_AUTH_PLUGIN_BINARY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -26,7 +28,9 @@ public class KubeConfigAuthPluginHelper {
   private static final int TIMEOUT_IN_MINUTES = 1;
 
   public static boolean isExecAuthPluginBinaryAvailable(String binaryName, LogCallback logCallback) {
-    boolean shouldUseExecFormat = runCommand(binaryName + " --version", logCallback);
+    String commandToRun = getCommandToRun(binaryName);
+    boolean shouldUseExecFormat = runCommand(binaryName + commandToRun, logCallback);
+
     if (shouldUseExecFormat) {
       saveLogs(
           String.format(
@@ -77,5 +81,12 @@ public class KubeConfigAuthPluginHelper {
         log.warn(errorMsg);
       }
     }
+  }
+
+  private static String getCommandToRun(String binaryName) {
+    if (binaryName.equals(EKS_AUTH_PLUGIN_BINARY)) {
+      return " version";
+    }
+    return " --version";
   }
 }

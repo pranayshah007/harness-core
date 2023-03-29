@@ -26,6 +26,7 @@ java_library(
         "//930-delegate-tasks/src/main/java/io/harness/delegate/k8s/request:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts/gcr/exceptions:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts/mappers:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/aws/eks:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/common:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/config:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/gcp/helpers:module",

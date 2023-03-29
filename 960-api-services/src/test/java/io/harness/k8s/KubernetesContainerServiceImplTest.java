@@ -60,7 +60,7 @@ import io.harness.k8s.model.GcpAccessTokenSupplier;
 import io.harness.k8s.model.KubernetesAzureConfig;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.OidcGrantType;
-import io.harness.k8s.model.kubeconfig.EnvVariables;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.model.kubeconfig.Exec;
 import io.harness.k8s.model.kubeconfig.InteractiveMode;
 import io.harness.k8s.oidc.OidcTokenRetriever;
@@ -144,7 +144,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1720,7 +1719,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
                     .apiVersion("client.authentication.k8s.io/v1beta1")
                     .command("command")
                     .args(null)
-                    .env(singletonList(EnvVariables.builder().name("name").value("value").build()))
+                    .env(singletonList(EnvVariable.builder().name("name").value("value").build()))
                     .provideClusterInfo(false)
                     .installHint("hint")
                     .interactiveMode(InteractiveMode.NEVER)
