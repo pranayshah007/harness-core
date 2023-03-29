@@ -14,7 +14,6 @@ import io.harness.idp.user.beans.entity.UserEventEntity;
 import io.harness.idp.user.repositories.UserEventRepository;
 
 import com.google.inject.Inject;
-import java.util.List;
 import lombok.AllArgsConstructor;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class UserRefreshServiceImpl implements UserRefreshService {
@@ -24,8 +23,7 @@ public class UserRefreshServiceImpl implements UserRefreshService {
   @Override
   public void processEntityUpdate(Message message, EntityChangeDTO entityChangeDTO) {
     String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
-    List<String> accountIds = namespaceService.getAccountIds();
-    if (accountIds.contains(accountIdentifier)) {
+    if (namespaceService.getAccountIdpStatus(accountIdentifier)) {
       UserEventEntity userEventEntity =
           UserEventEntity.builder().accountIdentifier(accountIdentifier).hasEvent(true).build();
       userEventRepository.saveOrUpdate(userEventEntity);

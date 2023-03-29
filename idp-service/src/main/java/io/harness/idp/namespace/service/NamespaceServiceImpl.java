@@ -63,4 +63,9 @@ public class NamespaceServiceImpl implements NamespaceService {
         namespaceEntities.stream().map(entity -> entity.getAccountIdentifier()).collect(Collectors.toList());
     return accountIdsList;
   }
+  public Boolean getAccountIdpStatus(String accountIdentifier) {
+    Optional<NamespaceEntity> namespaceEntity =
+        namespaceRepository.findByAccountIdentifierAndIsDeleted(accountIdentifier, false);
+    return namespaceEntity.isPresent();
+  }
 }

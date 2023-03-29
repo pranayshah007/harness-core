@@ -7,6 +7,8 @@
 
 package io.harness.idp.user.repositories;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.user.beans.entity.UserEventEntity;
 
 import com.google.inject.Inject;
@@ -17,17 +19,25 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-
+@OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 public class UserEventRepositoryCustomImpl implements UserEventRepositoryCustom {
   private MongoTemplate mongoTemplate;
   public UserEventEntity saveOrUpdate(UserEventEntity userEventEntity) {
     Criteria criteria =
-        Criteria.where(UserEventEntity.UserEventValue.accountIdentifier).is(userEventEntity.getAccountIdentifier());
+        Criteria.where(UserEventEntity.UserEventKeys.accountIdentifier).is(userEventEntity.getAccountIdentifier());
+    UserEventEntity entityForFindByAccountId = findOneBasedOnCriteria(criteria);
+    if (entityForFindByAccountId == null) {
+      return mongoTemplate.save(userEventEntity);
+    }
     Query query = new Query(criteria);
     Update update = new Update();
-    update.set(UserEventEntity.UserEventValue.hasEvent, userEventEntity.isHasEvent());
-    FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true).upsert(true);
+    update.set(UserEventEntity.UserEventKeys.hasEvent, userEventEntity.isHasEvent());
+    update.set(UserEventEntity.UserEventKeys.lastUpdatedAt, System.currentTimeMillis());
+    FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
     return mongoTemplate.findAndModify(query, update, options, UserEventEntity.class);
+  }
+  private UserEventEntity findOneBasedOnCriteria(Criteria criteria) {
+    return mongoTemplate.findOne(Query.query(criteria), UserEventEntity.class);
   }
 }

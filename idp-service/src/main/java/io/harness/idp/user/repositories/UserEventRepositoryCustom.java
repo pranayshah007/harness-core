@@ -7,8 +7,10 @@
 
 package io.harness.idp.user.repositories;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.user.beans.entity.UserEventEntity;
-
+@OwnedBy(HarnessTeam.IDP)
 public interface UserEventRepositoryCustom {
   UserEventEntity saveOrUpdate(UserEventEntity userEventEntity);
 }
