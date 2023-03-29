@@ -5313,7 +5313,8 @@
           ]
         },
         "envGroupRef": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?=\\s*\\S).*$"
         },
         "environments": {
           "oneOf": [
@@ -5414,7 +5415,8 @@
           ]
         },
         "environmentRef": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?=\\s*\\S).*$"
         },
         "filters": {
           "oneOf": [
@@ -7045,7 +7047,8 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?=\\s*\\S).*$"
         },
         "inputs": {
           "oneOf": [
