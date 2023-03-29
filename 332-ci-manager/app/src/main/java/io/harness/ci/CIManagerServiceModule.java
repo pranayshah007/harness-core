@@ -81,6 +81,7 @@ import io.harness.ng.core.event.MessageListener;
 import io.harness.opaclient.OpaClientModule;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
+import io.harness.project.ProjectClientModule;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
 import io.harness.reflection.HarnessReflections;
@@ -345,6 +346,8 @@ public class CIManagerServiceModule extends AbstractModule {
     install(new CILogServiceClientModule(ciManagerConfiguration.getLogServiceConfig()));
     install(UserClientModule.getInstance(ciManagerConfiguration.getManagerClientConfig(),
         ciManagerConfiguration.getManagerServiceSecret(), this.serviceHeader.getServiceId()));
+    install(new ProjectClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
+        ciManagerConfiguration.getNgManagerServiceSecret(), this.serviceHeader.getServiceId()));
     install(new TIServiceClientModule(ciManagerConfiguration.getTiServiceConfig()));
     install(new STOServiceClientModule(ciManagerConfiguration.getStoServiceConfig()));
     install(new SSCAServiceClientModule(ciManagerConfiguration.getSscaServiceConfig()));
