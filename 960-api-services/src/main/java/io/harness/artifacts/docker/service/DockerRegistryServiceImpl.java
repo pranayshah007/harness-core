@@ -275,7 +275,8 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
   @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
       DockerInternalConfig dockerConfig, String imageName, String tagRegex) {
-    Pattern pattern = Pattern.compile(tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+    tagRegex = tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?");
+    Pattern pattern = Pattern.compile(tagRegex);
     List<BuildDetailsInternal> builds = getBuilds(dockerConfig, imageName, MAX_NUMBER_OF_BUILDS, tagRegex);
     builds = builds.stream()
                  .filter(build -> pattern.matcher(build.getNumber()).find())
