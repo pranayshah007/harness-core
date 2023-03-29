@@ -63,6 +63,7 @@ import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
@@ -320,6 +321,77 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     sloTarget = sloTargetTypeSLOTargetTransformerMap.get(sloDTO.getSloTarget().getType())
                     .getSLOTarget(sloDTO.getSloTarget().getSpec());
     assertThat(serviceLevelObjective.getTarget()).isEqualTo(sloTarget);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetEvaluationType() {
+    // setting up monitored service for different project in same acc
+    ProjectParams projectParamsTest = ProjectParams.builder()
+                                          .accountIdentifier(projectParams.getAccountIdentifier())
+                                          .orgIdentifier(generateUuid())
+                                          .projectIdentifier(generateUuid())
+                                          .build();
+    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
+                                                  .orgIdentifier(projectParamsTest.getOrgIdentifier())
+                                                  .projectIdentifier(projectParamsTest.getProjectIdentifier())
+                                                  .build();
+    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(projectParamsTest.getAccountIdentifier(), monitoredServiceDTO);
+
+    // creating simple SLO in the different project with same sli and slo identifier
+    simpleServiceLevelObjectiveDTO2 = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
+                                          .projectIdentifier(projectParamsTest.getProjectIdentifier())
+                                          .orgIdentifier(projectParamsTest.getOrgIdentifier())
+                                          .identifier("simpleSLOIdentifier")
+                                          .build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
+    simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveDTO2.setSpec(simpleServiceLevelObjectiveSpec1);
+    serviceLevelObjectiveV2Service.create(projectParamsTest, simpleServiceLevelObjectiveDTO2);
+    simpleServiceLevelObjective2 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        projectParamsTest, simpleServiceLevelObjectiveDTO2.getIdentifier());
+
+    // validating that sli identifier is same for both
+    assertThat(simpleServiceLevelObjective1.getServiceLevelIndicators().get(0))
+        .isEqualTo(simpleServiceLevelObjective2.getServiceLevelIndicators().get(0));
+
+    // creating composite slo using these two slos
+    compositeSLODTO = builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+                          .identifier("new_composite_slo")
+                          .orgIdentifier(null)
+                          .projectIdentifier(null)
+                          .spec(CompositeServiceLevelObjectiveSpec.builder()
+                                    .serviceLevelObjectivesDetails(Arrays.asList(
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                            .weightagePercentage(75.0)
+                                            .accountId(simpleServiceLevelObjective1.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                            .build(),
+                                        ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                                            .weightagePercentage(25.0)
+                                            .accountId(simpleServiceLevelObjective2.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                                            .build()))
+                                    .build())
+                          .build();
+    serviceLevelObjectiveResponse = serviceLevelObjectiveV2Service.create(projectParams, compositeSLODTO);
+    compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        projectParams, compositeSLODTO.getIdentifier());
+
+    // validating that the evaluation type is calculated correct.
+    Map<AbstractServiceLevelObjective, SLIEvaluationType> sliEvaluationTypeMap =
+        serviceLevelObjectiveV2Service.getEvaluationType(
+            ProjectParams.builder().accountIdentifier(projectParams.getAccountIdentifier()).build(),
+            Collections.singletonList(compositeServiceLevelObjective));
+    assertThat(sliEvaluationTypeMap.get(compositeServiceLevelObjective)).isEqualTo(SLIEvaluationType.WINDOW);
   }
 
   @Test
