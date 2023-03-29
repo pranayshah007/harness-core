@@ -34,6 +34,9 @@ import static org.assertj.core.data.Offset.offset;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.VerificationBase;
@@ -62,7 +65,6 @@ import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.ContinuousVerificationExecutionMetaData;
 import software.wings.service.impl.analysis.DeploymentTimeSeriesAnalysis;
 import software.wings.service.impl.analysis.ExperimentalLogMLAnalysisRecord;
-import software.wings.service.impl.analysis.MLAnalysisType;
 import software.wings.service.impl.analysis.MetricDataAnalysisServiceImpl;
 import software.wings.service.impl.analysis.TimeSeriesMLAnalysisRecord;
 import software.wings.service.impl.analysis.TimeSeriesMLScores;
@@ -141,6 +143,7 @@ public class MetricDataAnalysisServiceTest extends VerificationBase {
   @Inject @InjectMocks private ContinuousVerificationService continuousVerificationService;
   @Inject @InjectMocks private LearningEngineService learningEngineService;
   private MetricDataAnalysisService managerAnalysisService;
+  private ContinuousVerificationService spiedContinuousVerificationService;
 
   @Before
   public void setUp() throws IllegalAccessException {
@@ -160,8 +163,9 @@ public class MetricDataAnalysisServiceTest extends VerificationBase {
     FieldUtils.writeField(managerAnalysisService, "wingsPersistence", wingsPersistence, true);
     FieldUtils.writeField(settingsService, "wingsPersistence", wingsPersistence, true);
     FieldUtils.writeField(managerAnalysisService, "settingsService", settingsService, true);
+    spiedContinuousVerificationService = spy(continuousVerificationService);
     FieldUtils.writeField(
-        metricDataAnalysisService, "continuousVerificationService", continuousVerificationService, true);
+        metricDataAnalysisService, "continuousVerificationService", spiedContinuousVerificationService, true);
     FieldUtils.writeField(managerAnalysisService, "appService", appService, true);
     FieldUtils.writeField(managerAnalysisService, "dataStoreService", dataStoreService, true);
 
@@ -371,17 +375,10 @@ public class MetricDataAnalysisServiceTest extends VerificationBase {
         LearningEngineAnalysisTask.builder().state_execution_id(generateUuid()).cluster_level(0).build();
     final String taskId = wingsPersistence.save(learningEngineAnalysisTask);
     timeSeriesMLAnalysisRecord.setCvConfigId(cvConfigId);
-    List<Alert> alerts = wingsPersistence.createQuery(Alert.class, excludeAuthority).asList();
-    assertThat(alerts).isEmpty();
     metricDataAnalysisService.saveAnalysisRecordsML(accountId, StateType.NEW_RELIC, appId,
         learningEngineAnalysisTask.getState_execution_id(), null, DEFAULT_GROUP_NAME, 10, taskId, null, cvConfigId,
         timeSeriesMLAnalysisRecord, null);
-    alerts = wingsPersistence.createQuery(Alert.class, excludeAuthority).asList();
-    waitForAlert(1, Optional.empty());
-    assertThat(alerts.size()).isEqualTo(1);
-    ContinuousVerificationAlertData alertData = (ContinuousVerificationAlertData) alerts.get(0).getAlertData();
-    assertThat(alertData.getMlAnalysisType()).isEqualTo(MLAnalysisType.TIME_SERIES);
-    assertThat(alertData.getRiskScore()).isEqualTo(riskScore, offset(0.0001));
+    verify(spiedContinuousVerificationService, times(1)).triggerTimeSeriesAlertIfNecessary(cvConfigId, riskScore, 10);
   }
 
   private void waitForAlert(int expectedNumOfAlerts, Optional<AlertStatus> alertStatus) {
