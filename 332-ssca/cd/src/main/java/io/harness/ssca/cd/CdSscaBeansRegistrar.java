@@ -13,6 +13,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepInfo;
+import io.harness.pms.contracts.steps.StepMetaData;
+import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationStepNode;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
 import io.harness.yaml.schema.beans.YamlGroup;
@@ -38,6 +41,16 @@ public class CdSscaBeansRegistrar {
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .featureFlags(Collections.singletonList(FeatureName.SSCA_ENABLED.name()))
                                            .build())
+                   .build())
+          .build();
+
+  public static final ImmutableList<StepInfo> sscaStepPaletteSteps =
+      ImmutableList.<StepInfo>builder()
+          .add(StepInfo.newBuilder()
+                   .setName(SscaConstants.SSCA_ORCHESTRATION_STEP)
+                   .setType(SscaConstants.CD_SSCA_ORCHESTRATION)
+                   .setStepMetaData(StepMetaData.newBuilder().addCategory("ssca").addFolderPaths("SSCA").build())
+                   .setFeatureFlag(FeatureName.SSCA_ENABLED.name())
                    .build())
           .build();
 }
