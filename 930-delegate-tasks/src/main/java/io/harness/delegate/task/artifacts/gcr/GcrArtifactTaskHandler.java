@@ -7,7 +7,6 @@
 
 package io.harness.delegate.task.artifacts.gcr;
 
-import static io.harness.delegate.task.artifacts.ArtifactServiceConstant.ACCEPT_ALL_REGEX;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -79,11 +78,10 @@ public class GcrArtifactTaskHandler extends DelegateArtifactTaskHandler<GcrArtif
       log.error("Could not get basic auth header", e);
       throw new GcpClientRuntimeException(e.getMessage());
     }
-    if (EmptyPredicate.isNotEmpty(attributesRequest.getTagRegex())
-        || attributesRequest.getTag().equals(ACCEPT_ALL_REGEX)) {
-      String tagRegex = isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag().replace("*", ".*?");
-      lastSuccessfulBuild =
-          gcrService.getLastSuccessfulBuildFromRegex(gcrInternalConfig, attributesRequest.getImagePath(), tagRegex);
+
+    if (EmptyPredicate.isNotEmpty(attributesRequest.getTagRegex())) {
+      lastSuccessfulBuild = gcrService.getLastSuccessfulBuildFromRegex(
+          gcrInternalConfig, attributesRequest.getImagePath(), attributesRequest.getTagRegex());
     } else {
       lastSuccessfulBuild =
           gcrService.verifyBuildNumber(gcrInternalConfig, attributesRequest.getImagePath(), attributesRequest.getTag());
@@ -155,8 +153,5 @@ public class GcrArtifactTaskHandler extends DelegateArtifactTaskHandler<GcrArtif
       secretDecryptionService.decrypt(
           gcrRequest.getGcpConnectorDTO().getCredential().getConfig(), gcrRequest.getEncryptedDataDetails());
     }
-  }
-  boolean isRegex(GcrArtifactDelegateRequest artifactDelegateRequest) {
-    return EmptyPredicate.isNotEmpty(artifactDelegateRequest.getTagRegex());
   }
 }

@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.artifacts.docker;
 
+import static io.harness.delegate.task.artifacts.ArtifactServiceConstant.ACCEPT_ALL_REGEX;
+
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.docker.service.DockerRegistryService;
@@ -26,8 +28,6 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
-import static io.harness.delegate.task.artifacts.ArtifactServiceConstant.ACCEPT_ALL_REGEX;
-
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 public class DockerArtifactTaskHandler extends DelegateArtifactTaskHandler<DockerArtifactDelegateRequest> {
@@ -39,11 +39,10 @@ public class DockerArtifactTaskHandler extends DelegateArtifactTaskHandler<Docke
     BuildDetailsInternal lastSuccessfulBuild;
     ArtifactMetaInfo artifactMetaInfo = null;
     List<Map<String, String>> labels;
-    if (isRegex(attributesRequest) || attributesRequest.getTag().equals(ACCEPT_ALL_REGEX)) {
-      String tagRegex = isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag();
+    if (isRegex(attributesRequest)) {
       lastSuccessfulBuild = dockerRegistryService.getLastSuccessfulBuildFromRegex(
           DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest), attributesRequest.getImagePath(),
-          tagRegex);
+          attributesRequest.getTagRegex());
       labels = dockerRegistryService.getLabels(DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest),
           attributesRequest.getImagePath(), Collections.singletonList(lastSuccessfulBuild.getNumber()));
     } else {

@@ -60,7 +60,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.expiringmap.ExpirationPolicy;
@@ -275,11 +274,9 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
   @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
       DockerInternalConfig dockerConfig, String imageName, String tagRegex) {
-    tagRegex = tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?");
-    Pattern pattern = Pattern.compile(tagRegex);
     List<BuildDetailsInternal> builds = getBuilds(dockerConfig, imageName, MAX_NUMBER_OF_BUILDS, tagRegex);
     builds = builds.stream()
-                 .filter(build -> pattern.matcher(build.getNumber()).find())
+                 .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
                  .sorted(new BuildDetailsInternalComparatorDescending())
                  .collect(Collectors.toList());
 
