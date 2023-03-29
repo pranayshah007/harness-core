@@ -515,6 +515,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .monitoredServiceIdentifier(sloDashboardApiFilter.getMonitoredServiceIdentifier())
             .targetTypes(sloDashboardApiFilter.getTargetTypes())
             .sliTypes(sloDashboardApiFilter.getSliTypes())
+            .searchFilter(sloDashboardApiFilter.getSearchFilter())
             .build());
     List<SLOHealthIndicator> sloHealthIndicators = sloHealthIndicatorService.getBySLOIdentifiers(projectParams,
         serviceLevelObjectiveList.stream()
@@ -1166,6 +1167,9 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                   -> slo.getNotificationRuleRefs().stream().anyMatch(notificationRuleRef
                       -> notificationRuleRef.getNotificationRuleRef().equals(filter.getNotificationRuleRef())))
               .collect(Collectors.toList());
+    }
+    if (isNotEmpty(filter.getSearchFilter())) {
+      serviceLevelObjectiveList = filterSLOs(serviceLevelObjectiveList, filter.getSearchFilter());
     }
     if (isNotEmpty(filter.getErrorBudgetRisks())) {
       List<SLOHealthIndicator> sloHealthIndicators = sloHealthIndicatorService.getBySLOIdentifiers(projectParams,

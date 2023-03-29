@@ -1727,27 +1727,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testGetRiskCount_Success() {
-    createMonitoredService();
-    ServiceLevelObjectiveV2DTO sloDTO =
-        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id1").build();
-    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
-    SLOHealthIndicator sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
-                                                .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
-                                                .errorBudgetRemainingPercentage(10)
-                                                .errorBudgetRisk(ErrorBudgetRisk.UNHEALTHY)
-                                                .build();
-    hPersistence.save(sloHealthIndicator);
-    sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id2").build();
-    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
-    sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
-                             .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
-                             .errorBudgetRemainingPercentage(-10)
-                             .errorBudgetRisk(ErrorBudgetRisk.EXHAUSTED)
-                             .build();
-    hPersistence.save(sloHealthIndicator);
-    sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id3").build();
-    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
-
+    riskCountSetup();
     SLORiskCountResponse sloRiskCountResponse =
         serviceLevelObjectiveV2Service.getRiskCount(projectParams, SLODashboardApiFilter.builder().build());
 
@@ -1774,6 +1754,58 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                    .get()
                    .getCount())
         .isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testGetRiskCount_withSearchFilter() {
+    riskCountSetup();
+    SLORiskCountResponse sloRiskCountResponse = serviceLevelObjectiveV2Service.getRiskCount(
+        projectParams, SLODashboardApiFilter.builder().searchFilter("id").build());
+
+    assertThat(sloRiskCountResponse.getTotalCount()).isEqualTo(2);
+    assertThat(sloRiskCountResponse.getRiskCounts()).hasSize(5);
+    assertThat(sloRiskCountResponse.getRiskCounts()
+                   .stream()
+                   .filter(rc -> rc.getErrorBudgetRisk().equals(ErrorBudgetRisk.EXHAUSTED))
+                   .findAny()
+                   .get()
+                   .getCount())
+        .isEqualTo(0);
+    assertThat(sloRiskCountResponse.getRiskCounts()
+                   .stream()
+                   .filter(rc -> rc.getErrorBudgetRisk().equals(ErrorBudgetRisk.UNHEALTHY))
+                   .findAny()
+                   .get()
+                   .getCount())
+        .isEqualTo(1);
+  }
+
+  private void riskCountSetup() {
+    createMonitoredService();
+    ServiceLevelObjectiveV2DTO sloDTO =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id1").name("id1").build();
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    SLOHealthIndicator sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
+                                                .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
+                                                .errorBudgetRemainingPercentage(10)
+                                                .errorBudgetRisk(ErrorBudgetRisk.UNHEALTHY)
+                                                .build();
+    hPersistence.save(sloHealthIndicator);
+    sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
+                 .identifier("id2")
+                 .name("can not be searched")
+                 .build();
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
+                             .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
+                             .errorBudgetRemainingPercentage(-10)
+                             .errorBudgetRisk(ErrorBudgetRisk.EXHAUSTED)
+                             .build();
+    hPersistence.save(sloHealthIndicator);
+    sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id3").name("id3").build();
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
   }
 
   @Test
