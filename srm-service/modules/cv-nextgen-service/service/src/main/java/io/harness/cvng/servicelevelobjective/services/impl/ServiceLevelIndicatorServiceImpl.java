@@ -150,20 +150,22 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         TimeGraphResponse.builder()
             .startTime(startTime.toEpochMilli())
             .endTime(endTime.toEpochMilli())
-            .dataPoints(sliAnalyseResponses.stream()
-                            .map(sliAnalyseResponse
-                                -> DataPoints.builder()
-                                       .timeStamp(sliAnalyseResponse.getTimeStamp().toEpochMilli())
-                                       .value(serviceLevelIndicatorDTO.getSliMissingDataType()
-                                                  .calculateSLIValue(sliAnalyseResponse.getRunningGoodCount(),
-                                                      sliAnalyseResponse.getRunningBadCount(),
-                                                      Duration.between(initialSLIResponse.getTimeStamp(),
-                                                                  sliAnalyseResponse.getTimeStamp())
-                                                              .toMinutes()
-                                                          + 1)
-                                                  .sliPercentage())
-                                       .build())
-                            .collect(Collectors.toList()))
+            .dataPoints(
+                sliAnalyseResponses.stream()
+                    .map(sliAnalyseResponse
+                        -> DataPoints.builder()
+                               .timeStamp(sliAnalyseResponse.getTimeStamp().toEpochMilli())
+                               .value(((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec())
+                                          .getSliMissingDataType()
+                                          .calculateSLIValue(sliAnalyseResponse.getRunningGoodCount(),
+                                              sliAnalyseResponse.getRunningBadCount(),
+                                              Duration.between(initialSLIResponse.getTimeStamp(),
+                                                          sliAnalyseResponse.getTimeStamp())
+                                                      .toMinutes()
+                                                  + 1)
+                                          .sliPercentage())
+                               .build())
+                    .collect(Collectors.toList()))
             .build();
 
     return SLIOnboardingGraphs.builder()
