@@ -587,6 +587,21 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/ProviderType'
+  /v1/merged-plugins-config:
+    get:
+      summary: Retrieve Merged Config for Enabled Plugins.
+      responses:
+        '200':
+          $ref: '#/components/responses/MergedPluginConfigResponse'
+      operationId: get-merged-plugins-config
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
+      description: API for retriving merged configs for enabled plugin of account.
+      tags:
+        - Merged Plugins Config
 components:
   schemas:
     BackstageEnvVariable:
@@ -1134,6 +1149,28 @@ components:
           $ref: '#/components/schemas/ConnectorDetails'
           x-stoplight:
             id: ictqwjgoxe2bc
+    MergedPluginConfigs:
+      title: MergedPluginConfigs
+      x-stoplight:
+        id: vc33058szl2a4
+      type: object
+      properties:
+        config:
+          type: string
+          x-stoplight:
+            id: 9tuk5lnb9qem9
+      description: Merged Config for all Enabled Plugins.
+    MergedPluginConfigResponse:
+      title: MergedPluginConfigResponse
+      x-stoplight:
+        id: cggq7dvi6muti
+      type: object
+      description: Merged Config for all Enabled Plugins Response.
+      properties:
+        merged_config:
+          $ref: '#/components/schemas/MergedPluginConfigs'
+          x-stoplight:
+            id: 4cbw2qu8gjz0n
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1463,6 +1500,12 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/ConnectorInfoResponse'
+    MergedPluginConfigResponse:
+      description: Merged Config for all Enabled Plugins Response.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MergedPluginConfigResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -1473,3 +1516,4 @@ tags:
   - name: BackstageEnvVariable
   - name: BackstagePermissions
   - name: LayoutProxy
+  - name: Merged Plugins Config

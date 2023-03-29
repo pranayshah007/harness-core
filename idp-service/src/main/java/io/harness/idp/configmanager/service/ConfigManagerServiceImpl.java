@@ -24,6 +24,7 @@ import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
+import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashMap;
@@ -130,6 +131,23 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     return mergedAppConfigRepository.saveOrUpdate(mergedAppConfigEntity);
   }
 
+  @Override
+  public MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) throws Exception {
+    List<String> allEnabledPluginConfigs = getAllEnabledPluginConfigs(accountIdentifier);
+    Iterator<String> itr = allEnabledPluginConfigs.iterator();
+    String config = itr.next();
+    itr.remove();
+    JsonNode mergedPluginConfig = ConfigManagerUtils.asJsonNode(config);
+    while (itr.hasNext()) {
+      config = itr.next();
+      JsonNode pluginConfig = ConfigManagerUtils.asJsonNode(config);
+      JsonNodeUtils.merge(mergedPluginConfig, pluginConfig);
+      itr.remove();
+    }
+    MergedPluginConfigs mergedPluginConfigs = new MergedPluginConfigs();
+    return mergedPluginConfigs.config(ConfigManagerUtils.asYaml(mergedPluginConfig.toString()));
+  }
+
   private String mergeAppConfigs(List<String> configs) throws Exception {
     String baseAppConfig = ConfigManagerUtils.readFile(BASE_APP_CONFIG_PATH);
     JsonNode baseConfig = ConfigManagerUtils.asJsonNode(baseAppConfig);
@@ -156,6 +174,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     }
     return allEnabledConfigEntity.stream().map(entity -> entity.getConfigs()).collect(Collectors.toList());
   }
+
   private void updateConfigMap(String accountIdentifier, String appConfigYamlData) {
     Map<String, String> data = new HashMap<>();
     data.put(CONFIG_DATA_NAME, appConfigYamlData);
@@ -173,5 +192,15 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     if (!ConfigManagerUtils.isValidSchema(config, pluginSchema)) {
       throw new InvalidRequestException(String.format(INVALID_PLUGIN_CONFIG_PROVIDED, configId));
     }
+  }
+
+  private List<String> getAllEnabledPluginConfigs(String accountIdentifier) {
+    List<AppConfigEntity> allEnabledPluginConfigEntity =
+        appConfigRepository.findAllByAccountIdentifierAndConfigTypeAndEnabled(
+            accountIdentifier, ConfigType.PLUGIN, true);
+    if (allEnabledPluginConfigEntity.isEmpty()) {
+      throw new InvalidRequestException(format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
+    }
+    return allEnabledPluginConfigEntity.stream().map(entity -> entity.getConfigs()).collect(Collectors.toList());
   }
 }

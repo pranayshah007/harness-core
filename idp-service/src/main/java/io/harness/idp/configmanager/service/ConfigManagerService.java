@@ -12,6 +12,7 @@ import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
+import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
 import java.util.Map;
 
@@ -28,4 +29,6 @@ public interface ConfigManagerService {
   AppConfig toggleConfigForAccount(String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType);
 
   MergedAppConfigEntity mergeAndSaveAppConfig(String accountIdentifier) throws Exception;
+
+  MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) throws Exception;
 }
