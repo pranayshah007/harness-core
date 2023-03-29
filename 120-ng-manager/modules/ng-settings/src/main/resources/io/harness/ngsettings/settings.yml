@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 15
+version : 16
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -167,3 +167,32 @@ settings :
     allowOverrides: false
     allowedScopes:
       - ACCOUNT
+  - identifier: default_connector_for_git_experience
+    name: Default Connector For Git Experience with Entities- Pipelines/InputSets/Templates
+    category: GIT_EXPERIENCE
+    defaultValue:
+    valueType: String
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: enforce_git_experience
+    name: Enforce Git Experience For Entities- Pipelines/InputSets/Templates
+    category: GIT_EXPERIENCE
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: default_store_type_for_entities
+    name: Default Store Type For Entities- Pipelines/InputSets/Templates
+    category: GIT_EXPERIENCE
+    defaultValue: INLINE
+    valueType: STRING
+    allowedScopes:
+      - PROJECT
+    allowedValues:
+      - INLINE
+      - REMOTE
