@@ -1115,6 +1115,9 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   private void triggerBackgroundCacheUpdateForRequestsWithGetOnlyFileContent(
       String accountIdentifier, Map<GetBatchFileRequestIdentifier, GitFileRequestV2> requestsToCache) {
+    if (requestsToCache.isEmpty()) {
+      return;
+    }
     gitBackgroundCacheRefreshHelper.submitBatchTask(
         getGitBatchFileFetchRunnableParams(accountIdentifier, requestsToCache));
   }
