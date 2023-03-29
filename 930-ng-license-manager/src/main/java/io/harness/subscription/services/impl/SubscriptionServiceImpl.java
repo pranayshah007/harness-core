@@ -43,6 +43,7 @@ import io.harness.subscription.helpers.StripeHelper;
 import io.harness.subscription.params.BillingParams;
 import io.harness.subscription.params.CustomerParams;
 import io.harness.subscription.params.CustomerParams.CustomerParamsBuilder;
+import io.harness.subscription.params.RecommendationRequest;
 import io.harness.subscription.params.StripeItemRequest;
 import io.harness.subscription.params.StripeSubscriptionRequest;
 import io.harness.subscription.params.SubscriptionItemRequest;
@@ -83,6 +84,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   private final String deployMode = System.getenv().get("DEPLOY_MODE");
 
+  private static final String CANNOT_PROVIDE_RECOMMENDATION_MESSAGE =
+      "Cannot provide recommendation. No active license detected for module %s.";
   private static final String PRICE_NOT_FOUND_MESSAGE =
       "No price found with metadata: {}, type: {}, edition: {}, billed: {}, max: {}";
   private static final String EDITION_CHECK_FAILED =
@@ -109,13 +112,50 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
+  public EnumMap<UsageKey, Long> getRecommendationRc(
+      String accountIdentifier, RecommendationRequest recommendationRequest) {
+    ModuleType moduleType = recommendationRequest.getModuleType();
+    Map<UsageKey, Long> usageMap = recommendationRequest.getUsageMap();
+
+    List<ModuleLicense> currentLicenses =
+        licenseRepository.findByAccountIdentifierAndModuleType(accountIdentifier, moduleType);
+
+    if (currentLicenses.isEmpty()) {
+      throw new InvalidRequestException(String.format(CANNOT_PROVIDE_RECOMMENDATION_MESSAGE, moduleType));
+    }
+
+    ModuleLicense moduleLicense = ModuleLicenseHelper.getLatestLicense(currentLicenses);
+    ModuleLicenseState latestLicenseState = ModuleLicenseHelper.getCurrentModuleState(currentLicenses);
+
+    EnumMap<UsageKey, Long> recommendedValues = new EnumMap<>(UsageKey.class);
+
+    if (ACTIVE_ENTERPRISE_PAID == latestLicenseState || ACTIVE_TEAM_PAID == latestLicenseState
+        || ACTIVE_FREE == latestLicenseState) {
+      EnumMap<UsageKey, Long> usageLimitMap = ModuleLicenseHelper.getUsageLimits(moduleLicense);
+      usageMap.forEach((UsageKey usageKey, Long usageValue) -> {
+        long usageLimiteValue = usageLimitMap.get(usageKey);
+        long recommendation = (long) (Math.max(usageValue, usageLimiteValue) * RECOMMENDATION_MULTIPLIER);
+        recommendedValues.put(usageKey, recommendation);
+      });
+    } else if (ACTIVE_ENTERPRISE_TRIAL == latestLicenseState || ACTIVE_TEAM_TRIAL == latestLicenseState) {
+      usageMap.forEach((usageKey, usageValue) -> {
+        long recommendation = (long) (usageValue * RECOMMENDATION_MULTIPLIER);
+        recommendedValues.put(usageKey, recommendation);
+      });
+    } else {
+      throw new InvalidRequestException(String.format(CANNOT_PROVIDE_RECOMMENDATION_MESSAGE, moduleType));
+    }
+
+    return recommendedValues;
+  }
+
+  @Override
   public EnumMap<UsageKey, Long> getRecommendation(String accountIdentifier, long numberOfMAUs, long numberOfUsers) {
     List<ModuleLicense> currentLicenses =
         licenseRepository.findByAccountIdentifierAndModuleType(accountIdentifier, ModuleType.CF);
 
     if (currentLicenses.isEmpty()) {
-      throw new InvalidRequestException(
-          String.format("Cannot provide recommendation. No active license detected for module %s.", ModuleType.CF));
+      throw new InvalidRequestException(String.format(CANNOT_PROVIDE_RECOMMENDATION_MESSAGE, ModuleType.CF));
     }
 
     CFModuleLicense cfLicense = (CFModuleLicense) ModuleLicenseHelper.getLatestLicense(currentLicenses);
@@ -137,8 +177,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       recommendedValues.put(UsageKey.NUMBER_OF_USERS, (long) recommendedUsers);
       recommendedValues.put(UsageKey.NUMBER_OF_MAUS, (long) recommendedMAUs);
     } else {
-      throw new InvalidRequestException(
-          String.format("Cannot provide recommendation. No active license detected for module %s.", ModuleType.CF));
+      throw new InvalidRequestException(String.format(CANNOT_PROVIDE_RECOMMENDATION_MESSAGE, ModuleType.CF));
     }
 
     return recommendedValues;

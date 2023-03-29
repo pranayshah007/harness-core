@@ -10,6 +10,7 @@ package io.harness.licensing.helpers;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.ModuleType;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
@@ -24,10 +25,12 @@ import io.harness.licensing.entities.modules.IACMModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.licensing.entities.modules.SRMModuleLicense;
 import io.harness.licensing.entities.modules.STOModuleLicense;
+import io.harness.subscription.params.UsageKey;
 
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +39,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @Singleton
 public class ModuleLicenseHelper {
+  private final String MODULE_NOT_SUPPORTED_ERROR = "Module %s is not supported for recommendations.";
+
   public static Map<ModuleType, ModuleLicense> getLastExpiredLicenseForEachModuleType(
       List<ModuleLicense> allModuleLicenses) {
     Map<ModuleType, ModuleLicense> result = new HashMap<>();
@@ -82,6 +87,26 @@ public class ModuleLicenseHelper {
       }
     }
     return latestLicense;
+  }
+
+  public static EnumMap<UsageKey, Long> getUsageLimits(ModuleLicense moduleLicense) {
+    EnumMap<UsageKey, Long> usageLimitMap = new EnumMap<>(UsageKey.class);
+
+    switch (moduleLicense.getModuleType().name()) {
+      case "CF":
+        CFModuleLicense cfModuleLicense = (CFModuleLicense) moduleLicense;
+        usageLimitMap.put(UsageKey.NUMBER_OF_USERS, (long) cfModuleLicense.getNumberOfUsers());
+        usageLimitMap.put(UsageKey.NUMBER_OF_MAUS, cfModuleLicense.getNumberOfClientMAUs());
+        break;
+      case "CI":
+        CIModuleLicense ciModuleLicense = (CIModuleLicense) moduleLicense;
+        usageLimitMap.put(UsageKey.NUMBER_OF_COMMITTERS, (long) ciModuleLicense.getNumberOfCommitters());
+        break;
+      default:
+        throw new InvalidRequestException(String.format(MODULE_NOT_SUPPORTED_ERROR, moduleLicense.getModuleType()));
+    }
+
+    return usageLimitMap;
   }
 
   public static ModuleLicenseDTO getMostRecentUpdatedLicense(List<ModuleLicenseDTO> licenses) {
