@@ -81,7 +81,7 @@ public class GcrArtifactTaskHandler extends DelegateArtifactTaskHandler<GcrArtif
     }
     if (EmptyPredicate.isNotEmpty(attributesRequest.getTagRegex())
         || attributesRequest.getTag().equals(ACCEPT_ALL_REGEX)) {
-      String tagRegex = isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag().replace(".", "\\.");
+      String tagRegex = isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag().replace("*", ".*?");
       lastSuccessfulBuild =
           gcrService.getLastSuccessfulBuildFromRegex(gcrInternalConfig, attributesRequest.getImagePath(), tagRegex);
     } else {
