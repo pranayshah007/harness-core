@@ -129,4 +129,11 @@ public class PlanNode implements Node {
   public String getStageFqn() {
     return this.stageFqn;
   }
+
+  public boolean isPreserveInRollbackMode() {
+    if (preserveInRollbackMode == null) {
+      return false;
+    }
+    return preserveInRollbackMode;
+  }
 }
