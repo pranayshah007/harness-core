@@ -470,7 +470,15 @@ public class MigratorUtility {
   }
 
   public static boolean containsExpressions(String str) {
-    return ngPattern.matcher(str).find() || cgPattern.matcher(str).find();
+    return containsCgExpressions(str) || containsNgExpressions(str);
+  }
+
+  public static boolean containsCgExpressions(String str) {
+    return cgPattern.matcher(str).find();
+  }
+
+  public static boolean containsNgExpressions(String str) {
+    return ngPattern.matcher(str).find();
   }
 
   public static NgEntityDetail getGitConnector(

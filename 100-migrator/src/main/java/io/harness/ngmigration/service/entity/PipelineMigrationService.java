@@ -544,12 +544,14 @@ public class PipelineMigrationService extends NgMigrationService {
       }
     }
 
+    String stageInfraRef = RUNTIME_INPUT;
     String infraId = getInfra(workflow, stageElement);
     JsonNode infraInputs = null;
     if (StringUtils.isNotBlank(infraId) && !RUNTIME_INPUT.equals(stageEnvRef)) {
       CgEntityId infraEntityId = CgEntityId.builder().id(infraId).type(INFRA).build();
       if (migratedEntities.containsKey(infraEntityId)) {
         NgEntityDetail infraDetails = migratedEntities.get(infraEntityId).getNgEntityDetail();
+        stageInfraRef = MigratorUtility.getIdentifierWithScope(migratedEntities.get(infraEntityId).getNgEntityDetail());
         infraInputs = migrationTemplateUtils.getInfraInput(accountId, stageEnvRef, infraDetails);
         if (infraInputs != null) {
           infraInputs = infraInputs.get(INFRASTRUCTURE_DEFINITIONS);
@@ -641,6 +643,9 @@ public class PipelineMigrationService extends NgMigrationService {
         environment.remove("environmentInputs");
         if (infraInputs != null) {
           environment.set(INFRASTRUCTURE_DEFINITIONS, infraInputs);
+        } else if (StringUtils.isNotBlank(stageInfraRef) && !RUNTIME_INPUT.equals(stageInfraRef)) {
+          environment.set(
+              INFRASTRUCTURE_DEFINITIONS, JsonPipelineUtils.readTree("[{\"identifier\": \"" + stageInfraRef + "\"}]"));
         }
       }
     }
