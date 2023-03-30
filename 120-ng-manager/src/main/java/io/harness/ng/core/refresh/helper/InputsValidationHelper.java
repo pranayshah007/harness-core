@@ -23,7 +23,6 @@ import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
-import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.ng.core.yaml.CDYamlFacade;
 import io.harness.persistence.PersistentEntity;
@@ -187,12 +186,13 @@ public class InputsValidationHelper {
         serviceYaml, serviceRef, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
 
     if (TemplateRefHelper.hasTemplateRef(serviceYamlGivenPrimaryArtifactRef)) {
+      // compare current service inputs with refreshed service yaml
       RefreshResponseDTO refreshResponseDTO = NGRestUtils.getResponse(templateResourceClient.getRefreshedYaml(
           context.getAccountId(), context.getOrgId(), context.getProjectId(), null, null, null, null, null, null, null,
           null, "true", RefreshRequestDTO.builder().yaml(serviceYamlGivenPrimaryArtifactRef).build()));
 
-      serviceYamlGivenPrimaryArtifactRef = refreshResponseDTO.getRefreshedYaml();
-      serviceYaml = serviceYamlGivenPrimaryArtifactRef;
+      // service yaml updated with refreshed yaml and primary artifact source only
+      serviceYaml = refreshResponseDTO.getRefreshedYaml();
     }
 
     String serviceRuntimeInputYaml = serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(
@@ -235,7 +235,7 @@ public class InputsValidationHelper {
     }
   }
 
-  public static void modifyServiceDefinitionGivenPrimaryArtifactRef(
+  private static void modifyServiceDefinitionGivenPrimaryArtifactRef(
       YamlField serviceYamlField, String serviceIdentifier, String primaryArtifactRef) {
     YamlField primaryArtifactField = ServiceFilterHelper.getPrimaryArtifactNodeFromServiceYaml(serviceYamlField);
     if (primaryArtifactField == null) {
