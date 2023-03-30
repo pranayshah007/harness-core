@@ -92,7 +92,7 @@ func GenerateStageYamlForCI(ctx context.Context, request *pb.GenerateYamlRequest
 
     // builds the pipeline configuration based on
     // the contents of the virtual filesystem.
-    builder := builder.New("harness")
+    builder := builder.New("harness", request.GetYamlVersion())
     yml, err := builder.Build(chroot)
     if err != nil {
         return nil, err

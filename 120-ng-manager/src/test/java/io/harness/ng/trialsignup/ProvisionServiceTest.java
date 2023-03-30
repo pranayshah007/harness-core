@@ -86,13 +86,13 @@ public class ProvisionServiceTest extends CategoryTest {
         (GithubUsernamePasswordDTO) doReturn(build).when(decryptionHelper).decrypt(Mockito.any(), Mockito.any());
     doReturn(GenerateYamlResponse.newBuilder().setYaml("yaml").build())
         .when(scmClient)
-        .autogenerateStageYamlForCI(anyString());
+        .autogenerateStageYamlForCI(anyString(), anyString());
     ConnectorInfoDTO connectorInfoDTO =
         ConnectorInfoDTO.builder().connectorConfig(githubConnectorDTO).connectorType(ConnectorType.GITHUB).build();
     doReturn(Optional.of(ConnectorResponseDTO.builder().connector(connectorInfoDTO).build()))
         .when(connectorService)
         .get(anyString(), anyString(), anyString(), anyString());
-    String s = provisionService.generateYaml("acc", "org", "proj", "id", "repo");
+    String s = provisionService.generateYaml("acc", "org", "proj", "id", "repo", "v0");
     assertThat(s).isEqualTo("yaml");
   }
 
@@ -121,11 +121,11 @@ public class ProvisionServiceTest extends CategoryTest {
         (GithubUsernamePasswordDTO) doReturn(build).when(decryptionHelper).decrypt(Mockito.any(), Mockito.any());
     doReturn(GenerateYamlResponse.newBuilder().setYaml("yaml").build())
         .when(scmClient)
-        .autogenerateStageYamlForCI(anyString());
+        .autogenerateStageYamlForCI(anyString(), anyString());
     ConnectorInfoDTO connectorInfoDTO =
         ConnectorInfoDTO.builder().connectorConfig(githubConnectorDTO).connectorType(ConnectorType.GITHUB).build();
     doReturn(Optional.empty()).when(connectorService).get(anyString(), anyString(), anyString(), anyString());
-    provisionService.generateYaml("acc", "org", "proj", "id", "repo");
+    provisionService.generateYaml("acc", "org", "proj", "id", "repo", "v1");
   }
 
   @Test

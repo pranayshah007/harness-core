@@ -1013,8 +1013,10 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
-  public GenerateYamlResponse autogenerateStageYamlForCI(String cloneUrl, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    return scmBlockingStub.generateStageYamlForCI(GenerateYamlRequest.newBuilder().setUrl(cloneUrl).build());
+  public GenerateYamlResponse autogenerateStageYamlForCI(
+      String cloneUrl, String yamlVersion, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    return scmBlockingStub.generateStageYamlForCI(
+        GenerateYamlRequest.newBuilder().setUrl(cloneUrl).setYamlVersion(yamlVersion).build());
   }
 
   public GetLatestCommitOnFileResponse getLatestCommitOnFile(

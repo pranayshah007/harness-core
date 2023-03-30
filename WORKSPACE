@@ -1539,90 +1539,6 @@ go_repository(
 )
 
 go_repository(
-    name = "com_github_wings_software_autogen_go",
-    importpath = "github.com/wings-software/autogen-go",
-    sum = "h1:VlJ29+8rZ3BdUpWFoEJC+NkUt7uFDj/71gngu1tCSE4=",
-    version = "v0.0.0-20230214055012-97895b93475b",
-)
-
-go_repository(
-    name = "com_github_drone_spec",
-    importpath = "github.com/drone/spec",
-    sum = "h1:9IrlHM84CSV6ui+PnxWRTslm8VJiyvpyd8tIsUVCSKE=",
-    version = "v0.0.0-20230203155728-6f5b316cad3e",
-)
-
-go_repository(
-    name = "com_github_99designs_httpsignatures_go",
-    importpath = "github.com/99designs/httpsignatures-go",
-    sum = "h1:rl2Aq4ZODqTDkeSqQBy+fzpZPamacO1Srp8zq7jf2Sc=",
-    version = "v0.0.0-20170731043157-88528bf4ca7e",
-)
-
-go_repository(
-    name = "com_github_acomagu_bufpipe",
-    importpath = "github.com/acomagu/bufpipe",
-    sum = "h1:fxAGrHZTgQ9w5QqVItgzwj235/uYZYgbXitB+dLupOk=",
-    version = "v1.0.3",
-)
-
-go_repository(
-    name = "com_github_anmitsu_go_shlex",
-    importpath = "github.com/anmitsu/go-shlex",
-    sum = "h1:kFOfPq6dUM1hTo4JG6LR5AXSUEsOjtdm0kw0FtQtMJA=",
-    version = "v0.0.0-20161002113705-648efa622239",
-)
-
-go_repository(
-    name = "com_github_armon_go_socks5",
-    importpath = "github.com/armon/go-socks5",
-    sum = "h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=",
-    version = "v0.0.0-20160902184237-e75332964ef5",
-)
-
-go_repository(
-    name = "com_github_buildkite_yaml",
-    importpath = "github.com/buildkite/yaml",
-    sum = "h1:xirI+ql5GzfikVNDmt+yeiXpf/v1Gt03qXTtT5WXdr8=",
-    version = "v2.1.0+incompatible",
-)
-
-go_repository(
-    name = "com_github_drone_drone_go",
-    importpath = "github.com/drone/drone-go",
-    sum = "h1:ZX+3Rs8YHUSUQ5mkuMLmm1zr1ttiiE2YGNxF3AnyDKw=",
-    version = "v1.7.1",
-)
-
-go_repository(
-    name = "com_github_flynn_go_shlex",
-    importpath = "github.com/flynn/go-shlex",
-    sum = "h1:BHsljHzVlRcyQhjrss6TZTdY2VfCqZPbv5k3iBFa2ZQ=",
-    version = "v0.0.0-20150515145356-3f9db97f8568",
-)
-
-go_repository(
-    name = "com_github_gliderlabs_ssh",
-    importpath = "github.com/gliderlabs/ssh",
-    sum = "h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=",
-    version = "v0.2.2",
-)
-
-go_repository(
-    name = "com_github_go_git_go_git_fixtures_v4",
-    importpath = "github.com/go-git/go-git-fixtures/v4",
-    sum = "h1:n9gGL1Ct/yIw+nfsfr8s4+sbhT+Ncu2SubfXjIWgci8=",
-    version = "v4.2.1",
-)
-
-go_repository(
-    name = "com_github_matryer_is",
-    importpath = "github.com/matryer/is",
-    sum = "h1:92UTHpy8CDwaJ08GqLDzhhuixiBUUD1p3AU6PHddz4A=",
-    version = "v1.2.0",
-)
-
-go_repository(
     name = "com_github_azure_go_autorest_autorest_azure_auth",
     importpath = "github.com/Azure/go-autorest/autorest/azure/auth",
     sum = "h1:iM6UAvjR97ZIeR93qTcwpKNMpV+/FTWjwEbuPD495Tk=",
@@ -5936,6 +5852,34 @@ go_repository(
     importpath = "github.com/bmatcuk/doublestar",
     sum = "h1:1jLE2y0VpSrOn/QR9G4f2RmrCtkM3AuATcWradjHUvM=",
     version = "v1.3.0",
+)
+
+go_repository(
+    name = "com_github_wings_software_autogen_go",
+    importpath = "github.com/wings-software/autogen-go",
+    sum = "h1:Ovgmeh04oFhEFg+LZy9c4Yo/Yv9Lkl0rFYFJ7jlhtN4=",
+    version = "v1.0.0",
+)
+
+go_repository(
+    name = "com_github_drone_spec",
+    importpath = "github.com/drone/spec",
+    sum = "h1:SCRvpZOFAS/kFo6q0c+oeH+ID0OBDPLpDAx4uHYQwYo=",
+    version = "v0.0.0-20230328162846-c2bc4a6d62ab",
+)
+
+go_repository(
+    name = "com_github_99designs_httpsignatures_go",
+    importpath = "github.com/99designs/httpsignatures-go",
+    sum = "h1:Xa6lInWHNQnuWoF0YPSsx+INFA9qk7/7pTjwb3PInkY=",
+    version = "v0.0.0-20170731043157-88528bf4ca7e",
+)
+
+go_repository(
+    name = "com_github_drone_go_convert",
+    importpath = "github.com/drone/go-convert",
+    sum = "h1:ybfe4Po+BUQjm2BpIZjEpng9fXBYgPvAehNe2edC0lY=",
+    version = "v0.0.0-20230329091825-a238380a6b0e",
 )
 
 # Contrib rules jvm for build cleaner.

@@ -98,8 +98,8 @@ public class CIProvisionResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "connectorIdentifier") @QueryParam("connectorIdentifier") String connectorIdentifier,
       @Parameter(description = "repo") @QueryParam("repo") String repo,
-      @Parameter(description = "inline") @QueryParam("inline") Boolean inline) {
-    return ResponseDTO.newResponse(
-        provisionService.generateYaml(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, repo));
+      @Parameter(description = "yamlVersion") @QueryParam("yamlVersion") String yamlVersion) {
+    return ResponseDTO.newResponse(provisionService.generateYaml(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, repo, yamlVersion));
   }
 }
