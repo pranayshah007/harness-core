@@ -13,6 +13,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
 
+import static software.wings.beans.TaskType.PT_SERIALIZATION_SUPPORT;
+
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.Capability;
 import io.harness.exception.InvalidRequestException;
@@ -25,6 +27,7 @@ import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.api.ContainerDeploymentInfoWithLabels;
 import software.wings.api.DeploymentInfo;
@@ -74,6 +77,7 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
 
   private final KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private DelegateTaskService delegateTaskService;
 
   @Override
   public PerpetualTaskExecutionBundle fetchInfraConnectorDetails(SettingAttribute cloudProvider) {
@@ -92,10 +96,11 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
             .putAllSetupAbstractions(Maps.of(NG, "false", OWNER, cloudProvider.getAccountId()));
     cloudProvider.getValue().fetchRequiredExecutionCapabilities(null).forEach(executionCapability
         -> builder
-               .addCapabilities(Capability.newBuilder()
-                                    .setKryoCapability(ByteString.copyFrom(
-                                        referenceFalseKryoSerializer.asDeflatedBytes(executionCapability)))
-                                    .build())
+               .addCapabilities(
+                   Capability.newBuilder()
+                       .setKryoCapability(ByteString.copyFrom(
+                           getKryoSerializer(cloudProvider.getAccountId()).asDeflatedBytes(executionCapability)))
+                       .build())
                .build());
     return builder.build();
   }
@@ -314,5 +319,11 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
       return releaseIdentifier.getDeleteAfter();
     }
     return System.currentTimeMillis() + RELEASE_PRESERVE_TIME;
+  }
+
+  private KryoSerializer getKryoSerializer(String accountId) {
+    return delegateTaskService.isTaskTypeSupportedByAllDelegates(accountId, PT_SERIALIZATION_SUPPORT.name())
+        ? referenceFalseKryoSerializer
+        : kryoSerializer;
   }
 }

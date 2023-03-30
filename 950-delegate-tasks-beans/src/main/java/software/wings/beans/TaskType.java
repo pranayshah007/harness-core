@@ -481,7 +481,10 @@ public enum TaskType {
   OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG(TaskGroup.HELM, "Task to query OCI Helm Docker API List Tags"),
   TAS_ROUTE_MAPPING(TaskGroup.TAS, "Tas Route Mapping task"),
   AWS_EKS_LIST_CLUSTERS_TASK(TaskGroup.AWS, "AWS EKS List Clusters Task"),
-  TERRAFORM_TASK_NG_V5(TaskGroup.TERRAFORM_NG, "Terraform Task NG V5");
+  TERRAFORM_TASK_NG_V5(TaskGroup.TERRAFORM_NG, "Terraform Task NG V5"),
+
+  // Dummy Task type to support referenceFalseSerialization
+  PT_SERIALIZATION_SUPPORT(TaskGroup.CAPABILITY_VALIDATION);
 
   private final TaskGroup taskGroup;
   private final String displayName;

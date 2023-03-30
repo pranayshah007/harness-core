@@ -9,6 +9,8 @@ package io.harness.ccm.ngperpetualtask.service;
 
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
+import static software.wings.beans.TaskType.PT_SERIALIZATION_SUPPORT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -39,6 +41,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.intfc.DelegateTaskService;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.api.client.util.Preconditions;
@@ -61,9 +64,11 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(HarnessTeam.CE)
 public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private KryoSerializer kryoSerializer;
   @Inject private PerpetualTaskService perpetualTaskService;
   @Inject private SecretManagerClientService ngSecretService;
   @Inject private ConnectorResourceClient connectorResourceClient;
+  @Inject private DelegateTaskService delegateTaskService;
 
   @Override
   public String create(String accountId, K8sEventCollectionBundle bundle) {
@@ -105,13 +110,13 @@ public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
         getExecutionCapabilityList(k8sConnectorConfigDTO, encryptedDataDetailList);
 
     Any perpetualTaskPack =
-        getTaskParams((KubernetesClusterConfigDTO) k8sConnectorConfigDTO, encryptedDataDetailList, bundle);
+        getTaskParams((KubernetesClusterConfigDTO) k8sConnectorConfigDTO, encryptedDataDetailList, bundle, accountId);
 
     final Map<String, String> ngTaskSetupAbstractionsWithOwner =
         getNGTaskSetupAbstractionsWithOwner(accountId, bundle.getOrgIdentifier(), bundle.getProjectIdentifier());
 
     return createPerpetualTaskExecutionBundle(
-        perpetualTaskPack, executionCapabilities, ngTaskSetupAbstractionsWithOwner);
+        perpetualTaskPack, executionCapabilities, ngTaskSetupAbstractionsWithOwner, accountId);
   }
 
   private List<EncryptedDataDetail> getEncryptedDataDetail(String accountId, String orgIdentifier,
@@ -131,7 +136,7 @@ public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
   }
 
   private Any getTaskParams(KubernetesClusterConfigDTO k8sConnectorConfigDTO,
-      List<EncryptedDataDetail> encryptedDataDetailList, K8sEventCollectionBundle bundle) {
+      List<EncryptedDataDetail> encryptedDataDetailList, K8sEventCollectionBundle bundle, String accountId) {
     K8sClusterInfo k8sClusterInfo = K8sClusterInfo.builder()
                                         .connectorConfigDTO(k8sConnectorConfigDTO)
                                         .encryptedDataDetails(encryptedDataDetailList)
@@ -142,7 +147,7 @@ public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
             .setClusterId(bundle.getClusterId())
             .setClusterName(bundle.getClusterName())
             .setCloudProviderId(bundle.getCloudProviderId())
-            .setK8SClusterInfo(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(k8sClusterInfo)))
+            .setK8SClusterInfo(ByteString.copyFrom(getKryoSerializer(accountId).asBytes(k8sClusterInfo)))
             .build();
 
     return Any.pack(k8sWatchTaskParams);
@@ -162,13 +167,14 @@ public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
 
   @NotNull
   private PerpetualTaskExecutionBundle createPerpetualTaskExecutionBundle(Any perpetualTaskPack,
-      List<ExecutionCapability> executionCapabilities, Map<String, String> ngTaskSetupAbstractionsWithOwner) {
+      List<ExecutionCapability> executionCapabilities, Map<String, String> ngTaskSetupAbstractionsWithOwner,
+      String accountId) {
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();
     executionCapabilities.forEach(executionCapability
         -> builder
                .addCapabilities(Capability.newBuilder()
                                     .setKryoCapability(ByteString.copyFrom(
-                                        referenceFalseKryoSerializer.asDeflatedBytes(executionCapability)))
+                                        getKryoSerializer(accountId).asDeflatedBytes(executionCapability)))
                                     .build())
                .build());
     return builder.setTaskParams(perpetualTaskPack).putAllSetupAbstractions(ngTaskSetupAbstractionsWithOwner).build();
@@ -213,5 +219,11 @@ public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
   @Override
   public PerpetualTaskRecord getStatus(String taskId) {
     return perpetualTaskService.getTaskRecord(taskId);
+  }
+
+  private KryoSerializer getKryoSerializer(String accountId) {
+    return delegateTaskService.isTaskTypeSupportedByAllDelegates(accountId, PT_SERIALIZATION_SUPPORT.name())
+        ? referenceFalseKryoSerializer
+        : kryoSerializer;
   }
 }

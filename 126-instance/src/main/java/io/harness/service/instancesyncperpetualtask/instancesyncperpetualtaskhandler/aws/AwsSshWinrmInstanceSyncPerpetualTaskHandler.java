@@ -99,7 +99,8 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
             .setServiceType(serviceType)
             .addAllHosts(hosts)
             .setInfrastructureKey(infrastructure.getInfrastructureKey())
-            .setInfraDelegateConfig(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(awsInfraDelegateConfig)))
+            .setInfraDelegateConfig(ByteString.copyFrom(
+                getKryoSerializer(infrastructure.getAccountIdentifier()).asBytes(awsInfraDelegateConfig)))
             .setHostConnectionType(awsInfrastructureOutcome.getHostConnectionType())
             .build();
 
@@ -107,7 +108,8 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(awsConnector);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier());
+        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier(),
+        infrastructure.getAccountIdentifier());
   }
 
   private Secret findSecret(

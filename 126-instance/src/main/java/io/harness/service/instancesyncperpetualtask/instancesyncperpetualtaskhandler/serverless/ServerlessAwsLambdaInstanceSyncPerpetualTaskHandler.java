@@ -52,7 +52,8 @@ public class ServerlessAwsLambdaInstanceSyncPerpetualTaskHandler extends Instanc
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(deploymentReleaseDataList);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier());
+        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
+        infrastructureMappingDTO.getAccountIdentifier());
   }
 
   private List<ServerlessAwsLambdaDeploymentReleaseData> populateDeploymentReleaseList(
@@ -104,25 +105,25 @@ public class ServerlessAwsLambdaInstanceSyncPerpetualTaskHandler extends Instanc
     return ServerlessAwsLambdaInstanceSyncPerpetualTaskParams.newBuilder()
         .setAccountId(accountIdentifier)
         .addAllServerlessAwsLambdaDeploymentReleaseList(
-            toServerlessAwsLambdaDeploymentReleaseList(deploymentReleaseData))
+            toServerlessAwsLambdaDeploymentReleaseList(deploymentReleaseData, accountIdentifier))
         .build();
   }
 
   private List<ServerlessAwsLambdaDeploymentRelease> toServerlessAwsLambdaDeploymentReleaseList(
-      List<ServerlessAwsLambdaDeploymentReleaseData> deploymentReleaseData) {
+      List<ServerlessAwsLambdaDeploymentReleaseData> deploymentReleaseData, String accountIdentifier) {
     return deploymentReleaseData.stream()
-        .map(this::toServerlessAwsLambdaDeploymentRelease)
+        .map(data -> toServerlessAwsLambdaDeploymentRelease(data, accountIdentifier))
         .collect(Collectors.toList());
   }
 
   private ServerlessAwsLambdaDeploymentRelease toServerlessAwsLambdaDeploymentRelease(
-      ServerlessAwsLambdaDeploymentReleaseData releaseData) {
+      ServerlessAwsLambdaDeploymentReleaseData releaseData, String accountIdentifier) {
     return ServerlessAwsLambdaDeploymentRelease.newBuilder()
         .setServiceName(releaseData.getServiceName())
         .setRegion(releaseData.getRegion())
         .addAllFunctions(releaseData.getFunctions())
         .setServerlessInfraConfig(
-            ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(releaseData.getServerlessInfraConfig())))
+            ByteString.copyFrom(getKryoSerializer(accountIdentifier).asBytes(releaseData.getServerlessInfraConfig())))
         .build();
   }
 
