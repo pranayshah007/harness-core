@@ -14,6 +14,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.expressionEvaluator.CustomScriptSecretExpressionEvaluator;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.common.NGTaskType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
@@ -57,8 +58,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CustomResourceServiceImpl implements CustomResourceService {
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  @Inject private FeatureFlagService featureFlagService;
-
+  @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
   @Inject ExceptionManager exceptionManager;
   @VisibleForTesting static final int timeoutInSecs = 30;
@@ -75,7 +75,7 @@ public class CustomResourceServiceImpl implements CustomResourceService {
     CustomArtifactDelegateRequest customArtifactDelegateRequest = ArtifactDelegateRequestUtils.getCustomDelegateRequest(
         arrayPath, null, "Inline", ArtifactSourceType.CUSTOM_ARTIFACT, versionPath, script, Collections.emptyMap(),
         inputs, null, null, timeoutInSecs, accountIdentifier,
-        featureFlagService.isEnabled(FeatureName.CDS_SSH_AGENT, accountIdentifier));
+        cdFeatureFlagHelper.isEnabled(accountIdentifier, FeatureName.CDS_SSH_AGENT));
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
           executeSyncTask(customArtifactDelegateRequest, ArtifactTaskType.GET_BUILDS, baseNGAccess,

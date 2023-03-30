@@ -17,6 +17,8 @@ import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -24,6 +26,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.rule.Owner;
 import io.harness.shell.AccessType;
+import io.harness.shell.SshSessionConfig;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.delegation.ShellScriptParameters;
@@ -47,6 +50,7 @@ public class ShellConnectionCapabilityCheckTest extends WingsBaseTest {
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void performCapabilityCheck() throws JSchException {
+    doNothing().when(shellConnectionCapabilityCheck).performTest(any(SshSessionConfig.class));
     CapabilityResponse capabilityResponse = shellConnectionCapabilityCheck.performCapabilityCheck(
         ShellConnectionCapability.builder()
             .shellScriptParameters(ShellScriptParameters.builder()
