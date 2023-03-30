@@ -461,7 +461,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     List<Double> expectedSLITrend = Lists.newArrayList(100.0, 97.5, 91.66, 75.0);
     List<Double> expectedBurndown = Lists.newArrayList(100.0, 87.5, 58.33, -25.0);
     testGraphCalculation_Request(
-        sliStates, goodCounts, badCounts, SLIMissingDataType.BAD, expectedSLITrend, expectedBurndown, -25, 0, 0);
+        sliStates, goodCounts, badCounts, SLIMissingDataType.BAD, expectedSLITrend, expectedBurndown, -25, 0, 0, 100);
   }
 
   @Test
@@ -474,7 +474,20 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     List<Double> expectedSLITrend = Lists.newArrayList(100.0, 100.0, 100.0, 66.66);
     List<Double> expectedBurndown = Lists.newArrayList(100.0, 100.0, 100.0, -66.66);
     testGraphCalculation_Request(
-        sliStates, goodCounts, badCounts, SLIMissingDataType.BAD, expectedSLITrend, expectedBurndown, -40, 0, 0);
+        sliStates, goodCounts, badCounts, SLIMissingDataType.BAD, expectedSLITrend, expectedBurndown, -40, 0, 0, 60);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetGraphData_request_noCalls() {
+    List<SLIRecord.SLIState> sliStates = Arrays.asList(GOOD, GOOD, GOOD, GOOD);
+    List<Long> goodCounts = Arrays.asList(0l, 0l, 0l, 0l);
+    List<Long> badCounts = Arrays.asList(0l, 0l, 0l, 0l);
+    List<Double> expectedSLITrend = Lists.newArrayList(100.0, 100.0, 100.0, 100.0);
+    List<Double> expectedBurndown = Lists.newArrayList(0.0, 0.0, 0.0, 0.0);
+    testGraphCalculation_Request(
+        sliStates, goodCounts, badCounts, SLIMissingDataType.BAD, expectedSLITrend, expectedBurndown, 0, 0, 0, 0);
   }
 
   @Test
@@ -537,7 +550,8 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
 
   private void testGraphCalculation_Request(List<SLIRecord.SLIState> sliStates, List<Long> goodCounts,
       List<Long> badCounts, SLIMissingDataType sliMissingDataType, List<Double> expectedSLITrend,
-      List<Double> expectedBurndown, int expectedErrorBudgetRemaining, long customMinutesStart, long customMinutesEnd) {
+      List<Double> expectedBurndown, int expectedErrorBudgetRemaining, long customMinutesStart, long customMinutesEnd,
+      long expectedErrorBudget) {
     Instant startTime =
         DateTimeUtils.roundDownTo1MinBoundary(clock.instant().minus(Duration.ofMinutes(sliStates.size())));
     createData(startTime.minus(Duration.ofMinutes(4)), Arrays.asList(SKIP_DATA, NO_DATA, GOOD, GOOD),
@@ -573,6 +587,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
         .isCloseTo(expectedBurndown.get(errorBudgetBurndown.size() - 1), offset(0.01));
     assertThat(sloGraphData.getErrorBudgetRemaining()).isEqualTo(expectedErrorBudgetRemaining);
     assertThat(sloGraphData.isRecalculatingSLI()).isFalse();
+    assertThat(sloGraphData.getTotalErrorBudgetFromGraph()).isEqualTo(expectedErrorBudget);
   }
 
   private void testGraphCalculation(List<SLIRecord.SLIState> sliStates, SLIMissingDataType sliMissingDataType,

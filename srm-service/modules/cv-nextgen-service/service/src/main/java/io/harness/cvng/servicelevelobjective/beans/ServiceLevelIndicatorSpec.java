@@ -29,4 +29,8 @@ import lombok.experimental.SuperBuilder;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
 public abstract class ServiceLevelIndicatorSpec {
   @JsonIgnore public abstract SLIEvaluationType getType();
+
+  @JsonIgnore
+  public abstract void generateNameAndIdentifier(
+      String serviceLevelObjectiveIdentifier, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO);
 }
