@@ -188,3 +188,7 @@ io.harness.ssca.cd.beans.stepnode.SscaOrchestrationStepNode
 io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationStepInfo
 io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput
 io.harness.ssca.execution.orchestration.outcome.PublishedSbomArtifact
+io.harness.beans.dependencies.CIDependencyType
+io.harness.beans.dependencies.DependencyType
+io.harness.beans.dependencies.DependencyElement
+io.harness.beans.dependencies.CIServiceInfo
