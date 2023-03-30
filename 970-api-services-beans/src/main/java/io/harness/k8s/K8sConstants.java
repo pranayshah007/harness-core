@@ -200,4 +200,11 @@ public interface K8sConstants {
 
   String AZURE_AUTH_PLUGIN_BINARY = "kubelogin";
   String GCP_AUTH_PLUGIN_BINARY = "gke-gcloud-auth-plugin";
+
+  String PRE_HOOK = "PreHook";
+  String POST_HOOK = "PostHook";
+
+  String FETCH_FILES = "FetchFiles";
+  String TEMPLATE_MANIFEST = "TemplateManifest";
+  String STEADY_STATE_CHECK = "SteadyStateCheck";
 }

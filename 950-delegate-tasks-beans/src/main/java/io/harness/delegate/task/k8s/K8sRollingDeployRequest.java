@@ -48,4 +48,5 @@ public class K8sRollingDeployRequest implements K8sDeployRequest {
   boolean useK8sApiForSteadyStateCheck;
   boolean useDeclarativeRollback;
   @Expression(ALLOW_SECRETS) Map<String, String> k8sCommandFlags;
+  @Expression(ALLOW_SECRETS) Map<String, String> serviceHooks;
 }

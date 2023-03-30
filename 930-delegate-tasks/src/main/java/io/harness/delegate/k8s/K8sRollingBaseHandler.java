@@ -236,12 +236,14 @@ public class K8sRollingBaseHandler {
       KubernetesConfig kubernetesConfig, String manifestFilesDirectory, String releaseName,
       boolean isLocalOverrideFeatureFlag, boolean isErrorFrameworkSupported, boolean isInCanaryWorkflow,
       LogCallback executionLogCallback) throws Exception {
+    // prehook - template manifest
+
     k8sTaskHelperBase.deleteSkippedManifestFiles(manifestFilesDirectory, executionLogCallback);
 
     List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplate(k8sDelegateTaskParams,
         request.getManifestDelegateConfig(), manifestFilesDirectory, manifestOverrideFiles, releaseName,
         kubernetesConfig.getNamespace(), executionLogCallback, request.getTimeoutIntervalInMin());
-
+    // post hook - template manifest
     List<KubernetesResource> resources = k8sTaskHelperBase.readManifestAndOverrideLocalSecrets(
         manifestFiles, executionLogCallback, isLocalOverrideFeatureFlag, isErrorFrameworkSupported);
     k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(resources, kubernetesConfig.getNamespace());

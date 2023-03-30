@@ -26,6 +26,7 @@ import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.k8s.beans.K8sRollingReleaseOutput;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.instancesync.mapper.K8sPodToServiceInstanceInfoMapper;
@@ -59,6 +60,7 @@ import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -103,6 +105,7 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
     InfrastructureOutcome infrastructure = executionPassThroughData.getInfrastructure();
     String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
     Optional<ServiceHooksOutcome> serviceHooksOutcome = cdStepHelper.getServiceHooksOutcome(ambiance);
+    Map<String, String> serviceHooks = getServiceHooksForDelegates(serviceHooksOutcome.get());
     K8sRollingStepParameters k8sRollingStepParameters = (K8sRollingStepParameters) stepElementParameters.getSpec();
     boolean skipDryRun = CDStepHelper.getParameterFieldBooleanValue(
         k8sRollingStepParameters.getSkipDryRun(), K8sRollingBaseStepInfoKeys.skipDryRun, stepElementParameters);
@@ -146,6 +149,7 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .skipAddingTrackSelectorToDeployment(cdStepHelper.isSkipAddingTrackSelectorToDeployment(accountId))
             .pruningEnabled(pruningEnabled)
+            .serviceHooks(serviceHooks)
             .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome));
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
@@ -234,5 +238,14 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
         .stepOutcome(StepOutcome.builder().name(OutcomeExpressionConstants.OUTPUT).outcome(k8sRollingOutcome).build())
         .stepOutcome(stepOutcome)
         .build();
+  }
+
+  private Map<String, String> getServiceHooksForDelegates(ServiceHooksOutcome serviceHooksOutcome) {
+    Map<String, String> serviceHooks = new HashMap<>();
+    serviceHooksOutcome.forEach((k, v) -> {
+      final String key = k + "_" + v.getType().toString();
+      v.getActions().forEach(q -> serviceHooks.put(key + "_" + q, ((InlineStoreConfig) v.getStore()).extractContent()));
+    });
+    return serviceHooks;
   }
 }
