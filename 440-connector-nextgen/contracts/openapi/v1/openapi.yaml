@@ -6,18 +6,18 @@ info:
   contact:
     email: contact@harness.io
 servers:
-  - url: 'https://api.harness.io'
+  - url: 'https://app.harness.io'
     description: Harness host URL.
 tags:
   - name: Account Connector
     description: This contains APIs for Account-scoped Connectors.
-    x-displayName: Account Connectors
+    x-displayName: Account Connectors [Beta]
   - name: Org Connector
     description: This contains APIs for Organization-scoped Connectors.
-    x-displayName: Organization Connectors
+    x-displayName: Organization Connectors [Beta]
   - name: Project Connector
     description: This contains APIs for Project-scoped Connectors.
-    x-displayName: Project Connectors
+    x-displayName: Project Connectors [Beta]
 paths:
   /v1/connectors:
     post:

@@ -6,30 +6,32 @@ info:
   contact:
     email: contact@harness.io
 servers:
-  - url: 'https://api.harness.io'
+  - url: 'https://app.harness.io'
     description: Harness host URL.
 tags:
   - name: Organization
-    description: This contains APIs for Organizations.
+    description: Create and manage organizations in your account. You use organizations to group together related projects. For example, you can use an organization to group together projects within a business unit or division.
   - name: Org Project
-    description: This contains APIs for Projects.
-    x-displayName: Project
+    description: This contains APIs for projects.
+    x-displayName: 'Project [Beta]'
   - name: Account Secret
-    description: This contains APIs for Account-scoped Secrets.
-    x-displayName: Account Secrets
+    description: This contains APIs for account-scoped secrets.
+    x-displayName: 'Account Secrets [Beta]'
   - name: Org Secret
-    description: This contains APIs for Organization-scoped Secrets.
-    x-displayName: Organization Secrets
+    description: This contains APIs for organization-scoped secrets.
+    x-displayName: 'Organization Secrets [Beta]'
   - name: Project Secret
-    description: This contains APIs for Project-scoped Secrets.
-    x-displayName: Project Secrets
+    description: This contains APIs for project-scoped secrets.
+    x-displayName: 'Project Secrets [Beta]'
   - name: Account Services
-    description: This contains APIs for Account-scoped Services.
+    description: This contains APIs for account-scoped services.
+    x-displayName: 'Account Services [Beta]'
   - name: Org Services
-    description: This contains APIs for Organization-scoped Services.
-    x-displayName: Organization Services
+    description: This contains APIs for organization-scoped services.
+    x-displayName: 'Organization Services [Beta]'
   - name: Project Services
-    description: This contains APIs for Project-scoped Services.
+    description: This contains APIs for project-scoped services.
+    x-displayName: 'Project Services [Beta]'
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:
@@ -37,7 +39,7 @@ paths:
       operationId: get-service
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      description: 'Retrieves the specified service'
+      description: Retrieves the specified service
       security:
         - x-api-key: []
       responses:
@@ -73,7 +75,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/ForceDelete'
-      description: Deletes the requested service
+      description: Deletes the requested service.
       security:
         - x-api-key: []
       tags:
@@ -144,9 +146,9 @@ paths:
       operationId: get-org-scoped-service
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      description: 'Retrieves the specified service'
+      description: Retrieves the specified service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       responses:
         '200':
           $ref: '#/components/responses/ServiceResponse'
@@ -167,7 +169,7 @@ paths:
         $ref: '#/components/requestBodies/ServiceRequest'
       description: Updates the specified service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       tags:
         - Org Services
     delete:
@@ -181,7 +183,7 @@ paths:
         - $ref: '#/components/parameters/ForceDelete'
       description: Deletes the requested service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       tags:
         - Org Services
   '/v1/orgs/{org}/services':
@@ -222,7 +224,7 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Order'
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       description: Returns a list of the services for which you have view permissions in the given project.
       tags:
         - Org Services
@@ -238,7 +240,7 @@ paths:
         $ref: '#/components/requestBodies/ServiceRequest'
       description: Creates a service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       tags:
         - Org Services
     parameters:
@@ -249,9 +251,9 @@ paths:
       operationId: get-account-scoped-service
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      description: 'Retrieves the specified service'
+      description: Retrieves the specified service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       responses:
         '200':
           $ref: '#/components/responses/ServiceResponse'
@@ -271,7 +273,7 @@ paths:
         $ref: '#/components/requestBodies/ServiceRequest'
       description: Updates the specified service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       tags:
         - Account Services
     delete:
@@ -285,10 +287,10 @@ paths:
         - $ref: '#/components/parameters/ForceDelete'
       description: Deletes the requested service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       tags:
         - Account Services
-  '/v1/services':
+  /v1/services:
     get:
       summary: List services
       responses:
@@ -326,7 +328,7 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Order'
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       description: Returns a list of the services for which you have view permissions in the given project.
       tags:
         - Account Services
@@ -342,13 +344,13 @@ paths:
         $ref: '#/components/requestBodies/ServiceRequest'
       description: Creates a service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       tags:
         - Account Services
     parameters: []
   /v1/orgs:
     post:
-      summary: Create an organization
+      summary: 'Create an organization [Beta]'
       operationId: create-organization
       responses:
         '201':
@@ -363,7 +365,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
     get:
-      summary: List organizations
+      summary: 'List organizations [Beta]'
       operationId: get-organizations
       responses:
         '200':
@@ -391,7 +393,7 @@ paths:
         required: true
         description: Organization identifier
     get:
-      summary: Retrieve an organization
+      summary: 'Retrieve an organization [Beta]'
       responses:
         '200':
           $ref: '#/components/responses/OrganizationResponse'
@@ -404,7 +406,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
     put:
-      summary: Update an organization
+      summary: 'Update an organization [Beta]'
       operationId: update-organization
       responses:
         '200':
@@ -419,7 +421,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
     delete:
-      summary: Delete an organization
+      summary: 'Delete an organization [Beta]'
       operationId: delete-organization
       responses:
         '200':
@@ -589,7 +591,7 @@ paths:
       security:
         - x-api-key: []
     parameters: []
-  '/v1/secrets/validate-secret-ref':
+  /v1/secrets/validate-secret-ref:
     post:
       summary: Validate secret reference
       operationId: validate-account-secret-ref
@@ -790,7 +792,7 @@ paths:
         name: project
         in: path
         required: true
-        description: Identifier field of the project the resource is scoped to
+        description: Identifier field of the project to which the resource is scoped.
   '/v1/secrets/{secret}':
     parameters:
       - schema:
@@ -2758,7 +2760,7 @@ components:
         type: integer
         default: 30
         maximum: 1000
-      description: 'Number of items to return per page.'
+      description: Number of items to return per page.
     SearchTerm:
       name: search_term
       in: query
