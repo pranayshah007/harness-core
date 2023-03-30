@@ -90,6 +90,7 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
     entityMap.put(FreezeEntityType.SERVICE,
         Lists.newArrayList(IdentifierRefHelper.getRefFromIdentifierOrRef(serviceEntity.getAccountId(),
             serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier())));
+    entityMap.put(FreezeEntityType.PIPELINE, Lists.newArrayList(AmbianceUtils.getPipelineIdentifier(ambiance)));
     StepResponse stepResponse = executeFreezePart(ambiance, entityMap, stepParameters, serviceEntity);
     if (stepResponse != null) {
       return stepResponse;
@@ -113,6 +114,7 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
             accessControlClient, CDNGRbacUtility.constructPrincipalFromAmbiance(ambiance))) {
       return null;
     }
+
     List<FreezeSummaryResponseDTO> globalFreezeConfigs;
     List<FreezeSummaryResponseDTO> manualFreezeConfigs;
     globalFreezeConfigs = freezeEvaluateService.anyGlobalFreezeActive(accountId, orgId, projectId);

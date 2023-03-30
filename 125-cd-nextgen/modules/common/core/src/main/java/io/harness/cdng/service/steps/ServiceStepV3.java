@@ -711,6 +711,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         Lists.newArrayList(IdentifierRefHelper.getRefFromIdentifierOrRef(serviceEntity.getAccountId(),
             serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier())));
 
+    entityMap.put(FreezeEntityType.PIPELINE, Lists.newArrayList(AmbianceUtils.getPipelineIdentifier(ambiance)));
+
     // Add the reason in serviceOutcome;
     ServiceStepOutcome outcome = ServiceStepOutcome.fromServiceStepV2(serviceEntity, ngServiceV2InfoConfig);
 
