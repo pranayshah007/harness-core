@@ -1,4 +1,4 @@
-# Default values for access-control
+# Default values for change-data-capture
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 ## Global Docker image parameters
@@ -8,32 +8,8 @@
 # --global.imagePullSecrets Global Docker registry secret names as an array
 # --global.storageClass Global StorageClass for Persistent Volume(s)
 global:
+  loadbalancerURL: ""
   ha: false
-  ingress:
-    # -- create ingress objects
-    enabled: false
-    # -- set ingress object classname
-    className: harness
-    # -- set host of ingressObjects
-    hosts:
-      - my-host.example.org
-    # -- set tls for ingress objects
-    tls:
-      enabled: true
-      secretName: ''
-    # -- add annotations to ingress objects
-    objects:
-      annotations: {}
-  istio:
-    # -- create virtualServices objects
-    enabled: false
-    # -- create gateway and use in virtualservice
-    gateway:
-      create: false
-    # -- if gateway not created, use specified gateway and host
-    virtualService:
-      gateways:
-      hosts:
   imagePullSecrets: []
 # --replicaCount Number of pods
 ##
@@ -54,68 +30,6 @@ schedulerName: ""
 ## ref: https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods
 ##
 terminationGracePeriodSeconds: "30"
-# -- set progressDealineSeconds in seconds, number of seconds the Deployment controller waits before indicating failure
-## ref: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
-progressDeadlineSeconds: 720
-# -- Configurations for Harness application
-config:
-  DEPLOY_MODE: KUBERNETES_ONPREM
-  LOGGING_LEVEL: INFO
-  EVENTS_CONFIG_USE_SENTINEL: true
-  EVENTS_CONFIG_SENTINEL_MASTER_NAME: harness-redis
-  EVENTS_CONFIG_REDIS_SENTINELS:
-  LOCK_CONFIG_USE_SENTINEL: true
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
-  LOCK_CONFIG_REDIS_SENTINELS:
-  RESOURCE_GROUP_ITERATOR_ENABLED: true
-  RESOURCE_GROUP_ITERATOR_INTERVAL: 3600
-  USER_GROUP_ITERATOR_ENABLED: true
-  USER_GROUP_ITERATOR_INTERVAL: 3600
-  USER_ITERATOR_ENABLED: true
-  USER_ITERATOR_INTERVAL: 3600
-  SERVICEACCOUNT_ITERATOR_ENABLED: true
-  SERVICEACCOUNT_ITERATOR_INTERVAL: 3600
-  SUPPORTPREFERENCE_ITERATOR_ENABLED: true
-  SUPPORTPREFERENCE_ITERATOR_INTERVAL: 600
-  SCOPE_ITERATOR_ENABLED: true
-  SCOPE_ITERATOR_INTERVAL: 3600
-  RESOURCE_GROUP_CLIENT_BASE_URL:
-  USER_CLIENT_BASE_URL:
-  USER_GROUP_CLIENT_BASE_URL:
-  SERVICEACCOUNT_CLIENT_BASE_URL:
-  ACCOUNT_CLIENT_BASE_URL:
-  FEATURE_FLAG_CLIENT_BASE_URL:
-  PROJECT_CLIENT_BASE_URL:
-  OFFSET_FLUSH_INTERVAL_MS: 10000
-  MONGODB_SSL_ENABLED: false
-  AGGREGATOR_ENABLED: true
-  ENABLE_AUTH: true
-  ACCESS_CONTROL_PREFERENCE_ENABLED: true
-  NOTIFICATION_SLACK_WEBHOOK_URL:
-  NOTIFICATION_ENVIRONMENT: ONPREM
-  ENABLE_ACCESS_CONTROL: false
-  ACCESS_CONTROL_SERVICE_BASE_URL:
-  ENABLE_AUDIT: true
-  AUDIT_CLIENT_BASE_URL:
-  DISTRIBUTED_LOCK_IMPLEMENTATION: REDIS
-  GOOGLE_APPLICATION_CREDENTIALS: /opt/harness/monitoring/stackdriver.json
-  MEMORY: 512
-secrets:
-  IDENTITY_SERVICE_SECRET: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
-  MONGODB_USER: admin
-## Pod Disruption Budget configuration in HA mode.
-## ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
-##
-pdb:
-  # --pdb.create Enable/disable a Pod Disruption Budget creation
-  ##
-  create: true
-  # --pdb.minAvailable Minimum number/percentage of pods that must still be available after the eviction
-  ##
-  minAvailable: 50%
-  # --pdb.maxUnavailable Maximum number/percentage of pods that may be made unavailable after the eviction
-  ##
-  maxUnavailable: ""
 ## image version
 ## ref: https://hub.docker.com/r/harness/accesscontrol-service-signed/tags
 # --image.registry ; image registry
@@ -126,9 +40,10 @@ pdb:
 # --image.imagePullSecrets Specify docker-registry secret names as an array
 image:
   registry: docker.io
-  repository: harness/accesscontrol-service-signed
+  repository: harness/cdcdata-signed
   pullPolicy: IfNotPresent
-  tag: "78900"
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "78426"
   digest: ""
   imagePullSecrets: []
 # -- Wait-For-App initContainers details
@@ -158,6 +73,12 @@ waitForInitContainer:
   containerSecurityContext:
     runAsUser: 65534
     runAsNonRoot: true
+# -- Configurations for Harness application
+config:
+  DEPLOY_MODE: "KUBERNETES"
+  MEMORY: 2048
+  MONGO_TAG_NAME: "none"
+  MONGO_TAG_VALUE: "none"
 ## -- mongo secrets reference passed to the application
 ##
 mongoSecrets:
@@ -167,7 +88,12 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
+## -- timescaleDB secrets reference passed to the application
+##
+timescaleSecret:
+  password:
+    name: harness-secrets
+    key: timescaledbPostgresPassword
 # --nameOverride String to partially override common.names.fullname template (will maintain the release name)
 ##
 nameOverride: ""
@@ -184,12 +110,23 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
+# -- provisioning.podAnnotations Provisioning Pod annotations.
+##
 podAnnotations: {}
-
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+## @param provisioning.podSecurityContext.enabled Enable pod Security Context
+## @param provisioning.podSecurityContext.fsGroup Group ID for the container
+##
+# e.g.:
+## fsGroup: 2000
 podSecurityContext: {}
-  # fsGroup: 2000
 
+# -- containerSecurityContext
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+## @param provisioning.containerSecurityContext.enabled Enable container Security Context
+## @param provisioning.containerSecurityContext.runAsUser User ID for the container
+## @param provisioning.containerSecurityContext.runAsNonRoot Avoid running as root User
+##
 containerSecurityContext:
   runAsUser: 65534
   runAsNonRoot: true
@@ -199,84 +136,6 @@ containerSecurityContext:
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
-service:
-  type: ClusterIP
-  port: 9006
-## Pod resource requests and limits
-## ref: https://kubernetes.io/docs/user-guide/compute-resources/
-# --resources.limits The resources limits for the containers
-# --resources.requests The requested resources for the containers
-##
-resources:
-  limits:
-    cpu: 0.5
-    memory: 8192Mi
-  requests:
-    cpu: 0.5
-    memory: 512Mi
-# --  lifecycleHooks for the container(s) to automate configuration before or after startup
-## e.g.
-# lifecycleHooks:
-#   postStart:
-#     exec:
-#       command: 
-#         - /bin/sh
-#         - -c
-#         - |
-#           mkdir -p /opt/harness/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME};
-#           [[ -L /opt/harness/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/POD_NAME ]] && unlink /opt/harness/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/POD_NAME ;
-#           ln -s /opt/harness/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME} /opt/harness/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/POD_NAME ;
-#     preStop:
-#     exec:
-#       command:
-#       - /bin/sh
-#       - -c
-#       - |
-#         touch shutdown;
-#         sleep 10;
-#         ts=$(date '+%s');
-#         loc=/opt/harness/dumps/${SERVICE_NAME}/${ENV_TYPE}/$ts/${POD_NAME};
-#         mkdir -p $loc; sleep 1; echo $ts > $loc/restart;
-#         echo $(date '+%s') > $loc/begin;
-#         PID=$(jps|grep -vi jps|awk '{ print $1}');
-#         #Copy GC log file
-#         cp mygclogfilename.gc $loc/;
-        
-#         #Retry 10 times to take thread dump. Unsuccessful attempt has just 1 line with java process id in the output.
-#         for ((n=0;n<10;n++)); do
-#           jcmd $PID Thread.print -e > $loc/thread-dump-attempt-$n.txt;
-#           if [ $(wc -l < $loc/thread-dump-attempt-$n.txt) -gt 1 ]; then break; fi;
-#         done
-        
-#         #10 retries to take heap histogram. Unsuccessful attempt has just 1 line with java process id in the output.
-#         for ((n=0;n<10;n++)); do
-#           jcmd $PID GC.class_histogram -all > $loc/heap-histogram-attempt-$n.txt;
-#           if [ $(wc -l < $loc/heap-histogram-attempt-$n.txt) -gt 1 ]; then break; fi;
-#         done
-        
-#         jcmd $PID VM.native_memory  > $loc/native-memory-dump.txt;
-        
-#         #Dump latest chunk of JFR recording
-#         jcmd $PID JFR.dump name=jfrRecording filename=/opt/harness/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME}/container_termination_$(date +%Y_%m_%d_%H_%M_%S).jfr > $loc/jfr_done.txt
-        
-#         echo $(date '+%s') > $loc/end
-#         kill -15
-lifecycleHooks: {}
-
-## Autoscaling configuration
-# --autoscaling.enabled Enable autoscaling for pods
-# --autoscaling.minReplicas Minimum number of replicas
-# --autoscaling.maxReplicas Maximum number of replicas
-# --autoscaling.targetCPU Target CPU utilization percentage
-# --autoscaling.targetMemory Target Memory utilization percentage
-##
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
 
 ## Configure extra options for liveness probe
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
@@ -290,10 +149,10 @@ autoscaling:
 livenessProbe:
   enabled: true
   initialDelaySeconds: 60
-  periodSeconds: 10
+  periodSeconds: 2
   timeoutSeconds: 10
   successThreshold: 1
-  failureThreshold: 
+  failureThreshold: 5
 ## Configure extra options for readiness probe
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
 # -- readinessProbe.enabled Enable readinessProbe
@@ -306,10 +165,10 @@ livenessProbe:
 readinessProbe:
   enabled: true
   initialDelaySeconds: 60
-  periodSeconds: 10
+  periodSeconds: 2
   timeoutSeconds: 10
   successThreshold: 1
-  failureThreshold: 10
+  failureThreshold: 5
 ## Configure extra options for startupProbe probe
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
 # -- startupProbe.enabled Enable startupProbe
@@ -320,12 +179,47 @@ readinessProbe:
 # -- startupProbe.successThreshold Success threshold for startupProbe
 ##
 startupProbe:
-  enabled: false
+  enabled: true
   initialDelaySeconds: 0
-  periodSeconds: 10
-  timeoutSeconds: 5
+  periodSeconds: 2
+  timeoutSeconds: 10
   successThreshold: 1
-  failureThreshold: 60
+  failureThreshold: 5
+
+#-- Service properties
+##
+service:
+  # -- service type
+  ##
+  type: ClusterIP
+  ## -- service.ports application service port
+  ##
+  port: 8190
+## Pod resource requests and limits
+## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+# --resources.limits The resources limits for the containers
+# --resources.requests The requested resources for the containers
+##
+resources:
+  limits:
+    cpu: 1
+    memory: 2880Mi
+  requests:
+    cpu: 1
+    memory: 2880Mi
+## Autoscaling configuration
+# --autoscaling.enabled Enable autoscaling for pods
+# --autoscaling.minReplicas Minimum number of replicas
+# --autoscaling.maxReplicas Maximum number of replicas
+# --autoscaling.targetCPU Target CPU utilization percentage
+# --autoscaling.targetMemory Target Memory utilization percentage
+##
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
 # -- extraEnvVars Extra environment variables to be set on container
 ## e.g:
 ## extraEnvVars:

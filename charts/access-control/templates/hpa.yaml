@@ -2,7 +2,7 @@
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: access-control
+  name: {{ include "access-control.name" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "access-control.labels" . | nindent 4 }}

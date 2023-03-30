@@ -2,11 +2,11 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: access-control
+  name: {{ include "access-control.name" . }}
   annotations:
-    { { - if .Values.global.ingress.nginx.objects.annotations } }
-    { { - include "common.tplvalues.render" ( dict "value" .Values.global.ingress.nginx.objects.annotations "context" $ ) | nindent 4 } }
-    { { - end } }
+    {{- if .Values.global.ingress.objects.annotations }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.ingress.objects.annotations "context" $) | nindent 4 }}
+    {{- end }}
     nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: {{ .Values.global.ingress.className | quote }}
@@ -15,7 +15,7 @@ spec:
         paths:
           - backend:
               service:
-                name: access-control
+                name: {{ include "access-control.name" . }}
                 port:
                   number: {{ .Values.service.port }}
             path: /authz(/|$)(.*)
