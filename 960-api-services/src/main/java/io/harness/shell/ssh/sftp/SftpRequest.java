@@ -5,15 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.shell.ssh.xfer;
+package io.harness.shell.ssh.sftp;
 
-import io.harness.logging.CommandExecutionStatus;
+import lombok.Getter;
 
-import lombok.Builder;
-
-@Builder
-public class ScpResponse {
-  boolean success;
-  int exitCode;
-  CommandExecutionStatus status;
+@Getter
+public class SftpRequest {
+  private String directory;
+  private String fileName;
+  private boolean cleanup;
 }

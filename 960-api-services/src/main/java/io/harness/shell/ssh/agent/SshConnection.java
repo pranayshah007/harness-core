@@ -5,8 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.shell.ssh.connection;
+package io.harness.shell.ssh.agent;
 
-public class ExecCommandData {
-  private String command;
-}
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * SSH Connection represents a TCP Connection at Transport layer.
+ */
+@Slf4j
+public abstract class SshConnection implements AutoCloseable {}

@@ -5,9 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.shell.ssh;
+package io.harness.shell.ssh.connection;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.Builder;
+import lombok.Getter;
 
-@Slf4j
-public abstract class HSshClient implements AutoCloseable {}
+@Getter
+@Builder
+public class ExecRequest {
+  private String command;
+  private boolean displayCommand;
+}
