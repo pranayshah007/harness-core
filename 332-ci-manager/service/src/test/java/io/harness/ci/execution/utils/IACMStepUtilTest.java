@@ -38,6 +38,8 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -80,11 +82,12 @@ public class IACMStepUtilTest extends CategoryTest {
     Map<String, ParameterField<String>> tfVars = new HashMap<>();
     tfVars.put("tfvar1", ParameterField.createValueField("TfValue1"));
     tfVars.put("tfvar2", ParameterField.createValueField("Value1"));
-    Map<String, ParameterField<String>> env = new HashMap<>();
-    env.put("command", ParameterField.createValueField("Apply"));
+    Map<String, JsonNode> setting = new HashMap<>();
+    ObjectMapper mapper = new ObjectMapper();
+    setting.put("operation", mapper.valueToTree("initialise"));
     PluginStepInfo stepInfo = PluginStepInfo.builder()
                                   .envVariables(ParameterField.createValueField(stepVars))
-                                  .uses(ParameterField.createValueField("initialise"))
+                                  .settings(ParameterField.createValueField(setting))
                                   .build();
     StackVariables[] stackVariables = new StackVariables[] {StackVariables.builder()
                                                                 .stack("123")
@@ -137,7 +140,7 @@ public class IACMStepUtilTest extends CategoryTest {
     assertThat(vmPluginStep.getEnvVariables().get("ENV_SECRETS_keytest1")).contains("${ngSecretManager.obtain");
     assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_keytest2")).isEqualTo("keyValue2");
     assertThat(vmPluginStep.getEnvVariables().get("TFVARS_SECRETS_keytest3")).contains("${ngSecretManager.obtain");
-    assertThat(vmPluginStep.getEnvVariables().get("TF_keytest4")).isEqualTo("keyValue4");
+    assertThat(vmPluginStep.getEnvVariables().get("TF_VARS_keytest4")).isEqualTo("keyValue4");
   }
 
   @Test
@@ -147,11 +150,12 @@ public class IACMStepUtilTest extends CategoryTest {
     Map<String, ParameterField<String>> stepVars = new HashMap<>();
     stepVars.put("STACK_ID", ParameterField.createValueField("stackID"));
     stepVars.put("WORKFLOW", ParameterField.createValueField("provision"));
-    Map<String, String> env = new HashMap<>();
-    env.put("command", "Apply");
+    Map<String, JsonNode> setting = new HashMap<>();
+    ObjectMapper mapper = new ObjectMapper();
+    setting.put("operation", mapper.valueToTree("initialise"));
     PluginStepInfo stepInfo = PluginStepInfo.builder()
                                   .envVariables(ParameterField.createValueField(stepVars))
-                                  .uses(ParameterField.createValueField("initialise"))
+                                  .settings(ParameterField.createValueField(setting))
                                   .build();
 
     Mockito.mockStatic(CIStepInfoUtils.class);
@@ -217,9 +221,12 @@ public class IACMStepUtilTest extends CategoryTest {
     for (int i = 0; i <= commands.size() - 1; i++) {
       for (int j = 0; j <= workflows.size() - 1; j++) {
         stepVars.put("WORKFLOW", ParameterField.createValueField(workflows.get(j)));
+        Map<String, JsonNode> setting = new HashMap<>();
+        ObjectMapper mapper = new ObjectMapper();
+        setting.put("operation", mapper.valueToTree(commands.get(i)));
         PluginStepInfo stepInfo = PluginStepInfo.builder()
                                       .envVariables(ParameterField.createValueField(stepVars))
-                                      .uses(ParameterField.createValueField(commands.get(i)))
+                                      .settings(ParameterField.createValueField(setting))
                                       .build();
         VmPluginStep vmPluginStep = iacmStepsUtils.injectIACMInfo(ambiance, stepInfo, null, null);
         if (i == 0) {
@@ -229,17 +236,17 @@ public class IACMStepUtilTest extends CategoryTest {
         if (i == 1) {
           assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(4);
           if (j == 0) {
-            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("plan");
+            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("evaluate-plan");
           } else {
-            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("plan-destroy");
+            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("evaluate-plan-destroy");
           }
         }
         if (i == 2) {
           assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(4);
           if (j == 0) {
-            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("apply");
+            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("execute-apply");
           } else {
-            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("destroy");
+            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("execute-destroy");
           }
         }
       }
