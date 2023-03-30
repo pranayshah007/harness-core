@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.core.environment.resources;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -13,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.EntityScopeInfo;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rbac.CDNGRbacPermissions;
 
@@ -34,6 +42,8 @@ public class EnvironmentRbacHelper {
   @Inject private AccessControlClient accessControlClient;
 
   public List<Environment> getPermittedEnvironmentsList(List<Environment> environments) {
+    // This method assumes that all environments are at the same scope
+
     final boolean hasProdAccess;
     final boolean hasPreProdAccess;
     if (isEmpty(environments)) {
@@ -43,7 +53,7 @@ public class EnvironmentRbacHelper {
     Map<EntityScopeInfo, Environment> environmentMap = environments.stream().collect(
         Collectors.toMap(EnvironmentRbacHelper::getEntityScopeInfoFromEnvironment, Function.identity()));
 
-    List<PermissionCheckDTO> permissionChecks =
+    final List<PermissionCheckDTO> permissionChecks =
         environments.stream()
             .map(environment
                 -> PermissionCheckDTO.builder()
@@ -57,7 +67,7 @@ public class EnvironmentRbacHelper {
 
     permissionChecks.add(PermissionCheckDTO.builder()
                              .permission(CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION)
-                             .resourceAttributes(getEnvironmentAttributesMap("PreProduction"))
+                             .resourceAttributes(getEnvironmentAttributesMap(EnvironmentType.PreProduction.name()))
                              .resourceScope(ResourceScope.of(environments.get(0).getAccountId(),
                                  environments.get(0).getOrgIdentifier(), environments.get(0).getProjectIdentifier()))
                              .resourceType(NGResourceType.ENVIRONMENT)
@@ -65,26 +75,27 @@ public class EnvironmentRbacHelper {
 
     permissionChecks.add(PermissionCheckDTO.builder()
                              .permission(CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION)
-                             .resourceAttributes(getEnvironmentAttributesMap("Production"))
+                             .resourceAttributes(getEnvironmentAttributesMap(EnvironmentType.Production.name()))
                              .resourceScope(ResourceScope.of(environments.get(0).getAccountId(),
                                  environments.get(0).getOrgIdentifier(), environments.get(0).getProjectIdentifier()))
                              .resourceType(NGResourceType.ENVIRONMENT)
                              .build());
 
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+    final AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
 
-    List<AccessControlDTO> accessControlDTOList = accessCheckResponse.getAccessControlList();
+    final EnvironmentTypeFilteredResponse environmentTypeFilteredResponse =
+        CheckingTypeBasedFilters(accessCheckResponse.getAccessControlList());
 
-    EnvironmentTypeFilteredResponse environmentTypeFilteredResponse =
-        CheckingTypeBasedFilters(accessControlDTOList, false, false);
+    final List<AccessControlDTO> onlyIdentifierBasedAccessCheckList =
+        removeTypeBasedAccessControlDTOs(accessCheckResponse.getAccessControlList());
 
-    accessControlDTOList = environmentTypeFilteredResponse.getAccessControlDTOList();
     hasPreProdAccess = environmentTypeFilteredResponse.hasPreProdAccess;
+
     hasProdAccess = environmentTypeFilteredResponse.hasProdAccess;
 
     List<Environment> permittedEnvironments = new ArrayList<>();
 
-    for (AccessControlDTO accessControlDTO : accessControlDTOList) {
+    for (AccessControlDTO accessControlDTO : onlyIdentifierBasedAccessCheckList) {
       Environment environment =
           environmentMap.get(EnvironmentRbacHelper.getEntityScopeInfoFromAccessControlDTO(accessControlDTO));
 
@@ -92,32 +103,41 @@ public class EnvironmentRbacHelper {
         continue;
       }
 
-      if (accessControlDTO.isPermitted() || (environment.getType().toString() == "PreProduction" && hasPreProdAccess)
-          || (environment.getType().toString() == "Production" && hasProdAccess)) {
+      if (accessControlDTO.isPermitted()
+          || (EnvironmentType.PreProduction.name().equals(accessControlDTO.getResourceAttributes().get("type"))
+              && hasPreProdAccess)
+          || (EnvironmentType.Production.name().equals(accessControlDTO.getResourceAttributes().get("type"))
+              && hasProdAccess)) {
         permittedEnvironments.add(environment);
       }
     }
+
     return permittedEnvironments;
   }
 
-  private EnvironmentTypeFilteredResponse CheckingTypeBasedFilters(
-      List<AccessControlDTO> accessControlDTOList, boolean hasPreProdAccess, boolean hasProdAccess) {
+  private List<AccessControlDTO> removeTypeBasedAccessControlDTOs(List<AccessControlDTO> accessControlDTOList) {
+    return accessControlDTOList.stream()
+        .filter(dto -> isEmpty(dto.getResourceAttributes()) || isEmpty(dto.getResourceAttributes().get("type")))
+        .collect(Collectors.toList());
+  }
+
+  private EnvironmentTypeFilteredResponse CheckingTypeBasedFilters(List<AccessControlDTO> accessControlDTOList) {
+    boolean hasPreProdAccess = false;
+
+    boolean hasProdAccess = false;
+
     for (AccessControlDTO accessControlDTO : accessControlDTOList) {
-      if (accessControlDTO.getResourceAttributes() != null) {
-        if (accessControlDTO.isPermitted()) {
-          if ("PreProduction".equals(accessControlDTO.getResourceAttributes().get("type"))) {
-            hasPreProdAccess = true;
+      if (accessControlDTO.isPermitted() && accessControlDTO.getResourceAttributes() != null) {
+        if (EnvironmentType.PreProduction.name().equals(accessControlDTO.getResourceAttributes().get("type"))) {
+          hasPreProdAccess = true;
 
-          } else if ("Production".equals(accessControlDTO.getResourceAttributes().get("type"))) {
-            hasProdAccess = true;
-          }
+        } else if (EnvironmentType.Production.name().equals(accessControlDTO.getResourceAttributes().get("type"))) {
+          hasProdAccess = true;
         }
-
-        accessControlDTOList.remove(accessControlDTO);
       }
     }
 
-    return new EnvironmentTypeFilteredResponse(accessControlDTOList, hasPreProdAccess, hasProdAccess);
+    return new EnvironmentTypeFilteredResponse(hasPreProdAccess, hasProdAccess);
   }
 
   private static EntityScopeInfo getEntityScopeInfoFromEnvironment(Environment environmentEntity) {

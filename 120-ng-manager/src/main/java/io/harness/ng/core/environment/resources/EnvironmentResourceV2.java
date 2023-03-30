@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
+import static io.harness.ng.core.environment.resources.EnvironmentResourceConstants.UNAUTHORIZED_TO_LIST_ENVIRONMENTS_MESSAGE;
 import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.checkDuplicateConfigFilesIdentifiersWithIn;
 import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.checkDuplicateManifestIdentifiersWithIn;
 import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
@@ -295,7 +296,7 @@ public class EnvironmentResourceV2 {
           "false") boolean forceDelete) {
     Optional<Environment> environmentOptional =
         environmentService.get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, false);
-    if (!environmentOptional.isPresent()) {
+    if (environmentOptional.isEmpty()) {
       throw new NotFoundException(String.format("Environment with identifier [%s] in project [%s], org [%s] not found",
           environmentIdentifier, projectIdentifier, orgIdentifier));
     }
@@ -409,7 +410,7 @@ public class EnvironmentResourceV2 {
               "Specifies sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
-        Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+        Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, UNAUTHORIZED_TO_LIST_ENVIRONMENTS_MESSAGE);
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
         accountId, orgIdentifier, projectIdentifier, false, searchTerm);
     Pageable pageRequest;
@@ -481,12 +482,6 @@ public class EnvironmentResourceV2 {
       @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentIdentifier,
       @QueryParam(NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY) String serviceIdentifier,
       @QueryParam(NGCommonEntityConstants.BUILD_KEY) String buildId) {
-    /*
-    if (tag != null && serviceIdentifier == null) {
-
-    }
-
-     */
     return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGroupedByServiceList(
         accountIdentifier, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier, buildId));
   }
@@ -529,42 +524,19 @@ public class EnvironmentResourceV2 {
           "false") boolean includeAllAccessibleAtScope) {
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier,
         false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope);
-    Pageable pageRequest;
 
     if (isNotEmpty(envIdentifiers)) {
       criteria.and(EnvironmentKeys.identifier).in(envIdentifiers);
     }
+    final Pageable pageRequest;
     if (isEmpty(sort)) {
       pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, EnvironmentKeys.createdAt));
     } else {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
 
-    final Page<Environment> environmentPage;
-
-    if (hasViewPermissionForAllEnvironments(accountId, orgIdentifier, projectIdentifier)) {
-      environmentPage = environmentService.list(criteria, pageRequest);
-
-    } else {
-      Page<Environment> environmentPages = environmentService.list(criteria, Pageable.unpaged());
-
-      if (environmentPages == null) {
-        return ResponseDTO.newResponse(getNGPageResponse(Page.empty()));
-      }
-
-      List<Environment> environmentList = environmentPages.getContent();
-
-      environmentList = environmentRbacHelper.getPermittedEnvironmentsList(environmentList);
-
-      if (isEmpty(environmentList)) {
-        return ResponseDTO.newResponse(getNGPageResponse(Page.empty()));
-      }
-
-      populateInFilter(criteria, EnvironmentKeys.identifier,
-          environmentList.stream().map(Environment::getIdentifier).collect(toList()));
-
-      environmentPage = environmentService.list(criteria, pageRequest);
-    }
+    final Page<Environment> environmentPage =
+        getRBACFilteredEnvironments(accountId, orgIdentifier, projectIdentifier, criteria, pageRequest);
 
     environmentPage.forEach(environment -> {
       if (EmptyPredicate.isEmpty(environment.getYaml())) {
@@ -613,7 +585,7 @@ public class EnvironmentResourceV2 {
       @QueryParam(NGResourceFilterConstants.INCLUDE_ALL_ACCESSIBLE_AT_SCOPE) @DefaultValue(
           "false") boolean includeAllAccessibleAtScope) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
-        Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+        Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, UNAUTHORIZED_TO_LIST_ENVIRONMENTS_MESSAGE);
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier,
         false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope);
 
@@ -665,7 +637,7 @@ public class EnvironmentResourceV2 {
       @QueryParam("sort") List<String> sort) {
     accessControlClient.checkForAccessOrThrow(List.of(scopeAccessHelper.getPermissionCheckDtoForViewAccessForScope(
                                                   Scope.of(accountId, orgIdentifier, projectIdentifier))),
-        "Unauthorized to list environments");
+        UNAUTHORIZED_TO_LIST_ENVIRONMENTS_MESSAGE);
 
     Criteria criteria;
     if (isEmpty(envIdentifiers) && isNotEmpty(envGroupIdentifier)) {
@@ -978,7 +950,7 @@ public class EnvironmentResourceV2 {
       String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers) {
     if (isEmpty(envIdentifiers)) {
       accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
-          Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+          Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, UNAUTHORIZED_TO_LIST_ENVIRONMENTS_MESSAGE);
       return;
     }
 
@@ -1005,17 +977,17 @@ public class EnvironmentResourceV2 {
     // listing without scoped refs
     if (checkProjectLevelList) {
       accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
-          Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+          Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, UNAUTHORIZED_TO_LIST_ENVIRONMENTS_MESSAGE);
     }
 
     if (checkOrgLevelList) {
       accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, null),
-          Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+          Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, UNAUTHORIZED_TO_LIST_ENVIRONMENTS_MESSAGE);
     }
 
     if (checkAccountLevelList) {
       accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, null, null), Resource.of(ENVIRONMENT, null),
-          ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+          ENVIRONMENT_VIEW_PERMISSION, UNAUTHORIZED_TO_LIST_ENVIRONMENTS_MESSAGE);
     }
   }
 
@@ -1118,6 +1090,8 @@ public class EnvironmentResourceV2 {
             "project identifier must be specified. Environments can only be created at Project scope");
       }
     } catch (Exception ex) {
+      log.error("failed to validate environment scope", ex);
+
       throw new InvalidRequestException(ex.getMessage());
     }
   }
@@ -1136,6 +1110,8 @@ public class EnvironmentResourceV2 {
             "project identifier must be specified. Service overrides can only be created at Project scope");
       }
     } catch (Exception ex) {
+      log.error("failed to validate service override scope", ex);
+
       throw new InvalidRequestException(ex.getMessage());
     }
   }
@@ -1171,8 +1147,26 @@ public class EnvironmentResourceV2 {
     return environmentAttributes;
   }
 
-  boolean hasViewPermissionForAllEnvironments(String accountId, String orgIdentifier, String projectIdentifier) {
+  private boolean hasViewPermissionForAllEnvironments(
+      String accountId, String orgIdentifier, String projectIdentifier) {
     return accessControlClient.hasAccess(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION);
+  }
+  private Page<Environment> getRBACFilteredEnvironments(
+      String accountId, String orgId, String projectId, Criteria criteria, Pageable pageRequest) {
+    if (!hasViewPermissionForAllEnvironments(accountId, orgId, projectId)) {
+      Page<Environment> environments = environmentService.list(criteria, Pageable.unpaged());
+      if (environments == null || environments.isEmpty()) {
+        return Page.empty();
+      }
+      final List<Environment> environmentList =
+          environmentRbacHelper.getPermittedEnvironmentsList(environments.getContent());
+      if (isEmpty(environmentList)) {
+        return Page.empty();
+      }
+      populateInFilter(criteria, EnvironmentKeys.identifier,
+          environmentList.stream().map(Environment::getIdentifier).collect(toList()));
+    }
+    return environmentService.list(criteria, pageRequest);
   }
 }

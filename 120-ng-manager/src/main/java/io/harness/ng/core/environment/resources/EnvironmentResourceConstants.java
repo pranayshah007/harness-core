@@ -1,4 +1,5 @@
 
+
 /*
  * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
@@ -8,17 +9,9 @@
 
 package io.harness.ng.core.environment.resources;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-@JsonIgnoreProperties(ignoreUnknown = true)
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-class EnvironmentTypeFilteredResponse {
-  boolean hasPreProdAccess;
-  boolean hasProdAccess;
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
+public class EnvironmentResourceConstants {
+  static final String UNAUTHORIZED_TO_LIST_ENVIRONMENTS_MESSAGE = "Unauthorized to list environments";
 }
