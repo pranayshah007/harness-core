@@ -42,6 +42,10 @@ public class GoogleFunctionUtils {
       + "1. Execution logs under deploy section. \n 2. Validate fields in cloud function manifest. \n "
       + "2. Refer documentation for createFunctionRequest: https://cloud.google.com/functions/docs/reference/rpc/google.cloud.functions.v2#createfunctionrequest \n ";
 
+  public static final String CREATE_FUNCTION_GEN_ONE_PARSE_FAILURE_HINT = "Please check for possible issues in: \n "
+      + "1. Execution logs under deploy section. \n 2. Validate fields in cloud function manifest. \n "
+      + "2. Refer documentation for createFunctionRequest: https://cloud.google.com/functions/docs/reference/rpc/google.cloud.functions.v1#google.cloud.functions.v1.CreateFunctionRequest \n ";
+
   public static final String FIELD_MASK_PARSE_FAILURE_HINT = "Please check for possible issues in: \n "
       + "1. Execution logs under deploy section. \n 2. Validate fields in cloud function manifest. \n "
       + "2. Refer documentation for createFunctionRequest: https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#google.protobuf.FieldMask \n ";
@@ -71,4 +75,14 @@ public class GoogleFunctionUtils {
 
   public static final String GET_CLOUD_RUN_REVISION_FAILURE_ERROR =
       "Could not able to retrieve cloud-run service revision details.";
+
+  public static final String CREATE_FUNCTION_GEN_ONE_FAILURE_HINT = "Please check for possible issues in: \n "
+      + "1. Execution logs under deploy section. \n 2. Validate fields in cloud function manifest. \n "
+      + "3. Refer documentation for createFunctionRequest: https://cloud.google.com/functions/docs/reference/rpc/google.cloud.functions.v1#google.cloud.functions.v1.CreateFunctionRequest \n "
+      + "4. Refer troubleshooting documentation: https://cloud.google.com/functions/docs/troubleshooting";
+
+  public static final String UPDATE_FUNCTION_GEN_ONE_FAILURE_HINT = "Please check for possible issues in: \n "
+      + "1. Execution logs under deploy section. \n 2. Validate fields in cloud function manifest. \n "
+      + "3. Refer documentation for createFunctionRequest: https://cloud.google.com/functions/docs/reference/rpc/google.cloud.functions.v1#google.cloud.functions.v1.CreateFunctionRequest \n "
+      + "4. Refer troubleshooting documentation: https://cloud.google.com/functions/docs/troubleshooting";
 }
