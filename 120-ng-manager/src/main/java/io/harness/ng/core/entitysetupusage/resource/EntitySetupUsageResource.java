@@ -24,6 +24,7 @@ import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.GitEntitySetupUsageDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntityReferencesDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -199,7 +200,7 @@ public class EntitySetupUsageResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(REFERRED_ENTITY_FQN) String referredEntityFQN,
-      @QueryParam(REFERRED_ENTITY_TYPE) EntityType entityType, ScmGitMetaData gitMetaData) {
+      @QueryParam(REFERRED_ENTITY_TYPE) EntityType entityType, GitEntitySetupUsageDTO gitMetaData) {
     return ResponseDTO.newResponse(true);
   }
 }
