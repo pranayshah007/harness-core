@@ -172,11 +172,24 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       if (governanceMetadata.getDeny()) {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
+
+      // GET REFERRED ENTITIES.
+      FilterCreationBlobResponse response = filterCreatorMergeService.getReferredEntitiesResponse(pipelineEntity);
+
+      // UPDATING PIPELINE INFO AND PUBLISHING SETUP USAGES.
       PipelineEntity entityWithUpdatedInfo =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
+
+      // PIPELINE CREATE FLOW.
       PipelineEntity createdEntity;
       PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
+
+      // POPULATE GIT INFO FOR REFERRED ENTITIES.
+      if (filterCreatorMergeService.doPublishSetupUsages(createdEntity)) {
+        populateGitInfoForReferredEntities(pipelineEntity, response);
+      }
+
       try {
         String branchInRequest = GitAwareContextHelper.getBranchInRequest();
         pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(createdEntity,
@@ -322,10 +335,19 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
       return optionalPipelineEntity;
     } else if (pipelineEntity.getStoreType() == StoreType.REMOTE && !loadFromCache) {
-      // In case of pipelines with GITX enabled
       try {
+        // GET REFERRED ENTITIES.
+        FilterCreationBlobResponse response = filterCreatorMergeService.getReferredEntitiesResponse(pipelineEntity);
+
+        // PUBLISHING SETUP USAGES.
         pipelineEntity =
             pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
+
+        // POPULATE GIT INFO FOR REFERRED ENTITIES.
+        if (filterCreatorMergeService.doPublishSetupUsages(pipelineEntity)) {
+          populateGitInfoForReferredEntities(pipelineEntity, response);
+        }
+
       } catch (IOException e) {
         throw new InvalidRequestException(
             "Failed to update the pipeline info for the gitX enabled pipeline while reloading from git.");
@@ -560,7 +582,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
             pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
       }
 
-      // UPDATING THE PIPELINE YAML.
+      // PIPELINE UPDATE FLOW.
       PipelineEntity updatedResult;
       if (isOldFlow) {
         updatedResult =
@@ -569,25 +591,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         updatedResult = pmsPipelineRepository.updatePipelineYaml(entityWithUpdatedInfo);
       }
 
-      // GET SCM GIT METADATA RESPONSE.
-      ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
-
-      String accountId = pipelineEntity.getAccountId();
-      String orgIdentifier = pipelineEntity.getOrgIdentifier();
-      String projectIdentifier = pipelineEntity.getProjectIdentifier();
-
-      IdentifierRef identifierRef = IdentifierRef.builder()
-                                        .accountIdentifier(accountId)
-                                        .orgIdentifier(orgIdentifier)
-                                        .projectIdentifier(projectIdentifier)
-                                        .identifier(pipelineEntity.getIdentifier())
-                                        .build();
-
-      // UPDATING THE GIT INFO DETAILS FOR THE REFERRED ENTITIES.
-      Boolean populateGitInfo =
-          NGRestUtils.getResponse(entitySetupUsageClient.populateGitInfoDetails(pipelineEntity.getAccountIdentifier(),
-              pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
-              identifierRef.getFullyQualifiedName(), EntityType.PIPELINES, gitMetaData));
+      // POPULATE GIT INFO FOR REFERRED ENTITIES.
+      if (filterCreatorMergeService.doPublishSetupUsages(pipelineEntity)) {
+        populateGitInfoForReferredEntities(pipelineEntity, response);
+      }
 
       if (updatedResult == null) {
         throw new InvalidRequestException(format(
@@ -611,6 +618,27 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       throw new InvalidRequestException(String.format(
           "Error while updating pipeline [%s]: %s", pipelineEntity.getIdentifier(), ExceptionUtils.getMessage(e)));
     }
+  }
+
+  public void populateGitInfoForReferredEntities(PipelineEntity pipelineEntity, FilterCreationBlobResponse response) {
+    // GET SCM GIT METADATA RESPONSE.
+    ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
+
+    String accountId = pipelineEntity.getAccountId();
+    String orgIdentifier = pipelineEntity.getOrgIdentifier();
+    String projectIdentifier = pipelineEntity.getProjectIdentifier();
+
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(accountId)
+                                      .orgIdentifier(orgIdentifier)
+                                      .projectIdentifier(projectIdentifier)
+                                      .identifier(pipelineEntity.getIdentifier())
+                                      .build();
+
+    // UPDATING THE GIT INFO DETAILS FOR THE REFERRED ENTITIES.
+    Boolean populateGitInfo = NGRestUtils.getResponse(entitySetupUsageClient.populateGitInfoDetails(
+        pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
+        identifierRef.getFullyQualifiedName(), EntityType.PIPELINES, gitMetaData));
   }
 
   @Override
@@ -740,11 +768,24 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     pipelineEntity.setRepoURL(repoUrl);
 
     try {
+      // GET REFERRED ENTITIES.
+      FilterCreationBlobResponse response = filterCreatorMergeService.getReferredEntitiesResponse(pipelineEntity);
+
+      // PUBLISHING SETUP USAGES.
       PipelineEntity entityWithUpdatedInfo =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineVersion);
+
+      // PIPELINE SAVE FLOW.
       PipelineEntity savedPipelineEntity =
           pmsPipelineRepository.savePipelineEntityForImportedYAML(entityWithUpdatedInfo);
+
+      // POPULATE GIT INFO FOR REFERRED ENTITIES.
+      if (filterCreatorMergeService.doPublishSetupUsages(pipelineEntity)) {
+        populateGitInfoForReferredEntities(pipelineEntity, response);
+      }
+
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(savedPipelineEntity, CREATING_PIPELINE);
+
       return savedPipelineEntity;
     } catch (DuplicateKeyException ex) {
       log.error(format(DUP_KEY_EXP_FORMAT_STRING, pipelineEntity.getIdentifier(), pipelineEntity.getProjectIdentifier(),
