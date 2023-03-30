@@ -39,6 +39,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
 
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
@@ -68,7 +69,7 @@ public class IACMStepsUtils {
   private Map<String, String> getStackVariables(Ambiance ambiance, String org, String projectId, String accountId,
       String stackID, String command, Stack stackInfo) {
     String pluginEnvPrefix = "PLUGIN_";
-    String tfEnvPrefix = "TF_";
+    String tfEnvPrefix = "TF_VARS_";
 
     StackVariables[] variables = getIACMStackVariables(org, projectId, accountId, stackID);
     HashMap<String, String> env = new HashMap<>();
@@ -150,22 +151,24 @@ public class IACMStepsUtils {
     createExecution(ambiance, stackInfo.getIdentifier(), workflow);
 
     String command = "";
-    switch (stepInfo.getUses().getValue()) {
+    TextNode operationTextNode = (TextNode) stepInfo.getSettings().get("operation");
+    String operation = operationTextNode.asText();
+    switch (operation) {
       case INITIALISE:
         command = INITIALISE;
         break;
       case EVALUATE:
         if (Objects.equals(workflow, TEARDOWN)) {
-          command = "plan-destroy";
+          command = "evaluate-plan-destroy";
         } else {
-          command = "plan";
+          command = "evaluate-plan";
         }
         break;
       case EXECUTE:
         if (Objects.equals(workflow, TEARDOWN)) {
-          command = "destroy";
+          command = "execute-destroy";
         } else {
-          command = "apply";
+          command = "execute-apply";
         }
         break;
       default:

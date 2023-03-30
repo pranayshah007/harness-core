@@ -218,6 +218,10 @@ if [[ "" != "$IACM_EXTERNAL_SERVICE_ENDPOINT" ]]; then
   export IACM_EXTERNAL_SERVICE_ENDPOINT; yq -i '.iacmServiceConfig.externalUrl=env(IACM_EXTERNAL_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
+  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$API_URL" ]]; then
   export API_URL; yq -i '.apiUrl=env(API_URL)' $CONFIG_FILE
 fi
@@ -245,6 +249,10 @@ fi
 
 if [[ "" != "$IACM_SERVICE_GLOBAL_TOKEN" ]]; then
   export IACM_SERVICE_GLOBAL_TOKEN; yq -i '.iacmServiceConfig.globalToken=env(IACM_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SSCA_SERVICE_GLOBAL_TOKEN" ]]; then
+  export SSCA_SERVICE_GLOBAL_TOKEN; yq -i '.sscaServiceConfig.globalToken=env(SSCA_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
