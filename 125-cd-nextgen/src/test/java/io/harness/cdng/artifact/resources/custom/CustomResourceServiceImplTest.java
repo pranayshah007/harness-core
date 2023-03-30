@@ -11,10 +11,14 @@ import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.data.algorithm.HashGenerator;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
@@ -46,6 +50,7 @@ public class CustomResourceServiceImplTest extends CategoryTest {
   @Mock ConnectorService connectorService;
   @Mock SecretManagerClientService secretManagerClientService;
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock CDFeatureFlagHelper cdFeatureFlagHelper;
   @Spy @InjectMocks CustomResourceServiceImpl customResourceService;
 
   @Before
@@ -65,6 +70,7 @@ public class CustomResourceServiceImplTest extends CategoryTest {
                 ArtifactTaskExecutionResponse.builder().buildDetails(Collections.singletonList(buildDetails)).build())
             .build();
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
+    when(cdFeatureFlagHelper.isEnabled(anyString(), eq(FeatureName.CDS_SSH_AGENT))).thenReturn(false);
 
     List<BuildDetails> customResourceServiceBuilds = customResourceService.getBuilds("script", "versionPath",
         "arrayPath", Collections.emptyMap(), ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER,

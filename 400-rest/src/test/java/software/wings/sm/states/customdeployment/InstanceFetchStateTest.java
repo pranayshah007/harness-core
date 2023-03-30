@@ -51,6 +51,7 @@ import static org.mockito.Mockito.when;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
@@ -59,6 +60,7 @@ import io.harness.delegate.beans.TaskData.TaskDataKeys;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.deployment.InstanceDetails;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
 
@@ -130,6 +132,7 @@ public class InstanceFetchStateTest extends WingsBaseTest {
   @Mock private ServiceTemplateService mockServiceTemplateService;
   @Mock private ServiceTemplateHelper serviceTemplateHelper;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private FeatureFlagService featureFlagService;
   @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
@@ -151,6 +154,7 @@ public class InstanceFetchStateTest extends WingsBaseTest {
     when(serviceTemplateHelper.fetchServiceTemplateId(any())).thenReturn(SERVICE_TEMPLATE_ID);
     when(environmentService.get(anyString(), anyString(), anyBoolean()))
         .thenReturn(anEnvironment().environmentType(PROD).build());
+    when(featureFlagService.isEnabled(eq(FeatureName.CDS_SSH_AGENT), anyString())).thenReturn(true);
 
     Key<ServiceTemplate> serviceTemplateKey = new Key<>(ServiceTemplate.class, "collection", "id");
     doReturn(singletonList(serviceTemplateKey))
@@ -215,6 +219,7 @@ public class InstanceFetchStateTest extends WingsBaseTest {
             .commandUnit(CommandUnitType.CUSTOM_DEPLOYMENT_FETCH_INSTANCES.getName())
             .outputPathKey(OUTPUT_PATH_KEY)
             .workflowExecutionId(context.getWorkflowExecutionId())
+            .useSshAgent(true)
             .build();
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);

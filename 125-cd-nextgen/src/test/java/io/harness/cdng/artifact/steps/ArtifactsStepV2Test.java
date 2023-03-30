@@ -33,6 +33,7 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.CDStepHelper;
@@ -82,6 +83,7 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
+import io.harness.ff.FeatureFlagService;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.NGLogCallback;
@@ -100,6 +102,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -119,6 +122,7 @@ import io.harness.template.remote.TemplateResourceClient;
 import software.wings.beans.SerializationFormat;
 
 import com.google.common.io.Resources;
+import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -160,7 +164,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @InjectMocks private ArtifactsStepV2 step = new ArtifactsStepV2();
-  private final ArtifactStepHelper stepHelper = new ArtifactStepHelper();
+  @InjectMocks private final ArtifactStepHelper stepHelper = new ArtifactStepHelper();
   @Mock private ConnectorService connectorService;
   @Mock private SecretManagerClientService secretManagerClientService;
 
@@ -168,6 +172,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
   @Mock private SecretManagerClientService ngSecretService;
   @Mock ExceptionManager exceptionManager;
+  @Mock FeatureFlagService featureFlagService;
 
   private final EmptyStepParameters stepParameters = new EmptyStepParameters();
   private final StepInputPackage inputPackage = StepInputPackage.builder().build();
@@ -218,6 +223,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     doCallRealMethod()
         .when(cdStepHelper)
         .mapTaskRequestToDelegateTaskRequest(any(), any(), anySet(), anyString(), anyBoolean());
+    doReturn(false).when(featureFlagService).isEnabled(eq(FeatureName.CDS_SSH_AGENT), anyString());
 
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(1, String.class))
         .when(expressionResolver)
