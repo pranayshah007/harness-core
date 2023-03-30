@@ -23,8 +23,8 @@ public class AppConfigMapper {
     appConfig.setConfigs(appConfigEntity.getConfigs());
     appConfig.setEnabled(appConfigEntity.getEnabled());
     appConfig.setEnabledDisabledAt(appConfigEntity.getEnabledDisabledAt());
-    appConfig.setCreatedAt(appConfigEntity.getCreatedAt());
-    appConfig.setLastModifiedAt(appConfigEntity.getLastModifiedAt());
+    appConfig.setCreated(appConfigEntity.getCreatedAt());
+    appConfig.setUpdated(appConfigEntity.getLastModifiedAt());
     return appConfig;
   }
 
