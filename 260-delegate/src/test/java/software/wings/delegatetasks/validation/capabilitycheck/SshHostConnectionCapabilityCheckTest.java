@@ -15,8 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -38,7 +36,6 @@ import io.harness.ng.core.dto.secrets.TGTPasswordSpecDTO;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.shell.SshSessionConfig;
 
 import software.wings.WingsBaseTest;
 
@@ -89,7 +86,6 @@ public class SshHostConnectionCapabilityCheckTest extends WingsBaseTest {
                         .password(SecretRefData.builder().decryptedValue(DECRYPTED_PASSWORD_VALUE).build())
                         .build());
 
-    doReturn(mockSession).when(spyCapabilityCheck).connect(any(SshSessionConfig.class));
     CapabilityResponse capabilityResponse = spyCapabilityCheck.performCapabilityCheck(capability);
     assertThat(capabilityResponse).isNotNull();
     assertThat(capabilityResponse.isValidated()).isTrue();
@@ -119,7 +115,6 @@ public class SshHostConnectionCapabilityCheckTest extends WingsBaseTest {
                         .password(SecretRefData.builder().decryptedValue(DECRYPTED_PASSWORD_VALUE).build())
                         .build());
 
-    doReturn(mockSession).when(spyCapabilityCheck).connect(any(SshSessionConfig.class));
     CapabilityResponse capabilityResponse = spyCapabilityCheck.performCapabilityCheck(capability);
     assertThat(capabilityResponse).isNotNull();
     assertThat(capabilityResponse.isValidated()).isTrue();
@@ -152,7 +147,6 @@ public class SshHostConnectionCapabilityCheckTest extends WingsBaseTest {
     when(secretDecryptionService.decrypt(any(), any()))
         .thenReturn(TGTKeyTabFilePathSpecDTO.builder().keyPath("path").build());
 
-    doReturn(mockSession).when(spyCapabilityCheck).connect(any(SshSessionConfig.class));
     CapabilityResponse capabilityResponse = spyCapabilityCheck.performCapabilityCheck(capability);
     assertThat(capabilityResponse).isNotNull();
     assertThat(capabilityResponse.isValidated()).isTrue();
@@ -214,7 +208,6 @@ public class SshHostConnectionCapabilityCheckTest extends WingsBaseTest {
                         .password(SecretRefData.builder().decryptedValue(DECRYPTED_PASSWORD_VALUE).build())
                         .build());
 
-    doThrow(new RuntimeException()).when(spyCapabilityCheck).connect(any(SshSessionConfig.class));
     CapabilityResponse capabilityResponse = spyCapabilityCheck.performCapabilityCheck(capability);
     assertThat(capabilityResponse).isNotNull();
     assertThat(capabilityResponse.isValidated()).isFalse();

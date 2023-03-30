@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.shell.ssh.agent;
+package io.harness.shell.ssh.client;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
@@ -16,7 +16,7 @@ import io.harness.logging.LogCallback;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.connection.ExecRequest;
 import io.harness.shell.ssh.connection.ExecResponse;
-import io.harness.shell.ssh.connection.TestResponse;
+import io.harness.shell.ssh.exception.SshClientException;
 import io.harness.shell.ssh.sftp.SftpRequest;
 import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.shell.ssh.xfer.ScpRequest;
@@ -63,16 +63,14 @@ public abstract class SshClient {
     return Arrays.copyOf(sshSessionConfig.getKey(), sshSessionConfig.getKey().length);
   }
 
-  public abstract ExecResponse exec(ExecRequest commandData);
-  public abstract TestResponse test();
-  public abstract ScpResponse scpUpload(ScpRequest commandData);
-
-  public abstract SftpResponse sftpUpload(SftpRequest commandData);
-
-  protected abstract Object getClient();
-  protected abstract Object getExecSession(SshConnection sshConnection);
-  protected abstract Object getSftpSession(SshConnection sshConnection);
-  protected abstract void configureProxy();
+  public abstract ExecResponse exec(ExecRequest commandData) throws SshClientException;
+  public abstract void testSession() throws SshClientException;
+  public abstract void testConnection() throws SshClientException;
+  public abstract ScpResponse scpUpload(ScpRequest commandData) throws SshClientException;
+  public abstract SftpResponse sftpUpload(SftpRequest commandData) throws SshClientException;
+  public abstract Object getConnection() throws SshClientException;
+  protected abstract Object getExecSession(SshConnection sshConnection) throws SshClientException;
+  protected abstract Object getSftpSession(SshConnection sshConnection) throws SshClientException;
   protected String getKeyPath() {
     String userhome = System.getProperty("user.home");
     String keyPath = userhome + File.separator + ".ssh" + File.separator + "id_rsa";

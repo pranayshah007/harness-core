@@ -5,18 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.shell.ssh.connection;
+package io.harness.shell.ssh.client.jsch;
 
-import io.harness.eraro.ErrorCode;
-import io.harness.logging.CommandExecutionStatus;
+import io.harness.shell.ssh.client.SshSession;
 
+import com.jcraft.jsch.ChannelSftp;
 import lombok.Builder;
 import lombok.Getter;
 
 @Builder
 @Getter
-public class TestResponse {
-  private CommandExecutionStatus status;
-  private String error;
-  private ErrorCode errorCode;
+public class JschSftpSession extends SshSession {
+  private ChannelSftp channel;
+  @Override
+  public void close() throws Exception {
+    channel.disconnect();
+  }
 }

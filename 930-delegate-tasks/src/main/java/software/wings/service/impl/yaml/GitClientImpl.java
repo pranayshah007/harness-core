@@ -24,7 +24,6 @@ import static io.harness.logging.LogLevel.INFO;
 import static io.harness.shell.AuthenticationScheme.HTTP_PASSWORD;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshSessionFactory.generateTGTUsingSshConfig;
-import static io.harness.shell.SshSessionFactory.getSSHSession;
 
 import static software.wings.beans.yaml.YamlConstants.GIT_DEFAULT_LOG_PREFIX;
 import static software.wings.beans.yaml.YamlConstants.GIT_HELM_LOG_PREFIX;
@@ -61,6 +60,9 @@ import io.harness.git.model.GitRepositoryType;
 import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
+import io.harness.shell.ssh.SshFactory;
+import io.harness.shell.ssh.client.jsch.JschConnection;
+import io.harness.shell.ssh.exception.SshClientException;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
@@ -81,7 +83,6 @@ import software.wings.service.intfc.yaml.GitClient;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -1321,10 +1322,10 @@ public class GitClientImpl implements GitClient {
   private SshSessionFactory getSshSessionFactory(SettingAttribute settingAttribute) {
     return new JschConfigSessionFactory() {
       @Override
-      protected Session createSession(Host hc, String user, String host, int port, FS fs) throws JSchException {
+      protected Session createSession(Host hc, String user, String host, int port, FS fs) throws SshClientException {
         SshSessionConfig sshSessionConfig = createSshSessionConfig(settingAttribute, host);
         sshSessionConfig.setPort(port); // use port from repo URL
-        return getSSHSession(sshSessionConfig);
+        return ((JschConnection) SshFactory.getSshClient(sshSessionConfig).getConnection()).getSession();
       }
 
       @Override

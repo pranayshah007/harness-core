@@ -10,7 +10,6 @@ package io.harness.connector.service.git;
 import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 import static io.harness.git.Constants.DEFAULT_FETCH_IDENTIFIER;
 import static io.harness.git.model.GitRepositoryType.YAML;
-import static io.harness.shell.SshSessionFactory.getSSHSession;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -30,6 +29,8 @@ import io.harness.git.model.GitBaseRequest;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.git.model.JgitSshAuthRequest;
 import io.harness.shell.SshSessionConfig;
+import io.harness.shell.ssh.SshFactory;
+import io.harness.shell.ssh.client.jsch.JschConnection;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -98,7 +99,7 @@ public class NGGitServiceImpl implements NGGitService {
           throws JSchException {
         sshSessionConfig.setPort(port); // use port from repo URL
         sshSessionConfig.setHost(host);
-        return getSSHSession(sshSessionConfig);
+        return ((JschConnection) SshFactory.getSshClient(sshSessionConfig).getConnection()).getSession();
       }
 
       @Override

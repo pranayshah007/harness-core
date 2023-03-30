@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.shell.ssh.agent.jsch;
+package io.harness.shell.ssh.client.jsch;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.ERROR_IN_GETTING_CHANNEL_STREAMS;
@@ -36,12 +36,12 @@ import io.harness.network.Http;
 import io.harness.security.EncryptionUtils;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshUserInfo;
-import io.harness.shell.ssh.agent.SshClient;
-import io.harness.shell.ssh.agent.SshConnection;
+import io.harness.shell.ssh.client.SshClient;
+import io.harness.shell.ssh.client.SshConnection;
 import io.harness.shell.ssh.connection.ExecRequest;
 import io.harness.shell.ssh.connection.ExecResponse;
-import io.harness.shell.ssh.connection.TestResponse;
-import io.harness.shell.ssh.exception.SshException;
+import io.harness.shell.ssh.exception.JschClientException;
+import io.harness.shell.ssh.exception.SshClientException;
 import io.harness.shell.ssh.sftp.SftpRequest;
 import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.shell.ssh.xfer.ScpRequest;
@@ -83,7 +83,7 @@ public class JschClient extends SshClient {
     StringBuffer output = new StringBuffer();
     CommandExecutionStatus commandExecutionStatus = FAILURE;
 
-    try (SshConnection client = getClient()) {
+    try (SshConnection client = getConnection()) {
       try (JschExecSession session = getExecSession(client)) {
         ChannelExec channel = session.getChannel();
         // Allocate a Pseudo-Terminal.
@@ -119,7 +119,7 @@ public class JschClient extends SshClient {
               totalBytesRead += numOfBytesRead;
               if (totalBytesRead >= MAX_BYTES_READ_PER_CHANNEL) {
                 // TODO: better error reporting
-                throw new SshException(UNKNOWN_ERROR);
+                throw new JschClientException(UNKNOWN_ERROR);
               }
               String dataReadFromTheStream = new String(byteBuffer, 0, numOfBytesRead, UTF_8);
               output.append(dataReadFromTheStream);
@@ -163,7 +163,7 @@ public class JschClient extends SshClient {
 
   @Override
   public SftpResponse sftpUpload(SftpRequest commandData) {
-    try (JschConnection client = getClient()) {
+    try (JschConnection client = getConnection()) {
       try (JschSftpSession session = getSftpSession(client)) {
         ChannelSftp channel = session.getChannel();
         channel.cd(commandData.getDirectory());
@@ -187,17 +187,30 @@ public class JschClient extends SshClient {
   }
 
   @Override
-  public TestResponse test() {
-    try (JschConnection client = getClient()) {
+  public void testConnection() {
+    try (JschConnection ignored = getConnection()) {
+    } catch (JSchException ex) {
+      log.error("Failed to connect Host. ", ex);
+      ErrorCode errorCode = normalizeError(ex);
+      throw new JschClientException(errorCode, errorCode.getDescription(), ex);
+    } catch (Exception exception) {
+      log.error("Failed to connect Host. ", exception);
+      throw new JschClientException(exception.getMessage(), exception);
+    }
+  }
+
+  @Override
+  public void testSession() {
+    try (JschConnection client = getConnection()) {
       try (JschExecSession ignored = getExecSession(client)) {
-        return TestResponse.builder().status(SUCCESS).build();
       }
     } catch (JSchException ex) {
       log.error("Failed to validate Host: ", ex);
       ErrorCode errorCode = normalizeError(ex);
-      return TestResponse.builder().status(FAILURE).errorCode(errorCode).error(errorCode.getDescription()).build();
+      throw new JschClientException(errorCode, errorCode.getDescription(), ex);
     } catch (Exception exception) {
-      return TestResponse.builder().status(FAILURE).error(exception.getMessage()).build();
+      log.error("Failed to connect Host. ", exception);
+      throw new JschClientException(exception.getMessage(), exception);
     }
   }
 
@@ -231,7 +244,7 @@ public class JschClient extends SshClient {
       String command = format(
           "mkdir -p \"%s\" && scp -r -d -t '%s'", commandData.getRemoteFilePath(), commandData.getRemoteFilePath());
 
-      try (JschConnection client = getClient()) {
+      try (JschConnection client = getConnection()) {
         try (JschExecSession session = getExecSession(client)) {
           ChannelExec channel = session.getChannel();
           channel.setCommand(command);
@@ -283,7 +296,7 @@ public class JschClient extends SshClient {
               saveExecutionLogError("Command execution failed with error " + normalizeError((JSchException) ex));
             }
           } else {
-            throw new SshException(ERROR_IN_GETTING_CHANNEL_STREAMS, ex);
+            throw new JschClientException(ERROR_IN_GETTING_CHANNEL_STREAMS, ex);
           }
           return ScpResponse.builder().status(commandExecutionStatus).success(false).exitCode(1).build();
         }
@@ -416,7 +429,7 @@ public class JschClient extends SshClient {
   }
 
   @Override
-  protected JschConnection getClient() {
+  public JschConnection getConnection() throws SshClientException {
     Session session = getJschSession();
     return JschConnection.builder().session(session).build();
   }
@@ -427,7 +440,7 @@ public class JschClient extends SshClient {
       ChannelExec execChannel = (ChannelExec) ((JschConnection) sshConnection).getSession().openChannel("exec");
       return JschExecSession.builder().channel(execChannel).build();
     } catch (Exception ex) {
-      throw new SshException("Failed to get sessions");
+      throw new JschClientException("Failed to get sessions");
     }
   }
 
@@ -437,33 +450,30 @@ public class JschClient extends SshClient {
       ChannelSftp sftpChannel = (ChannelSftp) ((JschConnection) sshConnection).getSession().openChannel("sftp");
       return JschSftpSession.builder().channel(sftpChannel).build();
     } catch (Exception ex) {
-      throw new SshException("Failed to get sessions");
+      throw new JschClientException("Failed to get sessions");
     }
   }
 
-  @Override
-  protected void configureProxy() {}
-
-  public Session getJschSession() {
+  private Session getJschSession() {
     SshSessionConfig config = getSshSessionConfig();
 
     try {
       switch (config.getExecutorType()) {
         case PASSWORD_AUTH:
         case KEY_AUTH:
-          return getSSHSession(config);
+          return getSSHSessionWithRetry(config);
         case BASTION_HOST:
           return getSSHSessionWithJumpbox(config.getBastionHostConfig());
         default:
-          throw new SshException(
+          throw new JschClientException(
               UNKNOWN_EXECUTOR_TYPE_ERROR, new Throwable("Unknown executor type: " + config.getExecutorType()));
       }
     } catch (JSchException jschEx) {
-      throw new SshException(normalizeError(jschEx), normalizeError(jschEx).name(), jschEx);
+      throw new JschClientException(normalizeError(jschEx), normalizeError(jschEx).name(), jschEx);
     }
   }
 
-  public Session getSSHSession(SshSessionConfig config) throws JSchException {
+  private Session getSSHSessionWithRetry(SshSessionConfig config) throws JSchException {
     Session session = null;
     int retryCount = 0;
     while (retryCount <= 6 && session == null) {
@@ -484,7 +494,7 @@ public class JschClient extends SshClient {
     return session;
   }
 
-  public Session fetchSSHSession(SshSessionConfig config, LogCallback logCallback) throws JSchException {
+  private Session fetchSSHSession(SshSessionConfig config, LogCallback logCallback) throws JSchException {
     JSch jsch = new JSch();
     log.info("[SshSessionFactory]: SSHSessionConfig is : {}", config);
     Session session;
@@ -591,7 +601,7 @@ public class JschClient extends SshClient {
   }
 
   public Session getSSHSessionWithJumpbox(SshSessionConfig config) throws JSchException {
-    Session jumpboxSession = getSSHSession(config);
+    Session jumpboxSession = getSSHSessionWithRetry(config);
     int forwardingPort = jumpboxSession.setPortForwardingL(0, config.getHost(), config.getPort());
     log.info("portforwarding port " + forwardingPort);
     getLogCallback().saveExecutionLog("portforwarding port " + forwardingPort);
@@ -605,6 +615,6 @@ public class JschClient extends SshClient {
                                      .withUseSshj(config.isUseSshj())
                                      .withUseSshClient(config.isUseSshClient())
                                      .build();
-    return getSSHSession(newConfig);
+    return getSSHSessionWithRetry(newConfig);
   }
 }
