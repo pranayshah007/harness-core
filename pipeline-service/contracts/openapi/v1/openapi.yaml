@@ -8,13 +8,15 @@ info:
   contact:
     email: contact@harness.io
 servers:
-  - url: 'https://api.harness.io'
+  - url: 'https://app.harness.io'
     description: Harness host URL.
 tags:
   - name: Pipelines
     description: This contains APIs for performing CRUD operations on Pipelines.
+    x-displayName: Pipelines [Beta]
   - name: Input Sets
     description: This contains APIs for Input Sets.
+    x-displayName: Input Sets [Beta]
 paths:
   '/v1/orgs/{org}/projects/{project}/pipelines':
     parameters:

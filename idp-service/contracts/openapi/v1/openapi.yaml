@@ -10,7 +10,7 @@ info:
     email: contact@harness.io
     url: 'https://harness.io/'
 servers:
-  - url: 'https://api.harness.io'
+  - url: 'https://app.harness.io'
 paths:
   /v1/backstage-env-variables:
     get:
