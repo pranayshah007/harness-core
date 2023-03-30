@@ -87,7 +87,6 @@ import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
-import io.harness.template.services.TemplateRbacHelper;
 import io.harness.template.services.TemplateVariableCreatorFactory;
 import io.harness.template.services.TemplateVariableCreatorService;
 import io.harness.template.utils.TemplateUtils;
@@ -179,7 +178,6 @@ public class NGTemplateResource {
   private final VariablesServiceBlockingStub variablesServiceBlockingStub;
   private final TemplateYamlConversionHelper templateYamlConversionHelper;
   private final TemplateReferenceHelper templateReferenceHelper;
-  private TemplateRbacHelper templateRbacHelper;
   @Inject CustomDeploymentResourceClient customDeploymentResourceClient;
   @Inject TemplateVariableCreatorFactory templateVariableCreatorFactory;
 
