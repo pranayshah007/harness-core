@@ -982,10 +982,46 @@ components:
           type: string
           x-stoplight:
             id: 4arnqctb1wfyl
+        description:
+          type: string
+          x-stoplight:
+            id: ql3oqpkls4fft
+        category:
+          type: string
+          x-stoplight:
+            id: ql3oqpkls4fft
+          enum:
+            - Monitoring
+            - CI/CD
+            - Security
+            - Source Control Mgmt
+        source:
+          type: string
+          x-stoplight:
+            id: 4arnqctb1wfyl
+        image_url:
+          type: string
+          x-stoplight:
+            id: 93hv7yj3dpbnu
+        core:
+          type: boolean
+          x-stoplight:
+            id: m6jhd4hiady4t
         enabled:
           type: boolean
           x-stoplight:
             id: 6opetnwiiai53
+      required:
+        - id
+        - name
+        - created_by
+        - icon_url
+        - description
+        - category
+        - source
+        - image_url
+        - core
+        - enabled
     PluginInfoResponse:
       title: PluginInfoResponse
       x-stoplight:
@@ -1016,30 +1052,18 @@ components:
           $ref: '#/components/schemas/PluginInfo'
           x-stoplight:
             id: zfeuzsbo3e90v
-        description:
-          type: string
-          x-stoplight:
-            id: ql3oqpkls4fft
-        category:
-          type: string
-          x-stoplight:
-            id: ql3oqpkls4fft
-          enum:
-            - Monitoring
-            - CI/CD
-            - Security
-        source:
-          type: string
-          x-stoplight:
-            id: 4arnqctb1wfyl
         config:
           type: string
           x-stoplight:
             id: 4arnqctb1wfyl
-        layout:
-          type: object
+        exports:
+          $ref: '#/components/schemas/Exports'
           x-stoplight:
             id: ns1ky9089aalt
+      required:
+        - plugin_details
+        - config
+        - exports
     ManualImportEntityRequest:
       title: ManualImportEntityRequest
       x-stoplight:
@@ -1164,6 +1188,28 @@ components:
           $ref: '#/components/schemas/ConnectorDetails'
           x-stoplight:
             id: ictqwjgoxe2bc
+    Exports:
+      title: Exports
+      x-stoplight:
+        id: qxll6vxpyv7r3
+      type: object
+      properties:
+        pages:
+          type: integer
+          x-stoplight:
+            id: z84hfxygvrde5
+        tab_contents:
+          type: integer
+          x-stoplight:
+            id: xsao98zphpvue
+        cards:
+          type: integer
+          x-stoplight:
+            id: ksifiqe7f9p5w
+      required:
+        - pages
+        - tab_contents
+        - cards
     MergedPluginConfigs:
       title: MergedPluginConfigs
       x-stoplight:
@@ -1271,6 +1317,7 @@ components:
           - pager-duty
           - snyk-security
           - harness-ci-cd
+          - github-pull-requests-board
     PluginName:
       name: PluginId
       in: query

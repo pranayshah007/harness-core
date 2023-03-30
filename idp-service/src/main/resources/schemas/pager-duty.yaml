@@ -5,19 +5,12 @@ createdBy: Spotify
 category: Monitoring
 source: https://github.com/backstage/backstage/tree/master/plugins/pagerduty
 iconUrl: https://avatars2.githubusercontent.com/u/766800?s=200&v=4
-layout:
-  imageUrl: ''
-  packageName: ''
-  exports:
-    - type: card
-      component: <EntityPagerduty />
-      defaultEntityTypes: []
-      addByDefault: boolean
-    - type: tab
-      component: <EntityTab />
-      defaultEntityTypes: []
-    - type: page
-      component: EntityPage
-      defaultMountPage?: /pagerduty
-    - type: conditional
-      component: isPagerdutyAvailable
+imageUrl: ''
+exports:
+  defaultEntityTypes:
+    - component
+    - service
+  exportDetails:
+    - type: CARD
+      name: EntityPagerDutyCard
+      addByDefault: true

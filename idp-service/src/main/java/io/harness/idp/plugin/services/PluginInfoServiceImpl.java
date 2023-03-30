@@ -76,6 +76,11 @@ public class PluginInfoServiceImpl implements PluginInfoService {
     });
   }
 
+  @Override
+  public void deleteAllPluginInfo() {
+    pluginInfoRepository.deleteAll();
+  }
+
   public void savePluginInfo(String identifier) throws Exception {
     String schema = FileUtils.readFile(SCHEMA_FOLER, identifier, YAML_EXT);
     String config = FileUtils.readFile(CONFIGS_FOLER, identifier, YAML_EXT);
