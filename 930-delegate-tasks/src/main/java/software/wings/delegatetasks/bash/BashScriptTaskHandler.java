@@ -36,6 +36,7 @@ public class BashScriptTaskHandler {
 
     final ScriptProcessExecutor executor = shellExecutorFactory.getExecutor(executorConfig);
 
+    // useSshAgent is false as no one creates ShellScriptTaskParametersNG
     return executor.executeCommandString(
         parameters.getScript(), parameters.getOutputVars(), parameters.getSecretOutputVars(), null, false);
   }

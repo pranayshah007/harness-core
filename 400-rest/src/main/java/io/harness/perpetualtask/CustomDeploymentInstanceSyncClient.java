@@ -14,6 +14,7 @@ import static software.wings.sm.states.customdeployment.InstanceFetchState.OUTPU
 
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
+import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.TaskData;
 import io.harness.ff.FeatureFlagService;
 import io.harness.perpetualtask.instancesync.CustomDeploymentInstanceSyncTaskParams;
@@ -102,7 +103,7 @@ public class CustomDeploymentInstanceSyncClient implements PerpetualTaskServiceC
             .outputPathKey(OUTPUT_PATH_KEY)
             .workflowExecutionId("test-execution-id")
             .activityId(generateUuid())
-            .useSshAgent(false)
+            .useSshAgent(featureFlagService.isEnabled(FeatureName.CDS_SSH_AGENT, accountId))
             .build();
     return DelegateTask.builder()
         .accountId(accountId)
