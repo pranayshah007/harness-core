@@ -8,6 +8,7 @@
 package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
@@ -24,6 +25,7 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.configuration.KubernetesCliCommandType;
@@ -38,6 +40,8 @@ import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesCliTaskRuntimeException;
 import io.harness.filesystem.FileIo;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
+import io.harness.k8s.KubernetesReleaseDetails;
 import io.harness.k8s.ProcessResponse;
 import io.harness.k8s.kubectl.ApplyCommand;
 import io.harness.k8s.kubectl.Kubectl;
@@ -45,6 +49,7 @@ import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.logging.LogCallback;
 
 import software.wings.beans.LogWeight;
@@ -108,7 +113,23 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
     this.kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
         request.getK8sInfraDelegateConfig(), executionLogCallback);
     this.client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
-    List<String> manifestOverrideFiles = getManifestOverrideFlies(request);
+
+    KubernetesReleaseDetails releaseDetails = null;
+    // For backward compatibility if delegate is released before ng-manager
+    if (request.getUseDeclarativeRollback() != null) {
+      K8sReleaseHandler releaseHandler = k8sTaskHelperBase.getReleaseHandler(request.getUseDeclarativeRollback());
+      IK8sReleaseHistory releaseHistory = releaseHandler.getReleaseHistory(kubernetesConfig, releaseName);
+      int currentReleaseNumber = releaseHistory.getNextReleaseNumber(request.isInCanaryWorkflow());
+      if (request.getUseDeclarativeRollback() && isEmpty(releaseHistory) && !request.isInCanaryWorkflow()) {
+        currentReleaseNumber =
+            k8sTaskHelperBase.getNextReleaseNumberFromOldReleaseHistory(kubernetesConfig, releaseName);
+      }
+
+      releaseDetails = KubernetesReleaseDetails.builder().releaseNumber(currentReleaseNumber).build();
+    }
+
+    List<String> manifestOverrideFiles =
+        getManifestOverrideFlies(request, releaseDetails != null ? releaseDetails.toContextMap() : emptyMap());
 
     this.resources =
         k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams, manifestOverrideFiles,

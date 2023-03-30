@@ -26,6 +26,7 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -169,7 +170,7 @@ public class K8sDeleteRequestHandler extends K8sRequestHandler {
         deleteFilePaths.forEach(each -> sb.append(color(format("- %s", each), Gray)).append(System.lineSeparator()));
         executionLogCallback.saveExecutionLog(sb.toString());
 
-        List<String> manifestOverrideFiles = getManifestOverrideFlies(k8sDeleteRequest);
+        List<String> manifestOverrideFiles = getManifestOverrideFlies(k8sDeleteRequest, emptyMap());
 
         resources = k8sTaskHelperBase.getResourcesFromManifests(k8sDelegateTaskParams,
             k8sDeleteRequest.getManifestDelegateConfig(), manifestFilesDirectory, deleteFilePaths,

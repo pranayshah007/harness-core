@@ -43,6 +43,7 @@ import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.k8s.K8sCliCommandType;
 import io.harness.k8s.K8sCommandFlagsUtils;
+import io.harness.k8s.KubernetesReleaseDetails;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
@@ -181,7 +182,10 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
     applyFilePaths.forEach(each -> sb.append(color(format("- %s", each), Gray)).append(System.lineSeparator()));
     logCallback.saveExecutionLog(sb.toString());
 
-    List<String> manifestOverrideFiles = getManifestOverrideFlies(request);
+    // To be defined a better logic to detect release number
+    KubernetesReleaseDetails releaseDetails = KubernetesReleaseDetails.builder().releaseNumber(1).build();
+
+    List<String> manifestOverrideFiles = getManifestOverrideFlies(request, releaseDetails.toContextMap());
 
     k8sApplyHandlerConfig.setResources(
         k8sTaskHelperBase.getResourcesFromManifests(k8sDelegateTaskParams, request.getManifestDelegateConfig(),

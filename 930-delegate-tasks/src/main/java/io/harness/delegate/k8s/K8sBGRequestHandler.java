@@ -58,12 +58,15 @@ import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sCliCommandType;
 import io.harness.k8s.K8sCommandFlagsUtils;
 import io.harness.k8s.KubernetesContainerService;
+import io.harness.k8s.KubernetesReleaseDetails;
+import io.harness.k8s.KubernetesReleaseDetails.KubernetesReleaseDetailsBuilder;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HarnessAnnotations;
+import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
@@ -266,7 +269,19 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     k8sTaskHelperBase.deleteSkippedManifestFiles(manifestFilesDirectory, executionLogCallback);
 
-    List<String> manifestOverrideFiles = getManifestOverrideFlies(request);
+    KubernetesReleaseDetailsBuilder releaseBuilder =
+        KubernetesReleaseDetails.builder().releaseNumber(currentReleaseNumber);
+
+    if (useDeclarativeRollback) {
+      IK8sRelease latestRelease = releaseHistory.getLatestRelease();
+      if (latestRelease == null) {
+        releaseBuilder.color(HarnessLabelValues.colorDefault);
+      } else {
+        releaseBuilder.color(k8sBGBaseHandler.getInverseColor(latestRelease.getReleaseColor()));
+      }
+    }
+
+    List<String> manifestOverrideFiles = getManifestOverrideFlies(request, releaseBuilder.build().toContextMap());
 
     List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplate(k8sDelegateTaskParams,
         request.getManifestDelegateConfig(), manifestFilesDirectory, manifestOverrideFiles, releaseName,

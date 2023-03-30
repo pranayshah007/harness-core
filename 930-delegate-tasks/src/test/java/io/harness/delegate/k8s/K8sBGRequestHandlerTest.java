@@ -66,6 +66,7 @@ import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.KubernetesYamlException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.KubernetesContainerService;
+import io.harness.k8s.KubernetesReleaseDetails;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
@@ -114,6 +115,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   @Mock K8sInfraDelegateConfig k8sInfraDelegateConfig;
   @Mock K8sReleaseHandler releaseHandler;
   @Mock IK8sReleaseHistory releaseHistory;
+  @Mock K8sRelease release;
 
   @Spy @InjectMocks K8sBGBaseHandler k8sBGBaseHandler;
   @Spy @InjectMocks K8sBGRequestHandler k8sBGRequestHandler;
@@ -121,13 +123,11 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   K8sDelegateTaskParams k8sDelegateTaskParams;
   CommandUnitsProgress commandUnitsProgress;
   final String workingDirectory = "/tmp";
-  private K8sRelease release;
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
 
-    release = K8sRelease.builder().releaseSecret(new V1Secret()).build();
     k8sDelegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
     commandUnitsProgress = CommandUnitsProgress.builder().build();
 
@@ -160,6 +160,9 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), anyString());
     doReturn(10).when(releaseHistory).getAndIncrementLastReleaseNumber();
     doReturn(release).when(releaseHandler).createRelease(any(), anyInt());
+    doReturn(release).when(releaseHistory).getLatestRelease();
+    doReturn(HarnessLabelValues.colorDefault).when(release).getReleaseColor();
+    doReturn(new V1Secret()).when(release).getReleaseSecret();
   }
 
   @Test
@@ -200,6 +203,13 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     assertThat(bgDeployResponse.getPrimaryServiceName()).isEqualTo("my-service");
     assertThat(bgDeployResponse.getStageServiceName()).isEqualTo("my-service-stage");
     assertThat(bgDeployResponse.getK8sPodList()).isEqualTo(deployedPods);
+    verify(k8sBGRequestHandler)
+        .getManifestOverrideFlies(k8sBGDeployRequest,
+            KubernetesReleaseDetails.builder()
+                .releaseNumber(10)
+                .color(k8sBGBaseHandler.getInverseColor(HarnessLabelValues.colorDefault))
+                .build()
+                .toContextMap());
   }
 
   @Test
@@ -251,6 +261,9 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
 
     verify(legacyRelease).setManagedWorkload(any());
     verify(legacyRelease, times(2)).setManagedWorkloadRevision(any());
+    verify(k8sBGRequestHandler)
+        .getManifestOverrideFlies(
+            k8sBGDeployRequest, KubernetesReleaseDetails.builder().releaseNumber(1).build().toContextMap());
   }
 
   @Test
