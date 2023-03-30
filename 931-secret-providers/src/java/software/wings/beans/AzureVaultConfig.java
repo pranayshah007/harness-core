@@ -75,7 +75,7 @@ public class AzureVaultConfig extends SecretManagerConfig {
 
   @Attributes(title = "Azure Tenant Id") private String tenantId;
 
-  @Attributes(title = "Azure Vault Name") private String vaultName;
+  @Attributes(title = "Azure Vault Name", required = true) private String vaultName;
 
   @Attributes(title = "Subscription") private String subscription;
 

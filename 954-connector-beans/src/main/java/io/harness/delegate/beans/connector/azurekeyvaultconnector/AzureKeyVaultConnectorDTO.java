@@ -18,7 +18,6 @@ import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
 import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
@@ -57,7 +56,7 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
   private SecretRefData secretKey;
   @Schema(description = "The Azure Active Directory (AAD) directory ID where you created your application.")
   private String tenantId;
-  @Schema(description = "The Azure Vault name") private String vaultName;
+  @NotNull @Schema(description = "The Azure Vault name") private String vaultName;
   @NotNull @Schema(description = "Azure Subscription ID.") private String subscription;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
 
@@ -78,6 +77,7 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
   @Override
   public void validate() {
     Preconditions.checkNotNull(this.subscription, "subscription cannot be empty");
+    Preconditions.checkNotNull(this.vaultName, "vaultName cannot be empty");
     if (BooleanUtils.isTrue(useManagedIdentity)) {
       Preconditions.checkNotNull(this.azureManagedIdentityType, "managedIdentityType cannot be empty");
       if (AzureManagedIdentityType.USER_ASSIGNED_MANAGED_IDENTITY.equals(this.azureManagedIdentityType)) {
@@ -86,7 +86,7 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
     } else {
       Preconditions.checkNotNull(this.clientId, "clientId cannot be empty");
       Preconditions.checkNotNull(this.tenantId, "tenantId cannot be empty");
-      Preconditions.checkNotNull(this.vaultName, "vaultName cannot be empty");
+      Preconditions.checkNotNull(this.secretKey, "secretKey cannot be empty");
     }
   }
 }
