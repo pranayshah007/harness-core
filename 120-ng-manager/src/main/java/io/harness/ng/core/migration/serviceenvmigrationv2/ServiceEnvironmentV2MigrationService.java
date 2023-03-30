@@ -362,11 +362,10 @@ public class ServiceEnvironmentV2MigrationService {
       gitDetails = EntityGitDetails.builder().build();
     }
     String branch = gitDetails.getBranch();
-    boolean isNewBranch = false;
+    boolean isNewBranch = requestDto.isNewBranch();
     boolean createPr = false;
     if (isNotEmpty(requestDto.getBranch())) {
       branch = requestDto.getBranch();
-      isNewBranch = true;
       createPr = true;
     }
     NGRestUtils.getResponse(pipelineServiceClient.updatePipeline(null, requestDto.getPipelineIdentifier(), accountId,
