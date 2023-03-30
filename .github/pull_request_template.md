@@ -10,6 +10,18 @@
   <summary>Build triggers</summary>
 
 - Feature build: `trigger feature-build`
+- 
+  Specific builds
+  - `trigger manager`
+  - `trigger dms`
+  - `trigger ng_manager`
+  - `trigger cvng `
+  - `trigger cmdlib`
+  - `trigger template_svc`
+  - `trigger events_fmwrk_monitor`
+  - `trigger event_server`
+  - `trigger change_data_capture`
+  -  Trigger multiple builds together: For eg: `trigger dms, manager`
 - Immutable delegate `trigger publish-delegate`
 </details>
 
