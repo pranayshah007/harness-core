@@ -134,7 +134,8 @@ public class FilterCreatorMergeService {
       defaultBranchCheckForGitX = gitEntityInfo.isDefaultBranch();
     }
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType().equals(StoreType.INLINE)
-        || defaultBranchCheckForGitX) {
+        || (pipelineEntity.getStoreType() == StoreType.REMOTE
+            && (defaultBranchCheckForGitX || (gitEntityInfo != null && isEmpty(gitEntityInfo.getBranch()))))) {
       pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, response.getReferredEntitiesList());
     }
 

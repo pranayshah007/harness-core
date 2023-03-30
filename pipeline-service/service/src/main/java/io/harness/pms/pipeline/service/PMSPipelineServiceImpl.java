@@ -317,7 +317,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       validateStoredYaml(pipelineEntity);
 
       return optionalPipelineEntity;
-    } else {
+    } else if (pipelineEntity.getStoreType() == StoreType.REMOTE && !loadFromCache) {
       // In case of pipelines with GITX enabled
       try {
         pipelineEntity =
