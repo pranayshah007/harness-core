@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -218,7 +219,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
             .useLatestKustomizeVersion(true)
             .accountId(accountId)
             .build();
-    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest).get(0)).isEqualTo("patch1");
+    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest, emptyMap()).get(0))
+        .isEqualTo("patch1");
 
     canaryDeployRequest = K8sCanaryDeployRequest.builder()
                               .releaseName(releaseName)
@@ -227,7 +229,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
                               .valuesYamlList(valuesYamlList)
                               .accountId(accountId)
                               .build();
-    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest).get(0)).isEqualTo("value1");
+    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest, emptyMap()).get(0))
+        .isEqualTo("value1");
 
     canaryDeployRequest = K8sCanaryDeployRequest.builder()
                               .releaseName(releaseName)
@@ -236,7 +239,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
                               .useLatestKustomizeVersion(true)
                               .accountId(accountId)
                               .build();
-    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest).get(0)).isEqualTo("param1");
+    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest, emptyMap()).get(0))
+        .isEqualTo("param1");
   }
 
   @Test

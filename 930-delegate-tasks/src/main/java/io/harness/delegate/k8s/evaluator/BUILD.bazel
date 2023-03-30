@@ -12,15 +12,9 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming:module",
-        "//930-delegate-tasks/src/main/java/io/harness/delegate/k8s/evaluator:module",
-        "//950-delegate-tasks-beans:module",
-        "//970-api-services-beans/src/main/java/io/harness/k8s/model:module",
-        "//970-api-services-beans/src/main/java/io/harness/logging:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
-        "//980-commons/src/main/java/io/harness/exception:module",
-        "//980-commons/src/main/java/io/harness/logging:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:org_apache_commons_commons_lang3",
     ],
 )
 
