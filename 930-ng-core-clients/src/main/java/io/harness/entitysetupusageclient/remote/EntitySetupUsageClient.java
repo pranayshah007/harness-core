@@ -19,6 +19,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntityReferencesDTO;
@@ -27,6 +28,7 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import javax.ws.rs.QueryParam;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -46,6 +48,7 @@ import retrofit2.http.Query;
 @OwnedBy(HarnessTeam.DX)
 public interface EntitySetupUsageClient {
   String INTERNAL_ENTITY_REFERENCE_API = "entitySetupUsage/internal";
+  String ENTITY_REFERENCE_API_ENDPOINT = "entitySetupUsage";
 
   @GET(INTERNAL_ENTITY_REFERENCE_API)
   Call<ResponseDTO<PageResponse<EntitySetupUsageDTO>>> listAllEntityUsage(
@@ -105,4 +108,12 @@ public interface EntitySetupUsageClient {
   Call<ResponseDTO<Boolean>> isEntityReferenced(
       @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Query(REFERRED_ENTITY_FQN) String referredEntityFQN, @Query(REFERRED_ENTITY_TYPE) EntityType referredEntityType);
+
+  @POST(ENTITY_REFERENCE_API_ENDPOINT + "/populateGitInfo")
+  Call<ResponseDTO<Boolean>> populateGitInfoDetails(
+      @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(REFERRED_ENTITY_FQN) String referredEntityFQN,
+      @QueryParam(REFERRED_ENTITY_TYPE) EntityType entityType, GitEntityInfo gitEntityInfo);
 }

@@ -21,6 +21,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntityReferencesDTO;
@@ -187,5 +188,17 @@ public class EntitySetupUsageResource {
       @QueryParam(REFERRED_BY_ENTITY_TYPE) EntityType referredByEntityType) {
     return ResponseDTO.newResponse(entitySetupUsageService.delete(
         accountIdentifier, referredEntityFQN, referredEntityType, referredByEntityFQN, referredByEntityType));
+  }
+
+  @POST
+  @Path("populateGitInfo")
+  @ApiOperation(value = "Populates git info in Entity references", nickname = "populateGitInfoDetails")
+  public ResponseDTO<Boolean> populateGitInfoDetails(
+      @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(REFERRED_ENTITY_FQN) String referredEntityFQN,
+      @QueryParam(REFERRED_ENTITY_TYPE) EntityType entityType, GitEntityInfo gitEntityInfo) {
+    return ResponseDTO.newResponse(true);
   }
 }
