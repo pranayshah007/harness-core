@@ -52,6 +52,7 @@ import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
+import io.harness.ng.core.dto.GitEntitySetupUsageDTO;
 import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
@@ -173,9 +174,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
 
-      // GET REFERRED ENTITIES.
-      FilterCreationBlobResponse response = filterCreatorMergeService.getReferredEntitiesResponse(pipelineEntity);
-
       // UPDATING PIPELINE INFO AND PUBLISHING SETUP USAGES.
       PipelineEntity entityWithUpdatedInfo =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
@@ -187,7 +185,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
       // POPULATE GIT INFO FOR REFERRED ENTITIES.
       if (filterCreatorMergeService.doPublishSetupUsages(createdEntity)) {
-        populateGitInfoForReferredEntities(pipelineEntity, response);
+        populateGitInfoForReferredEntities(pipelineEntity);
       }
 
       try {
@@ -336,16 +334,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       return optionalPipelineEntity;
     } else if (pipelineEntity.getStoreType() == StoreType.REMOTE && !loadFromCache) {
       try {
-        // GET REFERRED ENTITIES.
-        FilterCreationBlobResponse response = filterCreatorMergeService.getReferredEntitiesResponse(pipelineEntity);
-
         // PUBLISHING SETUP USAGES.
         pipelineEntity =
             pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
 
         // POPULATE GIT INFO FOR REFERRED ENTITIES.
         if (filterCreatorMergeService.doPublishSetupUsages(pipelineEntity)) {
-          populateGitInfoForReferredEntities(pipelineEntity, response);
+          populateGitInfoForReferredEntities(pipelineEntity);
         }
 
       } catch (IOException e) {
@@ -570,9 +565,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   private PipelineEntity makePipelineUpdateCall(
       PipelineEntity pipelineEntity, PipelineEntity oldEntity, ChangeType changeType, boolean isOldFlow) {
     try {
-      // GET REFERRED ENTITIES.
-      FilterCreationBlobResponse response = filterCreatorMergeService.getReferredEntitiesResponse(pipelineEntity);
-
       // UPDATING PIPELINE INFO AND PUBLISHING SETUP USAGES.
       PipelineEntity entityWithUpdatedInfo;
       if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
@@ -593,7 +585,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
       // POPULATE GIT INFO FOR REFERRED ENTITIES.
       if (filterCreatorMergeService.doPublishSetupUsages(pipelineEntity)) {
-        populateGitInfoForReferredEntities(pipelineEntity, response);
+        populateGitInfoForReferredEntities(pipelineEntity);
       }
 
       if (updatedResult == null) {
@@ -620,7 +612,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
   }
 
-  public void populateGitInfoForReferredEntities(PipelineEntity pipelineEntity, FilterCreationBlobResponse response) {
+  public void populateGitInfoForReferredEntities(PipelineEntity pipelineEntity) {
     // GET SCM GIT METADATA RESPONSE.
     ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
 
@@ -635,10 +627,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
                                       .identifier(pipelineEntity.getIdentifier())
                                       .build();
 
+    GitEntitySetupUsageDTO gitEntitySetupUsageDTO =
+        GitEntitySetupUsageDTO.builder().branch(gitMetaData.getBranchName()).build();
+
     // UPDATING THE GIT INFO DETAILS FOR THE REFERRED ENTITIES.
     Boolean populateGitInfo = NGRestUtils.getResponse(entitySetupUsageClient.populateGitInfoDetails(
         pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
-        identifierRef.getFullyQualifiedName(), EntityType.PIPELINES, gitMetaData));
+        identifierRef.getFullyQualifiedName(), EntityType.PIPELINES, gitEntitySetupUsageDTO));
   }
 
   @Override
@@ -768,9 +763,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     pipelineEntity.setRepoURL(repoUrl);
 
     try {
-      // GET REFERRED ENTITIES.
-      FilterCreationBlobResponse response = filterCreatorMergeService.getReferredEntitiesResponse(pipelineEntity);
-
       // PUBLISHING SETUP USAGES.
       PipelineEntity entityWithUpdatedInfo =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineVersion);
@@ -781,7 +773,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
       // POPULATE GIT INFO FOR REFERRED ENTITIES.
       if (filterCreatorMergeService.doPublishSetupUsages(pipelineEntity)) {
-        populateGitInfoForReferredEntities(pipelineEntity, response);
+        populateGitInfoForReferredEntities(pipelineEntity);
       }
 
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(savedPipelineEntity, CREATING_PIPELINE);

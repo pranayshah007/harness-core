@@ -17,6 +17,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.dto.GitEntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageQueryFilterHelper;
 import io.harness.ng.core.entitysetupusage.dto.EntityReferencesDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageBatchDTO;
@@ -28,6 +29,8 @@ import io.harness.ng.core.entitysetupusage.mappers.EntitySetupUsageEntityToDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.repositories.entitysetupusage.EntitySetupUsageRepository;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
+
+import software.wings.beans.EntityReference;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -308,5 +311,27 @@ public class EntitySetupUsageServiceImpl implements EntitySetupUsageService {
     Criteria criteria = entitySetupUsageFilterHelper.createCriteriaForReferredEntityFQNIn(
         accountIdentifier, referredEntityFQNs, EntityType.FILES);
     return entityReferenceRepository.countAll(criteria);
+  }
+
+  @Override
+  public Boolean populateGitInfoForReferredEntities(String accountId, String orgId, String projectId,
+      String referredByFQN, EntityType entityType, GitEntitySetupUsageDTO gitEntitySetupUsageDTO) {
+    Criteria criteria =
+        entitySetupUsageFilterHelper.createCriteriaForListAllReferredUsages(accountId, referredByFQN, null, null);
+    Pageable pageable = getPageRequest(0, 10000, Sort.by(Sort.Direction.DESC, EntitySetupUsageKeys.createdAt));
+    Page<EntitySetupUsage> entityReferences = entityReferenceRepository.findAll(criteria, pageable);
+    List<EntitySetupUsage> setupUsages = entityReferences.getContent();
+
+    List<EntityDetail> referredByEntity =
+        setupUsages.stream().map(EntitySetupUsage::getReferredByEntity).collect(Collectors.toList());
+
+    String branch = gitEntitySetupUsageDTO.getBranch();
+    for (EntityDetail e : referredByEntity) {
+      e.getEntityRef().setBranch(branch);
+    }
+
+    saveMultiple(setupUsages);
+
+    return true;
   }
 }
