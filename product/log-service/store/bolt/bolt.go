@@ -109,3 +109,8 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 		return err
 	})
 }
+
+// Ping pings the store for readiness
+func (s *Store) Ping() error {
+	return errors.New("not implemented")
+}

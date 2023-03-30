@@ -9,7 +9,7 @@
 # Build the queue-service image using:
 # > bazel build //queue-service/hsqs/...
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.6-751
+FROM redhat/ubi8-minimal:8.7
 
 COPY libappdynamics.so /lib/libappdynamics.so
 ENV LD_LIBRARY_PATH=/lib

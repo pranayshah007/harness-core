@@ -7,12 +7,15 @@
 
 package io.harness.ngmigration.service.step;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
+
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepInfo;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepNode;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterField;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterFieldType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -25,6 +28,8 @@ import io.harness.pms.yaml.ParameterField;
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.WorkflowPhase;
+import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.JenkinsState;
 
@@ -37,6 +42,18 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 public class JenkinsStepMapperImpl extends StepMapper {
+  @Override
+  public List<CgEntityId> getReferencedEntities(
+      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+    JenkinsState state = (JenkinsState) getState(graphNode);
+    List<CgEntityId> refs = new ArrayList<>();
+    if (StringUtils.isNotBlank(state.getJenkinsConfigId())) {
+      refs.add(CgEntityId.builder().id(state.getJenkinsConfigId()).type(NGMigrationEntityType.CONNECTOR).build());
+    }
+    refs.addAll(secretRefUtils.getSecretRefFromExpressions(accountId, getExpressions(graphNode)));
+    return refs;
+  }
+
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;
@@ -56,10 +73,11 @@ public class JenkinsStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     JenkinsState state = (JenkinsState) getState(graphNode);
     JenkinsBuildStepNode stepNode = new JenkinsBuildStepNode();
-    baseSetup(graphNode, stepNode);
+    baseSetup(graphNode, stepNode, context.getIdentifierCaseFormat());
 
     List<JenkinsParameterField> jobParams = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(state.getJobParameters())) {
@@ -74,13 +92,17 @@ public class JenkinsStepMapperImpl extends StepMapper {
                       .collect(Collectors.toList());
     }
 
-    String jobName = "<+input>";
+    String jobName = RUNTIME_INPUT;
+    if (!context.isTemplatizeStepParams()) {
+      jobName = state.getJobName();
+    }
+
     JenkinsBuildStepInfo stepInfo =
         JenkinsBuildStepInfo.builder()
             .unstableStatusAsSuccess(state.isUnstableSuccess())
             .useConnectorUrlForJobExecution(true)
             .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))
-            .connectorRef(ParameterField.createValueField("<+input>"))
+            .connectorRef(getConnectorRef(context, state.getJenkinsConfigId()))
             .jobParameter(ParameterField.createValueField(jobParams))
             .jobName(ParameterField.createValueField(jobName))
             .build();
@@ -105,9 +127,12 @@ public class JenkinsStepMapperImpl extends StepMapper {
         .stream()
         .map(exp
             -> StepOutput.builder()
-                   .stageIdentifier(MigratorUtility.generateIdentifier(phase.getName()))
-                   .stepIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()))
-                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
         .map(JenkinsStepFunctor::new)

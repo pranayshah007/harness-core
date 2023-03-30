@@ -81,8 +81,10 @@ import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEReportTemplateBuilderService;
 import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.ccm.views.service.DataResponseService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
+import io.harness.ccm.views.service.impl.BigQueryDataResponseServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportTemplateBuilderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
@@ -241,6 +243,8 @@ import io.harness.secrets.setupusage.builders.SecretManagerSetupUsageBuilder;
 import io.harness.secrets.setupusage.builders.ServiceVariableSetupUsageBuilder;
 import io.harness.secrets.setupusage.builders.SettingAttributeSetupUsageBuilder;
 import io.harness.secrets.setupusage.builders.TriggerSetupUsageBuilder;
+import io.harness.secrets.yamlhandlers.SecretYamlHandler;
+import io.harness.secrets.yamlhandlers.SecretYamlHandlerImpl;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.seeddata.SampleDataProviderService;
 import io.harness.seeddata.SampleDataProviderServiceImpl;
@@ -272,6 +276,8 @@ import io.harness.timescaledb.retention.RetentionManager;
 import io.harness.timescaledb.retention.RetentionManagerImpl;
 import io.harness.usergroups.UserGroupClientModule;
 import io.harness.usermembership.UserMembershipClientModule;
+import io.harness.utils.featureflaghelper.CGFeatureFlagHelperServiceImpl;
+import io.harness.utils.featureflaghelper.FeatureFlagHelperService;
 import io.harness.version.VersionModule;
 
 import software.wings.DataStorageMode;
@@ -1230,6 +1236,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(BudgetService.class).to(BudgetServiceImpl.class);
     bind(ViewCustomFieldService.class).to(ViewCustomFieldServiceImpl.class);
     bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
+    bind(DataResponseService.class).to(BigQueryDataResponseServiceImpl.class);
     bind(CEViewService.class).to(CEViewServiceImpl.class);
     bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
@@ -1292,6 +1299,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     registerEventListeners();
 
+    bind(FeatureFlagHelperService.class).to(CGFeatureFlagHelperServiceImpl.class);
+    bind(SecretYamlHandler.class).to(SecretYamlHandlerImpl.class);
     bind(PersistentScheduler.class)
         .annotatedWith(Names.named("BackgroundJobScheduler"))
         .to(BackgroundJobScheduler.class)

@@ -45,6 +45,7 @@ java_library(
         "//960-api-services/src/main/java/io/harness/aws/util:module",
         "//960-api-services/src/main/java/io/harness/aws/v2:module",
         "//960-api-services/src/main/java/io/harness/aws/v2/ecs:module",
+        "//960-api-services/src/main/java/io/harness/aws/v2/eks:module",
         "//960-api-services/src/main/java/io/harness/aws/v2/lambda:module",
         "//960-api-services/src/main/java/io/harness/awscli:module",
         "//960-api-services/src/main/java/io/harness/azure:module",

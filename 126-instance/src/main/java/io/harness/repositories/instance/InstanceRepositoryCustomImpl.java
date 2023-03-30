@@ -32,7 +32,7 @@ import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 import io.harness.ng.core.environment.beans.EnvironmentType;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -88,7 +88,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   @Override
   public List<Instance> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceIdentifier, long timestamp) {
-    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+    String serviceRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
 
     if (timestamp <= 0) {
@@ -641,7 +641,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
 
     if (serviceId != null) {
       criteria.and(InstanceKeys.serviceIdentifier)
-          .is(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+          .is(IdentifierRefHelper.getRefFromIdentifierOrRef(
               accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
     }
     if (buildId != null) {
@@ -650,7 +650,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
 
     if (envId != null) {
       criteria.and(InstanceKeys.envIdentifier)
-          .is(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+          .is(IdentifierRefHelper.getRefFromIdentifierOrRef(
               accountIdentifier, orgIdentifier, projectIdentifier, envId));
     }
 

@@ -14,9 +14,11 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.commons.RepairActionCode;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -24,6 +26,7 @@ import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -125,5 +128,9 @@ public class GenericPlanCreatorUtils {
   public static String getRollbackStageNodeId(YamlField currentField) {
     String stageNodeId = getStageOrParallelNodeId(currentField);
     return stageNodeId + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX;
+  }
+
+  public OnFailPipelineRollbackParameters buildOnFailPipelineRollbackParameters(Set<FailureType> failureTypes) {
+    return OnFailPipelineRollbackParameters.builder().applicableFailureTypes(failureTypes).build();
   }
 }

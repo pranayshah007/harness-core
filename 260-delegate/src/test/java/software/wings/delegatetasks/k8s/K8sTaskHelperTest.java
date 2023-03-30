@@ -39,6 +39,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
@@ -63,7 +64,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.k8s.beans.K8sHandlerConfig;
-import io.harness.delegate.k8s.kustomize.KustomizeTaskHelper;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
@@ -71,6 +71,7 @@ import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.k8sbase.KustomizeTaskHelper;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.exception.HelmClientException;
@@ -624,12 +625,12 @@ public class K8sTaskHelperTest extends CategoryTest {
 
     doReturn(new ArrayList<>())
         .when(kustomizeTaskHelper)
-        .buildForApply(any(), any(), any(), any(), anyBoolean(), any(), any());
+        .buildForApply(any(), any(), any(), any(), anyBoolean(), any(), any(), eq(Collections.emptyMap()));
     final List<FileData> manifestFiles = spyHelper.renderTemplateForGivenFiles(k8sDelegateTaskParams,
         K8sDelegateManifestConfig.builder().manifestStoreTypes(KustomizeSourceRepo).build(), ".", new ArrayList<>(),
         new ArrayList<>(), "release", "namespace", executionLogCallback, K8sApplyTaskParameters.builder().build(),
         false);
-    verify(kustomizeTaskHelper).buildForApply(any(), any(), any(), any(), anyBoolean(), any(), any());
+    verify(kustomizeTaskHelper).buildForApply(any(), any(), any(), any(), anyBoolean(), any(), any(), anyMap());
     assertThat(manifestFiles.size()).isEqualTo(0);
   }
 
@@ -643,12 +644,12 @@ public class K8sTaskHelperTest extends CategoryTest {
 
     doReturn(new ArrayList<>())
         .when(kustomizeTaskHelper)
-        .buildForApply(any(), any(), any(), any(), anyBoolean(), any(), any());
+        .buildForApply(any(), any(), any(), any(), anyBoolean(), any(), any(), eq(Collections.emptyMap()));
     final List<FileData> manifestFiles = spyHelper.renderTemplateForGivenFiles(k8sDelegateTaskParams,
         K8sDelegateManifestConfig.builder().manifestStoreTypes(KustomizeSourceRepo).build(), ".", new ArrayList<>(),
         new ArrayList<>(), "release", "namespace", executionLogCallback, K8sApplyTaskParameters.builder().build(),
         false);
-    verify(kustomizeTaskHelper).buildForApply(any(), any(), any(), any(), anyBoolean(), any(), any());
+    verify(kustomizeTaskHelper).buildForApply(any(), any(), any(), any(), anyBoolean(), any(), any(), anyMap());
     assertThat(manifestFiles.size()).isEqualTo(0);
   }
 
@@ -737,11 +738,12 @@ public class K8sTaskHelperTest extends CategoryTest {
     K8sDelegateTaskParams k8sDelegateTaskParams =
         K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).helmPath("helm").build();
 
-    when(kustomizeTaskHelper.build(any(), any(), any(), any(), any())).thenReturn(new ArrayList<>());
+    when(kustomizeTaskHelper.build(any(), any(), any(), any(), any(), eq(Collections.emptyMap())))
+        .thenReturn(new ArrayList<>());
     final List<FileData> manifestFiles = spyHelper.renderTemplate(k8sDelegateTaskParams,
         K8sDelegateManifestConfig.builder().manifestStoreTypes(KustomizeSourceRepo).build(), ".", new ArrayList<>(),
         "release", "namespace", executionLogCallback, K8sApplyTaskParameters.builder().build());
-    verify(kustomizeTaskHelper).build(any(), any(), any(), any(), any());
+    verify(kustomizeTaskHelper).build(any(), any(), any(), any(), any(), anyMap());
     assertThat(manifestFiles.size()).isEqualTo(0);
   }
 

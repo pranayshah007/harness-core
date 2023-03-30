@@ -212,8 +212,9 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testConstructPSScriptWithCommandsAndCommandParameters() {
     List<WinRmCommandParameter> commandParameters = new ArrayList<>();
-    commandParameters.add(new WinRmCommandParameter("ComputerName", "TestComputerName"));
-    commandParameters.add(new WinRmCommandParameter("ConfigurationName", "TestConfigurationName"));
+    commandParameters.add(WinRmCommandParameter.builder().parameter("ComputerName").value("TestComputerName").build());
+    commandParameters.add(
+        WinRmCommandParameter.builder().parameter("ConfigurationName").value("TestConfigurationName").build());
 
     String expectedString = "Invoke-Command -ComputerName TestComputerName -ConfigurationName TestConfigurationName";
     List<List<String>> result1 = WinRmExecutorHelper.constructPSScriptWithCommands(
@@ -227,8 +228,9 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testWrappedCommandWithEncodingWithAdditionalParameters() {
     List<WinRmCommandParameter> commandParameters = new ArrayList<>();
-    commandParameters.add(new WinRmCommandParameter("ComputerName", "TestComputerName"));
-    commandParameters.add(new WinRmCommandParameter("ConfigurationName", "TestConfigurationName"));
+    commandParameters.add(WinRmCommandParameter.builder().parameter("ComputerName").value("TestComputerName").build());
+    commandParameters.add(
+        WinRmCommandParameter.builder().parameter("ConfigurationName").value("TestConfigurationName").build());
 
     String expectedString = "Invoke-Command -ComputerName TestComputerName -ConfigurationName TestConfigurationName";
 

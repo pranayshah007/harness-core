@@ -42,9 +42,10 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class ArtifactPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
-  private final KryoSerializer kryoSerializer;
   private final ArtifactRepositoryServiceImpl artifactRepositoryService;
   private final PollingResponsePublisher pollingResponsePublisher;
+  private final KryoSerializer kryoSerializer;
+  private final KryoSerializer referenceFalseKryoSerializer;
 
   private final @Getter Cache<String, ArtifactsCollectionCache> cache = Caffeine.newBuilder().build();
   private static final long TIMEOUT_IN_MILLIS = 90L * 1000;
@@ -56,24 +57,27 @@ public class ArtifactPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
     String pollingDocId = taskParams.getPollingDocId();
     String perpetualTaskId = taskId.getId();
     ArtifactTaskParameters artifactTaskParameters =
-        (ArtifactTaskParameters) kryoSerializer.asObject(taskParams.getArtifactCollectionParams().toByteArray());
+        (ArtifactTaskParameters) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+            .asObject(taskParams.getArtifactCollectionParams().toByteArray());
     ArtifactsCollectionCache artifactsCollectionCache = cache.get(pollingDocId, id -> new ArtifactsCollectionCache());
 
     Instant startTime = Instant.now();
     if (!artifactsCollectionCache.needsToPublish()) {
-      collectArtifacts(artifactsCollectionCache, artifactTaskParameters, perpetualTaskId, pollingDocId);
+      collectArtifacts(artifactsCollectionCache, artifactTaskParameters, perpetualTaskId, pollingDocId,
+          params.getReferenceFalseKryoSerializer());
     }
 
     if (artifactsCollectionCache.needsToPublish()) {
       Instant deadline = startTime.plusMillis(TIMEOUT_IN_MILLIS);
-      publishFromCache(perpetualTaskId, pollingDocId, artifactTaskParameters, artifactsCollectionCache, deadline);
+      publishFromCache(perpetualTaskId, pollingDocId, artifactTaskParameters, artifactsCollectionCache, deadline,
+          params.getReferenceFalseKryoSerializer());
     }
     return PerpetualTaskResponse.builder().responseCode(200).responseMessage("success").build();
   }
 
   private void publishFromCache(String perpetualTaskId, String pollingDocId,
       ArtifactTaskParameters artifactTaskParameters, ArtifactsCollectionCache artifactsCollectionCache,
-      Instant deadline) {
+      Instant deadline, boolean referenceFalseSerializer) {
     if (deadline.isBefore(Instant.now())) {
       return;
     }
@@ -96,7 +100,7 @@ public class ArtifactPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
                                      .build())
             .build();
 
-    if (pollingResponsePublisher.publishToManger(perpetualTaskId, response)) {
+    if (pollingResponsePublisher.publishToManger(perpetualTaskId, response, referenceFalseSerializer)) {
       artifactsCollectionCache.setFirstCollectionOnDelegate(false);
       artifactsCollectionCache.clearUnpublishedArtifacts(unpublishedArtifacts);
       artifactsCollectionCache.removeDeletedArtifactKeys(toBeDeletedKeys);
@@ -108,7 +112,7 @@ public class ArtifactPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   }
 
   private void collectArtifacts(ArtifactsCollectionCache artifactsCollectionCache, ArtifactTaskParameters taskParams,
-      String taskId, String pollingDocId) {
+      String taskId, String pollingDocId, boolean referenceFalseSerializer) {
     try {
       ArtifactTaskExecutionResponse response = artifactRepositoryService.collectBuilds(taskParams);
 
@@ -131,7 +135,8 @@ public class ArtifactPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
               .errorMessage(e.getMessage())
               .pollingDocId(pollingDocId)
-              .build());
+              .build(),
+          referenceFalseSerializer);
     }
   }
 
@@ -140,5 +145,9 @@ public class ArtifactPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
     ArtifactCollectionTaskParamsNg taskParams = getTaskParams(params);
     cache.invalidate(taskParams.getPollingDocId());
     return true;
+  }
+
+  private KryoSerializer getKryoSerializer(boolean referenceFalse) {
+    return referenceFalse ? referenceFalseKryoSerializer : kryoSerializer;
   }
 }

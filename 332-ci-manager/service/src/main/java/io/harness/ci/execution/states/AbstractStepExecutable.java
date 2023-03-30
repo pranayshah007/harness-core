@@ -8,7 +8,6 @@
 package io.harness.ci.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.beans.steps.CIStepInfoType.SSCA_ORCHESTRATION;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODE_BASE_CONNECTOR_REF;
 import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
@@ -478,6 +477,10 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
     }
   }
 
+  protected void modifyStepStatus(Ambiance ambiance, StepStatus stepStatus, String stepIdentifier) {
+    return;
+  }
+
   private StepResponse buildAndReturnStepResponse(StepStatusTaskResponseData stepStatusTaskResponseData,
       Ambiance ambiance, StepElementParameters stepParameters, String stepIdentifier) {
     long startTime = AmbianceUtils.getCurrentLevelStartTs(ambiance);
@@ -491,6 +494,7 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
         (currentTime - startTime) / 1000);
 
     if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
+      modifyStepStatus(ambiance, stepStatus, stepIdentifier);
       if (stepStatus.getOutput() != null) {
         StepResponse.StepOutcome stepOutcome =
             StepResponse.StepOutcome.builder()

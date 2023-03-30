@@ -10,6 +10,7 @@ package io.harness.delegate.task.terraformcloud.response;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.delegate.task.terraformcloud.TerraformCloudTaskType;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,4 +22,9 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class TerraformCloudValidateTaskResponse extends TerraformCloudDelegateTaskResponse {
   private ConnectorValidationResult connectorValidationResult;
+
+  @Override
+  public TerraformCloudTaskType getTaskType() {
+    return TerraformCloudTaskType.VALIDATE;
+  }
 }

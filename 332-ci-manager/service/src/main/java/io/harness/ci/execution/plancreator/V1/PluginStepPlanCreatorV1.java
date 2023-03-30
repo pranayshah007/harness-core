@@ -13,11 +13,11 @@ import io.harness.beans.steps.nodes.PluginStepNode;
 import io.harness.beans.steps.nodes.V1.PluginStepNodeV1;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.V1.PluginStepInfoV1;
+import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
 
 import com.google.common.collect.Sets;
@@ -57,9 +57,7 @@ public class PluginStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<PluginStepNo
                             .runAsUser(stepInfo.getUser())
                             .retry(stepInfo.getRetry())
                             .settings(stepInfo.getWith())
-                            .imagePullPolicy(stepInfo.getPull() == null
-                                    ? ParameterField.ofNull()
-                                    : ParameterField.createValueField(stepInfo.getPull().toImagePullPolicy()))
+                            .imagePullPolicy(CIPlanCreatorUtils.getImagePullPolicy(stepInfo.getPull()))
                             .build())
         .build();
   }

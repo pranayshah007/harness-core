@@ -20,9 +20,10 @@ import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.InfrastructureType;
-import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
@@ -33,7 +34,6 @@ import software.wings.infra.GoogleKubernetesEngine;
 import software.wings.infra.GoogleKubernetesEngine.GoogleKubernetesEngineKeys;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 
 import java.util.List;
 import java.util.Map;
@@ -60,10 +60,11 @@ public class NativeHelmInfraDefMapper implements InfraDefMapper {
   }
 
   @Override
-  public Infrastructure getSpec(MigrationInputDTO inputDTO, InfrastructureDefinition infrastructureDefinition,
-      Map<CgEntityId, NGYamlFile> migratedEntities, Map<CgEntityId, CgEntityNode> entities,
+  public Infrastructure getSpec(MigrationContext migrationContext, InfrastructureDefinition infrastructureDefinition,
       List<ElastigroupConfiguration> elastigroupConfiguration) {
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     NgEntityDetail connectorDetail;
+    String releaseName;
     switch (infrastructureDefinition.getCloudProviderType()) {
       case KUBERNETES_CLUSTER:
         DirectKubernetesInfrastructure k8s =
@@ -71,9 +72,11 @@ public class NativeHelmInfraDefMapper implements InfraDefMapper {
         connectorDetail =
             migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(k8s.getCloudProviderId()).build())
                 .getNgEntityDetail();
+        releaseName = (String) MigratorExpressionUtils.render(
+            migrationContext, k8s.getReleaseName(), migrationContext.getInputDTO().getCustomExpressions());
         return K8SDirectInfrastructure.builder()
             .releaseName(getExpression(k8s.getExpressions(), DirectKubernetesInfrastructureKeys.releaseName,
-                k8s.getReleaseName(), infrastructureDefinition.getProvisionerId()))
+                releaseName, infrastructureDefinition.getProvisionerId()))
             .namespace(getExpression(k8s.getExpressions(), DirectKubernetesInfrastructureKeys.namespace,
                 k8s.getNamespace(), infrastructureDefinition.getProvisionerId()))
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
@@ -83,10 +86,12 @@ public class NativeHelmInfraDefMapper implements InfraDefMapper {
         connectorDetail =
             migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(gcpK8s.getCloudProviderId()).build())
                 .getNgEntityDetail();
+        releaseName = (String) MigratorExpressionUtils.render(
+            migrationContext, gcpK8s.getReleaseName(), migrationContext.getInputDTO().getCustomExpressions());
         return K8sGcpInfrastructure.builder()
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
-            .releaseName(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.releaseName,
-                gcpK8s.getReleaseName(), infrastructureDefinition.getProvisionerId()))
+            .releaseName(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.releaseName, releaseName,
+                infrastructureDefinition.getProvisionerId()))
             .cluster(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.clusterName,
                 gcpK8s.getClusterName(), infrastructureDefinition.getProvisionerId()))
             .namespace(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.namespace,
@@ -97,7 +102,7 @@ public class NativeHelmInfraDefMapper implements InfraDefMapper {
         connectorDetail =
             migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(aks.getCloudProviderId()).build())
                 .getNgEntityDetail();
-        return InfraDefMapperUtils.buildK8sAzureInfrastructure(aks, connectorDetail);
+        return InfraDefMapperUtils.buildK8sAzureInfrastructure(migrationContext, aks, connectorDetail);
       default:
         throw new InvalidRequestException("Unsupported Infra for K8s deployment");
     }

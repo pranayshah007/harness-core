@@ -469,6 +469,11 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(429, "BAMBOO_TRIGGER_JOB");
     taskTypeOrdinalMapping.put(430, "TERRAFORM_TASK_NG_V4");
     taskTypeOrdinalMapping.put(431, "TERRAFORM_CLOUD_CLEANUP_TASK_NG");
+    taskTypeOrdinalMapping.put(432, "OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG");
+    taskTypeOrdinalMapping.put(433, "TAS_ROUTE_MAPPING");
+    taskTypeOrdinalMapping.put(434, "AWS_EKS_LIST_CLUSTERS_TASK");
+    taskTypeOrdinalMapping.put(435, "TERRAFORM_TASK_NG_V5");
+    taskTypeOrdinalMapping.put(436, "PT_SERIALIZATION_SUPPORT");
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }

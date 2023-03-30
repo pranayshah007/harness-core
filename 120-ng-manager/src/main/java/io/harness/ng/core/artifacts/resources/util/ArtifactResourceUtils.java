@@ -122,6 +122,11 @@ public class ArtifactResourceUtils {
     if (isEmpty(pipelineIdentifier)) {
       return runtimeInputYaml;
     }
+
+    if (gitEntityBasicInfo == null) {
+      gitEntityBasicInfo = new GitEntityFindInfoDTO();
+    }
+
     MergeInputSetResponseDTOPMS response =
         NGRestUtils.getResponse(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(accountId, orgIdentifier,
             projectIdentifier, pipelineIdentifier, gitEntityBasicInfo.getBranch(),
@@ -385,6 +390,11 @@ public class ArtifactResourceUtils {
 
     // node from service will have updated details
     YamlNode artifactSpecNode = artifactTagLeafNode.getParentNode().getParentNode();
+
+    // In case of Nexus2&3 configs, coz they have one more spec in their ArtifactConfig like no other artifact source.
+    if (artifactSpecNode.getFieldName().equals("spec")) {
+      artifactSpecNode = artifactSpecNode.getParentNode();
+    }
 
     if (artifactSpecNode.getParentNode() != null
         && "template".equals(artifactSpecNode.getParentNode().getFieldName())) {
@@ -854,5 +864,36 @@ public class ArtifactResourceUtils {
   private static class EntityRefAndFQN {
     String entityRef;
     String entityFQN;
+  }
+
+  @Nullable
+  public String getResolvedConnectorId(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String runtimeInputYaml, String connectorRef, String fqnPath,
+      GitEntityFindInfoDTO gitEntityBasicInfo) {
+    final ParameterField<String> connectorParameterField =
+        RuntimeInputValuesValidator.getInputSetParameterField(connectorRef);
+    if (connectorParameterField == null) {
+      return connectorRef;
+    }
+    if (!connectorParameterField.isExpression()) {
+      return connectorParameterField.getValue();
+    }
+    // this check assumes ui sends -1 as pipeline identifier when pipeline is under construction
+    if ("-1".equals(pipelineIdentifier)) {
+      throw new InvalidRequestException(
+          String.format("Couldn't resolve connector expression %s, as pipeline has not been saved yet.", connectorRef));
+    }
+
+    String mergedCompleteYaml = getMergedCompleteYaml(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
+    if (isNotEmpty(mergedCompleteYaml) && TemplateRefHelper.hasTemplateRef(mergedCompleteYaml)) {
+      mergedCompleteYaml = applyTemplatesOnGivenYaml(
+          accountId, orgIdentifier, projectIdentifier, mergedCompleteYaml, gitEntityBasicInfo);
+    }
+    CDYamlExpressionEvaluator CDYamlExpressionEvaluator =
+        new CDYamlExpressionEvaluator(mergedCompleteYaml, fqnPath, new ArrayList<>());
+    connectorRef = CDYamlExpressionEvaluator.renderExpression(connectorRef);
+
+    return connectorRef;
   }
 }

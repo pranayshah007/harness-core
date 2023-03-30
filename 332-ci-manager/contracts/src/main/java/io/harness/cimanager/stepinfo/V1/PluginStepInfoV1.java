@@ -12,6 +12,7 @@ import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
@@ -69,9 +70,9 @@ public class PluginStepInfoV1 extends CIAbstractStepInfo implements WithConnecto
 
   @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) ParameterField<Boolean> privileged;
   @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) ParameterField<Integer> user;
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.PullPolicy")
-  PullPolicy pull;
+  ParameterField<PullPolicy> pull;
 
   @Builder
   @ConstructorProperties(
@@ -79,7 +80,7 @@ public class PluginStepInfoV1 extends CIAbstractStepInfo implements WithConnecto
   public PluginStepInfoV1(String uuid, ParameterField<Map<String, JsonNode>> with, ParameterField<String> image,
       ParameterField<String> uses, ContainerResource resources,
       ParameterField<Map<String, ParameterField<String>>> envs, ParameterField<Boolean> privileged,
-      ParameterField<Integer> user, PullPolicy pull, ParameterField<List<Volume>> volumes) {
+      ParameterField<Integer> user, ParameterField<PullPolicy> pull, ParameterField<List<Volume>> volumes) {
     this.uuid = uuid;
     this.with = with;
     this.image = image;

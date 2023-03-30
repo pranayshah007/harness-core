@@ -21,6 +21,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
+import software.wings.beans.Application;
 import software.wings.beans.Pipeline;
 import software.wings.beans.Pipeline.PipelineKeys;
 import software.wings.beans.Workflow;
@@ -114,6 +115,28 @@ public class EntityDetailsResource {
                                  .project(TriggerKeys.uuid, true)
                                  .project(TriggerKeys.name, true)
                                  .asList();
+
+    if (EmptyPredicate.isNotEmpty(triggers)) {
+      entities = triggers.stream()
+                     .map(entity -> BaseEntityDetailsDTO.builder().id(entity.getUuid()).name(entity.getName()).build())
+                     .collect(Collectors.toList());
+    }
+    return new RestResponse<>(entities);
+  }
+
+  @GET
+  @Path("/apps")
+  @Timed
+  @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
+  public RestResponse<List<BaseEntityDetailsDTO>> listApps(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
+    List<BaseEntityDetailsDTO> entities = new ArrayList<>();
+    List<Application> triggers = hPersistence.createQuery(Application.class)
+                                     .filter(Trigger.ACCOUNT_ID_KEY, accountId)
+                                     .project(TriggerKeys.uuid, true)
+                                     .project(TriggerKeys.name, true)
+                                     .asList();
 
     if (EmptyPredicate.isNotEmpty(triggers)) {
       entities = triggers.stream()

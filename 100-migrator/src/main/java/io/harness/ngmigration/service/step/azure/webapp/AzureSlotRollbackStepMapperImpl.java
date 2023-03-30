@@ -11,6 +11,7 @@ import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -47,17 +48,19 @@ public class AzureSlotRollbackStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     PcfRollbackState state = (PcfRollbackState) getState(graphNode);
     AzureWebAppRollbackStepInfo azureWebAppRollbackStepInfo = AzureWebAppRollbackStepInfo.infoBuilder().build();
 
     AzureWebAppRollbackStepNode azureWebAppRollbackStepNode = new AzureWebAppRollbackStepNode();
     azureWebAppRollbackStepNode.setAzureWebAppRollbackStepInfo(azureWebAppRollbackStepInfo);
 
-    baseSetup(state, azureWebAppRollbackStepNode);
+    baseSetup(state, azureWebAppRollbackStepNode, context.getIdentifierCaseFormat());
 
     return azureWebAppRollbackStepNode;
   }
+
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     return true;

@@ -51,6 +51,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -100,6 +101,7 @@ public class CDLicenseUsageResource {
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of all Services") },
       hidden = true)
   @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
+  @Deprecated
   public ResponseDTO<PageResponse<ServiceResponse>>
   getAllServices(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                      ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -112,7 +114,7 @@ public class CDLicenseUsageResource {
       @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.SIZE) @DefaultValue("100") int size,
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") @Max(1000) int size,
       @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.SORT) List<String> sort) {
     Criteria criteria = ServiceFilterHelper.createCriteriaForListingAllServices(

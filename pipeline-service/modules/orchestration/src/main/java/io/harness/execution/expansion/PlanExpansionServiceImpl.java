@@ -7,8 +7,8 @@
 package io.harness.execution.expansion;
 
 import io.harness.beans.FeatureName;
-import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecutionExpansion;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -26,8 +26,10 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.ejb.Singleton;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ClassUtils;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -49,21 +51,19 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
     String stepInputsKey =
         String.format("%s.%s", getExpansionPathUsingLevels(ambiance), PlanExpansionConstants.STEP_INPUTS);
     update.set(stepInputsKey, Document.parse(RecastOrchestrationUtils.pruneRecasterAdditions(stepInputs.clone())));
-    planExecutionExpansionRepository.update(ambiance.getPlanExecutionId(), update);
-  }
-
-  @Override
-  public void addNameAndIdentifier(NodeExecution nodeExecution) {
-    if (shouldSkipUpdate(nodeExecution.getAmbiance())) {
-      return;
+    Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
+    if (currentLevel != null && currentLevel.hasStrategyMetadata()) {
+      Map<String, Object> strategyMap = StrategyUtils.fetchStrategyObjectMap(currentLevel);
+      for (Map.Entry<String, Object> entry : strategyMap.entrySet()) {
+        String strategyKey = String.format("%s.%s", getExpansionPathUsingLevels(ambiance), entry.getKey());
+        if (ClassUtils.isPrimitiveOrWrapper(entry.getValue().getClass())) {
+          update.set(strategyKey, String.valueOf(entry.getValue()));
+        } else {
+          update.set(strategyKey, Document.parse(RecastOrchestrationUtils.pruneRecasterAdditions(entry.getValue())));
+        }
+      }
     }
-    Update update = new Update();
-    String key = getExpansionPathUsingLevels(nodeExecution.getAmbiance());
-    String nameKey = String.format("%s.%s", key, PlanExpansionConstants.NAME);
-    String identifierKey = String.format("%s.%s", key, PlanExpansionConstants.IDENTIFIER);
-    update.set(nameKey, nodeExecution.getName());
-    update.set(identifierKey, nodeExecution.getIdentifier());
-    planExecutionExpansionRepository.update(nodeExecution.getPlanExecutionId(), update);
+    planExecutionExpansionRepository.update(ambiance.getPlanExecutionId(), update);
   }
 
   @Override
@@ -84,12 +84,19 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
   }
 
   @Override
-  public Map<String, Object> resolveExpression(Ambiance ambiance, String expression) {
+  public Map<String, Object> resolveExpressions(Ambiance ambiance, List<String> expressions) {
     if (shouldUseExpandedJsonFunctor(ambiance)) {
       Criteria criteria = Criteria.where("planExecutionId").is(ambiance.getPlanExecutionId());
       Query query = new Query(criteria);
-      query.fields().include(String.format("%s.", PlanExpansionConstants.EXPANDED_JSON) + expression);
-      return JsonUtils.asMap(planExecutionExpansionRepository.find(query).getExpandedJson().toJson());
+      expressions.forEach(expression -> query.fields().include(expression));
+      PlanExecutionExpansion planExecutionExpansion = planExecutionExpansionRepository.find(query);
+      if (planExecutionExpansion == null) {
+        return null;
+      }
+      if (planExecutionExpansion.getExpandedJson() == null) {
+        return null;
+      }
+      return JsonUtils.asMap(planExecutionExpansion.getExpandedJson().toJson());
     }
     return null;
   }
@@ -126,5 +133,10 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
 
   private boolean shouldUseExpandedJsonFunctor(Ambiance ambiance) {
     return pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_ENGINE_V2);
+  }
+
+  @Override
+  public void deleteAllExpansions(Set<String> planExecutionIds) {
+    planExecutionExpansionRepository.deleteAllExpansions(planExecutionIds);
   }
 }

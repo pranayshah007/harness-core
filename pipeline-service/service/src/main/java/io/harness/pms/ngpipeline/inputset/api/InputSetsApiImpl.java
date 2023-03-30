@@ -14,12 +14,14 @@ import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
+import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
@@ -32,6 +34,8 @@ import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.v1.InputSetsApi;
 import io.harness.spec.server.pipeline.v1.model.InputSetCreateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.InputSetMoveConfigRequestBody;
+import io.harness.spec.server.pipeline.v1.model.InputSetMoveConfigResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetUpdateRequestBody;
 import io.harness.utils.ApiUtils;
@@ -40,6 +44,7 @@ import io.harness.utils.PageUtils;
 import com.google.inject.Inject;
 import java.util.Objects;
 import java.util.Optional;
+import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AccessLevel;
@@ -114,7 +119,7 @@ public class InputSetsApiImpl implements InputSetsApi {
           .build();
     }
     if (!optionalInputSetEntity.isPresent()) {
-      throw new InvalidRequestException(
+      throw new EntityNotFoundException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSet));
     }
     InputSetResponseBody inputSetResponse = inputSetsApiUtils.getInputSetResponse(optionalInputSetEntity.get());
@@ -164,5 +169,30 @@ public class InputSetsApiImpl implements InputSetsApi {
     InputSetEntity updatedEntity = pmsInputSetService.update(ChangeType.MODIFY, entity, true);
     InputSetResponseBody inputSetResponse = inputSetsApiUtils.getInputSetResponse(updatedEntity);
     return Response.ok().entity(inputSetResponse).build();
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  public Response inputSetsMoveConfig(
+      String org, String project, String inputSet, @Valid InputSetMoveConfigRequestBody requestBody, String account) {
+    if (requestBody == null) {
+      throw new InvalidRequestException("InputSet MoveConfig request body must not be null.");
+    }
+    if (!Objects.equals(inputSet, requestBody.getInputSetIdentifier())) {
+      throw new InvalidRequestException(
+          String.format("Expected InputSet identifier in Request Body to be [%s], but was [%s]", inputSet,
+              requestBody.getInputSetIdentifier()));
+    }
+    log.info(
+        String.format("Move Config for InputSet of move type %s with identifier %s in project %s, org %s, account %s",
+            requestBody.getMoveConfigOperationType().toString(), inputSet, project, org, account));
+    GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitMoveDetails(requestBody.getGitDetails()));
+    InputSetMoveConfigOperationDTO inputSetMoveConfigOperation = InputSetsApiUtils.buildMoveConfigOperationDTO(
+        requestBody.getGitDetails(), requestBody.getMoveConfigOperationType(), requestBody.getPipelineIdentifier());
+    InputSetEntity movedInputSetEntity =
+        pmsInputSetService.moveConfig(account, org, project, inputSet, inputSetMoveConfigOperation);
+    InputSetMoveConfigResponseBody responseBody = new InputSetMoveConfigResponseBody();
+    responseBody.setInputSetIdentifier(movedInputSetEntity.getIdentifier());
+    return Response.ok().entity(responseBody).build();
   }
 }

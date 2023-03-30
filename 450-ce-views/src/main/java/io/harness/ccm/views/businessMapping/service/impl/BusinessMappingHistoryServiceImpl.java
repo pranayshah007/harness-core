@@ -70,6 +70,7 @@ public class BusinessMappingHistoryServiceImpl implements BusinessMappingHistory
     BusinessMappingHistory businessMappingHistory =
         getLatest(businessMapping.getAccountId(), businessMapping.getUuid(), eventTime);
     if (getYearMonthInteger(getYearMonth(eventTime)).equals(businessMappingHistory.getStartAt())) {
+      businessMappingHistory.setName(businessMapping.getName());
       businessMappingHistory.setCostTargets(businessMapping.getCostTargets());
       businessMappingHistory.setSharedCosts(businessMapping.getSharedCosts());
       businessMappingHistory.setUnallocatedCost(businessMapping.getUnallocatedCost());

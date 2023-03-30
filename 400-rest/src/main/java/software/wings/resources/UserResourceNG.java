@@ -198,7 +198,9 @@ public class UserResourceNG {
   public RestResponse<Boolean> deleteUser(
       @QueryParam("accountId") String accountId, @QueryParam("userId") String userId) {
     if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)) {
-      userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+      if (userService.isUserPresent(userId) && userServiceHelper.isUserActiveInNG(userService.get(userId), accountId)) {
+        userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+      }
       if (!userService.isUserPartOfAnyUserGroupInCG(userId, accountId)) {
         log.warn("User {}, is being deleted from CG, since he is not part of any user-groups in CG",
             userService.get(userId).getEmail());
@@ -270,7 +272,7 @@ public class UserResourceNG {
     Integer pageSize = pageRequest.getPageSize();
 
     List<User> userList =
-        userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false);
+        userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false, false);
 
     PageResponse<UserInfo> pageResponse = aPageResponse()
                                               .withOffset(offset.toString())
@@ -516,6 +518,7 @@ public class UserResourceNG {
         .createdAt(user.getCreatedAt())
         .lastUpdatedAt(user.getLastUpdatedAt())
         .emailVerified(user.isEmailVerified())
+        .externalId(user.getExternalUserId())
         .accounts(user.getAccounts()
                       .stream()
                       .map(account -> AccountMapper.toGatewayAccountRequest(account))

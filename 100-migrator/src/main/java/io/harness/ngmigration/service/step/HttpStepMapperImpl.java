@@ -10,6 +10,8 @@ package io.harness.ngmigration.service.step;
 import io.harness.beans.KeyValuePair;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.http.HttpHeaderConfig;
+import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -34,6 +36,7 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.HttpState;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.List;
@@ -61,8 +64,9 @@ public class HttpStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
-    return defaultTemplateSpecMapper(context, graphNode);
+  public TemplateStepNode getTemplateSpec(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode, String skipCondition) {
+    return defaultTemplateSpecMapper(migrationContext, context, phase, phaseStep, graphNode, skipCondition);
   }
 
   @Override
@@ -79,10 +83,11 @@ public class HttpStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     HttpState state = (HttpState) getState(graphNode);
     HttpStepNode httpStepNode = new HttpStepNode();
-    baseSetup(graphNode, httpStepNode);
+    baseSetup(graphNode, httpStepNode, context.getIdentifierCaseFormat());
 
     if (StringUtils.isNotBlank(graphNode.getTemplateUuid())) {
       log.error(String.format("Trying to link a step which is not a step template - %s", graphNode.getTemplateUuid()));
@@ -184,9 +189,12 @@ public class HttpStepMapperImpl extends StepMapper {
         .stream()
         .map(exp
             -> StepOutput.builder()
-                   .stageIdentifier(MigratorUtility.generateIdentifier(phase.getName()))
-                   .stepIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()))
-                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
         .map(HttpStepFunctor::new)
@@ -196,5 +204,13 @@ public class HttpStepMapperImpl extends StepMapper {
   @Override
   public boolean loopingSupported() {
     return true;
+  }
+
+  @Override
+  public void overrideTemplateInputs(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, GraphNode graphNode, NGYamlFile templateFile, JsonNode templateInputs) {
+    // Fix delegate selectors in the workflow
+    HttpState state = (HttpState) getState(graphNode);
+    overrideTemplateDelegateSelectorInputs(templateInputs, state.getTags());
   }
 }

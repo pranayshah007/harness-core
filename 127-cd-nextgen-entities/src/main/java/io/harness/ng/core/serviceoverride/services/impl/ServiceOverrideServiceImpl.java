@@ -34,7 +34,6 @@ import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.serviceoverride.spring.ServiceOverrideRepository;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGVariable;
@@ -170,19 +169,32 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
       variableOverrides.removeIf(Objects::isNull);
       Set<String> variableKeys = new HashSet<>();
       Set<String> duplicates = new HashSet<>();
-      int emptyOverrides = 0;
+      int emptyOverrideNames = 0;
+      int nullOverrideValues = 0;
+      String nullOverrideValuesList = "";
       for (NGVariable variableOverride : variableOverrides) {
         if (StringUtils.isBlank(variableOverride.getName())) {
-          emptyOverrides++;
+          emptyOverrideNames++;
         } else if (!variableKeys.add(variableOverride.getName())) {
           duplicates.add(variableOverride.getName());
         }
+
+        if (variableOverride.fetchValue().fetchFinalValue() == null) {
+          nullOverrideValues++;
+          nullOverrideValuesList = nullOverrideValuesList + " " + variableOverride.getName();
+        }
       }
-      if (emptyOverrides != 0) {
-        String plural = emptyOverrides == 1 ? "" : "s";
+      if (emptyOverrideNames != 0) {
+        String plural = emptyOverrideNames == 1 ? "" : "s";
         throw new InvalidRequestException(
             String.format("Empty variable name%s for %s variable override%s in service ref: [%s]", plural,
-                emptyOverrides, plural, requestServiceOverride.getServiceRef()));
+                emptyOverrideNames, plural, requestServiceOverride.getServiceRef()));
+      }
+      if (nullOverrideValues != 0) {
+        String plural = nullOverrideValues == 1 ? "" : "s";
+        throw new InvalidRequestException(
+            String.format("value%s not provided for %s variable override%s%s in service ref: [%s]", plural,
+                nullOverrideValues, plural, nullOverrideValuesList, requestServiceOverride.getServiceRef()));
       }
       if (!duplicates.isEmpty()) {
         throw new InvalidRequestException(String.format("Duplicate Service overrides provided: [%s] for service: [%s]",
@@ -283,8 +295,8 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
     String[] serviceRefSplit = serviceIdentifier.split("\\.", 2);
     if (serviceRefSplit.length == 1) {
       // identifier
-      IdentifierRef serviceIdentifierRef = FullyQualifiedIdentifierHelper.getIdentifierRefWithScope(
-          accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
+      IdentifierRef serviceIdentifierRef =
+          IdentifierRefHelper.getIdentifierRefWithScope(accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
       String scopedServiceRef = serviceIdentifierRef.buildScopedIdentifier();
       // delete all service overrides with matching serviceRef irrespective of its scope
       criteria = getServiceOverrideEqualityCriteriaForServiceRef(
@@ -325,7 +337,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
         throw new InvalidRequestException("Service overrides yaml is empty.");
       }
       try {
-        String serviceOverrideInputs = RuntimeInputFormHelper.createRuntimeInputForm(yaml, true);
+        String serviceOverrideInputs = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(yaml);
         if (isEmpty(serviceOverrideInputs)) {
           return null;
         }

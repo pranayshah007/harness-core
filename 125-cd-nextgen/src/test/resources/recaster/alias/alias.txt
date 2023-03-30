@@ -731,7 +731,6 @@ io.harness.ngpipeline.artifact.bean.GoogleCloudStorageArtifactOutcome
 io.harness.ngpipeline.artifact.bean.GoogleCloudSourceArtifactOutcome
 io.harness.ngpipeline.pipeline.executions.beans.GoogleCloudStorageArtifactSummary
 io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome
-io.harness.cdng.provision.terraformcloud.output.TerraformCloudPlanOutput
 io.harness.cdng.provision.terraformcloud.params.TerraformCloudApplySpecParameters
 io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndApplySpecParameters
 io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndDestroySpecParameters
@@ -822,3 +821,18 @@ io.harness.cdng.bamboo.BambooBuildSpecParameters
 io.harness.cdng.bamboo.BambooBuildStepNode
 io.harness.cdng.pipeline.stepinfo.BambooBuildStepInfo
 io.harness.cdng.bamboo.BambooBuildOutcome
+io.harness.cdng.infra.yaml.K8sAwsInfrastructure
+io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome
+io.harness.cdng.infra.beans.K8sAwsInfraMapping
+io.harness.cdng.hooks.ServiceHook
+io.harness.cdng.hooks.ServiceHookWrapper
+io.harness.cdng.hooks.ServiceHookOutcome
+io.harness.cdng.tas.TasRouteType
+io.harness.cdng.tas.TasRouteMappingStepInfo
+io.harness.cdng.tas.TasRouteMappingStepParameters
+io.harness.cdng.tas.TasRouteMappingStepNode
+io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput
+io.harness.cdng.provision.terraform.TerraformCliOptionFlag
+io.harness.cdng.infra.yaml.K8sRancherInfrastructure
+io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome
+io.harness.cdng.infra.beans.K8sRancherInfraMapping

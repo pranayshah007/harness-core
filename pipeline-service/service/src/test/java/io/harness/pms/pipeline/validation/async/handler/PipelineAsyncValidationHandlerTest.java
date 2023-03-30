@@ -57,12 +57,8 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
                                   .uuid("abc123")
                                   .params(ValidationParams.builder().pipelineEntity(pipelineEntity).build())
                                   .build();
-    pipelineAsyncValidationHandler = PipelineAsyncValidationHandler.builder()
-                                         .validationEvent(pipelineValidationEvent)
-                                         .validationService(validationService)
-                                         .pipelineTemplateHelper(pipelineTemplateHelper)
-                                         .pipelineGovernanceService(pipelineGovernanceService)
-                                         .build();
+    pipelineAsyncValidationHandler = new PipelineAsyncValidationHandler(
+        pipelineValidationEvent, false, validationService, pipelineTemplateHelper, pipelineGovernanceService);
   }
 
   @Test

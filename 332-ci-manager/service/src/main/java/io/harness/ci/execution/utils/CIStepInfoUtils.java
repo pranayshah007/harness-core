@@ -15,16 +15,20 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.SecurityStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.config.StepImageConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.common.NGExpressionUtils;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.pms.yaml.ParameterField;
@@ -48,6 +52,15 @@ public class CIStepInfoUtils {
       return getVmPluginCustomStepImageConfig(step, ciExecutionConfigService, accountId);
     }
     return null;
+  }
+
+  public static String getPluginVersionForInfra(CIExecutionConfigService ciExecutionConfigService,
+      CIStepInfoType stepInfoType, String accountId, Infrastructure infrastructure) {
+    if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
+      return ciExecutionConfigService.getPluginVersionForK8(stepInfoType, accountId).getImage();
+    } else {
+      return ciExecutionConfigService.getPluginVersionForVM(stepInfoType, accountId);
+    }
   }
 
   public static ParameterField<Boolean> getPrivilegedMode(PluginCompatibleStep step) {
@@ -79,7 +92,7 @@ public class CIStepInfoUtils {
       case SECURITY:
         return ((SecurityStepInfo) step).getImagePullPolicy();
       default:
-        return null;
+        return new ParameterField<>();
     }
   }
 
@@ -162,7 +175,7 @@ public class CIStepInfoUtils {
       String defaultTag = stoStepsConfig.getDefaultTag();
       List<String> defaultEntryPoint = stoStepsConfig.getDefaultEntrypoint();
       Optional<STOImageConfig> optionalSTOImageConfig =
-          stoStepImages.stream().filter(el -> el.getProduct().toString().equals(stepProductName)).findFirst();
+          stoStepImages.stream().filter(el -> stepProductName.matches(el.getProduct())).findFirst();
 
       if (optionalSTOImageConfig.isPresent()) {
         STOImageConfig stepImageConfig = optionalSTOImageConfig.get();
@@ -198,5 +211,17 @@ public class CIStepInfoUtils {
       return getSecurityStepImageConfig(step, ciExecutionConfigService, defaultImageConfig).getImage();
     }
     return defaultImage;
+  }
+
+  public static boolean canRunVmStepOnHost(CIStepInfoType ciStepInfoType, StageInfraDetails stageInfraDetails,
+      String accountId, CIExecutionConfigService ciExecutionConfigService, CIFeatureFlagService featureFlagService) {
+    if (stageInfraDetails.getType() != Type.DLITE_VM) {
+      return false;
+    }
+    if (!featureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId)) {
+      return false;
+    }
+    String pluginName = ciExecutionConfigService.getContainerlessPluginNameForVM(ciStepInfoType);
+    return isNotEmpty(pluginName);
   }
 }

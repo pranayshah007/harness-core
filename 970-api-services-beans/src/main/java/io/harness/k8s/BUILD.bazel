@@ -10,7 +10,11 @@ java_library(
     name = "module",
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
-    deps = ["//999-annotations/src/main/java/io/harness/annotations/dev:module"],
+    deps = [
+        "//:lombok",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+    ],
 )
 
 run_analysis_per_module()

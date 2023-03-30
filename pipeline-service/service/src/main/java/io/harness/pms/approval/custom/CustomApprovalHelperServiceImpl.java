@@ -8,6 +8,7 @@
 package io.harness.pms.approval.custom;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.pms.approval.ApprovalUtils.sendTaskIdProgressUpdate;
 
 import static software.wings.beans.TaskType.SHELL_SCRIPT_TASK_NG;
 import static software.wings.beans.TaskType.WIN_RM_SHELL_SCRIPT_TASK_NG;
@@ -130,6 +131,9 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
       TaskParameters scriptTaskParametersNG = buildShellScriptTaskParametersNG(ambiance, instance);
       log.info("Queuing Custom Approval delegate task");
       String taskId = queueTask(ambiance, instance, scriptTaskParametersNG);
+
+      sendTaskIdProgressUpdate(taskId, instanceId, waitNotifyEngine);
+
       log.info("Custom Approval Instance queued task with taskId - {}", taskId);
       logCallback.saveExecutionLog(String.format("Custom Shell Script Approval: %s", taskId));
     } catch (Exception ex) {

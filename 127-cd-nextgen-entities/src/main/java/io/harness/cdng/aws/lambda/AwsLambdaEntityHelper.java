@@ -20,7 +20,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
+import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.infra.beans.AwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -28,9 +32,14 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.aws.lambda.AwsLambdaArtifactConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaArtifactoryArtifactConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaCustomArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaEcrArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaJenkinsArtifactConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaNexusArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaS3ArtifactConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;
@@ -41,13 +50,21 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
 @Singleton
 @OwnedBy(CDP)
 public class AwsLambdaEntityHelper {
+  private final List<String> NEXUS3_PACKAGE_SUPPORTED_TYPES = Arrays.asList("maven", "npm", "nuget", "raw");
+  private final List<String> NEXUS2_PACKAGE_SUPPORTED_TYPES = Arrays.asList("maven", "npm", "nuget");
+  private final String CUSTOM_ARTIFACT_KEY = "key";
+  private final String CUSTOM_ARTIFACT_BUCKET_NAME = "bucketName";
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
 
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
@@ -64,8 +81,13 @@ public class AwsLambdaEntityHelper {
           return emptyList();
         }
       default:
-        throw new UnsupportedOperationException(
-            format("Unsupported connector type : [%s]", connectorDTO.getConnectorType()));
+        List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+        if (connectorDTO.getConnectorConfig().getDecryptableEntities() != null) {
+          for (DecryptableEntity decryptableEntity : connectorDTO.getConnectorConfig().getDecryptableEntities()) {
+            encryptedDataDetails.addAll(secretManagerClientService.getEncryptionDetails(ngAccess, decryptableEntity));
+          }
+        }
+        return encryptedDataDetails;
     }
   }
 
@@ -127,9 +149,85 @@ public class AwsLambdaEntityHelper {
           .tag(ecrArtifactOutcome.getTag())
           .type(ecrArtifactOutcome.getType())
           .build();
+    } else if (artifactOutcome instanceof NexusArtifactOutcome) {
+      NexusArtifactOutcome nexusArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
+      connectorDTO = getConnectorInfoDTO(nexusArtifactOutcome.getConnectorRef(), ngAccess);
+
+      if (isNexusRepoTypeSupported(connectorDTO, nexusArtifactOutcome.getRepositoryFormat())) {
+        return AwsLambdaNexusArtifactConfig.builder()
+            .identifier(nexusArtifactOutcome.getIdentifier())
+            .connectorConfig(connectorDTO.getConnectorConfig())
+            .encryptedDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+            .isCertValidationRequired(false)
+            .artifactUrl(nexusArtifactOutcome.getMetadata().get("url"))
+            .metadata(nexusArtifactOutcome.getMetadata())
+            .repositoryFormat(nexusArtifactOutcome.getRepositoryFormat())
+            .build();
+      } else {
+        throw new UnsupportedOperationException(
+            format("Unsupported Nexus Repository Format: [%s]", nexusArtifactOutcome.getRepositoryFormat()));
+      }
+    } else if (artifactOutcome instanceof ArtifactoryGenericArtifactOutcome) {
+      ArtifactoryGenericArtifactOutcome artifactoryGenericArtifactOutcome =
+          (ArtifactoryGenericArtifactOutcome) artifactOutcome;
+      connectorDTO = getConnectorInfoDTO(artifactoryGenericArtifactOutcome.getConnectorRef(), ngAccess);
+      return AwsLambdaArtifactoryArtifactConfig.builder()
+          .repository(artifactoryGenericArtifactOutcome.getRepositoryName())
+          .identifier(artifactoryGenericArtifactOutcome.getIdentifier())
+          .connectorConfig(connectorDTO.getConnectorConfig())
+          .encryptedDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+          .artifactPaths(
+              new ArrayList<>(Collections.singletonList(artifactoryGenericArtifactOutcome.getArtifactPath())))
+          .repositoryFormat(artifactoryGenericArtifactOutcome.getRepositoryFormat())
+          .build();
+    } else if (artifactOutcome instanceof JenkinsArtifactOutcome) {
+      JenkinsArtifactOutcome jenkinsArtifactOutcome = (JenkinsArtifactOutcome) artifactOutcome;
+      connectorDTO = getConnectorInfoDTO(jenkinsArtifactOutcome.getConnectorRef(), ngAccess);
+      return AwsLambdaJenkinsArtifactConfig.builder()
+          .artifactPath(jenkinsArtifactOutcome.getArtifactPath())
+          .jobName(jenkinsArtifactOutcome.getJobName())
+          .connectorConfig(connectorDTO.getConnectorConfig())
+          .identifier(jenkinsArtifactOutcome.getIdentifier())
+          .build(jenkinsArtifactOutcome.getBuild())
+          .encryptedDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+          .build();
+    } else if (artifactOutcome instanceof CustomArtifactOutcome) {
+      CustomArtifactOutcome customArtifactOutcome = (CustomArtifactOutcome) artifactOutcome;
+      Map<String, String> metadata = customArtifactOutcome.getMetadata();
+      validateCustomArtifactMetaData(metadata);
+      return AwsLambdaCustomArtifactConfig.builder()
+          .identifier(customArtifactOutcome.getIdentifier())
+          .primaryArtifact(customArtifactOutcome.isPrimaryArtifact())
+          .version(customArtifactOutcome.getVersion())
+          .metadata(metadata)
+          .bucketName(metadata.get(CUSTOM_ARTIFACT_BUCKET_NAME))
+          .filePath(metadata.get(CUSTOM_ARTIFACT_KEY))
+          .build();
     } else {
       throw new UnsupportedOperationException(
           format("Unsupported Artifact type: [%s]", artifactOutcome.getArtifactType()));
+    }
+  }
+
+  private boolean isNexusRepoTypeSupported(ConnectorInfoDTO connectorDTO, String repoType) {
+    if (isNexusTwo(connectorDTO)) {
+      return NEXUS2_PACKAGE_SUPPORTED_TYPES.contains(repoType);
+    } else {
+      return NEXUS3_PACKAGE_SUPPORTED_TYPES.contains(repoType);
+    }
+  }
+
+  private boolean isNexusTwo(ConnectorInfoDTO connectorDTO) {
+    NexusConnectorDTO nexusConnectorDTO = (NexusConnectorDTO) connectorDTO.getConnectorConfig();
+    return nexusConnectorDTO.getVersion() == null || nexusConnectorDTO.getVersion().equalsIgnoreCase("2.x");
+  }
+
+  private void validateCustomArtifactMetaData(Map<String, String> metadata) {
+    if (!(metadata.get(CUSTOM_ARTIFACT_BUCKET_NAME) != null && metadata.get(CUSTOM_ARTIFACT_KEY) != null)) {
+      throw new UnsupportedOperationException(
+          format("Invalid Custom Artifact Configuration\n Check if Additional Attributes [%s], [%s] are configured in "
+                  + "Custom Artifact",
+              CUSTOM_ARTIFACT_BUCKET_NAME, CUSTOM_ARTIFACT_KEY));
     }
   }
 }

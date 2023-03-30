@@ -8,6 +8,7 @@
 package io.harness.filters;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.yaml.ParameterField.isNotNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -68,8 +69,8 @@ public abstract class GenericStageFilterJsonCreator implements FilterJsonCreator
   @Override
   public FilterCreationResponse handleNode(
       FilterCreationContext filterCreationContext, StageElementConfig stageElementConfig) {
-    if (stageElementConfig.getStrategy() != null) {
-      StrategyValidationUtils.validateStrategyNode(stageElementConfig.getStrategy());
+    if (isNotNull(stageElementConfig.getStrategy()) && stageElementConfig.getStrategy().getValue() != null) {
+      StrategyValidationUtils.validateStrategyNode(stageElementConfig.getStrategy().getValue());
     }
     FilterCreationResponseBuilder creationResponse = FilterCreationResponse.builder();
 

@@ -7,7 +7,6 @@
 
 package io.harness.cdng.gitops.syncstep;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
@@ -15,7 +14,9 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
@@ -25,25 +26,28 @@ import lombok.Data;
 public class SyncOptions {
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> skipSchemaValidation;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> autoCreateNamespace;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> pruneResourcesAtLast;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> applyOutOfSyncOnly;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> replaceResources;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  public ParameterField<String> prunePropagationPolicy;
+  @NotNull @JsonProperty("prunePropagationPolicy") PrunePropagationPolicy prunePropagationPolicy;
 }

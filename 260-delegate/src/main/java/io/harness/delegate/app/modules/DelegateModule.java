@@ -42,6 +42,8 @@ import io.harness.aws.v2.ecs.EcsV2Client;
 import io.harness.aws.v2.ecs.EcsV2ClientImpl;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.aws.v2.ecs.ElbV2ClientImpl;
+import io.harness.aws.v2.eks.EksV2Client;
+import io.harness.aws.v2.eks.EksV2ClientImpl;
 import io.harness.aws.v2.lambda.AwsLambdaClient;
 import io.harness.aws.v2.lambda.AwsLambdaClientImpl;
 import io.harness.awscli.AwsCliClient;
@@ -196,6 +198,8 @@ import io.harness.delegate.task.artifacts.azure.AcrArtifactTaskNG;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsTaskHandler;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsTaskNG;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.bamboo.BambooArtifactTaskNG;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactTaskHandler;
@@ -227,6 +231,7 @@ import io.harness.delegate.task.artifacts.s3.S3ArtifactTaskNG;
 import io.harness.delegate.task.aws.AwsCodeCommitApiDelegateTask;
 import io.harness.delegate.task.aws.AwsCodeCommitDelegateTask;
 import io.harness.delegate.task.aws.AwsDelegateTask;
+import io.harness.delegate.task.aws.AwsEKSListClustersDelegateTaskNG;
 import io.harness.delegate.task.aws.S3FetchFilesTaskNG;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataTaskNG;
@@ -336,6 +341,7 @@ import io.harness.delegate.task.helm.HelmValuesFetchTaskNG;
 import io.harness.delegate.task.helm.HttpHelmConnectivityDelegateTask;
 import io.harness.delegate.task.helm.HttpHelmValidationHandler;
 import io.harness.delegate.task.helm.OciHelmConnectivityDelegateTask;
+import io.harness.delegate.task.helm.OciHelmDockerApiListTagsDelegateTask;
 import io.harness.delegate.task.helm.OciHelmValidationHandler;
 import io.harness.delegate.task.jenkins.JenkinsTestConnectionDelegateTask;
 import io.harness.delegate.task.jenkins.JenkinsValidationHandler;
@@ -415,6 +421,7 @@ import io.harness.delegate.task.tas.TasDataFetchTask;
 import io.harness.delegate.task.tas.TasRollbackTask;
 import io.harness.delegate.task.tas.TasRollingDeploymentTask;
 import io.harness.delegate.task.tas.TasRollingRollbackTask;
+import io.harness.delegate.task.tas.TasRouteMappingTask;
 import io.harness.delegate.task.tas.TasSwapRollbackTask;
 import io.harness.delegate.task.tas.TasSwapRouteTask;
 import io.harness.delegate.task.terraform.TFTaskType;
@@ -1482,6 +1489,13 @@ public class DelegateModule extends AbstractModule {
         .toInstance(JenkinsArtifactTaskHandler.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
+        bambooArtifactServiceMapBinder =
+            MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
+                new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
+    bambooArtifactServiceMapBinder.addBinding(BambooArtifactDelegateRequest.class)
+        .toInstance(BambooArtifactTaskHandler.class);
+
+    MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
         customArtifactServiceMapBinder =
             MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
                 new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
@@ -2013,6 +2027,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V2).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V3).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V4).toInstance(TerraformTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V5).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.SCM_PUSH_TASK).toInstance(ScmPushTask.class);
     mapBinder.addBinding(TaskType.SCM_PATH_FILTER_EVALUATION_TASK).toInstance(ScmPathFilterEvaluationTask.class);
     mapBinder.addBinding(TaskType.SCM_GIT_REF_TASK).toInstance(ScmGitRefTask.class);
@@ -2036,6 +2051,8 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG).toInstance(HelmFetchChartVersionTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_CLOUD_TASK_NG).toInstance(TerraformCloudTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_CLOUD_CLEANUP_TASK_NG).toInstance(TerraformCloudCleanupTaskNG.class);
+    mapBinder.addBinding(TaskType.OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG)
+        .toInstance(OciHelmDockerApiListTagsDelegateTask.class);
 
     // ECS NG
     MapBinder<String, EcsCommandTaskNGHandler> ecsTaskTypeToTaskHandlerMap =
@@ -2114,6 +2131,7 @@ public class DelegateModule extends AbstractModule {
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);
     bind(GoogleCloudFunctionClient.class).to(GoogleCloudFunctionClientImpl.class);
     bind(GoogleCloudRunClient.class).to(GoogleCloudRunClientImpl.class);
+    bind(EksV2Client.class).to(EksV2ClientImpl.class);
 
     // AWS Lambda NG
     bind(AwsLambdaClient.class).to(AwsLambdaClientImpl.class);
@@ -2171,6 +2189,10 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG)
         .toInstance(AwsLambdaPrepareRollbackTask.class);
     mapBinder.addBinding(TaskType.AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG).toInstance(AwsLambdaRollbackTask.class);
+    mapBinder.addBinding(TaskType.TAS_ROUTE_MAPPING).toInstance(TasRouteMappingTask.class);
+
+    // AWS EKS
+    mapBinder.addBinding(TaskType.AWS_EKS_LIST_CLUSTERS_TASK).toInstance(AwsEKSListClustersDelegateTaskNG.class);
   }
 
   private void registerSecretManagementBindings() {

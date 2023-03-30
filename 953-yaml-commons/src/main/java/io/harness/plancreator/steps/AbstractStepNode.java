@@ -9,7 +9,6 @@ package io.harness.plancreator.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
@@ -70,7 +69,11 @@ public abstract class AbstractStepNode {
   @ApiModelProperty(hidden = true)
   ParameterField<List<String>> delegateSelectors;
 
-  @VariableExpression(skipVariableExpression = true) @JsonProperty("strategy") StrategyConfig strategy;
+  @ApiModelProperty(dataType = SwaggerConstants.STRATEGY_CLASSPATH)
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  @VariableExpression(skipVariableExpression = true)
+  @JsonProperty("strategy")
+  ParameterField<StrategyConfig> strategy;
   @VariableExpression(skipVariableExpression = true) PolicyConfig enforce;
 
   @JsonIgnore public abstract String getType();

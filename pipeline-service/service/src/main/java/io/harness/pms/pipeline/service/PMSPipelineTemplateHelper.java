@@ -37,6 +37,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
+import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.inject.Inject;
@@ -105,6 +106,7 @@ public class PMSPipelineTemplateHelper {
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
                   .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                  .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
                   .build(),
               appendInputSetValidator));
         }
@@ -118,6 +120,7 @@ public class PMSPipelineTemplateHelper {
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
                   .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                  .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
                   .build(),
               appendInputSetValidator));
         }

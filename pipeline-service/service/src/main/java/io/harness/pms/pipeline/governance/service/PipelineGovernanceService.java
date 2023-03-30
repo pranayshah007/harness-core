@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.governance.service;
 
 import io.harness.governance.GovernanceMetadata;
+import io.harness.pms.pipeline.PipelineEntity;
 
 public interface PipelineGovernanceService {
   GovernanceMetadata validateGovernanceRules(
@@ -16,6 +17,10 @@ public interface PipelineGovernanceService {
   GovernanceMetadata validateGovernanceRulesAndThrowExceptionIfDenied(
       String accountId, String orgIdentifier, String projectIdentifier, String yamlWithResolvedTemplates);
 
+  String fetchExpandedPipelineJSONFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineYaml, boolean isExecution, String action);
   String fetchExpandedPipelineJSONFromYaml(
-      String accountId, String orgIdentifier, String projectIdentifier, String pipelineYaml, boolean isExecution);
+      PipelineEntity pipelineEntity, String pipelineYaml, boolean isExecution, String branch, String action);
+  String getExpandedPipelineJSONFromYaml(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineYaml, boolean isExecution, String branch, PipelineEntity pipelineEntity);
 }

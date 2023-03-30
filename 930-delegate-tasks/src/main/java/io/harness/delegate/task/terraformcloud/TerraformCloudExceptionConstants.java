@@ -19,6 +19,7 @@ public final class TerraformCloudExceptionConstants {
     public static final String PLEASE_CHECK_TFC_CONFIG = "Please check Terraform Cloud configuration";
     public static final String PLEASE_CHECK_POLICY = "Please check status of policy check: %s";
     public static final String PLEASE_CHECK_RUN = "Please check status of run: %s";
+    public static final String PLEASE_CHECK_PLAN_STATUS = "Please check status of plan: %s";
     public static final String POLICY_OVERRIDE_HINT =
         "To override policies select option [ Continue on Soft-Mandatory Policy evaluation result ] in step configuration";
   }
@@ -26,9 +27,8 @@ public final class TerraformCloudExceptionConstants {
     public static final String COULD_NOT_GET_WORKSPACE = "Could not get workspaces from: %s for organization: %s";
     public static final String COULD_NOT_GET_ORG = "Could not get organizations from: %s";
     public static final String COULD_NOT_CREATE_RUN = "Error happened during a run creation";
-    public static final String COULD_NOT_FORCE_RUN = "Could not force execute run: %s";
     public static final String COULD_NOT_GET_PLAN = "Could not get a plan: %s";
-    public static final String APPLY_UNREACHABLE_ERROR = "Apply for run id: %s is unreachable";
+    public static final String APPLY_UNREACHABLE_ERROR = "Apply failed for run id: %s . Status: %s";
     public static final String COULD_NOT_GET_APPLY_LOGS = "Could not get apply logs for apply: %s";
     public static final String COULD_NOT_UPLOAD_FILE = "Could not upload json file: %s to the bucket: %s";
     public static final String COULD_NOT_FIND_RELATIONSHIP = "Could not find relationship: %s";
@@ -46,13 +46,13 @@ public final class TerraformCloudExceptionConstants {
     public static final String POLICY_OVERRIDE_ERROR_MESSAGE = "Policy check failed and not overridden";
     public static final String WORKSPACE_OR_RUN_MUST_BE_PROVIDED =
         "Workspace or run id must be provided to fetch last applied run";
+    public static final String ERROR_PLAN = "Error while executing Plan";
   }
 
   public static final class Message {
     public static final String ERROR_GETTING_WORKSPACE = "Failed to get workspaces";
     public static final String ERROR_GETTING_ORG = "Failed to get organizations";
     public static final String ERROR_CREATING_RUN = "Failed to create a run";
-    public static final String ERROR_DISCARD_PENDING_RUNS = "Failed to discard pending runs";
     public static final String ERROR_STREAMING_PLAN_LOGS = "Failed to stream Plan logs";
     public static final String ERROR_APPLYING = "Apply is unreachable";
     public static final String ERROR_STREAMING_APPLY_LOGS = "Failed to stream Apply logs";
@@ -67,5 +67,6 @@ public final class TerraformCloudExceptionConstants {
     public static final String ERROR_GETTING_APPLIED_POLICIES = "Failed to get applied polices";
     public static final String ERROR_TO_APPLY = "Failed to do apply";
     public static final String MISSING_WORKSPACE_ID = "Workspace id is missing";
+    public static final String FAILED_TO_PLAN = "Failed to execute Plan";
   }
 }

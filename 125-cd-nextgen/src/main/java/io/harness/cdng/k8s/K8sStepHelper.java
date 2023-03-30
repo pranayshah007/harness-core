@@ -24,6 +24,7 @@ import static java.util.Collections.emptyMap;
 
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.K8sHelmCommonStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
@@ -123,6 +124,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 
 @OwnedBy(CDP)
 @Singleton
@@ -176,13 +179,38 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       return emptyList();
     }
 
-    List<String> renderedValuesFileContents = getValuesFileContents(ambiance, valuesFileContents);
+    List<String> valuesFilesContentsWithoutComments = new ArrayList<>();
+    if (cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_REMOVE_COMMENTS_FROM_VALUES_YAML)) {
+      valuesFilesContentsWithoutComments = removeCommentsFromValuesYamlFiles(valuesFileContents);
+    }
+
+    List<String> renderedValuesFileContents = getValuesFileContents(ambiance,
+        isEmpty(valuesFilesContentsWithoutComments) ? valuesFileContents : valuesFilesContentsWithoutComments);
 
     if (ManifestType.OpenshiftTemplate.equals(manifestOutcome.getType())) {
       Collections.reverse(renderedValuesFileContents);
     }
 
     return renderedValuesFileContents;
+  }
+
+  private List<String> removeCommentsFromValuesYamlFiles(List<String> valuesFiles) {
+    List<String> modifiedValuesFiles = new ArrayList<>();
+    DumperOptions options = new DumperOptions();
+    options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+    options.setPrettyFlow(true);
+    Yaml yaml = new Yaml(options);
+    Map<String, String> map;
+    String str;
+    for (String values : valuesFiles) {
+      if (isNotEmpty(values)) {
+        map = yaml.load(values);
+        str = isNotEmpty(map) ? yaml.dump(map) : "";
+        modifiedValuesFiles.add(str);
+      }
+    }
+    return modifiedValuesFiles;
   }
 
   public List<String> renderPatches(
@@ -549,7 +577,17 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
           "There can be only a single manifest. Select one from " + String.join(", ", K8S_SUPPORTED_MANIFEST_TYPES),
           USER);
     }
-    return k8sManifests.get(0);
+
+    ManifestOutcome k8sManifest = k8sManifests.get(0);
+    if (ManifestStoreType.HARNESS.equals(k8sManifest.getStore().getKind())) {
+      if (manifestOutcomes.stream().anyMatch(
+              manifestOutcome -> ManifestStoreType.InheritFromManifest.equals(manifestOutcome.getStore().getKind()))) {
+        throw new InvalidRequestException(format(
+            "InheritFromManifest store type is not supported with Manifest identifier: %s, Manifest type: %s, Manifest store type: %s",
+            k8sManifest.getIdentifier(), k8sManifest.getType(), k8sManifest.getStore().getKind()));
+      }
+    }
+    return k8sManifest;
   }
 
   public List<KustomizePatchesManifestOutcome> getKustomizePatchesManifests(

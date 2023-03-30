@@ -124,7 +124,9 @@ public class FreezeEvalutationResource {
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId) {
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(description = "pipeline identifier for the entity") @QueryParam(
+          NGCommonEntityConstants.PIPELINE_KEY) String pipelineId) {
     if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
             featureFlagHelperService, accountId, orgId, projectId, accessControlClient)) {
       return ResponseDTO.newResponse(ShouldDisableDeploymentFreezeResponseDTO.builder()
@@ -132,8 +134,9 @@ public class FreezeEvalutationResource {
                                          .freezeReferences(new LinkedList<>())
                                          .build());
     }
+
     List<FreezeSummaryResponseDTO> freezeSummaryResponseDTO =
-        freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId);
+        freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId, pipelineId);
     List<FreezeReference> freezeReferences = new LinkedList<>();
     freezeSummaryResponseDTO.stream().forEach(freeze
         -> freezeReferences.add(FreezeReference.builder()

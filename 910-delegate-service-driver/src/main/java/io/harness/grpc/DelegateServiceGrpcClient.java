@@ -386,17 +386,20 @@ public class DelegateServiceGrpcClient {
       taskDetailsBuilder.setKryoParameters(
           ByteString.copyFrom(referenceFalseKryoSerializer.asDeflatedBytes(taskParameters)));
     }
+    TaskLogAbstractions.Builder builder =
+        TaskLogAbstractions.newBuilder().putAllValues(MapUtils.emptyIfNull(taskRequest.getLogStreamingAbstractions()));
+
+    builder.setShouldSkipOpenStream(taskRequest.isShouldSkipOpenStream());
+    builder.setBaseLogKey(taskRequest.getBaseLogKey() == null ? "" : taskRequest.getBaseLogKey());
 
     return submitTaskV2(delegateCallbackToken, AccountId.newBuilder().setId(taskRequest.getAccountId()).build(),
         TaskSetupAbstractions.newBuilder()
             .putAllValues(MapUtils.emptyIfNull(taskRequest.getTaskSetupAbstractions()))
             .build(),
-        TaskLogAbstractions.newBuilder()
-            .putAllValues(MapUtils.emptyIfNull(taskRequest.getLogStreamingAbstractions()))
-            .build(),
-        taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor, taskRequest.isForceExecute(),
-        taskRequest.isExecuteOnHarnessHostedDelegates(), taskRequest.getEligibleToExecuteDelegateIds(),
-        taskRequest.isEmitEvent(), taskRequest.getStageId(), delegateSelectionTrackingLogEnabled);
+        builder.build(), taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor,
+        taskRequest.isForceExecute(), taskRequest.isExecuteOnHarnessHostedDelegates(),
+        taskRequest.getEligibleToExecuteDelegateIds(), taskRequest.isEmitEvent(), taskRequest.getStageId(),
+        delegateSelectionTrackingLogEnabled);
   }
 
   public TaskExecutionStage cancelTask(AccountId accountId, TaskId taskId) {

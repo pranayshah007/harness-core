@@ -101,6 +101,9 @@ public class VmRunStepSerializer {
       connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);
       runStepBuilder.imageConnector(connectorDetails);
       runStepBuilder.privileged(RunTimeInputHandler.resolveBooleanParameter(runStepInfo.getPrivileged(), false));
+      if (runStepInfo.getRunAsUser() != null && runStepInfo.getRunAsUser().getValue() != null) {
+        runStepBuilder.runAsUser(runStepInfo.getRunAsUser().getValue().toString());
+      }
     }
 
     if (runStepInfo.getReports().getValue() != null) {

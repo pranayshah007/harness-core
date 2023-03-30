@@ -9,11 +9,14 @@ package io.harness.ccm.views.helper;
 
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
 import static io.harness.ccm.views.utils.ClusterTableKeys.DEFAULT_DOUBLE_VALUE;
+import static io.harness.ccm.views.utils.ClusterTableKeys.DEFAULT_STRING_VALUE;
+import static io.harness.ccm.views.utils.ClusterTableKeys.ID_SEPARATOR;
 
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.views.businessMapping.entities.CostTarget;
 import io.harness.ccm.views.businessMapping.entities.SharedCost;
 import io.harness.ccm.views.businessMapping.entities.SharedCostParameters;
+import io.harness.ccm.views.businessMapping.entities.SharedCostSplit;
 import io.harness.ccm.views.dto.DataPoint;
 import io.harness.ccm.views.dto.DataPoint.DataPointBuilder;
 import io.harness.ccm.views.dto.Reference;
@@ -22,6 +25,7 @@ import io.harness.ccm.views.graphql.QLCEViewGroupBy;
 
 import com.google.cloud.Timestamp;
 import com.google.inject.Inject;
+import io.fabric8.utils.Maps;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,7 +48,6 @@ public class PerspectiveTimeSeriesResponseHelper {
     Map<String, String> entityIdToName =
         entityMetadataService.getEntityIdToNameMapping(entityIds, harnessAccountId, fieldName);
     Map<Timestamp, List<DataPoint>> updatedDataPointsMap = new TreeMap<>();
-    log.info("getUpdatedDataPointsMap costDataPointsMap: {}", costDataPointsMap);
     if (entityIdToName != null) {
       costDataPointsMap.keySet().forEach(timestamp
           -> updatedDataPointsMap.put(
@@ -73,16 +76,22 @@ public class PerspectiveTimeSeriesResponseHelper {
     return updatedDataPoints;
   }
 
-  public static void addDataPointToMap(String id, String name, String type, double value,
+  public void addDataPointToMap(String id, String name, String type, double value,
       Map<Timestamp, List<DataPoint>> dataPointsMap, Timestamp startTimeTruncatedTimestamp) {
     if (value != DEFAULT_DOUBLE_VALUE) {
-      DataPointBuilder dataPointBuilder = DataPoint.builder();
-      dataPointBuilder.key(getReference(id, name, type));
-      dataPointBuilder.value(getRoundedDoubleValue(value));
       List<DataPoint> dataPoints = dataPointsMap.getOrDefault(startTimeTruncatedTimestamp, new ArrayList<>());
-      dataPoints.add(dataPointBuilder.build());
+      dataPoints.add(getDataPoint(id, name, type, value));
       dataPointsMap.put(startTimeTruncatedTimestamp, dataPoints);
     }
+  }
+
+  private DataPoint getDataPoint(String id, String name, String type, double value) {
+    DataPointBuilder dataPointBuilder = DataPoint.builder();
+    if (value != DEFAULT_DOUBLE_VALUE) {
+      dataPointBuilder.key(getReference(id, name, type));
+      dataPointBuilder.value(getRoundedDoubleValue(value));
+    }
+    return dataPointBuilder.build();
   }
 
   public static List<TimeSeriesDataPoints> convertTimeSeriesPointsMapToList(
@@ -110,11 +119,29 @@ public class PerspectiveTimeSeriesResponseHelper {
       Map<Timestamp, List<DataPoint>> costDataPointsMap,
       Map<String, Map<Timestamp, Double>> sharedCostsFromRulesAndFilters) {
     Map<Timestamp, List<DataPoint>> updatedDataPointsMap = new TreeMap<>();
-    costDataPointsMap.keySet().forEach(timestamp -> {
-      updatedDataPointsMap.put(timestamp,
-          addSharedCostsToDataPoint(costDataPointsMap.get(timestamp), sharedCostsFromRulesAndFilters, timestamp));
-    });
+    for (Map.Entry<Timestamp, List<DataPoint>> entry : costDataPointsMap.entrySet()) {
+      updatedDataPointsMap.put(
+          entry.getKey(), addSharedCostsToDataPoint(entry.getValue(), sharedCostsFromRulesAndFilters, entry.getKey()));
+    }
+    if (Maps.isNullOrEmpty(costDataPointsMap)) {
+      updatedDataPointsMap = getDataPointsFromSharedCosts(sharedCostsFromRulesAndFilters);
+    }
 
+    return updatedDataPointsMap;
+  }
+
+  private Map<Timestamp, List<DataPoint>> getDataPointsFromSharedCosts(
+      Map<String, Map<Timestamp, Double>> sharedCostsFromRulesAndFilters) {
+    Map<Timestamp, List<DataPoint>> updatedDataPointsMap = new TreeMap<>();
+    for (Map.Entry<String, Map<Timestamp, Double>> entry1 : sharedCostsFromRulesAndFilters.entrySet()) {
+      String name = entry1.getKey();
+      String id = getUpdatedId(DEFAULT_STRING_VALUE, name);
+      for (Map.Entry<Timestamp, Double> entry2 : entry1.getValue().entrySet()) {
+        List<DataPoint> dataPoints = updatedDataPointsMap.getOrDefault(entry2.getKey(), new ArrayList<>());
+        dataPoints.add(getDataPoint(id, name, DEFAULT_STRING_VALUE, entry2.getValue()));
+        updatedDataPointsMap.put(entry2.getKey(), dataPoints);
+      }
+    }
     return updatedDataPointsMap;
   }
 
@@ -154,7 +181,9 @@ public class PerspectiveTimeSeriesResponseHelper {
       }
     });
 
-    return updatedDataPoints;
+    return updatedDataPoints.stream()
+        .filter(dataPoint -> dataPoint.getValue().doubleValue() > 0.0D)
+        .collect(Collectors.toList());
   }
 
   private List<DataPoint> addSharedCostsToDataPoint(
@@ -179,9 +208,9 @@ public class PerspectiveTimeSeriesResponseHelper {
       double sharedCostForEntity = 0.0;
 
       if (costTargets.contains(name)) {
-        sharedCostForEntity =
-            calculateSharedCost(sharedCostParameters, timestamp, sharedCostParameters.getCostPerEntity().get(name),
-                sharedCostBucketsFromGroupBy, sharedCostParameters.getSharedCostFromGroupBy());
+        sharedCostForEntity = calculateSharedCost(sharedCostParameters, timestamp, name,
+            sharedCostParameters.getCostPerEntity().get(name), sharedCostBucketsFromGroupBy,
+            sharedCostParameters.getSharedCostFromGroupBy());
       }
 
       updatedDataPoints.add(DataPoint.builder()
@@ -195,9 +224,9 @@ public class PerspectiveTimeSeriesResponseHelper {
         entityDataPointAdded.put(entity, true);
         double sharedCostForEntity = 0.0;
         if (costTargets.contains(entity)) {
-          sharedCostForEntity =
-              calculateSharedCost(sharedCostParameters, timestamp, sharedCostParameters.getCostPerEntity().get(entity),
-                  sharedCostBucketsFromGroupBy, sharedCostParameters.getSharedCostFromGroupBy());
+          sharedCostForEntity = calculateSharedCost(sharedCostParameters, timestamp, entity,
+              sharedCostParameters.getCostPerEntity().get(entity), sharedCostBucketsFromGroupBy,
+              sharedCostParameters.getSharedCostFromGroupBy());
         }
         updatedDataPoints.add(DataPoint.builder()
                                   .value(getRoundedDoubleValue(sharedCostForEntity))
@@ -209,20 +238,33 @@ public class PerspectiveTimeSeriesResponseHelper {
     return updatedDataPoints;
   }
 
-  private double calculateSharedCost(SharedCostParameters sharedCostParameters, Timestamp timestamp, Double entityCost,
-      List<SharedCost> sharedCostBuckets, Map<String, Map<Timestamp, Double>> sharedCosts) {
+  private double calculateSharedCost(SharedCostParameters sharedCostParameters, Timestamp timestamp, String entity,
+      Double entityCost, List<SharedCost> sharedCostBuckets, Map<String, Map<Timestamp, Double>> sharedCosts) {
     double sharedCost = 0.0;
     for (SharedCost sharedCostBucket : sharedCostBuckets) {
-      double sharedCostForGivenTimestamp =
-          sharedCosts.get(modifyStringToComplyRegex(sharedCostBucket.getName())).get(timestamp);
-      switch (sharedCostBucket.getStrategy()) {
-        case PROPORTIONAL:
-          sharedCost += sharedCostForGivenTimestamp * (entityCost / sharedCostParameters.getTotalCost());
-          break;
-        case EQUAL:
-        default:
-          sharedCost += sharedCostForGivenTimestamp * (1.0 / sharedCostParameters.getNumberOfEntities());
-          break;
+      Map<Timestamp, Double> sharedCostsPerTimestamp =
+          sharedCosts.get(modifyStringToComplyRegex(sharedCostBucket.getName()));
+      if (Objects.nonNull(sharedCostsPerTimestamp)) {
+        double sharedCostForGivenTimestamp = sharedCostsPerTimestamp.getOrDefault(timestamp, 0.0D);
+        switch (sharedCostBucket.getStrategy()) {
+          case PROPORTIONAL:
+            sharedCost += sharedCostForGivenTimestamp * (entityCost / sharedCostParameters.getTotalCost());
+            break;
+          case EQUAL:
+            sharedCost += sharedCostForGivenTimestamp * (1.0 / sharedCostParameters.getNumberOfEntities());
+            break;
+          case FIXED:
+            for (final SharedCostSplit sharedCostSplit : sharedCostBucket.getSplits()) {
+              if (entity.equals(sharedCostSplit.getCostTargetName())) {
+                sharedCost += sharedCostForGivenTimestamp * (sharedCostSplit.getPercentageContribution() / 100.0D);
+                break;
+              }
+            }
+            break;
+          default:
+            log.error("Invalid shared cost strategy for shared cost bucket: {}", sharedCostBucket);
+            break;
+        }
       }
     }
     return sharedCost;
@@ -238,6 +280,10 @@ public class PerspectiveTimeSeriesResponseHelper {
       entityGroupByFieldName = "No " + groupByFieldName.get();
     }
     return entityGroupByFieldName;
+  }
+
+  public String getUpdatedId(String id, String newField) {
+    return id.equals(DEFAULT_STRING_VALUE) ? newField : id + ID_SEPARATOR + newField;
   }
 
   public static Reference getReference(String id, String name, String type) {

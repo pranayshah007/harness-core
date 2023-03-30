@@ -256,7 +256,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     }
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
       // fetch yaml from git
-      String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepoURL());
+      String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
       if (loadFromFallbackBranch) {
         savedEntity = fetchRemoteEntityWithFallBackBranch(
             accountId, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
@@ -280,6 +280,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
             .repoName(savedEntity.getRepo())
             .entityType(EntityType.TEMPLATE)
             .loadFromCache(loadFromCache)
+            .getOnlyFileContent(TemplateUtils.isExecutionFlow())
             .build(),
         Collections.emptyMap());
   }

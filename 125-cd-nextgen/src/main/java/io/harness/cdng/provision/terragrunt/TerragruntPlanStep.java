@@ -87,8 +87,6 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    helper.checkIfTerragruntFeatureIsEnabled(ambiance, "Terragrunt Plan");
-
     List<EntityDetail> entityDetailList = new ArrayList<>();
 
     String accountId = AmbianceUtils.getAccountId(ambiance);

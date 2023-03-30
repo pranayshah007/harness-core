@@ -34,6 +34,7 @@ public final class PerpetualTaskType {
 
   // NG
   public static final String K8S_INSTANCE_SYNC = "K8S_INSTANCE_SYNC";
+  public static final String K8S_INSTANCE_SYNC_V2 = "K8S_INSTANCE_SYNC_V2";
   public static final String MANIFEST_COLLECTION_NG = "MANIFEST_COLLECTION_NG";
   public static final String ARTIFACT_COLLECTION_NG = "ARTIFACT_COLLECTION_NG";
   public static final String GITPOLLING_NG = "GITPOLLING_NG";

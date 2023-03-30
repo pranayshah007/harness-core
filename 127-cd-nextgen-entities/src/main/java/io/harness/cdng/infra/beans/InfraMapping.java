@@ -16,7 +16,9 @@ import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
+import io.harness.cdng.infra.yaml.K8sRancherInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
@@ -46,7 +48,9 @@ import dev.morphia.annotations.Entity;
       @JsonSubTypes.Type(value = TanzuApplicationServiceInfrastructure.class, name = "tanzu-application-service"),
       @JsonSubTypes.Type(value = AsgInfrastructure.class, name = "Asg"),
       @JsonSubTypes.Type(value = GoogleFunctionsInfrastructure.class, name = "GoogleCloudFunctions"),
-      @JsonSubTypes.Type(value = AwsSamInfrastructure.class, name = "AWS_SAM")
+      @JsonSubTypes.Type(value = AwsSamInfrastructure.class, name = "AWS_SAM"),
+      @JsonSubTypes.Type(value = K8sAwsInfrastructure.class, name = "kubernetes-aws"),
+      @JsonSubTypes.Type(value = K8sRancherInfrastructure.class, name = "kubernetes-rancher")
 })
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "infrastructureMapping")

@@ -431,8 +431,7 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
         AmazonS3Client s3 = awsClient.getAmazonS3Client(credentials);
         S3Object o = s3.getObject(configuration.getAwsS3SyncConfig().getAwsS3BucketName(), objectSummary.getKey());
         S3ObjectInputStream s3is = o.getObjectContent();
-        String str = getAsString(s3is);
-        return str;
+        return getAsString(s3is);
       }
     }
 

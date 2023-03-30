@@ -16,6 +16,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
@@ -25,17 +27,23 @@ import lombok.Data;
 public class SyncRetryStrategy {
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
+  @Min(0)
+  @NotNull
   public ParameterField<Integer> limit;
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  public ParameterField<String> retryBackoffBaseDuration;
+  @NotNull
+  public ParameterField<String> baseBackoffDuration;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
-  public ParameterField<Integer> waitAfterRetryFactor;
+  @Min(0)
+  @NotNull
+  public ParameterField<Integer> increaseBackoffByFactor;
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  public ParameterField<String> maxRetryBackoffDuration;
+  @NotNull
+  public ParameterField<String> maxBackoffDuration;
 }

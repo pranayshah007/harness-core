@@ -77,7 +77,8 @@ public class DelegateToken implements PersistentEntity, UuidAware, CreatedAtAwar
   private long createdAt;
   private Long revokeAfter;
   private DelegateTokenStatus status;
-  private String value;
+  @Deprecated private String value;
+  private String encryptedTokenId;
   private boolean isNg;
   private DelegateEntityOwner owner;
 

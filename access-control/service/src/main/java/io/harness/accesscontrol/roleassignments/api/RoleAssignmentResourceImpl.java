@@ -76,6 +76,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.security.annotations.InternalApi;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -506,6 +507,70 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
           response.getScope().getAccountIdentifier(), response.getRoleAssignment(), response.getScope()));
       return ResponseDTO.newResponse(response);
     }));
+  }
+
+  @Override
+  public ResponseDTO<RoleAssignmentDeleteResponseDTO> bulkDelete(
+      HarnessScopeParams harnessScopeParams, Set<String> roleAssignmentIdentifiers) {
+    List<RoleAssignmentErrorResponseDTO> roleAssignmentErrorResponseDTOS = new ArrayList<>();
+    List<RoleAssignment> roleAssignmentsThatCanBeDeleted = new ArrayList<>();
+    String scopeIdentifier = fromParams(harnessScopeParams).toString();
+    try {
+      filterRoleAssignmentThatCanBeDeleted(harnessScopeParams, roleAssignmentIdentifiers,
+          roleAssignmentErrorResponseDTOS, roleAssignmentsThatCanBeDeleted);
+      List<String> roleAssignmentIdentifiersThatCanBeDeleted =
+          roleAssignmentsThatCanBeDeleted.stream().map(RoleAssignment::getIdentifier).collect(toList());
+      Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+        roleAssignmentService.deleteMulti(scopeIdentifier, roleAssignmentIdentifiersThatCanBeDeleted);
+        for (RoleAssignment roleAssignment : roleAssignmentsThatCanBeDeleted) {
+          RoleAssignmentResponseDTO response = roleAssignmentDTOMapper.toResponseDTO(roleAssignment);
+          outboxService.save(new RoleAssignmentDeleteEvent(
+              response.getScope().getAccountIdentifier(), response.getRoleAssignment(), response.getScope()));
+        }
+        return roleAssignmentIdentifiersThatCanBeDeleted;
+      }));
+
+    } catch (Exception e) {
+      for (RoleAssignment roleAssignment : roleAssignmentsThatCanBeDeleted) {
+        roleAssignmentErrorResponseDTOS.add(RoleAssignmentErrorResponseDTO.builder()
+                                                .roleAssignmentId(roleAssignment.getIdentifier())
+                                                .errorMessage(e.getMessage())
+                                                .build());
+      }
+    }
+    return ResponseDTO.newResponse(RoleAssignmentDeleteResponseDTO.builder()
+                                       .failedToDelete(roleAssignmentErrorResponseDTOS.size())
+                                       .successfullyDeleted(roleAssignmentsThatCanBeDeleted.size())
+                                       .roleAssignmentErrorResponseDTOList(roleAssignmentErrorResponseDTOS)
+                                       .build());
+  }
+
+  @VisibleForTesting
+  protected void filterRoleAssignmentThatCanBeDeleted(HarnessScopeParams harnessScopeParams,
+      Set<String> roleAssignmentIdentifiers, List<RoleAssignmentErrorResponseDTO> roleAssignmentErrorResponseDTOS,
+      List<RoleAssignment> roleAssignmentThatCanBeDeleted) {
+    String scopeIdentifier = fromParams(harnessScopeParams).toString();
+
+    for (String roleAssignmentIdentifier : roleAssignmentIdentifiers) {
+      try {
+        RoleAssignment roleAssignment =
+            roleAssignmentService.get(roleAssignmentIdentifier, scopeIdentifier).<NotFoundException>orElseThrow(() -> {
+              throw new NotFoundException("Role Assignment not found or have been already deleted.");
+            });
+        roleAssignmentApiUtils.checkUpdatePermission(harnessScopeParams, roleAssignment);
+        ValidationResult validationResult = actionValidator.canDelete(roleAssignment);
+        if (!validationResult.isValid()) {
+          throw new InvalidRequestException(validationResult.getErrorMessage());
+        }
+        roleAssignmentThatCanBeDeleted.add(roleAssignment);
+      } catch (Exception e) {
+        RoleAssignmentErrorResponseDTO roleAssignmentErrorResponseDTO = RoleAssignmentErrorResponseDTO.builder()
+                                                                            .roleAssignmentId(roleAssignmentIdentifier)
+                                                                            .errorMessage(e.getMessage())
+                                                                            .build();
+        roleAssignmentErrorResponseDTOS.add(roleAssignmentErrorResponseDTO);
+      }
+    }
   }
 
   @Override

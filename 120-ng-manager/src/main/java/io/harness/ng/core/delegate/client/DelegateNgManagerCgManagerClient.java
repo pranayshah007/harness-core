@@ -17,6 +17,7 @@ import io.harness.delegate.beans.DelegateGroupTags;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
+import io.harness.delegate.beans.SupportedDelegateVersion;
 import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
 import io.harness.rest.RestResponse;
 
@@ -37,6 +38,8 @@ public interface DelegateNgManagerCgManagerClient {
   String DELEGATE_GROUP_TAGS_API = "delegate-group-tags-internal";
   String DELEGATE_SETUP_NG_API = "delegate-setup/internal";
   String DELEGATE_DOWNLOAD_API = "delegate-download";
+
+  String DELEGATE_VERSION_OVERRIDE_API = "version-override/internal";
 
   //------------------------ Delegate Token -------------------------------------
 
@@ -159,4 +162,15 @@ public interface DelegateNgManagerCgManagerClient {
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Body @NotNull DelegateDownloadRequest delegateDownloadRequest);
+
+  //------------------------ Version Override API -----------------------------------
+  @PUT(DELEGATE_VERSION_OVERRIDE_API + "/delegate-tag")
+  Call<RestResponse<String>> overrideDelegateImage(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Query("delegateTag") @NotNull String delegateTag, @Query("validTillNextRelease") Boolean validTillNextRelease,
+      @Query("validForDays") int validForDays);
+
+  @GET("version/supportedDelegate")
+  Call<RestResponse<SupportedDelegateVersion>> getPublishedDelegateVersion(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier);
 }

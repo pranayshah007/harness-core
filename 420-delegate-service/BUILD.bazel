@@ -17,6 +17,7 @@ java_library(
         "//:lombok",
         "//867-polling-contracts:module",
         "//870-cg-orchestration:module",
+        "//940-feature-flag:module",
         "//952-remote-observers:module",
         "//955-outbox-sdk:module",
         "//clients/audit:module",

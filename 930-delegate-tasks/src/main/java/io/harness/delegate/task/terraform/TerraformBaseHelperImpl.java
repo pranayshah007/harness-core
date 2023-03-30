@@ -64,6 +64,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConne
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.clienttools.TerraformConfigInspectVersion;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -83,6 +84,7 @@ import io.harness.logging.PlanHumanReadableOutputStream;
 import io.harness.logging.PlanJsonLogOutputStream;
 import io.harness.logging.PlanLogOutputStream;
 import io.harness.provision.TerraformPlanSummary;
+import io.harness.provision.model.TfConfigInspectVersion;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
@@ -101,6 +103,7 @@ import io.harness.terraform.request.TerraformRefreshCommandRequest;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
+import software.wings.beans.delegation.TerraformProvisionParameters;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -196,7 +199,10 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     LogCallback logCallback = terraformExecuteStepRequest.getLogCallback();
     String tfBackendConfigsFile = terraformExecuteStepRequest.getTfBackendConfigsFile();
     TerraformInitCommandRequest terraformInitCommandRequest =
-        TerraformInitCommandRequest.builder().tfBackendConfigsFilePath(tfBackendConfigsFile).build();
+        TerraformInitCommandRequest.builder()
+            .tfBackendConfigsFilePath(tfBackendConfigsFile)
+            .additionalCliFlags(terraformExecuteStepRequest.getAdditionalCliFlags())
+            .build();
 
     if (!isEmpty(tfBackendConfigsFile)) {
       logCallback.saveExecutionLog(
@@ -223,6 +229,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
                   .varParams(terraformExecuteStepRequest.getVarParams())
                   .targets(terraformExecuteStepRequest.getTargets())
                   .uiLogs(terraformExecuteStepRequest.getUiLogs())
+                  .additionalCliFlags(terraformExecuteStepRequest.getAdditionalCliFlags())
                   .build();
           terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
               terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
@@ -237,6 +244,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
             .planName(TERRAFORM_PLAN_FILE_OUTPUT_NAME)
             .isTerraformCloudCli(terraformExecuteStepRequest.isTerraformCloudCli())
             .targets(terraformExecuteStepRequest.getTargets())
+            .additionalCliFlags(terraformExecuteStepRequest.getAdditionalCliFlags())
             .build();
 
     terraformClient.apply(terraformApplyCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
@@ -265,7 +273,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
       // if workspace is specified in Harness but none exists in the environment, then select a new workspace
       terraformClient.workspace(workspace, workspacelist.contains(workspace),
           terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-          terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
+          terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
+          terraformExecuteStepRequest.getAdditionalCliFlags());
     }
   }
 
@@ -303,6 +312,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
               .destroySet(terraformExecuteStepRequest.isTfPlanDestroy())
               .uiLogs(terraformExecuteStepRequest.getUiLogs())
               .isTerraformCloudCli(terraformExecuteStepRequest.isTerraformCloudCli())
+              .additionalCliFlags(terraformExecuteStepRequest.getAdditionalCliFlags())
               .build();
       response = terraformClient.plan(terraformPlanCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
           terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
@@ -344,7 +354,10 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     LogCallback logCallback = terraformExecuteStepRequest.getLogCallback();
 
     TerraformInitCommandRequest terraformInitCommandRequest =
-        TerraformInitCommandRequest.builder().tfBackendConfigsFilePath(tfBackendConfigsFile).build();
+        TerraformInitCommandRequest.builder()
+            .tfBackendConfigsFilePath(tfBackendConfigsFile)
+            .additionalCliFlags(terraformExecuteStepRequest.getAdditionalCliFlags())
+            .build();
     if (!isEmpty(tfBackendConfigsFile)) {
       logCallback.saveExecutionLog(
           format(PRINT_BACKEND_CONFIG, FileUtils.readFileToString(FileUtils.getFile(tfBackendConfigsFile), UTF_8)),
@@ -367,6 +380,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
                 .varParams(terraformExecuteStepRequest.getVarParams())
                 .targets(terraformExecuteStepRequest.getTargets())
                 .uiLogs(terraformExecuteStepRequest.getUiLogs())
+                .additionalCliFlags(terraformExecuteStepRequest.getAdditionalCliFlags())
                 .build();
         terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
             terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
@@ -384,7 +398,10 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     LogCallback logCallback = terraformExecuteStepRequest.getLogCallback();
     String tfBackendConfigsFile = terraformExecuteStepRequest.getTfBackendConfigsFile();
     TerraformInitCommandRequest terraformInitCommandRequest =
-        TerraformInitCommandRequest.builder().tfBackendConfigsFilePath(tfBackendConfigsFile).build();
+        TerraformInitCommandRequest.builder()
+            .tfBackendConfigsFilePath(tfBackendConfigsFile)
+            .additionalCliFlags(terraformExecuteStepRequest.getAdditionalCliFlags())
+            .build();
 
     if (!isEmpty(tfBackendConfigsFile)) {
       logCallback.saveExecutionLog(
@@ -409,6 +426,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
                   .varParams(terraformExecuteStepRequest.getVarParams())
                   .targets(terraformExecuteStepRequest.getTargets())
                   .uiLogs(terraformExecuteStepRequest.getUiLogs())
+                  .additionalCliFlags(terraformExecuteStepRequest.getAdditionalCliFlags())
                   .build();
           terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
               terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
@@ -457,6 +475,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
                 .uiLogs(terraformExecuteStepRequest.getUiLogs())
                 .targets(terraformExecuteStepRequest.getTargets())
                 .isTerraformCloudCli(terraformExecuteStepRequest.isTerraformCloudCli())
+                .additionalCliFlags(terraformExecuteStepRequest.getAdditionalCliFlags())
                 .build();
         response = terraformClient.destroy(terraformDestroyCommandRequest,
             terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
@@ -472,7 +491,10 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
             terraformExecuteStepRequest.getPlanLogOutputStream(), TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME);
 
         TerraformApplyCommandRequest terraformApplyCommandRequest =
-            TerraformApplyCommandRequest.builder().planName(TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME).build();
+            TerraformApplyCommandRequest.builder()
+                .planName(TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME)
+                .additionalCliFlags(terraformExecuteStepRequest.getAdditionalCliFlags())
+                .build();
         response = terraformClient.apply(terraformApplyCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
             terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
       }
@@ -826,6 +848,17 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
       FileIo.waitForDirectoryToBeAccessibleOutOfProcess(scriptDir.getPath(), 10);
     } catch (Exception ex) {
       handleExceptionWhileCopyingConfigFiles(logCallback, baseDir, ExceptionMessageSanitizer.sanitizeException(ex));
+    }
+  }
+
+  public TerraformConfigInspectVersion getTerraformConfigInspectVersion(TerraformProvisionParameters parameters) {
+    if (parameters.getTerraformConfigInspectVersion() != null
+        && TfConfigInspectVersion.V1_2.equals(parameters.getTerraformConfigInspectVersion())) {
+      return TerraformConfigInspectVersion.V1_2;
+    } else if (parameters.isUseTfConfigInspectLatestVersion()) {
+      return TerraformConfigInspectVersion.V1_1;
+    } else {
+      return TerraformConfigInspectVersion.V1_0;
     }
   }
 

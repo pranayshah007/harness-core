@@ -8,6 +8,7 @@
 package software.wings.helpers.ext.ecr;
 
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
+import static io.harness.rule.OwnerRule.RAFAEL;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 
@@ -35,6 +36,8 @@ import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
 import com.amazonaws.services.ecr.model.DescribeRepositoriesResult;
 import com.amazonaws.services.ecr.model.ImageDetail;
 import com.amazonaws.services.ecr.model.ImageIdentifier;
+import com.amazonaws.services.ecr.model.ListImagesRequest;
+import com.amazonaws.services.ecr.model.ListImagesResult;
 import com.amazonaws.services.ecr.model.Repository;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -55,6 +58,7 @@ import org.mockito.Mock;
 public class EcrServiceTest extends WingsBaseTest {
   @Mock private AwsEcrHelperServiceDelegate ecrServiceDelegate;
   @Inject @InjectMocks private EcrService ecrService;
+  @Inject @InjectMocks private EcrServiceImpl ecrServiceImpl;
   @Mock private AwsApiHelperService awsApiHelperService;
 
   private AwsConfig awsConfig = AwsConfig.builder().build();
@@ -96,6 +100,57 @@ public class EcrServiceTest extends WingsBaseTest {
         .hasSize(6)
         .isEqualTo(Lists.newArrayList(buildBuildDetails("latest"), buildBuildDetails("stable-perl"),
             buildBuildDetails("stable"), buildBuildDetails("v1"), buildBuildDetails("v2"), buildBuildDetails("v3")));
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldGetBuildsFallback() throws ParseException {
+    String region = Regions.US_EAST_1.getName();
+    when(ecrServiceDelegate.getEcrImageUrl(awsConfig, null, region, "imageName")).thenReturn("imageUrl");
+    ListImagesResult imagesResult = new ListImagesResult();
+    imagesResult.setNextToken(null);
+    imagesResult.setImageIds(Lists.newArrayList(null, buildImageIdentifier(null), buildImageIdentifier("latest"),
+        buildImageIdentifier("v2"), buildImageIdentifier("v1")));
+    when(awsApiHelperService.listEcrImages(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), region,
+             new ListImagesRequest().withRepositoryName("imageName")))
+        .thenReturn(imagesResult);
+    assertThat(
+        ecrServiceImpl
+            .getBuildsFallback(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), null, region, "imageName", 10)
+            .stream()
+            .map(ArtifactConfigMapper::toBuildDetails)
+            .collect(Collectors.toList()))
+        .hasSize(3)
+        .isEqualTo(Lists.newArrayList(buildBuildDetails("latest"), buildBuildDetails("v1"), buildBuildDetails("v2")));
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldGetBuildsWithFallback() throws ParseException {
+    String region = Regions.US_EAST_1.getName();
+    when(ecrServiceDelegate.getEcrImageUrl(awsConfig, null, region, "imageName")).thenReturn("imageUrl");
+    ListImagesResult imagesResult = new ListImagesResult();
+    imagesResult.setNextToken(null);
+    imagesResult.setImageIds(Lists.newArrayList(null, buildImageIdentifier(null), buildImageIdentifier("latest"),
+        buildImageIdentifier("stable"), buildImageIdentifier("stable-perl"), buildImageIdentifier("v1"),
+        buildImageIdentifier("v2"), buildImageIdentifier("v3")));
+    when(awsApiHelperService.describeEcrImages(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), region,
+             new DescribeImagesRequest().withRepositoryName("imageName")))
+        .thenReturn(null);
+    when(awsApiHelperService.listEcrImages(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), region,
+             new ListImagesRequest().withRepositoryName("imageName")))
+        .thenReturn(imagesResult);
+    assertThat(
+        ecrService.getBuilds(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), null, region, "imageName", 10)
+            .stream()
+            .map(ArtifactConfigMapper::toBuildDetails)
+            .collect(Collectors.toList()))
+        .hasSize(6)
+        .isEqualTo(Lists.newArrayList(buildBuildDetails("latest"), buildBuildDetails("stable"),
+            buildBuildDetails("stable-perl"), buildBuildDetails("v1"), buildBuildDetails("v2"),
+            buildBuildDetails("v3")));
   }
 
   @Test

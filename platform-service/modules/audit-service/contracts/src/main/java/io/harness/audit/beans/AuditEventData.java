@@ -12,9 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.custom.AuditEventDataTypeConstants;
 import io.harness.audit.beans.custom.chaos.ChaosAuditEventData;
+import io.harness.audit.beans.custom.executions.NodeExecutionEventData;
 import io.harness.audit.beans.custom.ff.FeatureFlagAuditEventData;
 import io.harness.audit.beans.custom.opa.OpaAuditEventData;
-import io.harness.audit.beans.custom.template.NodeExecutionEventData;
 import io.harness.audit.beans.custom.template.TemplateEventData;
 import io.harness.audit.beans.custom.user.AddCollaboratorAuditEventData;
 import io.harness.audit.beans.custom.user.UserInvitationAuditEventData;
@@ -52,7 +52,7 @@ import org.hibernate.validator.constraints.NotBlank;
           @JsonSubTypes.Type(
               value = UserMembershipAuditEventData.class, name = AuditEventDataTypeConstants.USER_MEMBERSHIP),
           @JsonSubTypes.Type(
-              value = NodeExecutionEventData.class, name = AuditEventDataTypeConstants.NODE_EXECUTION_EVENT_DATA)
+              value = NodeExecutionEventData.class, name = AuditEventDataTypeConstants.PIPELINE_EXECUTION_EVENT_DATA)
     })
 public abstract class AuditEventData {
   public static final String AUDIT_EVENT_DATA_TYPE = "io.harness.audit.beans.AuditEventDataType";

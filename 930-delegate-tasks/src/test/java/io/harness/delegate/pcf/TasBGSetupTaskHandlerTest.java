@@ -7,6 +7,7 @@
 
 package io.harness.delegate.pcf;
 
+import static io.harness.pcf.model.PcfConstants.PCF_ARTIFACT_DOWNLOAD_DIR_PATH;
 import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -224,6 +225,7 @@ public class TasBGSetupTaskHandlerTest extends CategoryTest {
     assertThat(cfRequestConfig.getApplicationName()).isEqualTo(appName);
     assertThat(cfRequestConfig.getEndpointUrl()).isEqualTo(ENDPOINT_URL);
     assertThat(cfRequestConfig.getPassword()).isEqualTo(PASSWORD);
+    assertThat(cfRequestConfig.getCfHomeDirPath()).contains(PCF_ARTIFACT_DOWNLOAD_DIR_PATH);
     assertThat(cfRequestConfig.getSpaceName()).isEqualTo(SPACE);
     assertThat(cfRequestConfig.getOrgName()).isEqualTo(ORGANIZATION);
   }

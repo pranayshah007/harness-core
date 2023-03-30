@@ -47,6 +47,7 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
   // to avoid conflict for other ArtifactSummary
   private static final List<String> tagNameSet = Arrays.asList("tag", "version", "build", "artifactPath");
   static final String ENV_GROUP_IDENTIFIER = "envGroupIdentifier";
+  static final String ARTIFACT_DISPLAY_NAME = "artifactDisplayName";
 
   @Inject private TimeScaleDBService timeScaleDBService;
 
@@ -158,6 +159,17 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
         columnValueMapping.put(PlanExecutionSummaryCDConstants.SERVICE_END_TS, "");
       }
 
+      if (((BasicDBObject) stageExecutionNode.getValue()).get(PlanExecutionSummaryCDConstants.FAILURE_INFO) != null
+          && ((BasicDBObject) ((BasicDBObject) stageExecutionNode.getValue())
+                     .get(PlanExecutionSummaryCDConstants.FAILURE_INFO))
+                  .get("message")
+              != null) {
+        String message = String.valueOf(((BasicDBObject) ((BasicDBObject) stageExecutionNode.getValue())
+                                             .get(PlanExecutionSummaryCDConstants.FAILURE_INFO))
+                                            .get("message"));
+        columnValueMapping.put("execution_failure_details", message);
+      }
+
       columnValueMapping.put("service_name", "");
       columnValueMapping.put("service_id", "");
       columnValueMapping.put(PlanExecutionSummaryCDConstants.ACCOUNT_ID_KEY, "");
@@ -227,6 +239,10 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
                 }
                 columnValueMapping.put("tag", tag);
                 columnValueMapping.put("artifact_image", imagePath);
+              }
+
+              if (artifacts.get(ARTIFACT_DISPLAY_NAME) != null) {
+                columnValueMapping.put("artifact_display_name", artifacts.get(ARTIFACT_DISPLAY_NAME).toString());
               }
             }
 

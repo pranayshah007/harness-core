@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackParameters;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
 import io.harness.advisers.retry.RetryAdviserRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
@@ -82,5 +83,6 @@ public class PmsSdkCoreKryoRegistrar implements KryoRegistrar {
     kryo.register(ProceedWithDefaultAdviserParameters.class, 878018);
     kryo.register(AsyncTimeoutResponseData.class, 878019);
     kryo.register(AsyncProgressData.class, 878020);
+    kryo.register(OnFailPipelineRollbackParameters.class, 878021);
   }
 }

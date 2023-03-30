@@ -172,6 +172,7 @@ import software.wings.service.intfc.ServiceTemplateService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
+import software.wings.utils.Utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -1317,6 +1318,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         }
 
         delegateTaskPackageBuilder.logStreamingAbstractions(delegateTask.getLogStreamingAbstractions());
+        delegateTaskPackageBuilder.baseLogKey(Utils.emptyIfNull(delegateTask.getBaseLogKey()));
+        delegateTaskPackageBuilder.shouldSkipOpenStream(delegateTask.isShouldSkipOpenStream());
       }
 
       if (delegateTask.getData().getParameters() == null || delegateTask.getData().getParameters().length != 1
@@ -2004,7 +2007,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     log.warn("Marking delegate tasks {} failed since delegate went down before completion.",
         delegateTasks.stream().map(DelegateTask::getUuid).collect(Collectors.toList()));
     Delegate delegate = delegateCache.get(accountId, delegateId, false);
-    final String errorMessage = "Delegate [" + delegate.getDelegateName() + "] disconnected while executing the task";
+    final String delegateName = isNotEmpty(delegate.getHostName()) ? delegate.getHostName() : delegate.getUuid();
+    final String errorMessage = "Delegate [" + delegateName + "] disconnected while executing the task";
     final DelegateTaskResponse delegateTaskResponse =
         DelegateTaskResponse.builder()
             .responseCode(ResponseCode.FAILED)

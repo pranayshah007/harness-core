@@ -21,6 +21,7 @@ import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.UnitStatus.RUNNING;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AWS;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
@@ -43,6 +44,7 @@ import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -557,6 +559,10 @@ public class CDStepHelper {
         K8sAzureInfrastructureOutcome k8sAzureInfrastructureOutcome = (K8sAzureInfrastructureOutcome) infrastructure;
         releaseName = k8sAzureInfrastructureOutcome.getReleaseName();
         break;
+      case KUBERNETES_AWS:
+        K8sAwsInfrastructureOutcome k8sAwsInfrastructureOutcome = (K8sAwsInfrastructureOutcome) infrastructure;
+        releaseName = k8sAwsInfrastructureOutcome.getReleaseName();
+        break;
       default:
         throw new UnsupportedOperationException(format("Unknown infrastructure type: [%s]", infrastructure.getKind()));
     }
@@ -985,9 +991,14 @@ public class CDStepHelper {
     return UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress);
   }
 
-  @Nonnull
   public DelegateTaskRequest mapTaskRequestToDelegateTaskRequest(
       TaskRequest taskRequest, TaskData taskData, Set<String> taskSelectors) {
+    return mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, taskSelectors, "", false);
+  }
+
+  @Nonnull
+  public DelegateTaskRequest mapTaskRequestToDelegateTaskRequest(TaskRequest taskRequest, TaskData taskData,
+      Set<String> taskSelectors, String baseLogKey, boolean shouldSkipOpenStream) {
     final SubmitTaskRequest submitTaskRequest = taskRequest.getDelegateTaskRequest().getRequest();
     return DelegateTaskRequest.builder()
         .taskParameters((TaskParameters) taskData.getParameters()[0])
@@ -1004,6 +1015,8 @@ public class CDStepHelper {
         .executeOnHarnessHostedDelegates(submitTaskRequest.getExecuteOnHarnessHostedDelegates())
         .emitEvent(submitTaskRequest.getEmitEvent())
         .stageId(submitTaskRequest.getStageId())
+        .baseLogKey(baseLogKey)
+        .shouldSkipOpenStream(shouldSkipOpenStream)
         .build();
   }
 }

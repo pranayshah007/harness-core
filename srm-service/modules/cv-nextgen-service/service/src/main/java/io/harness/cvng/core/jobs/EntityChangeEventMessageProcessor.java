@@ -28,6 +28,7 @@ import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.Annotation;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
@@ -68,5 +69,6 @@ public abstract class EntityChangeEventMessageProcessor implements ConsumerMessa
 
     EXCEPTIONS = new HashSet<>();
     EXCEPTIONS.add(ServiceLevelIndicator.class);
+    EXCEPTIONS.add(Annotation.class);
   }
 }

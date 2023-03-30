@@ -1002,8 +1002,8 @@ go_repository(
 go_repository(
     name = "org_golang_google_grpc",
     importpath = "google.golang.org/grpc",
-    sum = "h1:Eeu7bZtDZ2DpRCsLhUlcrLnvYaMK1Gz86a+hMVvELmM=",
-    version = "v1.43.0",
+    sum = "h1:LAv2ds7cmFV/XTS3XG1NneeENYrXGmorPxsBbptIjNc=",
+    version = "v1.53.0",
 )
 
 go_repository(
@@ -3902,6 +3902,27 @@ http_archive(
 
 load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
+go_repository(
+    name = "com_github_jasonlvhit_gocron",
+    importpath = "github.com/jasonlvhit/gocron",
+    sum = "h1:qTt5qF3b3srDjeOIR4Le1LfeyvoYzJlYpqvG7tJX5YU=",
+    version = "v0.0.1",
+)
+
+go_repository(
+    name = "com_github_prashantv_gostub",
+    importpath = "github.com/prashantv/gostub",
+    sum = "h1:BTyx3RfQjRHnUWaGF9oQos79AlQ5k8WNktv7VGvVH4g=",
+    version = "v1.1.0",
+)
+
+go_repository(
+    name = "org_uber_go_automaxprocs",
+    importpath = "go.uber.org/automaxprocs",
+    sum = "h1:e1YG66Lrk73dn4qhg8WFSvhF0JuFQF0ERIp4rpuV8Qk=",
+    version = "v1.5.1",
+)
+
 rust_repositories(
     edition = "2018",
     version = "1.49.0",
@@ -4578,7 +4599,7 @@ go_repository(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.19.4")
+go_register_toolchains(version = "1.19.6")
 
 gazelle_dependencies()
 
@@ -4965,7 +4986,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.42-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.43-RELEASE",
     "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",
@@ -5041,7 +5062,7 @@ plain_artifacts = [
     "net.jodah:expiringmap:0.5.7",
     "net.jodah:failsafe:2.2.0",
     "net.minidev:accessors-smart:1.2",
-    "net.minidev:json-smart:2.4.8",
+    "net.minidev:json-smart:2.4.10",
     "net.openhft:affinity:3.2.2",
     "net.openhft:chronicle-bytes:2.19.0",
     "net.openhft:chronicle-core:2.19.0",
@@ -5391,6 +5412,7 @@ amazon_v2_artifacts = [
         "health",
         "elasticloadbalancingv2",
         "lambda",
+        "eks",
     ]
 ]
 
@@ -5607,15 +5629,15 @@ maven_install(
     ],
 )
 
-# Adding maven rule for upgraded version of debezium (2.1.1.Final) and required version of mongodb java driver for debezium service
+# Adding maven rule for upgraded version of debezium (2.1.3.Final) and required version of mongodb java driver for debezium service
 maven_install(
     name = "maven_debezium",
     artifacts = [
         "org.mongodb:mongodb-driver-core:4.0.4",
         "org.mongodb:mongodb-driver-sync:4.0.4",
-        "io.debezium:debezium-api:2.1.1.Final",
-        "io.debezium:debezium-connector-mongodb:2.1.1.Final",
-        "io.debezium:debezium-core:2.1.1.Final",
+        "io.debezium:debezium-api:2.1.3.Final",
+        "io.debezium:debezium-connector-mongodb:2.1.3.Final",
+        "io.debezium:debezium-core:2.1.3.Final",
         maven.artifact(
             artifact = "debezium-embedded",
             exclusions = [
@@ -5623,7 +5645,7 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
             group = "io.debezium",
-            version = "2.1.1.Final",
+            version = "2.1.3.Final",
         ),
     ],
     repositories = [
@@ -5830,6 +5852,34 @@ go_repository(
     importpath = "github.com/bmatcuk/doublestar",
     sum = "h1:1jLE2y0VpSrOn/QR9G4f2RmrCtkM3AuATcWradjHUvM=",
     version = "v1.3.0",
+)
+
+go_repository(
+    name = "com_github_wings_software_autogen_go",
+    importpath = "github.com/wings-software/autogen-go",
+    sum = "h1:Ovgmeh04oFhEFg+LZy9c4Yo/Yv9Lkl0rFYFJ7jlhtN4=",
+    version = "v1.0.0",
+)
+
+go_repository(
+    name = "com_github_drone_spec",
+    importpath = "github.com/drone/spec",
+    sum = "h1:SCRvpZOFAS/kFo6q0c+oeH+ID0OBDPLpDAx4uHYQwYo=",
+    version = "v0.0.0-20230328162846-c2bc4a6d62ab",
+)
+
+go_repository(
+    name = "com_github_99designs_httpsignatures_go",
+    importpath = "github.com/99designs/httpsignatures-go",
+    sum = "h1:Xa6lInWHNQnuWoF0YPSsx+INFA9qk7/7pTjwb3PInkY=",
+    version = "v0.0.0-20170731043157-88528bf4ca7e",
+)
+
+go_repository(
+    name = "com_github_drone_go_convert",
+    importpath = "github.com/drone/go-convert",
+    sum = "h1:ybfe4Po+BUQjm2BpIZjEpng9fXBYgPvAehNe2edC0lY=",
+    version = "v0.0.0-20230329091825-a238380a6b0e",
 )
 
 # Contrib rules jvm for build cleaner.

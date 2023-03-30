@@ -22,6 +22,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.ExecutionInputInstance;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -70,6 +71,9 @@ public class WaitForExecutionInputHelper {
       String inputInstanceId = UUIDGenerator.generateUuid();
       EngineExpressionEvaluator evaluator = pmsEngineExpressionService.prepareExpressionEvaluator(ambiance);
       String fieldYaml = YamlNode.getNodeYaml(planExecutionMetadataOptional.get().getYaml(), ambiance);
+      // Resolve any expression in fieldYaml that can be resolved so far.
+      fieldYaml = pmsEngineExpressionService.renderExpression(
+          ambiance, fieldYaml, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
       long timeout = 0;
       if (EmptyPredicate.isNotEmpty(node.getTimeoutObtainments())) {
         // We take the last timeout added as timeout for the step.

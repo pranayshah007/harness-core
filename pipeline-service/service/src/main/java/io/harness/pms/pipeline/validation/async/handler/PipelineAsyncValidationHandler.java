@@ -21,17 +21,26 @@ import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 
 import io.fabric8.utils.Pair;
-import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@Builder
 @Slf4j
 public class PipelineAsyncValidationHandler implements Runnable {
   private final PipelineValidationEvent validationEvent;
+  private final boolean loadFromCache; // todo: see if this can be set to true always
   private final PipelineAsyncValidationService validationService;
   private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   private final PipelineGovernanceService pipelineGovernanceService;
+
+  public PipelineAsyncValidationHandler(PipelineValidationEvent validationEvent, boolean loadFromCache,
+      PipelineAsyncValidationService validationService, PMSPipelineTemplateHelper pipelineTemplateHelper,
+      PipelineGovernanceService pipelineGovernanceService) {
+    this.validationEvent = validationEvent;
+    this.loadFromCache = loadFromCache;
+    this.validationService = validationService;
+    this.pipelineTemplateHelper = pipelineTemplateHelper;
+    this.pipelineGovernanceService = pipelineGovernanceService;
+  }
 
   @Override
   public void run() {
@@ -59,7 +68,7 @@ public class PipelineAsyncValidationHandler implements Runnable {
     ValidationResult templateValidationResult;
 
     TemplateMergeResponseDTO templateMergeResponse =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, true, false);
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, true, loadFromCache);
     templateValidationResult =
         ValidationResult.builder()
             .templateInputsResponse(ValidateTemplateInputsResponseDTO.builder().validYaml(true).build())

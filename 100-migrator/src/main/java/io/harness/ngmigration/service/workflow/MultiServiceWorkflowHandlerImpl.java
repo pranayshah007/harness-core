@@ -8,21 +8,18 @@
 package io.harness.ngmigration.service.workflow;
 
 import io.harness.ng.core.template.TemplateEntityType;
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.plancreator.stages.StageElementWrapperConfig;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.service.impl.yaml.handler.workflow.MultiServiceWorkflowYamlHandler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.util.List;
-import java.util.Map;
 
 public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   @Inject MultiServiceWorkflowYamlHandler multiServiceWorkflowYamlHandler;
@@ -45,14 +42,14 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public List<StageElementWrapperConfig> asStages(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
-    return getStagesForMultiServiceWorkflow(WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow));
+  public List<StageElementWrapperConfig> asStages(MigrationContext migrationContext, Workflow workflow) {
+    return getStagesForMultiServiceWorkflow(
+        migrationContext, WorkflowMigrationContext.newInstance(migrationContext, workflow));
   }
 
   @Override
-  public JsonNode getTemplateSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
-    return buildMultiStagePipelineTemplate(WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow));
+  public JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow) {
+    return buildMultiStagePipelineTemplate(
+        migrationContext, WorkflowMigrationContext.newInstance(migrationContext, workflow));
   }
 }

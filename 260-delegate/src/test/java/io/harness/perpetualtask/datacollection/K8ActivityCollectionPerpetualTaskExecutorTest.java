@@ -50,6 +50,7 @@ import software.wings.delegatetasks.cvng.K8InfoDataService;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import io.kubernetes.client.informer.SharedInformerFactory;
@@ -87,6 +88,7 @@ public class K8ActivityCollectionPerpetualTaskExecutorTest extends DelegateTestB
   private PerpetualTaskExecutionParams perpetualTaskParams;
 
   @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Before
   public void setup() throws IllegalAccessException, IOException {
@@ -94,7 +96,7 @@ public class K8ActivityCollectionPerpetualTaskExecutorTest extends DelegateTestB
     when(apiClient.setVerifyingSsl(anyBoolean())).thenReturn(apiClient);
     when(apiClient.escapeString(anyString())).thenReturn(generateUuid());
     when(apiClientFactory.getClient(any())).thenReturn(apiClient);
-    on(dataCollector).set("kryoSerializer", kryoSerializer);
+    on(dataCollector).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
     accountId = generateUuid();
 
     SecretRefData secretRefData = SecretRefData.builder()
@@ -152,7 +154,7 @@ public class K8ActivityCollectionPerpetualTaskExecutorTest extends DelegateTestB
                                            .build()))
                                    .build())
             .build();
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(k8ActivityDataCollectionInfo));
+    ByteString bytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(k8ActivityDataCollectionInfo));
     perpetualTaskParams = PerpetualTaskExecutionParams.newBuilder()
                               .setCustomizedParams(Any.pack(K8ActivityCollectionPerpetualTaskParams.newBuilder()
                                                                 .setAccountId(accountId)

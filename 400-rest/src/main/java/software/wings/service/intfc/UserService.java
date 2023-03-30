@@ -640,7 +640,7 @@ public interface UserService extends OwnedByAccount {
   String saveUserInvite(UserInvite userInvite);
 
   List<User> listUsers(PageRequest pageRequest, String accountId, String searchTerm, Integer offset, Integer pageSize,
-      boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance);
+      boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled);
 
   long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance);
 
@@ -674,5 +674,5 @@ public interface UserService extends OwnedByAccount {
 
   boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
 
-  boolean isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled();
+  void removeAllUserGroupsFromUser(User user, String accountId);
 }

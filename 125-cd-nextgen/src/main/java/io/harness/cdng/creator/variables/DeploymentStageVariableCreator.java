@@ -424,6 +424,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     }
     yamlPropertiesMap.put(
         environmentYamlV2.getUuid(), YamlExtraProperties.newBuilder().addAllOutputProperties(outputProperties).build());
+    addProvisionerDependencyForSingleEnvironment(responseMap, specField);
     responseMap.put(
         environmentYamlV2.getUuid(), VariableCreationResponse.builder().yamlExtraProperties(yamlPropertiesMap).build());
 
@@ -432,6 +433,24 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       createVariablesForInfraDefinitions(ctx, specField, environmentRef, responseMap, environmentYamlV2);
     } else if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
       createVariablesForInfraDefinition(ctx, specField, environmentRef, responseMap, environmentYamlV2);
+    }
+  }
+
+  private void addProvisionerDependencyForSingleEnvironment(
+      LinkedHashMap<String, VariableCreationResponse> responseMap, YamlField specField) {
+    final YamlField envField = specField.getNode().getField(YAMLFieldNameConstants.ENVIRONMENT);
+    YamlField provisionerField = null;
+    if (envField != null) {
+      provisionerField = envField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
+    }
+    if (provisionerField != null) {
+      Map<String, YamlField> provisionerFieldDependency =
+          new HashMap<>(InfraVariableCreator.addDependencyForProvisionerSteps(provisionerField));
+
+      responseMap.put(specField.getUuid(),
+          VariableCreationResponse.builder()
+              .dependencies(DependenciesUtils.toDependenciesProto(provisionerFieldDependency))
+              .build());
     }
   }
 

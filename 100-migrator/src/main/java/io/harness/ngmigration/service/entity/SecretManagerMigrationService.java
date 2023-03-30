@@ -25,6 +25,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -155,8 +156,10 @@ public class SecretManagerMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     SecretManagerConfig secretManagerConfig = (SecretManagerConfig) entities.get(entityId).getEntity();
     String name = secretManagerConfig.getName().trim();
     String identifier;
@@ -165,7 +168,8 @@ public class SecretManagerMigrationService extends NgMigrationService {
       identifier = "harnessSecretManager";
     } else {
       name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, secretManagerConfig.getName());
-      identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+      identifier = MigratorUtility.generateIdentifierDefaultName(
+          inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
     }
     Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
@@ -190,6 +194,7 @@ public class SecretManagerMigrationService extends NgMigrationService {
                                          .build())
                       .build())
             .ngEntityDetail(NgEntityDetail.builder()
+                                .entityType(NGMigrationEntityType.SECRET_MANAGER)
                                 .identifier(identifier)
                                 .orgIdentifier(inputDTO.getOrgIdentifier())
                                 .projectIdentifier(inputDTO.getProjectIdentifier())
@@ -213,6 +218,7 @@ public class SecretManagerMigrationService extends NgMigrationService {
                                   .yaml(secretDTO)
                                   .type(SECRET)
                                   .ngEntityDetail(NgEntityDetail.builder()
+                                                      .entityType(NGMigrationEntityType.SECRET)
                                                       .projectIdentifier(secretDTO.getSecret().getProjectIdentifier())
                                                       .orgIdentifier(secretDTO.getSecret().getOrgIdentifier())
                                                       .identifier(secretDTO.getSecret().getIdentifier())

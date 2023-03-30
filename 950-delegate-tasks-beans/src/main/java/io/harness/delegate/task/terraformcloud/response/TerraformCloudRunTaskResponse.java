@@ -9,6 +9,7 @@ package io.harness.delegate.task.terraformcloud.response;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.terraformcloud.TerraformCloudTaskType;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -18,6 +19,7 @@ import lombok.experimental.SuperBuilder;
 @Value
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
+// Unsupported this class should not be used anymore
 public class TerraformCloudRunTaskResponse extends TerraformCloudDelegateTaskResponse {
   Integer detailedExitCode;
   String tfPlanJsonFileId;
@@ -26,4 +28,9 @@ public class TerraformCloudRunTaskResponse extends TerraformCloudDelegateTaskRes
   String tfOutput;
   String policyChecksJsonFileId;
   String workspaceId;
+
+  @Override
+  public TerraformCloudTaskType getTaskType() {
+    return null;
+  }
 }

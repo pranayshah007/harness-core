@@ -7,9 +7,11 @@
 
 package io.harness.ngmigration.service.step;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
+import static io.harness.ngmigration.utils.MigratorUtility.getSafeNotEmptyString;
 
-import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -35,6 +37,8 @@ import software.wings.beans.PhaseStep;
 import software.wings.beans.WorkflowPhase;
 import software.wings.beans.servicenow.ServiceNowCreateUpdateParams;
 import software.wings.beans.servicenow.ServiceNowFields;
+import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.collaboration.ServiceNowCreateUpdateState;
 
@@ -47,6 +51,21 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 public class ServiceNowStepMapperImpl extends StepMapper {
+  @Override
+  public List<CgEntityId> getReferencedEntities(
+      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+    ServiceNowCreateUpdateState state = (ServiceNowCreateUpdateState) getState(graphNode);
+    List<CgEntityId> refs = new ArrayList<>();
+    if (StringUtils.isNotBlank(state.getServiceNowCreateUpdateParams().getSnowConnectorId())) {
+      refs.add(CgEntityId.builder()
+                   .id(state.getServiceNowCreateUpdateParams().getSnowConnectorId())
+                   .type(NGMigrationEntityType.CONNECTOR)
+                   .build());
+    }
+    refs.addAll(secretRefUtils.getSecretRefFromExpressions(accountId, getExpressions(graphNode)));
+    return refs;
+  }
+
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;
@@ -77,16 +96,17 @@ public class ServiceNowStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     ServiceNowCreateUpdateState state = (ServiceNowCreateUpdateState) getState(graphNode);
     ServiceNowCreateUpdateParams params = state.getServiceNowCreateUpdateParams();
     switch (params.getAction()) {
       case CREATE:
-        return buildCreate(state);
+        return buildCreate(context, state);
       case UPDATE:
-        return buildUpdate(state);
+        return buildUpdate(context, state);
       case IMPORT_SET:
-        return buildImportSet(state);
+        return buildImportSet(context, state);
       default:
         throw new IllegalStateException("Unsupported service now action");
     }
@@ -110,21 +130,24 @@ public class ServiceNowStepMapperImpl extends StepMapper {
         .stream()
         .map(exp
             -> StepOutput.builder()
-                   .stageIdentifier(MigratorUtility.generateIdentifier(phase.getName()))
-                   .stepIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()))
-                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
         .map(ServiceNowFunctor::new)
         .collect(Collectors.toList());
   }
 
-  private ServiceNowCreateStepNode buildCreate(ServiceNowCreateUpdateState state) {
+  private ServiceNowCreateStepNode buildCreate(WorkflowMigrationContext wfContext, ServiceNowCreateUpdateState state) {
     ServiceNowCreateUpdateParams params = state.getServiceNowCreateUpdateParams();
     ServiceNowCreateStepNode stepNode = new ServiceNowCreateStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, wfContext.getIdentifierCaseFormat());
     ServiceNowCreateStepInfo stepInfo = ServiceNowCreateStepInfo.builder()
-                                            .connectorRef(RUNTIME_INPUT)
+                                            .connectorRef(getConnectorRef(wfContext, params.getSnowConnectorId()))
                                             .ticketType(ParameterField.createValueField(params.getTicketType()))
                                             .templateName(RUNTIME_INPUT)
                                             .useServiceNowTemplate(ParameterField.createValueField(false))
@@ -140,53 +163,58 @@ public class ServiceNowStepMapperImpl extends StepMapper {
     Map<ServiceNowFields, String> fields = parameters.fetchFields();
     Map<String, String> additional = parameters.fetchAdditionalFields();
     List<ServiceNowField> ngFields = new ArrayList<>();
-    if (EmptyPredicate.isNotEmpty(fields)) {
-      fields.forEach((key, value)
-                         -> ngFields.add(ServiceNowField.builder()
-                                             .name(key.getJsonBodyName())
-                                             .value(ParameterField.createValueField(value))
-                                             .build()));
+    if (isNotEmpty(fields)) {
+      fields.forEach((key, value) -> {
+        ngFields.add(ServiceNowField.builder()
+                         .name(key.getJsonBodyName())
+                         .value(ParameterField.createValueField(getSafeNotEmptyString(value)))
+                         .build());
+      });
     }
 
-    if (EmptyPredicate.isNotEmpty(additional)) {
-      additional.forEach(
-          (key, value)
-              -> ngFields.add(
-                  ServiceNowField.builder().name(key).value(ParameterField.createValueField(value)).build()));
+    if (isNotEmpty(additional)) {
+      additional.forEach((key, value)
+                             -> ngFields.add(ServiceNowField.builder()
+                                                 .name(key)
+                                                 .value(ParameterField.createValueField(getSafeNotEmptyString(value)))
+                                                 .build()));
     }
 
     return ngFields;
   }
 
-  private ServiceNowUpdateStepNode buildUpdate(ServiceNowCreateUpdateState state) {
+  private ServiceNowUpdateStepNode buildUpdate(WorkflowMigrationContext wfContext, ServiceNowCreateUpdateState state) {
     ServiceNowCreateUpdateParams params = state.getServiceNowCreateUpdateParams();
     ServiceNowUpdateStepNode stepNode = new ServiceNowUpdateStepNode();
-    baseSetup(state, stepNode);
-    ServiceNowUpdateStepInfo stepInfo = ServiceNowUpdateStepInfo.builder()
-                                            .connectorRef(RUNTIME_INPUT)
-                                            .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
-                                            .ticketType(ParameterField.createValueField(params.getTicketType()))
-                                            .ticketNumber(ParameterField.createValueField(params.getIssueNumber()))
-                                            .templateName(RUNTIME_INPUT)
-                                            .useServiceNowTemplate(ParameterField.createValueField(false))
-                                            .fields(getFields(params))
-                                            .build();
+    baseSetup(state, stepNode, wfContext.getIdentifierCaseFormat());
+    ServiceNowUpdateStepInfo stepInfo =
+        ServiceNowUpdateStepInfo.builder()
+            .connectorRef(getConnectorRef(wfContext, params.getSnowConnectorId()))
+            .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
+            .ticketType(ParameterField.createValueField(params.getTicketType()))
+            .ticketNumber(ParameterField.createValueField(getSafeNotEmptyString(params.getIssueNumber())))
+            .templateName(RUNTIME_INPUT)
+            .useServiceNowTemplate(ParameterField.createValueField(false))
+            .fields(getFields(params))
+            .build();
     stepNode.setServiceNowUpdateStepInfo(stepInfo);
     return stepNode;
   }
 
-  private ServiceNowImportSetStepNode buildImportSet(ServiceNowCreateUpdateState state) {
+  private ServiceNowImportSetStepNode buildImportSet(
+      WorkflowMigrationContext wfContext, ServiceNowCreateUpdateState state) {
     ServiceNowCreateUpdateParams params = state.getServiceNowCreateUpdateParams();
     ServiceNowImportSetStepNode stepNode = new ServiceNowImportSetStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, wfContext.getIdentifierCaseFormat());
     ImportDataSpecWrapper importDataSpecWrapper = new ImportDataSpecWrapper();
     importDataSpecWrapper.setType(ImportDataSpecType.JSON);
     JsonImportDataSpec jsonImportDataSpec =
         JsonImportDataSpec.builder().jsonBody(ParameterField.createValueField(params.getJsonBody())).build();
     importDataSpecWrapper.setImportDataSpec(jsonImportDataSpec);
+
     ServiceNowImportSetStepInfo stepInfo =
         ServiceNowImportSetStepInfo.builder()
-            .connectorRef(RUNTIME_INPUT)
+            .connectorRef(getConnectorRef(wfContext, params.getSnowConnectorId()))
             .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
             .stagingTableName(ParameterField.createValueField(params.getImportSetTableName()))
             .importData(importDataSpecWrapper)

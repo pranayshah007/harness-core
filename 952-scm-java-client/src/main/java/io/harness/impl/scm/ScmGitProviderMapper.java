@@ -226,8 +226,10 @@ public class ScmGitProviderMapper {
 
     try {
       return githubService.getToken(GithubAppConfig.builder()
-                                        .appId(apiAccessDTO.getApplicationId())
-                                        .installationId(apiAccessDTO.getInstallationId())
+                                        .appId(getSecretAsStringFromPlainTextOrSecretRef(
+                                            apiAccessDTO.getApplicationId(), apiAccessDTO.getApplicationIdRef()))
+                                        .installationId(getSecretAsStringFromPlainTextOrSecretRef(
+                                            apiAccessDTO.getInstallationId(), apiAccessDTO.getInstallationIdRef()))
                                         .privateKey(String.valueOf(apiAccessDTO.getPrivateKeyRef().getDecryptedValue()))
                                         .githubUrl(GitClientHelper.getGithubApiURL(githubConnector.getUrl()))
                                         .build());

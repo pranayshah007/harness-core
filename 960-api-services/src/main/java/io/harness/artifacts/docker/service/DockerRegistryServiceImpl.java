@@ -37,7 +37,6 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionMetadataKeys;
 import io.harness.exception.runtime.DockerHubInvalidImageRuntimeRuntimeException;
-import io.harness.exception.runtime.DockerHubInvalidTagRuntimeRuntimeException;
 import io.harness.exception.runtime.DockerHubServerRuntimeException;
 import io.harness.exception.runtime.InvalidDockerHubCredentialsRuntimeException;
 import io.harness.expression.RegexFunctor;
@@ -61,6 +60,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.expiringmap.ExpirationPolicy;
@@ -83,6 +83,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
   @Inject private DockerRestClientFactory dockerRestClientFactory;
   private static final String AUTHENTICATE_HEADER = "Www-Authenticate";
   private static final int MAX_NUMBER_OF_BUILDS = 250;
+  private static final String TAG_REGEX_TO_IGNORE = "\\*";
   private final Retry retry;
 
   private ExpiringMap<String, String> cachedBearerTokens = ExpiringMap.builder().variableExpiration().build();
@@ -110,14 +111,15 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
           "Check if the image exists and if the permissions are scoped for the authenticated user",
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
     }
-    // Sorting at build tag for docker artifacts.
-    // Don't change this order.
-    if (tagRegex != null) {
+    // Here we ignore tagRegex if it is equal to TAG_REGEX_TO_IGNORE - This is because DockerRegistry triggers are
+    // using tagRegex as "\\*" by default. Will remove this when triggers are fixed to have correct regex in place
+    if (tagRegex != null && !TAG_REGEX_TO_IGNORE.equals(tagRegex)) {
       buildDetails = buildDetails.stream()
                          .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
                          .collect(Collectors.toList());
     }
-
+    // Sorting at build tag for docker artifacts.
+    // Don't change this order.
     return buildDetails.stream().sorted(new BuildDetailsInternalComparatorAscending()).collect(toList());
   }
 
@@ -237,6 +239,21 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
         .collect(toList());
   }
 
+  private static BuildDetailsInternal processBuildResponse(String url, String imageName, String tag) {
+    String tagUrl = url.endsWith("/") ? url + imageName + "/tags/" : url + "/" + imageName + "/tags/";
+    String domainName = Http.getDomainWithPort(url);
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(ArtifactMetadataKeys.IMAGE,
+        (domainName == null || domainName.endsWith("/") ? domainName : domainName.concat("/")) + imageName + ":" + tag);
+    metadata.put(ArtifactMetadataKeys.TAG, tag);
+    return BuildDetailsInternal.builder()
+        .number(tag)
+        .buildUrl(tagUrl + tag)
+        .uiDisplayName("Tag# " + tag)
+        .metadata(metadata)
+        .build();
+  }
+
   @Override
   public List<Map<String, String>> getLabels(
       DockerInternalConfig dockerConfig, String imageName, List<String> buildNos) {
@@ -258,9 +275,10 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
   @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
       DockerInternalConfig dockerConfig, String imageName, String tagRegex) {
+    Pattern pattern = Pattern.compile(tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
     List<BuildDetailsInternal> builds = getBuilds(dockerConfig, imageName, MAX_NUMBER_OF_BUILDS, tagRegex);
     builds = builds.stream()
-                 .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
+                 .filter(build -> pattern.matcher(build.getNumber()).find())
                  .sorted(new BuildDetailsInternalComparatorDescending())
                  .collect(Collectors.toList());
 
@@ -319,21 +337,12 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
 
   private BuildDetailsInternal getBuildNumber(DockerInternalConfig dockerConfig, String imageName, String tag) {
     try {
-      List<BuildDetailsInternal> builds = getBuildDetails(dockerConfig, imageName);
-      builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
-
-      if (builds.size() != 1) {
-        Map<String, String> imageDataMap = new HashMap<>();
-        imageDataMap.put(ExceptionMetadataKeys.IMAGE_NAME.name(), imageName);
-        imageDataMap.put(ExceptionMetadataKeys.IMAGE_TAG.name(), tag);
-        String url = dockerConfig.getDockerRegistryUrl() + "/v2/" + imageName + "/" + tag;
-        imageDataMap.put(ExceptionMetadataKeys.URL.name(), url);
-        MdcGlobalContextData mdcGlobalContextData = MdcGlobalContextData.builder().map(imageDataMap).build();
-        GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);
-        throw new DockerHubInvalidTagRuntimeRuntimeException("Could not find tag [" + tag + "] for Docker image ["
-            + imageName + "] on registry [" + dockerConfig.getDockerRegistryUrl() + "]");
-      }
-      return builds.get(0);
+      DockerRegistryRestClient registryRestClient = dockerRestClientFactory.getDockerRegistryRestClient(dockerConfig);
+      String authHeader = getBasicAuthHeader(dockerConfig, true);
+      Function<Headers, String> getToken = headers -> getToken(dockerConfig, headers, registryRestClient);
+      // Note: We try & fetch the labels. If we cannot fetch the labels that means the image does not exist
+      DockerRegistryUtils.getSingleTagLabels(dockerConfig, registryRestClient, getToken, authHeader, imageName, tag);
+      return processBuildResponse(dockerConfig.getDockerRegistryUrl(), imageName, tag);
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the given tag for the image",
           "The tag provided for the image may be incorrect.",

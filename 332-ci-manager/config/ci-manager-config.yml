@@ -1,4 +1,3 @@
-
 # Copyright 2021 Harness Inc. All rights reserved.
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
@@ -112,6 +111,10 @@ tiServiceConfig:
   baseUrl: http://localhost:8078
   globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
 
+sscaServiceConfig:
+  baseUrl: http://localhost:8186
+  globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
+
 stoServiceConfig:
   baseUrl: http://localhost:4000
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
@@ -148,6 +151,7 @@ ciExecutionServiceConfig:
       readTimeOutSeconds: 15
     queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
     envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
+    topic: ${HSQS_TOPIC:-ci}
   addonImageTag: releaseBuild-30
   liteEngineImageTag: releaseBuild-29
   defaultMemoryLimit: 500
@@ -167,8 +171,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.6
-  liteEngineImage: harness/ci-lite-engine:1.16.6
+  addonImage: harness/ci-addon:1.16.7
+  liteEngineImage: harness/ci-lite-engine:1.16.7
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
@@ -187,29 +191,43 @@ ciExecutionServiceConfig:
       - "--run-strategy"
       - single-container
     images:
+      - product: awsecr_default
+        image: harness/aws-ecr-job-runner
+      - product: awssecurityhub_default
+        image: harness/aws-security-hub-job-runner
       - product: aquatrivy_default
         image: harness/aqua-trivy-job-runner
       - product: bandit_default
         image: harness/bandit-job-runner
       - product: blackduck_default
         image: harness/blackduckhub-job-runner
+      - product: brakeman_default
+        image: harness/brakeman-job-runner
+      - product: customingest_.*
+        image: harness/sto-plugin
       - product: grype_default
         image: harness/grype-job-runner
+      - product: nmap_.*
+        image: harness/nmap-job-runner
+      - product: nikto_.*
+        image: harness/nikto-job-runner
+      - product: metasploit_.*
+        image: harness/sto-plugin
+      - product: owasp_default
+        image: harness/owasp-job-runner
       - product: snyk_default
         image: harness/snyk-job-runner
       - product: sonarqube_default
         image: harness/sonarqube-agent-job-runner
+      - product: prowler_.*
+        image: harness/prowler-job-runner
       - product: prismacloud_default
         image: harness/twistlock-job-runner
       - product: checkmarx_default
         image: harness/checkmarx-job-runner
-      - product: zap_default
-        image: harness/zap-job-runner
-      - product: zap_quick
-        image: harness/zap-job-runner
-      - product: zap_attack
-        image: harness/zap-job-runner
-      - product: zap_standard
+      - product: veracode_default
+        image: harness/veracode-agent-job-runner
+      - product: zap_.*
         image: harness/zap-job-runner
       - product: mend_default
         image: harness/whitesource-agent-job-runner
@@ -264,13 +282,13 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.4.7
+      image: plugins/cache:1.5.2
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.4.7
+      image: plugins/cache:1.5.2
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
@@ -290,9 +308,18 @@ ciExecutionServiceConfig:
       s3Upload: plugins/s3:1.2.0
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.2.0
-      cacheGCS: plugins/cache:1.4.7
-      cacheS3: plugins/cache:1.4.7
+      cacheGCS: plugins/cache:1.5.2
+      cacheS3: plugins/cache:1.5.2
       sscaOrchestration: harness/ssca-plugin:latest
+    vmContainerlessStepConfig:
+      s3UploadConfig:
+        name: github.com/drone-plugins/drone-s3@refs/tags/v1.2.2
+      gcsUploadConfig:
+        name: github.com/drone-plugins/drone-gcs@refs/tags/v1.3.1
+      cacheS3Config:
+        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
+      cacheGCSConfig:
+        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
@@ -383,3 +410,10 @@ pmsPlanCreatorServicePoolConfig:
 
 enableOpentelemetry: false
 enableTelemetry: ${ENABLE_TELEMETRY:-false}
+
+policyManagerSecret: secret
+
+opaClientConfig:
+  baseUrl: http://localhost:3000
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15

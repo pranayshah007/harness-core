@@ -27,7 +27,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AsgDeploymentRelease;
 import io.harness.perpetualtask.instancesync.AsgInstanceSyncPerpetualTaskParamsNg;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -40,9 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class AsgInstanceSyncPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
+public class AsgInstanceSyncPerpetualTaskExecutorNg extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
-  @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private AsgTaskHelper asgTaskHelper;
 
@@ -52,12 +50,13 @@ public class AsgInstanceSyncPerpetualTaskExecutorNg implements PerpetualTaskExec
     log.info("Running the Asg InstanceSync perpetual task executor for task id: {}", taskId);
     AsgInstanceSyncPerpetualTaskParamsNg taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AsgInstanceSyncPerpetualTaskParamsNg.class);
-    return executeAsgInstanceSyncTask(taskId, taskParams);
+    return executeAsgInstanceSyncTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
   }
 
   public PerpetualTaskResponse executeAsgInstanceSyncTask(
-      PerpetualTaskId taskId, AsgInstanceSyncPerpetualTaskParamsNg taskParams) {
-    List<AsgDeploymentReleaseData> deploymentReleaseDataList = getAsgDeploymentReleaseData(taskParams);
+      PerpetualTaskId taskId, AsgInstanceSyncPerpetualTaskParamsNg taskParams, boolean referenceFalseKryoSerializer) {
+    List<AsgDeploymentReleaseData> deploymentReleaseDataList =
+        getAsgDeploymentReleaseData(taskParams, referenceFalseKryoSerializer);
 
     List<ServerInstanceInfo> serverInstanceInfos = deploymentReleaseDataList.stream()
                                                        .map(this::getServerInstanceInfoList)
@@ -80,17 +79,19 @@ public class AsgInstanceSyncPerpetualTaskExecutorNg implements PerpetualTaskExec
     }
   }
 
-  private List<AsgDeploymentReleaseData> getAsgDeploymentReleaseData(AsgInstanceSyncPerpetualTaskParamsNg taskParams) {
+  private List<AsgDeploymentReleaseData> getAsgDeploymentReleaseData(
+      AsgInstanceSyncPerpetualTaskParamsNg taskParams, boolean referenceFalseSerializer) {
     return taskParams.getAsgDeploymentReleaseListList()
         .stream()
-        .map(this::toAsgDeploymentReleaseData)
+        .map(data -> toAsgDeploymentReleaseData(data, referenceFalseSerializer))
         .collect(Collectors.toList());
   }
 
-  private AsgDeploymentReleaseData toAsgDeploymentReleaseData(AsgDeploymentRelease asgDeploymentRelease) {
+  private AsgDeploymentReleaseData toAsgDeploymentReleaseData(
+      AsgDeploymentRelease asgDeploymentRelease, boolean referenceFalseSerializer) {
     return AsgDeploymentReleaseData.builder()
-        .asgInfraConfig(
-            (AsgInfraConfig) kryoSerializer.asObject(asgDeploymentRelease.getAsgInfraConfig().toByteArray()))
+        .asgInfraConfig((AsgInfraConfig) getKryoSerializer(referenceFalseSerializer)
+                            .asObject(asgDeploymentRelease.getAsgInfraConfig().toByteArray()))
         .asgNameWithoutSuffix(asgDeploymentRelease.getAsgNameWithoutSuffix())
         .executionStrategy(asgDeploymentRelease.getExecutionStrategy())
         .build();

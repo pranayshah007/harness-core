@@ -188,6 +188,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.modelmapper.MappingException;
 
@@ -217,6 +218,8 @@ public class StateMachineExecutor implements StateInspectionListener {
   private static final String STATE_MACHINE_EXECUTOR_DEBUG_LINE = "STATE_MACHINE_EXECUTOR_DEBUG_LOG: ";
   private static final List<String> POSSIBLE_ROLLBACK_STATE_TYPES =
       asList(ENV_ROLLBACK_STATE.getType(), ENV_LOOP_STATE.getType(), FORK.getType());
+  static final String TEMPLATE_VARIABLE_ENTRY = "templateVariables";
+  private static final String VARIABLE_DESCRIPTION_FIELD = "description";
 
   @Getter private Subject<StateStatusUpdate> statusUpdateSubject = new Subject<>();
 
@@ -652,13 +655,16 @@ public class StateMachineExecutor implements StateInspectionListener {
 
       handleResponse(context, executionResponse);
     } catch (StateExecutionInstanceUpdateException exception) {
-      log.error("Exception occurred while updating state execution instance : {}", exception);
+      log.error(
+          String.format("Exception occurred while updating state execution instance : %s", stateExecutionInstance),
+          exception);
     } catch (WingsException exception) {
       ex = exception;
-      log.error("Exception occurred while starting state execution : {}", exception);
+      log.error(
+          String.format("Exception occurred while starting state execution : %s", stateExecutionInstance), exception);
     } catch (Exception exception) {
       ex = new WingsException(exception);
-      log.error("Exception occurred while starting state execution : {}", ex);
+      log.error(String.format("Exception occurred while starting state execution : %s", stateExecutionInstance), ex);
     }
 
     if (ex != null) {
@@ -1748,15 +1754,8 @@ public class StateMachineExecutor implements StateInspectionListener {
           ? context.getStateExecutionData().getErrorMsg()
           : errorMsgBuilder.toString();
 
-      // NOT CHANGED TO REDUCE THE BLAST RATIO.
-      // WHEN MAPPING FAIL HERE IT HANGS THE ABORT OPERATION, ALREADY SILENCED BECAUSE THAT.
-      try {
-        if (stateExecutionInstance.getStateParams() != null) {
-          MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
-        }
-      } catch (org.modelmapper.MappingException e) {
-        log.error("Got model mapping exception during mapping the stateParams {}",
-            stateExecutionInstance.getStateParams(), e);
+      if (stateExecutionInstance.getStateParams() != null) {
+        mapObject(stateExecutionInstance.getStateParams(), currentState, context.getAccountId());
       }
 
       currentState.handleAbortEvent(context);
@@ -2780,17 +2779,13 @@ public class StateMachineExecutor implements StateInspectionListener {
    * Maps source to target.
    */
   private void mapObject(Map<String, Object> source, State target, String accountId) {
-    //
-    // WE ARE UNABLE TO RCA TO A CORNER CASE DURING MAP OPERATION. THE METHOD THROW THE ERROR Converter
-    // org.modelmapper.internal.converter.CollectionConverter@354aaffe failed to convert com.mongodb.BasicDBList to
-    // java.util.List. WE CHOOSE TO ITERATE THE SOURCE AND TRY TO MAP EACH ELEMENT TO THE SAME TARGET, USING THIS
-    // STRATEGY WHEN THE ISSUE COMEs AGAIN WE WILL HAVE MORE DETAILS.
-    //
     try {
       MapperUtils.mapObject(source, target);
     } catch (MappingException e) {
-      log.error(String.format("Got model mapping exception during map the stateParams <%s> to state <%s>", source,
-          ToStringBuilder.reflectionToString(target)));
+      // CHANGE LOG PRIORITY TO A LOWER VALUE AS WE FOUND THE ROOT CAUSE
+      log.warn(String.format("Got model mapping exception during map the stateParams <%s> to state <%s>", source,
+                   ToStringBuilder.reflectionToString(target)),
+          e);
 
       // ITERATE THE SOURCE ELEMENTS AND MAP TO THE SAME TARGET
       mapEntries(source, target, accountId);
@@ -2801,7 +2796,7 @@ public class StateMachineExecutor implements StateInspectionListener {
   void mapEntries(Map<String, Object> source, State target, String accountId) {
     for (Map.Entry<String, Object> entry : source.entrySet()) {
       try {
-        MapperUtils.mapObject(Map.of(entry.getKey(), entry.getValue()), target);
+        MapperUtils.mapObject(sanitizeEntry(entry), target);
 
       } catch (MappingException e1) {
         log.error(String.format("Failure on entry <%s> to the same target", entry), e1);
@@ -2812,5 +2807,57 @@ public class StateMachineExecutor implements StateInspectionListener {
         }
       }
     }
+  }
+
+  @VisibleForTesting
+  Map<String, Object> sanitizeEntry(Map.Entry<String, Object> entry) {
+    //
+    // ONLY SOME FIELDS NEED SANITIZATION, WHEN NOT REQUIRED THE SAME ENTRY IS RETURNED.
+    //
+    Map<String, Object> result = null;
+
+    if (TEMPLATE_VARIABLE_ENTRY.equals(entry.getKey())) {
+      result = sanitizeTemplateVariables(entry);
+    }
+
+    // ADVICE: USING singletonMap BECAUSE ENTRY VALUE CAN BE NULL
+    return Optional.ofNullable(result).orElseGet(() -> Collections.singletonMap(entry.getKey(), entry.getValue()));
+  }
+
+  @VisibleForTesting
+  Map<String, Object> sanitizeTemplateVariables(final Map.Entry<String, Object> entry) {
+    //
+    // THE ROOT CAUSE OF MAPPING EXCEPTION IS AN ISSUE IN ModelMapper LIBRARY WHERE IS EXPECTED TO EVERY MAP
+    // ELEMENT OF THE SAME FIELD HAS THE SAME KEYS, NOT THE COUNT, BUT THE KEYS. MORE DETAILS AT CDS-54824.
+    //
+    if (entry.getValue() instanceof List) {
+      try {
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> elements = (List<Map<String, String>>) entry.getValue();
+
+        if (elements.stream().anyMatch(e -> e.containsKey(VARIABLE_DESCRIPTION_FIELD))) {
+          final List<Map<String, String>> result = new ArrayList<>();
+
+          elements.forEach(e -> {
+            if (e.containsKey(VARIABLE_DESCRIPTION_FIELD)) {
+              result.add(e);
+            } else {
+              Map<String, String> content = new HashMap<>(e);
+              content.put(VARIABLE_DESCRIPTION_FIELD, StringUtils.EMPTY);
+              result.add(content);
+            }
+          });
+
+          return Collections.singletonMap(TEMPLATE_VARIABLE_ENTRY, result);
+        }
+
+      } catch (ClassCastException e) {
+        log.warn(
+            String.format("Unable to cast [%s] to expected type [java.util.List]", entry.getValue().getClass()), e);
+      } catch (RuntimeException e) {
+        log.warn(String.format("Unable to sanitize field [%s]", TEMPLATE_VARIABLE_ENTRY), e);
+      }
+    }
+    return null;
   }
 }

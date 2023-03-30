@@ -44,7 +44,7 @@ public class ServiceImportService implements ImportService {
     return discoveryService.discoverMulti(accountId,
         DiscoveryInput.builder()
             .entities(services.stream()
-                          .filter(service -> ServiceV2Factory.getService2Mapper(service).isMigrationSupported())
+                          .filter(service -> ServiceV2Factory.getService2Mapper(service, false).isMigrationSupported())
                           .map(service
                               -> DiscoverEntityInput.builder()
                                      .entityId(service.getUuid())

@@ -130,6 +130,13 @@ eventsFramework:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
+policyManagerSecret: secret
+
+opaClientConfig:
+  baseUrl: http://localhost:3000
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
 pmsSdkGrpcServerConfig:
   connectors:
     - port: 12401

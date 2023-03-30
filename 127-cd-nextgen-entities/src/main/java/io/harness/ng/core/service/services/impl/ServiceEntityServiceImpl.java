@@ -27,7 +27,6 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.encryption.Scope;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
@@ -59,6 +58,8 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidator;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidatorFactory;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
@@ -66,8 +67,11 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
+import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PageUtils;
 import io.harness.utils.YamlPipelineUtils;
@@ -127,6 +131,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   private final ServiceOverrideService serviceOverrideService;
   private final ServiceEntitySetupUsageHelper entitySetupUsageHelper;
   @Inject private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
+  @Inject private TemplateResourceClient templateResourceClient;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
@@ -339,7 +344,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public List<ServiceEntity> listRunTimePermission(Criteria criteria) {
-    return serviceRepository.findAllRunTimePermission(criteria);
+    int NO_LIMIT = 50000;
+    return serviceRepository.findAll(criteria, Pageable.ofSize(NO_LIMIT)).toList();
   }
 
   @Override
@@ -553,20 +559,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     List<String> orgLevelIdentifiers = new ArrayList<>();
     List<String> accountLevelIdentifiers = new ArrayList<>();
 
-    for (String serviceIdentifier : serviceRefs) {
-      if (isNotEmpty(serviceIdentifier) && !EngineExpressionEvaluator.hasExpressions(serviceIdentifier)) {
-        IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
-            serviceIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
-
-        if (Scope.PROJECT.equals(identifierRef.getScope())) {
-          projectLevelIdentifiers.add(identifierRef.getIdentifier());
-        } else if (Scope.ORG.equals(identifierRef.getScope())) {
-          orgLevelIdentifiers.add(identifierRef.getIdentifier());
-        } else if (Scope.ACCOUNT.equals(identifierRef.getScope())) {
-          accountLevelIdentifiers.add(identifierRef.getIdentifier());
-        }
-      }
-    }
+    ServiceFilterHelper.populateIdentifiersOfEachLevel(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs,
+        projectLevelIdentifiers, orgLevelIdentifiers, accountLevelIdentifiers);
 
     if (isNotEmpty(projectLevelIdentifiers)) {
       Criteria projectCriteria = Criteria.where(ServiceEntityKeys.accountId)
@@ -609,7 +603,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public boolean isServiceField(String fieldName, JsonNode serviceValue) {
     return YamlTypes.SERVICE_ENTITY.equals(fieldName) && serviceValue.isObject()
-        && serviceValue.get(YamlTypes.SERVICE_REF) != null;
+        && (serviceValue.get(YamlTypes.SERVICE_REF) != null
+            || serviceValue.get(YamlTypes.SERVICE_USE_FROM_STAGE) != null);
   }
 
   @Override
@@ -652,7 +647,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         return null;
       }
       String serviceDefinition = serviceDefinitionNode.toString();
-      String serviceDefinitionInputs = RuntimeInputFormHelper.createTemplateFromYaml(serviceDefinition);
+      String serviceDefinitionInputs =
+          RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(serviceDefinition);
+
       if (isEmpty(serviceDefinitionInputs)) {
         return serviceDefinitionInputs;
       }
@@ -1011,5 +1008,26 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
     return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
         accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
+  }
+
+  @Override
+  public ValidateTemplateInputsResponseDTO validateTemplateInputs(
+      String accountId, String orgId, String projectId, String serviceIdentifier, String loadFromCache) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(serviceIdentifier), "service identifier must be present");
+
+    Optional<ServiceEntity> optionalService = get(accountId, orgId, projectId, serviceIdentifier, false);
+
+    if (optionalService.isPresent()) {
+      String yaml = optionalService.get().fetchNonEmptyYaml();
+
+      if (TemplateRefHelper.hasTemplateRef(yaml)) {
+        return NGRestUtils.getResponse(
+            templateResourceClient.validateTemplateInputsForGivenYaml(accountId, orgId, projectId, null, null, null,
+                null, null, null, null, null, loadFromCache, RefreshRequestDTO.builder().yaml(yaml).build()));
+      }
+    }
+
+    return ValidateTemplateInputsResponseDTO.builder().validYaml(true).build();
   }
 }

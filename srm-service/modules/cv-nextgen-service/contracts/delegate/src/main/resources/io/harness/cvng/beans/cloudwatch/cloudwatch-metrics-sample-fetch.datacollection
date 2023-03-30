@@ -2,6 +2,5 @@ Var bodyMap = {}
 Var:bodyMap.put("EndTime", Env:endTimeSeconds)
 Var:bodyMap.put("StartTime",  Env:startTimeSeconds)
 Var:bodyMap.put("MetricDataQueries", Env:body)
-
-Var response = sync-call-aws(url=Env:url, header=Env:commonHeaders, options=Env:commonOptions, body=Var:bodyMap, bodyType=JSON, method=POST, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, awsTarget=Env:awsTarget)
+Var response = sync-call-aws(url=Env:url, header=Env:commonHeaders, options=Env:commonOptions, body=Var:bodyMap, bodyType=JSON, method=POST, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, awsTarget=Env:awsTarget, securityToken=Env:awsSecurityToken)
 return Var:response

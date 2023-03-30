@@ -30,6 +30,7 @@ import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
+import io.harness.subscription.params.RecommendationRequest;
 import io.harness.subscription.params.SubscriptionRequest;
 import io.harness.subscription.params.UsageKey;
 import io.harness.subscription.services.SubscriptionService;
@@ -47,6 +48,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -88,6 +90,25 @@ public class SubscriptionResource {
   private static final String INVOICE_ID = "invoiceId";
   private static final String CUSTOMER_ID = "customerId";
   @Inject private SubscriptionService subscriptionService;
+
+  @GET
+  @Path("/recommendation-rc")
+  @ApiOperation(value = "Retrieves subscription recommendation", nickname = "retrieveRecommendation")
+  @Operation(operationId = "retrieveRecommendation", summary = "Retrieves subscription recommendation",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns product prices")
+      })
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  public ResponseDTO<Map<UsageKey, Long>>
+  retrieveRecommendedUsageRc(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(
+          required = true, description = "License type and, usages mapped to their identifiers") @NotNull
+      @Valid RecommendationRequest recommendationRequest) {
+    return ResponseDTO.newResponse(subscriptionService.getRecommendationRc(accountIdentifier, recommendationRequest));
+  }
 
   @GET
   @Path("/recommendation")

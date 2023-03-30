@@ -28,6 +28,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityBulkOrExecutionCapability;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.PdcDeploymentInfoDTO;
+import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -64,6 +65,7 @@ public class PdcInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
 
   @Mock KryoSerializer kryoSerializer;
   @Mock NGSecretServiceV2 ngSecretServiceV2;
+  @Mock DelegateServiceGrpcClient delegateServiceGrpcClient;
   @InjectMocks PdcInstanceSyncPerpetualTaskHandler pdcInstanceSyncPerpetualTaskHandler;
 
   @Test
@@ -104,6 +106,8 @@ public class PdcInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
                           .build());
     when(kryoSerializer.asBytes(any())).thenReturn(bytes);
     when(kryoSerializer.asDeflatedBytes(any())).thenReturn(bytes);
+    when(delegateServiceGrpcClient.isTaskTypeSupported(any(), any())).thenReturn(false);
+
     Any perpetualTaskPack = Any.pack(params);
 
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();

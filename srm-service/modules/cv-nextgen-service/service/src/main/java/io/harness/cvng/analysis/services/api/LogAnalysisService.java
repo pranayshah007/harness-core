@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 public interface LogAnalysisService {
+  String scheduleDeploymentLogFeedbackTask(AnalysisInput input);
   String scheduleServiceGuardLogAnalysisTask(AnalysisInput input);
   String scheduleDeploymentLogAnalysisTask(AnalysisInput analysisInput);
   Map<String, ExecutionStatus> getTaskStatus(List<String> taskIds);

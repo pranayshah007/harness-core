@@ -12,7 +12,6 @@ import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENT
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.NG_ENABLE_LDAP_CHECK;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.GROUP;
@@ -74,6 +73,7 @@ import io.harness.ng.core.events.UserGroupDeleteEvent;
 import io.harness.ng.core.events.UserGroupUpdateEvent;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.entities.UserGroup.UserGroupKeys;
+import io.harness.ng.core.user.entities.UserMetadata;
 import io.harness.ng.core.user.remote.dto.LastAdminCheckFilter;
 import io.harness.ng.core.user.remote.dto.UserFilter;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
@@ -116,6 +116,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -275,18 +276,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   @Override
   public List<String> getUserIds(List<String> emails) {
-    return ngUserService.getUserMetadataByEmails(emails)
-        .stream()
-        .map(userMetadataDTO -> userMetadataDTO.getUuid())
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  public List<String> getUserEmails(List<String> uuids) {
-    return ngUserService.getUserMetadata(uuids)
-        .stream()
-        .map(userMetadataDTO -> userMetadataDTO.getEmail())
-        .collect(Collectors.toList());
+    return ngUserService.getUserIdsByEmails(emails);
   }
 
   @Override
@@ -310,6 +300,15 @@ public class UserGroupServiceImpl implements UserGroupService {
   @Override
   public Long countUserGroups(String accountIdentifier) {
     return userGroupRepository.countByAccountIdentifierAndDeletedIsFalse(accountIdentifier);
+  }
+
+  @Override
+  public List<UserGroup> getUserGroupsForUser(String accountIdentifier, String userId) {
+    Criteria criteria = new Criteria();
+    criteria.and(UserGroupKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(UserGroupKeys.externallyManaged).is(true);
+    criteria.and(UserGroupKeys.users).in(userId);
+    return userGroupRepository.findAll(criteria);
   }
 
   @Override
@@ -423,15 +422,15 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public List<UserMetadataDTO> getUsersInUserGroup(Scope scope, String userGroupIdentifier) {
+  public CloseableIterator<UserMetadata> getUsersInUserGroup(Scope scope, String userGroupIdentifier) {
     Optional<UserGroup> userGroupOptional =
         get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
     if (!userGroupOptional.isPresent()) {
-      return new ArrayList<>();
+      return null;
     }
     Set<String> userGroupMemberIds = new HashSet<>(userGroupOptional.get().getUsers());
 
-    return ngUserService.getUserMetadata(new ArrayList<>(userGroupMemberIds));
+    return ngUserService.streamUserMetadata(new ArrayList<>(userGroupMemberIds));
   }
 
   @Override
@@ -835,14 +834,6 @@ public class UserGroupServiceImpl implements UserGroupService {
   public UserGroup linkToSsoGroup(@NotBlank @AccountIdentifier String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotBlank String userGroupIdentifier, @NotNull SSOType ssoType, @NotBlank String ssoId,
       @NotBlank String ssoGroupId, @NotBlank String ssoGroupName) {
-    boolean ngLdapEnabled = false;
-    if (SSOType.LDAP == ssoType) {
-      ngLdapEnabled = ngFeatureFlagHelperService.isEnabled(accountIdentifier, NG_ENABLE_LDAP_CHECK);
-      if (!ngLdapEnabled) {
-        throw new InvalidRequestException("Please enable feature flag NG_ENABLE_LDAP_CHECK for your account");
-      }
-    }
-
     UserGroup existingUserGroup = getOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
     UserGroupDTO oldUserGroup = (UserGroupDTO) HObjectMapper.clone(toDTO(existingUserGroup));
 

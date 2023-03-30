@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//:lombok",
         "//970-api-services-beans/src/main/java/io/harness/k8s/model:module",
+        "//970-api-services-beans/src/main/java/io/harness/k8s/model/kubeconfig:module",
         "//980-commons/src/main/java/io/harness/exception:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_api_client_google_api_client",

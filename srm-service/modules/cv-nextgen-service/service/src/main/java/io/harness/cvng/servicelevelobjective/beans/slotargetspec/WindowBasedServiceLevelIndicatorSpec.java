@@ -9,7 +9,7 @@ package io.harness.cvng.servicelevelobjective.beans.slotargetspec;
 
 import static io.harness.cvng.CVConstants.SLI_METRIC_TYPE;
 
-import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
@@ -41,7 +41,7 @@ public class WindowBasedServiceLevelIndicatorSpec extends ServiceLevelIndicatorS
   SLIMetricSpec spec;
   SLIMissingDataType sliMissingDataType;
 
-  public SLIExecutionType getType() {
-    return SLIExecutionType.WINDOW;
+  public SLIEvaluationType getType() {
+    return SLIEvaluationType.WINDOW;
   }
 }

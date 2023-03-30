@@ -14,7 +14,7 @@ import static io.harness.NGConstants.LOCATION;
 import static io.harness.NGConstants.RESOURCE_TYPE;
 import static io.harness.NGConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.PL_JPMC_SCIM_REQUIREMENTS;
+import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.GROUP;
@@ -31,7 +31,7 @@ import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.entities.UserGroup;
-import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
+import io.harness.ng.core.user.entities.UserMetadata;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.scim.Member;
 import io.harness.scim.PatchOperation;
@@ -62,6 +62,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -160,19 +161,19 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
                         .projectIdentifier(userGroup.getProjectIdentifier())
                         .build();
 
-      List<UserMetadataDTO> members = userGroupService.getUsersInUserGroup(scope, userGroup.getIdentifier());
-
-      if (isNotEmpty(members)) {
-        members.forEach(member -> {
+      try (CloseableIterator<UserMetadata> iterator =
+               userGroupService.getUsersInUserGroup(scope, userGroup.getIdentifier())) {
+        while (null != iterator && iterator.hasNext()) {
+          UserMetadata member = iterator.next();
           Member memberTemp = new Member();
-          memberTemp.setValue(member.getUuid());
+          memberTemp.setValue(member.getUserId());
           memberTemp.setDisplay(member.getEmail());
           memberTemp.setRef(URI.create(""));
           memberList.add(memberTemp);
-        });
+        }
       }
 
-      if (ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS)) {
+      if (ngFeatureFlagHelperService.isEnabled(accountId, PL_NEW_SCIM_STANDARDS)) {
         Map<String, String> metaMap = new HashMap<String, String>() {
           {
             put(RESOURCE_TYPE, "Group");

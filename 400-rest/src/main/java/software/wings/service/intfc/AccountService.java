@@ -24,6 +24,7 @@ import io.harness.managerclient.HttpsCertRequirement.CertRequirement;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
+import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
 
@@ -91,6 +92,10 @@ public interface AccountService {
   boolean getTwoFactorEnforceInfo(String accountId);
 
   void updateTwoFactorEnforceInfo(String accountId, boolean enabled);
+
+  Integer getSessionTimeoutInMinutes(String accountId);
+
+  void setSessionTimeoutInMinutes(String accountId, @NotNull @Valid SessionTimeoutSettings sessionTimeoutSettings);
 
   String suggestAccountName(@NotNull String accountName);
 

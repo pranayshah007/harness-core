@@ -7,9 +7,11 @@
 
 package io.harness.pms.pipeline.governance.service;
 
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
+import static junit.framework.TestCase.assertNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -18,6 +20,9 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.utils.OpaPolicyEvaluationHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.opaclient.model.OpaConstants;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.contracts.governance.ExpansionResponseBatch;
 import io.harness.pms.contracts.governance.ExpansionResponseProto;
@@ -25,9 +30,11 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.governance.ExpansionRequest;
 import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.JsonExpander;
+import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagService;
 
+import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.Set;
@@ -47,6 +54,7 @@ public class PipelineGovernanceServiceImplTest extends CategoryTest {
   @Mock private PmsGitSyncHelper gitSyncHelper;
   @Mock private ExpansionRequestsExtractor expansionRequestsExtractor;
   @Mock private JsonExpander jsonExpander;
+  @Mock private OpaPolicyEvaluationHelper opaPolicyEvaluationHelper;
 
   @InjectMocks PipelineGovernanceServiceImpl pipelineGovernanceService;
 
@@ -79,16 +87,20 @@ public class PipelineGovernanceServiceImplTest extends CategoryTest {
         ExpansionResponseBatch.newBuilder().addExpansionResponseProto(dummyResponse).build();
     Set<ExpansionResponseBatch> dummyResponseSet = Collections.singleton(dummyResponseBatch);
     doReturn(dummyResponseSet).when(jsonExpander).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
-    pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
-        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml, false);
+    doReturn(true)
+        .when(opaPolicyEvaluationHelper)
+        .shouldEvaluatePolicy(accountIdentifier, orgIdentifier, projectIdentifier,
+            OpaConstants.OPA_EVALUATION_TYPE_PIPELINE, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
+    pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(accountIdentifier, orgIdentifier, projectIdentifier,
+        dummyYaml, false, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
     verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
     verify(expansionRequestsExtractor, times(1)).fetchExpansionRequests(dummyYaml);
     verify(jsonExpander, times(1)).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
 
     doReturn(false).when(pmsFeatureFlagService).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
-    String noExp = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
-        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml, false);
-    assertThat(noExp).isEqualTo(dummyYaml);
+    String noExp = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(accountIdentifier, orgIdentifier,
+        projectIdentifier, dummyYaml, false, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
+    assertNull(noExp);
     verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
     verify(expansionRequestsExtractor, times(1)).fetchExpansionRequests(dummyYaml);
     verify(jsonExpander, times(1)).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
@@ -99,8 +111,80 @@ public class PipelineGovernanceServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testFetchExpandedPipelineJSONForV1Yaml() {
     String dummyYaml = "\"version: 1\"";
+    String noExp = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(accountIdentifier, orgIdentifier,
+        projectIdentifier, dummyYaml, false, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
+    assertNull(noExp);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testFetchExpandedPipelineJSONFromYamlWithPipelineEntity() {
+    String pipelineYaml = "pipeline:\n"
+        + "    identifier: cipipeline2GDdkmQLfb\n"
+        + "    name: run pipeline with output variable success\n"
+        + "    stages:\n"
+        + "        - stage:\n"
+        + "              identifier: outputvar\n"
+        + "              name: output variable\n"
+        + "              type: CI\n"
+        + "              spec:\n"
+        + "                  execution:\n"
+        + "                      steps:\n"
+        + "                          - step:\n"
+        + "                                identifier: two\n"
+        + "                                name: two\n"
+        + "                                type: Run\n"
+        + "                                spec:\n"
+        + "                                    command: <+input>\n"
+        + "                                    shell: Powershell\n"
+        + "                  infrastructure:\n"
+        + "                      type: VM\n"
+        + "                      spec:\n"
+        + "                          type: Pool\n"
+        + "                          spec:\n"
+        + "                              identifier: windows\n"
+        + "                  cloneCodebase: false\n"
+        + "    projectIdentifier: Plain_Old_Project\n"
+        + "    orgIdentifier: default\n";
+    ByteString randomByteString = ByteString.copyFromUtf8("sss");
+    ExpansionRequestMetadata expansionRequestMetadata = ExpansionRequestMetadata.newBuilder()
+                                                            .setAccountId(accountIdentifier)
+                                                            .setOrgId(orgIdentifier)
+                                                            .setProjectId(projectIdentifier)
+                                                            .setGitSyncBranchContext(randomByteString)
+                                                            .setYaml(ByteString.copyFromUtf8(pipelineYaml))
+                                                            .build();
+    ExpansionRequest dummyRequest = ExpansionRequest.builder().fqn("fqn").build();
+    Set<ExpansionRequest> dummyRequestSet = Collections.singleton(dummyRequest);
+    doReturn(randomByteString).when(gitSyncHelper).getGitSyncBranchContextBytesThreadLocal();
+    doReturn(dummyRequestSet).when(expansionRequestsExtractor).fetchExpansionRequests(pipelineYaml);
+    ExpansionResponseProto dummyResponse =
+        ExpansionResponseProto.newBuilder().setSuccess(false).setErrorMessage("just because").build();
+    ExpansionResponseBatch dummyResponseBatch =
+        ExpansionResponseBatch.newBuilder().addExpansionResponseProto(dummyResponse).build();
+    Set<ExpansionResponseBatch> dummyResponseSet = Sets.newHashSet(dummyResponseBatch);
+    doReturn(dummyResponseSet).when(jsonExpander).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
+
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .filePath("filePath")
+                                        .repo("repo")
+                                        .storeType(StoreType.REMOTE)
+                                        .build();
+    doReturn(true).when(pmsFeatureFlagService).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
+    doReturn(true)
+        .when(opaPolicyEvaluationHelper)
+        .shouldEvaluatePolicy(accountIdentifier, orgIdentifier, projectIdentifier,
+            OpaConstants.OPA_EVALUATION_TYPE_PIPELINE, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
     String noExp = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
-        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml, false);
-    assertThat(noExp).isEqualTo(dummyYaml);
+        pipelineEntity, pipelineYaml, true, "branch", OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
+    assertThat(noExp).isEqualTo(
+        "{\"pipeline\":{\"identifier\":\"cipipeline2GDdkmQLfb\",\"name\":\"run pipeline with output variable success\",\"stages\":[{\"stage\":{\"identifier\":\"outputvar\",\"name\":\"output variable\",\"type\":\"CI\",\"spec\":{\"execution\":{\"steps\":[{\"step\":{\"identifier\":\"two\",\"name\":\"two\",\"type\":\"Run\",\"spec\":{\"command\":\"<+input>\",\"shell\":\"Powershell\"}}}]},\"infrastructure\":{\"type\":\"VM\",\"spec\":{\"type\":\"Pool\",\"spec\":{\"identifier\":\"windows\"}}},\"cloneCodebase\":false}}}],\"projectIdentifier\":\"Plain_Old_Project\",\"orgIdentifier\":\"default\",\"gitConfig\":{\"branch\":\"branch\",\"repoName\":\"repo\",\"filePath\":\"filePath\"}}}");
+    verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
+    verify(expansionRequestsExtractor, times(1)).fetchExpansionRequests(pipelineYaml);
+    verify(jsonExpander, times(1)).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
   }
 }

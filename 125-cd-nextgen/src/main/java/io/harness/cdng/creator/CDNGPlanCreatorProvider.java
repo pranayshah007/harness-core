@@ -122,6 +122,7 @@ import io.harness.cdng.creator.plan.steps.TasCommandStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasRollingDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasRollingRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasRouteMappingStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasSwapRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasSwapRoutesStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformApplyStepPlanCreator;
@@ -216,6 +217,7 @@ import io.harness.cdng.creator.variables.TasCommandStepVariableCreator;
 import io.harness.cdng.creator.variables.TasRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasRollingDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.TasRollingRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.TasRouteMappingStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.AwsLambdaDeployStepVariableCreator;
@@ -302,7 +304,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String COMMANDS = "Commands";
   private static final String ELASTIGROUP = "Elastigroup";
   private static final String TAS = "TAS";
-  private static final String ASG = "AutoScalingGroup";
+  private static final String ASG = "AWS Auto Scaling Group";
   private static final String AWS_LAMBDA = "AwsLambda";
 
   private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
@@ -467,6 +469,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new TasRollbackStepPlanCreator());
     planCreators.add(new TasRollingDeployStepPlanCreator());
     planCreators.add(new TasRollingRollbackStepPlanCreator());
+    planCreators.add(new TasRouteMappingStepPlanCreator());
 
     planCreators.add(new K8sDryRunManifestStepPlanCreator());
 
@@ -612,6 +615,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new TasRollbackStepVariableCreator());
     variableCreators.add(new TasRollingDeployStepVariableCreator());
     variableCreators.add(new TasRollingRollbackStepVariableCreator());
+    variableCreators.add(new TasRouteMappingStepVariableCreator());
 
     variableCreators.add(new K8sDryRunManifestStepVariableCreator());
 
@@ -648,7 +652,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("GitOps Merge PR")
             .setType(StepSpecTypeConstants.GITOPS_MERGE_PR)
-            .setFeatureFlag(FeatureName.NG_GITOPS.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
             .build();
 
@@ -664,7 +667,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("GitOps Update Release Repo")
             .setType(StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
-            .setFeatureFlag(FeatureName.NG_GITOPS.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
             .build();
 
@@ -808,7 +810,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Command")
             .setType(StepSpecTypeConstants.COMMAND)
             .setFeatureRestrictionName(FeatureRestrictionName.COMMAND.name())
-            .setFeatureFlag(FeatureName.SSH_NG.name())
             .setStepMetaData(
                 StepMetaData.newBuilder().addAllCategory(CUSTOM_DEPLOYMENT_CATEGORY).addFolderPaths(COMMANDS).build())
             .build();
@@ -1019,6 +1020,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.BAMBOO_BUILD)
             .setFeatureRestrictionName(FeatureRestrictionName.BAMBOO_BUILD.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory(BUILD_STEP).addFolderPaths("Builds").build())
+            .setFeatureFlag(FeatureName.BAMBOO_BUILD.name())
             .build();
 
     StepInfo azureCreateARMResources =
@@ -1113,7 +1115,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                        .addAllCategory(TERRAGRUNT_CATEGORY)
                                                        .addFolderPaths(TERRAGRUNT_STEP_METADATA)
                                                        .build())
-                                  .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
                                   .build();
 
     StepInfo terragruntApply = StepInfo.newBuilder()
@@ -1124,7 +1125,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                         .addAllCategory(TERRAGRUNT_CATEGORY)
                                                         .addFolderPaths(TERRAGRUNT_STEP_METADATA)
                                                         .build())
-                                   .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
                                    .build();
 
     StepInfo terragruntDestroy = StepInfo.newBuilder()
@@ -1135,7 +1135,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                           .addAllCategory(TERRAGRUNT_CATEGORY)
                                                           .addFolderPaths(TERRAGRUNT_STEP_METADATA)
                                                           .build())
-                                     .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
                                      .build();
 
     StepInfo terragruntRollback = StepInfo.newBuilder()
@@ -1146,7 +1145,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                            .addAllCategory(TERRAGRUNT_CATEGORY)
                                                            .addFolderPaths(TERRAGRUNT_STEP_METADATA)
                                                            .build())
-                                      .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
                                       .build();
     StepInfo elastigroupBGStageSetup =
         StepInfo.newBuilder()
@@ -1166,7 +1164,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo asgCanaryDeploy =
         StepInfo.newBuilder()
-            .setName("Asg Canary Deploy")
+            .setName("ASG Canary Deploy")
             .setType(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
@@ -1174,7 +1172,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo asgCanaryDelete =
         StepInfo.newBuilder()
-            .setName("Asg Canary Delete")
+            .setName("ASG Canary Delete")
             .setType(StepSpecTypeConstants.ASG_CANARY_DELETE)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
@@ -1237,7 +1235,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo asgRollingDeploy =
         StepInfo.newBuilder()
-            .setName("Asg Rolling Deploy")
+            .setName("ASG Rolling Deploy")
             .setType(StepSpecTypeConstants.ASG_ROLLING_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
@@ -1245,7 +1243,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo asgRollingRollback =
         StepInfo.newBuilder()
-            .setName("Asg Rolling Rollback")
+            .setName("ASG Rolling Rollback")
             .setType(StepSpecTypeConstants.ASG_ROLLING_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
@@ -1253,7 +1251,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo asgBlueGreenDeploy =
         StepInfo.newBuilder()
-            .setName("Asg Blue Green Deploy")
+            .setName("ASG Blue Green Deploy")
             .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
@@ -1261,7 +1259,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo asgBlueGreenRollback =
         StepInfo.newBuilder()
-            .setName("Asg Blue Green Rollback")
+            .setName("ASG Blue Green Rollback")
             .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
@@ -1297,10 +1295,18 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo asgBlueGreenSwapService =
         StepInfo.newBuilder()
-            .setName("Asg Blue Green Swap Service")
+            .setName("ASG Blue Green Swap Service")
             .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
+            .build();
+
+    StepInfo tasRouteMapping =
+        StepInfo.newBuilder()
+            .setName("Route Mapping")
+            .setType(StepSpecTypeConstants.TAS_ROUTE_MAPPING)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
+            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
             .build();
 
     StepInfo terraformCloudRun = StepInfo.newBuilder()
@@ -1345,7 +1351,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Aws Lambda Rollback")
             .setType(StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_LAMBDA).setFolderPath(AWS_LAMBDA).build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_LAMBDA).setFolderPath("Aws Lambda").build())
             .setFeatureFlag(FeatureName.CDS_AWS_NATIVE_LAMBDA.name())
             .build();
 
@@ -1434,6 +1440,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(awsSamRollback);
     stepInfos.add(terraformCloudRollback);
     stepInfos.add(awsLambdaRollback);
+    stepInfos.add(tasRouteMapping);
     return stepInfos;
   }
 }

@@ -13,6 +13,7 @@ import io.harness.idp.namespace.beans.entity.NamespaceEntity;
 import io.harness.idp.namespace.mappers.NamespaceMapper;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.provision.service.ProvisionService;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.ProvisionApi;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
@@ -24,6 +25,7 @@ import org.springframework.dao.DuplicateKeyException;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@NextGenManagerAuth
 @Slf4j
 public class ProvisionApiImpl implements ProvisionApi {
   private ProvisionService provisionService;
@@ -32,16 +34,18 @@ public class ProvisionApiImpl implements ProvisionApi {
   @Override
   public Response provisionIdp(String accountIdentifier) {
     try {
+      provisionService.checkUserAuthorization();
       NamespaceEntity namespaceEntity = namespaceService.saveAccountIdNamespace(accountIdentifier);
       NamespaceInfo namespaceInfo = NamespaceMapper.toDTO(namespaceEntity);
-      provisionService.triggerPipeline(namespaceInfo.getAccountIdentifier(), namespaceInfo.getNamespace());
+      provisionService.triggerPipelineAndCreatePermissions(
+          namespaceInfo.getAccountIdentifier(), namespaceInfo.getNamespace());
       return Response.status(Response.Status.CREATED).entity(namespaceInfo).build();
     } catch (DuplicateKeyException e) {
       String logMessage = String.format("Namespace already created for given account Id - %s", accountIdentifier);
-      log.error(logMessage);
-      return Response.status(Response.Status.CONFLICT)
-          .entity(ResponseMessage.builder().message(logMessage).build())
-          .build();
+      log.info(logMessage);
+      NamespaceInfo namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
+      provisionService.triggerPipelineAndCreatePermissions(accountIdentifier, namespaceInfo.getNamespace());
+      return Response.status(Response.Status.CREATED).entity(namespaceInfo).build();
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())

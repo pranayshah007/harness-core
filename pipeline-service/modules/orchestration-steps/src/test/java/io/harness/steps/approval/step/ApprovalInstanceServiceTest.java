@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -28,6 +29,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.execution.NodeExecution;
+import io.harness.jira.JiraIssueNG;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -36,6 +38,8 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.repositories.ApprovalInstanceRepository;
 import io.harness.rule.Owner;
+import io.harness.servicenow.ServiceNowFieldValueNG;
+import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
@@ -48,13 +52,18 @@ import io.harness.steps.approval.step.harness.beans.HarnessApprovalAction;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityRequestDTO;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
+import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance.JiraApprovalInstanceKeys;
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
+import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance.ServiceNowApprovalInstanceKeys;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
+import dev.morphia.mapping.Mapper;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.Rule;
@@ -399,5 +408,115 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
                                      .build())
                        .build()))
         .isTrue();
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testUpdateTicketFieldsInServiceNowApprovalInstance() {
+    ServiceNowApprovalInstance serviceNowApprovalInstance = ServiceNowApprovalInstance.builder().build();
+    serviceNowApprovalInstance.setId("id");
+
+    assertThatCode(() -> {
+      approvalInstanceServiceImpl.updateTicketFieldsInServiceNowApprovalInstance(serviceNowApprovalInstance, null);
+    }).doesNotThrowAnyException();
+    assertThatCode(() -> {
+      approvalInstanceServiceImpl.updateTicketFieldsInServiceNowApprovalInstance(
+          serviceNowApprovalInstance, ServiceNowTicketNG.builder().build());
+    }).doesNotThrowAnyException();
+    assertThatCode(() -> {
+      approvalInstanceServiceImpl.updateTicketFieldsInServiceNowApprovalInstance(
+          serviceNowApprovalInstance, ServiceNowTicketNG.builder().fields(new HashMap<>()).build());
+    }).doesNotThrowAnyException();
+    Map<String, ServiceNowFieldValueNG> serviceNowTicketFields = new HashMap<>();
+    serviceNowTicketFields.put(
+        "dummyField", ServiceNowFieldValueNG.builder().displayValue("displayValue").value("value").build());
+    assertThatCode(() -> {
+      approvalInstanceServiceImpl.updateTicketFieldsInServiceNowApprovalInstance(
+          serviceNowApprovalInstance, ServiceNowTicketNG.builder().fields(serviceNowTicketFields).build());
+    }).doesNotThrowAnyException();
+    verify(approvalInstanceRepository, times(0)).updateFirst(any(), any());
+
+    serviceNowTicketFields.put("state", ServiceNowFieldValueNG.builder().displayValue("Open").value("open").build());
+
+    Map<String, ServiceNowFieldValueNG> updatedApprovalInstanceTicketFields = new HashMap<>();
+    updatedApprovalInstanceTicketFields.put(
+        "state", ServiceNowFieldValueNG.builder().displayValue("Open").value("open").build());
+
+    approvalInstanceServiceImpl.updateTicketFieldsInServiceNowApprovalInstance(
+        serviceNowApprovalInstance, ServiceNowTicketNG.builder().fields(serviceNowTicketFields).build());
+    verify(approvalInstanceRepository, times(1))
+        .updateFirst(new Query(Criteria.where(Mapper.ID_KEY).is(serviceNowApprovalInstance.getId()))
+                         .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING)),
+            new Update().set(ServiceNowApprovalInstanceKeys.ticketFields, updatedApprovalInstanceTicketFields));
+
+    // settings service now instance fields to the same value
+    serviceNowApprovalInstance.setTicketFields(updatedApprovalInstanceTicketFields);
+    approvalInstanceServiceImpl.updateTicketFieldsInServiceNowApprovalInstance(
+        serviceNowApprovalInstance, ServiceNowTicketNG.builder().fields(serviceNowTicketFields).build());
+    verify(approvalInstanceRepository, times(1)).updateFirst(any(), any());
+
+    // settings service now instance fields to different value
+    updatedApprovalInstanceTicketFields.put(
+        "state", ServiceNowFieldValueNG.builder().displayValue("Closed").value("closed").build());
+
+    serviceNowApprovalInstance.setTicketFields(updatedApprovalInstanceTicketFields);
+    approvalInstanceServiceImpl.updateTicketFieldsInServiceNowApprovalInstance(
+        serviceNowApprovalInstance, ServiceNowTicketNG.builder().fields(serviceNowTicketFields).build());
+    verify(approvalInstanceRepository, times(2)).updateFirst(any(), any());
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testUpdateTicketFieldsInJiraApprovalInstance() {
+    JiraApprovalInstance jiraApprovalInstance = JiraApprovalInstance.builder().build();
+    jiraApprovalInstance.setId("id");
+    JiraIssueNG jiraIssueNG = new JiraIssueNG();
+
+    assertThatCode(() -> {
+      approvalInstanceServiceImpl.updateTicketFieldsInJiraApprovalInstance(jiraApprovalInstance, null);
+    }).doesNotThrowAnyException();
+    assertThatCode(() -> {
+      approvalInstanceServiceImpl.updateTicketFieldsInJiraApprovalInstance(jiraApprovalInstance, jiraIssueNG);
+    }).doesNotThrowAnyException();
+
+    jiraIssueNG.setFields(new HashMap<>());
+
+    assertThatCode(() -> {
+      approvalInstanceServiceImpl.updateTicketFieldsInJiraApprovalInstance(jiraApprovalInstance, jiraIssueNG);
+    }).doesNotThrowAnyException();
+    Map<String, Object> jiraTicketFields = new HashMap<>();
+    jiraTicketFields.put("dummyField", "dummyValue");
+    jiraIssueNG.setFields(jiraTicketFields);
+
+    assertThatCode(() -> {
+      approvalInstanceServiceImpl.updateTicketFieldsInJiraApprovalInstance(jiraApprovalInstance, jiraIssueNG);
+    }).doesNotThrowAnyException();
+    verify(approvalInstanceRepository, times(0)).updateFirst(any(), any());
+
+    jiraTicketFields.put("Status", "To Do");
+    jiraIssueNG.setFields(jiraTicketFields);
+
+    Map<String, Object> updatedApprovalInstanceTicketFields = new HashMap<>();
+    updatedApprovalInstanceTicketFields.put("Status", "To Do");
+
+    approvalInstanceServiceImpl.updateTicketFieldsInJiraApprovalInstance(jiraApprovalInstance, jiraIssueNG);
+    verify(approvalInstanceRepository, times(1))
+        .updateFirst(new Query(Criteria.where(Mapper.ID_KEY).is(jiraApprovalInstance.getId()))
+                         .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING)),
+            new Update().set(JiraApprovalInstanceKeys.ticketFields, updatedApprovalInstanceTicketFields));
+
+    // settings service now instance fields to the same value
+    jiraApprovalInstance.setTicketFields(updatedApprovalInstanceTicketFields);
+    approvalInstanceServiceImpl.updateTicketFieldsInJiraApprovalInstance(jiraApprovalInstance, jiraIssueNG);
+    verify(approvalInstanceRepository, times(1)).updateFirst(any(), any());
+
+    // settings service now instance fields to different value
+    updatedApprovalInstanceTicketFields.put("Status", "In Progress");
+
+    jiraApprovalInstance.setTicketFields(updatedApprovalInstanceTicketFields);
+    approvalInstanceServiceImpl.updateTicketFieldsInJiraApprovalInstance(jiraApprovalInstance, jiraIssueNG);
+    verify(approvalInstanceRepository, times(2)).updateFirst(any(), any());
   }
 }

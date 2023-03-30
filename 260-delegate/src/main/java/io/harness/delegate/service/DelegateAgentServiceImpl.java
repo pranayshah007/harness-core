@@ -47,6 +47,8 @@ import static io.harness.delegate.message.MessageConstants.WATCHER_PROCESS;
 import static io.harness.delegate.message.MessageConstants.WATCHER_VERSION;
 import static io.harness.delegate.message.MessengerType.DELEGATE;
 import static io.harness.delegate.message.MessengerType.WATCHER;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_CONNECTED;
+import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_DISCONNECTED;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_CURRENTLY_EXECUTING;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_IN_QUEUE;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.TASK_EXECUTION_TIME;
@@ -235,6 +237,7 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody.Part;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
+import okhttp3.internal.http2.StreamResetException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -268,6 +271,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static final int POLL_INTERVAL_SECONDS = 3;
   private static final long UPGRADE_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long HEARTBEAT_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
+  private static final long HEARTBEAT_SOCKET_TIMEOUT = TimeUnit.MINUTES.toMillis(5);
   private static final long FROZEN_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long WATCHER_HEARTBEAT_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
   private static final long WATCHER_VERSION_MATCH_TIMEOUT = TimeUnit.MINUTES.toMillis(2);
@@ -314,6 +318,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private static volatile String delegateId;
   private static final String delegateInstanceId = generateUuid();
+  private final int MAX_ATTEMPTS = 3;
 
   @Inject
   @Getter(value = PACKAGE, onMethod = @__({ @VisibleForTesting }))
@@ -572,13 +577,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         log.info("Registering delegate with delegate profile: {}", delegateProfile);
       }
 
-      boolean isSample = "true".equals(System.getenv().get("SAMPLE_DELEGATE"));
-
       final List<String> supportedTasks = Arrays.stream(TaskType.values()).map(Enum::name).collect(toList());
 
       // Remove tasks which are in TaskTypeV2 and only specified with onlyV2 as true
       final List<String> unsupportedTasks =
-          Arrays.stream(TaskType.values()).filter(element -> element.isUnsupported()).map(Enum::name).collect(toList());
+          Arrays.stream(TaskType.values()).filter(TaskType::isUnsupported).map(Enum::name).collect(toList());
 
       if (BLOCK_SHELL_TASK) {
         log.info("Delegate is blocked from executing shell script tasks.");
@@ -838,14 +841,17 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void handleOpen(Object o) {
     log.info("Event:{}, message:[{}]", Event.OPEN.name(), o.toString());
+    metricRegistry.recordGaugeInc(DELEGATE_CONNECTED, new String[] {DELEGATE_NAME});
   }
 
   private void handleClose(Object o) {
     log.info("Event:{}, trying to reconnect, message:[{}]", Event.CLOSE.name(), o);
+    metricRegistry.recordGaugeInc(DELEGATE_DISCONNECTED, new String[] {DELEGATE_NAME});
   }
 
   private void handleError(final Exception e) {
     log.info("Event:{}", Event.ERROR.name(), e);
+    metricRegistry.recordGaugeInc(DELEGATE_DISCONNECTED, new String[] {DELEGATE_NAME});
   }
 
   private void finalizeSocket() {
@@ -916,6 +922,25 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       freeze();
     } else {
       log.warn("Delegate received unhandled message {}", message);
+    }
+  }
+
+  private void closeAndReconnectSocket() {
+    try {
+      finalizeSocket();
+      if (socket.status() == STATUS.OPEN || socket.status() == STATUS.REOPENED) {
+        log.error("Unable to close socket");
+        closingSocket.set(false);
+        return;
+      }
+      RequestBuilder requestBuilder = prepareRequestBuilder();
+      socket.open(requestBuilder.build());
+      if (socket.status() == STATUS.OPEN || socket.status() == STATUS.REOPENED) {
+        log.info("Socket reopened, status {}", socket.status());
+        closingSocket.set(false);
+      }
+    } catch (RuntimeException | IOException e) {
+      log.error("Exception while opening web socket connection delegate", e);
     }
   }
 
@@ -993,26 +1018,62 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.error("error executing rest call", e);
       throw e;
     } finally {
-      if (response != null && !response.isSuccessful()) {
-        String errorResponse = response.errorBody().string();
+      handleResponse(response);
+    }
+  }
 
-        log.warn("Received Error Response: {}", errorResponse);
-
-        if (errorResponse.contains(INVALID_TOKEN.name())) {
-          log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
-          initiateSelfDestruct();
-        } else if (errorResponse.contains(format(DUPLICATE_DELEGATE_ERROR_MESSAGE, delegateId, delegateConnectionId))) {
-          initiateSelfDestruct();
-        } else if (errorResponse.contains(EXPIRED_TOKEN.name())) {
-          log.warn("Delegate used expired token. It will be frozen and drained.");
-          freeze();
-        } else if (errorResponse.contains(REVOKED_TOKEN.name()) || errorResponse.contains("Revoked Delegate Token")) {
-          log.warn("Delegate used revoked token. It will be frozen and drained.");
-          freeze();
+  private <T> T executeCallWithRetryableException(Call<T> call, String failureMessage) throws IOException {
+    T responseBody = null;
+    Response<T> response = null;
+    int attempt = 1;
+    while (attempt <= MAX_ATTEMPTS && responseBody == null) {
+      try {
+        response = call.clone().execute();
+        responseBody = response.body();
+      } catch (Exception exception) {
+        if (exception instanceof StreamResetException && attempt < MAX_ATTEMPTS) {
+          attempt++;
+          log.warn(String.format("%s : Attempt: %d", failureMessage, attempt));
+        } else {
+          throw exception;
         }
-
-        response.errorBody().close();
       }
+    }
+    return responseBody;
+  }
+
+  private <T> T executeAcquireCallWithRetry(Call<T> call, String failureMessage) throws IOException {
+    Response<T> response = null;
+    try {
+      return executeCallWithRetryableException(call, failureMessage);
+    } catch (Exception e) {
+      log.error("error executing rest call", e);
+      throw e;
+    } finally {
+      handleResponse(response);
+    }
+  }
+
+  private <T> void handleResponse(Response<T> response) throws IOException {
+    if (response != null && !response.isSuccessful()) {
+      String errorResponse = response.errorBody().string();
+
+      log.warn("Received Error Response: {}", errorResponse);
+
+      if (errorResponse.contains(INVALID_TOKEN.name())) {
+        log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
+        initiateSelfDestruct();
+      } else if (errorResponse.contains(format(DUPLICATE_DELEGATE_ERROR_MESSAGE, delegateId, delegateConnectionId))) {
+        initiateSelfDestruct();
+      } else if (errorResponse.contains(EXPIRED_TOKEN.name())) {
+        log.warn("Delegate used expired token. It will be frozen and drained.");
+        freeze();
+      } else if (errorResponse.contains(REVOKED_TOKEN.name()) || errorResponse.contains("Revoked Delegate Token")) {
+        log.warn("Delegate used revoked token. It will be frozen and drained.");
+        freeze();
+      }
+
+      response.errorBody().close();
     }
   }
 
@@ -1669,8 +1730,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             receivedId, getDurationString(lastHeartbeatSentAt.get(), now),
             getDurationString(lastHeartbeatReceivedAt.get(), now),
             getDurationString(delegateHeartbeatResponse.getResponseSentAt(), now));
-      } else if (log.isDebugEnabled()) {
-        log.info("Delegate {} received heartbeat response {} after sending. {} since last response.", receivedId,
+      } else {
+        log.debug("Delegate {} received heartbeat response {} after sending. {} since last response.", receivedId,
             getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));
       }
       if (isEcsDelegate()) {
@@ -1686,23 +1747,44 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (!shouldContactManager() || !acquireTasks.get() || frozen.get()) {
       return;
     }
-
+    log.info("Last heartbeat received at {} and sent to manager at {}", lastHeartbeatReceivedAt.get(),
+        lastHeartbeatReceivedAt.get());
+    long now = clock.millis();
+    boolean heartbeatReceivedTimeExpired = lastHeartbeatReceivedAt.get() != 0
+        && (now - lastHeartbeatReceivedAt.get()) > HEARTBEAT_SOCKET_TIMEOUT && !closingSocket.get();
+    if (heartbeatReceivedTimeExpired) {
+      log.error("Reconnecting delegate - web socket connection: lastHeartbeatReceivedAt:[{}], lastHeartbeatSentAt:[{}]",
+          lastHeartbeatReceivedAt.get(), lastHeartbeatSentAt.get());
+      closeAndReconnectSocket();
+    }
     if (socket.status() == STATUS.OPEN || socket.status() == STATUS.REOPENED) {
       log.debug("Sending heartbeat...");
 
       // This will Add ECS delegate specific fields if DELEGATE_TYPE = "ECS"
       updateBuilderIfEcsDelegate(builder);
-      DelegateParams delegateParams = builder.build()
-                                          .toBuilder()
-                                          .delegateId(delegateId)
-                                          .lastHeartBeat(clock.millis())
-                                          .location(Paths.get("").toAbsolutePath().toString())
-                                          .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
-                                          .delegateConnectionId(delegateConnectionId)
-                                          .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
-                                          .build();
+      DelegateParams delegateParamsECS = builder.build()
+                                             .toBuilder()
+                                             .delegateId(delegateId)
+                                             .lastHeartBeat(clock.millis())
+                                             .location(Paths.get("").toAbsolutePath().toString())
+                                             .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
+                                             .delegateConnectionId(delegateConnectionId)
+                                             .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
+                                             .build();
 
+      // Send only minimal params over web socket to record HB
+      DelegateParams delegatesParams = DelegateParams.builder()
+                                           .delegateId(delegateId)
+                                           .accountId(accountId)
+                                           .lastHeartBeat(clock.millis())
+                                           .version(getVersion())
+                                           .location(Paths.get("").toAbsolutePath().toString())
+                                           .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
+                                           .delegateConnectionId(delegateConnectionId)
+                                           .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
+                                           .build();
       try {
+        final DelegateParams delegateParams = isEcsDelegate() ? delegateParamsECS : delegatesParams;
         HTimeLimiter.callInterruptible21(
             delegateHealthTimeLimiter, Duration.ofSeconds(15), () -> socket.fire(JsonUtils.asJson(delegateParams)));
         lastHeartbeatSentAt.set(clock.millis());
@@ -1920,9 +2002,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         currentlyAcquiringTasks.add(delegateTaskId);
 
         log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
+        Call<DelegateTaskPackage> acquireCall =
+            delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId);
 
-        DelegateTaskPackage delegateTaskPackage = executeRestCall(
-            delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId));
+        DelegateTaskPackage delegateTaskPackage = executeAcquireCallWithRetry(
+            acquireCall, String.format("Failed acquiring delegate task %s by delegate %s", delegateTaskId, delegateId));
+
         if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
           if (delegateTaskPackage == null) {
             log.warn("Delegate task package is null");
@@ -2033,7 +2118,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     DelegateRunnableTask delegateRunnableTask = delegateTaskFactory.getDelegateRunnableTask(
         TaskType.valueOf(taskData.getTaskType()), delegateTaskPackage, logStreamingTaskClient,
         getPostExecutionFunction(delegateTaskPackage.getDelegateTaskId(), sanitizer.orElse(null),
-            logStreamingTaskClient, delegateExpressionEvaluator),
+            logStreamingTaskClient, delegateExpressionEvaluator, delegateTaskPackage.isShouldSkipOpenStream()),
         getPreExecutionFunction(delegateTaskPackage, sanitizer.orElse(null), logStreamingTaskClient));
     if (delegateRunnableTask instanceof AbstractDelegateRunnableTask) {
       ((AbstractDelegateRunnableTask) delegateRunnableTask).setDelegateHostname(HOST_NAME);
@@ -2084,9 +2169,15 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (!logStreamingConfigPresent && !logCallbackConfigPresent) {
       return null;
     }
-    String logBaseKey = delegateTaskPackage.getLogStreamingAbstractions() != null
-        ? LogStreamingHelper.generateLogBaseKey(delegateTaskPackage.getLogStreamingAbstractions())
-        : EMPTY;
+
+    String logBaseKey;
+    if (!StringUtils.isBlank(delegateTaskPackage.getBaseLogKey())) {
+      logBaseKey = delegateTaskPackage.getBaseLogKey();
+    } else {
+      logBaseKey = delegateTaskPackage.getLogStreamingAbstractions() != null
+          ? LogStreamingHelper.generateLogBaseKey(delegateTaskPackage.getLogStreamingAbstractions())
+          : EMPTY;
+    }
 
     LogStreamingTaskClientBuilder taskClientBuilder =
         LogStreamingTaskClient.builder()
@@ -2225,7 +2316,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       if (logStreamingTaskClient != null) {
         try {
           // Opens the log stream for task
-          logStreamingTaskClient.openStream(null);
+          if (!delegateTaskPackage.isShouldSkipOpenStream()) {
+            logStreamingTaskClient.openStream(null);
+          }
         } catch (Exception ex) {
           log.error("Unexpected error occurred while opening the log stream.");
         }
@@ -2253,12 +2346,15 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private Consumer<DelegateTaskResponse> getPostExecutionFunction(String taskId, LogSanitizer sanitizer,
-      ILogStreamingTaskClient logStreamingTaskClient, DelegateExpressionEvaluator delegateExpressionEvaluator) {
+      ILogStreamingTaskClient logStreamingTaskClient, DelegateExpressionEvaluator delegateExpressionEvaluator,
+      boolean shouldSkipCloseStream) {
     return taskResponse -> {
       if (logStreamingTaskClient != null) {
         try {
           // Closes the log stream for the task
-          logStreamingTaskClient.closeStream(null);
+          if (!shouldSkipCloseStream) {
+            logStreamingTaskClient.closeStream(null);
+          }
         } catch (Exception ex) {
           log.error("Unexpected error occurred while closing the log stream.");
         }

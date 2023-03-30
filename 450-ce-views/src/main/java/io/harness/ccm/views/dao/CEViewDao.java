@@ -160,6 +160,16 @@ public class CEViewDao {
         .asList();
   }
 
+  public List<CEView> findByAccountIdAndBusinessMapping(String accountId, String businessMappingUuid) {
+    Query<CEView> query =
+        hPersistence.createQuery(CEView.class).disableValidation().field(CEViewKeys.accountId).equal(accountId);
+    query.or(query.and(query.criteria(VIEW_VISUALIZATION_GROUP_BY_IDENTIFIER).equal(BUSINESS_MAPPING),
+                 query.criteria(VIEW_VISUALIZATION_GROUP_BY_FIELD_ID).equal(businessMappingUuid)),
+        query.and(query.criteria(VIEW_RULES_VIEW_CONDITIONS_VIEW_FIELD_IDENTIFIER).equal(BUSINESS_MAPPING),
+            query.criteria(VIEW_RULES_VIEW_CONDITIONS_VIEW_FIELD_FIELD_ID).equal(businessMappingUuid)));
+    return query.asList();
+  }
+
   public List<CEView> findByAccountIdAndType(String accountId, ViewType viewType) {
     return hPersistence.createQuery(CEView.class)
         .filter(CEViewKeys.accountId, accountId)

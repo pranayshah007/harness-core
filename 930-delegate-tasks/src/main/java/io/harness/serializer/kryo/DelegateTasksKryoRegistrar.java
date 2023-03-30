@@ -184,6 +184,7 @@ import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.dto.Log;
 import software.wings.beans.dto.ManifestFile;
 import software.wings.beans.dto.NewRelicMetricDataRecord;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.beans.jira.JiraTaskParameters;
 import software.wings.beans.servicenow.ServiceNowFieldType;
 import software.wings.beans.servicenow.ServiceNowMetaDTO;
@@ -995,5 +996,8 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(TerraformSecretCleanupFailureException.class, 40118);
     kryo.register(TerraformSecretCleanupFailureDetails.class, 40119);
     kryo.register(RateLimitExceededException.class, 50027);
+    kryo.register(ThirdPartyApiCallLog.class, 5377);
+    kryo.register(ThirdPartyApiCallLog.ThirdPartyApiCallField.class, 71100);
+    kryo.register(ThirdPartyApiCallLog.FieldType.class, 71101);
   }
 }

@@ -260,6 +260,7 @@ public class DelegateServiceTest extends WingsBaseTest {
   private static final String UNIQUE_DELEGATE_NAME_ERROR_MESSAGE =
       "Delegate with same name exists. Delegate name must be unique across account.";
   private static final String DELEGATE_TOKEN_ERROR_MESSAGE = "Delegate Token must be provided.";
+  private static final String DELEGATE_PERMISSION_NOT_PROVIDED_ERROR_MESSAGE = "K8s permission type must be provided.";
   private static final String HARNESS_NG_DELEGATE = "harness-ng-delegate";
   private static final boolean runAsRoot = true;
 
@@ -371,6 +372,8 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(versionInfoManager.getVersionInfo()).thenReturn(VersionInfo.builder().version(VERSION).build());
     when(delegateVersionService.getWatcherJarVersions(ACCOUNT_ID)).thenReturn(VERSION);
 
+    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, TOKEN_NAME, false))
+        .thenReturn(DelegateTokenDetails.builder().status(DelegateTokenStatus.ACTIVE).build());
     when(delegateNgTokenService.getDelegateTokenValue(ACCOUNT_ID, TOKEN_NAME)).thenReturn("ACCOUNT_KEY");
     when(delegateTokenService.getTokenValue(ACCOUNT_ID, TOKEN_NAME)).thenReturn("ACCOUNT_KEY");
     when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, TOKEN_NAME))
@@ -2275,19 +2278,6 @@ public class DelegateServiceTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = ARPIT)
-  @Category(UnitTests.class)
-  public void testValidateKubernetesYamlWithUniqueName() {
-    String accountId = generateUuid();
-    DelegateSetupDetails setupDetails = DelegateSetupDetails.builder().name(DELEGATE_GROUP_NAME).build();
-    persistence.save(DelegateGroup.builder().accountId(accountId).name(DELEGATE_GROUP_NAME).ng(true).build());
-
-    assertThatThrownBy(() -> delegateService.validateKubernetesSetupDetails(accountId, setupDetails))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(UNIQUE_DELEGATE_NAME_ERROR_MESSAGE);
-  }
-
-  @Test
   @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void testValidateKubernetesYamlWithoutSize() {
@@ -3630,25 +3620,6 @@ public class DelegateServiceTest extends WingsBaseTest {
             CharStreams
                 .toString(new InputStreamReader(getClass().getResourceAsStream("/expectedNgHelmDelegateValues.yaml")))
                 .replaceAll("8888", "" + port));
-  }
-
-  @Test
-  @Owner(developers = ARPIT)
-  @Category(UnitTests.class)
-  public void testGenerateKubernetesYamlNgShouldThrowException() {
-    persistence.save(Delegate.builder().accountId(ACCOUNT_ID).ng(true).delegateName(UNIQUE_DELEGATE_NAME).build());
-    K8sConfigDetails k8sConfigDetails = K8sConfigDetails.builder().k8sPermissionType(CLUSTER_ADMIN).build();
-    DelegateSetupDetails setupDetails = DelegateSetupDetails.builder()
-                                            .name(UNIQUE_DELEGATE_NAME)
-                                            .size(DelegateSize.LAPTOP)
-                                            .delegateType(KUBERNETES)
-                                            .k8sConfigDetails(k8sConfigDetails)
-                                            .build();
-    assertThatThrownBy(()
-                           -> delegateService.generateKubernetesYaml(ACCOUNT_ID, setupDetails, "https://localhost:9090",
-                               "https://localhost:7070", MediaType.MULTIPART_FORM_DATA_TYPE))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(UNIQUE_DELEGATE_NAME_ERROR_MESSAGE);
   }
 
   @Test

@@ -24,15 +24,20 @@ import lombok.experimental.UtilityClass;
 public class IACMCreatorUtils {
   Set<String> supportedSteps =
       Sets.newHashSet("Plugin", "Action", "Run", "IACMTerraformPlan", "IACMTemplate", "liteEngineTask");
+  Set<String> supportedV1Filters = Sets.newHashSet("plugin", "test", "background", "action", "script");
   public Set<String> getSupportedSteps() {
     return supportedSteps;
   }
-
   public Set<String> getSupportedStepsV2() {
     SortedSet<String> steps = new TreeSet<>();
     steps.addAll(supportedSteps);
     steps.addAll(Arrays.stream(IACMStepType.values()).map(IACMStepType::getName).collect(Collectors.toSet()));
-
     return Sets.newTreeSet(steps);
+  }
+
+  public Set<String> getSupportedStepsV3() {
+    SortedSet<String> steps = new TreeSet<>();
+    steps.addAll(supportedV1Filters);
+    return steps;
   }
 }

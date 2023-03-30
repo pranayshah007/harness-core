@@ -131,7 +131,15 @@ public class RefreshInputsHelper {
 
   private JsonNode refreshServiceInputs(YamlNode entityNode, EntityRefreshContext context) {
     ObjectNode serviceNodeValue = (ObjectNode) entityNode.getCurrJsonNode();
-    String serviceRef = serviceNodeValue.get(YamlTypes.SERVICE_REF).asText();
+    String serviceRef = serviceNodeValue.get(YamlTypes.SERVICE_REF) != null
+        ? serviceNodeValue.get(YamlTypes.SERVICE_REF).asText()
+        : null;
+
+    // use from stage
+    if (EmptyPredicate.isEmpty(serviceRef)) {
+      serviceNodeValue.remove(YamlTypes.SERVICE_INPUTS);
+      return serviceNodeValue;
+    }
     if (NGExpressionUtils.isRuntimeField(serviceRef)) {
       serviceNodeValue.put(YamlTypes.SERVICE_INPUTS, "<+input>");
       return serviceNodeValue;

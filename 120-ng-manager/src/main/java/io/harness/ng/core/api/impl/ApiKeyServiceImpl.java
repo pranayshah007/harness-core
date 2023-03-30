@@ -38,12 +38,15 @@ import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.dto.ApiKeyAggregateDTO;
 import io.harness.ng.core.dto.ApiKeyDTO;
 import io.harness.ng.core.dto.ApiKeyFilterDTO;
+import io.harness.ng.core.dto.GatewayAccountRequestDTO;
 import io.harness.ng.core.entities.ApiKey;
 import io.harness.ng.core.entities.ApiKey.ApiKeyKeys;
 import io.harness.ng.core.events.ApiKeyCreateEvent;
 import io.harness.ng.core.events.ApiKeyDeleteEvent;
 import io.harness.ng.core.events.ApiKeyUpdateEvent;
 import io.harness.ng.core.mapper.ApiKeyDTOMapper;
+import io.harness.ng.core.user.UserInfo;
+import io.harness.ng.core.user.service.NgUserService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ng.core.spring.ApiKeyRepository;
 import io.harness.security.SourcePrincipalContextBuilder;
@@ -60,6 +63,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.ws.rs.NotAuthorizedException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.springframework.dao.DuplicateKeyException;
@@ -78,6 +82,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
   @Inject private AccessControlClient accessControlClient;
   @Inject private AccountService accountService;
+  @Inject private NgUserService ngUserService;
 
   @Override
   public ApiKeyDTO createApiKey(ApiKeyDTO apiKeyDTO) {
@@ -310,13 +315,28 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             && SourcePrincipalContextBuilder.getSourcePrincipal().getType() == PrincipalType.USER) {
           userId = java.util.Optional.of(SourcePrincipalContextBuilder.getSourcePrincipal().getName());
         }
-        if (!userId.isPresent()) {
+        if (userId.isEmpty()) {
           throw new InvalidArgumentsException("No user identifier present in context");
         }
         if (!userId.get().equals(parentIdentifier)) {
           throw new InvalidArgumentsException(String.format(
               "User [%s] not authenticated to create api key for user [%s]", userId.get(), parentIdentifier));
         }
+        Optional<UserInfo> userInfo = ngUserService.getUserById(userId.get());
+        if (userInfo.isEmpty()) {
+          throw new InvalidArgumentsException(String.format("No user found with id: [%s]", userId.get()));
+        }
+
+        List<GatewayAccountRequestDTO> userAccounts = userInfo.get().getAccounts();
+        if (userAccounts == null
+            || userAccounts.stream()
+                   .filter(account -> account.getUuid().equals(accountIdentifier))
+                   .findFirst()
+                   .isEmpty()) {
+          throw new NotAuthorizedException(String.format(
+              "User [%s] is not authorized to create ApiKey for account: [%s]", userId.get(), accountIdentifier));
+        }
+
         break;
       case SERVICE_ACCOUNT:
         accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),

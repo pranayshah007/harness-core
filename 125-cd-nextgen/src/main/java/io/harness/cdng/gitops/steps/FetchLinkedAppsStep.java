@@ -58,6 +58,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -178,10 +179,11 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
               LOG_KEY_SUFFIX);
         }
 
-        stepOutcome = StepResponse.StepOutcome.builder()
-                          .name(GITOPS_LINKED_APPS_OUTCOME)
-                          .outcome(GitOpsLinkedAppsOutcome.builder().apps(applications).build())
-                          .build();
+        GitOpsLinkedAppsOutcome linkedAppsOutcome = GitOpsLinkedAppsOutcome.builder().apps(applications).build();
+        stepOutcome =
+            StepResponse.StepOutcome.builder().name(GITOPS_LINKED_APPS_OUTCOME).outcome(linkedAppsOutcome).build();
+        executionSweepingOutputService.consume(
+            ambiance, GITOPS_LINKED_APPS_OUTCOME, linkedAppsOutcome, StepOutcomeGroup.STAGE.name());
       }
 
       StepResponseBuilder stepResponse = StepResponse.builder().status(Status.SUCCEEDED);

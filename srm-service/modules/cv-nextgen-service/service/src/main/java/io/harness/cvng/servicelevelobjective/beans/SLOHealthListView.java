@@ -8,6 +8,7 @@
 package io.harness.cvng.servicelevelobjective.beans;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.downtime.beans.DowntimeStatusDetails;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.ng.core.mapper.TagMapper;
@@ -48,6 +49,8 @@ public class SLOHealthListView {
   @NotNull ServiceLevelObjectiveType sloType;
   @NotNull double sloTargetPercentage;
   @NotNull int noOfActiveAlerts;
+  @NotNull SLIEvaluationType evaluationType;
+  DowntimeStatusDetails downtimeStatusDetails;
   @NotNull ProjectParams projectParams;
   @NotNull
   public ErrorBudgetRisk getErrorBudgetRisk() {
@@ -56,11 +59,12 @@ public class SLOHealthListView {
 
   public static SLOHealthListViewBuilder getSLOHealthListViewBuilder(
       AbstractServiceLevelObjective serviceLevelObjective, List<UserJourneyDTO> userJourneys,
-      int totalErrorBudgetMinutes, SLOHealthIndicator sloHealthIndicator) {
+      int totalErrorBudgetMinutes, SLOHealthIndicator sloHealthIndicator,
+      Map<AbstractServiceLevelObjective, SLIEvaluationType> serviceLevelObjectiveSLIEvaluationTypeMap) {
     return SLOHealthListView.builder()
         .sloIdentifier(serviceLevelObjective.getIdentifier())
         .name(serviceLevelObjective.getName())
-        .sloTargetType(serviceLevelObjective.getSloTarget().getType())
+        .sloTargetType(serviceLevelObjective.getTarget().getType())
         .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
         .userJourneys(userJourneys)
         .userJourneyName(userJourneys.get(0).getName())
@@ -72,6 +76,7 @@ public class SLOHealthListView {
         .burnRate(sloHealthIndicator.getErrorBudgetBurnRate())
         .noOfActiveAlerts(serviceLevelObjective.getNotificationRuleRefs().size())
         .sloType(serviceLevelObjective.getType())
+        .evaluationType(serviceLevelObjectiveSLIEvaluationTypeMap.get(serviceLevelObjective))
         .projectParams(ProjectParams.builder()
                            .accountIdentifier(serviceLevelObjective.getAccountId())
                            .orgIdentifier(serviceLevelObjective.getOrgIdentifier())

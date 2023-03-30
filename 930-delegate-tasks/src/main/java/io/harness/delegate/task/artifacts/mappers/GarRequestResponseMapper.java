@@ -9,9 +9,11 @@ package io.harness.delegate.task.artifacts.mappers;
 
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
+import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 
 import lombok.experimental.UtilityClass;
 
@@ -29,8 +31,19 @@ public class GarRequestResponseMapper {
   }
   public static GarDelegateResponse toGarResponse(
       BuildDetailsInternal buildDetailsInternal, GarDelegateRequest request) {
+    return toGarResponse(buildDetailsInternal, request, null);
+  }
+  public static GarDelegateResponse toGarResponse(
+      BuildDetailsInternal buildDetailsInternal, GarDelegateRequest request, ArtifactMetaInfo artifactMetaInfo) {
+    ArtifactBuildDetailsNG artifactBuildDetailsNG;
+    if (artifactMetaInfo != null) {
+      artifactBuildDetailsNG = ArtifactBuildDetailsMapper.toBuildDetailsNG(
+          buildDetailsInternal, artifactMetaInfo.getSha(), artifactMetaInfo.getShaV2());
+    } else {
+      artifactBuildDetailsNG = ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal);
+    }
     return GarDelegateResponse.builder()
-        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal))
+        .buildDetails(artifactBuildDetailsNG)
         .sourceType(ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY)
         .version(buildDetailsInternal.getNumber())
         .build();

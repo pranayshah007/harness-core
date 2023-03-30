@@ -152,19 +152,6 @@ public class EcsCanaryDeleteStep extends CdTaskExecutable<EcsCommandResponse> {
       return skipTaskRequestOrThrowException(ambiance);
     }
 
-    if (StepUtils.isStepInRollbackSection(ambiance)
-        && EmptyPredicate.isNotEmpty(ecsCanaryDeleteStepParameters.getEcsCanaryDeleteFnq())) {
-      OptionalSweepingOutput existingCanaryDeleteOutput = executionSweepingOutputService.resolveOptional(ambiance,
-          RefObjectUtils.getSweepingOutputRefObject(ecsCanaryDeleteStepParameters.getEcsCanaryDeleteFnq() + "."
-              + OutcomeExpressionConstants.ECS_CANARY_DELETE_OUTCOME));
-      if (existingCanaryDeleteOutput.isFound()) {
-        return TaskRequest.newBuilder()
-            .setSkipTaskRequest(
-                SkipTaskRequest.newBuilder().setMessage(ECS_CANARY_DELETE_STEP_ALREADY_EXECUTED).build())
-            .build();
-      }
-    }
-
     EcsCanaryDeleteDataOutcome ecsCanaryDeleteDataOutcome =
         (EcsCanaryDeleteDataOutcome) ecsCanaryDeleteDataOptionalOutput.getOutput();
 

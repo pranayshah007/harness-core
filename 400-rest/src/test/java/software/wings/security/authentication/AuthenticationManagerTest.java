@@ -264,7 +264,7 @@ public class AuthenticationManagerTest extends WingsBaseTest {
     when(portalConfig.getAuthTokenExpiryInMillis()).thenReturn(System.currentTimeMillis());
     when(MAIN_CONFIGURATION.getPortal()).thenReturn(portalConfig);
     when(AUTHENTICATION_UTL.getUser("testUser@test.com", WingsException.USER)).thenReturn(user);
-    when(PASSWORD_BASED_AUTH_HANDLER.authenticate(Matchers.anyString(), Matchers.anyString()))
+    when(PASSWORD_BASED_AUTH_HANDLER.authenticate(Matchers.anyString(), Matchers.anyString(), Matchers.anyString()))
         .thenReturn(authenticationResponse);
 
     User authenticatedUser = mock(User.class);
@@ -296,7 +296,7 @@ public class AuthenticationManagerTest extends WingsBaseTest {
     when(portalConfig.getAuthTokenExpiryInMillis()).thenReturn(System.currentTimeMillis());
     when(MAIN_CONFIGURATION.getPortal()).thenReturn(portalConfig);
     when(AUTHENTICATION_UTL.getUser(USER_NAME, WingsException.USER)).thenReturn(user);
-    when(PASSWORD_BASED_AUTH_HANDLER.authenticate(Matchers.anyString(), Matchers.anyString()))
+    when(PASSWORD_BASED_AUTH_HANDLER.authenticate(Matchers.anyString(), Matchers.anyString(), Matchers.anyString()))
         .thenReturn(authenticationResponse);
     User authenticatedUser = mock(User.class);
     when(authenticatedUser.getToken()).thenReturn(TEST_TOKEN);
@@ -379,7 +379,7 @@ public class AuthenticationManagerTest extends WingsBaseTest {
                                 .accounts(Lists.newArrayList(account))
                                 .build();
 
-    when(PASSWORD_BASED_AUTH_HANDLER.authenticate(any(), any()))
+    when(PASSWORD_BASED_AUTH_HANDLER.authenticate(any(), any(), any()))
         .thenReturn(new AuthenticationResponse(userToBeReturned));
     doReturn(account).when(spyAuthenticationManager).getAccount(any());
     when(AUTHSERVICE.generateBearerTokenForUser(any())).thenReturn(userToBeReturned);
@@ -430,7 +430,7 @@ public class AuthenticationManagerTest extends WingsBaseTest {
         + ":password")
                                                       .getBytes());
     AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(user));
-    when(PASSWORD_BASED_AUTH_HANDLER.authenticate(Matchers.anyString(), Matchers.anyString()))
+    when(PASSWORD_BASED_AUTH_HANDLER.authenticate(Matchers.anyString(), Matchers.anyString(), Matchers.anyString()))
         .thenReturn(authenticationResponse);
     when(AUTHSERVICE.generateBearerTokenForUser(user)).thenReturn(authenticatedUser);
     doNothing().when(AUTHSERVICE).auditLogin(any(), any());
@@ -492,7 +492,7 @@ public class AuthenticationManagerTest extends WingsBaseTest {
         + ":password")
                                                       .getBytes());
     AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(user));
-    when(PASSWORD_BASED_AUTH_HANDLER.authenticate(Matchers.anyString(), Matchers.anyString()))
+    when(PASSWORD_BASED_AUTH_HANDLER.authenticate(Matchers.anyString(), Matchers.anyString(), Matchers.anyString()))
         .thenReturn(authenticationResponse);
     when(AUTHSERVICE.generateBearerTokenForUser(user)).thenReturn(authenticatedUser);
     doNothing().when(AUTHSERVICE).auditLogin(any(), any());

@@ -20,6 +20,8 @@ import io.harness.connector.ConnectorResourceClient;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.azurerepo.*;
+import io.harness.delegate.beans.connector.scm.bitbucket.*;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
@@ -28,15 +30,22 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.*;
 import io.harness.encryption.SecretRefData;
-import io.harness.idp.gitintegration.GitIntegrationConstants;
-import io.harness.idp.gitintegration.implementation.GithubConnectorProcessor;
+import io.harness.idp.gitintegration.processor.impl.AzureRepoConnectorProcessor;
+import io.harness.idp.gitintegration.processor.impl.BitbucketConnectorProcessor;
+import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
+import io.harness.idp.gitintegration.processor.impl.GitlabConnectorProcessor;
+import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
+import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 
-import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.math3.util.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,6 +58,9 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.IDP)
 public class GitIntegrationServiceImplTest {
   @InjectMocks GithubConnectorProcessor githubConnectorProcessor;
+  @InjectMocks GitlabConnectorProcessor gitlabConnectorProcessor;
+  @InjectMocks BitbucketConnectorProcessor bitbucketConnectorProcessor;
+  @InjectMocks AzureRepoConnectorProcessor azureRepoConnectorProcessor;
 
   @Mock ConnectorResourceClient connectorResourceClient;
   @Mock private SecretManagerClientService ngSecretService;
@@ -60,6 +72,7 @@ public class GitIntegrationServiceImplTest {
   String CONNECTOR_IDENTIFIER = "test-connector-identifier";
   String DECRYPTED_SECRET_VALUE = "test-decrypted-value";
   String TOKEN_SECRET_IDENTIFIER = "test-secret-identifier";
+  String PWD_SECRET_IDENTIFIER = "test-secret-identifier1";
   String GITHUB_APP_APPLICATION_ID = "test-github-app-id";
 
   String GITHUB_APP_PRIVATE_KEY_SECRET_IDENTIFIER = "test-github-private-key-secret-identifier";
@@ -115,12 +128,179 @@ public class GitIntegrationServiceImplTest {
     when(ngSecretService.getDecryptedSecretValue(ACCOUNT_IDENTIFIER, null, null, TOKEN_SECRET_IDENTIFIER))
         .thenReturn(decryptedSecretValue);
 
-    List<EnvironmentSecret> response =
-        githubConnectorProcessor.getConnectorSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
+    Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> response =
+        githubConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
 
-    assertEquals(DECRYPTED_SECRET_VALUE, response.get(0).getDecryptedValue());
-    assertEquals(TOKEN_SECRET_IDENTIFIER, response.get(0).getSecretIdentifier());
-    assertEquals(GitIntegrationConstants.GITHUB_TOKEN, response.get(0).getEnvName());
+    assertEquals(TOKEN_SECRET_IDENTIFIER,
+        ((BackstageEnvSecretVariable) response.getSecond().get(GitIntegrationConstants.GITHUB_TOKEN))
+            .getHarnessSecretIdentifier());
+    assertEquals(GitIntegrationConstants.GITHUB_TOKEN,
+        response.getSecond().get(GitIntegrationConstants.GITHUB_TOKEN).getEnvName());
+    mockRestStatic.close();
+  }
+
+  @Test
+  @Category(UnitTests.class)
+  public void testGetConnectorSecretsInfoForGitlabConnector() {
+    SecretRefData secretRefData = SecretRefData.builder().identifier(TOKEN_SECRET_IDENTIFIER).build();
+    GitlabUsernameTokenDTO gitlabUsernameTokenDTO =
+        GitlabUsernameTokenDTO.builder().tokenRef(secretRefData).username(USER_NAME).usernameRef(null).build();
+    GitlabHttpCredentialsDTO gitlabHttpCredentialsDTO = GitlabHttpCredentialsDTO.builder()
+                                                            .type(GitlabHttpAuthenticationType.USERNAME_AND_TOKEN)
+                                                            .httpCredentialsSpec(gitlabUsernameTokenDTO)
+                                                            .build();
+    GitlabAuthenticationDTO githubAuthenticationDTO =
+        GitlabAuthenticationDTO.builder().authType(GitAuthType.HTTP).credentials(gitlabHttpCredentialsDTO).build();
+    GitlabConnectorDTO gitlabConnectorDTO = GitlabConnectorDTO.builder()
+                                                .apiAccess(null)
+                                                .url(URL)
+                                                .connectionType(GitConnectionType.ACCOUNT)
+                                                .authentication(githubAuthenticationDTO)
+                                                .delegateSelectors(null)
+                                                .executeOnDelegate(false)
+                                                .build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorConfig(gitlabConnectorDTO)
+                                            .connectorType(ConnectorType.GITLAB)
+                                            .identifier(ACCOUNT_IDENTIFIER)
+                                            .orgIdentifier(null)
+                                            .projectIdentifier(null)
+                                            .name(CONNECTOR_NAME)
+                                            .build();
+    ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(connectorInfoDTO).build();
+
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Optional.of(connectorDTO));
+    DecryptedSecretValue decryptedSecretValue = DecryptedSecretValue.builder()
+                                                    .decryptedValue(DECRYPTED_SECRET_VALUE)
+                                                    .identifier(TOKEN_SECRET_IDENTIFIER)
+                                                    .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                    .orgIdentifier(null)
+                                                    .projectIdentifier(null)
+                                                    .build();
+    when(ngSecretService.getDecryptedSecretValue(ACCOUNT_IDENTIFIER, null, null, TOKEN_SECRET_IDENTIFIER))
+        .thenReturn(decryptedSecretValue);
+
+    Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> response =
+        gitlabConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
+
+    assertEquals(TOKEN_SECRET_IDENTIFIER,
+        ((BackstageEnvSecretVariable) response.getSecond().get(GitIntegrationConstants.GITLAB_TOKEN))
+            .getHarnessSecretIdentifier());
+    assertEquals(GitIntegrationConstants.GITLAB_TOKEN,
+        response.getSecond().get(GitIntegrationConstants.GITLAB_TOKEN).getEnvName());
+    mockRestStatic.close();
+  }
+
+  @Test
+  @Category(UnitTests.class)
+  public void testGetConnectorSecretsInfoForBitBucketConnector() {
+    SecretRefData secretRefData = SecretRefData.builder().identifier(PWD_SECRET_IDENTIFIER).build();
+    BitbucketUsernamePasswordDTO bitbucketUsernamePasswordDTO =
+        BitbucketUsernamePasswordDTO.builder().passwordRef(secretRefData).username(USER_NAME).usernameRef(null).build();
+    BitbucketHttpCredentialsDTO bitbucketHttpCredentialsDTO =
+        BitbucketHttpCredentialsDTO.builder()
+            .type(BitbucketHttpAuthenticationType.USERNAME_AND_PASSWORD)
+            .httpCredentialsSpec(bitbucketUsernamePasswordDTO)
+            .build();
+    BitbucketAuthenticationDTO bitbucketAuthenticationDTO = BitbucketAuthenticationDTO.builder()
+                                                                .authType(GitAuthType.HTTP)
+                                                                .credentials(bitbucketHttpCredentialsDTO)
+                                                                .build();
+    BitbucketConnectorDTO gitlabConnectorDTO = BitbucketConnectorDTO.builder()
+                                                   .apiAccess(null)
+                                                   .url(URL)
+                                                   .connectionType(GitConnectionType.ACCOUNT)
+                                                   .authentication(bitbucketAuthenticationDTO)
+                                                   .delegateSelectors(null)
+                                                   .executeOnDelegate(false)
+                                                   .build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorConfig(gitlabConnectorDTO)
+                                            .connectorType(ConnectorType.BITBUCKET)
+                                            .identifier(ACCOUNT_IDENTIFIER)
+                                            .orgIdentifier(null)
+                                            .projectIdentifier(null)
+                                            .name(CONNECTOR_NAME)
+                                            .build();
+    ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(connectorInfoDTO).build();
+
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Optional.of(connectorDTO));
+    DecryptedSecretValue decryptedSecretValue = DecryptedSecretValue.builder()
+                                                    .decryptedValue(DECRYPTED_SECRET_VALUE)
+                                                    .identifier(PWD_SECRET_IDENTIFIER)
+                                                    .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                    .orgIdentifier(null)
+                                                    .projectIdentifier(null)
+                                                    .build();
+    when(ngSecretService.getDecryptedSecretValue(ACCOUNT_IDENTIFIER, null, null, PWD_SECRET_IDENTIFIER))
+        .thenReturn(decryptedSecretValue);
+
+    Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> response =
+        bitbucketConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
+
+    assertEquals(PWD_SECRET_IDENTIFIER,
+        ((BackstageEnvSecretVariable) response.getSecond().get(GitIntegrationConstants.BITBUCKET_TOKEN))
+            .getHarnessSecretIdentifier());
+    assertEquals(GitIntegrationConstants.BITBUCKET_TOKEN,
+        response.getSecond().get(GitIntegrationConstants.BITBUCKET_TOKEN).getEnvName());
+    mockRestStatic.close();
+  }
+
+  @Test
+  @Category(UnitTests.class)
+  public void testGetConnectorSecretsInfoForAzureRepoConnector() {
+    SecretRefData secretRefData = SecretRefData.builder().identifier(TOKEN_SECRET_IDENTIFIER).build();
+    AzureRepoUsernameTokenDTO azureRepoUsernameTokenDTO =
+        AzureRepoUsernameTokenDTO.builder().tokenRef(secretRefData).username(USER_NAME).usernameRef(null).build();
+    AzureRepoHttpCredentialsDTO azureRepoHttpCredentialsDTO =
+        AzureRepoHttpCredentialsDTO.builder()
+            .type(AzureRepoHttpAuthenticationType.USERNAME_AND_TOKEN)
+            .httpCredentialsSpec(azureRepoUsernameTokenDTO)
+            .build();
+    AzureRepoAuthenticationDTO githubAuthenticationDTO = AzureRepoAuthenticationDTO.builder()
+                                                             .authType(GitAuthType.HTTP)
+                                                             .credentials(azureRepoHttpCredentialsDTO)
+                                                             .build();
+    AzureRepoConnectorDTO azureRepoConnectorDTO = AzureRepoConnectorDTO.builder()
+                                                      .apiAccess(null)
+                                                      .url(URL)
+                                                      .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
+                                                      .authentication(githubAuthenticationDTO)
+                                                      .delegateSelectors(null)
+                                                      .executeOnDelegate(false)
+                                                      .build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorConfig(azureRepoConnectorDTO)
+                                            .connectorType(ConnectorType.AZURE_REPO)
+                                            .identifier(ACCOUNT_IDENTIFIER)
+                                            .orgIdentifier(null)
+                                            .projectIdentifier(null)
+                                            .name(CONNECTOR_NAME)
+                                            .build();
+    ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(connectorInfoDTO).build();
+
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Optional.of(connectorDTO));
+    DecryptedSecretValue decryptedSecretValue = DecryptedSecretValue.builder()
+                                                    .decryptedValue(DECRYPTED_SECRET_VALUE)
+                                                    .identifier(TOKEN_SECRET_IDENTIFIER)
+                                                    .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                    .orgIdentifier(null)
+                                                    .projectIdentifier(null)
+                                                    .build();
+    when(ngSecretService.getDecryptedSecretValue(ACCOUNT_IDENTIFIER, null, null, TOKEN_SECRET_IDENTIFIER))
+        .thenReturn(decryptedSecretValue);
+
+    Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> response =
+        azureRepoConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
+
+    assertEquals(TOKEN_SECRET_IDENTIFIER,
+        ((BackstageEnvSecretVariable) response.getSecond().get(GitIntegrationConstants.AZURE_REPO_TOKEN))
+            .getHarnessSecretIdentifier());
+    assertEquals(GitIntegrationConstants.AZURE_REPO_TOKEN,
+        response.getSecond().get(GitIntegrationConstants.AZURE_REPO_TOKEN).getEnvName());
     mockRestStatic.close();
   }
 
@@ -183,18 +363,23 @@ public class GitIntegrationServiceImplTest {
         .thenReturn(decryptedSecretValuePrivateRef)
         .thenReturn(decryptedSecretValueToken);
 
-    List<EnvironmentSecret> response =
-        githubConnectorProcessor.getConnectorSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
+    Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> response =
+        githubConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
 
-    assertEquals(GITHUB_APP_APPLICATION_ID, response.get(0).getDecryptedValue());
-    assertEquals(null, response.get(0).getSecretIdentifier());
-    assertEquals(GitIntegrationConstants.GITHUB_APP_ID, response.get(0).getEnvName());
-    assertEquals(GITHUB_APP_PRIVATE_KEY_DECRYPTED_VALUE, response.get(1).getDecryptedValue());
-    assertEquals(GITHUB_APP_PRIVATE_KEY_SECRET_IDENTIFIER, response.get(1).getSecretIdentifier());
-    assertEquals(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF, response.get(1).getEnvName());
-    assertEquals(DECRYPTED_SECRET_VALUE, response.get(2).getDecryptedValue());
-    assertEquals(TOKEN_SECRET_IDENTIFIER, response.get(2).getSecretIdentifier());
-    assertEquals(GitIntegrationConstants.GITHUB_TOKEN, response.get(2).getEnvName());
+    assertEquals(GITHUB_APP_APPLICATION_ID,
+        ((BackstageEnvConfigVariable) response.getSecond().get(GitIntegrationConstants.GITHUB_APP_ID)).getValue());
+    assertEquals(GitIntegrationConstants.GITHUB_APP_ID,
+        response.getSecond().get(GitIntegrationConstants.GITHUB_APP_ID).getEnvName());
+    assertEquals(GITHUB_APP_PRIVATE_KEY_SECRET_IDENTIFIER,
+        ((BackstageEnvSecretVariable) response.getSecond().get(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF))
+            .getHarnessSecretIdentifier());
+    assertEquals(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF,
+        response.getSecond().get(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF).getEnvName());
+    assertEquals(TOKEN_SECRET_IDENTIFIER,
+        ((BackstageEnvSecretVariable) response.getSecond().get(GitIntegrationConstants.GITHUB_TOKEN))
+            .getHarnessSecretIdentifier());
+    assertEquals(GitIntegrationConstants.GITHUB_TOKEN,
+        response.getSecond().get(GitIntegrationConstants.GITHUB_TOKEN).getEnvName());
     mockRestStatic.close();
   }
 }

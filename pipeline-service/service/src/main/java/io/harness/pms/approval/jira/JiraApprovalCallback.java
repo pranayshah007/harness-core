@@ -30,6 +30,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.servicenow.misc.TicketNG;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.CriteriaSpecDTO;
+import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.evaluation.CriteriaEvaluator;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
 import io.harness.tasks.BinaryResponseData;
@@ -124,6 +125,17 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     }
 
     try {
+      updateTicketFieldsInApprovalInstance(jiraTaskNGResponse.getIssue(), instance);
+    } catch (Exception ex) {
+      logCallback.saveExecutionLog(
+          LogHelper.color(String.format("Error while updating approval with jira ticket fields: %s. Ignoring it...",
+                              ExceptionUtils.getMessage(ex)),
+              LogColor.Red),
+          LogLevel.WARN);
+      log.warn("Error while updating approval instance with jira ticket fields", ex);
+    }
+
+    try {
       checkApprovalAndRejectionCriteriaAndWithinChangeWindow(jiraTaskNGResponse.getIssue(), instance, logCallback,
           instance.getApprovalCriteria(), instance.getRejectionCriteria());
     } catch (Exception ex) {
@@ -171,6 +183,13 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     }
     return true;
   }
+
+  @Override
+  protected void updateTicketFieldsInApprovalInstance(TicketNG ticket, ApprovalInstance instance) {
+    approvalInstanceService.updateTicketFieldsInJiraApprovalInstance(
+        (JiraApprovalInstance) instance, (JiraIssueNG) ticket);
+  }
+
   @Override
   protected boolean evaluateCriteria(TicketNG ticket, CriteriaSpecDTO criteriaSpec) {
     return CriteriaEvaluator.evaluateCriteria((JiraIssueNG) ticket, criteriaSpec);

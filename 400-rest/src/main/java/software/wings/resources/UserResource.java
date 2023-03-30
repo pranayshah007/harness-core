@@ -217,7 +217,8 @@ public class UserResource {
   @AuthRule(permissionType = USER_PERMISSION_READ)
   public RestResponse<PageResponse<PublicUser>> list(@BeanParam PageRequest<User> pageRequest,
       @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("searchTerm") String searchTerm,
-      @QueryParam("details") @DefaultValue("true") boolean loadUserGroups) {
+      @QueryParam("details") @DefaultValue("true") boolean loadUserGroups,
+      @QueryParam("showDisabled") @DefaultValue("false") boolean showDisabledUsers) {
     Integer offset = Integer.valueOf(pageRequest.getOffset());
     if (featureFlagService.isEnabled(FeatureName.EXTRA_LARGE_PAGE_SIZE, accountId)) {
       String baseLimit = LARGE_PAGE_SIZE_LIMIT;
@@ -228,7 +229,8 @@ public class UserResource {
     }
     Integer pageSize = pageRequest.getPageSize();
 
-    List<User> userList = userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, true, true);
+    List<User> userList =
+        userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, true, true, showDisabledUsers);
 
     PageResponse<PublicUser> pageResponse = aPageResponse()
                                                 .withOffset(offset.toString())
@@ -418,6 +420,11 @@ public class UserResource {
       throw new InvalidRequestException("Can not delete user added via SCIM", USER);
     }
     userService.delete(accountId, userId);
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId) && userService.isUserPresent(userId)
+        && !userService.isUserPartOfAnyUserGroupInCG(userId, accountId)) {
+      throw new InvalidRequestException(
+          "User is part of NG, hence the userGroups are removed for the user. Please delete the user from NG to remove the user from Harness.");
+    }
     return new RestResponse();
   }
 
@@ -531,9 +538,6 @@ public class UserResource {
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
   public RestResponse<User> get() {
-    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
-      return new RestResponse<>(UserThreadLocal.get().getPublicUser(true));
-    }
     return new RestResponse<>(UserThreadLocal.get().getPublicUser(false));
   }
 
@@ -590,10 +594,6 @@ public class UserResource {
   @Timed
   @ExceptionMetered
   public RestResponse<AccountRole> getAccountRole(@PathParam("accountId") String accountId) {
-    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
-      return new RestResponse<>(
-          userService.getUserAccountRole(UserThreadLocal.get().getPublicUser(true).getUuid(), accountId));
-    }
     return new RestResponse<>(
         userService.getUserAccountRole(UserThreadLocal.get().getPublicUser(false).getUuid(), accountId));
   }
@@ -604,10 +604,6 @@ public class UserResource {
   @Timed
   @ExceptionMetered
   public RestResponse<UserPermissionInfo> getUserPermissionInfo(@PathParam("accountId") String accountId) {
-    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
-      return new RestResponse<>(
-          authService.getUserPermissionInfo(accountId, UserThreadLocal.get().getPublicUser(true), false));
-    }
     return new RestResponse<>(
         authService.getUserPermissionInfo(accountId, UserThreadLocal.get().getPublicUser(false), false));
   }
@@ -640,10 +636,6 @@ public class UserResource {
   @Timed
   @ExceptionMetered
   public RestResponse<ApplicationRole> getApplicationRole(@PathParam("appId") String appId) {
-    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
-      return new RestResponse<>(
-          userService.getUserApplicationRole(UserThreadLocal.get().getPublicUser(true).getUuid(), appId));
-    }
     return new RestResponse<>(
         userService.getUserApplicationRole(UserThreadLocal.get().getPublicUser(false).getUuid(), appId));
   }

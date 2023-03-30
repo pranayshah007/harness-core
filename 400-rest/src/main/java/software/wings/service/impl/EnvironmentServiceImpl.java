@@ -246,6 +246,15 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   }
 
   @Override
+  public Environment getWithTags(String appId, String envId) {
+    Environment environment = get(appId, envId);
+    if (environment != null) {
+      environment.setTagLinks(harnessTagService.getTagLinksWithEntityId(environment.getAccountId(), envId));
+    }
+    return environment;
+  }
+
+  @Override
   public Environment getEnvironmentByName(String appId, String environmentName) {
     return getEnvironmentByName(appId, environmentName, true);
   }
@@ -649,11 +658,12 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   }
 
   @Override
-  public Map<String, List<Base>> getAppIdEnvMap(Set<String> appIds) {
+  public Map<String, List<Base>> getAppIdEnvMap(Set<String> appIds, String accountId) {
     if (isEmpty(appIds)) {
       return new HashMap<>();
     }
     PageRequest<Environment> pageRequest = aPageRequest()
+                                               .addFilter(EnvironmentKeys.accountId, EQ, accountId)
                                                .addFilter(EnvironmentKeys.appId, Operator.IN, appIds.toArray())
                                                .addFieldsIncluded("_id", "appId", "environmentType")
                                                .build();

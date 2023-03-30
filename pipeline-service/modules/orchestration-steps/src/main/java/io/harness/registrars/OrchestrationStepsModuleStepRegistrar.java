@@ -16,6 +16,8 @@ import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
+import io.harness.ssca.beans.SscaConstants;
+import io.harness.ssca.execution.CdSscaOrchestrationStep;
 import io.harness.steps.StagesStep;
 import io.harness.steps.approval.stage.ApprovalStageStep;
 import io.harness.steps.approval.step.custom.CustomApprovalStep;
@@ -74,6 +76,7 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(ServiceNowUpdateStep.STEP_TYPE, ServiceNowUpdateStep.class);
     engineSteps.put(ServiceNowImportSetStep.STEP_TYPE, ServiceNowImportSetStep.class);
     engineSteps.put(StagesStep.STEP_TYPE, StagesStep.class);
+    engineSteps.put(StagesStep.DEPRECATED_STEP_TYPE, StagesStep.class);
     engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
 
     // Feature Flag
@@ -92,6 +95,7 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(ContainerStep.STEP_TYPE, ContainerStep.class);
     engineSteps.put(InitContainerStep.STEP_TYPE, InitContainerStep.class);
     engineSteps.put(RunContainerStep.STEP_TYPE, RunContainerStep.class);
+    engineSteps.put(SscaConstants.CD_SSCA_ORCHESTRATION_STEP_TYPE, CdSscaOrchestrationStep.class);
 
     return engineSteps;
   }

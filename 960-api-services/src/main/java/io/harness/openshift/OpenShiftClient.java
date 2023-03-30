@@ -20,6 +20,14 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(CDP)
 public interface OpenShiftClient {
   @Nonnull
+  String generateOcCommand(
+      @NotEmpty String ocBinaryPath, @NotEmpty String templateFilePath, List<String> paramsFilePaths);
+
+  @Nonnull
   CliResponse process(@NotEmpty String ocBinaryPath, @NotEmpty String templateFilePath, List<String> paramsFilePaths,
       @NotEmpty String manifestFilesDirectoryPath, LogCallback executionLogCallback);
+
+  @Nonnull
+  CliResponse process(
+      @NotEmpty String processCommand, @NotEmpty String manifestFilesDirectoryPath, LogCallback executionLogCallback);
 }

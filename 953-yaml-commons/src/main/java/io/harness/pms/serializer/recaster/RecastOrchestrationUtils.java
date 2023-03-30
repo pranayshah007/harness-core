@@ -40,6 +40,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ClassUtils;
 import org.json.JSONException;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -277,6 +278,15 @@ public class RecastOrchestrationUtils {
     if (obj instanceof String) {
       return obj;
     }
+    if (ClassUtils.isPrimitiveOrWrapper(obj.getClass())) {
+      return obj;
+    }
+    if (obj instanceof List) {
+      return obj;
+    }
+    if (obj instanceof String[]) {
+      return obj;
+    }
     Map<String, Object> value = RecastOrchestrationUtils.toMap(obj);
     traverse(value);
     return value;
@@ -286,7 +296,7 @@ public class RecastOrchestrationUtils {
   private Object handleParameterField(Map<String, Object> value1) {
     Optional<ParameterDocumentField> parameterDocumentField =
         ParameterDocumentFieldMapper.fromParameterFieldMap(value1);
-    if (!parameterDocumentField.isPresent()) {
+    if (parameterDocumentField.isEmpty()) {
       return null;
     }
     Object jsonFieldValue = parameterDocumentField.get().fetchFinalValue();
@@ -316,11 +326,12 @@ public class RecastOrchestrationUtils {
 
   private boolean needConversion(Class<?> type) {
     return !(type != null
-        && (type == String.class || type == char.class || type == Character.class || type == short.class
-            || type == Short.class || type == Integer.class || type == int.class || type == Long.class
-            || type == long.class || type == Double.class || type == double.class || type == float.class
-            || type == Float.class || type == Boolean.class || type == boolean.class || type == Byte.class
-            || type == byte.class || type == Date.class || type == Locale.class || type == Class.class
-            || type == UUID.class || type == URI.class || type.isEnum()));
+            && (type == String.class || type == char.class || type == Character.class || type == short.class
+                || type == Short.class || type == Integer.class || type == int.class || type == Long.class
+                || type == long.class || type == Double.class || type == double.class || type == float.class
+                || type == Float.class || type == Boolean.class || type == boolean.class || type == Byte.class
+                || type == byte.class || type == Date.class || type == Locale.class || type == Class.class
+                || type == UUID.class || type == URI.class || type.isEnum())
+        || type == String[].class || type == List.class);
   }
 }

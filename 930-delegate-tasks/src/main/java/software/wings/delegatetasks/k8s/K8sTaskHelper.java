@@ -35,13 +35,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FileData;
 import io.harness.delegate.k8s.beans.K8sHandlerConfig;
-import io.harness.delegate.k8s.kustomize.KustomizeTaskHelper;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.k8sbase.KustomizeTaskHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -84,6 +84,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -200,7 +201,7 @@ public class K8sTaskHelper {
           k8sTaskHelperBase.savingPatchesToDirectory(kustomizePath, manifestOverrideFiles, executionLogCallback);
         }
         return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams.getKustomizeBinaryPath(),
-            pluginRootDir, kustomizeDirPath, executionLogCallback);
+            pluginRootDir, kustomizeDirPath, executionLogCallback, Collections.emptyMap());
       case OC_TEMPLATES:
         return openShiftDelegateService.processTemplatization(manifestFilesDirectory, k8sDelegateTaskParams.getOcPath(),
             k8sDelegateManifestConfig.getGitFileConfig().getFilePath(), executionLogCallback, manifestOverrideFiles);
@@ -268,7 +269,7 @@ public class K8sTaskHelper {
         String pluginRootDir = kustomizeConfig != null ? kustomizeConfig.getPluginRootDir() : null;
         return kustomizeTaskHelper.buildForApply(k8sDelegateTaskParams.getKustomizeBinaryPath(), pluginRootDir,
             manifestFilesDirectory, filesList, k8sTaskParameters.isUseLatestKustomizeVersion(), manifestOverrideFiles,
-            executionLogCallback);
+            executionLogCallback, Collections.emptyMap());
 
       default:
         unhandled(storeType);

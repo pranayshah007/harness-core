@@ -46,7 +46,7 @@ import retrofit2.Response;
 @Slf4j
 public class DockerRegistryUtils {
   protected static final String GITHUB_CONTAINER_REGISTRY = "ghcr.io";
-  protected static final String ACR_CONTAINER_REGISTRY = ".azurecr.io";
+  protected static final String ACR_CONTAINER_REGISTRY = ".azurecr.";
   private static final String DOCKER_REGISTRY_CREDENTIAL_TEMPLATE =
       "{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}";
 
@@ -134,7 +134,7 @@ public class DockerRegistryUtils {
     return res.getLeft();
   }
 
-  private static ImmutablePair<Map<String, String>, String> getSingleTagLabels(DockerInternalConfig dockerConfig,
+  public static ImmutablePair<Map<String, String>, String> getSingleTagLabels(DockerInternalConfig dockerConfig,
       DockerRegistryRestClient registryRestClient, Function<Headers, String> getTokenFn, String authHeader,
       String imageName, String tag) throws IOException {
     Response<DockerImageManifestResponse> response =

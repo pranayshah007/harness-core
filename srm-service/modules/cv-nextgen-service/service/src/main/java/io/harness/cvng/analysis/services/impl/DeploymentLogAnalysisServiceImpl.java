@@ -68,6 +68,7 @@ import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import dev.morphia.query.Sort;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -768,14 +769,18 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
             LogAnalysisRadarChartListDTO.builder()
                 .clusterId(UUID.nameUUIDFromBytes(
                                    (deploymentLogAnalysis.getVerificationTaskId() + ":" + testClusterSummary.getLabel())
-                                       .getBytes(Charsets.UTF_8))
+                                       .getBytes(StandardCharsets.UTF_8))
                                .toString())
                 .message(labelToClusterMap.get(testClusterSummary.getLabel()).getText())
                 .clusterType(testClusterSummary.getClusterType())
+                .previousClusterType(testClusterSummary.getPreviousClusterType())
                 .risk(testClusterSummary.getRiskLevel())
+                .previousRisk(testClusterSummary.getPreviousRiskLevel())
                 .totalTestFrequencyData(totalTestFrequencyData)
                 .testHostFrequencyData(testHostFrequencyData)
                 .count(getCountFromTotalTestFrequencyData(totalTestFrequencyData))
+                .feedback(testClusterSummary.getFeedback())
+                .feedbackApplied(testClusterSummary.getFeedbackApplied())
                 .averageControlFrequencyData(averageControlFrequencyData);
         if (testClusterSummary.getClusterType().equals(ClusterType.KNOWN_EVENT)
             || testClusterSummary.getClusterType().equals(ClusterType.UNEXPECTED_FREQUENCY)) {
@@ -799,12 +804,20 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
       Preconditions.checkState(
           logAnalysisRadarChartListDTOList.size() <= 1, "clusterId filter should result in one or zero cluster");
     }
+    // remove clusters with 0 count
+    logAnalysisRadarChartListDTOList =
+        logAnalysisRadarChartListDTOList.stream()
+            .filter(logAnalysisRadarChartListDTO -> logAnalysisRadarChartListDTO.getCount() != 0)
+            .collect(Collectors.toList());
     return logAnalysisRadarChartListDTOList;
   }
 
   private List<ClusterHostFrequencyData> getFilteredControlClusterHostFrequencies(
       List<ClusterHostFrequencyData> controlClusterHostFrequencies, List<String> hostNames) {
     List<ClusterHostFrequencyData> filteredClusterHostFrequencyData = new ArrayList<>();
+    if (controlClusterHostFrequencies == null) {
+      return filteredClusterHostFrequencyData;
+    }
     for (ClusterHostFrequencyData clusterHostFrequencyData : controlClusterHostFrequencies) {
       List<HostFrequencyData> hostFrequencyDataList =
           getFilteredHostFrequencyDataList(clusterHostFrequencyData.getFrequencyData(), hostNames);
@@ -830,6 +843,9 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
   private List<HostFrequencyData> getFilteredHostFrequencyDataList(
       List<HostFrequencyData> frequencyDataList, List<String> hostNames) {
     List<HostFrequencyData> filteredHostNames = new ArrayList<>();
+    if (frequencyDataList == null) {
+      return filteredHostNames;
+    }
     for (HostFrequencyData hostFrequencyData : frequencyDataList) {
       if (hostNames.contains(hostFrequencyData.getHost())) {
         filteredHostNames.add(hostFrequencyData);

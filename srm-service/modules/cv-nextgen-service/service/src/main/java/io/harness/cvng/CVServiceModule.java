@@ -342,7 +342,7 @@ import io.harness.cvng.outbox.CVServiceOutboxEventHandler;
 import io.harness.cvng.outbox.MonitoredServiceOutboxEventHandler;
 import io.harness.cvng.outbox.ServiceLevelObjectiveOutboxEventHandler;
 import io.harness.cvng.resources.VerifyStepResource;
-import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
@@ -354,29 +354,35 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator.ThresholdServiceLevelIndicatorUpdatableEntity;
+import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIAnalyserService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIConsecutiveMinutesProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityInstancesHandlerService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.SLOTimeScaleService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
+import io.harness.cvng.servicelevelobjective.services.impl.AnnotationServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLORecordServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLOServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.GraphDataServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.RatioAnalyserServiceImpl;
+import io.harness.cvng.servicelevelobjective.services.impl.SLIConsecutiveMinutesProcessorServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIDataProcessorServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIDataUnavailabilityInstancesHandlerServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIRecordServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLODashboardServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLOErrorBudgetResetServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLOHealthIndicatorServiceImpl;
+import io.harness.cvng.servicelevelobjective.services.impl.SLOTimeScaleServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelIndicatorServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelObjectiveV2ServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.ThresholdAnalyserServiceImpl;
@@ -399,6 +405,7 @@ import io.harness.cvng.statemachine.services.api.CanaryTimeSeriesAnalysisStateEx
 import io.harness.cvng.statemachine.services.api.CompositeSLOMetricAnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentLogAnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentLogClusterStateExecutor;
+import io.harness.cvng.statemachine.services.api.DeploymentLogFeedbackStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentLogHostSamplingStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentMetricHostSamplingStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentTimeSeriesAnalysisStateExecutor;
@@ -426,6 +433,7 @@ import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoPersistence;
+import io.harness.opaclient.OpaClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxDao;
 import io.harness.outbox.api.OutboxEventHandler;
@@ -515,6 +523,8 @@ public class CVServiceModule extends AbstractModule {
     install(new AccountClientModule(getManagerClientConfig(verificationConfiguration.getManagerClientConfig()),
         verificationConfiguration.getNgManagerServiceConfig().getManagerServiceSecret(),
         AuthorizationServiceHeader.CV_NEXT_GEN.toString()));
+    install(new OpaClientModule(verificationConfiguration.getOpaClientConfig(),
+        verificationConfiguration.getPolicyManagerSecret(), CV_NEXT_GEN.getServiceId()));
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(TimeSeriesRecordService.class).to(TimeSeriesRecordServiceImpl.class);
     bind(OrchestrationService.class).to(OrchestrationServiceImpl.class);
@@ -768,7 +778,7 @@ public class CVServiceModule extends AbstractModule {
     bind(ExecutionLogService.class).to(ExecutionLogServiceImpl.class);
     bind(DeleteEntityByHandler.class).to(DefaultDeleteEntityByHandler.class);
     bind(TimeSeriesAnomalousPatternsService.class).to(TimeSeriesAnomalousPatternsServiceImpl.class);
-
+    bind(SLOTimeScaleService.class).to(SLOTimeScaleServiceImpl.class);
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
@@ -869,15 +879,15 @@ public class CVServiceModule extends AbstractModule {
     MapBinder<String, ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder =
         MapBinder.newMapBinder(binder(), String.class, ServiceLevelIndicatorUpdatableEntity.class);
     serviceLevelIndicatorMapBinder
-        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.WINDOW, SLIMetricType.RATIO))
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIEvaluationType.WINDOW, SLIMetricType.RATIO))
         .to(RatioServiceLevelIndicatorUpdatableEntity.class)
         .in(Scopes.SINGLETON);
     serviceLevelIndicatorMapBinder
-        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.WINDOW, SLIMetricType.THRESHOLD))
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIEvaluationType.WINDOW, SLIMetricType.THRESHOLD))
         .to(ThresholdServiceLevelIndicatorUpdatableEntity.class)
         .in(Scopes.SINGLETON);
     serviceLevelIndicatorMapBinder
-        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.REQUEST, null))
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIEvaluationType.REQUEST, null))
         .to(RequestServiceLevelIndicatorUpdatableEntity.class)
         .in(Scopes.SINGLETON);
 
@@ -924,6 +934,7 @@ public class CVServiceModule extends AbstractModule {
     bind(GraphDataService.class).to(GraphDataServiceImpl.class);
     bind(DowntimeService.class).to(DowntimeServiceImpl.class);
     bind(EntityUnavailabilityStatusesService.class).to(EntityUnavailabilityStatusesServiceImpl.class);
+    bind(AnnotationService.class).to(AnnotationServiceImpl.class);
     install(NgLicenseHttpClientModule.getInstance(verificationConfiguration.getNgManagerClientConfig(),
         verificationConfiguration.getNgManagerServiceSecret(), CV_NEXT_GEN.getServiceId()));
 
@@ -977,6 +988,9 @@ public class CVServiceModule extends AbstractModule {
     activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.FEATURE_FLAG)
         .to(InternalChangeActivityUpdatableEntity.class)
         .in(Scopes.SINGLETON);
+    activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.CHAOS_EXPERIMENT)
+        .to(InternalChangeActivityUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
     activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.CUSTOM_DEPLOY)
         .to(CustomChangeActivityUpdatableEntity.class)
         .in(Scopes.SINGLETON);
@@ -1008,6 +1022,9 @@ public class CVServiceModule extends AbstractModule {
         .to(DeploymentActivityUpdateHandler.class)
         .in(Scopes.SINGLETON);
     activityUpdateHandlerMapBinder.addBinding(ActivityType.FEATURE_FLAG)
+        .to(InternalChangeActivityUpdateHandler.class)
+        .in(Scopes.SINGLETON);
+    activityUpdateHandlerMapBinder.addBinding(ActivityType.CHAOS_EXPERIMENT)
         .to(InternalChangeActivityUpdateHandler.class)
         .in(Scopes.SINGLETON);
     activityUpdateHandlerMapBinder.addBinding(ActivityType.CUSTOM_DEPLOY)
@@ -1048,6 +1065,7 @@ public class CVServiceModule extends AbstractModule {
     bind(ServiceLevelIndicatorService.class).to(ServiceLevelIndicatorServiceImpl.class).in(Singleton.class);
     bind(SLIDataProcessorService.class).to(SLIDataProcessorServiceImpl.class);
     bind(SLIDataUnavailabilityInstancesHandlerService.class).to(SLIDataUnavailabilityInstancesHandlerServiceImpl.class);
+    bind(SLIConsecutiveMinutesProcessorService.class).to(SLIConsecutiveMinutesProcessorServiceImpl.class);
     bind(ServiceLevelIndicatorEntityAndDTOTransformer.class);
     bind(CompositeSLOService.class).to(CompositeSLOServiceImpl.class);
     bind(DebugService.class).to(DebugServiceImpl.class).in(Singleton.class);
@@ -1055,15 +1073,15 @@ public class CVServiceModule extends AbstractModule {
     MapBinder<String, ServiceLevelIndicatorTransformer> serviceLevelIndicatorFQDITransformerMapBinder =
         MapBinder.newMapBinder(binder(), String.class, ServiceLevelIndicatorTransformer.class);
     serviceLevelIndicatorFQDITransformerMapBinder
-        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.REQUEST, null))
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIEvaluationType.REQUEST, null))
         .to(RequestServiceLevelIndicatorTransformer.class)
         .in(Scopes.SINGLETON);
     serviceLevelIndicatorFQDITransformerMapBinder
-        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.WINDOW, SLIMetricType.RATIO))
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIEvaluationType.WINDOW, SLIMetricType.RATIO))
         .to(RatioServiceLevelIndicatorTransformer.class)
         .in(Scopes.SINGLETON);
     serviceLevelIndicatorFQDITransformerMapBinder
-        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.WINDOW, SLIMetricType.THRESHOLD))
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIEvaluationType.WINDOW, SLIMetricType.THRESHOLD))
         .to(ThresholdServiceLevelIndicatorTransformer.class)
         .in(Scopes.SINGLETON);
 
@@ -1083,6 +1101,9 @@ public class CVServiceModule extends AbstractModule {
         .to(HarnessCDCurrentGenChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
     changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_FF)
+        .to(InternalChangeEventTransformer.class)
+        .in(Scopes.SINGLETON);
+    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_CE)
         .to(InternalChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
     changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.CUSTOM_DEPLOY)
@@ -1324,6 +1345,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     stateTypeAnalysisStateExecutorMap.addBinding(StateType.DEPLOYMENT_TIME_SERIES_ANALYSIS_STATE)
         .to(DeploymentTimeSeriesAnalysisStateExecutor.class)
+        .in(Scopes.SINGLETON);
+    stateTypeAnalysisStateExecutorMap.addBinding(StateType.DEPLOYMENT_LOG_FEEDBACK_STATE)
+        .to(DeploymentLogFeedbackStateExecutor.class)
         .in(Scopes.SINGLETON);
   }
 

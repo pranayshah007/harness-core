@@ -9,6 +9,7 @@ package io.harness.ng.serviceaccounts.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.JOHANNES;
 import static io.harness.rule.OwnerRule.RAJ;
@@ -23,10 +24,21 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.NgManagerTestBase;
+import io.harness.accesscontrol.AccessControlAdminClient;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.accesscontrol.roleassignments.api.RoleAssignmentAggregateResponseDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.AccountOrgProjectValidator;
+import io.harness.ng.core.api.ApiKeyService;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.dto.ServiceAccountFilterDTO;
+import io.harness.ng.serviceaccounts.dto.ServiceAccountAggregateDTO;
 import io.harness.ng.serviceaccounts.entities.ServiceAccount;
 import io.harness.ng.serviceaccounts.service.ServiceAccountDTOMapper;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
@@ -36,6 +48,7 @@ import io.harness.serviceaccount.ServiceAccountDTO;
 
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import io.fabric8.utils.Lists;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -43,7 +56,11 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.support.TransactionTemplate;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(PL)
 public class ServiceAccountServiceImplTest extends NgManagerTestBase {
@@ -57,6 +74,9 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
   private String description;
   private ServiceAccountDTO serviceAccountRequestDTO;
   private AccountOrgProjectValidator accountOrgProjectValidator;
+  private AccessControlClient accessControlClient;
+  private AccessControlAdminClient accessControlAdminClient;
+  private ApiKeyService apiKeyService;
   private TransactionTemplate transactionTemplate;
 
   @Before
@@ -70,6 +90,9 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
     serviceAccountRepository = mock(ServiceAccountRepository.class);
     serviceAccountService = new ServiceAccountServiceImpl();
     accountOrgProjectValidator = mock(AccountOrgProjectValidator.class);
+    accessControlClient = mock(AccessControlClient.class);
+    accessControlAdminClient = mock(AccessControlAdminClient.class);
+    apiKeyService = mock(ApiKeyService.class);
     transactionTemplate = mock(TransactionTemplate.class);
     serviceAccountRequestDTO = ServiceAccountDTO.builder()
                                    .identifier(identifier)
@@ -85,6 +108,9 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
     FieldUtils.writeField(serviceAccountService, "serviceAccountRepository", serviceAccountRepository, true);
     FieldUtils.writeField(serviceAccountService, "accountOrgProjectValidator", accountOrgProjectValidator, true);
     FieldUtils.writeField(serviceAccountService, "transactionTemplate", transactionTemplate, true);
+    FieldUtils.writeField(serviceAccountService, "accessControlClient", accessControlClient, true);
+    FieldUtils.writeField(serviceAccountService, "accessControlAdminClient", accessControlAdminClient, true);
+    FieldUtils.writeField(serviceAccountService, "apiKeyService", apiKeyService, true);
   }
 
   @Test
@@ -189,7 +215,7 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
         .when(serviceAccountRepository)
         .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier);
-    List<ServiceAccountDTO> accounts = serviceAccountService.listServiceAccounts(
+    List<ServiceAccount> accounts = serviceAccountService.listServiceAccounts(
         accountIdentifier, orgIdentifier, projectIdentifier, Collections.emptyList());
     assertThat(accounts.size()).isEqualTo(1);
   }
@@ -208,9 +234,150 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
         .when(serviceAccountRepository)
         .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifierIsIn(
             accountIdentifier, orgIdentifier, projectIdentifier, Collections.singletonList(identifier));
-    List<ServiceAccountDTO> accounts = serviceAccountService.listServiceAccounts(
+    List<ServiceAccount> accounts = serviceAccountService.listServiceAccounts(
         accountIdentifier, orgIdentifier, projectIdentifier, Collections.singletonList(identifier));
     assertThat(accounts.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void listAggregateServiceAccounts() throws IOException {
+    doReturn(new PageImpl<>(Lists.newArrayList(ServiceAccount.builder()
+                                                   .name(name)
+                                                   .identifier(identifier)
+                                                   .accountIdentifier(accountIdentifier)
+                                                   .orgIdentifier(orgIdentifier)
+                                                   .projectIdentifier(projectIdentifier)
+                                                   .build())))
+        .when(serviceAccountRepository)
+        .findAll(any(), any());
+    when(accessControlClient.hasAccess(any(), any(), anyString())).thenReturn(true);
+
+    ResponseDTO<RoleAssignmentAggregateResponseDTO> restResponse =
+        ResponseDTO.newResponse(RoleAssignmentAggregateResponseDTO.builder()
+                                    .roles(Collections.emptyList())
+                                    .roleAssignments(Collections.emptyList())
+                                    .resourceGroups(Collections.emptyList())
+                                    .build());
+    Response<ResponseDTO<RoleAssignmentAggregateResponseDTO>> response = Response.success(restResponse);
+    Call<ResponseDTO<RoleAssignmentAggregateResponseDTO>> responseDTOCall = mock(Call.class);
+    when(responseDTOCall.execute()).thenReturn(response);
+    when(accessControlAdminClient.getAggregatedFilteredRoleAssignments(any(), any(), any(), any()))
+        .thenReturn(responseDTOCall);
+    when(apiKeyService.getApiKeysPerParentIdentifier(anyString(), anyString(), anyString(), any(), any()))
+        .thenReturn(Collections.emptyMap());
+
+    PageResponse<ServiceAccountAggregateDTO> serviceAccountAggregateDTOPageResponse =
+        serviceAccountService.listAggregateServiceAccounts(accountIdentifier, orgIdentifier, projectIdentifier,
+            Collections.singletonList(identifier), PageRequest.ofSize(1), ServiceAccountFilterDTO.builder().build());
+
+    assertThat(serviceAccountAggregateDTOPageResponse.getContent()).isNotEmpty();
+    assertThat(serviceAccountAggregateDTOPageResponse.getContent().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void listAggregateServiceAccountsWithPermitted() throws IOException {
+    doReturn(new PageImpl<>(Lists.newArrayList(ServiceAccount.builder()
+                                                   .name(name)
+                                                   .identifier(identifier)
+                                                   .accountIdentifier(accountIdentifier)
+                                                   .orgIdentifier(orgIdentifier)
+                                                   .projectIdentifier(projectIdentifier)
+                                                   .build())))
+        .when(serviceAccountRepository)
+        .findAll(any(), any());
+    when(accessControlClient.hasAccess(any(), any(), anyString())).thenReturn(false);
+
+    ResponseDTO<RoleAssignmentAggregateResponseDTO> restResponse =
+        ResponseDTO.newResponse(RoleAssignmentAggregateResponseDTO.builder()
+                                    .roles(Collections.emptyList())
+                                    .roleAssignments(Collections.emptyList())
+                                    .resourceGroups(Collections.emptyList())
+                                    .build());
+    Response<ResponseDTO<RoleAssignmentAggregateResponseDTO>> response = Response.success(restResponse);
+    Call<ResponseDTO<RoleAssignmentAggregateResponseDTO>> responseDTOCall = mock(Call.class);
+    when(responseDTOCall.execute()).thenReturn(response);
+    when(accessControlAdminClient.getAggregatedFilteredRoleAssignments(any(), any(), any(), any()))
+        .thenReturn(responseDTOCall);
+    when(apiKeyService.getApiKeysPerParentIdentifier(anyString(), anyString(), anyString(), any(), any()))
+        .thenReturn(Collections.emptyMap());
+    AccessCheckResponseDTO accessCheckResponseDTO =
+        AccessCheckResponseDTO.builder()
+            .accessControlList(List.of(AccessControlDTO.builder()
+                                           .resourceIdentifier(identifier)
+                                           .resourceScope(ResourceScope.builder()
+                                                              .accountIdentifier(accountIdentifier)
+                                                              .orgIdentifier(orgIdentifier)
+                                                              .projectIdentifier(projectIdentifier)
+                                                              .build())
+                                           .permitted(true)
+                                           .build()))
+            .build();
+    when(accessControlClient.checkForAccessOrThrow(any())).thenReturn(accessCheckResponseDTO);
+
+    PageResponse<ServiceAccountAggregateDTO> serviceAccountAggregateDTOPageResponse =
+        serviceAccountService.listAggregateServiceAccounts(accountIdentifier, orgIdentifier, projectIdentifier,
+            Collections.singletonList(identifier), PageRequest.ofSize(1),
+            ServiceAccountFilterDTO.builder()
+                .orgIdentifier(orgIdentifier)
+                .projectIdentifier(projectIdentifier)
+                .identifiers(Collections.singletonList(identifier))
+                .build());
+
+    assertThat(serviceAccountAggregateDTOPageResponse.getContent()).isNotEmpty();
+    assertThat(serviceAccountAggregateDTOPageResponse.getContent().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void listAggregateServiceAccountsWithNonePermitted() throws IOException {
+    doReturn(new PageImpl<>(Lists.newArrayList(ServiceAccount.builder()
+                                                   .name(name)
+                                                   .identifier(identifier)
+                                                   .accountIdentifier(accountIdentifier)
+                                                   .orgIdentifier(orgIdentifier)
+                                                   .projectIdentifier(projectIdentifier)
+                                                   .build())))
+        .when(serviceAccountRepository)
+        .findAll(any(), any());
+    when(accessControlClient.hasAccess(any(), any(), anyString())).thenReturn(false);
+
+    ResponseDTO<RoleAssignmentAggregateResponseDTO> restResponse =
+        ResponseDTO.newResponse(RoleAssignmentAggregateResponseDTO.builder()
+                                    .roles(Collections.emptyList())
+                                    .roleAssignments(Collections.emptyList())
+                                    .resourceGroups(Collections.emptyList())
+                                    .build());
+    Response<ResponseDTO<RoleAssignmentAggregateResponseDTO>> response = Response.success(restResponse);
+    Call<ResponseDTO<RoleAssignmentAggregateResponseDTO>> responseDTOCall = mock(Call.class);
+    when(responseDTOCall.execute()).thenReturn(response);
+    when(accessControlAdminClient.getAggregatedFilteredRoleAssignments(any(), any(), any(), any()))
+        .thenReturn(responseDTOCall);
+    when(apiKeyService.getApiKeysPerParentIdentifier(anyString(), anyString(), anyString(), any(), any()))
+        .thenReturn(Collections.emptyMap());
+    AccessCheckResponseDTO accessCheckResponseDTO =
+        AccessCheckResponseDTO.builder()
+            .accessControlList(List.of(AccessControlDTO.builder()
+                                           .resourceIdentifier(identifier)
+                                           .resourceScope(ResourceScope.builder()
+                                                              .accountIdentifier(accountIdentifier)
+                                                              .orgIdentifier(orgIdentifier)
+                                                              .projectIdentifier(projectIdentifier)
+                                                              .build())
+                                           .permitted(false)
+                                           .build()))
+            .build();
+    when(accessControlClient.checkForAccessOrThrow(any())).thenReturn(accessCheckResponseDTO);
+
+    PageResponse<ServiceAccountAggregateDTO> serviceAccountAggregateDTOPageResponse =
+        serviceAccountService.listAggregateServiceAccounts(accountIdentifier, orgIdentifier, projectIdentifier,
+            Collections.singletonList(identifier), PageRequest.ofSize(1), ServiceAccountFilterDTO.builder().build());
+
+    assertThat(serviceAccountAggregateDTOPageResponse.getContent()).isEmpty();
   }
 
   @Test

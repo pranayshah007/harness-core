@@ -85,7 +85,7 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig);
+        .createKubernetesConfig(k8sInfraDelegateConfig, logCallback);
     doReturn(logCallback)
         .when(k8sTaskHelperBase)
         .getLogCallback(eq(iLogStreamingTaskClient), anyString(), anyBoolean(), any());

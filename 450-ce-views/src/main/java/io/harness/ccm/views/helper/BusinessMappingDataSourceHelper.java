@@ -24,8 +24,11 @@ import io.harness.ccm.views.graphql.QLCEViewRule;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.fabric8.utils.Lists;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -119,6 +122,62 @@ public class BusinessMappingDataSourceHelper {
       });
     }
     return viewFieldIdentifiers;
+  }
+
+  public List<ViewRule> getBusinessMappingRules(BusinessMapping businessMapping, QLCEViewFilter businessMappingFilter) {
+    List<ViewRule> viewRules = new ArrayList<>();
+    List<CostTarget> costTargets = businessMapping.getCostTargets();
+    boolean addSharedCostRules = false;
+    switch (businessMappingFilter.getOperator()) {
+      case EQUALS:
+      case IN:
+        List<String> values = Arrays.asList(businessMappingFilter.getValues());
+        for (CostTarget costTarget : costTargets) {
+          if (values.contains(costTarget.getName())) {
+            viewRules.addAll(costTarget.getRules());
+            addSharedCostRules = true;
+          }
+        }
+        break;
+      case NOT_IN:
+        List<String> notInValues = Arrays.asList(businessMappingFilter.getValues());
+        for (CostTarget costTarget : costTargets) {
+          if (!notInValues.contains(costTarget.getName())) {
+            viewRules.addAll(costTarget.getRules());
+            addSharedCostRules = true;
+          }
+        }
+        break;
+      case LIKE:
+      case SEARCH:
+        String searchString = businessMappingFilter.getValues()[0].toLowerCase(Locale.ROOT);
+        for (CostTarget costTarget : costTargets) {
+          if (searchString.contains(costTarget.getName().toLowerCase(Locale.ROOT))) {
+            viewRules.addAll(costTarget.getRules());
+            addSharedCostRules = true;
+          }
+        }
+        break;
+      case NOT_NULL:
+        costTargets.forEach(costTarget -> viewRules.addAll(costTarget.getRules()));
+        addSharedCostRules = true;
+        break;
+      case NULL:
+      default:
+    }
+    if (addSharedCostRules) {
+      viewRules.addAll(getSharedCostTargetRules(businessMapping));
+    }
+    return viewRules;
+  }
+
+  public List<ViewRule> getSharedCostTargetRules(BusinessMapping businessMapping) {
+    List<ViewRule> viewRules = new ArrayList<>();
+    List<SharedCost> sharedCostTargets = businessMapping.getSharedCosts();
+    if (sharedCostTargets != null) {
+      sharedCostTargets.forEach(sharedCostTarget -> viewRules.addAll(sharedCostTarget.getRules()));
+    }
+    return viewRules;
   }
 
   private Set<ViewFieldIdentifier> getViewRulesViewFieldIdentifiers(final List<ViewRule> viewRules) {

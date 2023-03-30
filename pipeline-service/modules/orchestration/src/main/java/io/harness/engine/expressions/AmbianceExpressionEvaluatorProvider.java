@@ -15,13 +15,15 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
+import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(CDC)
 public class AmbianceExpressionEvaluatorProvider implements ExpressionEvaluatorProvider {
   @Override
   public EngineExpressionEvaluator get(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
-      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific) {
-    return new AmbianceExpressionEvaluator(variableResolverTracker, ambiance, entityTypes, refObjectSpecific);
+      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific, Map<String, String> contextMap) {
+    return new AmbianceExpressionEvaluator(
+        variableResolverTracker, ambiance, entityTypes, refObjectSpecific, contextMap);
   }
 }

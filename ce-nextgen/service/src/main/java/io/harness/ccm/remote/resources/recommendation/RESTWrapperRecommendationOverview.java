@@ -22,7 +22,6 @@ import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationsDTO;
 import io.harness.ccm.graphql.query.recommendation.RecommendationsOverviewQueryV2;
 import io.harness.ccm.helper.RecommendationQueryHelper;
-import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.remote.beans.recommendation.CCMRecommendationFilterPropertiesDTO;
 import io.harness.ccm.remote.beans.recommendation.FilterValuesDTO;
 import io.harness.ccm.remote.utils.GraphQLToRESTHelper;
@@ -71,7 +70,6 @@ import org.springframework.stereotype.Service;
     content = { @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ErrorDTO.class)) })
 public class RESTWrapperRecommendationOverview {
   @Inject private RecommendationsOverviewQueryV2 overviewQueryV2;
-  @Inject private CCMRbacHelper rbacHelper;
 
   private static final String FILTER_DESCRIPTION = "CCM Recommendations filter body.";
 
@@ -96,7 +94,6 @@ public class RESTWrapperRecommendationOverview {
            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @RequestBody(
           required = true, description = FILTER_DESCRIPTION) CCMRecommendationFilterPropertiesDTO ccmFilter) {
-    rbacHelper.checkRecommendationsViewPermission(accountId, null, null);
     K8sRecommendationFilterDTO filter = RecommendationQueryHelper.buildK8sRecommendationFilterDTO(ccmFilter);
     GraphQLToRESTHelper.setDefaultPaginatedFilterValues(filter);
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
@@ -125,7 +122,6 @@ public class RESTWrapperRecommendationOverview {
             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @RequestBody(
           required = true, description = FILTER_DESCRIPTION) CCMRecommendationFilterPropertiesDTO ccmFilter) {
-    rbacHelper.checkRecommendationsViewPermission(accountId, null, null);
     K8sRecommendationFilterDTO filter = RecommendationQueryHelper.buildK8sRecommendationFilterDTO(ccmFilter);
     GraphQLToRESTHelper.setDefaultFilterValues(filter);
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
@@ -154,7 +150,6 @@ public class RESTWrapperRecommendationOverview {
             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @RequestBody(
           required = true, description = FILTER_DESCRIPTION) CCMRecommendationFilterPropertiesDTO ccmFilter) {
-    rbacHelper.checkRecommendationsViewPermission(accountId, null, null);
     K8sRecommendationFilterDTO filter = RecommendationQueryHelper.buildK8sRecommendationFilterDTO(ccmFilter);
     GraphQLToRESTHelper.setDefaultFilterValues(filter);
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId, filter);
@@ -183,7 +178,6 @@ public class RESTWrapperRecommendationOverview {
                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @RequestBody(
           required = true, description = "Recommendation Filter Values Body.") FilterValuesDTO filterValues) {
-    rbacHelper.checkRecommendationsViewPermission(accountId, null, null);
     if (filterValues.getColumns() == null) {
       filterValues.setColumns(emptyList());
     }
@@ -215,8 +209,8 @@ public class RESTWrapperRecommendationOverview {
   markApplied(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @QueryParam("recommendationId") @NotNull @Valid String recommendationId) {
-    rbacHelper.checkRecommendationsViewPermission(accountId, null, null);
-    overviewQueryV2.markRecommendationAsApplied(recommendationId);
+    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
+    overviewQueryV2.markRecommendationAsApplied(recommendationId, env);
     return ResponseDTO.newResponse();
   }
 }

@@ -8,11 +8,17 @@
 package io.harness.ngmigration.expressions;
 
 import io.harness.expression.LateBindingMap;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 
+import lombok.AllArgsConstructor;
+
+@AllArgsConstructor
 public class AppVariablesMigratorFunctor extends LateBindingMap {
+  private CaseFormat caseFormat;
+
   @Override
   public synchronized Object get(Object key) {
-    return "<+variable." + MigratorUtility.generateIdentifier((String) key) + ">";
+    return "<+variable." + MigratorUtility.generateIdentifier((String) key, caseFormat) + ">";
   }
 }

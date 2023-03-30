@@ -179,7 +179,6 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
                             .client(getOkHttpClient(url))
                             .baseUrl(url)
                             .addConverterFactory(ScalarsConverterFactory.create())
-                            .addConverterFactory(JacksonConverterFactory.create())
                             .addConverterFactory(JacksonConverterFactory.create(
                                 new ObjectMapper().enable(READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE)))
                             .build();

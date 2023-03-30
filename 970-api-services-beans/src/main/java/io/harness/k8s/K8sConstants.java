@@ -146,27 +146,20 @@ public interface K8sConstants {
       + "    server: ${MASTER_URL}\n"
       + "    ${INSECURE_SKIP_TLS_VERIFY}\n"
       + "    ${CERTIFICATE_AUTHORITY_DATA}\n"
-      + "  name: ${CLUSTER_NAME}\n"
+      + "  name: CLUSTER_NAME\n"
       + "contexts:\n"
       + "- context:\n"
-      + "    cluster: ${CLUSTER_NAME}\n"
-      + "    user: ${CLUSTER_USER}\n"
+      + "    cluster: CLUSTER_NAME\n"
+      + "    user: HARNESS_USER\n"
       + "    ${NAMESPACE}\n"
-      + "  name: ${CURRENT_CONTEXT}\n"
-      + "current-context: ${CURRENT_CONTEXT}\n"
+      + "  name: CURRENT_CONTEXT\n"
+      + "current-context: CURRENT_CONTEXT\n"
       + "kind: Config\n"
       + "preferences: {}\n"
       + "users:\n"
-      + "- name: ${CLUSTER_USER}\n"
+      + "- name: HARNESS_USER\n"
       + "  user:\n"
-      + "    exec:\n"
-      + "      apiVersion: client.authentication.k8s.io/${API_VERSION}\n"
-      + "      args: ${ARGS}\n"
-      + "      command: ${KUBELOGIN_BINARY}\n"
-      + "      installHint: ${INSTALL_HINT}"
-      + "      env: ${ENV}\n"
-      + "      interactiveMode: Never\n"
-      + "      provideClusterInfo: false\n";
+      + "    ${EXEC}";
 
   String eventOutputFormat =
       "custom-columns=KIND:involvedObject.kind,NAME:.involvedObject.name,MESSAGE:.message,REASON:.reason";
@@ -186,8 +179,10 @@ public interface K8sConstants {
    */
   String HARNESS_KUBE_CONFIG_PATH = "HARNESS_KUBE_CONFIG_PATH";
 
-  String CANARY_WORKLOAD_SUFFIX_NAME = "-canary";
+  String CANARY_WORKLOAD_SUFFIX_NAME = "canary";
+  String CANARY_WORKLOAD_SUFFIX_NAME_WITH_SEPARATOR = "-" + CANARY_WORKLOAD_SUFFIX_NAME;
 
+  String API_VERSION = "client.authentication.k8s.io/v1beta1";
   String KUBECFG_EXEC = "exec";
   String KUBECFG_API_VERSION = "apiVersion";
   String KUBECFG_COMMAND = "command";
@@ -196,4 +191,33 @@ public interface K8sConstants {
   String KUBECFG_INTERACTIVE_MODE = "interactiveMode";
   String KUBECFG_CLUSTER_INFO = "provideClusterInfo";
   String KUBECFG_INSTALL_HINT = "installHint";
+  String KUBECFG_NAME = "name";
+  String KUBECFG_VALUE = "value";
+
+  String AZURE_AUTH_PLUGIN_BINARY = "kubelogin";
+  String GCP_AUTH_PLUGIN_BINARY = "gke-gcloud-auth-plugin";
+  String GCP_AUTH_PLUGIN_INSTALL_HINT = "gke-gcloud-auth-plugin is required to authenticate to the current cluster.\n"
+      + "It can be installed on the delegate using following command from:\n"
+      + "https://cloud.google.com/sdk/docs/install#rpm\n"
+      + "\n"
+      + "tee -a /etc/yum.repos.d/google-cloud-sdk.repo << EOM\n"
+      + "[google-cloud-cli]\n"
+      + "name=Google Cloud CLI\n"
+      + "baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el8-x86_64\n"
+      + "enabled=1\n"
+      + "gpgcheck=1\n"
+      + "repo_gpgcheck=0\n"
+      + "gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg\n"
+      + "EOM\n"
+      + "\n"
+      + "// Download gke-gcloud-auth-plugin\n"
+      + "microdnf install google-cloud-cli\n"
+      + "microdnf install google-cloud-cli-gke-gcloud-auth-plugin\n"
+      + "\n"
+      + "// USE_GKE_GCLOUD_AUTH_PLUGIN=True for kubernetes version <1.26\n"
+      + "echo \"export USE_GKE_GCLOUD_AUTH_PLUGIN=True\" >> ~/.bashrc\n"
+      + "source ~/.bashrc\n";
+  String EKS_AUTH_PLUGIN_BINARY = "aws-iam-authenticator";
+  String EKS_AUTH_PLUGIN_INSTALL_HINT =
+      "Please use the following AWS docs for installing the aws-iam-authenticator plugin https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html";
 }

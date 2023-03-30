@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.template;
 
+import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_DELEGATE_INPUT;
+
 import static software.wings.beans.command.CommandUnitType.COPY_CONFIGS;
 import static software.wings.beans.command.CommandUnitType.DOCKER_START;
 import static software.wings.beans.command.CommandUnitType.DOCKER_STOP;
@@ -33,6 +35,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.shell.ScriptType;
@@ -93,7 +96,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
 
     List<NGVariable> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(template.getVariables())) {
-      variables.addAll(MigratorUtility.getVariables(template.getVariables()));
+      variables.addAll(MigratorUtility.getVariables(context, template.getVariables()));
     }
 
     List<CommandUnitWrapper> commandUnitWrappers = sshCommandTemplate.getCommandUnits()
@@ -105,6 +108,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     CommandStepInfo commandStepInfo = CommandStepInfo.infoBuilder()
                                           .commandUnits(commandUnitWrappers)
                                           .onDelegate(ParameterField.createValueField(true))
+                                          .delegateSelectors(RUNTIME_DELEGATE_INPUT)
                                           .environmentVariables(variables)
                                           .build();
 
@@ -116,13 +120,13 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     String name = commandUnit.getName();
     switch (type) {
       case SCP:
-        return handleScp(commandUnit);
+        return handleScp(commandUnit, context.getInputDTO().getIdentifierCaseFormat());
       case EXEC:
         return handleExec(context, commandUnit);
       case COPY_CONFIGS:
-        return handleCopyConfigs(commandUnit);
+        return handleCopyConfigs(commandUnit, context.getInputDTO().getIdentifierCaseFormat());
       case DOWNLOAD_ARTIFACT:
-        return handleDownloadArtifact(commandUnit);
+        return handleDownloadArtifact(commandUnit, context.getInputDTO().getIdentifierCaseFormat());
       case SETUP_ENV:
         SetupEnvCommandUnit setup = (SetupEnvCommandUnit) commandUnit;
         return getExec(context, name, setup.getScriptType(), setup.getCommandString(), setup.getCommandPath());
@@ -157,12 +161,11 @@ public class ServiceCommandTemplateService implements NgTemplateService {
       MigrationContext context, String name, ScriptType scriptType, String script, String workingDir) {
     ParameterField<String> directory =
         StringUtils.isBlank(workingDir) ? ParameterField.ofNull() : ParameterField.createValueField(workingDir);
-    script = (String) MigratorExpressionUtils.render(
-        context.getEntities(), context.getMigratedEntities(), script, new HashMap<>());
+    script = (String) MigratorExpressionUtils.render(context, script, new HashMap<>());
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.SCRIPT)
         .name(name)
-        .identifier(MigratorUtility.generateIdentifier(name))
+        .identifier(MigratorUtility.generateIdentifier(name, context.getInputDTO().getIdentifierCaseFormat()))
         .spec(ScriptCommandUnitSpec.builder()
                   .shell(ScriptType.POWERSHELL.equals(scriptType) ? ShellType.PowerShell : ShellType.Bash)
                   .tailFiles(Collections.emptyList())
@@ -180,12 +183,12 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     return StepSpecTypeConstants.COMMAND;
   }
 
-  static CommandUnitWrapper handleCopyConfigs(CommandUnit commandUnit) {
+  static CommandUnitWrapper handleCopyConfigs(CommandUnit commandUnit, CaseFormat caseFormat) {
     CopyConfigCommandUnit configCommandUnit = (CopyConfigCommandUnit) commandUnit;
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.COPY)
         .name(commandUnit.getName())
-        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName()))
+        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName(), caseFormat))
         .spec(CopyCommandUnitSpec.builder()
                   .destinationPath(valueOrDefaultEmpty(configCommandUnit.getDestinationParentPath()))
                   .sourceType(CommandUnitSourceType.Config)
@@ -193,24 +196,24 @@ public class ServiceCommandTemplateService implements NgTemplateService {
         .build();
   }
 
-  static CommandUnitWrapper handleDownloadArtifact(CommandUnit commandUnit) {
+  static CommandUnitWrapper handleDownloadArtifact(CommandUnit commandUnit, CaseFormat caseFormat) {
     DownloadArtifactCommandUnit downloadCommandUnit = (DownloadArtifactCommandUnit) commandUnit;
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.DOWNLOAD_ARTIFACT)
         .name(commandUnit.getName())
-        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName()))
+        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName(), caseFormat))
         .spec(DownloadArtifactCommandUnitSpec.builder()
                   .destinationPath(valueOrDefaultEmpty(downloadCommandUnit.getCommandPath()))
                   .build())
         .build();
   }
 
-  static CommandUnitWrapper handleScp(CommandUnit commandUnit) {
+  static CommandUnitWrapper handleScp(CommandUnit commandUnit, CaseFormat caseFormat) {
     ScpCommandUnit scpCommandUnit = (ScpCommandUnit) commandUnit;
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.COPY)
         .name(commandUnit.getName())
-        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName()))
+        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName(), caseFormat))
         .spec(CopyCommandUnitSpec.builder()
                   .destinationPath(valueOrDefaultEmpty(scpCommandUnit.getDestinationDirectoryPath()))
                   .sourceType(CommandUnitSourceType.Artifact)
@@ -231,13 +234,14 @@ public class ServiceCommandTemplateService implements NgTemplateService {
                                         .build())
                              .collect(Collectors.toList());
     }
-    String script = (String) MigratorExpressionUtils.render(
-        context.getEntities(), context.getMigratedEntities(), execCommandUnit.getCommandString(), new HashMap<>());
+    String script =
+        (String) MigratorExpressionUtils.render(context, execCommandUnit.getCommandString(), new HashMap<>());
 
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.SCRIPT)
         .name(commandUnit.getName())
-        .identifier(MigratorUtility.generateIdentifier(commandUnit.getName()))
+        .identifier(
+            MigratorUtility.generateIdentifier(commandUnit.getName(), context.getInputDTO().getIdentifierCaseFormat()))
         .spec(
             ScriptCommandUnitSpec.builder()
                 .shell(execCommandUnit.getScriptType().equals(ScriptType.BASH) ? ShellType.Bash : ShellType.PowerShell)

@@ -13,7 +13,7 @@
 
 # First stage
 FROM alpine:3.12
-RUN GRPC_HEALTH_PROBE_VERSION=v0.4.14 && \
+RUN GRPC_HEALTH_PROBE_VERSION=v0.4.16 && \
     wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
     chmod +x /bin/grpc_health_probe
 
@@ -24,6 +24,7 @@ COPY --from=0 /bin/grpc_health_probe /grpc_health_probe
 COPY scm_/scm /usr/local/bin/scm
 USER root
 RUN chown -R 65534:65534 /usr/local/bin /grpc_health_probe
+RUN microdnf install git
 USER 65534:65534
 WORKDIR /usr/local/bin
 CMD ["/usr/local/bin/scm"]

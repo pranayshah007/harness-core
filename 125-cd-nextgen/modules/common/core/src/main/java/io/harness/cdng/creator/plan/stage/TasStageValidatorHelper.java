@@ -18,6 +18,7 @@ import static io.harness.executions.steps.StepSpecTypeConstants.TAS_CANARY_APP_S
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLBACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_DEPLOY;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_ROLLBACK;
+import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROUTE_MAPPING;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_SWAP_ROUTES;
 import static io.harness.ng.core.template.TemplateListType.STABLE_TEMPLATE_TYPE;
 
@@ -83,6 +84,7 @@ public class TasStageValidatorHelper implements StageValidatorHelper {
     int bgAppSetupStepCount = stepTypeToCount.getOrDefault(TAS_BG_APP_SETUP, 0);
     int commandStepCount = stepTypeToCount.getOrDefault(TANZU_COMMAND, 0);
     int rollingDeployStepCount = stepTypeToCount.getOrDefault(TAS_ROLLING_DEPLOY, 0);
+    int routeMappingStepCount = stepTypeToCount.getOrDefault(TAS_ROUTE_MAPPING, 0);
     validateStepCount(basicAppSetupStepCount, "Only one Basic App Setup step is valid, found: %d");
     validateStepCount(canaryAppSetupStepCount, "Only one Canary App Setup step is valid, found: %d");
     validateStepCount(bgAppSetupStepCount, "Only one BG App Setup step is valid, found: %d");
@@ -90,7 +92,7 @@ public class TasStageValidatorHelper implements StageValidatorHelper {
 
     if (((basicAppSetupStepCount + bgAppSetupStepCount + canaryAppSetupStepCount + rollingDeployStepCount) > 1)
         || ((basicAppSetupStepCount + bgAppSetupStepCount + canaryAppSetupStepCount + rollingDeployStepCount) == 0
-            && commandStepCount == 0)) {
+            && commandStepCount == 0 && routeMappingStepCount == 0)) {
       throw new InvalidYamlException("Only one App Setup or Rolling Deploy is supported");
     }
     int swapRouteStepCount = stepTypeToCount.getOrDefault(TAS_SWAP_ROUTES, 0);

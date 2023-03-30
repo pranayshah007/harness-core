@@ -180,6 +180,8 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
   private int broadcastCount;
   private long nextBroadcast;
   private boolean forceExecute;
+  private boolean shouldSkipOpenStream;
+  private String baseLogKey;
   private int broadcastRound;
 
   @FdIndex private long expiry;

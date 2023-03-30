@@ -9,7 +9,8 @@ package io.harness.delegate.task.artifacts.artifactory;
 
 import static io.harness.artifactory.service.ArtifactoryRegistryService.DEFAULT_ARTIFACT_DIRECTORY;
 import static io.harness.artifactory.service.ArtifactoryRegistryService.DEFAULT_ARTIFACT_FILTER;
-import static io.harness.artifactory.service.ArtifactoryRegistryService.MAX_NO_OF_BUILDS_PER_ARTIFACT;
+import static io.harness.artifactory.service.ArtifactoryRegistryService.MAX_NO_OF_TAGS_PER_ARTIFACT;
+import static io.harness.delegate.task.artifacts.ArtifactServiceConstant.ACCEPT_ALL_REGEX;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -61,10 +62,11 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
     ArtifactoryConfigRequest artifactoryConfig =
         ArtifactoryRequestResponseMapper.toArtifactoryInternalConfig(attributesRequest);
 
-    if (isRegex(attributesRequest)) {
+    if (isRegex(attributesRequest) || attributesRequest.getTag().equals(ACCEPT_ALL_REGEX)) {
+      String tagRegex = isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag();
       lastSuccessfulBuild = artifactoryRegistryService.getLastSuccessfulBuildFromRegex(artifactoryConfig,
           attributesRequest.getRepositoryName(), attributesRequest.getArtifactPath(),
-          attributesRequest.getRepositoryFormat(), attributesRequest.getTagRegex());
+          attributesRequest.getRepositoryFormat(), tagRegex);
 
     } else {
       lastSuccessfulBuild =
@@ -159,7 +161,7 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
     List<BuildDetailsInternal> builds = artifactoryRegistryService.getBuilds(
         ArtifactoryRequestResponseMapper.toArtifactoryInternalConfig(attributesRequest),
         attributesRequest.getRepositoryName(), attributesRequest.getArtifactPath(),
-        attributesRequest.getRepositoryFormat(), ArtifactoryRegistryService.MAX_NO_OF_TAGS_PER_ARTIFACT);
+        attributesRequest.getRepositoryFormat());
     List<ArtifactoryArtifactDelegateResponse> artifactoryDockerArtifactDelegateResponseList =
         builds.stream()
             .sorted(new BuildDetailsInternalComparatorDescending())
@@ -183,7 +185,7 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
     String filePath = Paths.get(artifactDirectory, DEFAULT_ARTIFACT_FILTER).toString();
 
     List<BuildDetails> buildDetails = artifactoryNgService.getArtifactList(artifactoryConfigRequest,
-        artifactoryGenericArtifactDelegateRequest.getRepositoryName(), filePath, MAX_NO_OF_BUILDS_PER_ARTIFACT);
+        artifactoryGenericArtifactDelegateRequest.getRepositoryName(), filePath, MAX_NO_OF_TAGS_PER_ARTIFACT);
     String finalArtifactDirectory = artifactDirectory;
     buildDetails = buildDetails.stream()
                        .map(buildDetail -> {

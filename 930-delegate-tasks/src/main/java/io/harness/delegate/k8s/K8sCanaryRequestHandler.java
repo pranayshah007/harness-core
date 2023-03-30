@@ -43,6 +43,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sCliCommandType;
 import io.harness.k8s.K8sCommandFlagsUtils;
+import io.harness.k8s.KubernetesReleaseDetails;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
@@ -152,10 +153,15 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
 
     wrapUpLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
 
+    String canaryObjectsNames = canaryWorkload.getResourceId().namespaceKindNameRef();
+    if (k8sCanaryDeployRequest.isUseDeclarativeRollback()) {
+      canaryObjectsNames = k8sCanaryBaseHandler.appendSecretAndConfigMapNamesToCanaryWorkloads(
+          canaryObjectsNames, k8sCanaryHandlerConfig.getResources());
+    }
     return K8sDeployResponse.builder()
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .k8sNGTaskResponse(K8sCanaryDeployResponse.builder()
-                               .canaryWorkload(canaryWorkload.getResourceId().namespaceKindNameRef())
+                               .canaryWorkload(canaryObjectsNames)
                                .k8sPodList(allPods)
                                .releaseNumber(k8sCanaryHandlerConfig.getCurrentRelease().getReleaseNumber())
                                .currentInstances(k8sCanaryHandlerConfig.getTargetInstances())
@@ -179,7 +185,13 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
         K8sCanaryDataException.dataBuilder().canaryWorkloadDeployed(canaryWorkloadDeployed).cause(exception);
     KubernetesResource canaryWorkload = k8sCanaryHandlerConfig.getCanaryWorkload();
     if (canaryWorkload != null && canaryWorkload.getResourceId() != null) {
-      k8sCanaryDataBuilder.canaryWorkload(canaryWorkload.getResourceId().namespaceKindNameRef());
+      String canaryObjectsNames = canaryWorkload.getResourceId().namespaceKindNameRef();
+      if (((K8sCanaryDeployRequest) request).isUseDeclarativeRollback()) {
+        canaryObjectsNames = k8sCanaryBaseHandler.appendSecretAndConfigMapNamesToCanaryWorkloads(
+            canaryObjectsNames, k8sCanaryHandlerConfig.getResources());
+      }
+
+      k8sCanaryDataBuilder.canaryWorkload(canaryObjectsNames);
     }
 
     throw k8sCanaryDataBuilder.build();
@@ -191,7 +203,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     logCallback.saveExecutionLog("Initializing..\n");
     logCallback.saveExecutionLog(color(String.format("Release Name: [%s]", request.getReleaseName()), Yellow, Bold));
     k8sCanaryHandlerConfig.setKubernetesConfig(
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(request.getK8sInfraDelegateConfig()));
+        containerDeploymentDelegateBaseHelper.createKubernetesConfig(request.getK8sInfraDelegateConfig(), logCallback));
     k8sCanaryHandlerConfig.setClient(
         Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
 
@@ -210,7 +222,10 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
 
     k8sTaskHelperBase.deleteSkippedManifestFiles(k8sCanaryHandlerConfig.getManifestFilesDirectory(), logCallback);
 
-    List<String> manifestOverrideFiles = getManifestOverrideFlies(request);
+    KubernetesReleaseDetails releaseDetails =
+        KubernetesReleaseDetails.builder().releaseNumber(currentReleaseNumber).build();
+
+    List<String> manifestOverrideFiles = getManifestOverrideFlies(request, releaseDetails.toContextMap());
 
     List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplate(k8sDelegateTaskParams,
         request.getManifestDelegateConfig(), k8sCanaryHandlerConfig.getManifestFilesDirectory(), manifestOverrideFiles,

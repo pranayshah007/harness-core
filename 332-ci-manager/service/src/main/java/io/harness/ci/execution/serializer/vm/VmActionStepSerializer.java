@@ -40,7 +40,9 @@ public class VmActionStepSerializer {
     if (env == null) {
       env = new HashMap<>();
     }
-    env.put("PLUGIN_WITH", SerializerUtils.convertMapToJsonString(with));
+    if (with != null) {
+      env.put("PLUGIN_WITH", SerializerUtils.convertMapToJsonString(with));
+    }
 
     return VmRunStep.builder()
         .entrypoint(Arrays.asList("plugin", "-kind", "action", "-name"))

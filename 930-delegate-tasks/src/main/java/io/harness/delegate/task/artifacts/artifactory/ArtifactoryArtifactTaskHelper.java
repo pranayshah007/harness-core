@@ -8,7 +8,7 @@
 package io.harness.delegate.task.artifacts.artifactory;
 
 import static io.harness.artifactory.service.ArtifactoryRegistryService.DEFAULT_ARTIFACT_DIRECTORY;
-import static io.harness.artifactory.service.ArtifactoryRegistryService.MAX_NO_OF_BUILDS_PER_ARTIFACT;
+import static io.harness.artifactory.service.ArtifactoryRegistryService.MAX_NO_OF_TAGS_PER_ARTIFACT;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -182,7 +182,7 @@ public class ArtifactoryArtifactTaskHelper {
     BuildDetails buildDetails = artifactoryNgService.getLatestArtifact(artifactoryConfigRequest,
         artifactoryGenericArtifactDelegateRequest.getRepositoryName(), artifactDirectory,
         artifactoryGenericArtifactDelegateRequest.getArtifactPathFilter(),
-        artifactoryGenericArtifactDelegateRequest.getArtifactPath(), MAX_NO_OF_BUILDS_PER_ARTIFACT);
+        artifactoryGenericArtifactDelegateRequest.getArtifactPath(), MAX_NO_OF_TAGS_PER_ARTIFACT);
     artifactoryGenericArtifactDelegateResponse = ArtifactoryRequestResponseMapper.toArtifactoryGenericResponse(
         buildDetails, artifactoryGenericArtifactDelegateRequest);
     addArtifactNameToMetaData(artifactoryGenericArtifactDelegateResponse);

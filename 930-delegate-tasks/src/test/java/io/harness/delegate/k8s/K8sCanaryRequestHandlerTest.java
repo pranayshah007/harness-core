@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -26,6 +27,7 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -120,7 +122,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig);
+        .createKubernetesConfig(k8sInfraDelegateConfig, logCallback);
     doReturn(logCallback)
         .when(k8sTaskHelperBase)
         .getLogCallback(eq(iLogStreamingTaskClient), anyString(), anyBoolean(), any());
@@ -217,7 +219,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
             .useLatestKustomizeVersion(true)
             .accountId(accountId)
             .build();
-    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest).get(0)).isEqualTo("patch1");
+    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest, emptyMap()).get(0))
+        .isEqualTo("patch1");
 
     canaryDeployRequest = K8sCanaryDeployRequest.builder()
                               .releaseName(releaseName)
@@ -226,7 +229,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
                               .valuesYamlList(valuesYamlList)
                               .accountId(accountId)
                               .build();
-    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest).get(0)).isEqualTo("value1");
+    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest, emptyMap()).get(0))
+        .isEqualTo("value1");
 
     canaryDeployRequest = K8sCanaryDeployRequest.builder()
                               .releaseName(releaseName)
@@ -235,7 +239,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
                               .useLatestKustomizeVersion(true)
                               .accountId(accountId)
                               .build();
-    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest).get(0)).isEqualTo("param1");
+    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest, emptyMap()).get(0))
+        .isEqualTo("param1");
   }
 
   @Test
@@ -282,6 +287,9 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     doReturn(Arrays.asList(K8sPod.builder().build()))
         .when(k8sCanaryBaseHandler)
         .getAllPods(k8sCanaryHandlerConfig, releaseName, timeoutIntervalInMillis);
+    doAnswer(invocation -> invocation.getArgument(0))
+        .when(k8sCanaryBaseHandler)
+        .appendSecretAndConfigMapNamesToCanaryWorkloads(anyString(), anyList());
 
     K8sDeployResponse k8sDeployResponse =
         spyRequestHandler.executeTask(canaryDeployRequest, delegateTaskParams, iLogStreamingTaskClient, null);

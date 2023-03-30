@@ -20,6 +20,7 @@ import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NAMANG;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.REETIKA;
 import static io.harness.utils.PageTestUtils.getPage;
 import static io.harness.utils.PageUtils.getPageRequest;
@@ -1500,5 +1501,29 @@ public class UserGroupServiceImplTest extends CategoryTest {
         userGroupService.getInheritingChildScopeList(ACCOUNT_IDENTIFIER, null, null, "UG1");
     assertThat(returnedValue.size()).isEqualTo(2);
     assertThat(returnedValue).isEqualTo(new ArrayList<>(Arrays.asList(scopeNameDTO1, scopeNameDTO2)));
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testGetAllUserGroupsForAUser_WithUsersAndTagsExcluded() {
+    // Case when user groups are fetched as well for user
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    String userGroupIdentifier = randomAlphabetic(10);
+    UserGroup userGroup = UserGroup.builder()
+                              .accountIdentifier(scope.getAccountIdentifier())
+                              .orgIdentifier(scope.getOrgIdentifier())
+                              .projectIdentifier(scope.getProjectIdentifier())
+                              .identifier(userGroupIdentifier)
+                              .externallyManaged(true)
+                              .isSsoLinked(false)
+                              .build();
+
+    ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    doReturn(Collections.singletonList(userGroup))
+        .when(userGroupRepository)
+        .findAll(userGroupCriteriaArgumentCaptor.capture());
+    userGroupService.getUserGroupsForUser(ACCOUNT_IDENTIFIER, "testUserId");
+    verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture());
   }
 }

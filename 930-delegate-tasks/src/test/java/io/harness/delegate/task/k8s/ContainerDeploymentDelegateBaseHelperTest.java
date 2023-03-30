@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -26,6 +27,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,6 +37,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.azure.AzureConfigContext;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
@@ -47,11 +51,13 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsD
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesUserNamePasswordDTO;
+import io.harness.delegate.task.aws.eks.AwsEKSV2DelegateTaskHelper;
 import io.harness.delegate.task.gcp.helpers.GkeClusterHelper;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
@@ -76,6 +82,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -89,6 +97,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private AzureAsyncTaskHelper azureAsyncTaskHelper;
   @Mock LogCallback logCallback;
+  @Mock private AwsEKSV2DelegateTaskHelper awsEKSDelegateTaskHelper;
 
   @Spy @InjectMocks ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
 
@@ -154,7 +163,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
         .when(k8sYamlToDelegateDTOMapper)
         .createKubernetesConfigFromClusterConfig(eq(clusterConfigDTO), eq("default"));
 
-    KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(config);
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(config, null);
     assertThat(kubernetesConfig).isEqualTo(expectedKubernetesConfig);
 
     verify(k8sYamlToDelegateDTOMapper, times(1))
@@ -181,15 +190,20 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
                     .build())
             .build();
 
+    MockedStatic kubeConfigAuthPluginHelper = mockStatic(KubeConfigAuthPluginHelper.class);
+    Mockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
     KubernetesConfig expectedKubernetesConfig = KubernetesConfig.builder().password(secret).build();
     doReturn(expectedKubernetesConfig)
         .when(gkeClusterHelper)
-        .getCluster(eq(secret), eq(false), eq("cluster1"), eq("default"));
+        .getCluster(eq(secret), eq(false), eq("cluster1"), eq("default"), any(LogCallback.class));
 
-    KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(config);
+    KubernetesConfig kubernetesConfig =
+        containerDeploymentDelegateBaseHelper.createKubernetesConfig(config, logCallback);
+    kubeConfigAuthPluginHelper.close();
     assertThat(kubernetesConfig).isEqualTo(expectedKubernetesConfig);
 
-    verify(gkeClusterHelper, times(1)).getCluster(eq(secret), eq(false), eq("cluster1"), eq("default"));
+    verify(gkeClusterHelper, times(1))
+        .getCluster(eq(secret), eq(false), eq("cluster1"), eq("default"), any(LogCallback.class));
   }
 
   @Test
@@ -207,15 +221,21 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
                                  .build())
             .build();
 
+    MockedStatic kubeConfigAuthPluginHelper = mockStatic(KubeConfigAuthPluginHelper.class);
+    Mockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
+
     KubernetesConfig expectedKubernetesConfig = KubernetesConfig.builder().username("test".toCharArray()).build();
     doReturn(expectedKubernetesConfig)
         .when(gkeClusterHelper)
-        .getCluster(eq(null), eq(true), eq("cluster1"), eq("default"));
+        .getCluster(eq(null), eq(true), eq("cluster1"), eq("default"), any(LogCallback.class));
 
-    KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(config);
+    KubernetesConfig kubernetesConfig =
+        containerDeploymentDelegateBaseHelper.createKubernetesConfig(config, logCallback);
+    kubeConfigAuthPluginHelper.close();
     assertThat(kubernetesConfig).isEqualTo(expectedKubernetesConfig);
 
-    verify(gkeClusterHelper, times(1)).getCluster(eq(null), eq(true), eq("cluster1"), eq("default"));
+    verify(gkeClusterHelper, times(1))
+        .getCluster(eq(null), eq(true), eq("cluster1"), eq("default"), any(LogCallback.class));
   }
 
   @Test
@@ -224,7 +244,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
   public void testCreateKubernetesConfigUnknownType() {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = mock(K8sInfraDelegateConfig.class);
 
-    assertThatThrownBy(() -> containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sInfraDelegateConfig))
+    assertThatThrownBy(() -> containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sInfraDelegateConfig, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Unhandled K8sInfraDelegateConfig ");
   }
@@ -343,13 +363,15 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
             .namespace("default")
             .build();
     final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
-
+    MockedStatic kubeConfigAuthPluginHelper = mockStatic(KubeConfigAuthPluginHelper.class);
+    Mockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
     doReturn(kubernetesConfig)
         .when(gkeClusterHelper)
-        .getCluster(serviceAccountKeyFileContent, false, "cluster", "default");
+        .getCluster(serviceAccountKeyFileContent, false, "cluster", "default", null);
 
     containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(gcpK8sInfraDelegateConfig);
-    verify(gkeClusterHelper).getCluster(serviceAccountKeyFileContent, false, "cluster", "default");
+    kubeConfigAuthPluginHelper.close();
+    verify(gkeClusterHelper).getCluster(serviceAccountKeyFileContent, false, "cluster", "default", null);
     verify(secretDecryptionService).decrypt(credentials, encryptionDataDetails);
   }
 
@@ -370,7 +392,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
                                                                         .build();
     final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
 
-    when(azureAsyncTaskHelper.getClusterConfig(any(AzureConfigContext.class))).thenReturn(kubernetesConfig);
+    when(azureAsyncTaskHelper.getClusterConfig(any(AzureConfigContext.class), any())).thenReturn(kubernetesConfig);
 
     containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(azureK8sInfraDelegateConfig);
     verify(kubernetesContainerService).getConfigFileContent(kubernetesConfig);
@@ -393,9 +415,28 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
                                                                         .build();
     final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
 
-    when(azureAsyncTaskHelper.getClusterConfig(any(AzureConfigContext.class))).thenReturn(kubernetesConfig);
+    when(azureAsyncTaskHelper.getClusterConfig(any(AzureConfigContext.class), any())).thenReturn(kubernetesConfig);
 
     containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(azureK8sInfraDelegateConfig);
     verify(kubernetesContainerService).getConfigFileContent(kubernetesConfig);
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testGetUserKubeconfigFileContentEksK8sInfraDelegateConfig() {
+    final List<EncryptedDataDetail> encryptionDataDetails = emptyList();
+    final AwsConnectorDTO awsConnectorDTO =
+        AwsConnectorDTO.builder().credential(AwsCredentialDTO.builder().build()).build();
+    final EksK8sInfraDelegateConfig eksK8sInfraDelegateConfig = EksK8sInfraDelegateConfig.builder()
+                                                                    .awsConnectorDTO(awsConnectorDTO)
+                                                                    .cluster("eks")
+                                                                    .namespace("default")
+                                                                    .encryptionDataDetails(encryptionDataDetails)
+                                                                    .build();
+
+    containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(eksK8sInfraDelegateConfig);
+    verify(awsEKSDelegateTaskHelper, times(1)).getKubeConfig(eq(awsConnectorDTO), eq("eks"), eq("default"), eq(null));
+    verify(kubernetesContainerService).getConfigFileContent(any());
   }
 }

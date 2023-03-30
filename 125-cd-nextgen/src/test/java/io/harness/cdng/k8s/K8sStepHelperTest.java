@@ -305,7 +305,7 @@ public class K8sStepHelperTest extends CategoryTest {
         .hasMessageContaining(
             "Manifests are mandatory for K8s step. Select one from " + String.join(", ", K8S_SUPPORTED_MANIFEST_TYPES));
 
-    K8sManifestOutcome k8sManifestOutcome = K8sManifestOutcome.builder().build();
+    K8sManifestOutcome k8sManifestOutcome = K8sManifestOutcome.builder().store(GitStore.builder().build()).build();
     ValuesManifestOutcome valuesManifestOutcome = ValuesManifestOutcome.builder().build();
     List<ManifestOutcome> serviceManifestOutcomes = new ArrayList<>();
     serviceManifestOutcomes.add(k8sManifestOutcome);
@@ -369,6 +369,7 @@ public class K8sStepHelperTest extends CategoryTest {
         HelmChartManifestOutcome.builder()
             .helmVersion(HelmVersion.V3)
             .skipResourceVersioning(ParameterField.createValueField(true))
+            .store(GitStore.builder().build())
             .build();
     ValuesManifestOutcome valuesManifestOutcome = ValuesManifestOutcome.builder().build();
     List<ManifestOutcome> manifestOutcomes = new ArrayList<>();
@@ -376,6 +377,28 @@ public class K8sStepHelperTest extends CategoryTest {
     manifestOutcomes.add(valuesManifestOutcome);
 
     assertThat(k8sStepHelper.getK8sSupportedManifestOutcome(manifestOutcomes)).isEqualTo(helmChartManifestOutcome);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetOpenshiftManifestOutcomeWithHarnessAndInheritFromManifestStore() {
+    OpenshiftManifestOutcome openshiftManifestOutcome =
+        OpenshiftManifestOutcome.builder()
+            .identifier("OcTemplate")
+            .skipResourceVersioning(ParameterField.createValueField(true))
+            .store(HarnessStore.builder().build())
+            .build();
+    ValuesManifestOutcome valuesManifestOutcome =
+        ValuesManifestOutcome.builder().store(InheritFromManifestStoreConfig.builder().build()).build();
+    List<ManifestOutcome> manifestOutcomes = new ArrayList<>();
+    manifestOutcomes.add(openshiftManifestOutcome);
+    manifestOutcomes.add(valuesManifestOutcome);
+
+    assertThatThrownBy(() -> k8sStepHelper.getK8sSupportedManifestOutcome(manifestOutcomes))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "InheritFromManifest store type is not supported with Manifest identifier: OcTemplate, Manifest type: OpenshiftTemplate, Manifest store type: Harness");
   }
 
   @Test
@@ -747,6 +770,44 @@ public class K8sStepHelperTest extends CategoryTest {
     LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
         (LocalFileStoreDelegateConfig) openshiftManifestDelegateConfig.getStoreDelegateConfig();
     assertThat(localFileStoreDelegateConfig.getFilePaths()).isEqualTo(asList("/path/to/openshift/template.yaml"));
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void shouldRemoveCommentsBeforeRendering() {
+    String commentOnly = "  # comment\r\n";
+    String commentInSameLineAndNextLine = "  # defining name  \n"
+        + "name: hello  # this is not a good name \r \n"
+        + "# just adding some comments for testing \n"
+        + "key: value\n";
+    String hashInValue = "baseurl: \"https://abc.xyz/#/api\" # shouldn't remove the hash in url";
+    String nestedValues = "key: value\n"
+        + "metadata:\n"
+        + "  name: global-route # what is global route\n"
+        + "  namespace: default";
+
+    String op1 = "";
+    String op2 = "name: hello\n"
+        + "key: value\n";
+    String op3 = "baseurl: https://abc.xyz/#/api\n";
+    String op4 = "key: value\n"
+        + "metadata:\n"
+        + "  name: global-route\n"
+        + "  namespace: default\n";
+
+    List<String> valuesFiles = asList(commentOnly, commentInSameLineAndNextLine, hashInValue, nestedValues);
+
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(FeatureName.CDS_REMOVE_COMMENTS_FROM_VALUES_YAML));
+    doReturn(op1).when(engineExpressionService).renderExpression(any(), eq(op1), anyBoolean());
+    doReturn(op2).when(engineExpressionService).renderExpression(any(), eq(op2), anyBoolean());
+    doReturn(op3).when(engineExpressionService).renderExpression(any(), eq(op3), anyBoolean());
+    doReturn(op4).when(engineExpressionService).renderExpression(any(), eq(op4), anyBoolean());
+
+    List<String> renderedValuesFiles = k8sStepHelper.renderValues(
+        OpenshiftManifestOutcome.builder().build(), Ambiance.newBuilder().build(), valuesFiles);
+    assertThat(renderedValuesFiles).isNotEmpty();
+    assertThat(renderedValuesFiles).containsExactlyInAnyOrder(op1, op2, op3, op4);
   }
 
   @Test

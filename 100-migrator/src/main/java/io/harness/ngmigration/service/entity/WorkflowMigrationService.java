@@ -25,6 +25,7 @@ import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateResponseDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -212,15 +213,19 @@ public class WorkflowMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
+
     if (isNotEmpty(inputDTO.getDefaults()) && inputDTO.getDefaults().containsKey(WORKFLOW)
         && inputDTO.getDefaults().get(WORKFLOW).isSkipMigration()) {
       return null;
     }
     Workflow workflow = (Workflow) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, workflow.getName());
-    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String identifier = MigratorUtility.generateIdentifierDefaultName(
+        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
     Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
@@ -267,7 +272,7 @@ public class WorkflowMigrationService extends NgMigrationService {
     if (templateType == TemplateEntityType.PIPELINE_TEMPLATE) {
       List<StageElementWrapperConfig> stages;
       try {
-        stages = workflowHandler.asStages(entities, migratedEntities, workflow);
+        stages = workflowHandler.asStages(migrationContext, workflow);
       } catch (Exception e) {
         return YamlGenerationDetails.builder()
             .yamlFileList(files)
@@ -287,13 +292,15 @@ public class WorkflowMigrationService extends NgMigrationService {
                                             .orgIdentifier(orgIdentifier)
                                             .stages(stages)
                                             .allowStageExecutions(true)
+                                            .tags(MigratorUtility.getTags(workflow.getTagLinks()))
+                                            .variables(workflowHandler.getVariables(workflow))
                                             .build())
                     .build();
       ngType = PIPELINE;
     } else {
       JsonNode templateSpec;
       try {
-        templateSpec = workflowHandler.getTemplateSpec(entities, migratedEntities, workflow);
+        templateSpec = workflowHandler.getTemplateSpec(migrationContext, workflow);
       } catch (Exception e) {
         log.error("Exception during migrating workflow ", e);
         return YamlGenerationDetails.builder()
@@ -327,6 +334,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                             .orgIdentifier(orgIdentifier)
                                             .versionLabel(VERSION)
                                             .spec(templateSpec)
+                                            .tags(MigratorUtility.getTags(workflow.getTagLinks()))
                                             .build())
                     .build();
       ngType = TEMPLATE;

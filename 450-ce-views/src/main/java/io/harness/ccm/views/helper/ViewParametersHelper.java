@@ -9,6 +9,7 @@ package io.harness.ccm.views.helper;
 
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD_ID;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
@@ -74,6 +75,7 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
 import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_TYPE;
 
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewField;
@@ -130,6 +132,7 @@ public class ViewParametersHelper {
   @Inject private BusinessMappingDataSourceHelper businessMappingDataSourceHelper;
   @Inject private CEViewService viewService;
   @Inject private ViewsQueryHelper viewsQueryHelper;
+  @Inject private BusinessMappingService businessMappingService;
 
   private static final String OTHERS = "Others";
   private static final String STANDARD_TIME_ZONE = "GMT";
@@ -293,7 +296,7 @@ public class ViewParametersHelper {
   public List<QLCEViewFilter> addNotNullFilters(List<QLCEViewFilter> filters, List<QLCEViewGroupBy> groupByList) {
     List<QLCEViewFilter> updatedFilters = new ArrayList<>(filters);
     groupByList.forEach(groupBy -> {
-      if (groupBy.getEntityGroupBy() != null) {
+      if (groupBy.getEntityGroupBy() != null && groupBy.getEntityGroupBy().getIdentifier() != BUSINESS_MAPPING) {
         switch (groupBy.getEntityGroupBy().getFieldName()) {
           case GROUP_BY_ECS_TASK_ID:
           case GROUP_BY_INSTANCE_ID:
@@ -562,6 +565,14 @@ public class ViewParametersHelper {
     return modifiedAggregations;
   }
 
+  public List<QLCEViewAggregation> getCostAggregation(final boolean isClusterPerspective) {
+    final List<QLCEViewAggregation> costAggregation = new ArrayList<>();
+    final String costColumn = isClusterPerspective ? BILLING_AMOUNT : COST;
+    costAggregation.add(
+        QLCEViewAggregation.builder().columnName(costColumn).operationType(QLCEViewAggregateOperation.SUM).build());
+    return costAggregation;
+  }
+
   public List<QLCEViewAggregation> getAggregationsForEntityStatsCostTrend(List<QLCEViewAggregation> aggregations) {
     List<QLCEViewAggregation> trendAggregations = new ArrayList<>(aggregations);
     trendAggregations.add(QLCEViewAggregation.builder().operationType(MAX).columnName("startTime").build());
@@ -819,38 +830,29 @@ public class ViewParametersHelper {
   // ----------------------------------------------------------------------------------------------------------------
   // Cost category related methods
   // ----------------------------------------------------------------------------------------------------------------
-  public List<ViewRule> removeSharedCostRules(List<ViewRule> viewRules, BusinessMapping sharedCostBusinessMapping) {
-    if (sharedCostBusinessMapping != null) {
-      List<ViewRule> updatedViewRules = new ArrayList<>();
-      viewRules.forEach(rule -> {
-        List<ViewCondition> updatedViewConditions =
-            removeSharedCostRulesFromViewConditions(rule.getViewConditions(), sharedCostBusinessMapping);
-        if (!updatedViewConditions.isEmpty()) {
-          updatedViewRules.add(ViewRule.builder().viewConditions(updatedViewConditions).build());
+
+  public List<String> getBusinessMappingIds(List<QLCEViewFilterWrapper> filters, String groupByBusinessMappingId) {
+    Set<String> businessMappingIds = new HashSet<>();
+    List<ViewRule> viewRules = getViewRules(filters);
+    businessMappingIds.addAll(viewsQueryHelper.getBusinessMappingIdsFromViewRules(viewRules));
+    businessMappingIds.addAll(new HashSet<>(viewsQueryHelper.getBusinessMappingIdsFromFilters(filters)));
+    if (Objects.nonNull(groupByBusinessMappingId) && !groupByBusinessMappingId.isEmpty()) {
+      businessMappingIds.add(groupByBusinessMappingId);
+    }
+    return new ArrayList<>(businessMappingIds);
+  }
+
+  public List<BusinessMapping> getSharedCostBusinessMappings(final List<String> businessMappingIds) {
+    final List<BusinessMapping> sharedCostBusinessMappings = new ArrayList<>();
+    if (!businessMappingIds.isEmpty()) {
+      businessMappingIds.forEach(businessMappingId -> {
+        final BusinessMapping businessMapping = businessMappingService.get(businessMappingId);
+        if (businessMapping != null && businessMapping.getSharedCosts() != null) {
+          sharedCostBusinessMappings.add(businessMapping);
         }
       });
-      return updatedViewRules;
     }
-    return viewRules;
-  }
-
-  private List<ViewCondition> removeSharedCostRulesFromViewConditions(
-      List<ViewCondition> viewConditions, BusinessMapping sharedCostBusinessMapping) {
-    List<ViewCondition> updatedViewConditions = new ArrayList<>();
-    for (ViewCondition condition : viewConditions) {
-      if (!((ViewIdCondition) condition).getViewField().getFieldId().equals(sharedCostBusinessMapping.getUuid())) {
-        updatedViewConditions.add(condition);
-      }
-    }
-    return updatedViewConditions;
-  }
-
-  public List<String> getBusinessMappingIdsFromRulesAndFilters(List<QLCEViewFilterWrapper> filters) {
-    List<ViewRule> viewRules = getViewRules(filters);
-    Set<String> businessMappingIdsFromRules = viewsQueryHelper.getBusinessMappingIdsFromViewRules(viewRules);
-    List<String> businessMappingIdsFromRulesAndFilters = viewsQueryHelper.getBusinessMappingIdsFromFilters(filters);
-    businessMappingIdsFromRulesAndFilters.addAll(businessMappingIdsFromRules);
-    return businessMappingIdsFromRulesAndFilters;
+    return sharedCostBusinessMappings;
   }
 
   // ----------------------------------------------------------------------------------------------------------------

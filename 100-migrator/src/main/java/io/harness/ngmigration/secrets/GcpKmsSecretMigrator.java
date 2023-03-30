@@ -64,10 +64,11 @@ public class GcpKmsSecretMigrator implements SecretMigrator {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
 
-    String gcpSecretFileIdentifier =
-        String.format("migratedGcpKms_%s", MigratorUtility.generateIdentifier(gcpKmsConfig.getName()));
+    String gcpSecretFileIdentifier = String.format("migratedGcpKms_%s",
+        MigratorUtility.generateIdentifier(gcpKmsConfig.getName(), inputDTO.getIdentifierCaseFormat()));
 
     NgEntityDetail gcpEntityDetail = NgEntityDetail.builder()
+                                         .entityType(NGMigrationEntityType.SECRET)
                                          .identifier(gcpSecretFileIdentifier)
                                          .orgIdentifier(orgIdentifier)
                                          .projectIdentifier(projectIdentifier)

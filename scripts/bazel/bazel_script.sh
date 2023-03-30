@@ -59,7 +59,7 @@ if [ "${RUN_BAZEL_TESTS}" == "true" ]; then
 fi
 
 if [ "${RUN_CHECKS}" == "true" ]; then
-  if [[ "${BULD_PURPOSE}" == "PR_CHECKS" ]];then
+  if [[ "${BUILD_PURPOSE}" == "PR_CHECK" ]];then
     get_PR_Modules
   else
     GIT_DIFF="git diff --name-only develop $(git branch --show-current)"
@@ -84,9 +84,9 @@ if [ "${RUN_CHECKS}" == "true" ]; then
 fi
 
 if [ "${RUN_PMDS}" == "true" ]; then
-   if [[ ""${BULD_PURPOSE}"" == "PR_CHECKS" ]];then
+   if [[ "${BUILD_PURPOSE}" == "PR_CHECK" ]];then
       get_PR_Modules
-    else
+   else
       GIT_DIFF="git diff --name-only develop $(git branch --show-current)"
       PR_MODULES=()
       PR_MODULES+=($($GIT_DIFF | awk -F/ '{print $1}' | sort -u | tr '\r\n' ' '))

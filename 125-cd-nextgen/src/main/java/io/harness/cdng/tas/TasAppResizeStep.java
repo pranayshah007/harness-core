@@ -39,6 +39,8 @@ import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -203,8 +205,11 @@ public class TasAppResizeStep extends CdTaskExecutable<CfCommandResponseNG> {
         : tasAppResizeStepParameters.getOldAppInstances().getType();
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) tasSetupDataOptional.getOutput();
     Integer totalDesiredCount = tasSetupDataOutcome.getDesiredActualFinalCount();
-
-    Integer upsizeCount = getUpsizeCount(upsizeInstanceCount, upsizeInstanceCountType, totalDesiredCount);
+    Boolean ignoreInstanceCountManifest = isNull(tasAppResizeStepParameters.getIgnoreInstanceCountManifest())
+        ? Boolean.FALSE
+        : tasAppResizeStepParameters.getIgnoreInstanceCountManifest().getValue();
+    Integer upsizeCount = getUpsizeCountV2(upsizeInstanceCount, upsizeInstanceCountType, totalDesiredCount,
+        ignoreInstanceCountManifest, tasSetupDataOutcome.getInstanceCountType());
     Integer downsizeCount = getDownsizeCount(downsizeCountType, downsizeInstanceCount, totalDesiredCount, upsizeCount);
     TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
         (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
@@ -300,7 +305,27 @@ public class TasAppResizeStep extends CdTaskExecutable<CfCommandResponseNG> {
     }
   }
 
-  private Integer getUpsizeCount(
+  private Integer getUpsizeCountV2(Integer upsizeInstanceCount, TasInstanceUnitType upsizeInstanceCountType,
+      Integer totalDesiredCount, Boolean ignoreInstanceCountManifest, TasInstanceCountType instanceCountType) {
+    if (TasInstanceCountType.MATCH_RUNNING_INSTANCES.equals(instanceCountType)) {
+      return getUpsizeCountV1(upsizeInstanceCount, upsizeInstanceCountType, totalDesiredCount);
+    } else {
+      if (ignoreInstanceCountManifest != null && ignoreInstanceCountManifest.booleanValue() == true) {
+        if (upsizeInstanceCountType == TasInstanceUnitType.PERCENTAGE) {
+          throw NestedExceptionUtils.hintWithExplanationException(
+              "Disable Ignore instance count from manifest or change total instances type to Instance Count",
+              "\nCant ignore manifest count for percentage instance count type",
+              new InvalidRequestException("Invalid configuration for App Resize Step"));
+        } else {
+          return upsizeInstanceCount;
+        }
+      } else {
+        return getUpsizeCountV1(upsizeInstanceCount, upsizeInstanceCountType, totalDesiredCount);
+      }
+    }
+  }
+
+  private Integer getUpsizeCountV1(
       Integer upsizeInstanceCount, TasInstanceUnitType upsizeInstanceCountType, Integer totalDesiredCount) {
     if (upsizeInstanceCountType == TasInstanceUnitType.PERCENTAGE) {
       int percent = Math.min(upsizeInstanceCount, 100);

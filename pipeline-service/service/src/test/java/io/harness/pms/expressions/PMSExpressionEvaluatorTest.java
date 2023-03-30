@@ -16,6 +16,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -28,11 +29,11 @@ import io.harness.PipelineServiceTestHelper;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.expressions.OrchestrationConstants;
-import io.harness.engine.expressions.functors.ExpandedJsonFunctor;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;
@@ -55,6 +56,7 @@ import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
@@ -79,6 +81,7 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
   @Mock PmsSdkInstanceService pmsSdkInstanceService;
   @Mock RemoteExpressionFunctor remoteExpressionFunctor;
   @Mock PlanExpansionService planExpansionService;
+  @Mock PmsFeatureFlagService pmsFeatureFlagService;
 
   private final String planExecutionId = generateUuid();
   NodeExecution nodeExecution1;
@@ -185,6 +188,7 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     when(nodeExecutionService.getWithFieldsIncluded(
              nodeExecution5.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
         .thenReturn(nodeExecution5);
+    when(pmsFeatureFlagService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(false);
 
     List<NodeExecution> nodeExecutionsList1 = Collections.singletonList(nodeExecution1);
     CloseableIterator<NodeExecution> iterator1 =
@@ -362,6 +366,7 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     on(evaluator).set("planExecutionService", planExecutionService);
     on(evaluator).set("nodeExecutionService", nodeExecutionService);
     on(evaluator).set("planExpansionService", planExpansionService);
+    on(evaluator).set("pmsFeatureFlagService", pmsFeatureFlagService);
 
     evaluator.addToContextMap("dummy", remoteExpressionFunctor);
 
@@ -370,7 +375,7 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
 
   public static class SampleEngineExpressionEvaluator extends PMSExpressionEvaluator {
     public SampleEngineExpressionEvaluator(Ambiance ambiance, PmsSdkInstanceService pmsSdkInstanceService) {
-      super(null, ambiance, null, false);
+      super(null, ambiance, null, false, null);
       this.pmsSdkInstanceService = pmsSdkInstanceService;
     }
 

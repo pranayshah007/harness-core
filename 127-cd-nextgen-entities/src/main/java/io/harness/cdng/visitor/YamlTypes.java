@@ -108,6 +108,7 @@ public interface YamlTypes {
   String SERVICE_SECTION = "serviceSection";
   String SERVICE_ENTITY = "service";
   String SERVICE_REF = "serviceRef";
+  String SERVICE_USE_FROM_STAGE = "useFromStage";
   String SERVICE_DEFINITION = "serviceDefinition";
   String SERVICE_SPEC = "spec";
   String SERVICE_OVERRIDE = "serviceOverrides";
@@ -211,4 +212,5 @@ public interface YamlTypes {
   String AWS_SAM_ROLLBACK = StepSpecTypeConstants.AWS_SAM_ROLLBACK;
 
   String AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK;
+  String TAS_ROUTE_MAPPING = StepSpecTypeConstants.TAS_ROUTE_MAPPING;
 }

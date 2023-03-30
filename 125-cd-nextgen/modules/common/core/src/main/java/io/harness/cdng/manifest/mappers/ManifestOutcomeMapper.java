@@ -258,6 +258,7 @@ public class ManifestOutcomeMapper {
         .pluginPath(kustomizeManifest.getPluginPath())
         .patchesPaths(kustomizeManifest.getPatchesPaths())
         .overlayConfiguration(kustomizeManifest.getOverlayConfiguration())
+        .commandFlags(kustomizeManifest.getCommandFlags())
         .build();
   }
 

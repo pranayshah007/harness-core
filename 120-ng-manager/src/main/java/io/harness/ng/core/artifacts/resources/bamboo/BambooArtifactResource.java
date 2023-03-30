@@ -59,6 +59,7 @@ import lombok.extern.slf4j.Slf4j;
 public class BambooArtifactResource {
   private final BambooResourceService bambooResourceService;
   private final ArtifactResourceUtils artifactResourceUtils;
+
   @POST
   @Path("plans")
   @ApiOperation(value = "Gets Plan Keys for Bamboo", nickname = "getPlansKey")

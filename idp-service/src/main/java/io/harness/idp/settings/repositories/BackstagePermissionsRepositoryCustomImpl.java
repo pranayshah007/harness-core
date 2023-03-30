@@ -13,6 +13,7 @@ import io.harness.idp.settings.beans.entity.BackstagePermissionsEntity.Backstage
 import com.google.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -30,6 +31,7 @@ public class BackstagePermissionsRepositoryCustomImpl implements BackstagePermis
     Update update = new Update();
     update.set(BackstagePermissionsEntityKeys.permissions, backstagePermissionsEntity.getPermissions());
     update.set(BackstagePermissionsEntityKeys.userGroup, backstagePermissionsEntity.getUserGroup());
-    return mongoTemplate.findAndModify(query, update, BackstagePermissionsEntity.class);
+    FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
+    return mongoTemplate.findAndModify(query, update, options, BackstagePermissionsEntity.class);
   }
 }

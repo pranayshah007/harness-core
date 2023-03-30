@@ -14,6 +14,7 @@ import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.delegate.beans.DelegateTokenStatus.REVOKED;
 import static io.harness.delegate.beans.DelegateType.CE_KUBERNETES;
 import static io.harness.delegate.beans.DelegateType.DOCKER;
 import static io.harness.delegate.beans.DelegateType.ECS;
@@ -109,6 +110,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateScripts;
 import io.harness.delegate.beans.DelegateSelector;
 import io.harness.delegate.beans.DelegateSetupDetails;
+import io.harness.delegate.beans.DelegateSize;
 import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.delegate.beans.DelegateTags;
 import io.harness.delegate.beans.DelegateTokenDetails;
@@ -117,6 +119,7 @@ import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileMetadata;
 import io.harness.delegate.beans.K8sConfigDetails;
+import io.harness.delegate.beans.K8sPermissionType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.events.DelegateDeleteEvent;
@@ -267,6 +270,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -676,6 +680,14 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public DelegateSetupDetails validateKubernetesSetupDetails(
       String accountId, DelegateSetupDetails delegateSetupDetails) {
+    validateKubernetesSetupDetailsForYamlGeneration(accountId, delegateSetupDetails);
+    checkUniquenessOfDelegateName(accountId, delegateSetupDetails.getName(), true);
+    validateDelegateToken(accountId, delegateSetupDetails);
+    return delegateSetupDetails;
+  }
+
+  private void validateKubernetesSetupDetailsForYamlGeneration(
+      String accountId, DelegateSetupDetails delegateSetupDetails) {
     if (null == delegateSetupDetails) {
       throw new InvalidRequestException("Delegate Setup Details must be provided.", USER);
     }
@@ -684,7 +696,6 @@ public class DelegateServiceImpl implements DelegateService {
     if (isBlank(delegateSetupDetails.getName())) {
       throw new InvalidRequestException("Delegate Name must be provided.", USER);
     }
-    checkUniquenessOfDelegateName(accountId, delegateSetupDetails.getName(), true);
     if (delegateSetupDetails.getSize() == null) {
       throw new InvalidRequestException("Delegate Size must be provided.", USER);
     }
@@ -700,10 +711,6 @@ public class DelegateServiceImpl implements DelegateService {
             || HELM_DELEGATE.equals(delegateSetupDetails.getDelegateType()))) {
       throw new InvalidRequestException("Delegate type must be KUBERNETES OR HELM_DELEGATE.");
     }
-
-    validateDelegateToken(accountId, delegateSetupDetails);
-
-    return delegateSetupDetails;
   }
 
   private void validateDelegateToken(String accountId, DelegateSetupDetails delegateSetupDetails) {
@@ -1460,8 +1467,16 @@ public class DelegateServiceImpl implements DelegateService {
                               .replaceFirst("^0+(?!$)", "");
 
     final boolean isCiEnabled = isCiEnabled(templateParameters);
-    final String accountSecret = getAccountSecret(templateParameters, isNgDelegate);
-    final String base64Secret = Base64.getEncoder().encodeToString(accountSecret.getBytes());
+
+    String accountSecret = getAccountSecret(templateParameters, isNgDelegate);
+    String base64Secret;
+    if (StringUtils.isEmpty(accountSecret)) {
+      accountSecret = String.format(
+          "<No Delegate Token (%s) available, choose a delegate token>", templateParameters.getDelegateTokenName());
+      base64Secret = accountSecret;
+    } else {
+      base64Secret = Base64.getEncoder().encodeToString(accountSecret.getBytes());
+    }
     // Ng helm delegates always use immutable image irrespective of FF
     final String delegateDockerImage =
         // FIXME: refactor the code about deciding immutable or not
@@ -1727,6 +1742,11 @@ public class DelegateServiceImpl implements DelegateService {
     final Account account = accountService.get(inquiry.getAccountId());
     if (isNotBlank(inquiry.getDelegateTokenName())) {
       if (isNg) {
+        var tokenDetails =
+            delegateNgTokenService.getDelegateToken(inquiry.getAccountId(), inquiry.getDelegateTokenName(), false);
+        if (Objects.isNull(tokenDetails) || tokenDetails.getStatus().equals(REVOKED)) {
+          return null;
+        }
         return delegateNgTokenService.getDelegateTokenValue(inquiry.getAccountId(), inquiry.getDelegateTokenName());
       } else {
         return delegateTokenService.getTokenValue(inquiry.getAccountId(), inquiry.getDelegateTokenName());
@@ -2765,15 +2785,15 @@ public class DelegateServiceImpl implements DelegateService {
   public void unregister(final String accountId, final DelegateUnregisterRequest request) {
     final Delegate existingDelegate = getExistingDelegate(
         accountId, request.getHostName(), request.isNg(), request.getDelegateType(), request.getIpAddress());
-    String delegateId = existingDelegate.getUuid();
-    if (existingDelegate != null) {
-      log.info("Removing delegate instance {} from delegate {}", request.getHostName(), request.getDelegateId());
-      persistence.delete(existingDelegate);
-      sendUnregisterDelegateAuditEvent(existingDelegate, accountId);
-    } else {
+    if (existingDelegate == null) {
       log.warn("Delegate instance {} doesn't exist for {}, nothing to remove", request.getHostName(),
           request.getDelegateId());
+      return;
     }
+    String delegateId = existingDelegate.getUuid();
+    log.info("Removing delegate instance {} from delegate {}", request.getHostName(), request.getDelegateId());
+    persistence.delete(existingDelegate);
+    sendUnregisterDelegateAuditEvent(existingDelegate, accountId);
     delegateDao.delegateDisconnected(accountId, request.getDelegateId());
     onDelegateDisconnected(accountId, delegateId);
   }
@@ -4144,7 +4164,25 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public File generateKubernetesYaml(String accountId, DelegateSetupDetails delegateSetupDetails, String managerHost,
       String verificationServiceUrl, MediaType fileFormat) throws IOException {
-    validateKubernetesSetupDetails(accountId, delegateSetupDetails);
+    // If token name is not provided, use default token
+    if (StringUtils.isBlank(delegateSetupDetails.getTokenName())) {
+      DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(
+          delegateSetupDetails.getOrgIdentifier(), delegateSetupDetails.getProjectIdentifier());
+      delegateSetupDetails.setTokenName(delegateNgTokenService.getDefaultTokenName(owner));
+    }
+    // If size if not provided, use LAPTOP
+    if (Objects.isNull(delegateSetupDetails.getSize())) {
+      delegateSetupDetails.setSize(DelegateSize.LAPTOP);
+    }
+    // If permission not provided, use CLUSTER_ADMIN
+    if (Objects.isNull(delegateSetupDetails.getK8sConfigDetails())) {
+      delegateSetupDetails.setK8sConfigDetails(K8sConfigDetails.builder()
+                                                   .k8sPermissionType(K8sPermissionType.CLUSTER_ADMIN)
+                                                   .namespace(HARNESS_NG_DELEGATE_NAMESPACE)
+                                                   .build());
+    }
+
+    validateKubernetesSetupDetailsForYamlGeneration(accountId, delegateSetupDetails);
     File kubernetesDelegateFile = File.createTempFile(KUBERNETES_DELEGATE, ".tar");
 
     try (TarArchiveOutputStream out = new TarArchiveOutputStream(new FileOutputStream(kubernetesDelegateFile))) {
@@ -4227,6 +4265,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public File generateNgHelmValuesYaml(String accountId, DelegateSetupDetails delegateSetupDetails, String managerHost,
       String verificationServiceUrl) throws IOException {
+    checkUniquenessOfDelegateName(accountId, delegateSetupDetails.getName(), true);
     validateKubernetesSetupDetails(accountId, delegateSetupDetails);
 
     String version;
@@ -4481,7 +4520,9 @@ public class DelegateServiceImpl implements DelegateService {
     if (delegateTokenGlobalContextData != null) {
       return Optional.ofNullable(delegateTokenGlobalContextData.getTokenName());
     }
-    log.warn("Delegate token name not found in Global Context Data. Please verify manually.");
+    // Global context thread is not the best way to save token name. There has been issues in past due to racing between
+    // threads
+    log.debug("Delegate token name not found in Global Context Data. Please verify manually.");
     return Optional.empty();
   }
 

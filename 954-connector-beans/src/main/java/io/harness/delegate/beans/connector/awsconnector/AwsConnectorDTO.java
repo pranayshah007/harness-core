@@ -20,6 +20,7 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 import io.harness.delegate.beans.connector.awsconnector.outcome.AwsConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.awsconnector.outcome.AwsCredentialOutcomeDTO;
+import io.harness.delegate.beans.connector.awsconnector.outcome.AwsSdkClientBackoffStrategyOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -43,6 +44,7 @@ import lombok.EqualsAndHashCode;
 @Schema(name = "AwsConnector", description = "This contains details of the AWS connector")
 public class AwsConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @Valid @NotNull AwsCredentialDTO credential;
+  @Valid AwsSdkClientBackoffStrategyDTO awsSdkClientBackOffStrategyOverride;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
 
@@ -72,6 +74,11 @@ public class AwsConnectorDTO extends ConnectorConfigDTO implements DelegateSelec
                         .config(this.credential.getConfig())
                         .region(this.credential.getTestRegion())
                         .build())
+        .awsSdkClientBackOffStrategyOverride(
+            AwsSdkClientBackoffStrategyOutcomeDTO.builder()
+                .type(this.awsSdkClientBackOffStrategyOverride.getAwsSdkClientBackoffStrategyType())
+                .spec(this.awsSdkClientBackOffStrategyOverride.getBackoffStrategyConfig())
+                .build())
         .delegateSelectors(this.delegateSelectors)
         .executeOnDelegate(this.executeOnDelegate)
         .build();

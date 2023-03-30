@@ -12,9 +12,13 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//960-api-services/src/main/java/io/harness/exception/sanitizer:module",
         "//970-api-services-beans/src/main/java/io/harness/k8s:module",
+        "//970-api-services-beans/src/main/java/io/harness/logging:module",
+        "//980-commons/src/main/java/io/harness/logging:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_zeroturnaround_zt_exec",
     ],
 )
 

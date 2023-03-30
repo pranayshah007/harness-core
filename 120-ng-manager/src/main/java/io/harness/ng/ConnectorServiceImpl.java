@@ -54,8 +54,6 @@ import io.harness.connector.stats.ConnectorStatistics;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.jira.JiraAuthType;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
-import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
-import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -98,6 +96,7 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Slf4j
 @Singleton
@@ -185,18 +184,6 @@ public class ConnectorServiceImpl implements ConnectorService {
     }
   }
 
-  private void applyAdfsAuthFFCheckForServiceNowConnector(ConnectorDTO connectorDTO, String accountIdentifier) {
-    if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof ServiceNowConnectorDTO) {
-      ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
-      ServiceNowConnectorDTO serviceNowConnectorDTO = (ServiceNowConnectorDTO) connectorInfoDTO.getConnectorConfig();
-      if (!isNull(serviceNowConnectorDTO.getAuth())
-          && ServiceNowAuthType.ADFS.equals(serviceNowConnectorDTO.getAuth().getAuthType())
-          && !ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_SERVICENOW_ADFS_AUTH)) {
-        throw new InvalidRequestException("Unsupported servicenow auth type provided : ADFS");
-      }
-    }
-  }
-
   private void applyPatAuthFFCheckForJiraConnector(ConnectorDTO connectorDTO, String accountIdentifier) {
     if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof JiraConnectorDTO) {
       ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
@@ -211,7 +198,6 @@ public class ConnectorServiceImpl implements ConnectorService {
   private ConnectorResponseDTO createInternal(
       ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
-    applyAdfsAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
     applyPatAuthFFCheckForJiraConnector(connectorDTO, accountIdentifier);
     PerpetualTaskId connectorHeartbeatTaskId = null;
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
@@ -317,7 +303,6 @@ public class ConnectorServiceImpl implements ConnectorService {
   @Override
   public ConnectorResponseDTO update(ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
-    applyAdfsAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
     applyPatAuthFFCheckForJiraConnector(connectorDTO, accountIdentifier);
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
@@ -769,13 +754,11 @@ public class ConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier,
-      ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
-      String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
-      Boolean getDistinctFromBranches) {
-    return defaultConnectorService.list(page, size, accountIdentifier, filterProperties, orgIdentifier,
-        projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
-        getDistinctFromBranches);
+  public Page<ConnectorResponseDTO> list(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
+      String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable) {
+    return defaultConnectorService.list(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable);
   }
 
   @Override
@@ -798,13 +781,12 @@ public class ConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public Page<CombineCcmK8sConnectorResponseDTO> listCcmK8S(int page, int size, String accountIdentifier,
+  public Page<CombineCcmK8sConnectorResponseDTO> listCcmK8S(String accountIdentifier,
       ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
       String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
-      Boolean getDistinctFromBranches) {
-    return defaultConnectorService.listCcmK8S(page, size, accountIdentifier, filterProperties, orgIdentifier,
-        projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
-        getDistinctFromBranches);
+      Boolean getDistinctFromBranches, Pageable pageable) {
+    return defaultConnectorService.listCcmK8S(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable);
   }
 
   @Override

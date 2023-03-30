@@ -304,6 +304,11 @@ orchestrationStepConfig:
     liteEngineImage: harness/ci-lite-engine:1.14.22
     isLocal: false
     logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
+    pluginConfig:
+      sscaOrchestrationConfig:
+        image: harness/ssca-plugin:latest
+        entrypoint:
+          - /bin/ssca-plugin
 
 
 shouldDeployWithGitSync: true
@@ -557,7 +562,29 @@ eventsFrameworkSnapshotDebezium:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
-
-allowDifferentReposForPipelineAndInputSets: ${ALLOW_DIFFERENT_REPOS_FOR_PIPELINE_AND_INPUT_SETS:-false}
-
 disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-false}
+
+cfClientConfig:
+  apiKey: ""
+  configUrl: "https://config.feature-flags.uat.harness.io/api/1.0"
+  eventUrl: "https://event.feature-flags.uat.harness.io/api/1.0"
+  analyticsEnabled: true
+  connectionTimeout: 10000
+  readTimeout: 45000
+  bufferSize: 10240
+  retries: 6
+  sleepInterval: 5000
+
+featureFlagConfig:
+  featureFlagSystem: LOCAL
+  syncFeaturesToCF: false
+
+sscaServiceConfig:
+  baseUrl: http://localhost:8186
+  globalToken: "551715ea-ca71-11ec-9d64-0242ac120002" # this is dummy token
+
+pipelineAsyncValidationPoolConfig:
+  corePoolSize: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_CORE_SIZE:-2}
+  maxPoolSize: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_MAX_SIZE:-25}
+  idleTime: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}

@@ -33,7 +33,7 @@ public class ServiceConfigStepParameters implements StepParameters {
   // Todo(Alexei) Remove this when @RecastIgnore annotation is added
   @Override
   public String toViewJson() {
-    return RecastOrchestrationUtils.pruneRecasterAdditions(
+    return RecastOrchestrationUtils.toJson(
         ServiceConfigStepParameters.builder().useFromStage(useFromStage).serviceRef(serviceRef).build());
   }
 }

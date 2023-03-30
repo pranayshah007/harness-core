@@ -25,8 +25,10 @@ import io.harness.delegate.beans.connector.artifactoryconnector.outcome.Artifact
 import io.harness.delegate.beans.connector.artifactoryconnector.outcome.ArtifactoryConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrategyDTO;
 import io.harness.delegate.beans.connector.awsconnector.outcome.AwsConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.awsconnector.outcome.AwsCredentialOutcomeDTO;
+import io.harness.delegate.beans.connector.awsconnector.outcome.AwsSdkClientBackoffStrategyOutcomeDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCredentialsDTO;
@@ -194,6 +196,7 @@ public class ConnectorOutcomeTest {
     classToOutcomeClass.put(ConnectorInfoDTO.class, ConnectorInfoOutcomeDTO.class);
     classToOutcomeClass.put(AwsConnectorDTO.class, AwsConnectorOutcomeDTO.class);
     classToOutcomeClass.put(AwsCredentialDTO.class, AwsCredentialOutcomeDTO.class);
+    classToOutcomeClass.put(AwsSdkClientBackoffStrategyDTO.class, AwsSdkClientBackoffStrategyOutcomeDTO.class);
     classToOutcomeClass.put(AzureAuthCredentialDTO.class, AzureAuthCredentialOutcomeDTO.class);
     classToOutcomeClass.put(AzureAuthDTO.class, AzureAuthOutcomeDTO.class);
     classToOutcomeClass.put(AzureClientKeyCertDTO.class, AzureClientKeyCertOutcomeDTO.class);

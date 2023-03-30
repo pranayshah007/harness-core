@@ -23,13 +23,13 @@ import io.harness.git.model.ChangeType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @OwnedBy(DX)
 public interface ConnectorCrudService {
-  Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier,
-      ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
-      String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
-      Boolean getDistinctFromBranches);
+  Page<ConnectorResponseDTO> list(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
+      String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable);
 
   Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
@@ -76,8 +76,8 @@ public interface ConnectorCrudService {
   void deleteBatch(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiersList);
 
-  Page<CombineCcmK8sConnectorResponseDTO> listCcmK8S(int page, int size, String accountIdentifier,
+  Page<CombineCcmK8sConnectorResponseDTO> listCcmK8S(String accountIdentifier,
       ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
       String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
-      Boolean getDistinctFromBranches);
+      Boolean getDistinctFromBranches, Pageable pageable);
 }

@@ -68,6 +68,7 @@ import io.harness.migrations.all.AmendCorruptedEncryptedServiceVariable;
 import io.harness.migrations.all.ApiKeyLocalToKMSMigration;
 import io.harness.migrations.all.ApiKeysSetNameMigration;
 import io.harness.migrations.all.ArtifactSourceCollectionEnabledMigration;
+import io.harness.migrations.all.BackFillingKeywordsOnWorkflowExecutionCollection;
 import io.harness.migrations.all.CDPaidLicenseToNGMigration;
 import io.harness.migrations.all.CEViewsMigration;
 import io.harness.migrations.all.CleanUpDirectK8sInfraMappingEncryptedFieldsMigration;
@@ -99,12 +100,14 @@ import io.harness.migrations.all.DeleteStaleThirdPartyApiCallLogsMigration;
 import io.harness.migrations.all.DeletedAccountStatusMigration;
 import io.harness.migrations.all.DisableArtifactCollectionForInactiveAccount;
 import io.harness.migrations.all.DisableServiceGuardsWithDeletedConnectorsMigration;
+import io.harness.migrations.all.EncryptDelegateTokenMigration;
 import io.harness.migrations.all.ExecuteWorkflowAbortActionMigration;
 import io.harness.migrations.all.ExecuteWorkflowRollbackActionMigration;
 import io.harness.migrations.all.ExplodeLogMLFeedbackRecordsMigration;
 import io.harness.migrations.all.FetchAndSaveAccounts;
 import io.harness.migrations.all.FetchAndSaveAccounts2;
 import io.harness.migrations.all.FixDuplicatedHarnessGroups;
+import io.harness.migrations.all.ForAllAccountsAddIsCrossGenerationAccessEnabledMigration;
 import io.harness.migrations.all.GCPMarketplaceCustomerMigration;
 import io.harness.migrations.all.GcpConfigMultipleDelegateMigration;
 import io.harness.migrations.all.HelmStateTimeoutMigration;
@@ -150,6 +153,7 @@ import io.harness.migrations.all.UpdateAccountEncryptionClassNames;
 import io.harness.migrations.all.UpdateCorruptedEmptyClusterNameInstanceStatsMigration;
 import io.harness.migrations.all.UpdateCorruptedInstanceStatsMigration;
 import io.harness.migrations.all.UpdateInstanceInfoWithLastArtifactIdMigration;
+import io.harness.migrations.all.UpdateIsCrossGenerationAccessEnabledForAllAccountsMigration;
 import io.harness.migrations.all.UpdateNameInAwsInfrastructureMappingMigration;
 import io.harness.migrations.all.UpdateStaleDefaultAccountIds;
 import io.harness.migrations.all.UpdateWorkflowExecutionAccountId;
@@ -417,6 +421,10 @@ public class MigrationBackgroundList {
         .add(Pair.of(241, CleanupInfraMappingsForDeletedServices.class))
         .add(Pair.of(242, AddIsCrossGenerationAccessEnabledToAccountMigration.class))
         .add(Pair.of(243, ApiKeyLocalToKMSMigration.class))
+        .add(Pair.of(244, ForAllAccountsAddIsCrossGenerationAccessEnabledMigration.class))
+        .add(Pair.of(245, EncryptDelegateTokenMigration.class))
+        .add(Pair.of(246, UpdateIsCrossGenerationAccessEnabledForAllAccountsMigration.class))
+        .add(Pair.of(247, BackFillingKeywordsOnWorkflowExecutionCollection.class))
         .build();
   }
 }

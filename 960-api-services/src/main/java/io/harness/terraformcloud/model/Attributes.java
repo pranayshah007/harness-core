@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import java.util.Map;
 import lombok.Builder;
 
 @OwnedBy(CDP)
@@ -36,5 +35,12 @@ public class Attributes {
   @JsonProperty("target-addrs") private List<String> targets;
   @JsonProperty("has-changes") private boolean hasChanges;
   List<Variable> variables;
-  Map<String, Boolean> actions;
+  private Actions actions;
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  @Builder
+  @lombok.Data
+  public static class Actions {
+    @JsonProperty("is-confirmable") boolean isConfirmable;
+    @JsonProperty("is-discardable") boolean isDiscardable;
+  }
 }

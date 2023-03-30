@@ -104,6 +104,9 @@ public class ArtifactConfigToDelegateReqMapper {
       DockerConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
+    if (artifactConfig.getTagRegex() != null && artifactConfig.getTagRegex().getInputSetValidator() != null) {
+      tagRegex = artifactConfig.getTagRegex().getInputSetValidator().getParameters();
+    }
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
@@ -154,6 +157,10 @@ public class ArtifactConfigToDelegateReqMapper {
         ? StringUtils.isBlank(artifactConfig.getVersion().getValue()) ? "" : artifactConfig.getVersion().getValue()
         : "";
 
+    if (artifactConfig.getVersionRegex() != null && artifactConfig.getVersionRegex().getInputSetValidator() != null) {
+      versionRegex = artifactConfig.getVersionRegex().getInputSetValidator().getParameters();
+    }
+
     // If both version and versionRegex are empty, versionRegex is latest among all versions.
     if (isEmpty(version) && isEmpty(versionRegex)) {
       versionRegex = "*";
@@ -174,19 +181,28 @@ public class ArtifactConfigToDelegateReqMapper {
 
     String version = artifactConfig.getVersion().getValue();
 
+    if (artifactConfig.getVersionRegex() != null && artifactConfig.getVersionRegex().getInputSetValidator() != null) {
+      versionRegex = artifactConfig.getVersionRegex().getInputSetValidator().getParameters();
+    }
+
     if (StringUtils.isBlank(version)) {
       version = "";
     }
 
     // If both version and versionRegex are empty, throw exception.
     if (StringUtils.isAllBlank(version, versionRegex)) {
-      throw new InvalidRequestException("Please specify version or versionRegex. Both cannot be empty.");
+      versionRegex = "*";
+    }
+
+    String scope = null;
+    if (artifactConfig.getScope() != null) {
+      scope = artifactConfig.getScope().getValue();
     }
 
     return ArtifactDelegateRequestUtils.getAzureArtifactsDelegateRequest(artifactConfig.getPackageName().getValue(),
         artifactConfig.getPackageType().getValue(), version, versionRegex, artifactConfig.getProject().getValue(),
-        artifactConfig.getScope().getValue(), artifactConfig.getFeed().getValue(), connectorRef, connectorDTO,
-        encryptedDataDetails, ArtifactSourceType.AZURE_ARTIFACTS);
+        scope, artifactConfig.getFeed().getValue(), connectorRef, connectorDTO, encryptedDataDetails,
+        ArtifactSourceType.AZURE_ARTIFACTS);
   }
 
   public AMIArtifactDelegateRequest getAMIDelegateRequest(AMIArtifactConfig artifactConfig,
@@ -197,6 +213,10 @@ public class ArtifactConfigToDelegateReqMapper {
       versionRegex = "";
     }
 
+    if (artifactConfig.getVersionRegex() != null && artifactConfig.getVersionRegex().getInputSetValidator() != null) {
+      versionRegex = artifactConfig.getVersionRegex().getInputSetValidator().getParameters();
+    }
+
     String version = artifactConfig.getVersion().getValue();
 
     if (StringUtils.isBlank(version)) {
@@ -205,7 +225,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
     // If both version and versionRegex are empty, throw exception.
     if (StringUtils.isAllBlank(version, versionRegex)) {
-      throw new InvalidRequestException("Please specify version or versionRegex. Both cannot be empty.");
+      versionRegex = "*";
     }
 
     return ArtifactDelegateRequestUtils.getAMIArtifactDelegateRequest(artifactConfig.getTags().getValue(),
@@ -218,6 +238,9 @@ public class ArtifactConfigToDelegateReqMapper {
     String artifactPath = artifactConfig.getArtifactPath() != null ? artifactConfig.getArtifactPath().getValue() : "";
     String jobName = artifactConfig.getJobName() != null ? artifactConfig.getJobName().getValue() : "";
     String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
+    if (artifactConfig.getBuild().getInputSetValidator() != null) {
+      buildNumber = artifactConfig.getBuild().getInputSetValidator().getParameters();
+    }
     return ArtifactDelegateRequestUtils.getJenkinsDelegateArtifactRequest(connectorRef, connectorDTO,
         encryptedDataDetails, ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath),
         buildNumber);
@@ -229,6 +252,9 @@ public class ArtifactConfigToDelegateReqMapper {
                                                                           : Collections.emptyList();
     String planKey = artifactConfig.getPlanKey() != null ? artifactConfig.getPlanKey().getValue() : "";
     String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
+    if (artifactConfig.getBuild().getInputSetValidator() != null) {
+      buildNumber = artifactConfig.getBuild().getInputSetValidator().getParameters();
+    }
     return ArtifactDelegateRequestUtils.getBambooDelegateArtifactRequest(connectorRef, connectorDTO,
         encryptedDataDetails, ArtifactSourceType.BAMBOO, planKey, artifactPath, buildNumber);
   }
@@ -242,21 +268,41 @@ public class ArtifactConfigToDelegateReqMapper {
       timeout = artifactConfig.getTimeout().getValue().getTimeoutInMillis();
     }
 
+    String versionRegex = artifactConfig.getVersionRegex().getValue();
+
+    if (StringUtils.isBlank(versionRegex)) {
+      versionRegex = "";
+    }
+
+    if (artifactConfig.getVersionRegex().getInputSetValidator() != null) {
+      versionRegex = artifactConfig.getVersionRegex().getInputSetValidator().getParameters();
+    }
+
     String script = customScriptInlineSource.getScript().fetchFinalValue().toString();
     return ArtifactDelegateRequestUtils.getCustomDelegateRequest(
         artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().fetchFinalValue().toString(),
-        artifactConfig.getVersionRegex().getValue(),
+        versionRegex,
         artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource().getType(),
         ArtifactSourceType.CUSTOM_ARTIFACT,
         artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue(), script,
         NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
-        NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
+        NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L),
+        artifactConfig.getVersion().fetchFinalValue().toString(),
         ambiance != null ? AmbianceUtils.obtainCurrentRuntimeId(ambiance) : "", timeout,
         AmbianceUtils.getAccountId(ambiance));
   }
 
   public CustomArtifactDelegateRequest getCustomDelegateRequest(CustomArtifactConfig artifactConfig, Ambiance ambiance,
       DelegateMetricsService delegateMetricsService, SecretManagerClientService ngSecretService) {
+    String versionRegex = artifactConfig.getVersionRegex().getValue();
+
+    if (StringUtils.isBlank(versionRegex)) {
+      versionRegex = "";
+    }
+
+    if (artifactConfig.getVersionRegex().getInputSetValidator() != null) {
+      versionRegex = artifactConfig.getVersionRegex().getInputSetValidator().getParameters();
+    }
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     int secretFunctorToken = HashGenerator.generateIntegerHash();
     CustomScriptInlineSource customScriptInlineSource = getCustomScriptInlineSource(artifactConfig);
@@ -273,7 +319,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
     return ArtifactDelegateRequestUtils.getCustomDelegateRequest(
         artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().fetchFinalValue().toString(),
-        artifactConfig.getVersionRegex().getValue(),
+        versionRegex,
         artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource().getType(),
         ArtifactSourceType.CUSTOM_ARTIFACT,
         artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue(), script,
@@ -344,6 +390,10 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all gcr artifacts.
     String tagRegex = gcrArtifactConfig.getTagRegex() != null ? gcrArtifactConfig.getTagRegex().getValue() : "";
     String tag = gcrArtifactConfig.getTag() != null ? gcrArtifactConfig.getTag().getValue() : "";
+
+    if (gcrArtifactConfig.getTagRegex() != null && gcrArtifactConfig.getTagRegex().getInputSetValidator() != null) {
+      tagRegex = gcrArtifactConfig.getTagRegex().getInputSetValidator().getParameters();
+    }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
@@ -357,6 +407,11 @@ public class ArtifactConfigToDelegateReqMapper {
     String versionRegex =
         garArtifactConfig.getVersionRegex() != null ? garArtifactConfig.getVersionRegex().getValue() : "";
     String version = garArtifactConfig.getVersion() != null ? garArtifactConfig.getVersion().getValue() : "";
+
+    if (garArtifactConfig.getVersionRegex() != null
+        && garArtifactConfig.getVersionRegex().getInputSetValidator() != null) {
+      versionRegex = garArtifactConfig.getVersionRegex().getInputSetValidator().getParameters();
+    }
     if (StringUtils.isBlank(version) && StringUtils.isBlank(versionRegex)) {
       versionRegex = "/*";
     }
@@ -371,6 +426,10 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all ecr artifacts.
     String tagRegex = ecrArtifactConfig.getTagRegex() != null ? ecrArtifactConfig.getTagRegex().getValue() : "";
     String tag = ecrArtifactConfig.getTag() != null ? ecrArtifactConfig.getTag().getValue() : "";
+
+    if (ecrArtifactConfig.getTagRegex() != null && ecrArtifactConfig.getTagRegex().getInputSetValidator() != null) {
+      tagRegex = ecrArtifactConfig.getTagRegex().getInputSetValidator().getParameters();
+    }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
@@ -384,6 +443,10 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
+
+    if (artifactConfig.getTagRegex() != null && artifactConfig.getTagRegex().getInputSetValidator() != null) {
+      tagRegex = artifactConfig.getTagRegex().getInputSetValidator().getParameters();
+    }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
@@ -441,6 +504,10 @@ public class ArtifactConfigToDelegateReqMapper {
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
 
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
+
+    if (artifactConfig.getTagRegex() != null && artifactConfig.getTagRegex().getInputSetValidator() != null) {
+      tagRegex = artifactConfig.getTagRegex().getInputSetValidator().getParameters();
+    }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
@@ -491,6 +558,10 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
+
+    if (artifactConfig.getTagRegex() != null && artifactConfig.getTagRegex().getInputSetValidator() != null) {
+      tagRegex = artifactConfig.getTagRegex().getInputSetValidator().getParameters();
+    }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
@@ -530,6 +601,9 @@ public class ArtifactConfigToDelegateReqMapper {
     String tagRegex =
         ParameterField.isNull(acrArtifactConfig.getTagRegex()) ? "" : acrArtifactConfig.getTagRegex().getValue();
     String tag = ParameterField.isNull(acrArtifactConfig.getTag()) ? "" : acrArtifactConfig.getTag().getValue();
+    if (acrArtifactConfig.getTagRegex() != null && acrArtifactConfig.getTagRegex().getInputSetValidator() != null) {
+      tagRegex = acrArtifactConfig.getTagRegex().getInputSetValidator().getParameters();
+    }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }

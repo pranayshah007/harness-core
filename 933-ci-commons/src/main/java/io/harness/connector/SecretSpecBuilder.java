@@ -127,19 +127,20 @@ public class SecretSpecBuilder {
             secretVariableDetail.getSecretVariableDTO().getName(),
             secretVariableDetail.getSecretVariableDTO().getType(),
             secretVariableDetail.getSecretVariableDTO().getSecret().toSecretRefStringValue());
+        String validK8SecretName = getValidK8SecretIdentifier(secretVariableDTO.getName());
         switch (secretVariableDTO.getType()) {
           case FILE:
-            data.put(secretVariableDTO.getName(),
+            data.put(validK8SecretName,
                 SecretParams.builder()
-                    .secretKey(SECRET_KEY + secretVariableDTO.getName())
+                    .secretKey(SECRET_KEY + validK8SecretName)
                     .type(FILE)
                     .value(encodeBase64(secretVariableDTO.getSecret().getDecryptedValue()))
                     .build());
             break;
           case TEXT:
-            data.put(secretVariableDTO.getName(),
+            data.put(validK8SecretName,
                 SecretParams.builder()
-                    .secretKey(SECRET_KEY + secretVariableDTO.getName())
+                    .secretKey(SECRET_KEY + validK8SecretName)
                     .type(TEXT)
                     .value(encodeBase64(secretVariableDTO.getSecret().getDecryptedValue()))
                     .build());
@@ -753,5 +754,12 @@ public class SecretSpecBuilder {
   public static boolean isScmConnectorType(ConnectorType type) {
     return type == GITHUB || type == AZURE_REPO || type == GITLAB || type == BITBUCKET || type == CODECOMMIT
         || type == GIT;
+  }
+
+  private String getValidK8SecretIdentifier(String identifier) {
+    if (isEmpty(identifier)) {
+      return identifier;
+    }
+    return identifier.replaceAll("[^_a-zA-Z0-9]", "_");
   }
 }

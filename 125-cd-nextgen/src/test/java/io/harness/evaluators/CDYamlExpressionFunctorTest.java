@@ -9,6 +9,7 @@ package io.harness.evaluators;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.HINGER;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -81,5 +82,36 @@ public class CDYamlExpressionFunctorTest extends CategoryTest {
     assertThat(object).isInstanceOf(HashMap.class);
     Map<String, Object> serviceMap = (Map<String, Object>) object;
     assertThat(serviceMap.keySet().size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetYamlMapWithMultiServiceEnv() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("inputset/multiServiceEnvPipeline.yaml");
+    String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
+    YamlField yamlField = YamlUtils.readTree(yamlContent);
+
+    CDYamlExpressionFunctor functor = CDYamlExpressionFunctor.builder().build();
+    List<String> fqnList = new LinkedList<>();
+    Map<String, Map<String, Object>> fqnToValueMap = new HashMap<>();
+    Map<String, Object> contextMap =
+        functor.getYamlMap(yamlField.getNode().getField(YAMLFieldNameConstants.PIPELINE), fqnToValueMap, fqnList);
+    assertThat(!contextMap.isEmpty()).isTrue();
+    assertThat(
+        fqnToValueMap.containsKey("pipeline.stages.dep.spec.environments.values.qa.environmentInputs.variables"));
+    assertThat(fqnToValueMap.containsKey(
+        "pipeline.stages.dep.spec.services.values.nginx.serviceInputs.serviceDefinition.spec.artifacts.primary"));
+
+    Map<String, Object> pipelineMap = (Map<String, Object>) contextMap.get("pipeline");
+    Map<String, Object> stagesMap = (Map<String, Object>) pipelineMap.get("stages");
+    Map<String, Object> stage1Map = (Map<String, Object>) stagesMap.get("dep");
+    Map<String, Object> stage1SpecMap = (Map<String, Object>) stage1Map.get("spec");
+    Map<String, Object> stage1ServicesMap = (Map<String, Object>) stage1SpecMap.get("services");
+    Map<String, Object> stage1ServicesValuesMap = (Map<String, Object>) stage1ServicesMap.get("values");
+    assertThat(stage1ServicesValuesMap.size()).isEqualTo(2);
+    assertThat(stage1ServicesValuesMap.get("nginx")).isNotNull();
+    assertThat(stage1ServicesValuesMap.get("serInput1")).isNotNull();
   }
 }

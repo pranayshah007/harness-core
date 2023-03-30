@@ -20,9 +20,11 @@ delayQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 8
 delayQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 executionInputInstance {"name": "expireAt_1", "background": true, "expireAfterSeconds": 0} {"expireAt": 1}
 executionInputInstance {"name": "nodeExecutionId_1", "unique": true} {"nodeExecutionId": 1}
+executionSweepingOutput {"name": "planExecutionId_fully_qualified_name_createdAt_Idx", "background": true} {"planExecutionId": 1, "fullyQualifiedName": 1, "createdAt": -1}
 executionSweepingOutput {"name": "producedByRuntime_Idx", "background": true} {"producedBy.runtimeId": 1}
 executionSweepingOutput {"name": "unique_levelRuntimeIdUniqueIdx2", "unique": true} {"planExecutionId": 1, "levelRuntimeIdIdx": 1, "name": 1}
 executionSweepingOutput {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+expressionUsage {"name": "accountId_orgId_projectId_pipelineId", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineIdentifier": 1}
 filters {"name": "unique_accountId_orgId_projectId_name_type_Index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "name": 1, "filterType": 1}
 filters {"name": "unique_accountId_organizationId_projectId_type", "unique": true} {"fullyQualifiedIdentifier": 1, "filterType": 1}
 gitProcessRequestSdk {"name": "accountId_repo_branch_commit_index", "background": true} {"accountId": 1, "repoUrl": 1, "branch": 1, "commitId": 1}
@@ -63,6 +65,7 @@ orchestrationEventLog {"name": "validUntil_1", "background": true, "expireAfterS
 outboxEvents {"name": "blocked_createdAt_nextUnblockAttemptAt_outbox_Idx", "background": true} {"blocked": 1, "createdAt": 1, "nextUnblockAttemptAt": 1}
 outboxEvents {"name": "eventType_blocked_outbox_Idx", "background": true} {"eventType": 1, "blocked": 1}
 outcomeInstances {"name": "planExecutionIdProducedByRuntimeIdCreatedAtIdx", "background": true} {"planExecutionId": 1, "producedBy.runtimeId": 1, "createdAt": -1}
+outcomeInstances {"name": "planExecutionId_fully_qualified_name_createdAt", "background": true} {"planExecutionId": 1, "fullyQualifiedName": 1, "createdAt": -1}
 outcomeInstances {"name": "producedByRuntimeIdIdx", "background": true} {"producedBy.runtimeId": 1}
 outcomeInstances {"name": "unique_levelRuntimeIdUniqueIdx", "unique": true} {"planExecutionId": 1, "levelRuntimeIdIdx": 1, "name": 1}
 outcomeInstances {"name": "unique_producedBySetupIdRuntimeIdIdx", "unique": true} {"planExecutionId": 1, "producedBy.setupId": 1, "producedBy.runtimeId": 1, "name": 1}
@@ -77,6 +80,8 @@ pipelinesPMS {"name": "accountId_orgId_projectId_name_repo_identifier_idx", "bac
 pipelinesPMS {"name": "accountId_organizationId_projectId_lastUpdatedAt", "background": true} {"accountId": 1, "orgIdentifier": 1, "lastUpdatedAt": 1, "projectIdentifier": 1}
 pipelinesPMS {"name": "accountId_repoURL_filePath", "background": true} {"accountId": 1, "repoURL": 1, "filePath": 1}
 pipelinesPMS {"name": "unique_accountId_organizationId_projectId_pipelineId_repo_branch", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "yamlGitConfigRef": 1, "branch": 1}
+planExecutionExpansions {"name": "planExecutionId_1", "background": true} {"planExecutionId": 1}
+planExecutionExpansions {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 planExecutions {"name": "accountId_status_createdAt_idx", "background": true} {"setupAbstractions.accountId": 1, "status": 1, "createdAt": 1}
 planExecutions {"name": "exec_tag_status_idx", "background": true} {"metadata.triggerInfo.triggeredBy.extraInfo.execution_trigger_tag_needed_for_abort": 1, "status": 1, "createdAt": -1}
 planExecutions {"name": "status_idx", "background": true} {"status": 1}

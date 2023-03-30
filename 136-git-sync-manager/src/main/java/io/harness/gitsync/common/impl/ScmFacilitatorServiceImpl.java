@@ -31,6 +31,7 @@ import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.AccountId;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -38,7 +39,6 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.git.GitClientHelper;
-import io.harness.gitsync.GitSyncModule;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.caching.beans.CacheDetails;
 import io.harness.gitsync.caching.beans.GitFileCacheDeleteResult;
@@ -84,8 +84,9 @@ import io.harness.gitsync.common.scmerrorhandling.ScmApiErrorHandlingHelper;
 import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
+import io.harness.gitsync.core.beans.GitBatchFileFetchRunnableParams;
 import io.harness.gitsync.core.beans.GitFileFetchRunnableParams;
-import io.harness.gitsync.core.runnable.GitFileFetchRunnable;
+import io.harness.gitsync.core.runnable.GitBackgroundCacheRefreshHelper;
 import io.harness.gitsync.utils.GitProviderUtils;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.ng.beans.PageRequest;
@@ -115,7 +116,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -132,26 +132,26 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   NGFeatureFlagHelperService ngFeatureFlagHelperService;
   GitClientEnabledHelper gitClientEnabledHelper;
   GitFileCacheService gitFileCacheService;
-  ExecutorService executor;
   GitFilePathHelper gitFilePathHelper;
   DelegateServiceGrpcClient delegateServiceGrpcClient;
+  GitBackgroundCacheRefreshHelper gitBackgroundCacheRefreshHelper;
 
   @Inject
   public ScmFacilitatorServiceImpl(GitSyncConnectorHelper gitSyncConnectorHelper,
       @Named("connectorDecoratorService") ConnectorService connectorService,
       ScmOrchestratorService scmOrchestratorService, NGFeatureFlagHelperService ngFeatureFlagHelperService,
       GitClientEnabledHelper gitClientEnabledHelper, GitFileCacheService gitFileCacheService,
-      @Named(GitSyncModule.GITX_BACKGROUND_CACHE_UPDATE_EXECUTOR_NAME) ExecutorService executor,
-      GitFilePathHelper gitFilePathHelper, DelegateServiceGrpcClient delegateServiceGrpcClient) {
+      GitFilePathHelper gitFilePathHelper, DelegateServiceGrpcClient delegateServiceGrpcClient,
+      GitBackgroundCacheRefreshHelper gitBackgroundCacheRefreshHelper) {
     this.gitSyncConnectorHelper = gitSyncConnectorHelper;
     this.connectorService = connectorService;
     this.scmOrchestratorService = scmOrchestratorService;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.gitClientEnabledHelper = gitClientEnabledHelper;
     this.gitFileCacheService = gitFileCacheService;
-    this.executor = executor;
     this.gitFilePathHelper = gitFilePathHelper;
     this.delegateServiceGrpcClient = delegateServiceGrpcClient;
+    this.gitBackgroundCacheRefreshHelper = gitBackgroundCacheRefreshHelper;
   }
 
   @Override
@@ -356,13 +356,16 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                     .branch(scmGetFileByBranchRequestDTO.getBranchName())
                     .commitId(null)
                     .filepath(scmGetFileByBranchRequestDTO.getFilePath())
+                    .getOnlyFileContent(scmGetFileByBranchRequestDTO.isGetOnlyFileContent())
                     .build()),
             scmConnector);
 
-    processGetFileOperationResponse(scope, gitFileResponse, scmConnector,
-        scmGetFileByBranchRequestDTO.getConnectorRef(), scmGetFileByBranchRequestDTO.getRepoName(),
-        scmGetFileByBranchRequestDTO.getFilePath(), scmGetFileByBranchRequestDTO.getBranchName(),
-        scmGetFileByBranchRequestDTO.isGetOnlyFileContent());
+    checkIfErrorResponse(scope, gitFileResponse, scmConnector, scmGetFileByBranchRequestDTO.getConnectorRef(),
+        scmGetFileByBranchRequestDTO.getRepoName(), scmGetFileByBranchRequestDTO.getFilePath());
+
+    cacheGetFileOperationResponse(scope, gitFileResponse, scmConnector, scmGetFileByBranchRequestDTO.getConnectorRef(),
+        scmGetFileByBranchRequestDTO.getRepoName(), scmGetFileByBranchRequestDTO.getFilePath(),
+        scmGetFileByBranchRequestDTO.getBranchName(), scmGetFileByBranchRequestDTO.isGetOnlyFileContent());
 
     return getScmGetFileResponseDTO(gitFileResponse);
   }
@@ -717,6 +720,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         }
       case AZURE_REPO:
         return GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas(gitConnectionUrl);
+      case GITLAB:
+        return GitClientHelper.getCompleteHTTPUrlForGitLab(gitConnectionUrl);
       default:
         throw new InvalidRequestException(
             format("Connector of given type : %s isn't supported", scmConnector.getConnectorType()));
@@ -737,18 +742,32 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                      .build())
           .collect(Collectors.toList());
     }
-
     if (isNotEmpty(gitRepository.getName())) {
       return Collections.singletonList(GitRepositoryResponseDTO.builder().name(gitRepository.getName()).build());
     } else if (isNotEmpty(gitRepository.getOrg()) && isNamespaceNotEmpty(response)) {
+      return prepareListRepoResponseWithNamespace(scmConnector, response, gitRepository);
+    } else {
       return emptyIfNull(response.getReposList())
           .stream()
-          .filter(repository -> repository.getNamespace().equals(gitRepository.getOrg()))
           .map(repository -> GitRepositoryResponseDTO.builder().name(repository.getName()).build())
+          .collect(Collectors.toList());
+    }
+  }
+
+  private List<GitRepositoryResponseDTO> prepareListRepoResponseWithNamespace(
+      ScmConnector scmConnector, GetUserReposResponse response, GitRepositoryDTO gitRepository) {
+    if (ConnectorType.GITLAB.equals(scmConnector.getConnectorType())) {
+      return emptyIfNull(response.getReposList())
+          .stream()
+          .map(repository
+              -> GitRepositoryResponseDTO.builder()
+                     .name(GitProviderUtils.buildRepoForGitlab(repository.getNamespace(), repository.getName()))
+                     .build())
           .collect(Collectors.toList());
     } else {
       return emptyIfNull(response.getReposList())
           .stream()
+          .filter(repository -> repository.getNamespace().equals(gitRepository.getOrg()))
           .map(repository -> GitRepositoryResponseDTO.builder().name(repository.getName()).build())
           .collect(Collectors.toList());
     }
@@ -864,7 +883,6 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         .repoName(repoName)
         .scope(scope)
         .scmConnector(scmConnector)
-        .scmFacilitatorService(this)
         .build();
   }
 
@@ -976,26 +994,35 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       Map<GetBatchFileRequestIdentifier, GitFileResponse> gitFileResponseMap,
       Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestMap) {
     Map<ScmGetBatchFileRequestIdentifier, ScmGetFileResponseV2DTO> finalResponseMap = new HashMap<>();
+    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> requestsToCacheInBackground = new HashMap<>();
 
     gitFileResponseMap.forEach((requestIdentifier, gitFileResponse) -> {
       GitFileRequestV2 gitFileRequest = gitFileRequestMap.get(requestIdentifier);
       ScmGetBatchFileRequestIdentifier identifier =
           ScmGetBatchFileRequestIdentifier.fromGetBatchFileRequestIdentifier(requestIdentifier);
       try {
-        processGetFileOperationResponse(gitFileRequest.getScope(), gitFileResponse, gitFileRequest.getScmConnector(),
-            gitFileRequest.getConnectorRef(), gitFileRequest.getRepo(), gitFileRequest.getFilepath(),
-            gitFileRequest.getBranch(), gitFileRequest.isGetOnlyFileContent());
+        checkIfErrorResponse(gitFileRequest.getScope(), gitFileResponse, gitFileRequest.getScmConnector(),
+            gitFileRequest.getConnectorRef(), gitFileRequest.getRepo(), gitFileRequest.getFilepath());
+        if (gitFileRequest.isGetOnlyFileContent()) {
+          requestsToCacheInBackground.put(requestIdentifier, gitFileRequest);
+        } else {
+          upsertGetFileCache(accountIdentifier, gitFileResponse, gitFileRequest.getScmConnector(),
+              gitFileRequest.getRepo(), gitFileRequest.getBranch(), gitFileRequest.getFilepath());
+        }
         finalResponseMap.put(identifier, getScmGetFileResponseDTO(gitFileResponse).toScmGetFileResponseV2DTO());
       } catch (Exception exception) {
         finalResponseMap.put(identifier, prepareScmGetFileResponseV2FromException(exception));
       }
     });
 
+    // For requests with get-only-file-content param, we cannot update cache directly as we don't have required commit
+    // id Thus, we trigger background cache update thread for it
+    triggerBackgroundCacheUpdateForRequestsWithGetOnlyFileContent(accountIdentifier, requestsToCacheInBackground);
     return ScmGetBatchFilesResponseDTO.builder().scmGetFileResponseV2DTOMap(finalResponseMap).build();
   }
 
-  private void processGetFileOperationResponse(Scope scope, GitFileResponse gitFileResponse, ScmConnector scmConnector,
-      String connectorRef, String repoName, String filepath, String requestBranch, boolean getOnlyFileContent) {
+  private void checkIfErrorResponse(Scope scope, GitFileResponse gitFileResponse, ScmConnector scmConnector,
+      String connectorRef, String repoName, String filepath) {
     if (ScmApiErrorHandlingHelper.isFailureResponse(gitFileResponse.getStatusCode(), scmConnector.getConnectorType())) {
       try {
         ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_FILE, scmConnector.getConnectorType(),
@@ -1014,29 +1041,37 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         throw wingsException;
       }
     }
+  }
 
-    // We trigger get-file call in BG to update cache in case of get-only-file-content call
+  private void cacheGetFileOperationResponse(Scope scope, GitFileResponse gitFileResponse, ScmConnector scmConnector,
+      String connectorRef, String repoName, String filepath, String requestBranch, boolean getOnlyFileContent) {
     if (getOnlyFileContent) {
-      executor.execute(new GitFileFetchRunnable(getGitFileFetchRunnableParams(
-          scope, repoName, gitFileResponse.getBranch(), filepath, connectorRef, scmConnector)));
+      gitBackgroundCacheRefreshHelper.submitTask(getGitFileFetchRunnableParams(
+          scope, repoName, gitFileResponse.getBranch(), filepath, connectorRef, scmConnector));
     } else {
-      try {
-        gitFileCacheService.upsertCache(GitFileCacheKey.builder()
-                                            .accountIdentifier(scope.getAccountIdentifier())
-                                            .completeFilePath(filepath)
-                                            .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
-                                            .repoName(repoName)
-                                            .ref(gitFileResponse.getBranch())
-                                            .isDefaultBranch(isEmpty(requestBranch))
-                                            .build(),
-            GitFileCacheObject.builder()
-                .fileContent(gitFileResponse.getContent())
-                .commitId(gitFileResponse.getCommitId())
-                .objectId(gitFileResponse.getObjectId())
-                .build());
-      } catch (Exception exception) {
-        handleUpsertCacheFailure(exception);
-      }
+      upsertGetFileCache(
+          scope.getAccountIdentifier(), gitFileResponse, scmConnector, repoName, requestBranch, filepath);
+    }
+  }
+
+  private void upsertGetFileCache(String accountIdentifier, GitFileResponse gitFileResponse, ScmConnector scmConnector,
+      String repoName, String requestBranch, String filepath) {
+    try {
+      gitFileCacheService.upsertCache(GitFileCacheKey.builder()
+                                          .accountIdentifier(accountIdentifier)
+                                          .completeFilePath(filepath)
+                                          .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
+                                          .repoName(repoName)
+                                          .ref(gitFileResponse.getBranch())
+                                          .isDefaultBranch(isEmpty(requestBranch))
+                                          .build(),
+          GitFileCacheObject.builder()
+              .fileContent(gitFileResponse.getContent())
+              .commitId(gitFileResponse.getCommitId())
+              .objectId(gitFileResponse.getObjectId())
+              .build());
+    } catch (Exception exception) {
+      handleUpsertCacheFailure(exception);
     }
   }
 
@@ -1073,5 +1108,34 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           scmGetBatchFilesByBranchRequestDTO.getScmGetFileByBranchRequestDTOMap().size(),
           MAX_ALLOWED_BATCH_FILE_REQUESTS_COUNT);
     }
+  }
+
+  private GitBatchFileFetchRunnableParams getGitBatchFileFetchRunnableParams(
+      String accountIdentifier, Map<GetBatchFileRequestIdentifier, GitFileRequestV2> requestMap) {
+    Map<GetBatchFileRequestIdentifier, GitFileFetchRunnableParams> gitFileFetchRunnableParamsMap = new HashMap<>();
+    requestMap.forEach((requestIdentifier, request) -> {
+      gitFileFetchRunnableParamsMap.put(requestIdentifier,
+          GitFileFetchRunnableParams.builder()
+              .scmConnector(request.getScmConnector())
+              .scope(request.getScope())
+              .filePath(request.getFilepath())
+              .repoName(request.getRepo())
+              .connectorRef(request.getConnectorRef())
+              .branchName(request.getBranch())
+              .build());
+    });
+    return GitBatchFileFetchRunnableParams.builder()
+        .accountIdentifier(accountIdentifier)
+        .gitFileFetchRunnableParamsMap(gitFileFetchRunnableParamsMap)
+        .build();
+  }
+
+  private void triggerBackgroundCacheUpdateForRequestsWithGetOnlyFileContent(
+      String accountIdentifier, Map<GetBatchFileRequestIdentifier, GitFileRequestV2> requestsToCache) {
+    if (requestsToCache.isEmpty()) {
+      return;
+    }
+    gitBackgroundCacheRefreshHelper.submitBatchTask(
+        getGitBatchFileFetchRunnableParams(accountIdentifier, requestsToCache));
   }
 }

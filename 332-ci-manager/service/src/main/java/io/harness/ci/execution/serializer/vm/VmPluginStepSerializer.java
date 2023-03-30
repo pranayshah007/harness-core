@@ -9,6 +9,7 @@ package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
+import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BUCKET;
@@ -21,6 +22,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ENV_PREF
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STACK_ID;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -37,6 +39,8 @@ import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CICacheIntelligenceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.serializer.SerializerUtils;
 import io.harness.ci.utils.CIStepInfoUtils;
@@ -49,6 +53,7 @@ import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep.VmRunStepBuilder;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.iacm.execution.IACMStepsUtils;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -67,6 +72,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -74,13 +80,21 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class VmPluginStepSerializer {
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
+  @Inject CIExecutionConfigService ciExecutionConfigService;
   @Inject ConnectorUtils connectorUtils;
   @Inject HarnessImageUtils harnessImageUtils;
   @Inject CIStepInfoUtils ciStepInfoUtils;
+  @Inject private IACMStepsUtils iacmStepsUtils;
+  @Inject private CIFeatureFlagService featureFlagService;
 
   public VmStepInfo serialize(PluginStepInfo pluginStepInfo, StageInfraDetails stageInfraDetails, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance, List<CIRegistry> registries,
       ExecutionSource executionSource) {
+    if (pluginStepInfo.getEnvVariables() != null && pluginStepInfo.getEnvVariables().getValue() != null
+        && pluginStepInfo.getEnvVariables().getValue().get(STACK_ID) != null
+        && !Objects.equals(pluginStepInfo.getEnvVariables().getValue().get(STACK_ID).getValue(), "")) {
+      return iacmStepsUtils.injectIACMInfo(ambiance, pluginStepInfo, stageInfraDetails, parameterFieldTimeout);
+    }
     Map<String, JsonNode> settings =
         resolveJsonNodeMapParameter("settings", "Plugin", identifier, pluginStepInfo.getSettings(), false);
     Map<String, String> envVars = new HashMap<>();
@@ -118,13 +132,23 @@ public class VmPluginStepSerializer {
       if (isNotEmpty(uses)) {
         log.warn("Both image and uses are set for plugin step. Ignoring uses field");
       }
+
+      String accountID = AmbianceUtils.getAccountId(ambiance);
+      if (isGitCloneStep(identifier, pluginStepInfo)
+          && CIStepInfoUtils.canRunVmStepOnHost(
+              GIT_CLONE, stageInfraDetails, accountID, ciExecutionConfigService, featureFlagService)) {
+        String name = ciExecutionConfigService.getContainerlessPluginNameForVM(GIT_CLONE);
+        List<String> entrypoint = Arrays.asList("plugin", "-kind", "harness", "-name", name);
+        return convertContainerlessStep(identifier, entrypoint, envVars, timeout, pluginStepInfo);
+      }
       return convertContainerStep(
           ambiance, identifier, image, connectorIdentifier, envVars, timeout, stageInfraDetails, pluginStepInfo);
     } else if (isNotEmpty(uses)) {
       if (stageInfraDetails.getType() != StageInfraDetails.Type.DLITE_VM) {
         throw new CIStageExecutionException(format("uses field is applicable only for cloud builds"));
       }
-      return convertContainerlessStep(identifier, uses, envVars, timeout, pluginStepInfo);
+      List<String> entrypoint = Arrays.asList("plugin", "-kind", "harness", "-repo", uses);
+      return convertContainerlessStep(identifier, entrypoint, envVars, timeout, pluginStepInfo);
     } else {
       throw new CIStageExecutionException("Either image or uses field needs to be set");
     }
@@ -139,12 +163,11 @@ public class VmPluginStepSerializer {
 
     // if the plugin type is git clone use default harnessImage Connector
     // else if the connector is given in plugin, use that.
-    if (identifier.equals(GIT_CLONE_STEP_ID) && pluginStepInfo.isHarnessManagedImage()) {
-      String gitImage = ciExecutionServiceConfig.getStepConfig().getVmImageConfig().getGitClone();
+    if (isGitCloneStep(identifier, pluginStepInfo)) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       ConnectorDetails harnessInternalImageConnector =
           harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, stageInfraDetails);
-      image = IntegrationStageUtils.getFullyQualifiedImageName(gitImage, harnessInternalImageConnector);
+      image = IntegrationStageUtils.getFullyQualifiedImageName(image, harnessInternalImageConnector);
       pluginStepBuilder.image(image);
       pluginStepBuilder.imageConnector(harnessInternalImageConnector);
     } else if (!StringUtils.isEmpty(image) && !StringUtils.isEmpty(connectorIdentifier)) {
@@ -163,16 +186,16 @@ public class VmPluginStepSerializer {
       }
     }
     pluginStepBuilder.privileged(RunTimeInputHandler.resolveBooleanParameter(pluginStepInfo.getPrivileged(), false));
+    if (pluginStepInfo.getRunAsUser() != null && pluginStepInfo.getRunAsUser().getValue() != null) {
+      pluginStepBuilder.runAsUser(pluginStepInfo.getRunAsUser().getValue().toString());
+    }
     return pluginStepBuilder.build();
   }
 
-  private VmRunStep convertContainerlessStep(
-      String identifier, String uses, Map<String, String> envVars, long timeout, PluginStepInfo pluginStepInfo) {
-    VmRunStepBuilder stepBuilder = VmRunStep.builder()
-                                       .entrypoint(Arrays.asList("plugin", "-kind", "harness", "-repo"))
-                                       .command(uses)
-                                       .envVariables(envVars)
-                                       .timeoutSecs(timeout);
+  private VmRunStep convertContainerlessStep(String identifier, List<String> entrypoint, Map<String, String> envVars,
+      long timeout, PluginStepInfo pluginStepInfo) {
+    VmRunStepBuilder stepBuilder =
+        VmRunStep.builder().entrypoint(entrypoint).envVariables(envVars).timeoutSecs(timeout);
     if (pluginStepInfo.getReports().getValue() != null) {
       if (pluginStepInfo.getReports().getValue().getType() == UnitTestReportType.JUNIT) {
         JUnitTestReport junitTestReport = (JUnitTestReport) pluginStepInfo.getReports().getValue().getSpec();
@@ -205,5 +228,9 @@ public class VmPluginStepSerializer {
           break;
       }
     }
+  }
+
+  private boolean isGitCloneStep(String identifier, PluginStepInfo pluginStepInfo) {
+    return identifier.equals(GIT_CLONE_STEP_ID) && pluginStepInfo.isHarnessManagedImage();
   }
 }

@@ -8,6 +8,7 @@
 package io.harness.cvng.servicelevelobjective.resources;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.ExposeInternalException;
@@ -21,6 +22,9 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
 import io.harness.cvng.servicelevelobjective.beans.UnavailabilityInstancesResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsType;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -42,6 +46,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -205,5 +210,34 @@ public class SLODashboardResource {
       @Valid @BeanParam ProjectParams projectParams) {
     return ResponseDTO.newResponse(
         sloDashboardService.getUnavailabilityInstances(projectParams, startTime, endTime, identifier));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("/secondary-events/{identifier}")
+  @ApiOperation(value = "Get Secondary events data points for SLO", nickname = "getSecondaryEvents")
+  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  public ResponseDTO<List<SecondaryEventsResponse>> getSecondaryEvents(
+      @Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(required = true) @NotNull @PathParam(
+          "identifier") @ResourceIdentifier String identifier,
+      @NotNull @Valid @QueryParam("startTime") Long startTime, @NotNull @Valid @QueryParam("endTime") Long endTime,
+      @Valid @BeanParam ProjectParams projectParams) {
+    return ResponseDTO.newResponse(
+        sloDashboardService.getSecondaryEvents(projectParams, startTime, endTime, identifier));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("/secondary-events-details")
+  @ApiOperation(value = "Get Secondary events details for SLO", nickname = "getSecondaryEventDetails")
+  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  public ResponseDTO<SecondaryEventDetailsResponse> getSecondaryEventDetails(
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @AccountIdentifier @QueryParam(
+          "accountId") @NotNull String accountIdentifier,
+      @NotNull @Valid @QueryParam("secondaryEventType") SecondaryEventsType type,
+      @NotNull @Size(min = 1) @Valid @QueryParam("identifiers") List<String> uuids) {
+    return ResponseDTO.newResponse(sloDashboardService.getSecondaryEventDetails(type, uuids));
   }
 }

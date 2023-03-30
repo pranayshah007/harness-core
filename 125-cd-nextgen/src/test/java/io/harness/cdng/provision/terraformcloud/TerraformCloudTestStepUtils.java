@@ -20,8 +20,11 @@ import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformClou
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialDTO;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
+import io.harness.delegate.task.terraformcloud.TerraformCloudTaskType;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudApplyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanAndApplyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudTaskParams;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
@@ -136,17 +139,29 @@ public class TerraformCloudTestStepUtils {
   }
 
   public TerraformCloudTaskParams getTerraformCloudTaskParams(TerraformCloudTaskType type) {
-    return TerraformCloudTaskParams.builder()
-        .terraformCloudTaskType(type)
-        .terraformVersion("123")
-        .runId("run-123")
-        .planType(io.harness.delegate.beans.terraformcloud.PlanType.APPLY)
-        .targets(List.of("t1", "t2", "t3"))
-        .exportJsonTfPlan(true)
-        .discardPendingRuns(true)
-        .workspace("ws")
-        .organization("org")
-        .build();
+    if (type == TerraformCloudTaskType.RUN_PLAN) {
+      return TerraformCloudPlanTaskParams.builder()
+          .planType(io.harness.delegate.task.terraformcloud.PlanType.APPLY)
+          .targets(List.of("t1", "t2", "t3"))
+          .exportJsonTfPlan(true)
+          .discardPendingRuns(true)
+          .message("Triggered from Harness")
+          .workspace("ws")
+          .accountId("test-account")
+          .build();
+    } else if (type == TerraformCloudTaskType.RUN_PLAN_AND_APPLY) {
+      return TerraformCloudPlanAndApplyTaskParams.builder()
+          .planType(io.harness.delegate.task.terraformcloud.PlanType.APPLY)
+          .targets(List.of("t1", "t2", "t3"))
+          .exportJsonTfPlan(true)
+          .discardPendingRuns(true)
+          .workspace("ws")
+          .build();
+    } else if (type == TerraformCloudTaskType.RUN_APPLY) {
+      return TerraformCloudApplyTaskParams.builder().runId("run-123").build();
+    } else {
+      return null;
+    }
   }
 
   public TerraformCloudConnectorDTO getTerraformCloudConnector() {

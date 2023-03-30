@@ -48,7 +48,16 @@
       "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
     },
     "strategy": {
-      "$ref": "#/definitions/StrategyConfig"
+      "oneOf": [
+        {
+          "$ref": "#/definitions/StrategyConfig"
+        },
+        {
+          "type": "string",
+          "pattern": "^<\\+input>$",
+          "minLength": 1
+        }
+      ]
     },
     "tags": {
       "type": "object",
@@ -384,7 +393,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -487,6 +496,127 @@
             "advanced": {
               "$ref": "#/definitions/STOYamlAdvancedSettings"
             },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsSecurityHubStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
             "baseImageConnectorRefs": {
               "$ref": "#/definitions/ParameterFieldListString"
             },
@@ -508,7 +638,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -638,7 +768,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -708,7 +838,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -827,7 +957,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -852,7 +982,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -910,7 +1040,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1124,7 +1254,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1239,7 +1369,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1488,7 +1618,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1782,7 +1912,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1897,7 +2027,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -2261,6 +2391,118 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CustomIngestStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "DataTheoremStepInfo": {
       "allOf": [
         {
@@ -2298,7 +2540,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -2431,6 +2673,9 @@
                 "default"
               ]
             },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
+            },
             "imagePullPolicy": {
               "oneOf": [
                 {
@@ -2443,7 +2688,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -2939,118 +3184,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ExternalStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "config",
-            "mode",
-            "target"
-          ],
-          "properties": {
-            "advanced": {
-              "$ref": "#/definitions/STOYamlAdvancedSettings"
-            },
-            "baseImageConnectorRefs": {
-              "$ref": "#/definitions/ParameterFieldListString"
-            },
-            "config": {
-              "type": "string",
-              "enum": [
-                "default"
-              ]
-            },
-            "imagePullPolicy": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Always",
-                    "Never",
-                    "IfNotPresent"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "ingestion": {
-              "$ref": "#/definitions/STOYamlIngestion"
-            },
-            "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
-              ]
-            },
-            "outputVariables": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/OutputNGVariable"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "privileged": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "resources": {
-              "$ref": "#/definitions/ContainerResource"
-            },
-            "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "settings": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "target": {
-              "$ref": "#/definitions/STOYamlTarget"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "FailureStrategyActionConfig": {
       "type": "object",
       "required": [
@@ -3131,7 +3264,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -3442,7 +3575,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -4064,7 +4197,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -4587,7 +4720,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -4687,7 +4820,9 @@
             "config": {
               "type": "string",
               "enum": [
-                "default"
+                "default",
+                "metasploit-weak-ssh",
+                "metasploit-openssl-heartbleed"
               ]
             },
             "imagePullPolicy": {
@@ -4702,13 +4837,16 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
             },
             "ingestion": {
               "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "instance": {
+              "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
               "type": "string",
@@ -4841,13 +4979,16 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
             },
             "ingestion": {
               "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "instance": {
+              "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
               "type": "string",
@@ -4953,7 +5094,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -5065,13 +5206,16 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
             },
             "ingestion": {
               "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "instance": {
+              "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
               "type": "string",
@@ -5162,7 +5306,12 @@
             "config": {
               "type": "string",
               "enum": [
-                "default"
+                "default",
+                "firewall-bypass",
+                "unusual-port",
+                "smb-security-mode",
+                "exploit",
+                "no-default-cli-flags"
               ]
             },
             "imagePullPolicy": {
@@ -5177,13 +5326,16 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
             },
             "ingestion": {
               "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "instance": {
+              "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
               "type": "string",
@@ -5361,6 +5513,9 @@
             "advanced": {
               "$ref": "#/definitions/STOYamlAdvancedSettings"
             },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
             "baseImageConnectorRefs": {
               "$ref": "#/definitions/ParameterFieldListString"
             },
@@ -5382,13 +5537,16 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
             },
             "ingestion": {
               "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "instance": {
+              "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
               "type": "string",
@@ -5507,7 +5665,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -6198,7 +6356,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -6318,7 +6476,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -6533,7 +6691,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -6646,13 +6804,19 @@
             "advanced": {
               "$ref": "#/definitions/STOYamlAdvancedSettings"
             },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
             "baseImageConnectorRefs": {
               "$ref": "#/definitions/ParameterFieldListString"
             },
             "config": {
               "type": "string",
               "enum": [
-                "default"
+                "default",
+                "hipaa",
+                "gdpr",
+                "exclude_extras"
               ]
             },
             "imagePullPolicy": {
@@ -6667,7 +6831,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -6779,7 +6943,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -6891,7 +7055,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -7250,7 +7414,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -7322,7 +7486,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -7434,7 +7598,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -7546,7 +7710,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -7678,6 +7842,9 @@
           "type": "string"
         },
         "domain": {
+          "type": "string"
+        },
+        "region": {
           "type": "string"
         },
         "ssl": {
@@ -7964,6 +8131,9 @@
               "minLength": 1
             }
           ]
+        },
+        "project_key": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8373,7 +8543,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -8398,7 +8568,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -8678,7 +8848,16 @@
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "strategy": {
-          "$ref": "#/definitions/StrategyConfig"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StrategyConfig"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>$",
+              "minLength": 1
+            }
+          ]
         },
         "tags": {
           "type": "object",
@@ -8764,7 +8943,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -8862,7 +9041,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -8974,7 +9153,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -9092,7 +9271,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -9207,7 +9386,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -9432,7 +9611,16 @@
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "strategy": {
-          "$ref": "#/definitions/StrategyConfig"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StrategyConfig"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>$",
+              "minLength": 1
+            }
+          ]
         },
         "timeout": {
           "type": "string",
@@ -9468,6 +9656,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AwsEcrStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AWSSecurityHub"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsSecurityHubStepInfo"
               }
             }
           }
@@ -9716,6 +9920,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "CustomIngest"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CustomIngestStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "DataTheorem"
               }
             }
@@ -9740,22 +9960,6 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/DockerContentTrustStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "External"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/ExternalStepInfo"
               }
             }
           }
@@ -10520,7 +10724,16 @@
           "minItems": 1
         },
         "strategy": {
-          "$ref": "#/definitions/StrategyConfig"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StrategyConfig"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>$",
+              "minLength": 1
+            }
+          ]
         },
         "template": {
           "$ref": "#/definitions/TemplateLinkConfig"
@@ -10758,7 +10971,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -10911,13 +11124,16 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
             },
             "ingestion": {
               "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "instance": {
+              "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
               "type": "string",
@@ -11061,7 +11277,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -11083,7 +11299,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -11405,7 +11621,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -11775,7 +11991,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]

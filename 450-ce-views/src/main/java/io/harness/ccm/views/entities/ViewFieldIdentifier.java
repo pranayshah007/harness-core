@@ -24,7 +24,7 @@ public enum ViewFieldIdentifier {
     return displayName;
   }
 
-  private String displayName;
+  private final String displayName;
 
   ViewFieldIdentifier(String displayName) {
     this.displayName = displayName;

@@ -29,3 +29,5 @@ toolset
 .*./Dockerfile.*.
 .*./build.properties$
 .*.gitleaksignore$
+.*.jira-projects.txt$
+

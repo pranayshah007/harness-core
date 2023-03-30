@@ -109,7 +109,7 @@ else
 fi
 for KEY in ${KEYS}
 do
-    EXCLUDE_PROJECTS=",PIE,"
+    EXCLUDE_PROJECTS=",PIE,CCM,"
     echo $KEY
     IFS="-" read -ra PROJNUM <<< "$KEY"
     PROJ="${PROJNUM[0]}"

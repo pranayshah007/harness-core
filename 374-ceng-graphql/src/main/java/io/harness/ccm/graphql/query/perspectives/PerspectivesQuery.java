@@ -27,7 +27,6 @@ import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.dto.PerspectiveTimeSeriesData;
 import io.harness.ccm.views.entities.ViewQueryParams;
-import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
@@ -50,6 +49,7 @@ import io.leangen.graphql.annotations.GraphQLEnvironment;
 import io.leangen.graphql.annotations.GraphQLQuery;
 import io.leangen.graphql.execution.ResolutionEnvironment;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -64,15 +64,15 @@ import org.jooq.tools.StringUtils;
 @OwnedBy(CE)
 public class PerspectivesQuery {
   @Inject private GraphQLUtils graphQLUtils;
-  @Inject ViewsBillingService viewsBillingService;
+  @Inject private ViewsBillingService viewsBillingService;
   @Inject private CEViewService viewService;
-  @Inject ViewsQueryHelper viewsQueryHelper;
-  @Inject PerspectiveOverviewStatsHelper perspectiveOverviewStatsHelper;
-  @Inject PerspectiveTimeSeriesHelper perspectiveTimeSeriesHelper;
-  @Inject PerspectiveFieldsHelper perspectiveFieldsHelper;
-  @Inject CCMRbacHelper rbacHelper;
-  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
-  @Inject ClickHouseViewsBillingServiceImpl clickHouseViewsBillingService;
+  @Inject private ViewsQueryHelper viewsQueryHelper;
+  @Inject private PerspectiveOverviewStatsHelper perspectiveOverviewStatsHelper;
+  @Inject private PerspectiveTimeSeriesHelper perspectiveTimeSeriesHelper;
+  @Inject private PerspectiveFieldsHelper perspectiveFieldsHelper;
+  @Inject private CCMRbacHelper rbacHelper;
+  @Inject @Named("isClickHouseEnabled") private boolean isClickHouseEnabled;
+  @Inject private ClickHouseViewsBillingServiceImpl clickHouseViewsBillingService;
   private static final int MAX_LIMIT_VALUE = 10_000;
 
   @GraphQLQuery(name = "perspectiveTrendStats", description = "Trend stats for perspective")
@@ -86,13 +86,15 @@ public class PerspectivesQuery {
     isClusterQuery = isClusterQuery != null && isClusterQuery;
     groupBy = groupBy != null ? groupBy : Collections.emptyList();
 
+    ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(accountId, isClusterQuery);
+
     // Group by is only needed in case of business mapping
     if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
-      groupBy = Collections.emptyList();
+      viewQueryParams = viewsQueryHelper.buildQueryParamsWithSkipGroupBy(viewQueryParams, true);
     }
 
-    QLCEViewTrendData trendStatsData = viewsBillingService.getTrendStatsDataNg(
-        filters, groupBy, aggregateFunction, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
+    QLCEViewTrendData trendStatsData =
+        viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregateFunction, viewQueryParams);
     return PerspectiveTrendStats.builder()
         .cost(getStats(trendStatsData.getTotalCost()))
         .idleCost(getStats(trendStatsData.getIdleCost()))
@@ -114,13 +116,15 @@ public class PerspectivesQuery {
     isClusterQuery = isClusterQuery != null && isClusterQuery;
     groupBy = groupBy != null ? groupBy : Collections.emptyList();
 
+    ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(accountId, isClusterQuery);
+
     // Group by is only needed in case of business mapping
     if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
-      groupBy = Collections.emptyList();
+      viewQueryParams = viewsQueryHelper.buildQueryParamsWithSkipGroupBy(viewQueryParams, true);
     }
 
-    QLCEViewTrendInfo forecastCostData = viewsBillingService.getForecastCostData(
-        filters, groupBy, aggregateFunction, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
+    QLCEViewTrendInfo forecastCostData =
+        viewsBillingService.getForecastCostData(filters, groupBy, aggregateFunction, viewQueryParams);
     return PerspectiveTrendStats.builder()
         .cost(StatsInfo.builder()
                   .statsTrend(forecastCostData.getStatsTrend())
@@ -207,19 +211,13 @@ public class PerspectivesQuery {
 
     ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(accountId, true, false, isClusterQuery, false);
     Map<String, Map<Timestamp, Double>> sharedCostFromFilters =
-        viewsBillingService.getSharedCostPerTimestampFromFilters(
-            filters, groupBy, aggregateFunction, sortCriteria, viewQueryParams, viewQueryParams.isSkipRoundOff());
+        getSharedCostFromFilters(aggregateFunction, filters, groupBy, sortCriteria, businessMappingId, viewQueryParams);
+    boolean addSharedCostFromGroupBy = false;
 
     ViewQueryParams viewQueryParamsWithSkipDefaultGroupBy =
         viewsQueryHelper.buildQueryParams(accountId, true, false, isClusterQuery, false, true);
 
-    List<ViewRule> viewRules = viewsBillingService.getViewRules(filters);
-    Set<String> businessMappingIdsFromRules = viewsQueryHelper.getBusinessMappingIdsFromViewRules(viewRules);
-    List<String> businessMappingIdsFromRulesAndFilters = viewsQueryHelper.getBusinessMappingIdsFromFilters(filters);
-    businessMappingIdsFromRulesAndFilters.addAll(businessMappingIdsFromRules);
-    boolean addSharedCostFromGroupBy = !businessMappingIdsFromRulesAndFilters.contains(businessMappingId);
-
-    PerspectiveTimeSeriesData data = null;
+    PerspectiveTimeSeriesData data;
     if (isClickHouseEnabled) {
       data = clickHouseViewsBillingService.getClickHouseTimeSeriesStatsNg(filters, groupBy, aggregateFunction,
           sortCriteria, includeOthers, maxLimit, viewQueryParams, timePeriod, conversionField, businessMappingId,
@@ -245,6 +243,17 @@ public class PerspectivesQuery {
     }
 
     return perspectiveTimeSeriesHelper.postFetch(data, includeOthers, othersTotalCost, unallocatedCost);
+  }
+
+  private Map<String, Map<Timestamp, Double>> getSharedCostFromFilters(List<QLCEViewAggregation> aggregateFunction,
+      List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, List<QLCEViewSortCriteria> sortCriteria,
+      String businessMappingId, ViewQueryParams viewQueryParams) {
+    Map<String, Map<Timestamp, Double>> sharedCostFromFilters = new HashMap<>();
+    if (Objects.nonNull(businessMappingId)) {
+      sharedCostFromFilters = viewsBillingService.getSharedCostPerTimestampFromFilters(
+          filters, groupBy, aggregateFunction, sortCriteria, viewQueryParams, viewQueryParams.isSkipRoundOff());
+    }
+    return sharedCostFromFilters;
   }
 
   @GraphQLQuery(name = "perspectiveFields", description = "Fields for perspective explorer")

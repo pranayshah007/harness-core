@@ -25,7 +25,6 @@ import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManag
 import io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfigForCustomSecretManager;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
-import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
@@ -47,7 +46,6 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 public class ConnectorEntityReferenceHelperTest extends ConnectorsTestBase {
-  @Mock IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Mock SecretRefInputValidationHelper secretRefInputValidationHelper;
   @Mock Producer eventProducer;
   @Spy @InjectMocks ConnectorEntityReferenceHelper connectorEntityReferenceHelper;
@@ -76,9 +74,6 @@ public class ConnectorEntityReferenceHelperTest extends ConnectorsTestBase {
     final ConnectorInfoDTO connectorInfo = getConnectorWithTemplateRef(TEMPLATE_REF);
     final List<EntityDetailWithSetupUsageDetailProtoDTO> allTemplate =
         connectorEntityReferenceHelper.getTemplateDTOFromConnectorInfoDTO(connectorInfo, "accountId");
-    when(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
-             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, CONNECTOR_IDENTIFIER))
-        .thenReturn(connectorRef);
     when(eventProducer.send(any())).thenReturn("eventId");
     boolean result = connectorEntityReferenceHelper.produceEventForTemplateSetupUsage(
         connectorInfo, allTemplate, ACCOUNT_IDENTIFIER, null, null, "");
@@ -92,9 +87,6 @@ public class ConnectorEntityReferenceHelperTest extends ConnectorsTestBase {
     final ConnectorInfoDTO connectorInfo = getConnectorWithTemplateRef(TEMPLATE_REF);
     final List<EntityDetailWithSetupUsageDetailProtoDTO> allTemplate =
         connectorEntityReferenceHelper.getTemplateDTOFromConnectorInfoDTO(connectorInfo, "accountId");
-    when(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
-             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, CONNECTOR_IDENTIFIER))
-        .thenReturn(connectorRef);
     when(eventProducer.send(any())).thenThrow(EventsFrameworkDownException.class);
     boolean result = connectorEntityReferenceHelper.produceEventForTemplateSetupUsage(
         connectorInfo, allTemplate, ACCOUNT_IDENTIFIER, null, null, "");

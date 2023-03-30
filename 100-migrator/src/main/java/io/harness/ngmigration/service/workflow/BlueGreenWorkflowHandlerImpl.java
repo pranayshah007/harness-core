@@ -7,24 +7,21 @@
 
 package io.harness.ngmigration.service.workflow;
 
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 
 import software.wings.beans.Workflow;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.service.impl.yaml.handler.workflow.BlueGreenWorkflowYamlHandler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
-import java.util.Map;
 
 public class BlueGreenWorkflowHandlerImpl extends WorkflowHandler {
   @Inject BlueGreenWorkflowYamlHandler blueGreenWorkflowYamlHandler;
 
   @Override
-  public JsonNode getTemplateSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
-    return getDeploymentStageTemplateSpec(WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow));
+  public JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow) {
+    return getDeploymentStageTemplateSpec(
+        migrationContext, WorkflowMigrationContext.newInstance(migrationContext, workflow));
   }
 }

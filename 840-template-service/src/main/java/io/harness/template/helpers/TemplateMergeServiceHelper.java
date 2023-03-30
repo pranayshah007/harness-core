@@ -213,7 +213,7 @@ public class TemplateMergeServiceHelper {
         log.error("Template yaml provided does not have spec in it.");
         throw new NGTemplateException("Template yaml provided does not have spec in it.");
       }
-      String templateInputsYamlWithSpec = RuntimeInputFormHelper.createTemplateFromYaml(templateSpec);
+      String templateInputsYamlWithSpec = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(templateSpec);
       if (isEmpty(templateInputsYamlWithSpec)) {
         return templateInputsYamlWithSpec;
       }
@@ -436,7 +436,7 @@ public class TemplateMergeServiceHelper {
 
   private FetchRemoteEntityRequest buildFetchRemoteEntityRequest(
       Scope scope, TemplateEntity savedEntity, boolean loadFromCache) {
-    String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepoURL());
+    String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
 
     GetFileGitContextRequestParams getFileGitContextRequestParams =
         buildGitContextRequestParams(savedEntity, branchName, loadFromCache);
@@ -470,6 +470,7 @@ public class TemplateMergeServiceHelper {
         .repoName(savedEntity.getRepo())
         .entityType(EntityType.TEMPLATE)
         .loadFromCache(loadFromCache)
+        .getOnlyFileContent(TemplateUtils.isExecutionFlow())
         .build();
   }
 
