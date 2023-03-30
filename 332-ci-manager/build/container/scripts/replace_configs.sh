@@ -501,6 +501,10 @@ if [[ "" != "$HSQS_BASE_URL" ]]; then
   export HSQS_BASE_URL; yq -i '.ciExecutionServiceConfig.queueServiceClientConfig.httpClientConfig.baseUrl=env(HSQS_BASE_URL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$HSQS_TOPIC" ]]; then
+  export HSQS_TOPIC; yq -i '.ciExecutionServiceConfig.queueServiceClientConfig.topic=env(HSQS_TOPIC)' $CONFIG_FILE
+fi
+
 if [[ "" != "$HSQS_AUTH_TOKEN" ]]; then
   export HSQS_AUTH_TOKEN; yq -i '.ciExecutionServiceConfig.queueServiceClientConfig.queueServiceSecret=env(HSQS_AUTH_TOKEN)' $CONFIG_FILE
 fi

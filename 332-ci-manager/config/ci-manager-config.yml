@@ -151,6 +151,7 @@ ciExecutionServiceConfig:
       readTimeOutSeconds: 15
     queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
     envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
+    topic: ${HSQS_TOPIC:-ci}
   addonImageTag: releaseBuild-30
   liteEngineImageTag: releaseBuild-29
   defaultMemoryLimit: 500

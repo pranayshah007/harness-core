@@ -7,15 +7,23 @@
 
 package io.harness.beans.steps;
 
-import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.annotations.dev.HarnessTeam.STO;
 
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(CI)
-public interface STOStepSpecTypeConstants {
-  String RUN = "Run";
-  String BACKGROUND = "Background";
-  String SECURITY = "Security";
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
-  String SECURITY_STAGE = "SecurityTests";
+@OwnedBy(STO)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public final class STOStepSpecTypeConstants {
+  public static final String RUN = "Run";
+  public static final String BACKGROUND = "Background";
+  public static final String SECURITY = "Security";
+  public static final String CONTAINER_SECURITY = "Container Security";
+  public static final String CONFIGURATION = "Configuration";
+  public static final String SAST = "SAST";
+  public static final String SCA = "SCA";
+  public static final String DAST = "DAST";
+  public static final String SECURITY_STAGE = "SecurityTests";
 }

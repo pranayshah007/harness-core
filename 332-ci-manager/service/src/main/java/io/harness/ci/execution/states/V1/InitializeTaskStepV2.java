@@ -201,10 +201,10 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     boolean queueConcurrencyEnabled =
         ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance));
     if (queueConcurrencyEnabled) {
-      log.info("start executeAsyncAfterRbac for initialize step with queue");
+      String topic = ciExecutionServiceConfig.getQueueServiceClientConfig().getTopic();
+      log.info("start executeAsyncAfterRbac for initialize step with queue. Topic: {}", topic);
       taskId = generateUuid();
-      String topic = "ci";
-      String moduleName = "ci";
+      String moduleName = topic;
       String payload = RecastOrchestrationUtils.toJson(
           CIInitTaskArgs.builder().ambiance(ambiance).callbackId(taskId).stepElementParameters(stepParameters).build());
       EnqueueRequest enqueueRequest =

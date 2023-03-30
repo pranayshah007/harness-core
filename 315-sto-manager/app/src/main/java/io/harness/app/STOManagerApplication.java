@@ -59,6 +59,7 @@ import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEvent
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
+import io.harness.queue.QueueController;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.resource.VersionInfoResource;
@@ -90,6 +91,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -250,8 +252,28 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
 
     modules.add(new CIPersistenceModule());
     addGuiceValidationModule(modules);
-    modules.add(new CIManagerServiceModule(STO_MANAGER, "sto", configuration));
+    String mongoUri = STOManagerConfiguration.getHarnessSTOMongo(configuration.getHarnessCIMongo()).getUri();
+    modules.add(new CIManagerServiceModule(
+        configuration, new CIManagerConfigurationOverride(STO_MANAGER, "sto", false, false, mongoUri)));
     modules.add(new STOManagerServiceModule());
+
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(QueueController.class).toInstance(new QueueController() {
+          @Override
+          public boolean isPrimary() {
+            return true;
+          }
+
+          @Override
+          public boolean isNotPrimary() {
+            return false;
+          }
+        });
+      }
+    });
+
     modules.add(new CacheModule(configuration.getCacheConfig()));
 
     modules.add(YamlSdkModule.getInstance());
@@ -388,6 +410,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
+
     boolean local = config.getCiExecutionServiceConfig().isLocal();
     if (!local) {
       environment.lifecycle().manage(injector.getInstance(CIExecutionPoller.class));
