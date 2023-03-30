@@ -99,6 +99,10 @@ public abstract class ServiceLevelIndicator
 
   public abstract List<String> getMetricNames();
 
+  public abstract Integer getConsiderConsecutiveMinutes();
+
+  public abstract Boolean getConsiderAllConsecutiveMinutesFromStartAsBad();
+
   public abstract boolean isUpdatable(ServiceLevelIndicator serviceLevelIndicator);
 
   public abstract boolean shouldReAnalysis(ServiceLevelIndicator serviceLevelIndicator);
