@@ -572,7 +572,22 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       // GET SCM GIT METADATA RESPONSE.
       ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
 
+      String accountId = pipelineEntity.getAccountId();
+      String orgIdentifier = pipelineEntity.getOrgIdentifier();
+      String projectIdentifier = pipelineEntity.getProjectIdentifier();
+
+      IdentifierRef identifierRef = IdentifierRef.builder()
+                                        .accountIdentifier(accountId)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineEntity.getIdentifier())
+                                        .build();
+
       // UPDATING THE GIT INFO DETAILS FOR THE REFERRED ENTITIES.
+      Boolean populateGitInfo =
+          NGRestUtils.getResponse(entitySetupUsageClient.populateGitInfoDetails(pipelineEntity.getAccountIdentifier(),
+              pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
+              identifierRef.getFullyQualifiedName(), EntityType.PIPELINES, gitMetaData));
 
       if (updatedResult == null) {
         throw new InvalidRequestException(format(
