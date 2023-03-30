@@ -15,6 +15,7 @@ import io.harness.ng.core.migration.CreateDefaultGcpKmsSMInNGMigration;
 import io.harness.ng.core.migration.NGWebhookMendateSettingsCategoryUpdateMigration;
 import io.harness.ng.core.migration.PopulateYamlFieldInNGEnvironmentMigration;
 import io.harness.ng.core.migration.background.AddDeploymentTypeToInfrastructureEntityMigration;
+import io.harness.ng.core.migration.background.ChangeEnvironmentRefFieldNameToEnvIdentifierMigration;
 import io.harness.ng.core.migration.background.DeleteSoftDeletedConnectorsMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGJiraConnectorMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGServiceNowConnectorMigration;
@@ -49,6 +50,7 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
         .add(Pair.of(8, PopulateYamlAuthFieldInNGJiraConnectorMigration.class))
         .add(Pair.of(9, CreateDefaultGcpKmsSMInNGMigration.class))
         .add(Pair.of(10, UserMetadataTwoFactorAuthenticationMigration.class))
+        .add(Pair.of(11, ChangeEnvironmentRefFieldNameToEnvIdentifierMigration.class))
         .build();
   }
 }
