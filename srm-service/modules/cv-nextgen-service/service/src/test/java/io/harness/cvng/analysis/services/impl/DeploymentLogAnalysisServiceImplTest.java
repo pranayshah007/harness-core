@@ -48,6 +48,7 @@ import io.harness.cvng.analysis.beans.LogAnalysisRadarChartListWithCountDTO;
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.entities.DeploymentLogAnalysis;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
+import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
 import io.harness.cvng.core.services.api.VerificationTaskService;
@@ -1181,6 +1182,21 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getPageItemCount()).isEqualTo(3);
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getPageSize()).isEqualTo(20);
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().size()).isEqualTo(3);
+
+    LogAnalysisRadarChartListDTO content1 =
+        logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(0);
+    assertThat(content1.getFeedback()).isNotNull();
+    assertThat(content1.getFeedbackApplied()).isNotNull();
+
+    LogAnalysisRadarChartListDTO content2 =
+        logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(1);
+    assertThat(content2.getFeedback()).isNotNull();
+    assertThat(content2.getFeedbackApplied()).isNotNull();
+
+    LogAnalysisRadarChartListDTO content3 =
+        logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(2);
+    assertThat(content3.getFeedback()).isNotNull();
+    assertThat(content3.getFeedbackApplied()).isNotNull();
   }
 
   @Test
@@ -1588,6 +1604,8 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
         .count(count)
         .label(label)
         .testFrequencyData(testFrequencyData)
+        .feedback(LogFeedback.builder().build())
+        .feedbackApplied(LogFeedback.builder().build())
         .frequencyData(Collections.singletonList(
             DeploymentLogAnalysisDTO.HostFrequencyData.builder()
                 .frequencies(CollectionUtils.emptyIfNull(testFrequencyData)
