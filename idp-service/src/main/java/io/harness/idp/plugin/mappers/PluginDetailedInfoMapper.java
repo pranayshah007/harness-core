@@ -10,7 +10,9 @@ package io.harness.idp.plugin.mappers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
+import io.harness.idp.plugin.enums.ExportType;
 import io.harness.spec.server.idp.v1.model.AppConfig;
+import io.harness.spec.server.idp.v1.model.Exports;
 import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
 
 import lombok.experimental.UtilityClass;
@@ -22,13 +24,22 @@ public class PluginDetailedInfoMapper {
     PluginDetailedInfo pluginDetailedInfo = new PluginDetailedInfo();
     boolean isEnabled = appConfig != null && appConfig.isEnabled();
     pluginDetailedInfo.setPluginDetails(PluginInfoMapper.toDTO(pluginInfoEntity, isEnabled));
-    pluginDetailedInfo.setDescription(pluginInfoEntity.getDescription());
-    pluginDetailedInfo.setCategory(pluginInfoEntity.getCategory());
-    pluginDetailedInfo.setSource(pluginInfoEntity.getSource());
     String config =
         (appConfig != null && appConfig.isEnabled()) ? appConfig.getConfigs() : pluginInfoEntity.getConfig();
+    Exports exports = new Exports();
+    exports.setCards(getExportTypeCount(pluginInfoEntity, ExportType.CARD));
+    exports.setTabContents(getExportTypeCount(pluginInfoEntity, ExportType.TAB_CONTENT));
+    exports.setPages(getExportTypeCount(pluginInfoEntity, ExportType.PAGE));
+    pluginDetailedInfo.setExports(exports);
     pluginDetailedInfo.setConfig(config);
-    pluginDetailedInfo.setLayout(pluginInfoEntity.getLayout());
     return pluginDetailedInfo;
+  }
+
+  private int getExportTypeCount(PluginInfoEntity pluginInfoEntity, ExportType exportType) {
+    return (int) pluginInfoEntity.getExports()
+        .getExportDetails()
+        .stream()
+        .filter(exportDetails -> exportDetails.getType().equals(exportType))
+        .count();
   }
 }

@@ -16,4 +16,5 @@ public interface PluginInfoService {
   List<PluginInfo> getAllPluginsInfo(String harnessAccount);
   PluginDetailedInfo getPluginDetailedInfo(String identifier, String harnessAccount);
   void saveAllPluginInfo();
+  void deleteAllPluginInfo();
 }
