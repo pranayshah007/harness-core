@@ -129,14 +129,8 @@ public class FilterCreatorMergeService {
       response = response.toBuilder().addAllReferredEntities(Arrays.asList(gitConnectorReference.get())).build();
     }
 
-    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-    boolean defaultBranchCheckForGitX = false;
-    if (gitEntityInfo != null) {
-      defaultBranchCheckForGitX = gitEntityInfo.isDefaultBranch();
-    }
-    if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType().equals(StoreType.INLINE)
-        || (pipelineEntity.getStoreType() == StoreType.REMOTE
-            && (defaultBranchCheckForGitX || (gitEntityInfo != null && isEmpty(gitEntityInfo.getBranch()))))) {
+    // PUBLISH SETUP USAGES WITH CONDITIONS.
+    if (doPublishSetupUsages(pipelineEntity)) {
       pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, response.getReferredEntitiesList());
     }
 
@@ -145,6 +139,23 @@ public class FilterCreatorMergeService {
         .stageCount(response.getStageCount())
         .stageNames(new ArrayList<>(response.getStageNamesList()))
         .build();
+  }
+
+  public boolean doPublishSetupUsages(PipelineEntity pipelineEntity) {
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+
+    boolean defaultBranchCheckForGitX = false;
+    if (gitEntityInfo != null) {
+      defaultBranchCheckForGitX = gitEntityInfo.isDefaultBranch();
+    }
+
+    if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType().equals(StoreType.INLINE)
+        || (pipelineEntity.getStoreType() == StoreType.REMOTE
+            && (defaultBranchCheckForGitX || (gitEntityInfo != null && isEmpty(gitEntityInfo.getBranch()))))) {
+      return true;
+    }
+
+    return false;
   }
 
   public FilterCreationBlobResponse getReferredEntitiesResponse(PipelineEntity pipelineEntity) throws IOException {
