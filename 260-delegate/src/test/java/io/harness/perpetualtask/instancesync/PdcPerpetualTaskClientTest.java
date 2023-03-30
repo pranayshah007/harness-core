@@ -120,7 +120,7 @@ public class PdcPerpetualTaskClientTest extends WingsBaseTest {
   public void testGetTaskParams() {
     PerpetualTaskClientContext clientContext = getPerpetualTaskClientContext();
 
-    Message taskParams = pdcPerpetualTaskServiceClient.getTaskParams(clientContext, true);
+    Message taskParams = pdcPerpetualTaskServiceClient.getTaskParams(clientContext);
 
     assertThat(taskParams).isNotNull();
     assertThat(taskParams instanceof PdcInstanceSyncPerpetualTaskParams).isTrue();
@@ -148,7 +148,7 @@ public class PdcPerpetualTaskClientTest extends WingsBaseTest {
     when(secretsManager.getEncryptionDetails(winRmConnectionAttributes, null, null))
         .thenReturn(Collections.emptyList());
 
-    Message taskParams = pdcPerpetualTaskServiceClient.getTaskParams(clientContext, true);
+    Message taskParams = pdcPerpetualTaskServiceClient.getTaskParams(clientContext);
 
     assertThat(taskParams).isNotNull();
     assertThat(taskParams instanceof PdcInstanceSyncPerpetualTaskParams).isTrue();

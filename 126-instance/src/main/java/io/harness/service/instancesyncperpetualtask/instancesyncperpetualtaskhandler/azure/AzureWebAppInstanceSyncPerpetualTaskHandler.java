@@ -59,8 +59,7 @@ public class AzureWebAppInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(deploymentReleaseDataList);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
-        infrastructureMappingDTO.getAccountIdentifier());
+        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier());
   }
 
   private List<ExecutionCapability> getExecutionCapabilities(
@@ -82,23 +81,19 @@ public class AzureWebAppInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
       String accountIdentifier, List<AzureWebAppDeploymentReleaseData> deploymentReleaseData) {
     return AzureWebAppNGInstanceSyncPerpetualTaskParams.newBuilder()
         .setAccountId(accountIdentifier)
-        .addAllAzureWebAppDeploymentReleaseList(
-            toAzureWebAppDeploymentReleaseList(deploymentReleaseData, accountIdentifier))
+        .addAllAzureWebAppDeploymentReleaseList(toAzureWebAppDeploymentReleaseList(deploymentReleaseData))
         .build();
   }
 
   private List<AzureWebAppDeploymentRelease> toAzureWebAppDeploymentReleaseList(
-      List<AzureWebAppDeploymentReleaseData> deploymentReleaseData, String accountIdentifier) {
-    return deploymentReleaseData.stream()
-        .map(data -> toAzureWebAppDeploymentRelease(data, accountIdentifier))
-        .collect(Collectors.toList());
+      List<AzureWebAppDeploymentReleaseData> deploymentReleaseData) {
+    return deploymentReleaseData.stream().map(this::toAzureWebAppDeploymentRelease).collect(Collectors.toList());
   }
 
-  private AzureWebAppDeploymentRelease toAzureWebAppDeploymentRelease(
-      AzureWebAppDeploymentReleaseData releaseData, String accountIdentifier) {
+  private AzureWebAppDeploymentRelease toAzureWebAppDeploymentRelease(AzureWebAppDeploymentReleaseData releaseData) {
     return AzureWebAppDeploymentRelease.newBuilder()
-        .setAzureWebAppInfraDelegateConfig(ByteString.copyFrom(
-            getKryoSerializer(accountIdentifier).asBytes(releaseData.getAzureWebAppInfraDelegateConfig())))
+        .setAzureWebAppInfraDelegateConfig(
+            ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getAzureWebAppInfraDelegateConfig())))
         .setSubscriptionId(releaseData.getSubscriptionId())
         .setResourceGroupName(releaseData.getResourceGroupName())
         .setAppName(releaseData.getAppName())

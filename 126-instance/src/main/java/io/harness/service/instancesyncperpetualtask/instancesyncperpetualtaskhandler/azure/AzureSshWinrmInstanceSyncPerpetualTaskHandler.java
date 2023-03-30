@@ -99,8 +99,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncP
             .setServiceType(serviceType)
             .setInfrastructureKey(infrastructure.getInfrastructureKey())
             .addAllHosts(hosts)
-            .setAzureSshWinrmInfraDelegateConfig(ByteString.copyFrom(
-                getKryoSerializer(infrastructure.getAccountIdentifier()).asBytes(azureInfraDelegateConfig)))
+            .setAzureSshWinrmInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(azureInfraDelegateConfig)))
             .build();
 
     Any perpetualTaskPack = Any.pack(azureInstanceSyncPerpetualTaskParamsNg);
@@ -108,8 +107,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncP
         getExecutionCapabilities(azureInfraDelegateConfig.getAzureConnectorDTO());
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier(),
-        infrastructure.getAccountIdentifier());
+        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier());
   }
 
   private List<ExecutionCapability> getExecutionCapabilities(AzureConnectorDTO azureConnectorDTO) {

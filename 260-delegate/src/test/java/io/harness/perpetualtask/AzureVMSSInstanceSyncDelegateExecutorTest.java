@@ -39,7 +39,6 @@ import software.wings.delegatetasks.azure.taskhandler.AzureVMSSSyncTaskHandler;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.time.Instant;
@@ -63,12 +62,11 @@ public class AzureVMSSInstanceSyncDelegateExecutorTest extends DelegateTestBase 
 
   @InjectMocks private AzureVMSSInstanceSyncDelegateExecutor executor;
   @Inject private KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Before
   public void setUp() {
-    on(executor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
-    when(mockDelegateAgentManagerClient.publishInstanceSyncResultV2(
+    on(executor).set("kryoSerializer", kryoSerializer);
+    when(mockDelegateAgentManagerClient.publishInstanceSyncResult(
              anyString(), anyString(), any(DelegateResponseData.class)))
         .thenReturn(mockCall);
   }
@@ -92,7 +90,7 @@ public class AzureVMSSInstanceSyncDelegateExecutorTest extends DelegateTestBase 
     PerpetualTaskResponse perpetualTaskResponse = executor.runOnce(
         PerpetualTaskId.newBuilder().setId("task-id").build(), getPerpetualTaskParams(), Instant.now());
     verify(mockDelegateAgentManagerClient, times(1))
-        .publishInstanceSyncResultV2(eq("task-id"), eq("acct-id"), argumentCaptor.capture());
+        .publishInstanceSyncResult(eq("task-id"), eq("acct-id"), argumentCaptor.capture());
     AzureVMSSTaskExecutionResponse response = argumentCaptor.getValue();
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -109,9 +107,8 @@ public class AzureVMSSInstanceSyncDelegateExecutorTest extends DelegateTestBase 
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString azureConfigBytes =
-        ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(AzureConfig.builder().accountId("acct-id").build()));
-    ByteString azureEncryptedDetailsBytes =
-        ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(kryoSerializer.asBytes(AzureConfig.builder().accountId("acct-id").build()));
+    ByteString azureEncryptedDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
 
     AzureVmssInstanceSyncPerpetualTaskParams taskParams = AzureVmssInstanceSyncPerpetualTaskParams.newBuilder()
                                                               .setAzureConfig(azureConfigBytes)
@@ -120,9 +117,6 @@ public class AzureVMSSInstanceSyncDelegateExecutorTest extends DelegateTestBase 
                                                               .setResourceGroupName("res-gp")
                                                               .setVmssId("vmss-id")
                                                               .build();
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(taskParams))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
   }
 }
