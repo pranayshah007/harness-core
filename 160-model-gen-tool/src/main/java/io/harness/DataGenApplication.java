@@ -116,7 +116,7 @@ import ru.vyarus.guice.validator.ValidationModule;
 public class DataGenApplication extends Application<MainConfiguration> {
   public static void main(String... args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      log.info("Shutdown hook, entering maintenance...");
+      log.info("Shutdown hook, entering maintenance... ");
       // TODO: any cleanup
     }));
     log.info("Starting DataGen Application");
