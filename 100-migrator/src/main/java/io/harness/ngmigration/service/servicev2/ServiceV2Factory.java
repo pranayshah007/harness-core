@@ -9,11 +9,14 @@ package io.harness.ngmigration.service.servicev2;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.Service;
 import software.wings.utils.ArtifactType;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -105,5 +108,23 @@ public class ServiceV2Factory {
       }
     }
     return unsupportedServiceV2Mapper;
+  }
+
+  public static ServiceDefinitionType mapDeploymentTypeToServiceDefType(DeploymentType deploymentType) {
+    Map<DeploymentType, ServiceDefinitionType> map = new HashMap<>();
+    map.put(DeploymentType.SSH, ServiceDefinitionType.SSH);
+    map.put(DeploymentType.ECS, ServiceDefinitionType.ECS);
+    map.put(DeploymentType.SPOTINST, ServiceDefinitionType.ELASTIGROUP);
+    map.put(DeploymentType.KUBERNETES, ServiceDefinitionType.KUBERNETES);
+    map.put(DeploymentType.HELM, ServiceDefinitionType.NATIVE_HELM);
+    map.put(DeploymentType.AWS_LAMBDA, ServiceDefinitionType.AWS_LAMBDA);
+    map.put(DeploymentType.AMI, ServiceDefinitionType.ASG);
+    map.put(DeploymentType.WINRM, ServiceDefinitionType.WINRM);
+    map.put(DeploymentType.PCF, ServiceDefinitionType.TAS);
+    map.put(DeploymentType.AZURE_WEBAPP, ServiceDefinitionType.AZURE_WEBAPP);
+    map.put(DeploymentType.CUSTOM, ServiceDefinitionType.CUSTOM_DEPLOYMENT);
+    //    map.put(DeploymentType.AZURE_VMSS, ServiceDefinitionType.);
+    //    map.put(AWS_CODEDEPLOY, ServiceDefinitionType.);
+    return map.get(deploymentType);
   }
 }
