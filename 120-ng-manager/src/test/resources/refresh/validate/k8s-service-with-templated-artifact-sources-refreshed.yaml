@@ -1,0 +1,31 @@
+service:
+  name: artifactSourceTemplate
+  identifier: artifactSourceTemplate
+  tags: {}
+  serviceDefinition:
+    spec:
+      artifacts:
+        primary:
+          sources:
+            - name: s1
+              identifier: s1
+              template:
+                templateRef: nginx
+                versionLabel: v1
+                templateInputs:
+                  type: DockerRegistry
+                  spec:
+                    imagePath: <+input>
+                    tag: <+input>
+            - name: s2
+              identifier: s2
+              template:
+                templateRef: nginx
+                versionLabel: v1
+                templateInputs:
+                  type: DockerRegistry
+                  spec:
+                    imagePath: <+input>
+                    tag: <+input>
+          primaryArtifactRef: <+input>
+    type: Kubernetes

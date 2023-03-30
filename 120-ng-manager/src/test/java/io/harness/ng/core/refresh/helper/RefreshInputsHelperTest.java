@@ -7,15 +7,14 @@
 
 package io.harness.ng.core.refresh.helper;
 
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import io.harness.NgManagerTestBase;
 import io.harness.account.AccountClient;
@@ -27,6 +26,7 @@ import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.eventsframework.api.Producer;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
 import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
@@ -35,6 +35,8 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.yaml.CDYamlFacade;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
@@ -45,6 +47,7 @@ import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
 import io.harness.setupusage.EnvironmentEntitySetupUsageHelper;
 import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
+import io.harness.template.remote.TemplateResourceClient;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -60,6 +63,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.transaction.support.TransactionTemplate;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
 public class RefreshInputsHelperTest extends NgManagerTestBase {
@@ -92,6 +97,8 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
   @Mock NGSettingsClient settingsClient;
   @Mock EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
 
+  @Mock TemplateResourceClient templateResourceClient;
+
   @Before
   public void setup() {
     serviceEntityService = spy(new ServiceEntityServiceImpl(serviceRepository, entitySetupUsageService, eventProducer,
@@ -112,6 +119,7 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
     on(refreshInputsHelper).set("serviceEntityService", serviceEntityService);
     on(refreshInputsHelper).set("entityFetchHelper", entityFetchHelper);
     on(refreshInputsHelper).set("environmentRefreshHelper", environmentRefreshHelper);
+    on(refreshInputsHelper).set("templateResourceClient", templateResourceClient);
   }
 
   private String readFile(String filename) {
@@ -322,5 +330,36 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
         ACCOUNT_ID, ORG_ID, PROJECT_ID, templateWithInfraFixed, resolvedTemplateWithInfraFixed);
     assertThat(refreshedYaml).isNotNull();
     assertThat(refreshedYaml).isEqualTo(readFile("env/refresh-pipTemplate-with-infra-fixed.yaml"));
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testRefreshInputsForPipelineWithServiceWithStaleArtifactSourceTemplateHavingFixedPrimaryArtifactRef()
+      throws IOException {
+    when(environmentRefreshHelper.isEnvironmentField(anyString(), any(JsonNode.class))).thenReturn(false);
+    String pipelineYmlWithService = readFile("pipeline-with-single-service-templated-artifact-source.yaml");
+    String serviceYaml = readFile("k8s-service-with-templated-artifact-sources.yaml");
+
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "artifactSourceTemplate", false))
+        .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
+
+    RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(serviceYaml).build();
+    RefreshResponseDTO refreshResponseDTO =
+        RefreshResponseDTO.builder()
+            .refreshedYaml(readFile("k8s-service-with-templated-artifact-sources-refreshed.yaml"))
+            .build();
+    Call<ResponseDTO<RefreshResponseDTO>> callRequest = mock(Call.class);
+    doReturn(callRequest)
+        .when(templateResourceClient)
+        .getRefreshedYaml(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null, null, null, null, null, "true", refreshRequest);
+    when(callRequest.execute()).thenReturn(Response.success(ResponseDTO.newResponse(refreshResponseDTO)));
+
+    String refreshedYaml =
+        refreshInputsHelper.refreshInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+    assertThat(refreshedYaml).isNotNull().isNotEmpty();
+    assertThat(refreshedYaml)
+        .isEqualTo(readFile("pipeline-with-single-service-templated-artifact-source-refreshed.yaml"));
   }
 }

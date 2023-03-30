@@ -22,6 +22,7 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.ng.core.yaml.CDYamlFacade;
@@ -186,15 +187,12 @@ public class InputsValidationHelper {
         serviceYaml, serviceRef, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
 
     if (TemplateRefHelper.hasTemplateRef(serviceYamlGivenPrimaryArtifactRef)) {
-      ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
-          NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(context.getAccountId(),
-              context.getOrgId(), context.getProjectId(), null, null, null, null, null, null, null, null, "true",
-              RefreshRequestDTO.builder().yaml(serviceYamlGivenPrimaryArtifactRef).build()));
+      RefreshResponseDTO refreshResponseDTO = NGRestUtils.getResponse(templateResourceClient.getRefreshedYaml(
+          context.getAccountId(), context.getOrgId(), context.getProjectId(), null, null, null, null, null, null, null,
+          null, "true", RefreshRequestDTO.builder().yaml(serviceYamlGivenPrimaryArtifactRef).build()));
 
-      if (!validateTemplateInputsResponseDTO.isValidYaml()) {
-        errorNodeSummary.setValid(false);
-        return;
-      }
+      serviceYamlGivenPrimaryArtifactRef = refreshResponseDTO.getRefreshedYaml();
+      serviceYaml = serviceYamlGivenPrimaryArtifactRef;
     }
 
     String serviceRuntimeInputYaml = serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(
@@ -217,7 +215,7 @@ public class InputsValidationHelper {
     }
   }
 
-  private String createServiceYamlGivenPrimaryArtifactRef(
+  public static String createServiceYamlGivenPrimaryArtifactRef(
       String serviceYaml, String serviceIdentifier, String primaryArtifactRef) {
     try {
       YamlField serviceYamlField = YamlUtils.readTree(serviceYaml).getNode().getField(YamlTypes.SERVICE_ENTITY);
@@ -237,7 +235,7 @@ public class InputsValidationHelper {
     }
   }
 
-  private void modifyServiceDefinitionGivenPrimaryArtifactRef(
+  public static void modifyServiceDefinitionGivenPrimaryArtifactRef(
       YamlField serviceYamlField, String serviceIdentifier, String primaryArtifactRef) {
     YamlField primaryArtifactField = ServiceFilterHelper.getPrimaryArtifactNodeFromServiceYaml(serviceYamlField);
     if (primaryArtifactField == null) {

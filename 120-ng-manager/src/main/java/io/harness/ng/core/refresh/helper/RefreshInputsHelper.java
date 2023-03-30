@@ -160,7 +160,13 @@ public class RefreshInputsHelper {
     JsonNode serviceInputs = serviceNodeValue.get(YamlTypes.SERVICE_INPUTS);
     String serviceYaml = serviceEntity.fetchNonEmptyYaml();
 
-    if (TemplateRefHelper.hasTemplateRef(serviceYaml)) {
+    YamlNode primaryArtifactRefNode = YamlNodeUtils.goToPathUsingFqn(
+        entityNode, "serviceInputs.serviceDefinition.spec.artifacts.primary.primaryArtifactRef");
+
+    String serviceYamlUpdatedWithPrimaryArtifactRef = InputsValidationHelper.createServiceYamlGivenPrimaryArtifactRef(
+        serviceYaml, serviceRef, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
+
+    if (TemplateRefHelper.hasTemplateRef(serviceYamlUpdatedWithPrimaryArtifactRef)) {
       RefreshResponseDTO refreshResponseDTO = NGRestUtils.getResponse(templateResourceClient.getRefreshedYaml(
           context.getAccountId(), context.getOrgId(), context.getProjectId(), null, null, null, null, null, null, null,
           null, "true", RefreshRequestDTO.builder().yaml(serviceYaml).build()));
@@ -168,8 +174,6 @@ public class RefreshInputsHelper {
       serviceYaml = refreshResponseDTO.getRefreshedYaml();
     }
 
-    YamlNode primaryArtifactRefNode = YamlNodeUtils.goToPathUsingFqn(
-        entityNode, "serviceInputs.serviceDefinition.spec.artifacts.primary.primaryArtifactRef");
     String serviceRuntimeInputYaml = serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(
         serviceYaml, serviceRef, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
     if (EmptyPredicate.isEmpty(serviceRuntimeInputYaml)) {

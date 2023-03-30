@@ -1,0 +1,62 @@
+pipeline:
+  name: serviceRecon2
+  identifier: serviceRecon2
+  projectIdentifier: projectId
+  orgIdentifier: orgId
+  tags: {}
+  stages:
+    - stage:
+        name: dep
+        identifier: dep
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            serviceRef: artifactSourceTemplate
+            serviceInputs:
+              serviceDefinition:
+                type: Kubernetes
+                spec:
+                  artifacts:
+                    primary:
+                      sources:
+                        - identifier: s1
+                          template:
+                            templateInputs:
+                              type: DockerRegistry
+                              spec:
+                                imagePath: <+input>
+                                tag: <+input>
+                      primaryArtifactRef: s1
+          environment:
+            environmentRef: <+input>
+            deployToAll: false
+            environmentInputs: <+input>
+            serviceOverrideInputs: <+input>
+            infrastructureDefinitions: <+input>
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+                    pruningEnabled: false
+            rollbackSteps:
+              - step:
+                  name: Rollback Rollout Deployment
+                  identifier: rollbackRolloutDeployment
+                  type: K8sRollingRollback
+                  timeout: 10m
+                  spec:
+                    pruningEnabled: false
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
