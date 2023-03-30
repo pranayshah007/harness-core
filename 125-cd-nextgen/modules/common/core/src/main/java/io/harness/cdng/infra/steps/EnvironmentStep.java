@@ -99,6 +99,7 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
         Lists.newArrayList(
             getEnviromentRef(stepParameters.getEnvironment(), stepParameters.getEnvironmentRef(), environmentOutcome)));
     entityMap.put(FreezeEntityType.ENV_TYPE, Lists.newArrayList(environmentOutcome.getType().name()));
+    entityMap.put(FreezeEntityType.PIPELINE, Lists.newArrayList(AmbianceUtils.getPipelineIdentifier(ambiance)));
     StepResponse stepResponse = executeFreezePart(ambiance, entityMap);
     if (stepResponse != null) {
       return stepResponse;

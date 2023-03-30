@@ -735,11 +735,13 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       String accountId = ctx.getAccountIdentifier();
       String orgId = ctx.getOrgIdentifier();
       String projectId = ctx.getProjectIdentifier();
+      String pipelineId = ctx.getPipelineIdentifier();
       if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(featureFlagHelperService, accountId, orgId, projectId,
               accessControlClient, CDNGRbacUtility.constructPrincipalFromPlanCreationContextValue(ctx.getMetadata()))) {
         return;
       }
-      projectFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId);
+
+      projectFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId, pipelineId);
     } catch (Exception e) {
       log.error(
           "NG Freeze: Failure occurred when evaluating execution should fail due to freeze at the time of plan creation");
