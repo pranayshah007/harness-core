@@ -49,9 +49,12 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
+import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.pms.contracts.steps.StepInfo;
+import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
@@ -138,6 +141,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PipelineValidationService pipelineValidationService;
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject FilterCreatorMergeService filterCreatorMergeService;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -544,6 +548,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   private PipelineEntity makePipelineUpdateCall(
       PipelineEntity pipelineEntity, PipelineEntity oldEntity, ChangeType changeType, boolean isOldFlow) {
     try {
+      // GET REFERRED ENTITIES.
+      FilterCreationBlobResponse response = filterCreatorMergeService.getReferredEntitiesResponse(pipelineEntity);
+
+      // UPDATING PIPELINE INFO AND PUBLISHING SETUP USAGES.
       PipelineEntity entityWithUpdatedInfo;
       if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
         entityWithUpdatedInfo = pipelineEntity;
@@ -551,6 +559,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         entityWithUpdatedInfo =
             pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
       }
+
+      // UPDATING THE PIPELINE YAML.
       PipelineEntity updatedResult;
       if (isOldFlow) {
         updatedResult =
@@ -558,6 +568,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       } else {
         updatedResult = pmsPipelineRepository.updatePipelineYaml(entityWithUpdatedInfo);
       }
+
+      // GET SCM GIT METADATA RESPONSE.
+      ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
+
+      // UPDATING THE GIT INFO DETAILS FOR THE REFERRED ENTITIES.
 
       if (updatedResult == null) {
         throw new InvalidRequestException(format(

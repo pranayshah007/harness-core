@@ -45,6 +45,7 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
 import io.harness.pms.sdk.PmsSdkHelper;
 import io.harness.pms.utils.CompletableFutures;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.IdentifierRefHelper;
@@ -144,6 +145,28 @@ public class FilterCreatorMergeService {
         .stageCount(response.getStageCount())
         .stageNames(new ArrayList<>(response.getStageNamesList()))
         .build();
+  }
+
+  public FilterCreationBlobResponse getReferredEntitiesResponse(PipelineEntity pipelineEntity) throws IOException {
+    if (pipelineEntity.getHarnessVersion() == PipelineVersion.V0) {
+      Map<String, PlanCreatorServiceInfo> services = getServices();
+      Dependencies dependencies = getDependencies(pipelineEntity.getYaml());
+      Map<String, String> filters = new HashMap<>();
+      SetupMetadata.Builder setupMetadataBuilder = getSetupMetadataBuilder(
+          pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+      ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
+      if (gitSyncBranchContext != null) {
+        setupMetadataBuilder.setGitSyncBranchContext(gitSyncBranchContext);
+      }
+      setupMetadataBuilder.setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext());
+      if (!gitSyncSdkService.isGitSyncEnabled(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+              pipelineEntity.getProjectIdentifier())) {
+        setupMetadataBuilder.setTriggeredInfo(triggeredByHelper.getFromSecurityContext());
+      }
+      FilterCreationBlobResponse response =
+          obtainFiltersRecursively(services, dependencies, filters, setupMetadataBuilder.build());
+    }
+    return null;
   }
 
   private void deleteExistingSetupUsages(PipelineEntity pipelineEntity) {
