@@ -679,10 +679,13 @@ public class CfCommandTaskHelperNG {
 
     cfServiceDataUpdated.add(cfServiceData);
 
+    appAutoscalarRequestData.setApplicationName(applicationDetail.getName());
+    appAutoscalarRequestData.setApplicationGuid(applicationDetail.getId());
+    boolean isAutoScalarEnabled =
+        cfDeploymentManager.checkIfAppHasAutoscalarEnabled(appAutoscalarRequestData, executionLogCallback);
+
     // First disable App Auto scalar if attached with application
-    if (cfDeployCommandRequestNG.isUseAppAutoScalar()) {
-      appAutoscalarRequestData.setApplicationName(applicationDetail.getName());
-      appAutoscalarRequestData.setApplicationGuid(applicationDetail.getId());
+    if (isAutoScalarEnabled) {
       appAutoscalarRequestData.setExpectedEnabled(true);
       boolean autoscalarStateChanged =
           pcfCommandTaskBaseHelper.disableAutoscalarSafe(appAutoscalarRequestData, executionLogCallback);

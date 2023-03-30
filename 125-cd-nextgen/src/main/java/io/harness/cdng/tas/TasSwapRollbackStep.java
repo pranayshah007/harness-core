@@ -20,7 +20,6 @@ import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasAppResizeDataOutcome;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
-import io.harness.cdng.tas.outcome.TasSwapRouteDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
@@ -138,21 +137,6 @@ public class TasSwapRollbackStep extends CdTaskExecutable<CfCommandResponseNG> {
       });
     }
 
-    boolean swapRouteOccurred = false;
-    boolean downsizeOldApplication = false;
-    OptionalSweepingOutput tasSwapRouteDataOptional = OptionalSweepingOutput.builder().found(false).build();
-    if (!isNull(tasSwapRollbackStepParameters.getTasSwapRoutesFqn())) {
-      tasSwapRouteDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
-          RefObjectUtils.getSweepingOutputRefObject(tasSwapRollbackStepParameters.getTasSwapRoutesFqn() + "."
-              + OutcomeExpressionConstants.TAS_SWAP_ROUTES_OUTCOME));
-    }
-
-    if (tasSwapRouteDataOptional.isFound()) {
-      TasSwapRouteDataOutcome tasSwapRouteDataOutcome = (TasSwapRouteDataOutcome) tasSwapRouteDataOptional.getOutput();
-      swapRouteOccurred = tasSwapRouteDataOutcome.isSwapRouteOccurred();
-      downsizeOldApplication = tasSwapRouteDataOutcome.isDownsizeOldApplication();
-    }
-
     CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG =
         CfSwapRollbackCommandRequestNG.builder()
             .accountId(accountId)
@@ -164,9 +148,9 @@ public class TasSwapRollbackStep extends CdTaskExecutable<CfCommandResponseNG> {
             .tasInfraConfig(tasInfraConfig)
             .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROLLBACK)
             .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
-            .downsizeOldApplication(downsizeOldApplication)
+            .downsizeOldApplication(true)
             .timeoutIntervalInMin(10)
-            .swapRouteOccurred(swapRouteOccurred)
+            .swapRouteOccurred(true)
             .useAppAutoScalar(tasSetupDataOutcome.isUseAppAutoScalar())
             .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails() == null
                     ? null
