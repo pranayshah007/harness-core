@@ -65,6 +65,8 @@ public class EnvironmentRbacHelper {
                        .build())
             .collect(Collectors.toList());
 
+    // pre-prod permission check
+
     permissionChecks.add(PermissionCheckDTO.builder()
                              .permission(CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION)
                              .resourceAttributes(getEnvironmentAttributesMap(EnvironmentType.PreProduction.name()))
@@ -72,6 +74,8 @@ public class EnvironmentRbacHelper {
                                  environments.get(0).getOrgIdentifier(), environments.get(0).getProjectIdentifier()))
                              .resourceType(NGResourceType.ENVIRONMENT)
                              .build());
+
+    // Prod permission check
 
     permissionChecks.add(PermissionCheckDTO.builder()
                              .permission(CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION)
