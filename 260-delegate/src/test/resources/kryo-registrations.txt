@@ -2765,3 +2765,12 @@
 10000523:io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails
 10000524:io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig
 10000526:io.harness.beans.HttpCertificateNG
+20000501:io.harness.delegate.beans.connector.rancher.RancherAuthType
+20000502:io.harness.delegate.beans.connector.rancher.RancherConfigType
+20000503:io.harness.delegate.beans.connector.rancher.RancherConnectorBearerTokenAuthenticationDTO
+20000504:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthCredentialsDTO
+20000505:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthCredentialsDTOSerializer
+20000506:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthDTO
+20000507:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthenticationSpecDTO
+20000508:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigDTO
+20000509:io.harness.delegate.beans.connector.rancher.RancherConnectorDTO
