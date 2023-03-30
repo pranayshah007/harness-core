@@ -112,7 +112,7 @@ public class ExecCommandUnit extends SshCommandUnit implements NestedAnnotationR
 
   @Override
   protected CommandExecutionStatus executeInternal(ShellCommandExecutionContext context) {
-    return context.executeCommandString(preparedCommand);
+    return context.executeCommandString(preparedCommand, context.isUseSshAgent());
   }
 
   /**

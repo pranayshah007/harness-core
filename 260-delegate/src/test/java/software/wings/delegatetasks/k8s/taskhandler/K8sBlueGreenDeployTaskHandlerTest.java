@@ -157,7 +157,9 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void executeInternalSkeleton() throws Exception {
     K8sBlueGreenDeployTaskHandler spyHandler = spy(k8sBlueGreenDeployTaskHandler);
-    doReturn(true).when(k8sTaskHelper).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), );
+    doReturn(true)
+        .when(k8sTaskHelper)
+        .fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), anyBoolean());
     doReturn(executionLogCallback).when(k8sTaskHelper).getExecutionLogCallback(any(), any());
     doReturn(true).when(spyHandler).init(any(), any(), any());
     doReturn(true).when(spyHandler).prepareForBlueGreen(any(), any(), any());
@@ -214,7 +216,9 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void executeInternalSkeletonWithLegacyReleaseImpl() throws Exception {
     K8sBlueGreenDeployTaskHandler spyHandler = spy(k8sBlueGreenDeployTaskHandler);
-    doReturn(true).when(k8sTaskHelper).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), );
+    doReturn(true)
+        .when(k8sTaskHelper)
+        .fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), anyBoolean());
     doReturn(executionLogCallback).when(k8sTaskHelper).getExecutionLogCallback(any(), any());
     doReturn(true).when(spyHandler).init(any(), any(), any());
     doReturn(true).when(spyHandler).prepareForBlueGreen(any(), any(), any());
@@ -374,7 +378,9 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     List<KubernetesResource> kubernetesResources =
         new ArrayList<>(asList(primaryService(), deployment(), stageService(), configMap()));
     K8sBlueGreenDeployTaskHandler spyHandler = spy(k8sBlueGreenDeployTaskHandler);
-    doReturn(true).when(k8sTaskHelper).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), );
+    doReturn(true)
+        .when(k8sTaskHelper)
+        .fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), anyBoolean());
     doReturn(executionLogCallback).when(k8sTaskHelper).getExecutionLogCallback(any(), any());
     doReturn(true).when(spyHandler).init(any(), any(), any());
     k8sBlueGreenHandlerConfig.setManagedWorkload(deployment());
@@ -800,7 +806,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     doReturn(true)
         .when(k8sTaskHelper)
         .fetchManifestFilesAndWriteToDirectory(
-            any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong(), );
+            any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong(), anyBoolean());
     doReturn(executionLogCallback)
         .when(k8sTaskHelper)
         .getExecutionLogCallback(any(K8sBlueGreenDeployTaskParameters.class), any());
@@ -863,7 +869,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     doReturn(true)
         .when(k8sTaskHelper)
         .fetchManifestFilesAndWriteToDirectory(
-            any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong(), );
+            any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong(), anyBoolean());
     doReturn(executionLogCallback)
         .when(k8sTaskHelper)
         .getExecutionLogCallback(any(K8sBlueGreenDeployTaskParameters.class), any());
@@ -932,7 +938,9 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldSaveReleaseHistoryUsingK8sClient() throws Exception {
     K8sBlueGreenDeployTaskHandler spyHandler = spy(k8sBlueGreenDeployTaskHandler);
-    doReturn(true).when(k8sTaskHelper).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), );
+    doReturn(true)
+        .when(k8sTaskHelper)
+        .fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), anyBoolean());
     doReturn(executionLogCallback).when(k8sTaskHelper).getExecutionLogCallback(any(), any());
     doReturn(true).when(spyHandler).init(any(), any(), any());
     doReturn(true).when(spyHandler).prepareForBlueGreen(any(), any(), any());
@@ -987,7 +995,9 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
   public void shouldCatchGetPodListException() throws Exception {
     K8sBlueGreenDeployTaskHandler spyHandler = spy(k8sBlueGreenDeployTaskHandler);
     doReturn(true).when(spyHandler).init(any(), any(), any());
-    doReturn(true).when(k8sTaskHelper).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), );
+    doReturn(true)
+        .when(k8sTaskHelper)
+        .fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), anyBoolean());
     doReturn(true).when(spyHandler).prepareForBlueGreen(any(), any(), any());
     doReturn(true).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     doReturn(true).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());

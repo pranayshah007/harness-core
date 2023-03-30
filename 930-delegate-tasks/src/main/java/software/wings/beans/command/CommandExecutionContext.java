@@ -118,6 +118,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
   private Map<String, List<EncryptedDataDetail>> artifactServerEncryptedDataDetailsMap;
   private String artifactFileName;
   private SSHVaultConfig sshVaultConfig;
+  private boolean useSshAgent;
 
   public CommandExecutionContext() {}
 
@@ -169,6 +170,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
     artifactFileName = other.artifactFileName;
     delegateSelectors = other.delegateSelectors;
     sshVaultConfig = other.sshVaultConfig;
+    useSshAgent = other.useSshAgent;
   }
 
   public CommandExecutionContext(String accountId, String envId, Host host, String appId, String activityId,
@@ -189,7 +191,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
       boolean useWinRMKerberosUniqueCacheFile, List<String> delegateSelectors, Map<String, Artifact> multiArtifactMap,
       Map<String, ArtifactStreamAttributes> artifactStreamAttributesMap, boolean multiArtifact,
       Map<String, List<EncryptedDataDetail>> artifactServerEncryptedDataDetailsMap, String artifactFileName,
-      SSHVaultConfig sshVaultConfig) {
+      SSHVaultConfig sshVaultConfig, boolean useSshAgent) {
     this.accountId = accountId;
     this.envId = envId;
     this.host = host;
@@ -238,6 +240,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
     this.artifactServerEncryptedDataDetailsMap = artifactServerEncryptedDataDetailsMap;
     this.artifactFileName = artifactFileName;
     this.sshVaultConfig = sshVaultConfig;
+    this.useSshAgent = useSshAgent;
   }
 
   /**
@@ -425,6 +428,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
     private Map<String, List<EncryptedDataDetail>> artifactServerEncryptedDataDetailsMap;
     private String artifactFileName;
     private SSHVaultConfig sshVaultConfig;
+    private boolean useSshAgent;
 
     private Builder() {}
 
@@ -434,6 +438,11 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
 
     public Builder accountId(String accountId) {
       this.accountId = accountId;
+      return this;
+    }
+
+    public Builder useSshAgent(boolean useSshAgent) {
+      this.useSshAgent = useSshAgent;
       return this;
     }
 
@@ -710,6 +719,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
           .winrmScriptCommandSplit(winrmScriptCommandSplit)
           .disableWinRMEnvVariables(disableWinRMEnvVariables)
           .delegateSelectors(delegateSelectors)
+          .useSshAgent(useSshAgent)
           .sshVaultConfig(sshVaultConfig);
     }
 
@@ -761,6 +771,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
       commandExecutionContext.setDisableWinRMEnvVariables(disableWinRMEnvVariables);
       commandExecutionContext.setDelegateSelectors(delegateSelectors);
       commandExecutionContext.setSshVaultConfig(sshVaultConfig);
+      commandExecutionContext.setUseSshAgent(useSshAgent);
       return commandExecutionContext;
     }
   }

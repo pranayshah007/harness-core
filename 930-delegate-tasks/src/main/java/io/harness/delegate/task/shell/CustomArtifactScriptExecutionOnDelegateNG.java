@@ -63,8 +63,8 @@ public class CustomArtifactScriptExecutionOnDelegateNG {
     // if (taskParameters.isLocalOverrideFeatureFlag()) {
     //   taskParameters.setScript(delegateLocalConfigService.replacePlaceholdersWithLocalConfig(taskParameters.getScript()));
     // }
-    ExecuteCommandResponse executeCommandResponse =
-        executor.executeCommandString(taskParameters.getScript(), taskParameters.getOutputVars(), );
+    ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
+        taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.isUseSshAgent());
     return ShellScriptTaskResponseNG.builder()
         .executeCommandResponse(executeCommandResponse)
         .status(executeCommandResponse.getStatus())

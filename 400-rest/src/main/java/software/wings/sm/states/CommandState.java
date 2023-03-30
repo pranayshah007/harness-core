@@ -532,6 +532,7 @@ public class CommandState extends State {
               .delegateSelectors(getDelegateSelectors(context))
               .disableWinRMEnvVariables(
                   featureFlagService.isNotEnabled(FeatureName.ENABLE_WINRM_ENV_VARIABLES, accountId))
+              .useSshAgent(featureFlagService.isNotEnabled(FeatureName.CDS_SSH_AGENT, accountId))
               .sshVaultConfig(sshVaultConfig);
 
       if (host != null) {

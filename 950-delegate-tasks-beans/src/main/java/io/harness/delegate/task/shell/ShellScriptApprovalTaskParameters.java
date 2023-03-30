@@ -41,6 +41,7 @@ public class ShellScriptApprovalTaskParameters implements TaskParameters, Activi
   @Expression(ALLOW_SECRETS) private final String script;
   private String workingDirectory;
   private List<String> delegateSelectors;
+  private boolean useSshAgent;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

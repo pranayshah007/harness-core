@@ -173,6 +173,7 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
             .variables(new HashMap<>())
             .outputPathKey(OUTPUT_PATH_KEY)
             .timeoutInMillis(CDStepHelper.getTimeoutInMillis(stepParameters))
+            .useSshAgent(cdStepHelper.isUseSshAgent(AmbianceUtils.getAccountId(ambiance)))
             .build();
 
     final TaskData taskData = TaskData.builder()

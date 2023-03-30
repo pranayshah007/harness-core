@@ -300,6 +300,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .commandUnits(
             mapCommandUnits(ambiance, commandStepParameters.getCommandUnits(), onDelegate, Collections.emptyMap()))
         .host(onDelegate ? null : getHost(commandStepParameters))
+        .useSshAgent(cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_SSH_AGENT))
         .build();
   }
 
@@ -322,6 +323,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .commandUnits(
             mapCommandUnits(ambiance, commandStepParameters.getCommandUnits(), onDelegate, Collections.emptyMap()))
         .host(onDelegate ? null : getHost(commandStepParameters))
+        .useSshAgent(cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_SSH_AGENT))
         .build();
   }
 
@@ -348,6 +350,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .disableWinRMCommandEncodingFFSet(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING_NG))
         .winrmScriptCommandSplit(cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_SCRIPT_COMMAND_SPLIT_NG))
+        .useSshAgent(cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SSH_AGENT))
         .build();
   }
 
@@ -376,6 +379,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .disableWinRMCommandEncodingFFSet(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING_NG))
         .winrmScriptCommandSplit(cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_SCRIPT_COMMAND_SPLIT_NG))
+        .useSshAgent(cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SSH_AGENT))
         .build();
   }
 

@@ -726,6 +726,10 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING);
   }
 
+  public boolean isUseSshAgent(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SSH_AGENT);
+  }
+
   public LogCallback getLogCallback(String commandUnitName, Ambiance ambiance, boolean shouldOpenStream) {
     return new NGLogCallback(logStreamingStepClientFactory, ambiance, commandUnitName, shouldOpenStream);
   }

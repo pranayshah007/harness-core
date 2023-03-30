@@ -102,7 +102,8 @@ public class InitSshCommandUnitV2 extends SshCommandUnit {
     activityId = context.getActivityId();
     executionStagingDir = "/tmp/" + activityId;
     preInitCommand = "mkdir -p " + executionStagingDir;
-    CommandExecutionStatus commandExecutionStatus = context.executeCommandString(preInitCommand);
+    CommandExecutionStatus commandExecutionStatus =
+        context.executeCommandString(preInitCommand, context.isUseSshAgent());
 
     notNullCheck("Service Variables", context.getServiceVariables());
     for (Map.Entry<String, String> entry : context.getServiceVariables().entrySet()) {
@@ -120,7 +121,7 @@ public class InitSshCommandUnitV2 extends SshCommandUnit {
     }
     StringBuffer envVariablesFromHost = new StringBuffer();
     commandExecutionStatus = commandExecutionStatus == CommandExecutionStatus.SUCCESS
-        ? context.executeCommandString("printenv", envVariablesFromHost)
+        ? context.executeCommandString("printenv", envVariablesFromHost, context.isUseSshAgent())
         : commandExecutionStatus;
     Properties properties = new Properties();
     try {

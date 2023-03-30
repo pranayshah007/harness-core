@@ -57,16 +57,17 @@ public class ShellCommandExecutionContext extends CommandExecutionContext {
         accountId, appId, activityId, commandUnitName, hostName);
   }
 
-  public CommandExecutionStatus executeCommandString(String commandString) {
-    return executor.executeCommandString(commandString, false, );
+  public CommandExecutionStatus executeCommandString(String commandString, boolean useSshAgent) {
+    return executor.executeCommandString(commandString, false, useSshAgent);
   }
 
-  public CommandExecutionStatus executeCommandString(String commandString, boolean displayCommand) {
-    return executor.executeCommandString(commandString, displayCommand, false, );
+  public CommandExecutionStatus executeCommandString(
+      String commandString, boolean displayCommand, boolean useSshAgent) {
+    return executor.executeCommandString(commandString, displayCommand, false, useSshAgent);
   }
 
-  public CommandExecutionStatus executeCommandString(String commandString, StringBuffer output) {
-    return executor.executeCommandString(commandString, output, );
+  public CommandExecutionStatus executeCommandString(String commandString, StringBuffer output, boolean useSshAgent) {
+    return executor.executeCommandString(commandString, output, useSshAgent);
   }
 
   public void setExecutor(BaseScriptExecutor executor) {

@@ -74,7 +74,7 @@ public class ScriptProcessExecutorTest extends CategoryTest {
     String command = "export A=\"aaa\"\n"
         + "export B=\"bbb\"";
     ExecuteCommandResponse executeCommandResponse = scriptProcessExecutor.executeCommandString(
-        command, asList("A", "B", "${C}", "${A}"), Collections.emptyList(), null, );
+        command, asList("A", "B", "${C}", "${A}"), Collections.emptyList(), null, false);
     assertThat(executeCommandResponse).isNotNull();
     assertThat(executeCommandResponse.getStatus()).isEqualTo(SUCCESS);
     assertThat(executeCommandResponse.getCommandExecutionData()).isNotNull();
@@ -106,7 +106,7 @@ public class ScriptProcessExecutorTest extends CategoryTest {
 
     String command = "exit 1";
     ExecuteCommandResponse executeCommandResponse =
-        scriptProcessExecutor.executeCommandString(command, asList("A", "B"), );
+        scriptProcessExecutor.executeCommandString(command, asList("A", "B"), false);
     assertThat(executeCommandResponse).isNotNull();
     assertThat(executeCommandResponse.getStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     assertThat(executeCommandResponse.getCommandExecutionData()).isNotNull();
@@ -134,7 +134,8 @@ public class ScriptProcessExecutorTest extends CategoryTest {
 
     String command = "export A=\"aaa\"\n"
         + "export B=\"bbb\"";
-    CommandExecutionStatus commandExecutionStatus = scriptProcessExecutor.executeCommandString(command, null, true);
+    CommandExecutionStatus commandExecutionStatus =
+        scriptProcessExecutor.executeCommandString(command, new StringBuffer(), true);
     assertThat(commandExecutionStatus).isEqualTo(SUCCESS);
   }
 
@@ -157,7 +158,8 @@ public class ScriptProcessExecutorTest extends CategoryTest {
 
     String command = "export A=\"aaa\"\n"
         + "export B=\"bbb\"";
-    CommandExecutionStatus commandExecutionStatus = scriptProcessExecutor.executeCommandString(command, null, true);
+    CommandExecutionStatus commandExecutionStatus =
+        scriptProcessExecutor.executeCommandString(command, new StringBuffer(), true);
     assertThat(commandExecutionStatus).isEqualTo(SUCCESS);
   }
 
@@ -180,7 +182,8 @@ public class ScriptProcessExecutorTest extends CategoryTest {
     on(scriptProcessExecutor).set("logCallback", logCallback);
 
     String command = "efjrls";
-    CommandExecutionStatus commandExecutionStatus = scriptProcessExecutor.executeCommandString(command, null, true);
+    CommandExecutionStatus commandExecutionStatus =
+        scriptProcessExecutor.executeCommandString(command, new StringBuffer(), true);
     assertThat(commandExecutionStatus).isEqualTo(FAILURE);
   }
 
@@ -203,7 +206,8 @@ public class ScriptProcessExecutorTest extends CategoryTest {
 
     String command = "export A=\"aaa\"\n"
         + "export B=\"bbb\"";
-    CommandExecutionStatus commandExecutionStatus = scriptProcessExecutor.executeCommandString(command, null, true);
+    CommandExecutionStatus commandExecutionStatus =
+        scriptProcessExecutor.executeCommandString(command, new StringBuffer(), true);
     assertThat(commandExecutionStatus).isEqualTo(SUCCESS);
     assertThat(scriptProcessExecutor.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(scriptProcessExecutor.getExecutionId()).isEqualTo(ACTIVITY_ID);
@@ -230,7 +234,8 @@ public class ScriptProcessExecutorTest extends CategoryTest {
 
     String command = "export A=\"aaa\"\n"
         + "export B=\"bbb\"";
-    CommandExecutionStatus commandExecutionStatus = scriptProcessExecutor.executeCommandString(command, null, true);
+    CommandExecutionStatus commandExecutionStatus =
+        scriptProcessExecutor.executeCommandString(command, new StringBuffer(), true);
     assertThat(commandExecutionStatus).isEqualTo(SUCCESS);
   }
 
@@ -254,7 +259,8 @@ public class ScriptProcessExecutorTest extends CategoryTest {
 
     String command = "export A=\"aaa\"\n"
         + "export B=\"bbb\"";
-    CommandExecutionStatus commandExecutionStatus = scriptProcessExecutor.executeCommandString(command, null, true);
+    CommandExecutionStatus commandExecutionStatus =
+        scriptProcessExecutor.executeCommandString(command, new StringBuffer(), true);
     assertThat(commandExecutionStatus).isEqualTo(SUCCESS);
   }
 
@@ -279,7 +285,8 @@ public class ScriptProcessExecutorTest extends CategoryTest {
 
     String command = "export A=\"aaa\"\n"
         + "export B=\"bbb\"";
-    CommandExecutionStatus commandExecutionStatus = scriptProcessExecutor.executeCommandString(command, null, true);
+    CommandExecutionStatus commandExecutionStatus =
+        scriptProcessExecutor.executeCommandString(command, new StringBuffer(), true);
     assertThat(commandExecutionStatus).isEqualTo(SUCCESS);
   }
 
@@ -306,7 +313,7 @@ public class ScriptProcessExecutorTest extends CategoryTest {
     String command = "export A=\"aaa\"\n"
         + "export B=\"bbb\"";
     ExecuteCommandResponse executeCommandResponse = scriptProcessExecutor.executeCommandString(
-        command, asList("A", "B", "${C}", "${A}"), Collections.emptyList(), null, );
+        command, asList("A", "B", "${C}", "${A}"), Collections.emptyList(), null, false);
     assertThat(executeCommandResponse).isNotNull();
     assertThat(executeCommandResponse.getStatus()).isEqualTo(SUCCESS);
     assertThat(executeCommandResponse.getCommandExecutionData()).isNotNull();
@@ -340,8 +347,8 @@ public class ScriptProcessExecutorTest extends CategoryTest {
 
     String command = "export A=\"aaa\"\n"
         + "export B=\"bbb\"";
-    ExecuteCommandResponse executeCommandResponse = scriptProcessExecutor.executeCommandString(
-        command, asList("A", "B", "${C}", "${A}", "hyphen-var", "nonExistentVar"), Collections.emptyList(), null, );
+    ExecuteCommandResponse executeCommandResponse = scriptProcessExecutor.executeCommandString(command,
+        asList("A", "B", "${C}", "${A}", "hyphen-var", "nonExistentVar"), Collections.emptyList(), null, false);
     assertThat(executeCommandResponse).isNotNull();
     assertThat(executeCommandResponse.getStatus()).isEqualTo(SUCCESS);
     assertThat(executeCommandResponse.getCommandExecutionData()).isNotNull();

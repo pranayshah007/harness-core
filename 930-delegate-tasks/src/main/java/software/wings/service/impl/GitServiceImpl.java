@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshSessionFactory.generateTGTUsingSshConfig;
+import static io.harness.shell.SshSessionFactory.getSSHSession;
 
 import static software.wings.beans.yaml.YamlConstants.GIT_YAML_LOG_PREFIX;
 import static software.wings.utils.SshDelegateHelperUtils.createSshSessionConfig;
@@ -32,7 +33,6 @@ import io.harness.git.model.PushResultGit;
 import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.ssh.exception.SshException;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
@@ -127,14 +127,9 @@ public class GitServiceImpl implements GitService {
       @Override
       protected Session createSession(OpenSshConfig.Host hc, String user, String host, int port, FS fs)
           throws JSchException {
-        try {
-          SshSessionConfig sshSessionConfig = createSshSessionConfig(settingAttribute, host);
-          sshSessionConfig.setPort(port);
-          return new JschAgent(sshSessionConfig, new NoopExecutionCallback())
-              .getJschSession(); // use port from repo URL
-        } catch (SshException se) {
-          throw new JSchException(se.getMessage());
-        }
+        SshSessionConfig sshSessionConfig = createSshSessionConfig(settingAttribute, host);
+        sshSessionConfig.setPort(port); // use port from repo URL
+        return getSSHSession(sshSessionConfig);
       }
 
       @Override

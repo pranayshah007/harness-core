@@ -313,7 +313,8 @@ public class ArtifactDelegateRequestUtils {
 
   public CustomArtifactDelegateRequest getCustomDelegateRequest(String artifactsArrayPath, String versionRegex,
       String type, ArtifactSourceType sourceType, String versionPath, String script, Map<String, String> attributes,
-      Map<String, String> inputs, String version, String executionId, long timeout, String accountId) {
+      Map<String, String> inputs, String version, String executionId, long timeout, String accountId,
+      boolean useSshAgent) {
     return CustomArtifactDelegateRequest.builder()
         .artifactsArrayPath(artifactsArrayPath)
         .attributes(attributes)
@@ -328,6 +329,7 @@ public class ArtifactDelegateRequestUtils {
         .executionId(executionId)
         .workingDirectory("/tmp")
         .accountId(accountId)
+        .useSshAgent(useSshAgent)
         .build();
   }
 

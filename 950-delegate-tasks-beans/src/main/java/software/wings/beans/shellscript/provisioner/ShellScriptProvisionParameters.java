@@ -51,6 +51,7 @@ public class ShellScriptProvisionParameters implements TaskParameters, ActivityA
   Name of the variable which contains the file path
    */
   private String outputPathKey;
+  private boolean useSshAgent;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

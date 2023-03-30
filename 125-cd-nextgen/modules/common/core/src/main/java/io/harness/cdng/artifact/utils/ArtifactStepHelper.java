@@ -12,6 +12,7 @@ import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
@@ -68,6 +69,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidConnectorTypeException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -101,6 +103,7 @@ public class ArtifactStepHelper {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Inject private DelegateMetricsService delegateMetricsService;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
 
@@ -363,7 +366,8 @@ public class ArtifactStepHelper {
           return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
               customArtifactConfig, ambiance, delegateMetricsService, ngSecretService);
         }
-        return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, ambiance);
+        return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, ambiance,
+            featureFlagService.isEnabled(FeatureName.CDS_SSH_AGENT, AmbianceUtils.getAccountId(ambiance)));
       case GOOGLE_CLOUD_STORAGE_ARTIFACT:
         GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
             (GoogleCloudStorageArtifactConfig) artifactConfig;

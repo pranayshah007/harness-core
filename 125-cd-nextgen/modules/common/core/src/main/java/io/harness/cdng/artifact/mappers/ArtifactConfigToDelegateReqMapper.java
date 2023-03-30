@@ -259,7 +259,7 @@ public class ArtifactConfigToDelegateReqMapper {
         encryptedDataDetails, ArtifactSourceType.BAMBOO, planKey, artifactPath, buildNumber);
   }
   public CustomArtifactDelegateRequest getCustomDelegateRequest(
-      CustomArtifactConfig artifactConfig, Ambiance ambiance) {
+      CustomArtifactConfig artifactConfig, Ambiance ambiance, boolean useSshAgent) {
     CustomScriptInlineSource customScriptInlineSource = getCustomScriptInlineSource(artifactConfig);
     long timeout = TIME_OUT;
 
@@ -289,7 +289,7 @@ public class ArtifactConfigToDelegateReqMapper {
         NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L),
         artifactConfig.getVersion().fetchFinalValue().toString(),
         ambiance != null ? AmbianceUtils.obtainCurrentRuntimeId(ambiance) : "", timeout,
-        AmbianceUtils.getAccountId(ambiance));
+        AmbianceUtils.getAccountId(ambiance), useSshAgent);
   }
 
   public CustomArtifactDelegateRequest getCustomDelegateRequest(CustomArtifactConfig artifactConfig, Ambiance ambiance,

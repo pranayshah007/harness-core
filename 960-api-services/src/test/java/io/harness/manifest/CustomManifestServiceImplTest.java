@@ -85,10 +85,10 @@ public class CustomManifestServiceImplTest extends CategoryTest {
 
     doReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.FAILURE).build())
         .when(scriptProcessExecutor)
-        .executeCommandString("test script", emptyList(), );
+        .executeCommandString("test script", emptyList(), false);
 
     assertThatThrownBy(
-        () -> customManifestService.downloadCustomSource(customManifestSource, testOutputDirectory, logCallback, ))
+        () -> customManifestService.downloadCustomSource(customManifestSource, testOutputDirectory, logCallback, false))
         .isInstanceOf(ShellExecutionException.class)
         .hasMessageContaining("Custom shell script failed");
   }
@@ -101,9 +101,9 @@ public class CustomManifestServiceImplTest extends CategoryTest {
         CustomManifestSource.builder().script("test script").filePaths(singletonList("file1.yaml")).build();
     doReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build())
         .when(scriptProcessExecutor)
-        .executeCommandString("test script", emptyList(), );
+        .executeCommandString("test script", emptyList(), false);
     assertThatThrownBy(
-        () -> customManifestService.downloadCustomSource(customManifestSource, testOutputDirectory, logCallback, ))
+        () -> customManifestService.downloadCustomSource(customManifestSource, testOutputDirectory, logCallback, false))
         .isInstanceOf(IOException.class)
         .hasMessageContaining("file1.yaml' does not exist");
   }
@@ -130,9 +130,9 @@ public class CustomManifestServiceImplTest extends CategoryTest {
       return ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build();
     })
         .when(scriptProcessExecutor)
-        .executeCommandString("test script", Collections.emptyList(), );
+        .executeCommandString("test script", Collections.emptyList(), false);
 
-    customManifestService.downloadCustomSource(customManifestSource, testOutputDirectory, logCallback, );
+    customManifestService.downloadCustomSource(customManifestSource, testOutputDirectory, logCallback, false);
     assertFilesExists(testOutputDirectory, "file1.yaml", "file2.yaml", "file3.yaml", "templates/file4.yaml");
   }
 
@@ -160,10 +160,10 @@ public class CustomManifestServiceImplTest extends CategoryTest {
       return ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build();
     })
         .when(scriptProcessExecutor)
-        .executeCommandString("test script", Collections.emptyList(), );
+        .executeCommandString("test script", Collections.emptyList(), false);
 
-    Collection<CustomSourceFile> result =
-        customManifestService.fetchValues(customManifestSource, workingDirectory, ACTIVITY_ID, logCallback, true, );
+    Collection<CustomSourceFile> result = customManifestService.fetchValues(
+        customManifestSource, workingDirectory, ACTIVITY_ID, logCallback, true, false);
     assertThat(result.stream().map(CustomSourceFile::getFilePath))
         .containsExactlyInAnyOrder("file1.yaml", "values/file2.yaml", absolutePath);
     assertThat(result.stream().map(CustomSourceFile::getFileContent))
@@ -183,7 +183,7 @@ public class CustomManifestServiceImplTest extends CategoryTest {
     FileUtils.write(absoluteFile, "absolute-content", Charset.defaultCharset());
 
     Collection<CustomSourceFile> result = customManifestService.fetchValues(
-        customManifestSource, shellWorkingDirectory, ACTIVITY_ID, logCallback, true, );
+        customManifestSource, shellWorkingDirectory, ACTIVITY_ID, logCallback, true, false);
     assertThat(result.stream().map(CustomSourceFile::getFilePath)).containsExactly(absolutePath);
     assertThat(result.stream().map(CustomSourceFile::getFileContent)).containsExactly("absolute-content");
   }
@@ -196,9 +196,9 @@ public class CustomManifestServiceImplTest extends CategoryTest {
         CustomManifestSource.builder().script("test script").filePaths(singletonList("file1.yaml")).build();
     doReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build())
         .when(scriptProcessExecutor)
-        .executeCommandString("test script", emptyList(), );
+        .executeCommandString("test script", emptyList(), false);
     String resultWorkingDir =
-        customManifestService.executeCustomSourceScript(ACTIVITY_ID, logCallback, customManifestSource, true, );
+        customManifestService.executeCustomSourceScript(ACTIVITY_ID, logCallback, customManifestSource, true, false);
 
     assertThat(resultWorkingDir).isNotNull();
     File file = new File(resultWorkingDir);
@@ -215,10 +215,11 @@ public class CustomManifestServiceImplTest extends CategoryTest {
         CustomManifestSource.builder().script("test script").filePaths(singletonList("file1.yaml")).build();
     doReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.FAILURE).build())
         .when(scriptProcessExecutor)
-        .executeCommandString("test script", emptyList(), );
+        .executeCommandString("test script", emptyList(), false);
 
-    assertThatThrownBy(
-        () -> customManifestService.executeCustomSourceScript(ACTIVITY_ID, logCallback, customManifestSource, true, ))
+    assertThatThrownBy(()
+                           -> customManifestService.executeCustomSourceScript(
+                               ACTIVITY_ID, logCallback, customManifestSource, true, false))
         .isInstanceOf(ShellExecutionException.class)
         .hasMessageContaining("Custom shell script failed");
   }

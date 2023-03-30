@@ -12,6 +12,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.expressionEvaluator.CustomScriptSecretExpressionEvaluator;
 import io.harness.common.NGTaskType;
 import io.harness.data.structure.EmptyPredicate;
@@ -36,6 +37,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -55,6 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CustomResourceServiceImpl implements CustomResourceService {
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
   @Inject ExceptionManager exceptionManager;
@@ -71,7 +74,8 @@ public class CustomResourceServiceImpl implements CustomResourceService {
         script, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
     CustomArtifactDelegateRequest customArtifactDelegateRequest = ArtifactDelegateRequestUtils.getCustomDelegateRequest(
         arrayPath, null, "Inline", ArtifactSourceType.CUSTOM_ARTIFACT, versionPath, script, Collections.emptyMap(),
-        inputs, null, null, timeoutInSecs, accountIdentifier);
+        inputs, null, null, timeoutInSecs, accountIdentifier,
+        featureFlagService.isEnabled(FeatureName.CDS_SSH_AGENT, accountIdentifier));
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
           executeSyncTask(customArtifactDelegateRequest, ArtifactTaskType.GET_BUILDS, baseNGAccess,

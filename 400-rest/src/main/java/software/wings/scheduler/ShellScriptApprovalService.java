@@ -17,12 +17,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.shell.ShellScriptApprovalTaskParameters;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
+import io.harness.ff.FeatureFlagService;
 import io.harness.shell.ScriptType;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -57,6 +59,7 @@ public class ShellScriptApprovalService {
   private final WaitNotifyEngine waitNotifyEngine;
   private final ApprovalPolingService approvalPolingService;
   @Inject private StateExecutionService stateExecutionService;
+  @Inject private FeatureFlagService featureFlagService;
   @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Inject
@@ -116,6 +119,7 @@ public class ShellScriptApprovalService {
             .scriptType(ScriptType.BASH)
             .script(scriptString)
             .delegateSelectors(delegateSelectors)
+            .useSshAgent(featureFlagService.isEnabled(FeatureName.CDS_SSH_AGENT, accountId))
             .build();
 
     DelegateTask delegateTask = DelegateTask.builder()

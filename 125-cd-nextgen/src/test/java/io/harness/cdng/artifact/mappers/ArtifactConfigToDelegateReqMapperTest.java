@@ -467,7 +467,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .build();
 
     CustomArtifactDelegateRequest customArtifactDelegateRequest =
-        ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+        ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+            customArtifactConfig, Ambiance.newBuilder().build(), false);
     assertThat(customArtifactDelegateRequest.getArtifactsArrayPath()).isEqualTo("results");
     assertThat(customArtifactDelegateRequest.getVersionPath()).isEqualTo("version");
     assertThat(customArtifactDelegateRequest.getScript()).isEqualTo("echo test");
@@ -498,8 +499,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .version(ParameterField.createValueField("build-x"))
             .build();
 
-    customArtifactDelegateRequest =
-        ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+    customArtifactDelegateRequest = ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+        customArtifactConfig, Ambiance.newBuilder().build(), false);
     assertThat(customArtifactDelegateRequest.getArtifactsArrayPath()).isEqualTo("results");
     assertThat(customArtifactDelegateRequest.getVersionPath()).isEqualTo("version");
     assertThat(customArtifactDelegateRequest.getScript()).isEqualTo("echo test");
@@ -513,8 +514,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(customArtifactDelegateRequest.getTimeout()).isEqualTo(700000L);
 
     // Validate for Triggers
-    customArtifactDelegateRequest =
-        ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+    customArtifactDelegateRequest = ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+        customArtifactConfig, Ambiance.newBuilder().build(), false);
     assertThat(customArtifactDelegateRequest.getTimeout()).isEqualTo(700000L);
   }
 
@@ -530,7 +531,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
                                                     .version(ParameterField.createValueField("build-x"))
                                                     .build();
     try {
-      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+          customArtifactConfig, Ambiance.newBuilder().build(), false);
     } catch (Exception ex) {
       assertThat(ex).isInstanceOf(InvalidArtifactServerException.class);
       assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
@@ -548,7 +550,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .build();
 
     try {
-      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+          customArtifactConfig, Ambiance.newBuilder().build(), false);
     } catch (Exception ex) {
       assertThat(ex).isInstanceOf(InvalidArtifactServerException.class);
       assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
@@ -571,7 +574,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .build();
 
     try {
-      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+          customArtifactConfig, Ambiance.newBuilder().build(), false);
     } catch (Exception ex) {
       assertThat(ex).isInstanceOf(InvalidArtifactServerException.class);
       assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
@@ -594,7 +598,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .version(ParameterField.createValueField("build-x"))
             .build();
     try {
-      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+          customArtifactConfig, Ambiance.newBuilder().build(), false);
     } catch (Exception ex) {
       assertThat(ex).isInstanceOf(InvalidArtifactServerException.class);
       assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
@@ -617,7 +622,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .version(ParameterField.createValueField("build-x"))
             .build();
     try {
-      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+          customArtifactConfig, Ambiance.newBuilder().build(), false);
     } catch (Exception ex) {
       assertThat(ex).isInstanceOf(InvalidArtifactServerException.class);
       assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
@@ -648,7 +654,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .version(ParameterField.createValueField("build-x"))
             .build();
     try {
-      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+          customArtifactConfig, Ambiance.newBuilder().build(), false);
     } catch (Exception ex) {
       assertThat(ex).isInstanceOf(InvalidArtifactServerException.class);
       assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
@@ -679,7 +686,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .version(ParameterField.createValueField("build-x"))
             .build();
     try {
-      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+          customArtifactConfig, Ambiance.newBuilder().build(), false);
     } catch (Exception ex) {
       assertThat(ex).isInstanceOf(InvalidArtifactServerException.class);
       assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
@@ -887,7 +895,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .build();
 
     CustomArtifactDelegateRequest customArtifactDelegateRequest =
-        ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+        ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+            customArtifactConfig, Ambiance.newBuilder().build(), false);
     assertThat(customArtifactDelegateRequest.getArtifactsArrayPath()).isEqualTo("results");
     assertThat(customArtifactDelegateRequest.getVersionPath()).isEqualTo("version");
     assertThat(customArtifactDelegateRequest.getScript()).isEqualTo("echo test");
@@ -925,7 +934,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .build();
 
     CustomArtifactDelegateRequest customArtifactDelegateRequest =
-        ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+        ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+            customArtifactConfig, Ambiance.newBuilder().build(), false);
     assertThat(customArtifactDelegateRequest.getArtifactsArrayPath()).isEqualTo("results");
     assertThat(customArtifactDelegateRequest.getVersionPath()).isEqualTo("version");
     assertThat(customArtifactDelegateRequest.getScript()).isEqualTo("echo test");
@@ -956,8 +966,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .version(ParameterField.createValueField("build-x"))
             .build();
 
-    customArtifactDelegateRequest =
-        ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+    customArtifactDelegateRequest = ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+        customArtifactConfig, Ambiance.newBuilder().build(), false);
     assertThat(customArtifactDelegateRequest.getArtifactsArrayPath()).isEqualTo("results");
     assertThat(customArtifactDelegateRequest.getVersionPath()).isEqualTo("version");
     assertThat(customArtifactDelegateRequest.getScript()).isEqualTo("echo test");
@@ -971,8 +981,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(customArtifactDelegateRequest.getTimeout()).isEqualTo(700000L);
 
     // Validate for Triggers
-    customArtifactDelegateRequest =
-        ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+    customArtifactDelegateRequest = ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+        customArtifactConfig, Ambiance.newBuilder().build(), false);
     assertThat(customArtifactDelegateRequest.getTimeout()).isEqualTo(700000L);
     assertThat(customArtifactDelegateRequest.getVersionRegex()).isEqualTo("stable*");
   }

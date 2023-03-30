@@ -65,7 +65,7 @@ public class CommandParameters extends CommandExecutionContext implements TaskPa
       boolean useWinRMKerberosUniqueCacheFile, List<String> delegateSelectors, Map<String, Artifact> multiArtifactMap,
       Map<String, ArtifactStreamAttributes> artifactStreamAttributesMap, boolean multiArtifact,
       Map<String, List<EncryptedDataDetail>> artifactServerEncryptedDataDetailsMap, String artifactFileName,
-      SSHVaultConfig sshVaultConfig, Command command) {
+      SSHVaultConfig sshVaultConfig, Command command, boolean useSshAgent) {
     super(accountId, envId, host, appId, activityId, serviceName, runtimePath, stagingPath, backupPath,
         windowsRuntimePath, serviceTemplateId, executionCredential, appContainer, artifactFiles, serviceVariables,
         safeDisplayServiceVariables, envVariables, hostConnectionAttributes, hostConnectionCredentials,
@@ -75,7 +75,7 @@ public class CommandParameters extends CommandExecutionContext implements TaskPa
         deploymentType, artifactServerEncryptedDataDetails, inlineSshCommand, executeOnDelegate,
         disableWinRMCommandEncodingFFSet, winrmScriptCommandSplit, disableWinRMEnvVariables,
         useWinRMKerberosUniqueCacheFile, delegateSelectors, multiArtifactMap, artifactStreamAttributesMap,
-        multiArtifact, artifactServerEncryptedDataDetailsMap, artifactFileName, sshVaultConfig);
+        multiArtifact, artifactServerEncryptedDataDetailsMap, artifactFileName, sshVaultConfig, useSshAgent);
 
     this.command = command;
   }

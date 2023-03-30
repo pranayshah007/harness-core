@@ -31,6 +31,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.context.ContextElementType;
 import io.harness.data.algorithm.HashGenerator;
@@ -42,6 +43,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -129,6 +131,7 @@ public class InstanceFetchState extends State {
   @Inject private ServiceTemplateService serviceTemplateService;
   @Inject private ServiceTemplateHelper serviceTemplateHelper;
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Getter @Setter @DefaultValue("10") String stateTimeoutInMinutes;
   @Getter @Setter private List<String> tags;
@@ -203,16 +206,18 @@ public class InstanceFetchState extends State {
     logCallback.saveExecutionLog("Dispatching script to delegate for fetching instances", LogLevel.INFO, RUNNING);
     logCallback.saveExecutionLog(scriptString);
 
-    ShellScriptProvisionParameters taskParameters = ShellScriptProvisionParameters.builder()
-                                                        .accountId(accountId)
-                                                        .appId(appId)
-                                                        .activityId(activityId)
-                                                        .scriptBody(scriptString)
-                                                        .textVariables(infraMappingElement.getCustom().getVars())
-                                                        .commandUnit(CUSTOM_DEPLOYMENT_FETCH_INSTANCES.getName())
-                                                        .outputPathKey(OUTPUT_PATH_KEY)
-                                                        .workflowExecutionId(context.getWorkflowExecutionId())
-                                                        .build();
+    ShellScriptProvisionParameters taskParameters =
+        ShellScriptProvisionParameters.builder()
+            .accountId(accountId)
+            .appId(appId)
+            .activityId(activityId)
+            .scriptBody(scriptString)
+            .textVariables(infraMappingElement.getCustom().getVars())
+            .commandUnit(CUSTOM_DEPLOYMENT_FETCH_INSTANCES.getName())
+            .outputPathKey(OUTPUT_PATH_KEY)
+            .workflowExecutionId(context.getWorkflowExecutionId())
+            .useSshAgent(featureFlagService.isEnabled(FeatureName.CDS_SSH_AGENT, accountId))
+            .build();
 
     final long timeout =
         ObjectUtils.defaultIfNull(Long.valueOf(getTimeoutMillis(context)), TaskData.DEFAULT_ASYNC_CALL_TIMEOUT);

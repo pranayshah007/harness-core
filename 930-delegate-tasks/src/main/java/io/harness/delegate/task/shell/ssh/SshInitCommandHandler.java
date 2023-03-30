@@ -136,11 +136,12 @@ public class SshInitCommandHandler implements CommandHandler {
   private CommandExecutionStatus runPreInitCommand(SshCommandTaskParameters taskParameters,
       AbstractScriptExecutor executor, SshExecutorFactoryContext context, Map<String, Object> taskContext) {
     String cmd = String.format("mkdir -p %s", getExecutionStagingDir(taskParameters));
-    CommandExecutionStatus commandExecutionStatus = executor.executeCommandString(cmd, true, );
+    CommandExecutionStatus commandExecutionStatus =
+        executor.executeCommandString(cmd, true, taskParameters.isUseSshAgent());
 
     StringBuffer envVariablesFromHost = new StringBuffer();
     commandExecutionStatus = commandExecutionStatus == CommandExecutionStatus.SUCCESS
-        ? executor.executeCommandString("printenv", envVariablesFromHost, )
+        ? executor.executeCommandString("printenv", envVariablesFromHost, taskParameters.isUseSshAgent())
         : commandExecutionStatus;
 
     Properties properties = new Properties();

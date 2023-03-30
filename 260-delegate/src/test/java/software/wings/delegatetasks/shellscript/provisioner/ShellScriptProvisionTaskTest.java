@@ -18,6 +18,7 @@ import static software.wings.utils.WingsTestConstants.APP_ID;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
@@ -128,14 +129,14 @@ public class ShellScriptProvisionTaskTest extends WingsBaseTest {
         ExecuteCommandResponse.builder().status(CommandExecutionStatus.FAILURE).build();
 
     ScriptProcessExecutor scriptProcessExecutor = mock(ScriptProcessExecutor.class);
-    when(scriptProcessExecutor.executeCommandString(anyString(), anyList(), anyList(), any(), ))
+    when(scriptProcessExecutor.executeCommandString(anyString(), anyList(), anyList(), any(), anyBoolean()))
         .thenReturn(executeCommandResponse);
     when(shellExecutorFactory.getExecutor(any(ShellExecutorConfig.class))).thenReturn(scriptProcessExecutor);
 
     ShellScriptProvisionExecutionData shellScriptProvisionExecutionData = shellScriptProvisionTask.run(taskParameters);
     assertThat(shellScriptProvisionExecutionData.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
     verify(scriptProcessExecutor, times(1))
-        .executeCommandString(eq(scriptBody), eq(emptyList()), eq(emptyList()), eq(null), );
+        .executeCommandString(eq(scriptBody), eq(emptyList()), eq(emptyList()), eq(null), anyBoolean());
   }
 
   @Test

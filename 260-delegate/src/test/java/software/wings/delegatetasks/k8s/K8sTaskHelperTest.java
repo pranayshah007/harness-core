@@ -252,7 +252,7 @@ public class K8sTaskHelperTest extends CategoryTest {
                 .gitFileConfig(
                     GitFileConfig.builder().filePath("dir/file").branch("master").connectorId("git-connector").build())
                 .build(),
-            "./dir", logCallback, LONG_TIMEOUT_INTERVAL, ))
+            "./dir", logCallback, LONG_TIMEOUT_INTERVAL, false))
         .isTrue();
 
     verify(mockGitService, times(1))
@@ -272,7 +272,7 @@ public class K8sTaskHelperTest extends CategoryTest {
                 .gitFileConfig(
                     GitFileConfig.builder().filePath("dir/file").branch("master").connectorId("git-connector").build())
                 .build(),
-            "./dir", logCallback, LONG_TIMEOUT_INTERVAL, ))
+            "./dir", logCallback, LONG_TIMEOUT_INTERVAL, false))
         .isFalse();
     reset(mockGitService);
     reset(mockEncryptionService);
@@ -296,7 +296,7 @@ public class K8sTaskHelperTest extends CategoryTest {
                                           .connectorId("git-connector")
                                           .build())
                        .build(),
-                   "./dir", logCallback, LONG_TIMEOUT_INTERVAL, ))
+                   "./dir", logCallback, LONG_TIMEOUT_INTERVAL, false))
         .isTrue();
 
     verify(scmFetchFilesHelper, times(1)).downloadFilesUsingScm(any(), any(), any(), any());
@@ -320,7 +320,7 @@ public class K8sTaskHelperTest extends CategoryTest {
                                           .connectorId("git-connector")
                                           .build())
                        .build(),
-                   "./dir", logCallback, LONG_TIMEOUT_INTERVAL, ))
+                   "./dir", logCallback, LONG_TIMEOUT_INTERVAL, false))
         .isFalse();
     reset(mockGitService);
     reset(mockEncryptionService);
@@ -334,7 +334,7 @@ public class K8sTaskHelperTest extends CategoryTest {
                                                                 .manifestStoreTypes(StoreType.HelmChartRepo)
                                                                 .helmChartConfigParams(helmChartConfigParams)
                                                                 .build(),
-                   "dir", logCallback, LONG_TIMEOUT_INTERVAL, ))
+                   "dir", logCallback, LONG_TIMEOUT_INTERVAL, false))
         .isTrue();
 
     verify(mockHelmTaskHelper, times(1)).printHelmChartInfoInExecutionLogs(helmChartConfigParams, logCallback);
@@ -347,7 +347,7 @@ public class K8sTaskHelperTest extends CategoryTest {
                                                                 .manifestStoreTypes(StoreType.HelmChartRepo)
                                                                 .helmChartConfigParams(helmChartConfigParams)
                                                                 .build(),
-                   "dir", logCallback, LONG_TIMEOUT_INTERVAL, ))
+                   "dir", logCallback, LONG_TIMEOUT_INTERVAL, false))
         .isFalse();
   }
 
@@ -360,7 +360,7 @@ public class K8sTaskHelperTest extends CategoryTest {
                                                          .manifestStoreTypes(Local)
                                                          .manifestFiles(convertFileDataToManifestFiles(manifestFiles))
                                                          .build(),
-            manifestFileDirectory, logCallback, LONG_TIMEOUT_INTERVAL, );
+            manifestFileDirectory, logCallback, LONG_TIMEOUT_INTERVAL, false);
     assertThat(success).isTrue();
     assertThat(Arrays.stream(new File(manifestFileDirectory).listFiles())
                    .filter(file -> file.length() > 0)
@@ -377,7 +377,7 @@ public class K8sTaskHelperTest extends CategoryTest {
                                                        .build();
     assertThat(helper.fetchManifestFilesAndWriteToDirectory(
                    K8sDelegateManifestConfig.builder().manifestFiles(asList(values)).manifestStoreTypes(Local).build(),
-                   manifestFileDirectory, logCallback, LONG_TIMEOUT_INTERVAL, ))
+                   manifestFileDirectory, logCallback, LONG_TIMEOUT_INTERVAL, false))
         .isTrue();
 
     // invalid manifest files directory
@@ -386,7 +386,7 @@ public class K8sTaskHelperTest extends CategoryTest {
                        .manifestStoreTypes(Local)
                        .manifestFiles(convertFileDataToManifestFiles(prepareSomeCorrectManifestFiles()))
                        .build(),
-                   "", logCallback, LONG_TIMEOUT_INTERVAL, ))
+                   "", logCallback, LONG_TIMEOUT_INTERVAL, false))
         .isFalse();
   }
 
@@ -410,37 +410,37 @@ public class K8sTaskHelperTest extends CategoryTest {
 
     delegateManifestConfig.setCustomManifestEnabled(false);
     assertThat(helper.fetchManifestFilesAndWriteToDirectory(
-                   delegateManifestConfig, manifestDirectory, executionLogCallback, 50000, ))
+                   delegateManifestConfig, manifestDirectory, executionLogCallback, 50000, false))
         .isFalse();
     verify(customManifestService, times(0))
-        .downloadCustomSource(customManifestSource, manifestDirectory, executionLogCallback, );
+        .downloadCustomSource(customManifestSource, manifestDirectory, executionLogCallback, false);
 
     delegateManifestConfig.setCustomManifestEnabled(true);
     assertThat(helper.fetchManifestFilesAndWriteToDirectory(
-                   delegateManifestConfig, manifestDirectory, executionLogCallback, 50000, ))
+                   delegateManifestConfig, manifestDirectory, executionLogCallback, 50000, false))
         .isTrue();
     verify(customManifestService, times(1))
-        .downloadCustomSource(customManifestSource, manifestDirectory, executionLogCallback, );
+        .downloadCustomSource(customManifestSource, manifestDirectory, executionLogCallback, false);
 
     doThrow(new IOException("file doesn't exists"))
         .when(customManifestService)
-        .downloadCustomSource(customManifestSource, manifestDirectory, executionLogCallback, );
+        .downloadCustomSource(customManifestSource, manifestDirectory, executionLogCallback, false);
     assertThat(helper.fetchManifestFilesAndWriteToDirectory(
-                   delegateManifestConfig, manifestDirectory, executionLogCallback, 50000, ))
+                   delegateManifestConfig, manifestDirectory, executionLogCallback, 50000, false))
         .isFalse();
 
     doThrow(new ShellScriptException("command not found", ErrorCode.GENERAL_ERROR, Level.ERROR, WingsException.USER))
         .when(customManifestService)
-        .downloadCustomSource(customManifestSource, manifestDirectory, executionLogCallback, );
+        .downloadCustomSource(customManifestSource, manifestDirectory, executionLogCallback, false);
     assertThat(helper.fetchManifestFilesAndWriteToDirectory(
-                   delegateManifestConfig, manifestDirectory, executionLogCallback, 50000, ))
+                   delegateManifestConfig, manifestDirectory, executionLogCallback, 50000, false))
         .isFalse();
 
     doThrow(new NullPointerException())
         .when(customManifestService)
-        .downloadCustomSource(customManifestSource, manifestDirectory, executionLogCallback, );
+        .downloadCustomSource(customManifestSource, manifestDirectory, executionLogCallback, false);
     assertThat(helper.fetchManifestFilesAndWriteToDirectory(
-                   delegateManifestConfig, manifestDirectory, executionLogCallback, 50000, ))
+                   delegateManifestConfig, manifestDirectory, executionLogCallback, 50000, false))
         .isFalse();
   }
 
@@ -471,7 +471,7 @@ public class K8sTaskHelperTest extends CategoryTest {
 
     doReturn(tempParentDir).when(customManifestService).getWorkingDirectory();
     assertThat(helper.fetchManifestFilesAndWriteToDirectory(
-                   delegateManifestConfig, manifestDirectory, executionLogCallback, 50000, ))
+                   delegateManifestConfig, manifestDirectory, executionLogCallback, 50000, false))
         .isTrue();
     File file = new File(manifestDirectory);
     assertThat(file.exists()).isTrue();
@@ -958,7 +958,7 @@ public class K8sTaskHelperTest extends CategoryTest {
         .downloadChartFiles(manifestConfig.getHelmChartConfigParams(), manifestDirectory, LONG_TIMEOUT_INTERVAL,
             manifestConfig.getHelmCommandFlag());
     helper.fetchManifestFilesAndWriteToDirectory(
-        manifestConfig, manifestDirectory, executionLogCallback, LONG_TIMEOUT_INTERVAL, );
+        manifestConfig, manifestDirectory, executionLogCallback, LONG_TIMEOUT_INTERVAL, false);
 
     ArgumentCaptor<String> logMessageCaptor = ArgumentCaptor.forClass(String.class);
     verify(executionLogCallback)

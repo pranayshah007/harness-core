@@ -19,6 +19,7 @@ import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -172,7 +173,7 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
     doReturn(DEFAULT_DIR)
         .when(customManifestService)
         .executeCustomSourceScript(
-            eq(taskParams.getActivityId()), any(LogCallback.class), eq(customManifestSource), eq(false), );
+            eq(taskParams.getActivityId()), any(LogCallback.class), eq(customManifestSource), eq(false), anyBoolean());
 
     doReturn(TEMP_DIR).when(customManifestService).getWorkingDirectory();
 
@@ -213,14 +214,14 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
     doThrow(new ShellScriptException("shell script failed", GIT_ERROR, Level.ERROR, WingsException.USER))
         .when(customManifestService)
         .executeCustomSourceScript(
-            eq(taskParams.getActivityId()), any(LogCallback.class), eq(customManifestSource), eq(false), );
+            eq(taskParams.getActivityId()), any(LogCallback.class), eq(customManifestSource), eq(false), anyBoolean());
 
     assertThatThrownBy(() -> doRun(taskParams))
         .extracting(ex -> ((TaskNGDataException) ex).getCause().getMessage())
         .isEqualTo("shell script failed");
 
     verify(delegateFileManagerBase, never()).uploadAsFile(any(DelegateFile.class), any(File.class));
-    verify(customManifestService, never()).fetchValues(any(), any(), any(), any(), eq(true), );
+    verify(customManifestService, never()).fetchValues(any(), any(), any(), any(), eq(true), anyBoolean());
   }
 
   @Test
@@ -240,7 +241,7 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
     doReturn(DEFAULT_DIR)
         .when(customManifestService)
         .executeCustomSourceScript(
-            eq(taskParams.getActivityId()), any(LogCallback.class), eq(customManifestSource), eq(false), );
+            eq(taskParams.getActivityId()), any(LogCallback.class), eq(customManifestSource), eq(false), anyBoolean());
     doThrow(new AccessDeniedException("access denied", WingsException.USER))
         .when(delegateFileManagerBase)
         .uploadAsFile(any(), any());
@@ -268,7 +269,7 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
     doReturn(ABSOLUTE_DIR)
         .when(customManifestService)
         .executeCustomSourceScript(
-            eq(taskParams.getActivityId()), any(LogCallback.class), eq(customManifestSource), eq(false), );
+            eq(taskParams.getActivityId()), any(LogCallback.class), eq(customManifestSource), eq(false), anyBoolean());
 
     doReturn(TEMP_DIR).when(customManifestService).getWorkingDirectory();
 

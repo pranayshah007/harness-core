@@ -102,6 +102,7 @@ public class CustomDeploymentInstanceSyncClient implements PerpetualTaskServiceC
             .outputPathKey(OUTPUT_PATH_KEY)
             .workflowExecutionId("test-execution-id")
             .activityId(generateUuid())
+            .useSshAgent(false)
             .build();
     return DelegateTask.builder()
         .accountId(accountId)

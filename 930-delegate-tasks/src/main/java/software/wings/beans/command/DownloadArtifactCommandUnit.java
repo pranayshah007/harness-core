@@ -178,25 +178,25 @@ public class DownloadArtifactCommandUnit extends ExecCommandUnit {
         log.info("Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
         saveExecutionLog(
             context, INFO, "Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
-        return context.executeCommandString(command, false);
+        return context.executeCommandString(command, false, context.isUseSshAgent());
       case ARTIFACTORY:
         command = constructCommandStringForArtifactory(artifactStreamAttributes, encryptionDetails, metadata);
         log.info("Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
         saveExecutionLog(
             context, INFO, "Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
-        return context.executeCommandString(command, false);
+        return context.executeCommandString(command, false, context.isUseSshAgent());
       case SMB:
         command = constructCommandStringForSMB(artifactStreamAttributes, encryptionDetails, metadata);
         log.info("Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
         saveExecutionLog(
             context, INFO, "Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
-        return context.executeCommandString(command, false);
+        return context.executeCommandString(command, false, context.isUseSshAgent());
       case SFTP:
         command = constructCommandStringForSFTP(artifactStreamAttributes, encryptionDetails, metadata);
         log.info("Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
         saveExecutionLog(
             context, INFO, "Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
-        return context.executeCommandString(command, false);
+        return context.executeCommandString(command, false, context.isUseSshAgent());
       case AZURE_ARTIFACTS:
         log.info("Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
         saveExecutionLog(
@@ -211,7 +211,8 @@ public class DownloadArtifactCommandUnit extends ExecCommandUnit {
         for (AzureArtifactsPackageFileInfo fileInfo : fileInfos) {
           metadata.put(ArtifactMetadataKeys.artifactFileName, fileInfo.getName());
           command = constructCommandStringForAzureArtifacts(artifactStreamAttributes, encryptionDetails, metadata);
-          CommandExecutionStatus executionStatus = context.executeCommandString(command, false);
+          CommandExecutionStatus executionStatus =
+              context.executeCommandString(command, false, context.isUseSshAgent());
           if (FAILURE == executionStatus) {
             return executionStatus;
           }
@@ -222,19 +223,19 @@ public class DownloadArtifactCommandUnit extends ExecCommandUnit {
         log.info("Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
         saveExecutionLog(
             context, INFO, "Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
-        return context.executeCommandString(command, false);
+        return context.executeCommandString(command, false, context.isUseSshAgent());
       case JENKINS:
         command = constructCommandStringForJenkins(context, artifactStreamAttributes, encryptionDetails);
         log.info("Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
         saveExecutionLog(
             context, INFO, "Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
-        return context.executeCommandString(command, false);
+        return context.executeCommandString(command, false, context.isUseSshAgent());
       case BAMBOO:
         command = constructCommandStringForBamboo(context, artifactStreamAttributes, encryptionDetails);
         log.info("Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
         saveExecutionLog(
             context, INFO, "Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
-        return context.executeCommandString(command, false);
+        return context.executeCommandString(command, false, context.isUseSshAgent());
       default:
         saveExecutionLog(context, ERROR,
             format("Download Artifact not supported for Artifact Stream Type %s", artifactStreamType.name()));

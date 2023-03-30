@@ -14,6 +14,7 @@ import static software.wings.beans.TaskType.SHELL_SCRIPT_PROVISION;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -96,6 +97,7 @@ public class ShellScriptProvisionStep extends CdTaskExecutable<ShellScriptProvis
             .scriptBody(scriptBody)
             .variables(getEnvironmentVariables(stepParameters.getEnvironmentVariables()))
             .timeoutInMillis(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .useSshAgent(cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_SSH_AGENT))
             .build();
 
     TaskData taskData = TaskData.builder()

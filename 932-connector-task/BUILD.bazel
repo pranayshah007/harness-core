@@ -28,7 +28,6 @@ java_library(
         "//960-api-services/src/main/java/io/harness/git:module",
         "//960-api-services/src/main/java/io/harness/pcf:module",
         "//960-api-services/src/main/java/io/harness/shell:module",
-        "//960-api-services/src/main/java/io/harness/shell/ssh:module",
         "//960-api-services/src/main/java/io/harness/spotinst:module",
         "//960-api-services/src/main/java/io/harness/terraformcloud:module",
         "//970-api-services-beans/src/main/java/io/harness/artifactory:module",

@@ -166,7 +166,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     doReturn(false)
         .when(k8sTaskHelper)
         .fetchManifestFilesAndWriteToDirectory(
-            any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong(), );
+            any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong(), anyBoolean());
 
     final K8sTaskExecutionResponse response =
         k8sApplyTaskHandler.executeTask(K8sApplyTaskParameters.builder().releaseName("release-name").build(),
@@ -255,8 +255,8 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
 
     doReturn(true)
         .when(k8sTaskHelper)
-        .fetchManifestFilesAndWriteToDirectory(
-            nullable(K8sDelegateManifestConfig.class), any(), nullable(ExecutionLogCallback.class), anyLong(), );
+        .fetchManifestFilesAndWriteToDirectory(nullable(K8sDelegateManifestConfig.class), any(),
+            nullable(ExecutionLogCallback.class), anyLong(), anyBoolean());
     doReturn(false).when(handler).init(nullable(K8sApplyTaskParameters.class), nullable(K8sDelegateTaskParams.class),
         nullable(ExecutionLogCallback.class));
 
@@ -284,8 +284,8 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
 
     doReturn(true)
         .when(k8sTaskHelper)
-        .fetchManifestFilesAndWriteToDirectory(
-            nullable(K8sDelegateManifestConfig.class), any(), nullable(ExecutionLogCallback.class), anyLong(), );
+        .fetchManifestFilesAndWriteToDirectory(nullable(K8sDelegateManifestConfig.class), any(),
+            nullable(ExecutionLogCallback.class), anyLong(), anyBoolean());
     doReturn(true).when(handler).init(nullable(K8sApplyTaskParameters.class), nullable(K8sDelegateTaskParams.class),
         nullable(ExecutionLogCallback.class));
 
@@ -294,7 +294,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
 
     verify(handler, times(1))
         .init(any(K8sApplyTaskParameters.class), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
-    verify(k8sTaskHelper, times(1)).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), );
+    verify(k8sTaskHelper, times(1)).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), anyBoolean());
     verify(mockedK8sApplyBaseHandler, times(0)).prepare(any(), anyBoolean(), any());
     verify(k8sTaskHelperBase, times(0)).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     verify(mockedK8sApplyBaseHandler, times(0)).steadyStateCheck(anyBoolean(), any(), any(), anyLong(), any(), any());
@@ -334,7 +334,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
 
     verify(handler, times(0))
         .init(any(K8sApplyTaskParameters.class), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
-    verify(k8sTaskHelper, times(0)).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), );
+    verify(k8sTaskHelper, times(0)).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong(), anyBoolean());
     verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any());
     verify(mockedK8sApplyBaseHandler, times(1)).prepare(any(), anyBoolean(), any());
     verify(k8sTaskHelperBase, times(1)).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
@@ -446,7 +446,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     doReturn(true)
         .when(k8sTaskHelper)
         .fetchManifestFilesAndWriteToDirectory(
-            any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong(), );
+            any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong(), anyBoolean());
     doReturn(true).when(handler).init(
         any(K8sApplyTaskParameters.class), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
     doReturn(true)
@@ -605,8 +605,8 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     K8sApplyTaskHandler handler = spy(k8sApplyTaskHandler);
     doReturn(true)
         .when(k8sTaskHelper)
-        .fetchManifestFilesAndWriteToDirectory(
-            nullable(K8sDelegateManifestConfig.class), any(), nullable(ExecutionLogCallback.class), anyLong(), );
+        .fetchManifestFilesAndWriteToDirectory(nullable(K8sDelegateManifestConfig.class), any(),
+            nullable(ExecutionLogCallback.class), anyLong(), anyBoolean());
     doReturn(true).when(handler).init(nullable(K8sApplyTaskParameters.class), nullable(K8sDelegateTaskParams.class),
         nullable(ExecutionLogCallback.class));
     doReturn(true)

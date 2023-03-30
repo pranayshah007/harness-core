@@ -162,8 +162,8 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuter implements Perpet
       ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(taskParameters);
       ScriptProcessExecutor executor =
           shellExecutorFactory.getExecutor(shellExecutorConfig, null, commandUnitsProgress);
-      ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
-          taskParameters.getScriptBody(), emptyList(), emptyList(), ofMinutes(DEFAULT_TIMEOUT_IN_MINUTES).toMillis(), );
+      ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(taskParameters.getScriptBody(),
+          emptyList(), emptyList(), ofMinutes(DEFAULT_TIMEOUT_IN_MINUTES).toMillis(), false);
 
       String message = String.format("Execution finished with status: %s", executeCommandResponse.getStatus());
       if (executeCommandResponse.getStatus() == CommandExecutionStatus.FAILURE) {

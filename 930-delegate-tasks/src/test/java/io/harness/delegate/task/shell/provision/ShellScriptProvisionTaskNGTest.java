@@ -88,14 +88,15 @@ public class ShellScriptProvisionTaskNGTest extends CategoryTest {
         .getLogCallback(any(), any(), anyBoolean(), any());
     doReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build())
         .when(scriptProcessExecutor)
-        .executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), eq(null), );
+        .executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), eq(null), anyBoolean());
     ArgumentCaptor<ShellExecutorConfig> shellExecutorConfigArgumentCaptor =
         ArgumentCaptor.forClass(ShellExecutorConfig.class);
 
     ShellScriptProvisionTaskNGResponse response = shellScriptProvisionTaskNG.run(request);
 
     verify(shellExecutorFactory).getExecutor(shellExecutorConfigArgumentCaptor.capture(), any(), any());
-    verify(scriptProcessExecutor).executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), eq(null), );
+    verify(scriptProcessExecutor)
+        .executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), eq(null), anyBoolean());
     ShellExecutorConfig shellExecutorConfig = shellExecutorConfigArgumentCaptor.getValue();
     assertThat(shellExecutorConfig.getScriptType()).isEqualTo(ScriptType.BASH);
     assertThat(shellExecutorConfig.getExecutionId()).isEqualTo("executionId");
@@ -125,14 +126,15 @@ public class ShellScriptProvisionTaskNGTest extends CategoryTest {
         .getLogCallback(any(), any(), anyBoolean(), any());
     doReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.FAILURE).build())
         .when(scriptProcessExecutor)
-        .executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), eq(null), );
+        .executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), eq(null), anyBoolean());
     ArgumentCaptor<ShellExecutorConfig> shellExecutorConfigArgumentCaptor =
         ArgumentCaptor.forClass(ShellExecutorConfig.class);
 
     ShellScriptProvisionTaskNGResponse response = shellScriptProvisionTaskNG.run(request);
 
     verify(shellExecutorFactory).getExecutor(shellExecutorConfigArgumentCaptor.capture(), any(), any());
-    verify(scriptProcessExecutor).executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), eq(null), );
+    verify(scriptProcessExecutor)
+        .executeCommandString(eq("test"), eq(emptyList()), eq(emptyList()), eq(null), anyBoolean());
     ShellExecutorConfig shellExecutorConfig = shellExecutorConfigArgumentCaptor.getValue();
     assertThat(shellExecutorConfig.getScriptType()).isEqualTo(ScriptType.BASH);
     assertThat(shellExecutorConfig.getExecutionId()).isEqualTo("executionId");

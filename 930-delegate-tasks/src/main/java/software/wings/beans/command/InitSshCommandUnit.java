@@ -140,7 +140,8 @@ public class InitSshCommandUnit extends SshCommandUnit {
 
     launcherScriptFileName = "harnesslauncher" + activityId + ".sh";
 
-    CommandExecutionStatus commandExecutionStatus = context.executeCommandString(preInitCommand);
+    CommandExecutionStatus commandExecutionStatus =
+        context.executeCommandString(preInitCommand, context.isUseSshAgent());
     String launcherFile = null;
     try {
       launcherFile = getLauncherFile();
@@ -181,11 +182,11 @@ public class InitSshCommandUnit extends SshCommandUnit {
     }
 
     commandExecutionStatus = commandExecutionStatus == CommandExecutionStatus.SUCCESS
-        ? context.executeCommandString("chmod 0700 " + executionStagingDir + "/*")
+        ? context.executeCommandString("chmod 0700 " + executionStagingDir + "/*", context.isUseSshAgent())
         : commandExecutionStatus;
     StringBuffer envVariablesFromHost = new StringBuffer();
     commandExecutionStatus = commandExecutionStatus == CommandExecutionStatus.SUCCESS
-        ? context.executeCommandString("printenv", envVariablesFromHost)
+        ? context.executeCommandString("printenv", envVariablesFromHost, context.isUseSshAgent())
         : commandExecutionStatus;
     Properties properties = new Properties();
     try {

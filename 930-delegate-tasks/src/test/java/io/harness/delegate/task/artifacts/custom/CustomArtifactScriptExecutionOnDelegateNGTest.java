@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -91,13 +92,13 @@ public class CustomArtifactScriptExecutionOnDelegateNGTest extends CategoryTest 
     doReturn(scriptProcessExecutor)
         .when(shellExecutorFactory)
         .getExecutorForCustomArtifactScriptExecution(any(), any());
-    when(scriptProcessExecutor.executeCommandString(any(), anyList(), ))
+    when(scriptProcessExecutor.executeCommandString(any(), anyList(), anyBoolean()))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
     ShellScriptTaskResponseNG shellScriptTaskResponseNG =
         customArtifactScriptExecutionOnDelegateNG.executeOnDelegate(shellScriptTaskParametersNG, logCallback);
     assertThat(shellScriptTaskResponseNG).isNotNull();
     verify(shellExecutorFactory).getExecutorForCustomArtifactScriptExecution(any(), any());
-    verify(scriptProcessExecutor).executeCommandString(any(), anyList(), );
+    verify(scriptProcessExecutor).executeCommandString(any(), anyList(), anyBoolean());
   }
 
   @Test

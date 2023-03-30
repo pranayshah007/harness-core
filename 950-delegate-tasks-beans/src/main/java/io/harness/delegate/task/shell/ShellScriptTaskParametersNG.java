@@ -47,6 +47,7 @@ public class ShellScriptTaskParametersNG
   SSHKeySpecDTO sshKeySpecDTO;
   List<EncryptedDataDetail> encryptionDetails;
   String host;
+  boolean useSshAgent;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

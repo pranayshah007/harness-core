@@ -13,6 +13,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -97,24 +98,28 @@ public class CustomManifestValuesFetchTaskTest extends CategoryTest {
 
     doReturn(SAMPLE_1_RESULT)
         .when(customManifestService)
-        .fetchValues(eq(SAMPLE_1), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true), );
+        .fetchValues(
+            eq(SAMPLE_1), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true), anyBoolean());
     doReturn(SAMPLE_2_RESULT)
         .when(customManifestService)
-        .fetchValues(eq(SAMPLE_2), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true), );
+        .fetchValues(
+            eq(SAMPLE_2), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true), anyBoolean());
     doReturn(SAMPLE_3_RESULT)
         .when(customManifestService)
-        .fetchValues(eq(SAMPLE_3), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true), );
+        .fetchValues(
+            eq(SAMPLE_3), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true), anyBoolean());
     doThrow(new FileNotFoundException())
         .when(customManifestService)
-        .fetchValues(eq(MISSING_FILE), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true), );
+        .fetchValues(eq(MISSING_FILE), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true),
+            anyBoolean());
     doThrow(new AccessDeniedException("file not accessible"))
         .when(customManifestService)
-        .fetchValues(
-            eq(NOT_ACCESSIBLE), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true), );
+        .fetchValues(eq(NOT_ACCESSIBLE), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true),
+            anyBoolean());
     doThrow(new RuntimeException("something wen wrong"))
         .when(customManifestService)
-        .fetchValues(
-            eq(EXECUTION_EXCEPTION), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true), );
+        .fetchValues(eq(EXECUTION_EXCEPTION), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback),
+            eq(true), anyBoolean());
 
     doAnswer(invocation -> invocation.getMethod().getName() + new Random().nextInt())
         .when(customManifestService)

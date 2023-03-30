@@ -21,6 +21,7 @@ import static java.util.stream.Collectors.toList;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
@@ -238,6 +239,7 @@ public abstract class ContainerServiceSetup extends State {
               .serviceVariables(serviceVariables)
               .safeDisplayServiceVariables(safeDisplayServiceVariables)
               .delegateSelectors(isNotEmpty(allDelegateSelectors) ? allDelegateSelectors : null)
+              .useSshAgent(featureFlagService.isEnabled(FeatureName.CDS_SSH_AGENT, app.getAccountId()))
               .build();
 
       List<String> awsConfigTags = awsCommandHelper.getAwsConfigTagsFromContext(commandExecutionContext);

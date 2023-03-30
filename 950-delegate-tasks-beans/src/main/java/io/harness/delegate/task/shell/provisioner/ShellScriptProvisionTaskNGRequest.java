@@ -37,6 +37,7 @@ public class ShellScriptProvisionTaskNGRequest
   @Expression(ALLOW_SECRETS) private String scriptBody;
   @Expression(ALLOW_SECRETS) private Map<String, String> variables;
   long timeoutInMillis;
+  boolean useSshAgent;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

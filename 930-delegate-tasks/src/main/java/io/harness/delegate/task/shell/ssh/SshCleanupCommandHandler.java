@@ -73,7 +73,7 @@ public class SshCleanupCommandHandler implements CommandHandler {
 
   private CommandExecutionStatus cleanup(SshCommandTaskParameters taskParameters, AbstractScriptExecutor executor) {
     String cmd = String.format("rm -rf %s", getExecutionStagingDir(taskParameters));
-    executor.executeCommandString(cmd, true, );
+    executor.executeCommandString(cmd, true, taskParameters.isUseSshAgent());
     return CommandExecutionStatus.SUCCESS;
   }
 }

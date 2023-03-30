@@ -46,8 +46,8 @@ public class ShellScriptTaskHandlerNG {
     if (taskParameters.isExecuteOnDelegate()) {
       ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(taskParameters);
       ScriptProcessExecutor executor = shellExecutorFactory.getExecutor(shellExecutorConfig, commandUnitsProgress);
-      ExecuteCommandResponse executeCommandResponse =
-          executor.executeCommandString(taskParameters.getScript(), taskParameters.getOutputVars(), );
+      ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
+          taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.isUseSshAgent());
       return ShellScriptTaskResponseNG.builder()
           .executeCommandResponse(executeCommandResponse)
           .status(executeCommandResponse.getStatus())
@@ -58,8 +58,8 @@ public class ShellScriptTaskHandlerNG {
       try {
         SshSessionConfig sshSessionConfig = getSshSessionConfig(taskParameters);
         ScriptSshExecutor executor = sshExecutorFactoryNG.getExecutor(sshSessionConfig, commandUnitsProgress);
-        ExecuteCommandResponse executeCommandResponse =
-            executor.executeCommandString(taskParameters.getScript(), taskParameters.getOutputVars(), );
+        ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
+            taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.isUseSshAgent());
         return ShellScriptTaskResponseNG.builder()
             .executeCommandResponse(executeCommandResponse)
             .status(executeCommandResponse.getStatus())

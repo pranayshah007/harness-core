@@ -93,8 +93,8 @@ public class ShellScriptProvisionTaskNG extends AbstractDelegateRunnableTask {
                                                     .build();
       ScriptProcessExecutor executor =
           shellExecutorFactory.getExecutor(shellExecutorConfig, getLogStreamingTaskClient(), commandUnitsProgress);
-      ExecuteCommandResponse executeCommandResponse =
-          executor.executeCommandString(parameters.getScriptBody(), emptyList(), emptyList(), null, );
+      ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
+          parameters.getScriptBody(), emptyList(), emptyList(), null, parameters.isUseSshAgent());
 
       String message = String.format("Execution finished with status: %s", executeCommandResponse.getStatus());
       logCallback.saveExecutionLog(message, INFO, SUCCESS);

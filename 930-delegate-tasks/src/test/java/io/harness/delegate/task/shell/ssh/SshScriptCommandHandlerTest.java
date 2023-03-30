@@ -88,7 +88,7 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldExecuteCommandWithSshExecutor() {
     doReturn(scriptSshExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptSshExecutor.executeCommandString(COMMAND, outputVariables, ))
+    when(scriptSshExecutor.executeCommandString(COMMAND, outputVariables, false))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
 
     CommandExecutionStatus status =
@@ -107,7 +107,7 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldExecuteCommandWithScriptProcessExecutorOnDelegate() {
     doReturn(scriptProcessExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptProcessExecutor.executeCommandString(COMMAND, outputVariables, ))
+    when(scriptProcessExecutor.executeCommandString(COMMAND, outputVariables, false))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
     when(scriptProcessExecutor.getLogCallback()).thenReturn(logCallback);
 

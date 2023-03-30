@@ -68,6 +68,7 @@ public class EcsServiceDeployCommandHandler extends EcsCommandTaskHandler {
                                                             .cloudProviderCredentials(encryptedDataDetails)
                                                             .containerResizeParams(request.getEcsResizeParams())
                                                             .deploymentType(DeploymentType.ECS.name())
+                                                            .useSshAgent(false)
                                                             .build();
       CommandExecutionStatus status = resizeCommandUnit.execute(commandExecutionContext);
       ResizeCommandUnitExecutionData commandExecutionData =

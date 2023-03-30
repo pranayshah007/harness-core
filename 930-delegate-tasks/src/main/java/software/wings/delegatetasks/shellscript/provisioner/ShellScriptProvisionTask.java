@@ -96,8 +96,8 @@ public class ShellScriptProvisionTask extends AbstractDelegateRunnableTask {
                                                     .scriptType(ScriptType.BASH)
                                                     .build();
       ScriptProcessExecutor executor = shellExecutorFactory.getExecutor(shellExecutorConfig);
-      ExecuteCommandResponse executeCommandResponse =
-          executor.executeCommandString(parameters.getScriptBody(), emptyList(), emptyList(), null, );
+      ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
+          parameters.getScriptBody(), emptyList(), emptyList(), null, parameters.isUseSshAgent());
 
       saveExecutionLog(parameters, "Execution finished with status: " + executeCommandResponse.getStatus(),
           executeCommandResponse.getStatus());
