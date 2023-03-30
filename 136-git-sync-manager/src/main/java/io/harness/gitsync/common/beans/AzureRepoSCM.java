@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoApiAccess;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
 import io.harness.ng.DbAliases;
 import io.harness.ng.userprofile.commons.SCMType;
 
@@ -39,6 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Persistent
 public class AzureRepoSCM extends UserSourceCodeManager {
   AzureRepoApiAccess azureRepoApiAccess;
+  AzureRepoApiAccessType apiAccessType;
 
   @Override
   public SCMType getType() {
