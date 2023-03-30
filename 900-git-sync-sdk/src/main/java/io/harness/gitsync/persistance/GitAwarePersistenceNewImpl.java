@@ -37,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -242,7 +243,8 @@ public class GitAwarePersistenceNewImpl implements GitAwarePersistence {
     List<Criteria> criteriaList = Arrays.asList(criteria, gitSyncCriteria);
     Query query = new Query()
                       .addCriteria(new Criteria().andOperator(criteriaList.toArray(new Criteria[criteriaList.size()])))
-                      .with(pageable);
+                      .with(pageable)
+                      .collation(Collation.of("en").strength(Collation.ComparisonLevel.secondary()));
     return mongoTemplate.find(query, entityClass);
   }
 
