@@ -540,10 +540,9 @@ public class EnvironmentResourceV2 {
 
     environmentPage.forEach(environment -> {
       if (EmptyPredicate.isEmpty(environment.getYaml())) {
-        environment.fetchNonEmptyYaml();
+        environment.setYaml(environment.fetchNonEmptyYaml());
       }
     });
-
     return ResponseDTO.newResponse(getNGPageResponse(environmentPage.map(EnvironmentMapper::toResponseWrapper)));
   }
 
@@ -1111,7 +1110,6 @@ public class EnvironmentResourceV2 {
       }
     } catch (Exception ex) {
       log.error("failed to validate service override scope", ex);
-
       throw new InvalidRequestException(ex.getMessage());
     }
   }

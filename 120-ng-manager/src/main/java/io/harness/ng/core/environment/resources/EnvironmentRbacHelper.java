@@ -40,12 +40,9 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDC)
 public class EnvironmentRbacHelper {
   @Inject private AccessControlClient accessControlClient;
-
+  private final String TYPE = "type";
   public List<Environment> getPermittedEnvironmentsList(List<Environment> environments) {
     // This method assumes that all environments are at the same scope
-
-    final boolean hasProdAccess;
-    final boolean hasPreProdAccess;
     if (isEmpty(environments)) {
       return Collections.emptyList();
     }
@@ -66,7 +63,6 @@ public class EnvironmentRbacHelper {
             .collect(Collectors.toList());
 
     // pre-prod permission check
-
     permissionChecks.add(PermissionCheckDTO.builder()
                              .permission(CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION)
                              .resourceAttributes(getEnvironmentAttributesMap(EnvironmentType.PreProduction.name()))
@@ -76,7 +72,6 @@ public class EnvironmentRbacHelper {
                              .build());
 
     // Prod permission check
-
     permissionChecks.add(PermissionCheckDTO.builder()
                              .permission(CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION)
                              .resourceAttributes(getEnvironmentAttributesMap(EnvironmentType.Production.name()))
@@ -88,14 +83,12 @@ public class EnvironmentRbacHelper {
     final AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
 
     final EnvironmentTypeFilteredResponse environmentTypeFilteredResponse =
-        CheckingTypeBasedFilters(accessCheckResponse.getAccessControlList());
-
+        checkingTypeBasedFilters(accessCheckResponse.getAccessControlList());
     final List<AccessControlDTO> onlyIdentifierBasedAccessCheckList =
         removeTypeBasedAccessControlDTOs(accessCheckResponse.getAccessControlList());
 
-    hasPreProdAccess = environmentTypeFilteredResponse.hasPreProdAccess;
-
-    hasProdAccess = environmentTypeFilteredResponse.hasProdAccess;
+    final boolean hasPreProdAccess = environmentTypeFilteredResponse.hasPreProdAccess;
+    final boolean hasProdAccess = environmentTypeFilteredResponse.hasProdAccess;
 
     List<Environment> permittedEnvironments = new ArrayList<>();
 
@@ -108,10 +101,8 @@ public class EnvironmentRbacHelper {
       }
 
       if (accessControlDTO.isPermitted()
-          || (EnvironmentType.PreProduction.name().equals(accessControlDTO.getResourceAttributes().get("type"))
-              && hasPreProdAccess)
-          || (EnvironmentType.Production.name().equals(accessControlDTO.getResourceAttributes().get("type"))
-              && hasProdAccess)) {
+          || (EnvironmentType.PreProduction.name().equals(environment.getType().name()) && hasPreProdAccess)
+          || (EnvironmentType.Production.name().equals(environment.getType().name()) && hasProdAccess)) {
         permittedEnvironments.add(environment);
       }
     }
@@ -121,26 +112,23 @@ public class EnvironmentRbacHelper {
 
   private List<AccessControlDTO> removeTypeBasedAccessControlDTOs(List<AccessControlDTO> accessControlDTOList) {
     return accessControlDTOList.stream()
-        .filter(dto -> isEmpty(dto.getResourceAttributes()) || isEmpty(dto.getResourceAttributes().get("type")))
+        .filter(dto -> isEmpty(dto.getResourceAttributes()) || isEmpty(dto.getResourceAttributes().get()))
         .collect(Collectors.toList());
   }
 
-  private EnvironmentTypeFilteredResponse CheckingTypeBasedFilters(List<AccessControlDTO> accessControlDTOList) {
+  private EnvironmentTypeFilteredResponse checkingTypeBasedFilters(List<AccessControlDTO> accessControlDTOList) {
     boolean hasPreProdAccess = false;
-
     boolean hasProdAccess = false;
 
     for (AccessControlDTO accessControlDTO : accessControlDTOList) {
       if (accessControlDTO.isPermitted() && accessControlDTO.getResourceAttributes() != null) {
-        if (EnvironmentType.PreProduction.name().equals(accessControlDTO.getResourceAttributes().get("type"))) {
+        if (EnvironmentType.PreProduction.name().equals(accessControlDTO.getResourceAttributes().get(TYPE))) {
           hasPreProdAccess = true;
-
-        } else if (EnvironmentType.Production.name().equals(accessControlDTO.getResourceAttributes().get("type"))) {
+        } else if (EnvironmentType.Production.name().equals(accessControlDTO.getResourceAttributes().get(TYPE))) {
           hasProdAccess = true;
         }
       }
     }
-
     return new EnvironmentTypeFilteredResponse(hasPreProdAccess, hasProdAccess);
   }
 
@@ -168,9 +156,7 @@ public class EnvironmentRbacHelper {
   }
   private Map<String, String> getEnvironmentAttributesMap(String environmentType) {
     Map<String, String> environmentAttributes = new HashMap<>();
-
     environmentAttributes.put("type", environmentType);
-
     return environmentAttributes;
   }
 }
