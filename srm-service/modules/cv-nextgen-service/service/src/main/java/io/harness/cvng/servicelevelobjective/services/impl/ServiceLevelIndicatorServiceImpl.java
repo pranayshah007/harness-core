@@ -276,10 +276,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
 
   private void generateNameAndIdentifier(
       String serviceLevelObjectiveIdentifier, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO) {
-    serviceLevelIndicatorDTO.setName(serviceLevelObjectiveIdentifier + "_"
-        + ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec().getMetricName());
-    serviceLevelIndicatorDTO.setIdentifier(serviceLevelObjectiveIdentifier + "_"
-        + ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec().getMetricName());
+    serviceLevelIndicatorDTO.getSpec().generateNameAndIdentifier(
+        serviceLevelObjectiveIdentifier, serviceLevelIndicatorDTO);
   }
 
   @Override
