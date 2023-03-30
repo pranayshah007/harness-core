@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.ng.core.deserializer;
+package io.harness.ng.core.entitydetail;
 
 import io.harness.EntityType;
 import io.harness.beans.EntityReference;
