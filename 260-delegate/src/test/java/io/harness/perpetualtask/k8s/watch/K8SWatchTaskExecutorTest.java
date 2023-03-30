@@ -56,7 +56,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
@@ -108,7 +107,6 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
   @Captor private ArgumentCaptor<Map<String, String>> mapArgumentCaptor;
 
   @Inject KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   private static final String KUBE_SYSTEM_ID = "aa4062a7-d214-4642-8bb5-dfc32e750ed0";
   private final String WATCH_ID = "watch-id";
@@ -130,7 +128,7 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
     doReturn(apiClient).when(apiClientFactory).getClient(any(KubernetesConfig.class));
 
     k8SWatchTaskExecutor = new K8SWatchTaskExecutor(eventPublisher, k8sWatchServiceDelegate, apiClientFactory,
-        kryoSerializer, containerDeploymentDelegateHelper, k8sConnectorHelper, referenceFalseKryoSerializer);
+        kryoSerializer, containerDeploymentDelegateHelper, k8sConnectorHelper);
 
     stubFor(get(urlPathEqualTo("/api/v1/namespaces/kube-system"))
                 .willReturn(aResponse().withStatus(200).withBody(new Gson().toJson(new V1NamespaceBuilder()

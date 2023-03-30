@@ -34,7 +34,6 @@ import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -64,7 +63,6 @@ public class SpotinstPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Mock private SpotNgConfigMapper ngConfigMapper;
 
   @Inject KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @InjectMocks private SpotinstPerpetualTaskExecutorNg executor;
   @Captor private ArgumentCaptor<SpotInstanceSyncPerpetualTaskResponse> perpetualTaskResponseCaptor;
@@ -75,7 +73,7 @@ public class SpotinstPerpetualTaskExecutorNgTest extends DelegateTestBase {
 
   @Before
   public void setUp() throws IOException {
-    on(executor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
+    on(executor).set("kryoSerializer", kryoSerializer);
     doReturn(call)
         .when(delegateAgentManagerClient)
         .processInstanceSyncNGResult(any(), any(), perpetualTaskResponseCaptor.capture());
@@ -120,9 +118,8 @@ public class SpotinstPerpetualTaskExecutorNgTest extends DelegateTestBase {
   }
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
-    ByteString spotConnectorDTOBytes =
-        ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(SpotConnectorDTO.builder().build()));
-    ByteString encryptedDataDetailBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(new ArrayList<>()));
+    ByteString spotConnectorDTOBytes = ByteString.copyFrom(kryoSerializer.asBytes(SpotConnectorDTO.builder().build()));
+    ByteString encryptedDataDetailBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
 
     SpotinstAmiInstanceSyncPerpetualTaskParamsNg taskParams =
         SpotinstAmiInstanceSyncPerpetualTaskParamsNg.newBuilder()
@@ -133,9 +130,6 @@ public class SpotinstPerpetualTaskExecutorNgTest extends DelegateTestBase {
             .setInfrastructureKey("infraKey")
             .build();
 
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(taskParams))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
   }
 }

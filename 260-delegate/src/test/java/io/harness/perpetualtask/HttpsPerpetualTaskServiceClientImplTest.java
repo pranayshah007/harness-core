@@ -70,7 +70,7 @@ public class HttpsPerpetualTaskServiceClientImplTest extends WingsBaseTest {
     PerpetualTaskClientContext context = PerpetualTaskClientContext.builder().clientParams(testParamsMap).build();
 
     HttpsPerpetualTaskParams taskParams =
-        (HttpsPerpetualTaskParams) httpsPerpetualTaskServiceClient.getTaskParams(context, true);
+        (HttpsPerpetualTaskParams) httpsPerpetualTaskServiceClient.getTaskParams(context);
     assertThat(taskParams).isNotNull();
     assertThat(taskParams.getTaskParams().toString(Charset.defaultCharset())).isEqualTo("getTaskParamsResponse");
   }

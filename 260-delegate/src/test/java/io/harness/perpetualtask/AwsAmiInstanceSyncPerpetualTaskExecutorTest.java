@@ -38,7 +38,6 @@ import software.wings.service.intfc.aws.delegate.AwsAsgHelperServiceDelegate;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -66,13 +65,13 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
   private ArgumentCaptor<AwsAsgListInstancesResponse> captor =
       ArgumentCaptor.forClass(AwsAsgListInstancesResponse.class);
 
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject KryoSerializer kryoSerializer;
 
   @InjectMocks private AwsAmiInstanceSyncPerpetualTaskExecutor executor;
 
   @Before
   public void setup() {
-    on(executor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
+    on(executor).set("kryoSerializer", kryoSerializer);
   }
 
   @Test
@@ -85,15 +84,14 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
         .listAutoScalingGroupInstances(any(AwsConfig.class), anyList(), eq("us-east-1"), eq("asg-1"), eq(true));
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
     doReturn(retrofit2.Response.success("success")).when(call).execute();
 
     PerpetualTaskResponse perpetualTaskResponse;
     perpetualTaskResponse =
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), getPerpetualTaskParams(), Instant.now());
 
-    verify(delegateAgentManagerClient, times(1))
-        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), captor.capture());
+    verify(delegateAgentManagerClient, times(1)).publishInstanceSyncResult(eq("id"), eq("accountId"), captor.capture());
 
     final AwsAsgListInstancesResponse awsResponse = captor.getValue();
 
@@ -126,15 +124,14 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
         .listAutoScalingGroupInstances(any(AwsConfig.class), anyList(), eq("us-east-1"), eq("asg-1"), eq(true));
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
     doReturn(retrofit2.Response.success("success")).when(call).execute();
 
     PerpetualTaskResponse perpetualTaskResponse;
     perpetualTaskResponse =
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), getPerpetualTaskParams(), Instant.now());
 
-    verify(delegateAgentManagerClient, times(1))
-        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), captor.capture());
+    verify(delegateAgentManagerClient, times(1)).publishInstanceSyncResult(eq("id"), eq("accountId"), captor.capture());
 
     final AwsAsgListInstancesResponse awsResponse = captor.getValue();
 
@@ -167,8 +164,8 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString configBytes =
-        ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(kryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
 
     AwsAmiInstanceSyncPerpetualTaskParams params = AwsAmiInstanceSyncPerpetualTaskParams.newBuilder()
                                                        .setAwsConfig(configBytes)
@@ -176,9 +173,6 @@ public class AwsAmiInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBas
                                                        .setRegion("us-east-1")
                                                        .setAsgName("asg-1")
                                                        .build();
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(params))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
   }
 }

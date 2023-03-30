@@ -167,7 +167,7 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
         .setAccountId(infrastructureMappingDTO.getAccountIdentifier())
         .setOrgId(connectorInfoDTO.getOrgIdentifier())
         .setProjectId(connectorInfoDTO.getProjectIdentifier())
-        .setConnectorInfoDto(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(connectorInfoDTO)))
+        .setConnectorInfoDto(ByteString.copyFrom(kryoSerializer.asBytes(connectorInfoDTO)))
         .build();
   }
 
@@ -187,8 +187,7 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
     return K8sDeploymentRelease.newBuilder()
         .setReleaseName(releaseData.getReleaseName())
         .addAllNamespaces(releaseData.getNamespaces())
-        .setK8SInfraDelegateConfig(
-            ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(releaseData.getK8sInfraDelegateConfig())))
+        .setK8SInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getK8sInfraDelegateConfig())))
         .build();
   }
 
