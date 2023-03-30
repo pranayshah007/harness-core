@@ -96,7 +96,7 @@ import io.harness.steps.SdkCoreStepUtils;
 import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.tasks.ResponseData;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGVariable;
@@ -493,7 +493,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       }
       serviceStepsHelper.checkForAccessOrThrow(ambiance, secretNGVariables);
       entityMap.put(FreezeEntityType.ENVIRONMENT,
-          Lists.newArrayList(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(environment.get().getAccountId(),
+          Lists.newArrayList(IdentifierRefHelper.getRefFromIdentifierOrRef(environment.get().getAccountId(),
               environment.get().getOrgIdentifier(), environment.get().getProjectIdentifier(),
               environment.get().getIdentifier())));
       entityMap.put(FreezeEntityType.ENV_TYPE, Lists.newArrayList(environment.get().getType().name()));
@@ -708,7 +708,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(AmbianceUtils.getProjectIdentifier(ambiance)));
     // serviceRef instead of identifier to be passed here
     entityMap.put(FreezeEntityType.SERVICE,
-        Lists.newArrayList(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(serviceEntity.getAccountId(),
+        Lists.newArrayList(IdentifierRefHelper.getRefFromIdentifierOrRef(serviceEntity.getAccountId(),
             serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier())));
 
     // Add the reason in serviceOutcome;

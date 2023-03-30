@@ -20,8 +20,12 @@ import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.scope.ScopeHelper;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -282,5 +286,106 @@ public class IdentifierRefHelper {
       default:
         return "unknown";
     }
+  }
+
+  private void validateAccountIdentifier(String accountIdentifier) {
+    if (isEmpty(accountIdentifier)) {
+      throw new InvalidRequestException("No account identifier provided.");
+    }
+  }
+
+  private void validateOrgIdentifier(String orgIdentifier) {
+    if (isEmpty(orgIdentifier)) {
+      throw new InvalidRequestException("No org identifier provided.");
+    }
+  }
+
+  private void validateIdentifier(String identifier) {
+    if (isEmpty(identifier)) {
+      throw new InvalidRequestException("No identifier provided.");
+    }
+  }
+
+  /***
+   *
+   * @param accountId
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param identifier
+   * @return IdentifierRef with appropriate scope based on the identifiers provided
+   */
+
+  public IdentifierRef getIdentifierRefWithScope(
+      String accountId, String orgIdentifier, String projectIdentifier, String identifier) {
+    validateIdentifier(identifier);
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      validateOrgIdentifier(orgIdentifier);
+      validateAccountIdentifier(accountId);
+      return IdentifierRef.builder()
+          .accountIdentifier(accountId)
+          .orgIdentifier(orgIdentifier)
+          .projectIdentifier(projectIdentifier)
+          .identifier(identifier)
+          .scope(Scope.PROJECT)
+          .build();
+    } else if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      validateAccountIdentifier(accountId);
+      return IdentifierRef.builder()
+          .accountIdentifier(accountId)
+          .orgIdentifier(orgIdentifier)
+          .identifier(identifier)
+          .scope(Scope.ORG)
+          .build();
+    } else if (EmptyPredicate.isNotEmpty(accountId)) {
+      return IdentifierRef.builder().accountIdentifier(accountId).identifier(identifier).scope(Scope.ACCOUNT).build();
+    }
+    throw new InvalidRequestException("No account ID provided.");
+  }
+
+  /**
+   *
+   * @param accountId account identifier
+   * @param orgIdentifier org identifier
+   * @param projectIdentifier project identifier
+   * @param identifierOrRef identifier or scoped identifier
+   * @return scoped identifier built from accountId, orgId, projectId, identifier
+   */
+  public String getRefFromIdentifierOrRef(
+      String accountId, String orgIdentifier, String projectIdentifier, String identifierOrRef) {
+    String[] identifierSplit = StringUtils.split(identifierOrRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+
+    // Length 2 means already a ref
+    if (identifierSplit == null || identifierSplit.length == 2) {
+      return identifierOrRef;
+    }
+
+    return getIdentifierRefWithScope(accountId, orgIdentifier, projectIdentifier, identifierOrRef)
+        .buildScopedIdentifier();
+  }
+
+  public ScopeWiseIds getScopeWiseIds(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Collection<String> refs) {
+    List<String> projectIds = new ArrayList<>();
+    List<String> orgIds = new ArrayList<>();
+    List<String> accountIds = new ArrayList<>();
+
+    for (String ref : refs) {
+      if (isNotEmpty(ref)) {
+        IdentifierRef identifierRef = getIdentifierRef(ref, accountIdentifier, orgIdentifier, projectIdentifier);
+
+        if (Scope.PROJECT.equals(identifierRef.getScope())) {
+          projectIds.add(identifierRef.getIdentifier());
+        } else if (Scope.ORG.equals(identifierRef.getScope())) {
+          orgIds.add(identifierRef.getIdentifier());
+        } else if (Scope.ACCOUNT.equals(identifierRef.getScope())) {
+          accountIds.add(identifierRef.getIdentifier());
+        }
+      }
+    }
+    return ScopeWiseIds.builder()
+        .accountScopedIds(accountIds)
+        .orgScopedIds(orgIds)
+        .projectScopedIds(projectIds)
+        .build();
   }
 }

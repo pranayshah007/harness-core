@@ -54,7 +54,7 @@ import io.harness.service.instancesynchandlerfactory.InstanceSyncHandlerFactoryS
 import io.harness.service.instancesyncperpetualtask.InstanceSyncPerpetualTaskService;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoService;
 import io.harness.util.logging.InstanceSyncLogContext;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -645,13 +645,13 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
         InstanceDTO.builder()
             .accountIdentifier(deploymentSummaryDTO.getAccountIdentifier())
             .orgIdentifier(deploymentSummaryDTO.getOrgIdentifier())
-            .envIdentifier(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(environment.getAccountId(),
+            .envIdentifier(IdentifierRefHelper.getRefFromIdentifierOrRef(environment.getAccountId(),
                 environment.getOrgIdentifier(), environment.getProjectIdentifier(), environment.getIdentifier()))
             .envType(environment.getType())
             .envName(environment.getName())
             .envGroupRef(deploymentSummaryDTO.getEnvGroupRef())
             .serviceName(serviceEntity.getName())
-            .serviceIdentifier(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(serviceEntity.getAccountId(),
+            .serviceIdentifier(IdentifierRefHelper.getRefFromIdentifierOrRef(serviceEntity.getAccountId(),
                 serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier()))
             .projectIdentifier(deploymentSummaryDTO.getProjectIdentifier())
             .infrastructureMappingId(infrastructureMappingDTO.getId())
