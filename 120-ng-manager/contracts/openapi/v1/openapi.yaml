@@ -526,6 +526,96 @@ paths:
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
+  /v1/ip-allowlist:
+    post:
+      summary: Create a IP Allowlist config
+      operationId: create-ip-allowlist-config
+      responses:
+        '201':
+          $ref: '#/components/responses/IPAllowlistConfigResponse'
+      description: Creates a new IP Allowlist config
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/IPAllowlistConfigRequest'
+      tags:
+        - IP Allowlist
+    get:
+      summary: List IP Allowlist Configs
+      operationId: get-ip-allowlist-configs
+      responses:
+        '200':
+          $ref: '#/components/responses/IPAllowlistConfigListResponse'
+      description: Retrieves the information of the IP Allowlist Config
+      parameters:
+        - schema:
+            type: array
+            items:
+              type: string
+          in: query
+          description: Identifier field of IP Allowlist config
+          name: identifier
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - IP Allowlist
+    parameters: []
+  '/v1/ip-allowlist/{ipConfigIdentifier}':
+    get:
+      summary: Retrieve a IP Allowlist config
+      operationId: get-ip-allowlist-config
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: Retrieves the specified IP Allowlist config
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/IPAllowlistConfigResponse'
+        '':
+          $ref: '#/components/responses/IPAllowlistConfigResponse'
+      tags:
+        - IP Allowlist
+    parameters:
+      - schema:
+          type: string
+        name: ipConfigIdentifier
+        in: path
+        required: true
+    put:
+      summary: Update service
+      operationId: update-ip-allowlist-config
+      responses:
+        '200':
+          $ref: '#/components/responses/IPAllowlistConfigResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/IPAllowlistConfigRequest'
+      description: Updates the specified IP Allowlist config
+      security:
+        - x-api-key: []
+      tags:
+        - IP Allowlist
+    delete:
+      summary: Delete a service
+      operationId: delete-ip-allowlist-config
+      responses:
+        '200':
+          $ref: '#/components/responses/IPAllowlistConfigResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: Deletes the specified IP Allowlist config
+      security:
+        - x-api-key: []
+      tags:
+        - IP Allowlist
   /v1/secrets:
     post:
       summary: Create a secret
@@ -1159,7 +1249,6 @@ components:
         - TEMPLATESERVICE
         - GOVERNANCE
         - CHAOS
-        - CET
     CreateProjectRequest:
       description: Create project request
       type: object
@@ -1756,6 +1845,74 @@ components:
         message:
           type: string
           description: Secret reference path validation result
+    IPAllowlistConfig:
+      title: IPAllowlistConfig
+      x-stoplight:
+        id: v6ozn5wcwdwhg
+      type: object
+      description: This contains data for a config set in Harness to allow selected IPs
+      properties:
+        name:
+          type: string
+          description: Name of the IP Config defined in Harness
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        identifier:
+          type: string
+          description: Identifier of the IP Config
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        description:
+          type: string
+          description: Description of the entity
+        enabled:
+          type: boolean
+          default: false
+          description: 'If true, it will allow all the IPs that are part of the config and block others.'
+        tags:
+          type: object
+        allowedSourceType:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/AllowedSourceType'
+        ipAddress:
+          type: string
+      required:
+        - name
+        - identifier
+    AllowedSourceType:
+      title: AllowedSourceType
+      x-stoplight:
+        id: z6z1v0ym6pp0n
+      type: string
+      enum:
+        - UI
+        - API
+      description: This denotes source from which IPs are allowed.
+    IPAllowlistConfigRequest:
+      title: IPAllowlistConfigRequest
+      x-stoplight:
+        id: xgbzir9wm0meq
+      type: object
+      properties:
+        ipAllowlistConfig:
+          $ref: '#/components/schemas/IPAllowlistConfig'
+      description: This is the request spec to create IP Allowlist config in Harness
+    IPAllowlistConfigResponse:
+      title: IPAllowlistConfigResponse
+      x-stoplight:
+        id: ykl8b62ijl5wt
+      type: object
+      properties:
+        ipAllowlistConfig:
+          $ref: '#/components/schemas/IPAllowlistConfig'
+        createdAt:
+          type: string
+        lastModifiedAt:
+          type: string
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2211,6 +2368,33 @@ components:
               value:
                 success: true
                 message: 'Validation is Successful, Secret can be referenced'
+    IPAllowlistConfigResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/IPAllowlistConfigResponse'
+    IPAllowlistConfigListResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/IPAllowlistConfigResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
   requestBodies:
     ServiceRequest:
       content:
@@ -2743,6 +2927,11 @@ components:
                 secret_manager_identifier: prod_sm_one
                 secret_ref_path: path1/path2#key
       description: Details of the secret reference
+    IPAllowlistConfigRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/IPAllowlistConfigRequest'
   parameters:
     Page:
       name: page
