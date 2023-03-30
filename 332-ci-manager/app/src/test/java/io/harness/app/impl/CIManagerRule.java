@@ -8,7 +8,6 @@
 package io.harness.app.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 
@@ -18,6 +17,7 @@ import io.harness.SCMGrpcClientModule;
 import io.harness.ScmConnectionConfig;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.CIManagerConfiguration;
+import io.harness.app.CIManagerConfigurationOverride;
 import io.harness.app.CIManagerServiceModule;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.beans.entities.IACMServiceConfig;
@@ -219,7 +219,7 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     modules.add(mongoTypeModule(annotations));
     modules.add(TestMongoModule.getInstance());
     modules.add(new SpringPersistenceTestModule());
-    modules.add(new CIManagerServiceModule(CI_MANAGER, "ci", configuration));
+    modules.add(new CIManagerServiceModule(configuration, new CIManagerConfigurationOverride()));
     modules.add(PmsSdkModule.getInstance(getPmsSdkConfiguration()));
     return modules;
   }
