@@ -17,6 +17,7 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO.AccessControlDTOBuilder;
 import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -95,23 +96,22 @@ public class EnvironmentRbacHelperTest extends CategoryTest {
   public void testEnvironmentsHavingOnlyProdAccess() {
     List<AccessControlDTO> accessControlDTOS = new ArrayList<>();
 
-    AccessControlDTO.AccessControlDTOBuilder accessControlDTOBuilder = AccessControlDTO.builder()
-                                                                           .resourceType(NGResourceType.ENVIRONMENT)
-                                                                           .permission(ENVIRONMENT_VIEW_PERMISSION)
-                                                                           .resourceScope(ResourceScope.builder()
-                                                                                              .accountIdentifier(ACC_ID)
-                                                                                              .orgIdentifier(ORG_ID)
-                                                                                              .projectIdentifier(PRO_ID)
-                                                                                              .build());
-    AccessControlDTO.AccessControlDTOBuilder accessControlDTOBuilderForType =
-        AccessControlDTO.builder()
-            .resourceType(NGResourceType.ENVIRONMENT)
-            .permission(ENVIRONMENT_VIEW_PERMISSION)
-            .resourceScope(ResourceScope.builder()
-                               .accountIdentifier(ACC_ID)
-                               .orgIdentifier(ORG_ID)
-                               .projectIdentifier(PRO_ID)
-                               .build());
+    AccessControlDTOBuilder accessControlDTOBuilder = AccessControlDTO.builder()
+                                                          .resourceType(NGResourceType.ENVIRONMENT)
+                                                          .permission(ENVIRONMENT_VIEW_PERMISSION)
+                                                          .resourceScope(ResourceScope.builder()
+                                                                             .accountIdentifier(ACC_ID)
+                                                                             .orgIdentifier(ORG_ID)
+                                                                             .projectIdentifier(PRO_ID)
+                                                                             .build());
+    AccessControlDTOBuilder accessControlDTOBuilderForType = AccessControlDTO.builder()
+                                                                 .resourceType(NGResourceType.ENVIRONMENT)
+                                                                 .permission(ENVIRONMENT_VIEW_PERMISSION)
+                                                                 .resourceScope(ResourceScope.builder()
+                                                                                    .accountIdentifier(ACC_ID)
+                                                                                    .orgIdentifier(ORG_ID)
+                                                                                    .projectIdentifier(PRO_ID)
+                                                                                    .build());
 
     Map<String, String> preProdAttributes = new HashMap<>();
     preProdAttributes.put("type", "PreProduction");
@@ -142,23 +142,22 @@ public class EnvironmentRbacHelperTest extends CategoryTest {
   public void testEnvironmentsHavingOnlyPreProdAccess() {
     List<AccessControlDTO> accessControlDTOS = new ArrayList<>();
 
-    AccessControlDTO.AccessControlDTOBuilder accessControlDTOBuilder = AccessControlDTO.builder()
-                                                                           .resourceType(NGResourceType.ENVIRONMENT)
-                                                                           .permission(ENVIRONMENT_VIEW_PERMISSION)
-                                                                           .resourceScope(ResourceScope.builder()
-                                                                                              .accountIdentifier(ACC_ID)
-                                                                                              .orgIdentifier(ORG_ID)
-                                                                                              .projectIdentifier(PRO_ID)
-                                                                                              .build());
-    AccessControlDTO.AccessControlDTOBuilder accessControlDTOBuilderForType =
-        AccessControlDTO.builder()
-            .resourceType(NGResourceType.ENVIRONMENT)
-            .permission(ENVIRONMENT_VIEW_PERMISSION)
-            .resourceScope(ResourceScope.builder()
-                               .accountIdentifier(ACC_ID)
-                               .orgIdentifier(ORG_ID)
-                               .projectIdentifier(PRO_ID)
-                               .build());
+    AccessControlDTOBuilder accessControlDTOBuilder = AccessControlDTO.builder()
+                                                          .resourceType(NGResourceType.ENVIRONMENT)
+                                                          .permission(ENVIRONMENT_VIEW_PERMISSION)
+                                                          .resourceScope(ResourceScope.builder()
+                                                                             .accountIdentifier(ACC_ID)
+                                                                             .orgIdentifier(ORG_ID)
+                                                                             .projectIdentifier(PRO_ID)
+                                                                             .build());
+    AccessControlDTOBuilder accessControlDTOBuilderForType = AccessControlDTO.builder()
+                                                                 .resourceType(NGResourceType.ENVIRONMENT)
+                                                                 .permission(ENVIRONMENT_VIEW_PERMISSION)
+                                                                 .resourceScope(ResourceScope.builder()
+                                                                                    .accountIdentifier(ACC_ID)
+                                                                                    .orgIdentifier(ORG_ID)
+                                                                                    .projectIdentifier(PRO_ID)
+                                                                                    .build());
     Map<String, String> preProdAttributes = new HashMap<>();
     preProdAttributes.put("type", "PreProduction");
     Map<String, String> prodAttributes = new HashMap<>();

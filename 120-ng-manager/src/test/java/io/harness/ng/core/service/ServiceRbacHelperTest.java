@@ -17,6 +17,7 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO.AccessControlDTOBuilder;
 import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -77,14 +78,14 @@ public class ServiceRbacHelperTest extends CategoryTest {
   public void testGetApi() {
     List<AccessControlDTO> accessControlDTOS = new ArrayList<>();
 
-    AccessControlDTO.AccessControlDTOBuilder accessControlDTOBuilder = AccessControlDTO.builder()
-                                                                           .resourceType(NGResourceType.SERVICE)
-                                                                           .permission(SERVICE_VIEW_PERMISSION)
-                                                                           .resourceScope(ResourceScope.builder()
-                                                                                              .accountIdentifier(ACC_ID)
-                                                                                              .orgIdentifier(ORG_ID)
-                                                                                              .projectIdentifier(PRO_ID)
-                                                                                              .build());
+    AccessControlDTOBuilder accessControlDTOBuilder = AccessControlDTO.builder()
+                                                          .resourceType(NGResourceType.SERVICE)
+                                                          .permission(SERVICE_VIEW_PERMISSION)
+                                                          .resourceScope(ResourceScope.builder()
+                                                                             .accountIdentifier(ACC_ID)
+                                                                             .orgIdentifier(ORG_ID)
+                                                                             .projectIdentifier(PRO_ID)
+                                                                             .build());
 
     accessControlDTOS.add(accessControlDTOBuilder.permitted(true).resourceIdentifier("newService1").build());
     accessControlDTOS.add(accessControlDTOBuilder.permitted(false).resourceIdentifier("newService2").build());
