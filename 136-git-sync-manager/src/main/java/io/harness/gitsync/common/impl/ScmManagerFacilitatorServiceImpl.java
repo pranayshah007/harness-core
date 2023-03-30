@@ -130,7 +130,7 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
     validateFileContentParams(branch, commitId);
     final ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnector(
         yamlGitConfigIdentifier, projectIdentifier, orgIdentifier, accountIdentifier);
-    final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(filePath, branch, commitId);
+    final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(filePath, branch, commitId, false);
     final FileContent fileContent = scmClient.getFileContent(decryptedConnector, gitFilePathDetails);
     return validateAndGetGitFileContent(fileContent);
   }
@@ -140,7 +140,7 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
       String connectorRef, String repoName, String branchName, String filePath, String commitId) {
     ScmConnector connector = gitSyncConnectorHelper.getDecryptedConnectorForGivenRepo(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
-    final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(filePath, branchName, commitId);
+    final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(filePath, branchName, commitId, false);
     return scmClient.getFileContent(connector, gitFilePathDetails);
   }
 
