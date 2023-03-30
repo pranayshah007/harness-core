@@ -719,7 +719,9 @@ public class NGVaultServiceImpl implements NGVaultService {
         AzureKeyVaultConnectorDTO.builder()
             .tenantId(azureVaultConfig.getTenantId())
             .clientId(azureVaultConfig.getClientId())
-            .secretKey(SecretRefData.builder().decryptedValue(azureVaultConfig.getSecretKey().toCharArray()).build())
+            .secretKey(azureVaultConfig.getSecretKey() != null
+                    ? SecretRefData.builder().decryptedValue(azureVaultConfig.getSecretKey().toCharArray()).build()
+                    : null)
             .subscription(azureVaultConfig.getSubscription())
             .delegateSelectors(azureVaultConfig.getDelegateSelectors())
             .azureEnvironmentType(azureVaultConfig.getAzureEnvironmentType())
