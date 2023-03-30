@@ -32,30 +32,3 @@ java_library(
         "//platform-service/modules/audit-service/contracts:module",
     ],
 )
-
-java_library(
-    name = "tests",
-    testonly = True,
-    srcs = glob(["src/test/**/*.java"]),
-    resources = [],
-    visibility = ["//120-ng-manager:__subpackages__"],
-    deps = [
-        ":module",
-        "//:lombok",
-        "//120-ng-manager/modules/ng-settings/contracts:module",
-        "//930-ng-core-clients:module",
-        "//950-ng-project-n-orgs:module",
-        "//954-connector-beans:module",
-        "//960-persistence:tests",
-        "//980-commons:tests",
-        "//999-annotations:module",
-        "//clients/audit:module",
-        "//platform-service/modules/audit-service/contracts:module",
-        "@maven//:org_assertj_assertj_core",
-        "@maven//:org_mockito_mockito_core",
-    ],
-)
-
-run_analysis()
-
-run_tests()

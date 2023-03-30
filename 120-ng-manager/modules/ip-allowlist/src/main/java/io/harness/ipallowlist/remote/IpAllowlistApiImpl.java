@@ -32,13 +32,13 @@ public class IpAllowlistApiImpl implements IpAllowlistApi {
   }
 
   @Override
-  public Response getIpAllowlistConfig(
-      List<String> identifier, String searchTerm, Integer page, @Max(1000L) Integer limit, String harnessAccount) {
+  public Response getIpAllowlistConfig(String ipConfigIdentifier, String harnessAccount) {
     return null;
   }
 
   @Override
-  public Response getIpAllowlistConfig_1(String ipConfigIdentifier, String harnessAccount) {
+  public Response getIpAllowlistConfigs(
+      List<String> identifier, String searchTerm, Integer page, @Max(1000L) Integer limit, String harnessAccount) {
     return null;
   }
 
