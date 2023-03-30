@@ -14,10 +14,10 @@ import io.harness.gitsync.caching.entity.GitFileCache;
 import io.harness.gitsync.common.beans.AzureRepoSCM;
 import io.harness.gitsync.common.beans.GitBranch;
 import io.harness.gitsync.common.beans.GitFileLocation;
-import io.harness.gitsync.common.beans.GitLabSCM;
 import io.harness.gitsync.common.beans.GitSyncSettings;
 import io.harness.gitsync.common.beans.GitToHarnessProgress;
 import io.harness.gitsync.common.beans.GithubSCM;
+import io.harness.gitsync.common.beans.GitlabSCM;
 import io.harness.gitsync.common.beans.UserSourceCodeManager;
 import io.harness.gitsync.common.beans.YamlChangeSet;
 import io.harness.gitsync.common.beans.YamlGitConfig;
@@ -54,7 +54,7 @@ public class GitSyncMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(UserSourceCodeManager.class);
     set.add(AzureRepoSCM.class);
     set.add(GithubSCM.class);
-    set.add(GitLabSCM.class);
+    set.add(GitlabSCM.class);
   }
 
   @Override

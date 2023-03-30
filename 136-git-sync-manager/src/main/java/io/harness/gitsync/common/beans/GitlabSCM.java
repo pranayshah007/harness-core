@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabApiAccess;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
 import io.harness.ng.DbAliases;
 import io.harness.ng.userprofile.commons.SCMType;
 
@@ -37,8 +38,9 @@ import org.springframework.data.annotation.TypeAlias;
 @Entity(value = "userSourceCodeManagers", noClassnameStored = true)
 @TypeAlias("io.harness.gitsync.common.beans.GitlabSCM")
 @Persistent
-public class GitLabSCM extends UserSourceCodeManager {
+public class GitlabSCM extends UserSourceCodeManager {
   GitlabApiAccess gitlabApiAccess;
+  GitlabApiAccessType apiAccessType;
 
   @Override
   public SCMType getType() {
