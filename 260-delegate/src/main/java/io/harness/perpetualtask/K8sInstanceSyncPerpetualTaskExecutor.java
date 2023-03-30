@@ -32,6 +32,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.K8sDeploymentRelease;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
+import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -50,12 +51,13 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class K8sInstanceSyncPerpetualTaskExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
+public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private static final int DEFAULT_GET_K8S_POD_DETAILS_STEADY_STATE_TIMEOUT = 5;
   private static final String SUCCESS_RESPONSE_MSG = "success";
   private static final String NAMESPACE_RELEASE_NAME_KEY_PATTERN = "namespace:%s_releaseName:%s";
   private static final String DEFAULT_NAMESPACE = "default";
 
+  @Inject private KryoSerializer kryoSerializer;
   @Inject private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -66,13 +68,13 @@ public class K8sInstanceSyncPerpetualTaskExecutor extends PerpetualTaskExecutorB
     log.info("Running the K8s InstanceSync perpetual task executor for task id: {}", taskId);
     K8sInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), K8sInstanceSyncPerpetualTaskParams.class);
-    return executeK8sInstanceSyncTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
+    return executeK8sInstanceSyncTask(taskId, taskParams);
   }
 
   private PerpetualTaskResponse executeK8sInstanceSyncTask(
-      PerpetualTaskId taskId, K8sInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
+      PerpetualTaskId taskId, K8sInstanceSyncPerpetualTaskParams taskParams) {
     List<K8sDeploymentReleaseData> deploymentReleaseDataList =
-        fixK8sDeploymentReleaseData(getK8sDeploymentReleaseData(taskParams, referenceFalseKryoSerializer));
+        fixK8sDeploymentReleaseData(getK8sDeploymentReleaseData(taskParams));
 
     List<PodDetailsRequest> distinctPodDetailsRequestList = getDistinctPodDetailsRequestList(deploymentReleaseDataList);
 
@@ -88,21 +90,19 @@ public class K8sInstanceSyncPerpetualTaskExecutor extends PerpetualTaskExecutorB
     return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(instanceSyncResponseMsg).build();
   }
 
-  private List<K8sDeploymentReleaseData> getK8sDeploymentReleaseData(
-      K8sInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
+  private List<K8sDeploymentReleaseData> getK8sDeploymentReleaseData(K8sInstanceSyncPerpetualTaskParams taskParams) {
     return taskParams.getK8SDeploymentReleaseListList()
         .stream()
-        .map(data -> toK8sDeploymentReleaseData(data, referenceFalseKryoSerializer))
+        .map(this::toK8sDeploymentReleaseData)
         .collect(Collectors.toList());
   }
 
-  private K8sDeploymentReleaseData toK8sDeploymentReleaseData(
-      K8sDeploymentRelease k8SDeploymentRelease, boolean referenceFalseKryoSerializer) {
+  private K8sDeploymentReleaseData toK8sDeploymentReleaseData(K8sDeploymentRelease k8SDeploymentRelease) {
     return K8sDeploymentReleaseData.builder()
         .releaseName(k8SDeploymentRelease.getReleaseName())
         .namespaces(new LinkedHashSet<>(k8SDeploymentRelease.getNamespacesList()))
-        .k8sInfraDelegateConfig((K8sInfraDelegateConfig) getKryoSerializer(referenceFalseKryoSerializer)
-                                    .asObject(k8SDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()))
+        .k8sInfraDelegateConfig((K8sInfraDelegateConfig) kryoSerializer.asObject(
+            k8SDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()))
         .build();
   }
 

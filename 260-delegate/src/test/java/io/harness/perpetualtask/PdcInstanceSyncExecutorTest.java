@@ -30,7 +30,6 @@ import software.wings.service.impl.aws.model.response.HostReachabilityResponse;
 import software.wings.utils.HostValidationService;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -53,7 +52,6 @@ import retrofit2.Call;
 @OwnedBy(CDP)
 public class PdcInstanceSyncExecutorTest extends DelegateTestBase {
   @Inject private KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
   @Mock private HostValidationService hostValidationService;
@@ -65,10 +63,10 @@ public class PdcInstanceSyncExecutorTest extends DelegateTestBase {
 
   @Before
   public void setUp() throws IOException {
-    on(pdcInstanceSyncExecutor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
+    on(pdcInstanceSyncExecutor).set("kryoSerializer", kryoSerializer);
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResultV2(any(), any(), perpetualTaskResponseCaptor.capture());
+        .publishInstanceSyncResult(any(), any(), perpetualTaskResponseCaptor.capture());
     doReturn(retrofit2.Response.success(SUCCESS)).when(call).execute();
   }
 
@@ -99,14 +97,10 @@ public class PdcInstanceSyncExecutorTest extends DelegateTestBase {
         PdcInstanceSyncPerpetualTaskParams.newBuilder()
             .addHostNames("h1")
             .addHostNames("h2")
-            .setEncryptedData(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(Collections.emptyList())))
-            .setSettingAttribute(
-                ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(SettingAttribute.builder().build())))
+            .setEncryptedData(ByteString.copyFrom(kryoSerializer.asBytes(Collections.emptyList())))
+            .setSettingAttribute(ByteString.copyFrom(kryoSerializer.asBytes(SettingAttribute.builder().build())))
             .build();
 
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(message))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
   }
 }

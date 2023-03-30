@@ -52,8 +52,7 @@ public class GoogleFunctionInstanceSyncPerpetualTaskHandler extends InstanceSync
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(deploymentReleaseDataList);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
-        infrastructureMappingDTO.getAccountIdentifier());
+        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier());
   }
 
   private List<GoogleFunctionDeploymentReleaseData> populateDeploymentReleaseList(
@@ -103,25 +102,22 @@ public class GoogleFunctionInstanceSyncPerpetualTaskHandler extends InstanceSync
       String accountIdentifier, List<GoogleFunctionDeploymentReleaseData> deploymentReleaseData) {
     return GoogleFunctionInstanceSyncPerpetualTaskParams.newBuilder()
         .setAccountId(accountIdentifier)
-        .addAllGoogleFunctionsDeploymentReleaseList(
-            toGoogleFunctionsDeploymentReleaseList(deploymentReleaseData, accountIdentifier))
+        .addAllGoogleFunctionsDeploymentReleaseList(toGoogleFunctionsDeploymentReleaseList(deploymentReleaseData))
         .build();
   }
 
   private List<GoogleFunctionDeploymentRelease> toGoogleFunctionsDeploymentReleaseList(
-      List<GoogleFunctionDeploymentReleaseData> deploymentReleaseData, String accountIdentifier) {
-    return deploymentReleaseData.stream()
-        .map(data -> toGoogleFunctionDeploymentRelease(data, accountIdentifier))
-        .collect(Collectors.toList());
+      List<GoogleFunctionDeploymentReleaseData> deploymentReleaseData) {
+    return deploymentReleaseData.stream().map(this::toGoogleFunctionDeploymentRelease).collect(Collectors.toList());
   }
 
   private GoogleFunctionDeploymentRelease toGoogleFunctionDeploymentRelease(
-      GoogleFunctionDeploymentReleaseData releaseData, String accountIdentifier) {
+      GoogleFunctionDeploymentReleaseData releaseData) {
     return GoogleFunctionDeploymentRelease.newBuilder()
         .setFunction(releaseData.getFunction())
         .setRegion(releaseData.getRegion())
-        .setGoogleFunctionsInfraConfig(ByteString.copyFrom(
-            getKryoSerializer(accountIdentifier).asBytes(releaseData.getGoogleFunctionInfraConfig())))
+        .setGoogleFunctionsInfraConfig(
+            ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getGoogleFunctionInfraConfig())))
         .build();
   }
 

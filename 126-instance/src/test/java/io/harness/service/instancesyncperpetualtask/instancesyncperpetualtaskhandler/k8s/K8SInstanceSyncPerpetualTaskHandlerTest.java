@@ -11,7 +11,6 @@ import static io.harness.delegate.beans.NgSetupFields.OWNER;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
@@ -33,7 +32,6 @@ import io.harness.delegate.task.k8s.K8sInstanceSyncRequest;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
-import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.K8sDeploymentRelease;
@@ -64,7 +62,6 @@ public class K8SInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
 
   @Mock K8sEntityHelper k8sEntityHelper;
   @Mock KryoSerializer kryoSerializer;
-  @Mock DelegateServiceGrpcClient delegateServiceGrpcClient;
   @InjectMocks K8SInstanceSyncPerpetualTaskHandler k8SInstanceSyncPerpetualTaskHandler;
 
   @Test
@@ -131,7 +128,6 @@ public class K8SInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
 
     when(k8sEntityHelper.getK8sInfraDelegateConfig(infrastructureOutcome, baseNGAccess))
         .thenReturn(k8sInfraDelegateConfig);
-    when(delegateServiceGrpcClient.isTaskTypeSupported(any(), any())).thenReturn(false);
     when(kryoSerializer.asBytes(k8sDeploymentReleaseData.getK8sInfraDelegateConfig())).thenReturn(bytes);
 
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();

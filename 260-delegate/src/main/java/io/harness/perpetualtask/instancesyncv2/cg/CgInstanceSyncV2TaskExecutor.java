@@ -109,7 +109,7 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
       String accountId, String perpetualTaskId, CgInstanceSyncResponse syncTaskResponse) {
     try {
       DelegateRestUtils.executeRestCall(
-          delegateAgentManagerClient.publishInstanceSyncV2ResultV2(perpetualTaskId, accountId, syncTaskResponse));
+          delegateAgentManagerClient.publishInstanceSyncV2Result(perpetualTaskId, accountId, syncTaskResponse));
     } catch (IOException e) {
       log.error("Exception while publishing instance sync response data for perpetual task Id: [{}], for account: [{}]",
           perpetualTaskId, accountId, e);

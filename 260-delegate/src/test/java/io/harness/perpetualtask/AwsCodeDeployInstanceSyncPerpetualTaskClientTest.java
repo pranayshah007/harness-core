@@ -152,7 +152,7 @@ public class AwsCodeDeployInstanceSyncPerpetualTaskClientTest extends CategoryTe
     List<Filter> ec2Filters = singletonList(new Filter("instance-state", singletonList("running")));
     doReturn(ec2Filters).when(awsUtils).getFilters(eq(DeploymentType.AWS_CODEDEPLOY), any(AwsInstanceFilter.class));
     AwsCodeDeployInstanceSyncPerpetualTaskParams taskParams =
-        (AwsCodeDeployInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext(), false);
+        (AwsCodeDeployInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext());
 
     assertThat(taskParams.getFilter()).isNotNull();
     assertThat(taskParams.getRegion()).isEqualTo(US_EAST);

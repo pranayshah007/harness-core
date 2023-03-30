@@ -30,6 +30,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParamsNg;
+import io.harness.serializer.KryoSerializer;
 import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.service.impl.aws.model.AwsEC2Instance;
@@ -45,12 +46,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class AwsSshWinrmPerpetualTaskExecutorNg extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
+public class AwsSshWinrmPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   private static final Set<String> VALID_SERVICE_TYPES = ImmutableSet.of(ServiceSpecType.SSH, ServiceSpecType.WINRM);
 
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private AwsListEC2InstancesDelegateTaskHelper awsListEC2InstancesDelegateTaskHelper;
   @Inject private AwsASGDelegateTaskHelper awsASGDelegateTaskHelper;
+  @Inject private KryoSerializer kryoSerializer;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -64,12 +66,12 @@ public class AwsSshWinrmPerpetualTaskExecutorNg extends PerpetualTaskExecutorBas
           format("Invalid serviceType provided %s. Expected: %s", taskParams.getServiceType(), VALID_SERVICE_TYPES));
     }
 
-    return executeTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
+    return executeTask(taskId, taskParams);
   }
 
   private PerpetualTaskResponse executeTask(
-      PerpetualTaskId taskId, AwsSshInstanceSyncPerpetualTaskParamsNg taskParams, boolean referenceFalseSerializer) {
-    List<AwsEC2Instance> awsEC2Instances = getAwsEC2Instance(taskParams, referenceFalseSerializer);
+      PerpetualTaskId taskId, AwsSshInstanceSyncPerpetualTaskParamsNg taskParams) {
+    List<AwsEC2Instance> awsEC2Instances = getAwsEC2Instance(taskParams);
     Set<String> awsHosts = awsEC2Instances.stream()
                                .map(instance -> mapToAddress(instance, taskParams.getHostConnectionType()))
                                .collect(Collectors.toSet());
@@ -103,10 +105,9 @@ public class AwsSshWinrmPerpetualTaskExecutorNg extends PerpetualTaskExecutorBas
     }
   }
 
-  private List<AwsEC2Instance> getAwsEC2Instance(
-      AwsSshInstanceSyncPerpetualTaskParamsNg taskParams, boolean referenceFalseSerializer) {
-    AwsInfraDelegateConfig infraConfig = (AwsInfraDelegateConfig) getKryoSerializer(referenceFalseSerializer)
-                                             .asObject(taskParams.getInfraDelegateConfig().toByteArray());
+  private List<AwsEC2Instance> getAwsEC2Instance(AwsSshInstanceSyncPerpetualTaskParamsNg taskParams) {
+    AwsInfraDelegateConfig infraConfig =
+        (AwsInfraDelegateConfig) kryoSerializer.asObject(taskParams.getInfraDelegateConfig().toByteArray());
 
     if (EmptyPredicate.isNotEmpty(infraConfig.getAutoScalingGroupName())) { // ASG
       return awsASGDelegateTaskHelper.getInstances(infraConfig.getAwsConnectorDTO(),

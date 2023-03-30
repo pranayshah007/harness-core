@@ -13,8 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
 
-import static software.wings.beans.TaskType.PT_SERIALIZATION_SUPPORT;
-
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.Capability;
 import io.harness.exception.InvalidRequestException;
@@ -27,7 +25,6 @@ import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.serializer.KryoSerializer;
-import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.api.ContainerDeploymentInfoWithLabels;
 import software.wings.api.DeploymentInfo;
@@ -47,7 +44,6 @@ import software.wings.settings.SettingVariableTypes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -76,8 +72,6 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
   private final InfrastructureMappingService infrastructureMappingService;
 
   private final KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
-  @Inject private DelegateTaskService delegateTaskService;
 
   @Override
   public PerpetualTaskExecutionBundle fetchInfraConnectorDetails(SettingAttribute cloudProvider) {
@@ -98,8 +92,7 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
         -> builder
                .addCapabilities(
                    Capability.newBuilder()
-                       .setKryoCapability(ByteString.copyFrom(
-                           getKryoSerializer(cloudProvider.getAccountId()).asDeflatedBytes(executionCapability)))
+                       .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionCapability)))
                        .build())
                .build());
     return builder.build();
@@ -319,11 +312,5 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
       return releaseIdentifier.getDeleteAfter();
     }
     return System.currentTimeMillis() + RELEASE_PRESERVE_TIME;
-  }
-
-  private KryoSerializer getKryoSerializer(String accountId) {
-    return delegateTaskService.isTaskTypeSupportedByAllDelegates(accountId, PT_SERIALIZATION_SUPPORT.name())
-        ? referenceFalseKryoSerializer
-        : kryoSerializer;
   }
 }
