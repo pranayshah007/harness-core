@@ -27,6 +27,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriBuilder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
@@ -111,4 +112,23 @@ public class DelegateProxyRequestForwarder {
         return httpTaskParametersNg;
     }
 
+    public List<HttpHeaderConfig> CreateHeaderConfig(Map<String, Object> headers) {
+        List<HttpHeaderConfig> headerList = new ArrayList<>();
+        try {
+            for(String headerKey : headers.keySet()){
+                if(headerKey == "Content-Length")
+                {
+                    continue;
+                }
+                String value = headers.get(headerKey).toString();
+                headerList.add(HttpHeaderConfig.builder().key(headerKey).value(value).build());
+                log.info("header {} : {}", headerKey,value);
+            }
+        } catch (Exception ex){
+            log.error("error while mapping the headers", ex);
+            throw ex;
+        }
+
+        return headerList;
+    }
 }

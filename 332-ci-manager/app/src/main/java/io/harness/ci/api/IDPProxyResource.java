@@ -7,6 +7,8 @@
 
 package io.harness.app.resources;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
@@ -25,8 +27,11 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpStatus;
 import software.wings.beans.TaskType;
+import com.google.gson.Gson;
+
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -78,6 +83,44 @@ public class IDPProxyResource {
     }*/
 
         return Response.status(httpResponse.getHttpResponseCode()).entity(httpResponse.getHttpResponseBody()).build();
+
+    }
+
+    //This api will be used by backstageProxy
+    @POST
+    @Path("/delegate/url/{url: .+}")
+    public Response ForwardProxy(@Context UriInfo info, @Context javax.ws.rs.core.HttpHeaders headers, @PathParam("url") String url, String body) throws JsonProcessingException {
+        log.info("Starting the proxy task");
+        var accountId = headers.getHeaderString("accountId");
+        log.info("body: {}",accountId);
+        log.info("body: {}",body);
+        BackstageProxyRequest backstageProxyRequest = null;
+        try {
+
+            //String escaped = StringEscapeUtils.escapeJson(body);
+            //String unescaped = StringEscapeUtils.unescapeJson(escaped);
+            //unescaped = StringEscapeUtils.unescapeJson(unescaped);
+            ObjectMapper mapper = new ObjectMapper();
+            backstageProxyRequest = mapper.readValue(body, BackstageProxyRequest.class);
+        }catch (Exception err){
+            log.info("err parsing backstageProxyRequest: {}",err);
+            throw err;
+        }
+        log.info("parsed body: {}",backstageProxyRequest);
+
+
+        List<HttpHeaderConfig> headerList = delegateProxyRequestForwarder.CreateHeaderConfig(backstageProxyRequest.headers);
+
+        HttpStepResponse httpResponse = delegateProxyRequestForwarder.ForwardRequestToDelegate(
+                accountId,
+                backstageProxyRequest.url,
+                headerList,
+                backstageProxyRequest.body,
+                backstageProxyRequest.method);
+
+        return Response.status(httpResponse.getHttpResponseCode())
+                .entity(httpResponse.getHttpResponseBody())
+                .build();
 
     }
 
