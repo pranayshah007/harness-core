@@ -5,15 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.shell.ssh.xfer;
+package io.harness.shell.ssh.agent.jsch;
 
-import io.harness.logging.CommandExecutionStatus;
+import io.harness.shell.ssh.agent.SshSession;
 
+import com.jcraft.jsch.ChannelSftp;
 import lombok.Builder;
+import lombok.Getter;
 
 @Builder
-public class ScpResponse {
-  boolean success;
-  int exitCode;
-  CommandExecutionStatus status;
+@Getter
+public class JschSftpSession extends SshSession {
+  private ChannelSftp channel;
+  @Override
+  public void close() throws Exception {
+    channel.disconnect();
+  }
 }

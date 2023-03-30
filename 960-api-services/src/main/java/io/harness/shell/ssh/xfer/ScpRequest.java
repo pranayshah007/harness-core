@@ -7,13 +7,14 @@
 
 package io.harness.shell.ssh.xfer;
 
-import io.harness.logging.CommandExecutionStatus;
+import io.harness.shell.AbstractScriptExecutor.FileProvider;
 
 import lombok.Builder;
+import lombok.Getter;
 
 @Builder
-public class ScpResponse {
-  boolean success;
-  int exitCode;
-  CommandExecutionStatus status;
+@Getter
+public class ScpRequest {
+  private String remoteFilePath;
+  private FileProvider fileProvider;
 }

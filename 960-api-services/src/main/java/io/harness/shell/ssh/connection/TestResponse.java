@@ -5,15 +5,18 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.shell.ssh.xfer;
+package io.harness.shell.ssh.connection;
 
+import io.harness.eraro.ErrorCode;
 import io.harness.logging.CommandExecutionStatus;
 
 import lombok.Builder;
+import lombok.Getter;
 
 @Builder
-public class ScpResponse {
-  boolean success;
-  int exitCode;
-  CommandExecutionStatus status;
+@Getter
+public class TestResponse {
+  private CommandExecutionStatus status;
+  private String error;
+  private ErrorCode errorCode;
 }

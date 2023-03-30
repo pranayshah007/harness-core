@@ -5,6 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.shell.ssh.xfer;
+package io.harness.shell.ssh.agent;
 
-public class ScpCommandData {}
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Ssh session opens a new channel at application layer.
+ */
+@Slf4j
+public abstract class SshSession implements AutoCloseable {}
