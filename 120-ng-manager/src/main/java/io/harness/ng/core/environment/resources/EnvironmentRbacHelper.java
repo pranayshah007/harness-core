@@ -112,7 +112,7 @@ public class EnvironmentRbacHelper {
 
   private List<AccessControlDTO> removeTypeBasedAccessControlDTOs(List<AccessControlDTO> accessControlDTOList) {
     return accessControlDTOList.stream()
-        .filter(dto -> isEmpty(dto.getResourceAttributes()) || isEmpty(dto.getResourceAttributes().get()))
+        .filter(dto -> isEmpty(dto.getResourceAttributes()) || isEmpty(dto.getResourceAttributes().get(TYPE)))
         .collect(Collectors.toList());
   }
 
