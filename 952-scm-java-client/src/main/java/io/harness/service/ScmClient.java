@@ -121,7 +121,7 @@ public interface ScmClient {
   RefreshTokenResponse refreshToken(
       ScmConnector scmConnector, String clientId, String clientSecret, String endpoint, String refreshToken);
 
-  GenerateYamlResponse autogenerateStageYamlForCI(String cloneUrl);
+  GenerateYamlResponse autogenerateStageYamlForCI(String cloneUrl, String yamlVersion);
 
   GetLatestCommitOnFileResponse getLatestCommitOnFile(ScmConnector scmConnector, String branchName, String filepath);
 
