@@ -74,7 +74,8 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(deploymentReleaseList);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier());
+        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier(),
+        infrastructure.getAccountIdentifier());
   }
 
   @Override
@@ -86,7 +87,8 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
         getExecutionCapabilitiesV2(connectorInfoDTO, infrastructureMappingDTO);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier());
+        connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier(),
+        infrastructureMappingDTO.getAccountIdentifier());
   }
 
   private List<K8sDeploymentReleaseData> populateDeploymentReleaseList(
@@ -167,7 +169,8 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
         .setAccountId(infrastructureMappingDTO.getAccountIdentifier())
         .setOrgId(connectorInfoDTO.getOrgIdentifier())
         .setProjectId(connectorInfoDTO.getProjectIdentifier())
-        .setConnectorInfoDto(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(connectorInfoDTO)))
+        .setConnectorInfoDto(ByteString.copyFrom(
+            getKryoSerializer(infrastructureMappingDTO.getAccountIdentifier()).asBytes(connectorInfoDTO)))
         .build();
   }
 
@@ -175,20 +178,23 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
       String accountIdentifier, List<K8sDeploymentReleaseData> deploymentReleaseData) {
     return K8sInstanceSyncPerpetualTaskParams.newBuilder()
         .setAccountId(accountIdentifier)
-        .addAllK8SDeploymentReleaseList(toK8sDeploymentReleaseList(deploymentReleaseData))
+        .addAllK8SDeploymentReleaseList(toK8sDeploymentReleaseList(deploymentReleaseData, accountIdentifier))
         .build();
   }
 
-  private List<K8sDeploymentRelease> toK8sDeploymentReleaseList(List<K8sDeploymentReleaseData> deploymentReleaseData) {
-    return deploymentReleaseData.stream().map(this::toK8sDeploymentRelease).collect(Collectors.toList());
+  private List<K8sDeploymentRelease> toK8sDeploymentReleaseList(
+      List<K8sDeploymentReleaseData> deploymentReleaseData, String accountIdentifier) {
+    return deploymentReleaseData.stream()
+        .map(data -> toK8sDeploymentRelease(data, accountIdentifier))
+        .collect(Collectors.toList());
   }
 
-  private K8sDeploymentRelease toK8sDeploymentRelease(K8sDeploymentReleaseData releaseData) {
+  private K8sDeploymentRelease toK8sDeploymentRelease(K8sDeploymentReleaseData releaseData, String accountIdentifier) {
     return K8sDeploymentRelease.newBuilder()
         .setReleaseName(releaseData.getReleaseName())
         .addAllNamespaces(releaseData.getNamespaces())
         .setK8SInfraDelegateConfig(
-            ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(releaseData.getK8sInfraDelegateConfig())))
+            ByteString.copyFrom(getKryoSerializer(accountIdentifier).asBytes(releaseData.getK8sInfraDelegateConfig())))
         .build();
   }
 

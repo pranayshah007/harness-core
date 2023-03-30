@@ -23,6 +23,7 @@ import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.api.ContainerDeploymentInfoWithLabels;
 import software.wings.api.DeploymentInfo;
@@ -58,6 +59,7 @@ public class K8SInstanceSyncV2DeploymentHelperCgTest extends CategoryTest {
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   @Mock private KryoSerializer kryoSerializer;
+  @Mock private DelegateTaskService delegateTaskService;
 
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
@@ -72,6 +74,7 @@ public class K8SInstanceSyncV2DeploymentHelperCgTest extends CategoryTest {
 
     doReturn(new byte[] {}).when(kryoSerializer).asBytes(any());
     doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+    doReturn(false).when(delegateTaskService).isTaskTypeSupportedByAllDelegates(any(), any());
     PerpetualTaskExecutionBundle perpetualTaskExecutionBundle =
         k8SInstanceSyncV2DeploymentHelperCg.fetchInfraConnectorDetails(settingAttribute);
     assertThat(perpetualTaskExecutionBundle).isNotNull();

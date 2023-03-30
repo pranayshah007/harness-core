@@ -55,7 +55,8 @@ public class AsgInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(deploymentReleaseDataList);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier());
+        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
+        infrastructureMappingDTO.getAccountIdentifier());
   }
 
   private List<AsgDeploymentReleaseData> populateDeploymentReleaseList(
@@ -102,18 +103,22 @@ public class AsgInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
       String accountIdentifier, List<AsgDeploymentReleaseData> deploymentReleaseData) {
     return AsgInstanceSyncPerpetualTaskParamsNg.newBuilder()
         .setAccountId(accountIdentifier)
-        .addAllAsgDeploymentReleaseList(toAsgDeploymentReleaseList(deploymentReleaseData))
+        .addAllAsgDeploymentReleaseList(toAsgDeploymentReleaseList(deploymentReleaseData, accountIdentifier))
         .build();
   }
 
-  private List<AsgDeploymentRelease> toAsgDeploymentReleaseList(List<AsgDeploymentReleaseData> deploymentReleaseData) {
-    return deploymentReleaseData.stream().map(this::toAsgDeploymentRelease).collect(Collectors.toList());
+  private List<AsgDeploymentRelease> toAsgDeploymentReleaseList(
+      List<AsgDeploymentReleaseData> deploymentReleaseData, String accountIdentifier) {
+    return deploymentReleaseData.stream()
+        .map(data -> toAsgDeploymentRelease(data, accountIdentifier))
+        .collect(Collectors.toList());
   }
 
-  private AsgDeploymentRelease toAsgDeploymentRelease(AsgDeploymentReleaseData releaseData) {
+  private AsgDeploymentRelease toAsgDeploymentRelease(AsgDeploymentReleaseData releaseData, String accountIdentifier) {
     return AsgDeploymentRelease.newBuilder()
         .setAsgNameWithoutSuffix(releaseData.getAsgNameWithoutSuffix())
-        .setAsgInfraConfig(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(releaseData.getAsgInfraConfig())))
+        .setAsgInfraConfig(
+            ByteString.copyFrom(getKryoSerializer(accountIdentifier).asBytes(releaseData.getAsgInfraConfig())))
         .setExecutionStrategy(releaseData.getExecutionStrategy())
         .build();
   }
