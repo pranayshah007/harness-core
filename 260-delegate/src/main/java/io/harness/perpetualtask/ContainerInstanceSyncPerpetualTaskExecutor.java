@@ -28,6 +28,7 @@ import io.harness.perpetualtask.instancesync.ContainerInstanceSyncPerpetualTaskP
 import io.harness.perpetualtask.instancesync.ContainerServicePerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.K8sContainerInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.dto.SettingAttribute;
@@ -52,12 +53,12 @@ import org.eclipse.jetty.server.Response;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class ContainerInstanceSyncPerpetualTaskExecutor
-    extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
+public class ContainerInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private K8sTaskHelper k8sTaskHelper;
   @Inject private ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
   @Inject private ContainerService containerService;
+  @Inject private KryoSerializer kryoSerializer;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private AwsEcsHelperServiceDelegate awsEcsHelperServiceDelegate;
 
@@ -71,22 +72,19 @@ public class ContainerInstanceSyncPerpetualTaskExecutor
         AnyUtils.unpack(params.getCustomizedParams(), ContainerInstanceSyncPerpetualTaskParams.class);
 
     return K8S.name().equals(taskParams.getContainerType())
-        ? executeK8sContainerSyncTask(
-            taskId, taskParams.getK8SContainerPerpetualTaskParams(), params.getReferenceFalseKryoSerializer())
-        : executeContainerServiceSyncTask(
-            taskId, taskParams.getContainerServicePerpetualTaskParams(), params.getReferenceFalseKryoSerializer());
+        ? executeK8sContainerSyncTask(taskId, taskParams.getK8SContainerPerpetualTaskParams())
+        : executeContainerServiceSyncTask(taskId, taskParams.getContainerServicePerpetualTaskParams());
   }
 
-  private PerpetualTaskResponse executeContainerServiceSyncTask(PerpetualTaskId taskId,
-      ContainerServicePerpetualTaskParams containerServicePerpetualTaskParams, boolean referenceFalseKryoSerializer) {
-    final SettingAttribute settingAttribute =
-        (SettingAttribute) getKryoSerializer(referenceFalseKryoSerializer)
-            .asObject(containerServicePerpetualTaskParams.getSettingAttribute().toByteArray());
+  private PerpetualTaskResponse executeContainerServiceSyncTask(
+      PerpetualTaskId taskId, ContainerServicePerpetualTaskParams containerServicePerpetualTaskParams) {
+    final SettingAttribute settingAttribute = (SettingAttribute) kryoSerializer.asObject(
+        containerServicePerpetualTaskParams.getSettingAttribute().toByteArray());
 
     ContainerSyncResponse responseData =
-        getContainerSyncResponse(containerServicePerpetualTaskParams, settingAttribute, referenceFalseKryoSerializer);
-    publishInstanceSyncResult(taskId, settingAttribute.getAccountId(),
-        containerServicePerpetualTaskParams.getNamespace(), responseData, referenceFalseKryoSerializer);
+        getContainerSyncResponse(containerServicePerpetualTaskParams, settingAttribute);
+    publishInstanceSyncResult(
+        taskId, settingAttribute.getAccountId(), containerServicePerpetualTaskParams.getNamespace(), responseData);
 
     boolean isFailureResponse = FAILURE == responseData.getCommandExecutionStatus();
     return PerpetualTaskResponse.builder()
@@ -96,12 +94,10 @@ public class ContainerInstanceSyncPerpetualTaskExecutor
   }
 
   private ContainerSyncResponse getContainerSyncResponse(
-      ContainerServicePerpetualTaskParams containerServicePerpetualTaskParams, SettingAttribute settingAttribute,
-      boolean referenceFalseKryoSerializer) {
+      ContainerServicePerpetualTaskParams containerServicePerpetualTaskParams, SettingAttribute settingAttribute) {
     @SuppressWarnings("unchecked")
-    final List<EncryptedDataDetail> encryptedDataDetails =
-        (List<EncryptedDataDetail>) getKryoSerializer(referenceFalseKryoSerializer)
-            .asObject(containerServicePerpetualTaskParams.getEncryptionDetails().toByteArray());
+    final List<EncryptedDataDetail> encryptedDataDetails = (List<EncryptedDataDetail>) kryoSerializer.asObject(
+        containerServicePerpetualTaskParams.getEncryptionDetails().toByteArray());
 
     ContainerServiceParams request =
         ContainerServiceParams.builder()
@@ -150,12 +146,10 @@ public class ContainerInstanceSyncPerpetualTaskExecutor
     }
   }
 
-  private PerpetualTaskResponse executeK8sContainerSyncTask(PerpetualTaskId taskId,
-      K8sContainerInstanceSyncPerpetualTaskParams k8sContainerInstanceSyncPerpetualTaskParams,
-      boolean referenceFalseKryoSerializer) {
-    final K8sClusterConfig k8sClusterConfig =
-        (K8sClusterConfig) getKryoSerializer(referenceFalseKryoSerializer)
-            .asObject(k8sContainerInstanceSyncPerpetualTaskParams.getK8SClusterConfig().toByteArray());
+  private PerpetualTaskResponse executeK8sContainerSyncTask(
+      PerpetualTaskId taskId, K8sContainerInstanceSyncPerpetualTaskParams k8sContainerInstanceSyncPerpetualTaskParams) {
+    final K8sClusterConfig k8sClusterConfig = (K8sClusterConfig) kryoSerializer.asObject(
+        k8sContainerInstanceSyncPerpetualTaskParams.getK8SClusterConfig().toByteArray());
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(k8sClusterConfig, true);
 
     K8sTaskExecutionResponse responseData =
@@ -167,7 +161,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutor
     }
 
     publishInstanceSyncResult(taskId, k8sContainerInstanceSyncPerpetualTaskParams.getAccountId(),
-        k8sContainerInstanceSyncPerpetualTaskParams.getNamespace(), responseData, referenceFalseKryoSerializer);
+        k8sContainerInstanceSyncPerpetualTaskParams.getNamespace(), responseData);
 
     boolean isFailureResponse = FAILURE == responseData.getCommandExecutionStatus();
     return PerpetualTaskResponse.builder()
@@ -207,15 +201,10 @@ public class ContainerInstanceSyncPerpetualTaskExecutor
     }
   }
 
-  private void publishInstanceSyncResult(PerpetualTaskId taskId, String accountId, String namespace,
-      DelegateResponseData responseData, boolean referenceFalseKryoSerializer) {
+  private void publishInstanceSyncResult(
+      PerpetualTaskId taskId, String accountId, String namespace, DelegateResponseData responseData) {
     try {
-      if (referenceFalseKryoSerializer) {
-        execute(delegateAgentManagerClient.publishInstanceSyncResultV2(taskId.getId(), accountId, responseData));
-      } else {
-        execute(delegateAgentManagerClient.publishInstanceSyncResult(taskId.getId(), accountId, responseData));
-      }
-
+      execute(delegateAgentManagerClient.publishInstanceSyncResult(taskId.getId(), accountId, responseData));
     } catch (Exception e) {
       log.error(
           String.format("Failed to publish container instance sync result. namespace [%s] and PerpetualTaskId [%s]",

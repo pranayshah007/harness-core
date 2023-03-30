@@ -33,7 +33,6 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.AwsSshWinrmDeploymentInfoDTO;
-import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
@@ -75,7 +74,6 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandlerTest extends InstancesTe
   @Mock NGSecretServiceV2 ngSecretServiceV2;
   @Mock SshEntityHelper sshEntityHelper;
   @Mock ServerlessEntityHelper serverlessEntityHelper;
-  @Mock DelegateServiceGrpcClient delegateServiceGrpcClient;
   @InjectMocks AwsSshWinrmInstanceSyncPerpetualTaskHandler awsSshWinrmInstanceSyncPerpetualTaskHandler;
 
   AwsConnectorDTO awsConnectorDTO =
@@ -129,7 +127,6 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandlerTest extends InstancesTe
         AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, null);
     when(kryoSerializer.asBytes(any())).thenReturn(bytes);
     when(kryoSerializer.asDeflatedBytes(any())).thenReturn(bytes);
-    when(delegateServiceGrpcClient.isTaskTypeSupported(any(), any())).thenReturn(false);
     Any perpetualTaskPack = Any.pack(params);
 
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();

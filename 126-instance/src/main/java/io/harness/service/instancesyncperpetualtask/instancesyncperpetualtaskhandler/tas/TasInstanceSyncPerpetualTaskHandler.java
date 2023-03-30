@@ -51,8 +51,7 @@ public class TasInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(deploymentReleaseDataList);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
-        infrastructureMappingDTO.getAccountIdentifier());
+        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier());
   }
 
   private List<TasDeploymentReleaseData> populateDeploymentReleaseList(
@@ -98,22 +97,18 @@ public class TasInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
       String accountIdentifier, List<TasDeploymentReleaseData> deploymentReleaseData) {
     return TasInstanceSyncPerpetualTaskParams.newBuilder()
         .setAccountId(accountIdentifier)
-        .addAllTasDeploymentReleaseList(toTasDeploymentReleaseList(deploymentReleaseData, accountIdentifier))
+        .addAllTasDeploymentReleaseList(toTasDeploymentReleaseList(deploymentReleaseData))
         .build();
   }
 
-  private List<TasDeploymentRelease> toTasDeploymentReleaseList(
-      List<TasDeploymentReleaseData> deploymentReleaseData, String accountIdentifier) {
-    return deploymentReleaseData.stream()
-        .map(data -> toTasDeploymentRelease(data, accountIdentifier))
-        .collect(Collectors.toList());
+  private List<TasDeploymentRelease> toTasDeploymentReleaseList(List<TasDeploymentReleaseData> deploymentReleaseData) {
+    return deploymentReleaseData.stream().map(this::toTasDeploymentRelease).collect(Collectors.toList());
   }
 
-  private TasDeploymentRelease toTasDeploymentRelease(TasDeploymentReleaseData releaseData, String accountIdentifier) {
+  private TasDeploymentRelease toTasDeploymentRelease(TasDeploymentReleaseData releaseData) {
     return TasDeploymentRelease.newBuilder()
         .setApplicationName(releaseData.getApplicationName())
-        .setTasInfraConfig(
-            ByteString.copyFrom(getKryoSerializer(accountIdentifier).asBytes(releaseData.getTasInfraConfig())))
+        .setTasInfraConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getTasInfraConfig())))
         .build();
   }
 

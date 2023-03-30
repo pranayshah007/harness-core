@@ -64,22 +64,4 @@ public class InstanceSyncResource {
         accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse);
     return ResponseDTO.newResponse(Boolean.TRUE);
   }
-
-  @POST
-  @Path("/v2/response")
-  @ApiOperation(
-      value = "Get instance sync perpetual task response", nickname = "getInstanceSyncPerpetualTaskResponseV2")
-  public ResponseDTO<Boolean>
-  processInstanceSyncPerpetualTaskResponseV2(
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PERPETUAL_TASK_ID) String perpetualTaskId,
-      @Body DelegateResponseData delegateResponseData) {
-    InstanceSyncPerpetualTaskResponse instanceSyncPerpetualTaskResponse =
-        (InstanceSyncPerpetualTaskResponse) delegateResponseData;
-    log.info("Received instance sync perpetual task response for accountId : {} and perpetualTaskId : {} : {}",
-        accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse.toString());
-    instanceSyncService.processInstanceSyncByPerpetualTask(
-        accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse);
-    return ResponseDTO.newResponse(Boolean.TRUE);
-  }
 }

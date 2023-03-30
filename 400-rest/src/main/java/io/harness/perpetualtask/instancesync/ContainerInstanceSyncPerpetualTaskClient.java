@@ -26,10 +26,10 @@ import io.harness.beans.DelegateTask;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.TaskData;
 import io.harness.ff.FeatureFlagService;
-import io.harness.perpetualtask.PerpetualTaskClientBase;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.AzureKubernetesInfrastructureMapping;
@@ -64,30 +64,26 @@ import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ContainerInstanceSyncPerpetualTaskClient
-    extends PerpetualTaskClientBase implements PerpetualTaskServiceClient {
+public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskServiceClient {
   @Inject InfrastructureMappingService infraMappingService;
   @Inject EnvironmentService environmentService;
   @Inject ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   @Inject transient AwsCommandHelper awsCommandHelper;
   @Inject SecretManager secretManager;
   @Inject SettingsService settingsService;
+  @Inject KryoSerializer kryoSerializer;
   @Inject FeatureFlagService featureFlagService;
 
   @Override
-  public Message getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
+  public Message getTaskParams(PerpetualTaskClientContext clientContext) {
     final ContainerInstanceSyncPerpetualTaskData taskData = getPerpetualTaskData(clientContext);
-    return isK8sContainerType(clientContext.getClientParams())
-        ? buildK8ContainerInstanceSyncTaskParams(taskData, referenceFalse)
-        : buildContainerInstanceSyncTaskParams(taskData, referenceFalse);
+    return isK8sContainerType(clientContext.getClientParams()) ? buildK8ContainerInstanceSyncTaskParams(taskData)
+                                                               : buildContainerInstanceSyncTaskParams(taskData);
   }
 
-  private Message buildContainerInstanceSyncTaskParams(
-      ContainerInstanceSyncPerpetualTaskData taskData, boolean referenceFalse) {
-    ByteString settingAttribute =
-        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(taskData.getSettingAttribute()));
-    ByteString encryptionDetails =
-        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(taskData.getEncryptionDetails()));
+  private Message buildContainerInstanceSyncTaskParams(ContainerInstanceSyncPerpetualTaskData taskData) {
+    ByteString settingAttribute = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getSettingAttribute()));
+    ByteString encryptionDetails = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getEncryptionDetails()));
 
     return ContainerInstanceSyncPerpetualTaskParams.newBuilder()
         .setContainerType(taskData.getContainerType())
@@ -106,10 +102,8 @@ public class ContainerInstanceSyncPerpetualTaskClient
         .build();
   }
 
-  private Message buildK8ContainerInstanceSyncTaskParams(
-      ContainerInstanceSyncPerpetualTaskData taskData, boolean referenceFalse) {
-    ByteString clusterConfig =
-        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(taskData.getK8sClusterConfig()));
+  private Message buildK8ContainerInstanceSyncTaskParams(ContainerInstanceSyncPerpetualTaskData taskData) {
+    ByteString clusterConfig = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getK8sClusterConfig()));
 
     return ContainerInstanceSyncPerpetualTaskParams.newBuilder()
         .setContainerType(taskData.getContainerType())

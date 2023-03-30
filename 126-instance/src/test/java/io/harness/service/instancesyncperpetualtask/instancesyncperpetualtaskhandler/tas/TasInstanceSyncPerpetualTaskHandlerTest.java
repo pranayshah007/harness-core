@@ -28,7 +28,6 @@ import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.TasDeploymentInfoDTO;
-import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.TasDeploymentRelease;
 import io.harness.perpetualtask.instancesync.TasInstanceSyncPerpetualTaskParams;
@@ -57,7 +56,6 @@ public class TasInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
   @Mock TasEntityHelper tasEntityHelper;
   @Mock KryoSerializer kryoSerializer;
   @InjectMocks TasInstanceSyncPerpetualTaskHandler tasInstanceSyncPerpetualTaskHandler;
-  @Mock DelegateServiceGrpcClient delegateServiceGrpcClient;
 
   @Test
   @Owner(developers = SOURABH)
@@ -109,7 +107,6 @@ public class TasInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
 
     when(tasEntityHelper.getTasInfraConfig(any(), any())).thenReturn(tasInfraConfig);
     when(kryoSerializer.asBytes(any())).thenReturn(bytes);
-    when(delegateServiceGrpcClient.isTaskTypeSupported(any(), any())).thenReturn(false);
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();
     expectedExecutionCapabilityList.forEach(executionCapability
         -> builder.addCapabilities(Capability.newBuilder().setKryoCapability(ByteString.copyFrom(bytes3)).build())

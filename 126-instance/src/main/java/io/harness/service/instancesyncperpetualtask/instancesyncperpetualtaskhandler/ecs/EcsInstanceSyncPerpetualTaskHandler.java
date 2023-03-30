@@ -52,8 +52,7 @@ public class EcsInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(deploymentReleaseDataList);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
-        infrastructureMappingDTO.getAccountIdentifier());
+        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier());
   }
 
   private List<EcsDeploymentReleaseData> populateDeploymentReleaseList(
@@ -99,22 +98,18 @@ public class EcsInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
       String accountIdentifier, List<EcsDeploymentReleaseData> deploymentReleaseData) {
     return EcsInstanceSyncPerpetualTaskParams.newBuilder()
         .setAccountId(accountIdentifier)
-        .addAllEcsDeploymentReleaseList(toEcsDeploymentReleaseList(deploymentReleaseData, accountIdentifier))
+        .addAllEcsDeploymentReleaseList(toEcsDeploymentReleaseList(deploymentReleaseData))
         .build();
   }
 
-  private List<EcsDeploymentRelease> toEcsDeploymentReleaseList(
-      List<EcsDeploymentReleaseData> deploymentReleaseData, String accountIdentifier) {
-    return deploymentReleaseData.stream()
-        .map(data -> toEcsDeploymentRelease(data, accountIdentifier))
-        .collect(Collectors.toList());
+  private List<EcsDeploymentRelease> toEcsDeploymentReleaseList(List<EcsDeploymentReleaseData> deploymentReleaseData) {
+    return deploymentReleaseData.stream().map(this::toEcsDeploymentRelease).collect(Collectors.toList());
   }
 
-  private EcsDeploymentRelease toEcsDeploymentRelease(EcsDeploymentReleaseData releaseData, String accountIdentifier) {
+  private EcsDeploymentRelease toEcsDeploymentRelease(EcsDeploymentReleaseData releaseData) {
     return EcsDeploymentRelease.newBuilder()
         .setServiceName(releaseData.getServiceName())
-        .setEcsInfraConfig(
-            ByteString.copyFrom(getKryoSerializer(accountIdentifier).asBytes(releaseData.getEcsInfraConfig())))
+        .setEcsInfraConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getEcsInfraConfig())))
         .build();
   }
 

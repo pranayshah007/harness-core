@@ -45,7 +45,6 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.serializer.KryoSerializer;
-import io.harness.service.intfc.DelegateTaskService;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -67,7 +66,6 @@ public class K8sWatchTaskServiceImplTest extends CategoryTest {
 
   @Mock private KryoSerializer kryoSerializer;
   @Mock private PerpetualTaskService perpetualTaskService;
-  @Mock private DelegateTaskService delegateTaskService;
   @Mock private SecretManagerClientService ngSecretService;
   @Mock(answer = RETURNS_DEEP_STUBS) private ConnectorResourceClient connectorResourceClient;
   @Mock private Call call;
