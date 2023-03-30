@@ -23,4 +23,6 @@ public class ScmErrorExplanations {
   public static final String INVALID_CONNECTOR_CREDS =
       "The credentials provided in the Gitlab connector<CONNECTOR> are invalid or have expired or are not configured with SSO.";
   public static final String REPO_NOT_FOUND = "Provided Gitlab repository<REPO> does not exist or has been deleted.";
+
+  public static final String BRANCH_NOT_FOUND = "Provided Gitlab branch<BRANCH> does not exist or has been deleted.";
 }
