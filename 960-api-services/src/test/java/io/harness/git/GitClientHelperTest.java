@@ -18,6 +18,7 @@ import static io.harness.git.model.GitRepositoryType.TERRAFORM;
 import static io.harness.git.model.GitRepositoryType.TRIGGER;
 import static io.harness.git.model.GitRepositoryType.YAML;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
@@ -749,5 +750,13 @@ public class GitClientHelperTest extends CategoryTest {
   public void testGetAzureRepoOrgAndProjectSSHForProjectTypeConnector() {
     assertThat(GitClientHelper.getAzureRepoOrgAndProjectSSH("git@ssh.dev.azure.com:v3/repoOrg/repoProject"))
         .isEqualTo("repoOrg/repoProject");
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetCompleteHTTPUrlForGitLab() {
+    assertThat(GitClientHelper.getCompleteHTTPUrlForGitLab("https://gitlab.com/gitlab160412/testRepo"))
+        .isEqualTo("https://gitlab.com/gitlab160412/testRepo");
   }
 }

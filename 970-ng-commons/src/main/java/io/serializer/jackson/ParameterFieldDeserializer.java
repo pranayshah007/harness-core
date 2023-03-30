@@ -194,7 +194,7 @@ public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?
         array.add(JsonNodeUtils.getValueFromJsonNode(arrayElement));
       }
       return array;
-    } else if (jsonNode.isTextual()) {
+    } else if (jsonNode.isTextual() && this.referenceType.getRawClass() == String.class) {
       return jsonNode.asText();
     }
     return JsonUtils.asObject(defaultValuesString, this.referenceType.getRawClass());

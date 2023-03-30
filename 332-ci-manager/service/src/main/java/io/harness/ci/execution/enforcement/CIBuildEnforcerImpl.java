@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.beans.entities.ExecutionQueueLimit;
 import io.harness.beans.execution.license.CILicenseService;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.ExecutionLimits;
 import io.harness.ci.config.ExecutionLimits.ExecutionLimitSpec;
 import io.harness.ci.execution.QueueExecutionUtils;
@@ -26,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class CIBuildEnforcerImpl implements CIBuildEnforcer {
   @Inject CILicenseService ciLicenseService;
+  @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private QueueExecutionUtils queueExecutionUtils;
   @Inject private ExecutionLimits executionLimits;
   @Inject private ExecutionQueueLimitRepository executionQueueLimitRepository;

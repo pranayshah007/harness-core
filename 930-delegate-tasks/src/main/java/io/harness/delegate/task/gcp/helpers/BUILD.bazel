@@ -19,6 +19,7 @@ java_library(
         "//970-api-services-beans/src/main/java/io/harness/beans/version:module",
         "//970-api-services-beans/src/main/java/io/harness/globalcontex:module",
         "//970-api-services-beans/src/main/java/io/harness/k8s/model:module",
+        "//970-api-services-beans/src/main/java/io/harness/k8s/model/kubeconfig:module",
         "//980-commons/src/main/java/io/harness/concurrent:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//980-commons/src/main/java/io/harness/eraro:module",

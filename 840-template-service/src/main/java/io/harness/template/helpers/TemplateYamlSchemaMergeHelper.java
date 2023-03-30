@@ -28,6 +28,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,17 +57,28 @@ public class TemplateYamlSchemaMergeHelper {
           nGTemplateInfoConfig.get("properties").get("spec"), "$ref", "#/definitions/specNode");
       JsonNode specJsonNode = templateSchema.get("definitions").get("specNode");
       if (templateEntityType.equals(TemplateEntityType.STEPGROUP_TEMPLATE)) {
-        // specSchema.get("$ref") will be of format "#/definitions/nameSpace/StepGroupElementConfig"
-        String ref = specSchema.get("$ref").asText();
-        ref = ref.subSequence(2, ref.length()).toString();
-        // refSplit will contain ["definitions", "nameSpace", "StepGroupElementConfig"].
-        String[] refSplit = ref.split("/");
-        JsonNode refNode = specSchema;
-        for (String str : refSplit) {
-          refNode = refNode.get(str);
+        boolean isNewSchemaPath = false;
+        Iterator<Map.Entry<String, JsonNode>> schemaFields = specSchema.fields();
+        while (schemaFields.hasNext()) {
+          Map.Entry<String, JsonNode> field = schemaFields.next();
+          if (field.getKey().equals("$ref")) {
+            isNewSchemaPath = true;
+            break;
+          }
         }
-        JsonNodeUtils.deletePropertiesInJsonNode((ObjectNode) refNode.get("properties"), keys);
-        JsonNodeUtils.deletePropertiesInArrayNode((ArrayNode) refNode.get("required"), keys);
+        if (isNewSchemaPath) {
+          // specSchema.get("$ref") will be of format "#/definitions/nameSpace/StepGroupElementConfig"
+          String ref = specSchema.get("$ref").asText();
+          ref = ref.subSequence(2, ref.length()).toString();
+          // refSplit will contain ["definitions", "nameSpace", "StepGroupElementConfig"].
+          String[] refSplit = ref.split("/");
+          JsonNode refNode = specSchema;
+          for (String str : refSplit) {
+            refNode = refNode.get(str);
+          }
+          JsonNodeUtils.deletePropertiesInJsonNode((ObjectNode) refNode.get("properties"), keys);
+          JsonNodeUtils.deletePropertiesInArrayNode((ArrayNode) refNode.get("required"), keys);
+        }
       } else {
         JsonNodeUtils.deletePropertiesInJsonNode((ObjectNode) specSchema.get("properties"), keys);
         JsonNodeUtils.deletePropertiesInArrayNode((ArrayNode) specSchema.get("required"), keys);

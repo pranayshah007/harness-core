@@ -9,6 +9,7 @@ package io.harness.ccm.views.helper;
 
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD_ID;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
@@ -295,7 +296,7 @@ public class ViewParametersHelper {
   public List<QLCEViewFilter> addNotNullFilters(List<QLCEViewFilter> filters, List<QLCEViewGroupBy> groupByList) {
     List<QLCEViewFilter> updatedFilters = new ArrayList<>(filters);
     groupByList.forEach(groupBy -> {
-      if (groupBy.getEntityGroupBy() != null) {
+      if (groupBy.getEntityGroupBy() != null && groupBy.getEntityGroupBy().getIdentifier() != BUSINESS_MAPPING) {
         switch (groupBy.getEntityGroupBy().getFieldName()) {
           case GROUP_BY_ECS_TASK_ID:
           case GROUP_BY_INSTANCE_ID:
@@ -829,31 +830,6 @@ public class ViewParametersHelper {
   // ----------------------------------------------------------------------------------------------------------------
   // Cost category related methods
   // ----------------------------------------------------------------------------------------------------------------
-  public List<ViewRule> removeSharedCostRules(List<ViewRule> viewRules, BusinessMapping sharedCostBusinessMapping) {
-    if (sharedCostBusinessMapping != null) {
-      List<ViewRule> updatedViewRules = new ArrayList<>();
-      viewRules.forEach(rule -> {
-        List<ViewCondition> updatedViewConditions =
-            removeSharedCostRulesFromViewConditions(rule.getViewConditions(), sharedCostBusinessMapping);
-        if (!updatedViewConditions.isEmpty()) {
-          updatedViewRules.add(ViewRule.builder().viewConditions(updatedViewConditions).build());
-        }
-      });
-      return updatedViewRules;
-    }
-    return viewRules;
-  }
-
-  private List<ViewCondition> removeSharedCostRulesFromViewConditions(
-      List<ViewCondition> viewConditions, BusinessMapping sharedCostBusinessMapping) {
-    List<ViewCondition> updatedViewConditions = new ArrayList<>();
-    for (ViewCondition condition : viewConditions) {
-      if (!((ViewIdCondition) condition).getViewField().getFieldId().equals(sharedCostBusinessMapping.getUuid())) {
-        updatedViewConditions.add(condition);
-      }
-    }
-    return updatedViewConditions;
-  }
 
   public List<String> getBusinessMappingIds(List<QLCEViewFilterWrapper> filters, String groupByBusinessMappingId) {
     Set<String> businessMappingIds = new HashSet<>();

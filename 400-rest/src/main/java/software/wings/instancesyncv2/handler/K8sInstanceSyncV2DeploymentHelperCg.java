@@ -234,6 +234,10 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
     InfrastructureMapping infraMapping =
         infrastructureMappingService.get(taskDetails.getAppId(), taskDetails.getInfraMappingId());
 
+    if (infraMapping == null) {
+      return Collections.emptyList();
+    }
+
     if (!(infraMapping instanceof ContainerInfrastructureMapping)) {
       log.error("Unsupported infrastructure mapping being tracked here: [{}]. InfraMappingType found: [{}]",
           taskDetails, infraMapping.getClass().getName());

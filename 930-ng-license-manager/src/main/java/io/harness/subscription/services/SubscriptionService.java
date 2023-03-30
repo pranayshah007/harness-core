@@ -16,6 +16,7 @@ import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
+import io.harness.subscription.params.RecommendationRequest;
 import io.harness.subscription.params.SubscriptionRequest;
 import io.harness.subscription.params.UsageKey;
 
@@ -24,6 +25,7 @@ import java.util.List;
 
 public interface SubscriptionService {
   EnumMap<UsageKey, Long> getRecommendation(String accountIdentifier, long numberOfMAUs, long numberOfUsers);
+  EnumMap<UsageKey, Long> getRecommendationRc(String accountIdentifier, RecommendationRequest recommendationRequest);
   PriceCollectionDTO listPrices(String accountIdentifier, ModuleType moduleType);
   InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO);
   void payInvoice(String invoiceId);

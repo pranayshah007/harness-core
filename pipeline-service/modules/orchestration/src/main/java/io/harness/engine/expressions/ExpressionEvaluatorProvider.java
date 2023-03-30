@@ -12,6 +12,7 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
+import java.util.Map;
 import java.util.Set;
 
 public interface ExpressionEvaluatorProvider {
@@ -24,6 +25,10 @@ public interface ExpressionEvaluatorProvider {
    * @param refObjectSpecific       used by AmbianceExpressionEvaluator constructor
    * @return a new instance of EngineExpressionEvaluator
    */
+  default EngineExpressionEvaluator get(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
+      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific) {
+    return get(variableResolverTracker, ambiance, entityTypes, refObjectSpecific, null);
+  }
   EngineExpressionEvaluator get(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
-      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific);
+      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific, Map<String, String> contextMap);
 }

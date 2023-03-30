@@ -7,7 +7,6 @@
 
 package io.harness.app;
 
-import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE;
@@ -81,6 +80,7 @@ import io.harness.ng.core.event.MessageListener;
 import io.harness.opaclient.OpaClientModule;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
+import io.harness.project.ProjectClientModule;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
 import io.harness.reflection.HarnessReflections;
@@ -89,6 +89,7 @@ import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ScmServiceClient;
+import io.harness.ssca.client.SSCAServiceClientModule;
 import io.harness.stoserviceclient.STOServiceClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
@@ -128,9 +129,12 @@ import org.redisson.api.RedissonClient;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class CIManagerServiceModule extends AbstractModule {
   private final CIManagerConfiguration ciManagerConfiguration;
+  protected final CIManagerConfigurationOverride configurationOverride;
 
-  public CIManagerServiceModule(CIManagerConfiguration ciManagerConfiguration) {
+  public CIManagerServiceModule(
+      CIManagerConfiguration ciManagerConfiguration, CIManagerConfigurationOverride configurationOverride) {
     this.ciManagerConfiguration = ciManagerConfiguration;
+    this.configurationOverride = configurationOverride;
   }
 
   @Provides
@@ -156,11 +160,13 @@ public class CIManagerServiceModule extends AbstractModule {
   private DelegateCallbackToken getDelegateCallbackToken(
       DelegateServiceGrpcClient delegateServiceClient, CIManagerConfiguration appConfig) {
     log.info("Generating Delegate callback token");
+    String overrideMongoUri = configurationOverride.getMongoUri();
     final DelegateCallbackToken delegateCallbackToken = delegateServiceClient.registerCallback(
         DelegateCallback.newBuilder()
             .setMongoDatabase(MongoDatabase.newBuilder()
-                                  .setCollectionNamePrefix("ciManager")
-                                  .setConnection(appConfig.getHarnessCIMongo().getUri())
+                                  .setCollectionNamePrefix(configurationOverride.getModulePrefix() + "Manager")
+                                  .setConnection(overrideMongoUri.isEmpty() ? appConfig.getHarnessCIMongo().getUri()
+                                                                            : overrideMongoUri)
                                   .build())
             .build());
     log.info("Delegate callback token generated =[{}]", delegateCallbackToken.getToken());
@@ -216,7 +222,12 @@ public class CIManagerServiceModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    install(PrimaryVersionManagerModule.getInstance());
+    if (this.configurationOverride.isUsePrimaryVersionController()) {
+      install(PrimaryVersionManagerModule.getInstance());
+    }
+    if (this.configurationOverride.isUseBuildEnforcer()) {
+      bind(CIBuildEnforcer.class).to(CIBuildEnforcerImpl.class);
+    }
     bind(CIManagerConfiguration.class).toInstance(ciManagerConfiguration);
     bind(CIInitTaskMessageProcessor.class).to(CIInitTaskMessageProcessorImpl.class);
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
@@ -232,11 +243,11 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
     bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
     bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
-    bind(CIBuildEnforcer.class).to(CIBuildEnforcerImpl.class);
     bind(CIYAMLSanitizationService.class).to(CIYAMLSanitizationServiceImpl.class).in(Singleton.class);
     bind(CIAccountValidationService.class).to(CIAccountValidationServiceImpl.class).in(Singleton.class);
     install(NgLicenseHttpClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
+        ciManagerConfiguration.getNgManagerServiceSecret(),
+        this.configurationOverride.getServiceHeader().getServiceId()));
 
     bind(ExecutorService.class)
         .annotatedWith(Names.named("ciInitTaskExecutor"))
@@ -244,10 +255,10 @@ public class CIManagerServiceModule extends AbstractModule {
             10, 30, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Init-Task-Handler-%d").build()));
 
     bind(ScheduledExecutorService.class)
-        .annotatedWith(Names.named("ciTelemetryPublisherExecutor"))
+        .annotatedWith(Names.named(this.configurationOverride.getModulePrefix() + "TelemetryPublisherExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(1,
             new ThreadFactoryBuilder()
-                .setNameFormat("ci-telemetry-publisher-Thread-%d")
+                .setNameFormat(this.configurationOverride.getModulePrefix() + "-telemetry-publisher-Thread-%d")
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
     bind(ScheduledExecutorService.class)
@@ -283,7 +294,7 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(ExecutorService.class)
         .toInstance(ThreadPool.create(1, 2, 5, TimeUnit.SECONDS,
             new ThreadFactoryBuilder()
-                .setNameFormat("default-ci-executor-%d")
+                .setNameFormat("default-" + this.configurationOverride.getModulePrefix() + "-executor-%d")
                 .setPriority(Thread.MIN_PRIORITY)
                 .build()));
 
@@ -307,11 +318,13 @@ public class CIManagerServiceModule extends AbstractModule {
         ciManagerConfiguration.getManagerTarget(), ciManagerConfiguration.getManagerAuthority(), true));
 
     install(new TokenClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
+        ciManagerConfiguration.getNgManagerServiceSecret(),
+        this.configurationOverride.getServiceHeader().getServiceId()));
     install(PersistentLockModule.getInstance());
     install(new OpaClientModule(ciManagerConfiguration.getOpaClientConfig(),
-        ciManagerConfiguration.getPolicyManagerSecret(), CI_MANAGER.getServiceId()));
+        ciManagerConfiguration.getPolicyManagerSecret(), this.configurationOverride.getServiceHeader().getServiceId()));
 
+    String appName = this.configurationOverride.getServiceHeader().getServiceId();
     install(new AbstractManagerGrpcClientModule() {
       @Override
       public ManagerGrpcClientModule.Config config() {
@@ -323,28 +336,37 @@ public class CIManagerServiceModule extends AbstractModule {
 
       @Override
       public String application() {
-        return "CIManager";
+        return appName;
       }
     });
 
-    install(AccessControlClientModule.getInstance(
-        ciManagerConfiguration.getAccessControlClientConfiguration(), CI_MANAGER.getServiceId()));
+    install(AccessControlClientModule.getInstance(ciManagerConfiguration.getAccessControlClientConfiguration(),
+        this.configurationOverride.getServiceHeader().getServiceId()));
     install(new EntitySetupUsageClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(), "CIManager"));
+        ciManagerConfiguration.getNgManagerServiceSecret(),
+        this.configurationOverride.getServiceHeader().getServiceId()));
     install(new ConnectorResourceClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(), "CIManager", ClientMode.PRIVILEGED));
+        ciManagerConfiguration.getNgManagerServiceSecret(),
+        this.configurationOverride.getServiceHeader().getServiceId(), ClientMode.PRIVILEGED));
     install(new SecretNGManagerClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(), "CIManager"));
+        ciManagerConfiguration.getNgManagerServiceSecret(),
+        this.configurationOverride.getServiceHeader().getServiceId()));
     install(new CILogServiceClientModule(ciManagerConfiguration.getLogServiceConfig()));
     install(UserClientModule.getInstance(ciManagerConfiguration.getManagerClientConfig(),
-        ciManagerConfiguration.getManagerServiceSecret(), CI_MANAGER.getServiceId()));
+        ciManagerConfiguration.getManagerServiceSecret(),
+        this.configurationOverride.getServiceHeader().getServiceId()));
+    install(new ProjectClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
+        ciManagerConfiguration.getNgManagerServiceSecret(),
+        this.configurationOverride.getServiceHeader().getServiceId()));
     install(new TIServiceClientModule(ciManagerConfiguration.getTiServiceConfig()));
     install(new STOServiceClientModule(ciManagerConfiguration.getStoServiceConfig()));
+    install(new SSCAServiceClientModule(ciManagerConfiguration.getSscaServiceConfig()));
     install(new IACMServiceClientModule(ciManagerConfiguration.getIacmServiceConfig()));
     install(new AccountClientModule(ciManagerConfiguration.getManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.toString()));
+        ciManagerConfiguration.getNgManagerServiceSecret(), this.configurationOverride.getServiceHeader().toString()));
     install(EnforcementClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId(),
+        ciManagerConfiguration.getNgManagerServiceSecret(),
+        this.configurationOverride.getServiceHeader().getServiceId(),
         ciManagerConfiguration.getEnforcementClientConfiguration()));
     install(new AbstractTelemetryModule() {
       @Override

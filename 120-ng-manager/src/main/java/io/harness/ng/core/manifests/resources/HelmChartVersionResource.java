@@ -15,6 +15,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.resources.HelmChartService;
 import io.harness.cdng.manifest.resources.dtos.HelmChartResponseDTO;
+import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -57,6 +58,9 @@ public class HelmChartVersionResource {
   private final HelmChartService helmChartService;
   private final ArtifactResourceUtils artifactResourceUtils;
 
+  // this is kept for compatibility reasons.
+  // Once the UI completely moves the code to use getHelmChartVersionDetailsV1 and getHelmChartVersionDetailsV2 then
+  // this method can be removed.
   @GET
   @Path("chart/version")
   @ApiOperation(value = "Gets helm chart version details", nickname = "getHelmChartVersionDetails")
@@ -64,14 +68,31 @@ public class HelmChartVersionResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
-      @NotNull @QueryParam("fqnPath") String fqnPath, @QueryParam("connectorRef") String connectorIdentifier,
-      @QueryParam("chartName") String chartName, @QueryParam("region") String region,
-      @QueryParam("bucketName") String bucketName, @QueryParam("folderPath") String folderPath,
-      @QueryParam("lastTag") String lastTag) {
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, @QueryParam("fqnPath") String fqnPath,
+      @QueryParam("connectorRef") String connectorIdentifier, @QueryParam("chartName") String chartName,
+      @QueryParam("region") String region, @QueryParam("bucketName") String bucketName,
+      @QueryParam("folderPath") String folderPath, @QueryParam("lastTag") String lastTag) {
     HelmChartResponseDTO helmChartResponseDTO =
-        helmChartService.getHelmChartVersionDetails(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath,
+        helmChartService.getHelmChartVersionDetailsV2(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath,
             connectorIdentifier, chartName, region, bucketName, folderPath, lastTag);
+    return ResponseDTO.newResponse(helmChartResponseDTO);
+  }
+
+  @GET
+  @Path("v1/chart/version")
+  @ApiOperation(value = "Gets helm chart version details", nickname = "getHelmChartVersionDetailsV1")
+  public ResponseDTO<HelmChartResponseDTO> getHelmChartVersionDetailsV1(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("connectorRef") String connectorIdentifier,
+      @NotNull @QueryParam("chartName") String chartName, @QueryParam("region") String region,
+      @QueryParam("bucketName") String bucketName, @QueryParam("folderPath") String folderPath,
+      @QueryParam("lastTag") String lastTag, @NotNull @QueryParam("storeType") String storeType,
+      @QueryParam("helmVersion") String helmVersion) {
+    HelmChartResponseDTO helmChartResponseDTO =
+        helmChartService.getHelmChartVersionDetails(accountId, orgIdentifier, projectIdentifier, connectorIdentifier,
+            chartName, region, bucketName, folderPath, lastTag, storeType, helmVersion);
     return ResponseDTO.newResponse(helmChartResponseDTO);
   }
 
@@ -84,7 +105,7 @@ public class HelmChartVersionResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
-      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
       @NotNull @QueryParam("fqnPath") String fqnPath, @QueryParam("connectorRef") String connectorIdentifier,
       @QueryParam("chartName") String chartName, @QueryParam("region") String region,
       @QueryParam("bucketName") String bucketName, @QueryParam("folderPath") String folderPath,
@@ -129,6 +150,23 @@ public class HelmChartVersionResource {
             pipelineIdentifier, runtimeInputYaml, folderPath, fqnPath, gitEntityBasicInfo, serviceRef);
       }
 
+      if (storeConfig instanceof GcsStoreConfig) {
+        GcsStoreConfig gcsStoreConfig = (GcsStoreConfig) storeConfig;
+        if (isEmpty(bucketName)) {
+          bucketName = (String) gcsStoreConfig.getBucketName().fetchFinalValue();
+        }
+
+        if (isEmpty(folderPath)) {
+          folderPath = (String) gcsStoreConfig.getFolderPath().fetchFinalValue();
+        }
+
+        bucketName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, runtimeInputYaml, bucketName, fqnPath, gitEntityBasicInfo, serviceRef);
+
+        folderPath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, runtimeInputYaml, folderPath, fqnPath, gitEntityBasicInfo, serviceRef);
+      }
+
       connectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
           pipelineIdentifier, runtimeInputYaml, connectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
 
@@ -136,7 +174,7 @@ public class HelmChartVersionResource {
           pipelineIdentifier, runtimeInputYaml, chartName, fqnPath, gitEntityBasicInfo, serviceRef);
     }
     HelmChartResponseDTO helmChartResponseDTO =
-        helmChartService.getHelmChartVersionDetails(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath,
+        helmChartService.getHelmChartVersionDetailsV2(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath,
             connectorIdentifier, chartName, region, bucketName, folderPath, lastTag);
     return ResponseDTO.newResponse(helmChartResponseDTO);
   }

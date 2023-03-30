@@ -35,6 +35,7 @@ public class SLODashboardWidget {
   List<MonitoredServiceDetail> monitoredServiceDetails;
   Map<String, String> tags;
   ServiceLevelIndicatorType type;
+  SLIEvaluationType evaluationType;
   @NotNull ServiceLevelObjectiveType sloType;
   @NotNull BurnRate burnRate;
   @NotNull int timeRemainingDays;
@@ -43,8 +44,8 @@ public class SLODashboardWidget {
   public ErrorBudgetRisk getErrorBudgetRisk() {
     return ErrorBudgetRisk.getFromPercentage(errorBudgetRemainingPercentage);
   }
-  @NotNull int errorBudgetRemaining;
-  @NotNull int totalErrorBudget;
+  @NotNull long errorBudgetRemaining;
+  @NotNull long totalErrorBudget;
   @NotNull SLOTargetType sloTargetType;
   @NotNull int currentPeriodLengthDays;
   @NotNull long currentPeriodStartTime;
@@ -72,13 +73,15 @@ public class SLODashboardWidget {
   @Builder
   public static class SLOGraphData {
     double errorBudgetRemainingPercentage;
-    int errorBudgetRemaining;
+    long errorBudgetRemaining;
     List<Point> errorBudgetBurndown;
     List<Point> sloPerformanceTrend;
     boolean isRecalculatingSLI;
     boolean isCalculatingSLI;
-    @JsonIgnore int errorBudgetBurned;
+    @JsonIgnore long errorBudgetBurned;
     @JsonIgnore double sliStatusPercentage;
+    @JsonIgnore SLIEvaluationType evaluationType;
+    @JsonIgnore long totalErrorBudgetFromGraph;
     public double errorBudgetSpentPercentage() {
       return 100 - errorBudgetRemainingPercentage;
     }
@@ -103,6 +106,7 @@ public class SLODashboardWidget {
         .errorBudgetRemaining(sloGraphData.getErrorBudgetRemaining())
         .errorBudgetRemainingPercentage(sloGraphData.getErrorBudgetRemainingPercentage())
         .errorBudgetBurndown(sloGraphData.getErrorBudgetBurndown())
-        .sloPerformanceTrend(sloGraphData.getSloPerformanceTrend());
+        .sloPerformanceTrend(sloGraphData.getSloPerformanceTrend())
+        .totalErrorBudget(sloGraphData.totalErrorBudgetFromGraph);
   }
 }

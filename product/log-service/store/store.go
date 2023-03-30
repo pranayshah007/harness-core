@@ -28,4 +28,7 @@ type Store interface {
 
 	// Delete deletes the blob from the datastore.
 	Delete(ctx context.Context, key string) error
+
+	// Ping pings the store for readiness
+	Ping() error
 }

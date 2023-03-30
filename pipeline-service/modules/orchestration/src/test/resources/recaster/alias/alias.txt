@@ -62,3 +62,4 @@ io.harness.steps.policy.step.outcome.PolicyStepOutcome
 io.harness.steps.policy.step.outcome.PolicySetOutcome
 io.harness.steps.policy.step.outcome.PolicyOutcome
 io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig
+io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput

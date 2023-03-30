@@ -1946,6 +1946,7 @@
 97116:io.harness.servicenow.ServiceNowImportSetResponseNG
 97117:io.harness.servicenow.ServiceNowImportSetTransformMapResult
 97118:io.harness.servicenow.ServiceNowStagingTable
+97120:io.harness.servicenow.ServiceNowTicketTypeDTO
 98399:io.harness.delegate.task.helm.HelmCommandRequestNG
 98400:io.harness.helm.HelmCommandType
 98401:io.harness.delegate.task.helm.HelmInstallCommandRequestNG
@@ -2545,6 +2546,7 @@
 930010:io.harness.cd.CDLicenseType
 930011:io.harness.licensing.beans.modules.STOModuleLicenseDTO
 930012:io.harness.licensing.beans.modules.IACMModuleLicenseDTO
+930013:io.harness.licensing.beans.modules.CETModuleLicenseDTO
 955000:io.harness.beans.CommitDetails
 955001:io.harness.beans.Repository
 955002:io.harness.beans.WebhookGitUser
@@ -2615,7 +2617,6 @@
 980100:software.wings.beans.infrastructure.instance.info.K8sPodInfo
 980101:software.wings.beans.infrastructure.instance.info.K8sContainerInfo
 1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
-
 5731600:io.harness.aws.beans.AsgLoadBalancerConfig
 5731601:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackRequest
 5731602:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse
@@ -2628,6 +2629,7 @@
 5731609:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult
 
 9000312:software.wings.helpers.ext.nexus.NexusRepositories
+9000313:io.harness.provision.model.TfConfigInspectVersion
 9300122:io.harness.yaml.core.timeout.Timeout
 9300123:io.harness.beans.WebhookEncryptedSecretDTO
 9800001:io.harness.beans.RecasterMap
@@ -2725,7 +2727,12 @@
 10000452:io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO
 10000453:io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO
 10000454:io.harness.delegate.beans.connector.jira.JiraPATDTO
-
+10000455:io.harness.delegate.beans.connector.awsconnector.AwsFixedDelayBackoffStrategySpecDTO
+10000456:io.harness.delegate.beans.connector.awsconnector.AwsEqualJitterBackoffStrategySpecDTO
+10000457:io.harness.delegate.beans.connector.awsconnector.AwsFullJitterBackoffStrategySpecDTO
+10000458:io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrategyDTO
+10000459:io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrategySpecDTO
+10000460:io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrategyType
 10000502:io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest
 10000503:io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse
 10000504:io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest

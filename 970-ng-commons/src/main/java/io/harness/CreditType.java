@@ -7,13 +7,13 @@
 package io.harness;
 
 import static io.harness.CreditType.CreditVisibility.PUBLIC;
+import static io.harness.annotations.dev.HarnessTeam.GTM;
 
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 public enum CreditType {
   @JsonProperty("PAID") PAID("Paid Credits", PUBLIC),
   @JsonProperty("FREE") FREE("Free Credits", PUBLIC);

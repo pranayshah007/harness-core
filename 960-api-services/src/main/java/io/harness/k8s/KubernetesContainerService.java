@@ -205,4 +205,5 @@ public interface KubernetesContainerService {
   List<V1Secret> getSecretsWithLabelsAndFields(KubernetesConfig kubernetesConfig, String labels, String fields);
 
   V1Status deleteSecrets(KubernetesConfig kubernetesConfig, String labels, String fields);
+  String generateExecFormatKubeconfig(KubernetesConfig config);
 }

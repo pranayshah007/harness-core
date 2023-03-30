@@ -7,7 +7,7 @@
 
 package io.harness.pms.helpers;
 
-import static io.harness.beans.FeatureName.ARGO_PHASE1;
+import static io.harness.beans.FeatureName.NG_SVC_ENV_REDESIGN;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
@@ -43,7 +43,7 @@ public class PmsFeatureFlagHelperTest extends CategoryTest {
 
   @Before
   public void setUp() {
-    doReturn(true).when(featureFlagService).isEnabled(ARGO_PHASE1, accountId);
+    doReturn(true).when(featureFlagService).isEnabled(NG_SVC_ENV_REDESIGN, accountId);
   }
 
   @Test
@@ -51,7 +51,7 @@ public class PmsFeatureFlagHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void isEnabled() throws IOException {
     assertThat(pmsFeatureFlagHelper.isEnabled(accountId, "dd")).isFalse();
-    assertThat(pmsFeatureFlagHelper.isEnabled(accountId, ARGO_PHASE1)).isTrue();
+    assertThat(pmsFeatureFlagHelper.isEnabled(accountId, NG_SVC_ENV_REDESIGN)).isTrue();
   }
 
   @Test

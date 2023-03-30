@@ -118,6 +118,61 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .useCFCLI(true)
               .build();
 
+      if (cfSwapRoutesRequestNG.getActiveApplicationDetails() != null) {
+        List<String> existingApps = cfCommandTaskHelperNG.getAppNameBasedOnGuidForBlueGreenDeployment(cfRequestConfig,
+            cfSwapRoutesRequestNG.getReleaseNamePrefix(),
+            cfSwapRoutesRequestNG.getActiveApplicationDetails().getApplicationGuid());
+        String existingAppName = isEmpty(existingApps)
+            ? cfSwapRoutesRequestNG.getActiveApplicationDetails().getApplicationName()
+            : existingApps.get(0);
+        cfRequestConfig.setApplicationName(existingAppName);
+        ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
+        TasApplicationInfo activeApplicationInfo =
+            TasApplicationInfo.builder()
+                .applicationGuid(applicationDetail.getId())
+                .applicationName(applicationDetail.getName())
+                .oldName(cfSwapRoutesRequestNG.getActiveApplicationDetails().getOldName())
+                .attachedRoutes(new ArrayList<>(applicationDetail.getUrls()))
+                .runningCount(applicationDetail.getRunningInstances())
+                .build();
+
+        cfSwapRoutesRequestNG.setActiveApplicationDetails(activeApplicationInfo);
+        cfSwapRoutesRequestNG.setExistingApplicationNames(Collections.singletonList(existingAppName));
+
+        CfAppAutoscalarRequestData appAutoscalarRequestData = null;
+        appAutoscalarRequestData =
+            CfAppAutoscalarRequestData.builder()
+                .applicationGuid(cfSwapRoutesRequestNG.getActiveApplicationDetails().getApplicationGuid())
+                .applicationName(cfSwapRoutesRequestNG.getActiveApplicationDetails().getApplicationName())
+                .cfRequestConfig(cfRequestConfig)
+                .configPathVar(workingDirectory.getAbsolutePath())
+                .timeoutInMins(cfSwapRoutesRequestNG.getTimeoutIntervalInMin())
+                .build();
+        boolean isAutoScalarEnabled =
+            cfDeploymentManager.checkIfAppHasAutoscalarEnabled(appAutoscalarRequestData, executionLogCallback);
+        cfSwapRoutesRequestNG.setUseAppAutoScalar(isAutoScalarEnabled);
+      }
+
+      if (cfSwapRoutesRequestNG.getNewApplicationDetails() != null) {
+        List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuidForBlueGreenDeployment(cfRequestConfig,
+            cfSwapRoutesRequestNG.getReleaseNamePrefix(),
+            cfSwapRoutesRequestNG.getNewApplicationDetails().getApplicationGuid());
+        String newAppName = isEmpty(newApps) ? cfSwapRoutesRequestNG.getNewApplicationName() : newApps.get(0);
+        cfRequestConfig.setApplicationName(newAppName);
+        ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
+        TasApplicationInfo newApplicationInfo =
+            TasApplicationInfo.builder()
+                .applicationGuid(applicationDetail.getId())
+                .applicationName(applicationDetail.getName())
+                .oldName(cfSwapRoutesRequestNG.getNewApplicationDetails().getOldName())
+                .attachedRoutes(new ArrayList<>(applicationDetail.getUrls()))
+                .runningCount(applicationDetail.getRunningInstances())
+                .build();
+
+        cfSwapRoutesRequestNG.setNewApplicationDetails(newApplicationInfo);
+        cfSwapRoutesRequestNG.setNewApplicationName(newAppName);
+      }
+
       TasApplicationInfo activeApplicationDetails = cfSwapRoutesRequestNG.getActiveApplicationDetails();
       CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData =
           CfRouteUpdateRequestConfigData.builder()
@@ -218,7 +273,6 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         iLogStreamingTaskClient, CfCommandUnitConstants.Rename, true, commandUnitsProgress);
     CfInBuiltVariablesUpdateValues cfInBuiltVariablesUpdateValues =
         renameApps(pcfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
-
     executionLogCallback.saveExecutionLog("Renaming of Apps Completed", INFO, CommandExecutionStatus.SUCCESS);
     return cfInBuiltVariablesUpdateValues;
   }

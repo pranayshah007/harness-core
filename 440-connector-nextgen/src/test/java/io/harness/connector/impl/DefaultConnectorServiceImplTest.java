@@ -38,6 +38,7 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ConnectorsTestBase;
 import io.harness.connector.entities.Connector;
+import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.entities.embedded.kubernetescluster.KubernetesClusterConfig;
 import io.harness.connector.entities.embedded.localconnector.LocalConnector;
 import io.harness.connector.validator.ConnectionValidator;
@@ -69,6 +70,7 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -89,6 +91,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -130,6 +134,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   String updatedMasterUrl = "updatedMasterUrl";
   String updatedPasswordIdentifier = "updatedPasswordIdentifier";
   String dummyExceptionMessage = "DUMMY_MESSAGE";
+  Pageable pageable;
 
   @Before
   public void setUp() {
@@ -138,6 +143,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     passwordSecretRef = SecretRefData.builder().identifier(passwordIdentifier).scope(Scope.ACCOUNT).build();
     doNothing().when(secretRefInputValidationHelper).validateTheSecretInput(any(), any());
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(anyString(), anyString(), anyString());
+    pageable = PageUtils.getPageRequest(0, 100, List.of(ConnectorKeys.lastModifiedAt, Sort.Direction.DESC.toString()));
   }
 
   private ConnectorDTO createKubernetesConnectorRequestDTO(
@@ -323,7 +329,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
         SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
     when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
     Page<ConnectorResponseDTO> connectorSummaryDTOSList =
-        connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, false);
+        connectorService.list(accountIdentifier, null, null, null, "", "", false, false, pageable);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(3);
     List<String> connectorIdentifierList =
         connectorSummaryDTOSList.stream()
@@ -659,7 +665,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
         SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
     when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
     Page<ConnectorResponseDTO> connectorSummaryDTOSList =
-        connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, true);
+        connectorService.list(accountIdentifier, null, null, null, "", "", false, true, pageable);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(3);
     List<String> connectorIdentifierList =
         connectorSummaryDTOSList.stream()
@@ -668,11 +674,15 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     assertThat(connectorIdentifierList).contains(connectorIdentifier1);
     assertThat(connectorIdentifierList).contains(connectorIdentifier2);
     assertThat(connectorIdentifierList).contains(connectorIdentifier3);
+    Pageable pageable2 =
+        PageUtils.getPageRequest(1, 2, List.of(ConnectorKeys.lastModifiedAt, Sort.Direction.DESC.toString()));
+    Pageable pageable3 =
+        PageUtils.getPageRequest(0, 2, List.of(ConnectorKeys.lastModifiedAt, Sort.Direction.DESC.toString()));
     Page<ConnectorResponseDTO> connectorSummaryDTOSList_1 =
-        connectorService.list(0, 2, accountIdentifier, null, null, null, "", "", false, true);
+        connectorService.list(accountIdentifier, null, null, null, "", "", false, true, pageable3);
     assertThat(connectorSummaryDTOSList_1.get().count()).isEqualTo(2L);
     Page<ConnectorResponseDTO> connectorSummaryDTOSList_2 =
-        connectorService.list(1, 2, accountIdentifier, null, null, null, "", "", false, true);
+        connectorService.list(accountIdentifier, null, null, null, "", "", false, true, pageable2);
     assertThat(connectorSummaryDTOSList_2.get().count()).isEqualTo(1L);
   }
 
@@ -705,7 +715,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     mockStatic(CGRestUtils.class);
     when(CGRestUtils.getResponse(any())).thenReturn(true);
     Page<ConnectorResponseDTO> connectorSummaryDTOSList =
-        connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, false);
+        connectorService.list(accountIdentifier, null, null, null, "", "", false, false, pageable);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(2);
     List<String> connectorIdentifierList =
         connectorSummaryDTOSList.stream()
@@ -743,7 +753,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
         SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
     when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
     Page<ConnectorResponseDTO> connectorSummaryDTOSList =
-        connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, false);
+        connectorService.list(accountIdentifier, null, null, null, "", "", false, false, pageable);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(3);
     List<String> connectorIdentifierList =
         connectorSummaryDTOSList.stream()

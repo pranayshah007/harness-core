@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,6 +38,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.impl.EntitySetupUsageServiceImpl;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
@@ -48,12 +50,16 @@ import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.validators.NoOpServiceEntityValidator;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidatorFactory;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.refresh.ErrorNodeSummary;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
+import io.harness.template.remote.TemplateResourceClient;
 import io.harness.utils.PageUtils;
 
 import com.google.common.io.Resources;
@@ -79,6 +85,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
 @RunWith(Parameterized.class)
@@ -90,6 +98,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
   @Mock private NoOpServiceEntityValidator noOpServiceEntityValidator;
   @Mock private ServiceRepository serviceRepository;
+
+  @Mock private TemplateResourceClient templateResourceClient;
 
   @Inject @InjectMocks private ServiceEntityServiceImpl serviceEntityService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -118,6 +128,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Reflect.on(serviceEntityService).set("serviceOverrideService", serviceOverrideService);
     Reflect.on(serviceEntityService).set("entitySetupUsageHelper", entitySetupUsageHelper);
     Reflect.on(serviceEntityService).set("serviceEntityValidatorFactory", serviceEntityValidatorFactory);
+    Reflect.on(serviceEntityService).set("templateResourceClient", templateResourceClient);
     when(serviceEntityValidatorFactory.getServiceEntityValidator(any())).thenReturn(noOpServiceEntityValidator);
   }
   @Parameterized.Parameters
@@ -988,6 +999,79 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     list = serviceEntityService.list(projectServiceCriteria, pageRequest);
     assertThat(list.getContent()).isNotNull();
     assertThat(list.getContent().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testValidateTemplateInputsWithNormalService() {
+    ServiceEntity serviceEntity1 = ServiceEntity.builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .identifier("IDENTIFIER_1")
+                                       .orgIdentifier("ORG_ID")
+                                       .name("Service")
+                                       .build();
+
+    serviceEntityService.create(serviceEntity1);
+    ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
+        serviceEntityService.validateTemplateInputs("ACCOUNT_ID", "ORG_ID", null, "IDENTIFIER_1", "false");
+
+    assertThat(validateTemplateInputsResponseDTO.isValidYaml()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testValidateTemplateInputsWithInvalidService() throws IOException {
+    // create service
+    ServiceEntity serviceEntity1 = ServiceEntity.builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .identifier("IDENTIFIER_1")
+                                       .orgIdentifier("ORG_ID")
+                                       .name("Service")
+                                       .yaml("service:\n"
+                                           + "  name: Service\n"
+                                           + "  identifier: IDENTIFIER_1\n"
+                                           + "  tags: {}\n"
+                                           + "  serviceDefinition:\n"
+                                           + "    spec:\n"
+                                           + "      artifacts:\n"
+                                           + "        primary:\n"
+                                           + "          primaryArtifactRef: <+input>\n"
+                                           + "          sources:\n"
+                                           + "            - name: s1\n"
+                                           + "              identifier: s1\n"
+                                           + "              template:\n"
+                                           + "                templateRef: nginx\n"
+                                           + "                versionLabel: v1\n"
+                                           + "                templateInputs:\n"
+                                           + "                  type: DockerRegistry\n"
+                                           + "                  spec:\n"
+                                           + "                    tag: <+input>\n"
+                                           + "    type: Kubernetes")
+                                       .build();
+
+    serviceEntityService.create(serviceEntity1);
+
+    RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(serviceEntity1.fetchNonEmptyYaml()).build();
+
+    ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
+        ValidateTemplateInputsResponseDTO.builder()
+            .validYaml(false)
+            .errorNodeSummary(ErrorNodeSummary.builder().build())
+            .build();
+    Call<ResponseDTO<ValidateTemplateInputsResponseDTO>> callRequest = mock(Call.class);
+    doReturn(callRequest)
+        .when(templateResourceClient)
+        .validateTemplateInputsForGivenYaml(
+            "ACCOUNT_ID", "ORG_ID", null, null, null, null, null, null, null, null, null, "false", refreshRequest);
+    when(callRequest.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(validateTemplateInputsResponseDTO)));
+
+    ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO2 =
+        serviceEntityService.validateTemplateInputs("ACCOUNT_ID", "ORG_ID", null, "IDENTIFIER_1", "false");
+
+    assertThat(validateTemplateInputsResponseDTO2.isValidYaml()).isFalse();
   }
 
   private String readFile(String filename) {

@@ -202,6 +202,33 @@ public class ExpandedJsonFunctorUtilsTest extends CategoryTest {
                 "expandedJson.pipeline.stages.stage1.strategy.shell1.stepInputs.identifier"));
   }
 
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testCreateFullyQualifiedName() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .addAllLevels(getStepLevelInsideStrategy("stepRuntimeId", "stageRuntimeId", "stageSetupId"))
+                            .build();
+    String expression = "step.identifier";
+    assertThat(ExpandedJsonFunctorUtils.createFullQualifiedName(ambiance, expression))
+        .isEqualTo("pipeline.stages.stage1.strategy.shell1.shell1.identifier");
+    expression = "shell1.identifier";
+    assertThat(ExpandedJsonFunctorUtils.createFullQualifiedName(ambiance, expression))
+        .isEqualTo("pipeline.stages.stage1.strategy.shell1.identifier");
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testGenerateFullyQualifiedName() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .addAllLevels(getStepLevelInsideStrategy("stepRuntimeId", "stageRuntimeId", "stageSetupId"))
+                            .build();
+    String expression = "output";
+    assertThat(ExpandedJsonFunctorUtils.createFullQualifiedName(ambiance, expression))
+        .isEqualTo("pipeline.stages.stage1.strategy.shell1.shell1.output");
+  }
+
   private List<Level> getNormalStageLevels(String stageRuntimeId, String stageSetupId) {
     List<Level> levelList = new LinkedList<>();
     levelList.add(

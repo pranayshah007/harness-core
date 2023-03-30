@@ -47,6 +47,7 @@ import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
+import io.harness.cdng.infra.yaml.K8sRancherInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
@@ -569,6 +570,12 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
           saveExecutionLogSafely(
               logCallback, color(format(k8sNamespaceLogLine, k8sAwsInfrastructure.getNamespace().getValue()), Yellow));
         }
+        break;
+
+      case InfrastructureKind.KUBERNETES_RANCHER:
+        K8sRancherInfrastructure rancherInfrastructure = (K8sRancherInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(rancherInfrastructure.getConnectorRef(),
+            rancherInfrastructure.getNamespace(), rancherInfrastructure.getCluster());
         break;
 
       default:

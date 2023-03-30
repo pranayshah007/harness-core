@@ -14,5 +14,6 @@ public enum FreezeEntityType {
   @JsonProperty("Project") PROJECT,
   @JsonProperty("Org") ORG,
   @JsonProperty("Environment") ENVIRONMENT,
-  @JsonProperty("EnvType") ENV_TYPE;
+  @JsonProperty("EnvType") ENV_TYPE,
+  @JsonProperty("Pipeline") PIPELINE;
 }

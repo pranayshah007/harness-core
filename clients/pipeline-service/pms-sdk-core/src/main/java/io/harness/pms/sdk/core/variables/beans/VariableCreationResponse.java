@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.VariablesCreationBlobResponse;
 import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
@@ -73,6 +74,18 @@ public class VariableCreationResponse implements CreatorResponse {
     resolvedDependencies = resolvedDependencies.toBuilder().putDependencies(nodeId, yamlPath).build();
     if (dependencies != null) {
       dependencies = dependencies.toBuilder().removeDependencies(nodeId).build();
+    }
+  }
+
+  @Override
+  public void addAffinityToDependencyMetadata(String dependencyKey, String serviceAffinity) {
+    if (!dependencies.getDependencyMetadataMap().containsKey(dependencyKey)) {
+      Dependency dependency = Dependency.newBuilder().setServiceAffinity(serviceAffinity).build();
+      dependencies = dependencies.toBuilder().putDependencyMetadata(dependencyKey, dependency).build();
+    } else {
+      Dependency dependency = dependencies.getDependencyMetadataMap().get(dependencyKey);
+      Dependency dependencyWithAffinity = dependency.toBuilder().setServiceAffinity(serviceAffinity).build();
+      dependencies = dependencies.toBuilder().putDependencyMetadata(dependencyKey, dependencyWithAffinity).build();
     }
   }
 

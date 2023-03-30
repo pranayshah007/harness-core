@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.FeatureName.SPG_DASHBOARD_PROJECTION;
+import static io.harness.beans.FeatureName.SPG_SERVICES_OVERVIEW_RBAC;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -29,6 +30,7 @@ import static io.harness.validation.Validator.notNullCheck;
 import static software.wings.beans.Base.CREATED_AT_KEY;
 import static software.wings.beans.EntityType.APPLICATION;
 import static software.wings.beans.EntityType.ARTIFACT;
+import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_SERVICEIDS;
 import static software.wings.beans.infrastructure.instance.Instance.InstanceKeys;
 import static software.wings.features.DeploymentHistoryFeature.FEATURE_NAME;
 import static software.wings.sm.StateType.PHASE;
@@ -105,6 +107,7 @@ import software.wings.dl.WingsMongoPersistence;
 import software.wings.features.DeploymentHistoryFeature;
 import software.wings.features.api.RestrictedFeature;
 import software.wings.persistence.artifact.Artifact;
+import software.wings.security.PermissionAttribute;
 import software.wings.security.UserRequestContext;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.instance.CompareEnvironmentAggregationInfo.CompareEnvironmentAggregationInfoKeys;
@@ -631,6 +634,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
   private Query<Instance> getInstanceQueryAtTime(String accountId, List<String> appIds, long timestamp) {
     Query<Instance> query;
+    Set<String> allowedSvcIds = new HashSet<>();
     if (timestamp > 0) {
       query = getInstanceQuery(accountId, appIds, true, timestamp);
       query.field(Instance.CREATED_AT_KEY).lessThanOrEq(timestamp);
@@ -639,7 +643,21 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     } else {
       query = getInstanceQuery(accountId, appIds, false, timestamp);
     }
+    if (featureFlagService.isEnabled(SPG_SERVICES_OVERVIEW_RBAC, accountId) && hasUserContext()) {
+      UserRequestContext userRequestContext = UserThreadLocal.get().getUserRequestContext();
+      Map<String, Set<String>> appSvcMap = usageRestrictionsService.getAppSvcMapFromUserPermissions(
+          accountId, userRequestContext.getUserPermissionInfo(), PermissionAttribute.Action.READ);
+      for (String appId : appSvcMap.keySet()) {
+        allowedSvcIds.addAll(appSvcMap.get(appId));
+      }
+      query.field("serviceId").in(allowedSvcIds);
+    }
     return query;
+  }
+
+  private boolean hasUserContext() {
+    User user = UserThreadLocal.get();
+    return user != null && user.getUserRequestContext() != null;
   }
 
   private List<InstanceStatsByEnvironment> constructInstanceStatsForService(
@@ -1132,12 +1150,16 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     PageRequest<WorkflowExecution> finalPageRequest;
 
     if (pageRequest == null) {
-      PageRequestBuilder pageRequestBuilder = aPageRequest()
-                                                  .addFilter(WorkflowExecutionKeys.appId, EQ, appId)
-                                                  .addFilter(WorkflowExecutionKeys.workflowType, EQ, ORCHESTRATION)
-                                                  .addFilter(WorkflowExecutionKeys.serviceIds, HAS, serviceId)
-                                                  .addOrder(WorkflowExecutionKeys.createdAt, OrderType.DESC)
-                                                  .withLimit("10");
+      PageRequestBuilder pageRequestBuilder =
+          aPageRequest()
+              .addFilter(WorkflowExecutionKeys.accountId, EQ, accountId)
+              .addFilter(WorkflowExecutionKeys.appId, EQ, appId)
+              .addFilter(WorkflowExecutionKeys.workflowType, EQ, ORCHESTRATION)
+              .addFilter(WorkflowExecutionKeys.serviceIds, HAS, serviceId)
+              .addOrder(WorkflowExecutionKeys.createdAt, OrderType.DESC)
+              .withIndexHint(
+                  BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_SERVICEIDS))
+              .withLimit("10");
 
       finalPageRequest = pageRequestBuilder.build();
     } else {
@@ -1376,7 +1398,6 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         UserRequestContext userRequestContext = user.getUserRequestContext();
         if (userRequestContext.isAppIdFilterRequired()) {
           Set<String> allowedAppIds = userRequestContext.getAppIds();
-
           if (includeDeleted && userService.isAccountAdmin(accountId)) {
             Set<String> deletedAppIds = getDeletedAppIds(accountId, timestamp);
             if (isNotEmpty(deletedAppIds)) {

@@ -13,6 +13,7 @@ import static io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTrans
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -119,10 +120,16 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
     String inactiveRoute = "route";
     int activeInstanceCount = 1;
     int inactiveInstanceCount = 1;
-    TasApplicationInfo activeApplicationDetails =
-        TasApplicationInfo.builder().applicationName("a_s_e__5").runningCount(activeInstanceCount).build();
-    TasApplicationInfo newApplicationDetails =
-        TasApplicationInfo.builder().applicationName("a_s_e__6").attachedRoutes(emptyList()).build();
+    TasApplicationInfo activeApplicationDetails = TasApplicationInfo.builder()
+                                                      .applicationName("a_s_e__5")
+                                                      .applicationGuid("id1")
+                                                      .runningCount(activeInstanceCount)
+                                                      .build();
+    TasApplicationInfo newApplicationDetails = TasApplicationInfo.builder()
+                                                   .applicationName("a_s_e__6")
+                                                   .applicationGuid("id2")
+                                                   .attachedRoutes(emptyList())
+                                                   .build();
     TasApplicationInfo inactiveApplicationDetails = TasApplicationInfo.builder()
                                                         .applicationName("a_s_e__3")
                                                         .runningCount(inactiveInstanceCount)
@@ -131,18 +138,21 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                                         .build();
 
     String releaseNamePrefix = "release";
-    CfSwapRoutesRequestNG cfSwapRoutesRequestNG = CfSwapRoutesRequestNG.builder()
-                                                      .tasInfraConfig(tasInfraConfig)
-                                                      .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROLLBACK)
-                                                      .accountId(ACCOUNT_ID)
-                                                      .releaseNamePrefix(releaseNamePrefix)
-                                                      .timeoutIntervalInMin(5)
-                                                      .newApplicationDetails(newApplicationDetails)
-                                                      .inActiveApplicationDetails(inactiveApplicationDetails)
-                                                      .activeApplicationDetails(activeApplicationDetails)
-                                                      .downsizeOldApplication(true)
-                                                      .useAppAutoScalar(true)
-                                                      .build();
+    CfSwapRoutesRequestNG cfSwapRoutesRequestNG =
+        CfSwapRoutesRequestNG.builder()
+            .tasInfraConfig(tasInfraConfig)
+            .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROLLBACK)
+            .accountId(ACCOUNT_ID)
+            .releaseNamePrefix(releaseNamePrefix)
+            .timeoutIntervalInMin(5)
+            .newApplicationDetails(newApplicationDetails)
+            .inActiveApplicationDetails(inactiveApplicationDetails)
+            .activeApplicationDetails(activeApplicationDetails)
+            .downsizeOldApplication(true)
+            .useAppAutoScalar(true)
+            .newApplicationName(newApplicationDetails.getApplicationName())
+            .existingApplicationNames(Arrays.asList(activeApplicationDetails.getApplicationName()))
+            .build();
 
     String cfCliPath = "cfCliPath";
     doReturn(cfCliPath)
@@ -184,6 +194,42 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
             .finalRoutes(cfSwapRoutesRequestNG.getFinalRoutes())
             .isMapRoutesOperation(false)
             .build();
+
+    doReturn(singletonList(cfSwapRoutesRequestNG.getActiveApplicationDetails().getApplicationName()))
+        .when(pcfCommandTaskHelper)
+        .getAppNameBasedOnGuidForBlueGreenDeployment(cfRequestConfig, cfSwapRoutesRequestNG.getReleaseNamePrefix(),
+            cfSwapRoutesRequestNG.getActiveApplicationDetails().getApplicationGuid());
+    cfRequestConfig.setApplicationName(cfSwapRoutesRequestNG.getExistingApplicationNames().get(0));
+    ApplicationDetail applicationDetail1 =
+        ApplicationDetail.builder()
+            .id(cfSwapRoutesRequestNG.getActiveApplicationDetails().getApplicationGuid())
+            .diskQuota(1)
+            .instances(0)
+            .memoryLimit(1)
+            .name(cfSwapRoutesRequestNG.getActiveApplicationDetails().getApplicationName())
+            .requestedState(STOPPED)
+            .stack("")
+            .runningInstances(0)
+            .build();
+    doReturn(applicationDetail1).when(cfDeploymentManager).getApplicationByName(cfRequestConfig);
+
+    doReturn(singletonList(cfSwapRoutesRequestNG.getNewApplicationDetails().getApplicationName()))
+        .when(pcfCommandTaskHelper)
+        .getAppNameBasedOnGuidForBlueGreenDeployment(cfRequestConfig, cfSwapRoutesRequestNG.getReleaseNamePrefix(),
+            cfSwapRoutesRequestNG.getNewApplicationDetails().getApplicationGuid());
+    cfRequestConfig.setApplicationName(cfSwapRoutesRequestNG.getNewApplicationName());
+    ApplicationDetail applicationDetail2 =
+        ApplicationDetail.builder()
+            .id(cfSwapRoutesRequestNG.getNewApplicationDetails().getApplicationGuid())
+            .diskQuota(1)
+            .instances(0)
+            .memoryLimit(1)
+            .name(cfSwapRoutesRequestNG.getNewApplicationDetails().getApplicationName())
+            .requestedState(STOPPED)
+            .stack("")
+            .runningInstances(0)
+            .build();
+    doReturn(applicationDetail2).when(cfDeploymentManager).getApplicationByName(cfRequestConfig);
 
     CfInBuiltVariablesUpdateValues cfInBuiltVariablesUpdateValues = CfInBuiltVariablesUpdateValues.builder().build();
     doReturn(cfInBuiltVariablesUpdateValues)

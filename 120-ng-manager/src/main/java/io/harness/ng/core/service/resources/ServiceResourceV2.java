@@ -47,6 +47,7 @@ import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
 import io.harness.cdng.artifact.utils.ArtifactSourceTemplateHelper;
 import io.harness.cdng.hooks.ServiceHookAction;
 import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
+import io.harness.cdng.manifest.yaml.kinds.KustomizeCommandFlagType;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
@@ -80,6 +81,7 @@ import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityManagementService;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -110,6 +112,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -882,6 +885,24 @@ public class ServiceResourceV2 {
         format("Service with type: [%s] does not support service hooks", serviceSpecType));
   }
 
+  @GET
+  @Path("validate-template-inputs")
+  @ApiOperation(value = "This validates inputs for templates like artifact sources for service yaml",
+      nickname = "validateTemplateInputs")
+  @Hidden
+  public ResponseDTO<ValidateTemplateInputsResponseDTO>
+  validateTemplateInputs(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String serviceIdentifier,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
+    return ResponseDTO.newResponse(
+        serviceEntityService.validateTemplateInputs(accountId, orgId, projectId, serviceIdentifier, loadFromCache));
+  }
+
   @Hidden
   public ServiceEntity updateArtifactoryRegistryUrlIfEmpty(
       ServiceEntity serviceEntity, String accountId, String orgIdentifier, String projectIdentifier) {
@@ -1062,5 +1083,19 @@ public class ServiceResourceV2 {
       throw new InvalidRequestException(
           "No request body sent in the API. Following field is required: identifier. Other optional fields: name, orgIdentifier, projectIdentifier, tags, description, version");
     }
+  }
+
+  @GET
+  @Path("kustomize/command-flags")
+  @ApiOperation(value = "Get Command flags for kustomize", nickname = "kustomizeCmdFlags")
+  @Operation(operationId = "kustomizeCmdFlags", summary = "Retrieving the list of Kustomize Command Flags",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of Kustomize Command Flags")
+      })
+  public ResponseDTO<Set<KustomizeCommandFlagType>>
+  getKustomizeCommandFlags() {
+    return ResponseDTO.newResponse(new HashSet<>(Arrays.asList(KustomizeCommandFlagType.values())));
   }
 }

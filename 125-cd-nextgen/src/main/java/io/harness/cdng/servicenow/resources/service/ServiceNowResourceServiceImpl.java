@@ -45,6 +45,7 @@ import io.harness.servicenow.ServiceNowFieldSchemaNG;
 import io.harness.servicenow.ServiceNowFieldTypeNG;
 import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
+import io.harness.servicenow.ServiceNowTicketTypeDTO;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -129,6 +130,14 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
         ServiceNowTaskNGParameters.builder().action(ServiceNowActionNG.GET_IMPORT_SET_STAGING_TABLES);
     return obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder)
         .getServiceNowStagingTableList();
+  }
+
+  @Override
+  public List<ServiceNowTicketTypeDTO> getTicketTypesV2(IdentifierRef connectorRef, String orgId, String projectId) {
+    ServiceNowTaskNGParametersBuilder parametersBuilder =
+        ServiceNowTaskNGParameters.builder().action(ServiceNowActionNG.GET_TICKET_TYPES);
+    return obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder)
+        .getServiceNowTicketTypeList();
   }
 
   private ServiceNowTaskNGResponse obtainServiceNowTaskNGResponse(IdentifierRef serviceNowConnectorRef, String orgId,

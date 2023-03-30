@@ -22,7 +22,7 @@ import org.apache.commons.collections4.MapUtils;
 
 @AllArgsConstructor
 public enum ChangeSourceType {
-  //@JsonProperty added for swagger as it doesnt understand @JsonValue
+  //@JsonProperty added for swagger as it doesn't understand @JsonValue
   @JsonProperty("HarnessCDNextGen")
   HARNESS_CD("HarnessCDNextGen", ChangeCategory.DEPLOYMENT, ActivityType.DEPLOYMENT, false),
   @JsonProperty("PagerDuty") PAGER_DUTY("PagerDuty", ChangeCategory.ALERTS, ActivityType.PAGER_DUTY, false),
@@ -30,6 +30,8 @@ public enum ChangeSourceType {
   @JsonProperty("HarnessCD")
   HARNESS_CD_CURRENT_GEN("HarnessCD", ChangeCategory.DEPLOYMENT, ActivityType.HARNESS_CD_CURRENT_GEN, false),
   @JsonProperty("HarnessFF") HARNESS_FF("HarnessFF", ChangeCategory.FEATURE_FLAG, ActivityType.FEATURE_FLAG, true),
+  @JsonProperty("HarnessCE")
+  HARNESS_CE("HarnessCE", ChangeCategory.CHAOS_EXPERIMENT, ActivityType.CHAOS_EXPERIMENT, true),
   @JsonProperty("CustomDeploy")
   CUSTOM_DEPLOY("CustomDeploy", ChangeCategory.DEPLOYMENT, ActivityType.CUSTOM_DEPLOY, false),
   @JsonProperty("CustomIncident")

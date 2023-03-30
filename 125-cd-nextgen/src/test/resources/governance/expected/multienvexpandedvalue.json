@@ -1,0 +1,22 @@
+[ {
+  "identifier" : "my_env",
+  "name" : "my env",
+  "type" : "Production",
+  "orgIdentifier" : "org",
+  "projectIdentifier" : "proj",
+  "infrastructures" : [ {
+    "type" : "KubernetesDirect",
+    "spec" : {
+      "namespace" : "default",
+      "releaseName" : "release_name",
+      "connector" : {
+        "name" : "k8s",
+        "identifier" : "k8s",
+        "type" : "K8sCluster",
+        "spec" : {
+          "key" : "value"
+        }
+      }
+    }
+  } ]
+} ]

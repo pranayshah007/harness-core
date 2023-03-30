@@ -166,7 +166,7 @@ public class PlanCreatorUtilsTest extends CategoryTest {
 
     YamlField yamlField = YamlUtils.readTree(yaml);
     Map<RollbackStrategy, String> map = PlanCreatorUtilsCommon.getRollbackStrategyMap(yamlField);
-    assertEquals(map.size(), 3);
+    assertEquals(map.size(), 2);
   }
 
   @Test

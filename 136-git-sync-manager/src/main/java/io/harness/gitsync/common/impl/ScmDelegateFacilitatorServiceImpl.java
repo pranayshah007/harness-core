@@ -190,7 +190,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     scmConnector.setUrl(yamlGitConfigDTO.getRepo());
     final List<EncryptedDataDetail> encryptionDetails =
         getEncryptedDataDetails(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
-    final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(filePath, branch, commitId);
+    final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(filePath, branch, commitId, false);
     final ScmGitFileTaskParams scmGitFileTaskParams = getScmGitFileTaskParams(
         scmConnector, encryptionDetails, gitFilePathDetails, GitFileTaskType.GET_FILE_CONTENT, null, branch, null);
     DelegateTaskRequest delegateTaskRequest =
@@ -212,7 +212,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
     final List<EncryptedDataDetail> encryptionDetails =
         getEncryptedDataDetailsForNewGitX(accountIdentifier, orgIdentifier, projectIdentifier, connector);
-    final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(filePath, branchName, commitId);
+    final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(filePath, branchName, commitId, false);
     final ScmGitFileTaskParams scmGitFileTaskParams = getScmGitFileTaskParams(
         connector, encryptionDetails, gitFilePathDetails, GitFileTaskType.GET_FILE_CONTENT, commitId, branchName, null);
     DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(
@@ -856,8 +856,9 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   public GitFileResponse getFile(Scope scope, ScmConnector scmConnector, GitFileRequest gitFileContentRequest) {
     final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
-    final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(
-        gitFileContentRequest.getFilepath(), gitFileContentRequest.getBranch(), gitFileContentRequest.getCommitId());
+    final GitFilePathDetails gitFilePathDetails =
+        getGitFilePathDetails(gitFileContentRequest.getFilepath(), gitFileContentRequest.getBranch(),
+            gitFileContentRequest.getCommitId(), gitFileContentRequest.isGetOnlyFileContent());
     final ScmGitFileTaskParams scmGitFileTaskParams =
         getScmGitFileTaskParams(scmConnector, encryptionDetails, gitFilePathDetails, GitFileTaskType.GET_FILE,
             gitFileContentRequest.getCommitId(), gitFileContentRequest.getBranch(), null);
@@ -1083,6 +1084,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
         .commitId(gitFileRequest.getCommitId())
         .filepath(gitFileRequest.getFilepath())
         .repo(gitFileRequest.getRepo())
+        .getOnlyFileContent(gitFileRequest.isGetOnlyFileContent())
         .build();
   }
 

@@ -96,6 +96,8 @@ instanceNG {"name": "accountId_organizationId_projectId_serviceId_instanceInfo.A
 instanceNG {"name": "accountId_organizationId_projectId_serviceId_isDeleted_createdAt_deletedAt_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "serviceIdentifier": 1, "isDeleted": 1, "createdAt": 1, "deletedAt": 1}
 instanceNG {"name": "accountIdentifier_1_deletedAt_1_createdAt_1", "background": true} {"accountIdentifier": 1, "deletedAt": 1, "createdAt": 1}
 instanceNG {"name": "unique_instanceKey_infrastructureMappingId_idx", "unique": true} {"instanceKey": 1, "infrastructureMappingId": 1}
+instanceSyncPerpetualTaskMapping {"name": "connectorIdentifier_accountId_orgId_projectId_idx", "background": true} {"accountId": 1, "orgId": 1, "projectId": 1, "connectorIdentifier": 1}
+instanceSyncPerpetualTaskMapping {"name": "unique_connectorIdentifier_accountId_orgId_projectId_perpetualTaskId_idx", "unique": true} {"accountId": 1, "orgId": 1, "projectId": 1, "connectorIdentifier": 1, "perpetualTaskId": 1}
 instanceSyncPerpetualTasksInfoNG {"name": "infrastructureMappingId_1", "unique": true} {"infrastructureMappingId": 1}
 instanceSyncPerpetualTasksInfoNG {"name": "perpetualTaskId_1", "unique": true} {"perpetualTaskId": 1}
 invites {"name": "ng_invite_account_org_project_identifiers_email_role_deleted", "background": true} {"deleted": 1, "email": 1, "accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
@@ -177,6 +179,8 @@ userMetadata {"name": "uniqueUserMetadataEmailId", "unique": true} {"email": 1}
 userProjectMaps {"name": "accountOrgProjectMapIdx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 userProjectMaps {"name": "uniqueUserProjectMap", "unique": true} {"userId": 1, "accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 userProjectMaps {"name": "userProjectMapMigrationIdx", "background": true} {"moved": 1, "tries": 1}
+userSourceCodeManagers {"name": "accountIdentifier_1", "background": true} {"accountIdentifier": 1}
+userSourceCodeManagers {"name": "unique_accountIdentifier_userIdentifier_type_idx", "unique": true} {"accountIdentifier": 1, "userIdentifier": 1, "type": 1}
 variables {"name": "accountId_orgId_projectId_createdAt_decreasing_sort_Index", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "createdAt": -1}
 variables {"name": "accountId_orgId_projectId_identifier_unique_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 waitInstances {"name": "correlationIds_1", "background": true} {"correlationIds": 1}

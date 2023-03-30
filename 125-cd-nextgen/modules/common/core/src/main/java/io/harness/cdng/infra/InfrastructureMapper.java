@@ -30,6 +30,7 @@ import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
@@ -56,6 +57,7 @@ import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
+import io.harness.cdng.infra.yaml.K8sRancherInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
@@ -384,6 +386,24 @@ public class InfrastructureMapper {
         setInfraIdentifierAndName(k8sAwsInfrastructureOutcome, k8sAwsInfrastructure.getInfraIdentifier(),
             k8sAwsInfrastructure.getInfraName());
         infrastructureOutcome = k8sAwsInfrastructureOutcome;
+        break;
+
+      case InfrastructureKind.KUBERNETES_RANCHER:
+        K8sRancherInfrastructure rancherInfrastructure = (K8sRancherInfrastructure) infrastructure;
+        K8sRancherInfrastructureOutcome rancherInfrastructureOutcome =
+            K8sRancherInfrastructureOutcome.builder()
+                .connectorRef(rancherInfrastructure.getConnectorRef().getValue())
+                .namespace(rancherInfrastructure.getNamespace().getValue())
+                .clusterName(rancherInfrastructure.getCluster().getValue())
+                .releaseName(getValueOrExpression(rancherInfrastructure.getReleaseName()))
+                .environment(environmentOutcome)
+                .infrastructureKey(InfrastructureKey.generate(
+                    service, environmentOutcome, rancherInfrastructure.getInfrastructureKeyValues()))
+                .build();
+
+        setInfraIdentifierAndName(rancherInfrastructureOutcome, rancherInfrastructure.getInfraIdentifier(),
+            rancherInfrastructure.getInfraName());
+        infrastructureOutcome = rancherInfrastructureOutcome;
         break;
 
       default:

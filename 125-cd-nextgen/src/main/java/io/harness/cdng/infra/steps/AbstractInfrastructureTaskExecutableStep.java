@@ -45,6 +45,7 @@ import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
+import io.harness.cdng.infra.yaml.K8sRancherInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
@@ -837,6 +838,16 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         if (k8sAwsInfrastructure.getNamespace() != null && isNotEmpty(k8sAwsInfrastructure.getNamespace().getValue())) {
           saveExecutionLog(
               logCallback, color(format(k8sNamespaceLogLine, k8sAwsInfrastructure.getNamespace().getValue()), Yellow));
+        }
+        break;
+      case InfrastructureKind.KUBERNETES_RANCHER:
+        K8sRancherInfrastructure rancherInfrastructure = (K8sRancherInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(rancherInfrastructure.getConnectorRef(),
+            rancherInfrastructure.getNamespace(), rancherInfrastructure.getCluster());
+        if (ParameterField.isNotNull(rancherInfrastructure.getNamespace())
+            && isNotEmpty(rancherInfrastructure.getNamespace().getValue())) {
+          saveExecutionLog(
+              logCallback, color(format(k8sNamespaceLogLine, rancherInfrastructure.getNamespace().getValue()), Yellow));
         }
         break;
       default:

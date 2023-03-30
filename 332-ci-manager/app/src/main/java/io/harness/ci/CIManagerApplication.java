@@ -286,7 +286,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     modules.add(new CIPersistenceModule());
     addGuiceValidationModule(modules);
-    modules.add(new CIManagerServiceModule(configuration));
+    modules.add(new CIManagerServiceModule(configuration, new CIManagerConfigurationOverride()));
     modules.add(new CacheModule(configuration.getCacheConfig()));
 
     modules.add(YamlSdkModule.getInstance());

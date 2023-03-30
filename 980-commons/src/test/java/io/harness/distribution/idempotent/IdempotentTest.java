@@ -104,7 +104,7 @@ public class IdempotentTest extends CategoryTest {
   public void testIdempotentAfterTtl() {
     final IdempotentRegistry<BooleanIdempotentResult> idempotentRegistry = new InprocIdempotentRegistry<>();
     try (IdempotentLock<BooleanIdempotentResult> idempotent =
-             idempotentRegistry.create(id, ofMillis(1), ofMillis(1), ofMillis(1500))) {
+             idempotentRegistry.create(id, ofMillis(1000), ofMillis(1), ofMillis(1500))) {
       assertThat(idempotent).isNotNull();
       assertThat(idempotent.alreadyExecuted()).isFalse();
       idempotent.succeeded(TRUE);

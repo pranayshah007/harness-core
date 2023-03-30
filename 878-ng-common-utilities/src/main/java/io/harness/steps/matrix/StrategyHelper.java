@@ -143,7 +143,8 @@ public class StrategyHelper {
     } catch (JsonMappingException ex) {
       throw new InvalidYamlException(ex.getOriginalMessage());
     } catch (Exception ex) {
-      throw new InvalidRequestException("Unable to expand yaml for a execution element with strategy");
+      throw new InvalidRequestException(
+          String.format("Unable to expand yaml for a execution element with strategy: %s", ex.getMessage()));
     }
   }
 }

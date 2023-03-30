@@ -8,6 +8,7 @@
 package io.harness.cvng.servicelevelobjective.resources;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.ExposeInternalException;
@@ -233,6 +234,8 @@ public class SLODashboardResource {
   @ApiOperation(value = "Get Secondary events details for SLO", nickname = "getSecondaryEventDetails")
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public ResponseDTO<SecondaryEventDetailsResponse> getSecondaryEventDetails(
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @AccountIdentifier @QueryParam(
+          "accountId") @NotNull String accountIdentifier,
       @NotNull @Valid @QueryParam("secondaryEventType") SecondaryEventsType type,
       @NotNull @Size(min = 1) @Valid @QueryParam("identifiers") List<String> uuids) {
     return ResponseDTO.newResponse(sloDashboardService.getSecondaryEventDetails(type, uuids));

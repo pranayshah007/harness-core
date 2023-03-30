@@ -20,6 +20,7 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.SshRetryableException;
 import io.harness.exception.WingsException;
@@ -257,6 +258,7 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
       // combine both variable types
       List<String> allVariablesToCollect =
           Stream.concat(envVariablesToCollect.stream(), secretEnvVariablesToCollect.stream())
+              .filter(EmptyPredicate::isNotEmpty)
               .collect(Collectors.toList());
 
       if (!allVariablesToCollect.isEmpty()) {

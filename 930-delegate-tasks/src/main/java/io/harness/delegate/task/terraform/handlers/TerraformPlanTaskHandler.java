@@ -179,6 +179,7 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
               .accountId(taskParameters.getAccountId())
               .isTerraformCloudCli(taskParameters.isTerraformCloudCli())
               .skipTerraformRefresh(taskParameters.isSkipTerraformRefresh())
+              .additionalCliFlags(taskParameters.getTerraformCommandFlags())
               .build();
 
       TerraformStepResponse terraformStepResponse =

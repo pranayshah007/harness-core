@@ -20,7 +20,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -45,13 +44,14 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 @Slf4j
 public class ConnectorActivityServiceTest extends CategoryTest {
   @InjectMocks ConnectorActivityServiceImpl connectorActivityService;
   @Mock NGActivityService ngActivityService;
-  @Mock IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Mock Producer producer;
   String connectorName = "connector";
   String accountIdentifier = "accountIdentifier";
@@ -62,10 +62,16 @@ public class ConnectorActivityServiceTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    when(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(anyString(), anyString(), anyString(), anyString()))
+    MockedStatic<IdentifierRefProtoDTOHelper> mockedStatic = Mockito.mockStatic(IdentifierRefProtoDTOHelper.class);
+    mockedStatic
+        .when(()
+                  -> IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+                      anyString(), anyString(), anyString(), anyString()))
         .thenCallRealMethod();
-    when(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
-             anyString(), anyString(), anyString(), anyString(), any()))
+    mockedStatic
+        .when(()
+                  -> IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+                      anyString(), anyString(), anyString(), anyString(), any()))
         .thenCallRealMethod();
   }
 

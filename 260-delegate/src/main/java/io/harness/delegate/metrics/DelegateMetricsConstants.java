@@ -19,6 +19,8 @@ public class DelegateMetricsConstants {
   public static final String TASKS_CURRENTLY_EXECUTING = "tasks_currently_executing";
   public static final String TASKS_IN_QUEUE = "tasks_in_queue";
   public static final String TASK_TIMEOUT = "task_timeout";
+  public static final String DELEGATE_DISCONNECTED = "delegate_disconnected";
+  public static final String DELEGATE_CONNECTED = "delegate_connected";
 
   private static final String DELEGATE_NAME_LABEL = "delegate_name";
   private static final String TASK_TYPE_LABEL = "task_type";
@@ -28,6 +30,8 @@ public class DelegateMetricsConstants {
     put(TASKS_CURRENTLY_EXECUTING, create("Number of tasks in execution.", DELEGATE_NAME_LABEL));
     put(TASKS_IN_QUEUE, create("Number of tasks in the queue.", DELEGATE_NAME_LABEL));
     put(TASK_TIMEOUT, create("Number of tasks timed out.", DELEGATE_NAME_LABEL, TASK_TYPE_LABEL));
+    put(DELEGATE_DISCONNECTED, create("Delegate disconnected.", DELEGATE_NAME_LABEL));
+    put(DELEGATE_CONNECTED, create("Delegate connected.", DELEGATE_NAME_LABEL));
   }
 
   private static void put(String metricName, DelegateMetricDetails metricDetails) {

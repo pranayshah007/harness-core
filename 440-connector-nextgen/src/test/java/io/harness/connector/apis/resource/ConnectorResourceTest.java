@@ -12,6 +12,7 @@ import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredenti
 
 import static com.google.common.base.Predicates.alwaysTrue;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -22,6 +23,7 @@ import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SortOrder;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorCatalogueItem;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
@@ -31,6 +33,7 @@ import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.featureflagfilter.ConnectorEnumFilter;
 import io.harness.connector.helper.CatalogueHelper;
 import io.harness.connector.helper.ConnectorRbacHelper;
@@ -39,11 +42,13 @@ import io.harness.connector.utils.ConnectorAllowedFieldValues;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.utils.PageTestUtils;
+import io.harness.utils.PageUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.Charset;
@@ -64,6 +69,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(HarnessTeam.DX)
 public class ConnectorResourceTest extends CategoryTest {
@@ -78,6 +85,8 @@ public class ConnectorResourceTest extends CategoryTest {
   ConnectorDTO connectorRequest;
   String accountIdentifier = "accountIdentifier";
   ConnectorCatalogueResponseDTO catalogueResponseDTO;
+
+  Pageable pageable;
 
   @Before
   public void setUp() throws Exception {
@@ -98,6 +107,7 @@ public class ConnectorResourceTest extends CategoryTest {
     connectorRequest = ConnectorDTO.builder().connectorInfo(connectorInfo).build();
     connectorResponse = ConnectorResponseDTO.builder().connector(connectorInfo).build();
     catalogueResponseDTO = setUpCatalogueResponse();
+    pageable = PageUtils.getPageRequest(0, 100, List.of(ConnectorKeys.lastModifiedAt, Sort.Direction.DESC.toString()));
   }
 
   private ConnectorCatalogueResponseDTO setUpCatalogueResponse() {
@@ -152,14 +162,20 @@ public class ConnectorResourceTest extends CategoryTest {
     ConnectorFilterPropertiesDTO connectorListFilter = ConnectorFilterPropertiesDTO.builder().build();
     final Page<ConnectorResponseDTO> page =
         PageTestUtils.getPage(Arrays.asList(ConnectorResponseDTO.builder().build()), 1);
-    when(connectorService.list(0, 100, accountIdentifier, null, orgIdentifier, projectIdentifier, filterIdentifier,
-             searchTerm, false, false))
+    when(connectorService.list(
+             anyString(), any(), anyString(), anyString(), anyString(), anyString(), any(), any(), any()))
         .thenReturn(page);
-    ResponseDTO<PageResponse<ConnectorResponseDTO>> connectorSummaryListResponse = connectorResource.list(0, 100,
-        accountIdentifier, searchTerm, orgIdentifier, projectIdentifier, filterIdentifier, false, null, null, false);
+    ResponseDTO<PageResponse<ConnectorResponseDTO>> connectorSummaryListResponse = connectorResource.list(
+        accountIdentifier, searchTerm, orgIdentifier, projectIdentifier, filterIdentifier, false, null, null, false,
+        PageRequest.builder()
+            .pageSize(100)
+            .pageIndex(0)
+            .sortOrders(
+                List.of(SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build()))
+            .build());
     Mockito.verify(connectorService, times(1))
-        .list(eq(0), eq(100), eq(accountIdentifier), eq(null), eq(orgIdentifier), eq(projectIdentifier),
-            eq(filterIdentifier), eq(searchTerm), eq(false), eq(false));
+        .list(eq(accountIdentifier), eq(null), eq(orgIdentifier), eq(projectIdentifier), eq(filterIdentifier),
+            eq(searchTerm), eq(false), eq(false), any());
     assertThat(connectorSummaryListResponse.getData()).isNotNull();
   }
 

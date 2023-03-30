@@ -45,6 +45,7 @@ message PlanCreationBlobResponse {
   GraphLayoutInfo graphLayoutInfo = 5;
   Dependencies deps = 6;
   YamlUpdates yamlUpdates = 7;
+  repeated string preservedNodesInRollbackMode = 8;
 }
 
 message GraphLayoutInfo {
@@ -158,6 +159,7 @@ message Dependencies {
 
 message Dependency {
   map<string, bytes> metadata = 2;
+  string service_affinity = 3;
 }
 
 // TODO: Looking forward to implement this Dependency model

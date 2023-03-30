@@ -51,7 +51,10 @@ import io.harness.servicenow.ServiceNowFieldSchemaNG;
 import io.harness.servicenow.ServiceNowFieldTypeNG;
 import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
+import io.harness.servicenow.ServiceNowTicketTypeDTO;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.Arrays;
@@ -77,7 +80,7 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
                                                          .projectIdentifier(PROJECT_IDENTIFIER)
                                                          .orgIdentifier(ORG_IDENTIFIER)
                                                          .build();
-
+  private static final ObjectMapper mapper = new ObjectMapper();
   @Mock ConnectorService connectorService;
   @Mock SecretManagerClientService secretManagerClientService;
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
@@ -303,5 +306,38 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
             String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK))
         .hasCause(new DelegateNotAvailableException(
             "Delegates are not available for performing servicenow operation.", WingsException.USER));
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetTicketTypesV2WithUpdatedConnectorFlow() throws JsonProcessingException {
+    String ticketType1 = "        {\n"
+        + "            \"name\": \"change_task\",\n"
+        + "            \"label\": \"Change Task\"\n"
+        + "        }";
+    String ticketType2 = "        {\n"
+        + "            \"name\": \"change_request_imac\"\n"
+        + "        }";
+    ServiceNowTicketTypeDTO ticketTypeDTO1 = new ServiceNowTicketTypeDTO(mapper.readTree(ticketType1));
+    ServiceNowTicketTypeDTO ticketTypeDTO2 = new ServiceNowTicketTypeDTO(mapper.readTree(ticketType2));
+    assertThat(ticketTypeDTO1.getKey()).isEqualTo("change_task");
+    assertThat(ticketTypeDTO1.getName()).isEqualTo("Change Task");
+    assertThat(ticketTypeDTO2.getKey()).isEqualTo("change_request_imac");
+    assertThat(ticketTypeDTO2.getName()).isEqualTo("change_request_imac");
+    List<ServiceNowTicketTypeDTO> serviceNowTicketTypeList = Arrays.asList(ticketTypeDTO1, ticketTypeDTO2);
+
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowTicketTypeList(serviceNowTicketTypeList).build());
+    assertThat(serviceNowResourceService.getTicketTypesV2(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isEqualTo(serviceNowTicketTypeList);
+    ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
+    ServiceNowTaskNGParameters parameters =
+        (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
+
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TICKET_TYPES);
   }
 }

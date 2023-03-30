@@ -52,6 +52,7 @@ import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sCliCommandType;
 import io.harness.k8s.K8sCommandFlagsUtils;
 import io.harness.k8s.KubernetesContainerService;
+import io.harness.k8s.KubernetesReleaseDetails;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
@@ -285,7 +286,11 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
           k8sTaskHelperBase.getNextReleaseNumberFromOldReleaseHistory(kubernetesConfig, request.getReleaseName());
     }
 
-    List<String> manifestOverrideFiles = getManifestOverrideFlies(request);
+    KubernetesReleaseDetails releaseDetails =
+        KubernetesReleaseDetails.builder().releaseNumber(currentReleaseNumber).build();
+
+    List<String> manifestOverrideFiles = getManifestOverrideFlies(request, releaseDetails.toContextMap());
+
     this.resources =
         k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams, manifestOverrideFiles,
             this.kubernetesConfig, this.manifestFilesDirectory, this.releaseName, request.isLocalOverrideFeatureFlag(),
