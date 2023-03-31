@@ -232,6 +232,7 @@ eventsFramework:
       - "redis://redis2:26379"
       - "redis://redis3:26379"
     envNamespace: ""
+    readMode: SLAVE
     nettyThreads: 16
     useScriptCache: true
     userName: ""
@@ -251,6 +252,7 @@ redisLockConfig:
     - "redis://redis1:26379"
     - "redis://redis2:26379"
     - "redis://redis3:26379"
+  readMode: SLAVE
   envNamespace: ""
   nettyThreads: 16
   useScriptCache: true
