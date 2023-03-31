@@ -18,6 +18,7 @@ import lombok.Data;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
 public abstract class UserSourceCodeManagerRequestDTO {
   String accountIdentifier;
+  String userIdentifier;
   SCMType type;
 
   public abstract SCMType getType();
