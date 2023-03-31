@@ -7,6 +7,7 @@
 
 package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.k8s;
 
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AWS;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
@@ -18,6 +19,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -142,6 +144,12 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
             .build();
       case KUBERNETES_AZURE:
         return K8sAzureInfrastructureOutcome.builder()
+            .releaseName(releaseName)
+            .connectorRef(connectorRef)
+            .namespace(DEFAULT_NAMESPACE)
+            .build();
+      case KUBERNETES_AWS:
+        return K8sAwsInfrastructureOutcome.builder()
             .releaseName(releaseName)
             .connectorRef(connectorRef)
             .namespace(DEFAULT_NAMESPACE)
