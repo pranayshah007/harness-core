@@ -28,6 +28,7 @@ public class ContainerExecutionConstants {
   public static final Integer PORT_STARTING_RANGE = 20002;
   public static final Integer LITE_ENGINE_PORT = 20001;
   public static final String PLUGIN_ENV_PREFIX = "PLUGIN_";
+  public static final String PLUGIN_PIPELINE = "PLUGIN_PIPELINE";
   public static final String SERVICE_PREFIX = "service-";
   public static final String STEP_PREFIX = "step-";
   public static final String SHARED_VOLUME_PREFIX = "shared-";
