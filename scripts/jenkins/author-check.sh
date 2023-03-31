@@ -264,6 +264,7 @@ git log -1000 --oneline --format='%aN <%aE>' | sort -u |\
     grep -iv "^Dev Mittal <devki.mittal@harness.io>$" |\
     grep -iv "^Ankit Tiwari <ankit.tiwari@harness.io>$" |\
     grep -iv "^Kapil Garg <kapil.garg@harness.io>$" |\
+    grep -iv "^Enver Bisevac <enver.bisevac@harness.io>$" |\
     grep -iv "^Vikyath Harekal <vikyath.harekal@harness.io>$"` || :
 
 

@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 50
+version: 51
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -146,6 +146,10 @@ roles:
         - core_deploymentfreeze_manage
         - core_deploymentfreeze_override
         - core_deploymentfreeze_global
+        - code_repo_view
+        - code_repo_edit
+        - code_repo_delete
+        - code_repo_push
       allowedScopeLevels:
         - project
       managed: true
@@ -198,6 +202,7 @@ roles:
         - chaos_chaosexperiment_view
         - chaos_chaosgameday_view
         - core_setting_view
+        - code_repo_view
       allowedScopeLevels:
         - project
       managed: true
@@ -351,6 +356,10 @@ roles:
         - core_deploymentfreeze_manage
         - core_deploymentfreeze_override
         - core_deploymentfreeze_global
+        - code_repo_view
+        - code_repo_edit
+        - code_repo_delete
+        - code_repo_push
       allowedScopeLevels:
         - organization
       managed: true
@@ -405,6 +414,7 @@ roles:
         - chaos_chaosexperiment_view
         - chaos_chaosgameday_view
         - core_setting_view
+        - code_repo_view
       allowedScopeLevels:
         - organization
       managed: true
@@ -604,6 +614,10 @@ roles:
         - ccm_cloudAssetGovernanceEnforcement_view
         - ccm_cloudAssetGovernanceEnforcement_delete
         - idp_idpsettings_manage
+        - code_repo_view
+        - code_repo_edit
+        - code_repo_delete
+        - code_repo_push
       allowedScopeLevels:
         - account
       managed: true
@@ -674,6 +688,7 @@ roles:
         - ccm_cloudAssetGovernanceEnforcement_view
         - ccm_cloudAssetGovernanceRuleSet_view
         - ccm_cloudAssetGovernanceRule_view
+        - code_repo_view
       allowedScopeLevels:
         - account
       managed: true
@@ -930,4 +945,16 @@ roles:
       managed: true
       allowedScopeLevels:
         - account
-
+    - identifier: _code_admin
+      name: Code Admin
+      description: Code Admin
+      permissions:
+        - code_repo_view
+        - code_repo_edit
+        - code_repo_delete
+        - code_repo_push
+      managed: true
+      allowedScopeLevels:
+        - account
+        - organization
+        - project
