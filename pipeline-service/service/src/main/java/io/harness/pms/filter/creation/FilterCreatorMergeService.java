@@ -128,34 +128,12 @@ public class FilterCreatorMergeService {
       response = response.toBuilder().addAllReferredEntities(Arrays.asList(gitConnectorReference.get())).build();
     }
 
-    // PUBLISH SETUP USAGES WITH CONDITIONS.
-    if (doPublishSetupUsages(pipelineEntity)) {
-      pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, response.getReferredEntitiesList());
-    }
-
     return FilterCreatorMergeServiceResponse.builder()
         .filters(filters)
         .stageCount(response.getStageCount())
         .stageNames(new ArrayList<>(response.getStageNamesList()))
         .referredEntities(response.getReferredEntitiesList())
         .build();
-  }
-
-  public boolean doPublishSetupUsages(PipelineEntity pipelineEntity) {
-    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-
-    boolean defaultBranchCheckForGitX = false;
-    if (gitEntityInfo != null) {
-      defaultBranchCheckForGitX = gitEntityInfo.isDefaultBranch();
-    }
-
-    if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType().equals(StoreType.INLINE)
-        || (pipelineEntity.getStoreType() == StoreType.REMOTE
-            && (defaultBranchCheckForGitX || (gitEntityInfo != null && isEmpty(gitEntityInfo.getBranch()))))) {
-      return true;
-    }
-
-    return false;
   }
 
   private void deleteExistingSetupUsages(PipelineEntity pipelineEntity) {

@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
-import io.harness.ng.core.dto.GitEntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntityReferencesDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage;
@@ -66,7 +65,4 @@ public interface EntitySetupUsageService {
       String referredByEntityName);
 
   Long countReferredByEntitiesByFQNsIn(String accountIdentifier, List<String> referredEntityFQNs);
-
-  Boolean populateGitInfoForReferredEntities(String accountId, String orgId, String projectId, String referredByFQN,
-      EntityType entityType, GitEntitySetupUsageDTO gitEntitySetupUsageDTO);
 }
