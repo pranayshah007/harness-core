@@ -69,30 +69,27 @@ public class IACMStepsUtils {
   private Map<String, String> getStackVariables(Ambiance ambiance, String org, String projectId, String accountId,
       String stackID, String command, Stack stackInfo) {
     String pluginEnvPrefix = "PLUGIN_";
-    String tfEnvPrefix = "TF_VARS_";
 
     StackVariables[] variables = getIACMStackVariables(org, projectId, accountId, stackID);
-    HashMap<String, String> env = new HashMap<>();
+    HashMap<String, String> pluginEnvs = new HashMap<>();
 
-    HashMap<String, String> envSecrets = new HashMap<>();
-    HashMap<String, String> tfVars = new HashMap<>();
-    HashMap<String, String> tfVarsSecrets = new HashMap<>();
+    HashMap<String, String> env = new HashMap<>();
+    HashMap<String, String> tfInputEnvs = new HashMap<>();
 
     for (StackVariables variable : variables) {
       switch (variable.getKind()) {
         case "env":
           if (Objects.equals(variable.getValue_type(), "secret")) {
-            envSecrets.put(variable.getKey(), "${ngSecretManager.obtain(\"" + variable.getKey() + "\", -871314908)})}");
+            env.put(variable.getKey(), "${ngSecretManager.obtain(\"" + variable.getKey() + "\", -871314908)}");
           } else {
             env.put(variable.getKey(), variable.getValue());
           }
           break;
         case "tf":
           if (Objects.equals(variable.getValue_type(), "secret")) {
-            tfVarsSecrets.put(
-                variable.getKey(), "${ngSecretManager.obtain(\"" + variable.getKey() + "\", -871314908)})}");
+            tfInputEnvs.put(variable.getKey(), "${ngSecretManager.obtain(\"" + variable.getKey() + "\", -871314908)}");
           } else {
-            tfVars.put(variable.getKey(), variable.getValue());
+            tfInputEnvs.put(variable.getKey(), variable.getValue());
           }
           break;
         default:
@@ -101,16 +98,14 @@ public class IACMStepsUtils {
     }
 
     // Plugin system env variables
-    env.put("ROOT_DIR", stackInfo.getRepository_path());
-    env.put("TF_VERSION", stackInfo.getProvisioner_version());
-    env.put("ENDPOINT_VARIABLES", getTerraformEndpointsInfo(ambiance, stackID));
-    env.put("OPERATIONS", command);
+    pluginEnvs.put("ROOT_DIR", stackInfo.getRepository_path());
+    pluginEnvs.put("TF_VERSION", stackInfo.getProvisioner_version());
+    pluginEnvs.put("ENDPOINT_VARIABLES", getTerraformEndpointsInfo(ambiance, stackID));
+    pluginEnvs.put("OPERATIONS", command);
+    pluginEnvs.put("VARS", transformMapToString(tfInputEnvs));
+    pluginEnvs.put("ENV_VARS", transformMapToString(env));
 
-    Map<String, String> envVars = prepareEnvsMaps(env, pluginEnvPrefix);
-    envVars.putAll(prepareEnvsMaps(envSecrets, "ENV_SECRETS_"));
-    envVars.putAll(prepareEnvsMaps(tfVarsSecrets, "TFVARS_SECRETS_"));
-    envVars.putAll(prepareEnvsMaps(tfVars, tfEnvPrefix));
-    return envVars;
+    return prepareEnvsMaps(pluginEnvs, pluginEnvPrefix);
   }
 
   Map<String, String> prepareEnvsMaps(Map<String, String> envs, String prefix) {
@@ -202,5 +197,20 @@ public class IACMStepsUtils {
     }
 
     return vmPluginStepBuilder.build();
+  }
+  public String transformMapToString(Map<String, String> originalMap) {
+    StringBuilder sb = new StringBuilder();
+    sb.append('{');
+    for (Map.Entry<String, String> entry : originalMap.entrySet()) {
+      String key = entry.getKey();
+      String value = entry.getValue();
+      String transformedValue = String.format("\"%s\"", value);
+      sb.append(String.format("\"%s\":%s,", key, transformedValue));
+    }
+    if (sb.length() > 1) {
+      sb.deleteCharAt(sb.length() - 1);
+    }
+    sb.append('}');
+    return sb.toString();
   }
 }
