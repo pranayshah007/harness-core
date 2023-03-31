@@ -55,15 +55,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.net.ssl.HttpsURLConnection;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Credentials;
 import org.apache.commons.lang3.StringUtils;
@@ -79,6 +76,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 public class NexusThreeServiceImpl {
   private static final int MAX_PAGES = 10;
   private static final List<String> IGNORE_EXTENSIONS = Lists.newArrayList("pom", "sha1", "sha256", "sha512", "md5");
+  private static final int HTTP_CLIENT_TIMOUT_SECONDS = 600;
 
   @Inject private ArtifactCollectionCommonTaskHelper artifactCollectionCommonTaskHelper;
   @Inject private CGNexusHelper nexusHelper;
@@ -767,21 +765,9 @@ public class NexusThreeServiceImpl {
   public Pair<String, InputStream> downloadArtifactByUrl(
       NexusRequest nexusConfig, String artifactName, String artifactUrl) {
     try {
-      if (nexusConfig.isHasCredentials()) {
-        Authenticator.setDefault(new NexusThreeServiceImpl.MyAuthenticator(
-            nexusConfig.getUsername(), new String(nexusConfig.getPassword())));
-      }
-      URL url = new URL(artifactUrl);
-      URLConnection conn = url.openConnection();
-      if (conn instanceof HttpsURLConnection) {
-        HttpsURLConnection conn1 = (HttpsURLConnection) url.openConnection();
-        conn1.setHostnameVerifier((hostname, session) -> true);
-        conn1.setSSLSocketFactory(Http.getSslContext().getSocketFactory());
-        return ImmutablePair.of(artifactName, conn1.getInputStream());
-      } else {
-        return ImmutablePair.of(artifactName, conn.getInputStream());
-      }
-    } catch (IOException ex) {
+      return ImmutablePair.of(artifactName,
+          Http.getResponseStreamFromUrl(artifactUrl, HTTP_CLIENT_TIMOUT_SECONDS, HTTP_CLIENT_TIMOUT_SECONDS));
+    } catch (Exception ex) {
       throw new InvalidRequestException(ExceptionUtils.getMessage(ex), ex);
     }
   }
