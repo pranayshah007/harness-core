@@ -111,8 +111,7 @@ public abstract class BaseCreatorService<R extends CreatorResponse, M, N> {
       }
       mergeResponses(finalResponse, response, dependencies);
       finalResponse.addResolvedDependency(currentYaml, yamlField.getNode().getUuid(), yamlPath);
-      PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(
-          response, currentDependenciesMetadataMap.get(dependencyEntry.getKey()), currentServiceName, yamlField);
+      PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(response, currentServiceName, yamlField, "");
       if (isNotEmpty(response.getDependencies().getDependenciesMap())) {
         dependencies.putAllDependencies(response.getDependencies().getDependenciesMap());
         if (EmptyPredicate.isNotEmpty(response.getDependencies().getDependencyMetadataMap())) {

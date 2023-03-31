@@ -18,7 +18,8 @@ public interface CreatorResponse {
   Dependencies getDependencies();
   void addDependency(String yaml, String nodeId, String yamlPath);
   void addResolvedDependency(String yaml, String nodeId, String yamlPath);
-  void addAffinityToDependencyMetadata(String dependencyKey, String serviceAffinity);
+
+  default void addServiceAffinityToResponse(String dependencyKey, String serviceAffinity) {}
 
   default List<String> getErrorMessages() {
     return null;
