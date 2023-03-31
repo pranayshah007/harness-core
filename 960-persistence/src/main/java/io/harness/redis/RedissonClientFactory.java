@@ -108,7 +108,9 @@ public class RedissonClientFactory {
         for (String sentinelUrl : redisConfig.getSentinelUrls()) {
           config.useSentinelServers().addSentinelAddress(sentinelUrl);
         }
-        config.useSentinelServers().setReadMode(ReadMode.valueOf(redisConfig.getReadMode().name()));
+        if (redisConfig.getReadMode() != null) {
+          config.useSentinelServers().setReadMode(ReadMode.valueOf(redisConfig.getReadMode().name()));
+        }
         if (redisConfig.getSubscriptionsPerConnection() != 0) {
           config.useSentinelServers().setSubscriptionsPerConnection(redisConfig.getSubscriptionsPerConnection());
         }
