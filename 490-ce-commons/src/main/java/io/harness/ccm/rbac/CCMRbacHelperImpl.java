@@ -134,6 +134,13 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
   }
 
   @Override
+  public boolean hasPerspectiveViewOnAllResources(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(FOLDER, null), PERSPECTIVE_VIEW);
+  }
+
+  @Override
   public void checkPerspectiveEditPermission(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),

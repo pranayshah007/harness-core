@@ -7,6 +7,7 @@
 
 package software.wings.service.impl;
 
+import static io.harness.beans.FeatureName.SPG_ENABLE_SHARING_FILTERS;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -14,7 +15,9 @@ import static io.harness.mongo.MongoUtils.setUnset;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
+import io.harness.beans.SearchFilter;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.AccountAuditFilter;
 import software.wings.beans.ApplicationAuditFilter;
@@ -30,9 +33,14 @@ import software.wings.beans.Preference.PreferenceKeys;
 import software.wings.beans.PreferenceType;
 import software.wings.beans.ResourceLookup;
 import software.wings.beans.ResourceLookup.ResourceLookupKeys;
+import software.wings.beans.User;
+import software.wings.beans.security.UserGroup;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.PreferenceService;
+import software.wings.service.intfc.UserGroupService;
+import software.wings.service.intfc.UserService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import dev.morphia.query.UpdateOperations;
@@ -41,14 +49,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
 public class PreferenceServiceImpl implements PreferenceService {
-  public static final String USER_ID_KEY = "userId";
   public static final String PREFERENCE_WITH_SAME_NAME_EXISTS = "Preference with same name exists for user";
+  public static final String USER_IS_NOT_ENABLED = "User is not a enabled to add a share filter";
+  private static final String USER_ID_KEY = "userId";
   @Inject private WingsPersistence wingsPersistence;
+  @Inject private UserGroupService userGroupService;
+  @Inject private UserService userService;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public Preference save(String accountId, String userId, Preference preference) {
@@ -58,8 +71,28 @@ public class PreferenceServiceImpl implements PreferenceService {
       throw new InvalidRequestException(PREFERENCE_WITH_SAME_NAME_EXISTS, USER);
     }
 
+    if (featureFlagService.isEnabled(SPG_ENABLE_SHARING_FILTERS, accountId) && !hasUserGroupAdmin(accountId, userId)
+        && preference.getUserGroupsIdToShare() != null) {
+      throw new InvalidRequestException(USER_IS_NOT_ENABLED, USER);
+    }
+
     savedPreference = wingsPersistence.saveAndGet(Preference.class, preference);
     return savedPreference;
+  }
+
+  @VisibleForTesting
+  public boolean hasUserGroupAdmin(String accountId, String userId) {
+    User user = userService.get(accountId, userId);
+    UserGroup userGroupAdmin = userGroupService.getAdminUserGroup(accountId);
+
+    List<UserGroup> listOfAdminUG = userGroupService.listByAccountId(accountId, user, true)
+                                        .stream()
+                                        .filter(userGroup -> userGroup.getUuid().equals(userGroupAdmin.getUuid()))
+                                        .collect(Collectors.toList());
+    if (listOfAdminUG.isEmpty()) {
+      return false;
+    }
+    return true;
   }
 
   @Override
@@ -75,8 +108,8 @@ public class PreferenceServiceImpl implements PreferenceService {
   public Preference get(String accountId, String userId, String preferenceId) {
     Preference preference = wingsPersistence.createQuery(Preference.class)
                                 .filter(PreferenceKeys.accountId, accountId)
-                                .filter(USER_ID_KEY, userId)
-                                .filter(PreferenceKeys.uuid, preferenceId)
+                                .filter(PreferenceKeys.userId, userId)
+                                .filter(PreferenceKeys.id, preferenceId)
                                 .get();
     if (preference instanceof DeploymentPreference) {
       ((DeploymentPreference) preference)
@@ -87,8 +120,29 @@ public class PreferenceServiceImpl implements PreferenceService {
   }
 
   @Override
-  public PageResponse<Preference> list(PageRequest<Preference> pageRequest, String userId) {
-    pageRequest.addFilter(USER_ID_KEY, EQ, userId);
+  public PageResponse<Preference> list(PageRequest<Preference> pageRequest, String accountId, String userId) {
+    User user = userService.get(userId);
+    List<String> l = userGroupService.listByAccountId(accountId, user, true)
+                         .stream()
+                         .map(UserGroup::getUuid)
+                         .collect(Collectors.toList());
+
+    if (featureFlagService.isEnabled(SPG_ENABLE_SHARING_FILTERS, accountId)) {
+      SearchFilter userIdFilter =
+          SearchFilter.builder().fieldName(PreferenceKeys.userId).fieldValues(new String[] {userId}).op(EQ).build();
+      for (String s : l) {
+        pageRequest.addFilter("", SearchFilter.Operator.OR,
+            SearchFilter.builder()
+                .fieldName(PreferenceKeys.userGroupsIdToShare)
+                .op(SearchFilter.Operator.EQ)
+                .fieldValues(new String[] {s})
+                .build(),
+            userIdFilter);
+      }
+    } else {
+      pageRequest.addFilter(USER_ID_KEY, EQ, userId);
+    }
+
     PageResponse<Preference> preferences = wingsPersistence.query(Preference.class, pageRequest);
     if (preferences != null && isNotEmpty(preferences.getResponse())) {
       for (Preference preference : preferences.getResponse()) {
@@ -170,11 +224,19 @@ public class PreferenceServiceImpl implements PreferenceService {
     if (existingPreference != null && !existingPreference.getUuid().equals(preferenceId)) {
       throw new InvalidRequestException(PREFERENCE_WITH_SAME_NAME_EXISTS, USER);
     }
+
     if (preference instanceof DeploymentPreference) {
       DeploymentPreference deployPref = null;
       deployPref = (DeploymentPreference) preference;
 
       UpdateOperations<Preference> updateOperations = wingsPersistence.createUpdateOperations(Preference.class);
+
+      if (featureFlagService.isEnabled(SPG_ENABLE_SHARING_FILTERS, accountId) && hasUserGroupAdmin(accountId, userId)) {
+        setUnset(updateOperations, PreferenceKeys.userGroupsIdToShare, deployPref.getUserGroupsIdToShare());
+      } else {
+        setUnset(updateOperations, PreferenceKeys.userGroupsIdToShare, null);
+      }
+
       // Set fields to update
       setUnset(updateOperations, "name", deployPref.getName());
       setUnset(updateOperations, "appIds", deployPref.getAppIds());
@@ -227,10 +289,19 @@ public class PreferenceServiceImpl implements PreferenceService {
 
   @Override
   public void delete(String accountId, String userId, String preferenceId) {
-    wingsPersistence.delete(wingsPersistence.createQuery(Preference.class)
-                                .filter(PreferenceKeys.accountId, accountId)
-                                .filter(USER_ID_KEY, userId)
-                                .filter(PreferenceKeys.uuid, preferenceId));
+    Preference preference = get(accountId, userId, preferenceId);
+    if (preference == null) {
+      throw new InvalidRequestException("Permission is insufficient to delete this filter", USER);
+    }
+
+    if (preference.getUserGroupsIdToShare() == null
+        || (featureFlagService.isEnabled(SPG_ENABLE_SHARING_FILTERS, accountId)
+            && hasUserGroupAdmin(accountId, userId))) {
+      wingsPersistence.delete(wingsPersistence.createQuery(Preference.class)
+                                  .filter(PreferenceKeys.accountId, accountId)
+                                  .filter(PreferenceKeys.userId, userId)
+                                  .filter(PreferenceKeys.uuid, preferenceId));
+    }
   }
 
   // this will return a Tag in the format "label" or "key:value" based on the filter

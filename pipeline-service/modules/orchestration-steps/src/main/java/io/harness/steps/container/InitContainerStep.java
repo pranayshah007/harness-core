@@ -29,19 +29,15 @@ import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
-import io.harness.steps.container.execution.ContainerStepCleanupHelper;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
 import io.harness.steps.executable.TaskExecutableWithRbac;
-import io.harness.steps.plugin.ContainerStepInfo;
 import io.harness.steps.plugin.ContainerStepSpec;
-import io.harness.steps.plugin.ContainerStepType;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.yaml.core.timeout.Timeout;
 
@@ -61,18 +57,14 @@ import lombok.extern.slf4j.Slf4j;
 public class InitContainerStep implements TaskExecutableWithRbac<StepElementParameters, K8sTaskExecutionResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.INIT_CONTAINER_STEP_TYPE;
 
-  private final ContainerStepCleanupHelper containerStepCleanupHelper;
   private final ContainerStepInitHelper containerStepInitHelper;
   private final ContainerStepRbacHelper containerStepRbacHelper;
   private final KryoSerializer kryoSerializer;
-  private final ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     ContainerStepSpec stepParameter = (ContainerStepSpec) stepParameters.getSpec();
-    if (stepParameter.getType() == ContainerStepType.RUN_CONTAINER) {
-      containerStepRbacHelper.validateResources((ContainerStepInfo) stepParameter, ambiance);
-    }
+    containerStepRbacHelper.validateResources(stepParameter, ambiance);
   }
 
   @Override

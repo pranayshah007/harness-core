@@ -89,7 +89,7 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     LogCallback logCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress);
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        k8sScaleRequest.getK8sInfraDelegateConfig(), logCallback);
+        k8sScaleRequest.getK8sInfraDelegateConfig(), k8SDelegateTaskParams.getWorkingDirectory(), logCallback);
 
     init(k8sScaleRequest, k8SDelegateTaskParams, kubernetesConfig.getNamespace(), logCallback);
 

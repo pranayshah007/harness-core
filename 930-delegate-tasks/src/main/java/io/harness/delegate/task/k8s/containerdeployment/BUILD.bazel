@@ -12,6 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/aws/eks:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/gcp/helpers:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/yaml:module",
         "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/azure/taskhelper:module",

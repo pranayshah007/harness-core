@@ -99,7 +99,7 @@ public class SettingResourceNg {
       smtpConfig.setPassword(secretManager.saveSecretText(accountId, secretText, true).toCharArray());
     } catch (SecretManagementException ex) {
       log.error(" Exception received while setting SMTP password {}", ex);
-      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, ex, USER);
+      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, ex.getMessage(), USER);
     }
     variable.setValue(smtpConfig);
     settingAuthHandler.authorize(variable, appId);

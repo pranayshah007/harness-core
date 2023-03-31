@@ -19,7 +19,6 @@ public enum ResourceType {
   RESOURCE_GROUP(ResourceTypeConstants.RESOURCE_GROUP),
   USER(ResourceTypeConstants.USER),
   ROLE(ResourceTypeConstants.ROLE),
-  ROLE_ASSIGNMENT(ResourceTypeConstants.ROLE_ASSIGNMENT),
   PIPELINE(ResourceTypeConstants.PIPELINE),
   TRIGGER(ResourceTypeConstants.TRIGGER),
   TEMPLATE(ResourceTypeConstants.TEMPLATE),
@@ -65,7 +64,7 @@ public enum ResourceType {
   FEATURE_FLAG(ResourceTypeConstants.FEATURE_FLAG),
   NG_ACCOUNT_DETAILS(ResourceTypeConstants.NG_ACCOUNT_DETAILS),
   BUDGET_GROUP(ResourceTypeConstants.BUDGET_GROUP),
-  NODE_EXECUTION(ResourceTypeConstants.NODE_EXECUTION);
+  PIPELINE_EXECUTION(ResourceTypeConstants.PIPELINE_EXECUTION);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

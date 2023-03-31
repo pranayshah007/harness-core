@@ -45,7 +45,7 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.RetryUtils;
 import io.harness.utils.ScopeWiseIds;
@@ -108,7 +108,7 @@ public class EnvironmentInfraFilterHelper {
   public List<io.harness.gitops.models.Cluster> fetchClustersFromGitOps(
       String accountId, String orgId, String projectId, Set<String> clsRefs) {
     List<io.harness.gitops.models.Cluster> clusters = new ArrayList<>();
-    ScopeWiseIds scopeWiseIds = FullyQualifiedIdentifierHelper.getScopeWiseIds(accountId, orgId, projectId, clsRefs);
+    ScopeWiseIds scopeWiseIds = IdentifierRefHelper.getScopeWiseIds(accountId, orgId, projectId, clsRefs);
     clusters.addAll(getClusters(accountId, orgId, projectId, scopeWiseIds.getProjectScopedIds()));
     clusters.addAll(getClusters(accountId, orgId, null, scopeWiseIds.getOrgScopedIds()));
     clusters.addAll(getClusters(accountId, null, null, scopeWiseIds.getAccountScopedIds()));

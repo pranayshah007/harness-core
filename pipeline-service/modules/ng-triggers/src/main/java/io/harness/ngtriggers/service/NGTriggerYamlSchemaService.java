@@ -17,4 +17,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 @OwnedBy(PIPELINE)
 public interface NGTriggerYamlSchemaService {
   JsonNode getTriggerYamlSchema(String projectIdentifier, String orgIdentifier, String identifier, Scope scope);
+
+  void validateTriggerYaml(String yaml, String projectIdentifier, String orgIdentifier, String identifier);
 }

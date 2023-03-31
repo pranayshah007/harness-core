@@ -10,6 +10,7 @@ package io.harness.cdng.aws.lambda;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,6 +52,7 @@ import io.harness.delegate.task.aws.lambda.AwsLambdaS3ArtifactConfig;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse;
+import io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse.AwsLambdaPrepareRollbackResponseBuilder;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.gitcommon.GitFetchFilesResult;
 import io.harness.delegate.task.gitcommon.GitTaskNGResponse;
@@ -132,6 +134,7 @@ public class AwsLambdaHelperTest extends CategoryTest {
   @Mock private AwsLambdaEntityHelper awsLambdaEntityHelper;
   @Mock private TaskRequestsUtils TaskRequestsUtils;
   @Mock private StepHelper stepHelper;
+
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @InjectMocks @Spy AwsLambdaHelper awsLambdaHelper;
@@ -188,6 +191,75 @@ public class AwsLambdaHelperTest extends CategoryTest {
     verify(awsLambdaHelper)
         .queueTask(eq(stepElementParameters), any(), eq(TaskType.AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG),
             eq(ambiance), any(), eq(false));
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void
+  testHandlePrepareRollbackDataResponseSkipsRollbackIfFunctionConfigurationIsEmptyOrFirstDeploymentIsTrue() {
+    AwsLambdaPrepareRollbackResponseBuilder awsLambdaPrepareRollbackResponseBuilder =
+        AwsLambdaPrepareRollbackResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .unitProgressData(unitProgressData);
+
+    HarnessStore harnessStoreConfig =
+        HarnessStore.builder()
+            .files(ParameterField.<List<String>>builder().value(Arrays.asList(FILE_PATH)).build())
+            .build();
+    ManifestOutcome manifestOutcome =
+        AwsLambdaDefinitionManifestOutcome.builder().identifier(ID).store(harnessStoreConfig).build();
+    AwsLambdaStepPassThroughData awsLambdaStepPassThroughData =
+        AwsLambdaStepPassThroughData.builder()
+            .manifestsOutcomes(Arrays.asList(manifestOutcome))
+            .manifestFileContentsMap(Map.of(ID, Arrays.asList("v1:k1")))
+            .build();
+    OptionalOutcome optionalArtifactOutcome = OptionalOutcome.builder().found(true).outcome(artifactsOutcome).build();
+    doReturn(optionalArtifactOutcome)
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
+    doReturn(TaskChainResponse.builder().chainEnd(true).build())
+        .when(awsLambdaHelper)
+        .executeTask(ambiance, stepElementParameters, awsLambdaStepPassThroughData, unitProgressData);
+
+    // First deployment is false and functionConfiguration is null
+    awsLambdaHelper.handlePrepareRollbackDataResponse(
+        awsLambdaPrepareRollbackResponseBuilder.build(), ambiance, stepElementParameters, awsLambdaStepPassThroughData);
+    Mockito.verify(executionSweepingOutputService, Mockito.times(0)).consume(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testHandlePrepareRollbackDataResponse() {
+    AwsLambdaPrepareRollbackResponseBuilder awsLambdaPrepareRollbackResponseBuilder =
+        AwsLambdaPrepareRollbackResponse.builder()
+            .functionConfiguration("FunctionArn")
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .unitProgressData(unitProgressData);
+
+    HarnessStore harnessStoreConfig =
+        HarnessStore.builder()
+            .files(ParameterField.<List<String>>builder().value(Arrays.asList(FILE_PATH)).build())
+            .build();
+    ManifestOutcome manifestOutcome =
+        AwsLambdaDefinitionManifestOutcome.builder().identifier(ID).store(harnessStoreConfig).build();
+    AwsLambdaStepPassThroughData awsLambdaStepPassThroughData =
+        AwsLambdaStepPassThroughData.builder()
+            .manifestsOutcomes(Arrays.asList(manifestOutcome))
+            .manifestFileContentsMap(Map.of(ID, Arrays.asList("v1:k1")))
+            .build();
+    OptionalOutcome optionalArtifactOutcome = OptionalOutcome.builder().found(true).outcome(artifactsOutcome).build();
+    doReturn(optionalArtifactOutcome)
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
+    doReturn(TaskChainResponse.builder().chainEnd(true).build())
+        .when(awsLambdaHelper)
+        .executeTask(ambiance, stepElementParameters, awsLambdaStepPassThroughData, unitProgressData);
+
+    awsLambdaHelper.handlePrepareRollbackDataResponse(
+        awsLambdaPrepareRollbackResponseBuilder.build(), ambiance, stepElementParameters, awsLambdaStepPassThroughData);
+    Mockito.verify(executionSweepingOutputService, Mockito.times(1)).consume(any(), any(), any(), any());
   }
 
   @Test

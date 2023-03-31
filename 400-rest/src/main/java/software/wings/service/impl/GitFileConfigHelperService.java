@@ -46,7 +46,7 @@ public class GitFileConfigHelperService {
     GitFileConfig newGitFileConfig = createNewGitFileConfig(gitFileConfig);
 
     SettingAttribute settingAttribute =
-        settingsService.getByName(accountId, appId, newGitFileConfig.getConnectorName());
+        settingsService.getConnectorByName(accountId, appId, newGitFileConfig.getConnectorName());
     if (settingAttribute == null) {
       throw new WingsException(ErrorCode.INVALID_ARGUMENT)
           .addParam("args", "No git connector exists with name " + newGitFileConfig.getConnectorName());

@@ -9,15 +9,10 @@ package io.harness.async;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.contracts.plan.Dependencies;
-
-import java.util.List;
+import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public interface AsyncCreatorResponse {
-  Dependencies getDependencies();
-
-  List<String> getErrorMessages();
-
-  void setDependencies(Dependencies dependencies);
+public interface AsyncCreatorResponse extends CreatorResponse {
+  @Override
+  default void addResolvedDependency(String yaml, String nodeId, String yamlPath) {}
 }

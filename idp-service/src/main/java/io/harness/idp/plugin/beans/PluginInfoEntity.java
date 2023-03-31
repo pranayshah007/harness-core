@@ -13,18 +13,21 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
-import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
+import io.harness.spec.server.idp.v1.model.PluginInfo;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
 @StoreIn(DbAliases.IDP)
+@FieldNameConstants(innerTypeName = "PluginInfoEntityKeys")
 @Entity(value = "pluginInfo", noClassnameStored = true)
 @Document("pluginInfo")
 @Persistent
@@ -35,9 +38,11 @@ public class PluginInfoEntity implements PersistentEntity {
   private String name;
   private String description;
   private String createdBy;
-  private PluginDetailedInfo.CategoryEnum category;
+  private PluginInfo.CategoryEnum category;
+  @Builder.Default private boolean core = false;
   private String source;
   private String config;
   private String iconUrl;
   private String imageUrl;
+  @JsonProperty("exports") private ExportsData exports;
 }

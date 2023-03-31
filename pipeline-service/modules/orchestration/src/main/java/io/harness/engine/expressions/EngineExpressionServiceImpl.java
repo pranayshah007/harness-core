@@ -18,6 +18,7 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -56,5 +57,11 @@ public class EngineExpressionServiceImpl implements EngineExpressionService {
       result = json;
     }
     return result;
+  }
+
+  @Override
+  public Object resolve(Ambiance ambiance, Object o, io.harness.expression.common.ExpressionMode expressionMode,
+      Map<String, String> contextMap) {
+    return pmsEngineExpressionService.resolve(ambiance, o, expressionMode, contextMap);
   }
 }

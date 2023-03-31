@@ -38,6 +38,11 @@ public class AzureArtifactsSummary implements ArtifactSummary {
    */
   String version;
 
+  /**
+   * Tag
+   */
+  String tag;
+
   @Override
   public String getDisplayName() {
     return packageName + ":" + version;

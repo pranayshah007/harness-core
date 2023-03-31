@@ -30,6 +30,7 @@ import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
@@ -206,6 +207,7 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
         .in(instanceState)
         .field(InstanceDataKeys.usageStartTime)
         .lessThanOrEq(startTime)
+        .useReadPreference(ReadPreference.secondaryPreferred())
         .asList();
   }
 
@@ -242,6 +244,7 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
         .field(InstanceDataKeys.instanceType)
         .in(instanceTypes)
         .filter(InstanceDataKeys.instanceState, instanceState)
+        .useReadPreference(ReadPreference.secondaryPreferred())
         .asList();
   }
 
@@ -287,7 +290,8 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
         .lessThanOrEq(endTime)
         .field(InstanceDataKeys.instanceType)
         .in(instanceTypes)
-        .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.activeInstanceIterator);
+        .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.activeInstanceIterator)
+        .useReadPreference(ReadPreference.secondaryPreferred());
   }
 
   public List<InstanceData> getInstanceDataListsOfTypesAndClusterId(String accountId, int batchSize, Instant startTime,
@@ -302,7 +306,8 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
                                     .field(InstanceDataKeys.instanceType)
                                     .in(instanceTypes)
                                     .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.clusterId + ","
-                                        + InstanceDataKeys.activeInstanceIterator);
+                                        + InstanceDataKeys.activeInstanceIterator)
+                                    .useReadPreference(ReadPreference.secondaryPreferred());
     return query.asList(new FindOptions().limit(batchSize));
   }
 
@@ -318,7 +323,8 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
                                     .field(InstanceDataKeys.instanceType)
                                     .in(instanceTypes)
                                     .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.clusterId + ","
-                                        + InstanceDataKeys.activeInstanceIterator);
+                                        + InstanceDataKeys.activeInstanceIterator)
+                                    .useReadPreference(ReadPreference.secondaryPreferred());
     return query.asList();
   }
 }

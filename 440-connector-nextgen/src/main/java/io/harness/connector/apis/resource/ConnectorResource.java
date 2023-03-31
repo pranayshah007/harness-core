@@ -15,9 +15,11 @@ import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.DELETE_CONNECTOR_PERMISSION;
 import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.EDIT_CONNECTOR_PERMISSION;
 import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.ng.core.utils.URLDecoderUtility.getDecodedString;
 import static io.harness.utils.PageUtils.getNGPageResponse;
+import static io.harness.utils.PageUtils.getPageRequest;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
@@ -29,6 +31,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SortOrder;
 import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
@@ -53,6 +56,7 @@ import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.OrgIdentifier;
 import io.harness.ng.core.ProjectIdentifier;
@@ -252,14 +256,8 @@ public class ConnectorResource {
         ApiResponse(responseCode = "default", description = "Returns the list of Connectors")
       })
   public ResponseDTO<PageResponse<ConnectorResponseDTO>>
-  list(@Parameter(description = "Page number of navigation. By default, it is set to 0.") @QueryParam(
-           NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(
-          description =
-              "Number of entries per page. The default number of entries per page is 100, while the maximum number allowed is 1000.")
-      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(MAX_LIMIT) int size,
-      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+  list(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(
           description =
               "This would be used to filter Connectors. Any Connector having the specified string in its Name, ID and Tag would be filtered.")
@@ -279,12 +277,17 @@ public class ConnectorResource {
           description =
               "This when set to true along with GitSync enabled for the Connector, you can get one connector entity from each identifier. "
               + "The connector entity can belong to any branch") @QueryParam("getDistinctFromBranches")
-      Boolean getDistinctFromBranches) {
+      Boolean getDistinctFromBranches,
+      @BeanParam PageRequest pageRequest) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
-    return ResponseDTO.newResponse(getNGPageResponse(
-        connectorService.list(page, size, accountIdentifier, connectorListFilter, orgIdentifier, projectIdentifier,
-            filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches)));
+    if (isEmpty(pageRequest.getSortOrders())) {
+      SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
+      pageRequest.setSortOrders(List.of(order));
+    }
+    return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(accountIdentifier, connectorListFilter,
+        orgIdentifier, projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
+        getDistinctFromBranches, getPageRequest(pageRequest))));
   }
 
   @POST
@@ -298,14 +301,8 @@ public class ConnectorResource {
         ApiResponse(responseCode = "default", description = "Returns the list of Connectors")
       })
   public ResponseDTO<PageResponse<CombineCcmK8sConnectorResponseDTO>>
-  ccmK8sList(@Parameter(description = "Page number of navigation. By default, it is set to 0.") @QueryParam(
-                 NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(
-          description =
-              "Number of entries per page. The default number of entries per page is 100, while the maximum number allowed is 1000.")
-      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(MAX_LIMIT) int size,
-      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+  ccmK8sList(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+                 NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(
           description =
               "This would be used to filter Connectors. Any Connector having the specified string in its Name, ID and Tag would be filtered.")
@@ -325,12 +322,17 @@ public class ConnectorResource {
           description =
               "This when set to true along with GitSync enabled for the Connector, you can get one connector entity from each identifier. "
               + "The connector entity can belong to any branch") @QueryParam("getDistinctFromBranches")
-      Boolean getDistinctFromBranches) {
+      Boolean getDistinctFromBranches,
+      @BeanParam PageRequest pageRequest) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
-    return ResponseDTO.newResponse(getNGPageResponse(connectorService.listCcmK8S(page, size, accountIdentifier,
-        connectorListFilter, orgIdentifier, projectIdentifier, filterIdentifier, searchTerm,
-        includeAllConnectorsAccessibleAtScope, getDistinctFromBranches)));
+    if (isEmpty(pageRequest.getSortOrders())) {
+      SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
+      pageRequest.setSortOrders(List.of(order));
+    }
+    return ResponseDTO.newResponse(getNGPageResponse(connectorService.listCcmK8S(accountIdentifier, connectorListFilter,
+        orgIdentifier, projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
+        getDistinctFromBranches, getPageRequest(pageRequest))));
   }
 
   @POST

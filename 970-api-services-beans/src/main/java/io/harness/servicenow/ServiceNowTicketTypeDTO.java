@@ -34,8 +34,8 @@ public class ServiceNowTicketTypeDTO {
   @NotNull String name;
 
   public ServiceNowTicketTypeDTO(JsonNode node) {
-    this.key = JsonNodeUtils.mustGetString(node, "key");
-    this.name = JsonNodeUtils.getString(node, "name");
+    this.key = JsonNodeUtils.mustGetString(node, "name");
+    this.name = JsonNodeUtils.getString(node, "label");
     if (this.name == null) {
       this.name = this.key;
     }

@@ -16,6 +16,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.task.artifacts.mappers.CustomRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
@@ -25,6 +27,8 @@ import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.eraro.Level;
 import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.security.encryption.DelegateDecryptionService;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
@@ -56,8 +60,12 @@ public class CustomArtifactService {
   @Inject private DelegateDecryptionService delegateDecryptionService;
   private static final String ARTIFACT_RESULT_PATH = "HARNESS_ARTIFACT_RESULT_PATH";
 
-  public ArtifactTaskExecutionResponse getBuilds(CustomArtifactDelegateRequest attributesRequest) {
-    List<BuildDetails> buildDetails = getBuildDetails(attributesRequest);
+  public ArtifactTaskExecutionResponse getBuilds(
+      CustomArtifactDelegateRequest attributesRequest, LogCallback executionLogCallback) {
+    if (executionLogCallback == null) {
+      executionLogCallback = new NGDelegateLogCallback(null, "", false, CommandUnitsProgress.builder().build());
+    }
+    List<BuildDetails> buildDetails = getBuildDetails(attributesRequest, executionLogCallback);
     List<CustomArtifactDelegateResponse> customArtifactDelegateResponseList =
         buildDetails.stream()
             .sorted(new BuildDetailsComparatorDescending())
@@ -66,8 +74,12 @@ public class CustomArtifactService {
     return getSuccessTaskExecutionResponse(customArtifactDelegateResponseList, buildDetails);
   }
 
-  public ArtifactTaskExecutionResponse getLastSuccessfulBuild(CustomArtifactDelegateRequest attributesRequest) {
-    List<BuildDetails> buildDetails = getBuildDetails(attributesRequest);
+  public ArtifactTaskExecutionResponse getLastSuccessfulBuild(
+      CustomArtifactDelegateRequest attributesRequest, LogCallback executionLogCallback) {
+    if (executionLogCallback == null) {
+      executionLogCallback = new NGDelegateLogCallback(null, "", false, CommandUnitsProgress.builder().build());
+    }
+    List<BuildDetails> buildDetails = getBuildDetails(attributesRequest, executionLogCallback);
     if (filterVersion(buildDetails, attributesRequest) != null
         && EmptyPredicate.isNotEmpty(filterVersion(buildDetails, attributesRequest))) {
       CustomArtifactDelegateResponse customArtifactDelegateResponse =
@@ -81,7 +93,8 @@ public class CustomArtifactService {
     }
   }
 
-  private List<BuildDetails> getBuildDetails(CustomArtifactDelegateRequest attributesRequest) {
+  private List<BuildDetails> getBuildDetails(
+      CustomArtifactDelegateRequest attributesRequest, LogCallback executionLogCallback) {
     String script = resolveNgSecretExpression(attributesRequest);
     UUID uuid = UUID.randomUUID();
     String scriptOutputFilename = "harness-" + uuid + ".out";
@@ -91,11 +104,14 @@ public class CustomArtifactService {
       script = addEnvVariablesCollector(script, scriptOutputFile.getAbsolutePath());
       ShellScriptTaskParametersNG shellScriptTaskParametersNG =
           getShellScriptTaskParametersNG(script, attributesRequest);
-      ShellScriptTaskResponseNG shellScriptTaskResponseNG =
-          customArtifactScriptExecutionOnDelegateNG.executeOnDelegate(shellScriptTaskParametersNG, null);
+      ShellScriptTaskResponseNG shellScriptTaskResponseNG = customArtifactScriptExecutionOnDelegateNG.executeOnDelegate(
+          shellScriptTaskParametersNG, executionLogCallback);
+      log.info("Script executed with response status :  {}", shellScriptTaskResponseNG.getStatus().name());
+      executionLogCallback.saveExecutionLog(
+          "Script executed with response status : " + shellScriptTaskResponseNG.getStatus().name(), LogLevel.INFO);
       if (shellScriptTaskResponseNG.getStatus().name().equals("SUCCESS")) {
         return customArtifactScriptExecutionOnDelegateNG.getBuildDetails(
-            scriptOutputFile.getAbsolutePath(), attributesRequest);
+            scriptOutputFile.getAbsolutePath(), attributesRequest, executionLogCallback);
       } else {
         String msg = "No Artifact found in " + ARTIFACT_RESULT_PATH;
         log.error(msg);

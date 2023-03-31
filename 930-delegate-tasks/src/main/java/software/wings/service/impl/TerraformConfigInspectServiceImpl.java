@@ -10,6 +10,7 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.clienttools.TerraformConfigInspectVersion;
 
 import software.wings.delegatetasks.terraform.TerraformConfigInspectClient;
 import software.wings.service.intfc.TerraformConfigInspectService;
@@ -25,7 +26,9 @@ public class TerraformConfigInspectServiceImpl implements TerraformConfigInspect
   @Inject private TerraformConfigInspectClient terraformConfigInspectClient;
 
   @Override
-  public List<String> parseFieldsUnderCategory(String directory, String category, boolean useLatestVersion) {
-    return new ArrayList<>(terraformConfigInspectClient.parseFieldsUnderBlock(directory, category, useLatestVersion));
+  public List<String> parseFieldsUnderCategory(
+      String directory, String category, TerraformConfigInspectVersion terraformConfigInspectVersion) {
+    return new ArrayList<>(
+        terraformConfigInspectClient.parseFieldsUnderBlock(directory, category, terraformConfigInspectVersion));
   }
 }

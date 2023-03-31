@@ -142,7 +142,8 @@ public class EnvironmentPlanCreatorHelper {
       return EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig(
           mergedEnvYaml, infrastructureConfigs, serviceOverrideConfig);
     } else {
-      if (!environmentV2.getDeployToAll().getValue() && isEmpty(environmentV2.getGitOpsClusters().getValue())) {
+      if ((environmentV2.getDeployToAll().getValue() == null || !environmentV2.getDeployToAll().getValue())
+          && isEmpty(environmentV2.getGitOpsClusters().getValue())) {
         throw new InvalidRequestException("List of Gitops clusters must be provided because deployToAll is false");
       }
       return EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(

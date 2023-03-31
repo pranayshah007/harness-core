@@ -42,6 +42,7 @@ import io.harness.pms.contracts.triggers.ManifestData;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.contracts.triggers.Type;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.helpers.YamlExpressionResolveHelper;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.merger.helpers.InputSetTemplateHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
@@ -95,6 +96,7 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
   @Mock private PlanExecutionMetadataService planExecutionMetadataService;
   @Mock private GitSyncSdkService gitSyncSdkService;
   @Mock OrchestrationService orchestrationService;
+  @Mock YamlExpressionResolveHelper yamlExpressionResolveHelper;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -410,6 +412,7 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
         PlanExecutionMetadata.builder()
             .yaml(executionYaml)
             .planExecutionId(planExecutionID)
+            .inputSetYaml("inputSetYaml")
             .triggerPayload(TriggerPayload.newBuilder()
                                 .setType(Type.MANIFEST)
                                 .setManifestData(ManifestData.newBuilder().setVersion("1.0").build())
@@ -419,12 +422,15 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
     doReturn(Optional.of(planExecutionMetadata))
         .when(planExecutionMetadataService)
         .findByPlanExecutionId(planExecutionID);
-
+    doReturn("resolvedYaml")
+        .when(yamlExpressionResolveHelper)
+        .resolveExpressionsInYaml("inputSetYaml", planExecutionID);
     ExecutionMetaDataResponseDetailsDTO executionData = pmsExecutionService.getExecutionDataDetails(planExecutionID);
 
     assertThat(executionData.getExecutionYaml()).isEqualTo(planExecutionMetadata.getYaml());
     assertThat(executionData.getTriggerPayload().getType()).isEqualTo(Type.MANIFEST);
     assertThat(executionData.getTriggerPayload().getManifestData().getVersion()).isEqualTo("1.0");
+    assertThat(executionData.getResolvedYaml()).isEqualTo("resolvedYaml");
     verify(planExecutionMetadataService, times(1)).findByPlanExecutionId(planExecutionID);
   }
 

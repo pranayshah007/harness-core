@@ -19,6 +19,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.validation.Validator;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -61,6 +62,7 @@ public class TerraformPlanExecutionData {
   @YamlSchemaTypes({string})
   ParameterField<Boolean> exportTerraformHumanReadablePlan;
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> skipRefreshCommand;
+  @VariableExpression(skipVariableExpression = true) List<TerraformCliOptionFlag> commandFlags;
 
   public TerraformPlanExecutionDataParameters toStepParameters() {
     validateParams();
@@ -89,6 +91,7 @@ public class TerraformPlanExecutionData {
     builder.varFiles(varFiles);
     builder.isTerraformCloudCli(ParameterField.createValueField(false));
     builder.skipTerraformRefresh(skipRefreshCommand);
+    builder.cliOptionFlags(commandFlags);
     return builder.build();
   }
 

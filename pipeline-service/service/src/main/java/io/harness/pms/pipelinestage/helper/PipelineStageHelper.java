@@ -17,6 +17,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -36,8 +37,6 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO.ChildExecutionDetailDTOBuilder;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
-import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
-import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO.PipelineExecutionDetailDTOBuilder;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.yaml.ParameterField;
@@ -75,8 +74,22 @@ public class PipelineStageHelper {
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
   @Inject private final PipelineStageHelperV1 pipelineStageHelperV1;
 
+  private static String NESTED_ERROR_EXCEPTION_HINT =
+      "Check if the Chained Pipeline at stage [%s] is not a Parent Pipeline";
+  private static String NESTED_ERROR_EXCEPTION =
+      "Chained Stage [%s] is a parent pipeline. Nested chaining is not supported";
   private final List<String> actionTypeNotSupported = Arrays.asList(NGFailureActionTypeConstants.RETRY,
       NGFailureActionTypeConstants.PIPELINE_ROLLBACK, NGFailureActionTypeConstants.MANUAL_INTERVENTION);
+
+  public void validateNestedChainedPipeline(PipelineEntity pipelineEntity, String stageName) {
+    try {
+      validateNestedChainedPipeline(pipelineEntity);
+    } catch (Exception e) {
+      log.error("Error during nested chaining validation ", e);
+      throw NestedExceptionUtils.hintWithExplanationException(String.format(NESTED_ERROR_EXCEPTION_HINT, stageName),
+          String.format(NESTED_ERROR_EXCEPTION, stageName), null);
+    }
+  }
   public void validateNestedChainedPipeline(PipelineEntity entity) {
     TemplateMergeResponseDTO templateMergeResponseDTO =
         pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity, BOOLEAN_FALSE_VALUE);
@@ -165,21 +178,20 @@ public class PipelineStageHelper {
     return inputSetYaml;
   }
 
-  public PipelineExecutionDetailDTO getResponseDTOWithChildGraph(String accountId, String childStageNodeId,
-      PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails,
-      NodeExecution nodeExecution, String stageNodeExecutionId) {
+  public ChildExecutionDetailDTO getChildGraph(String accountId, String childStageNodeId,
+      EntityGitDetails entityGitDetails, NodeExecution nodeExecution, String stageNodeExecutionId) {
     String childExecutionId = nodeExecution.getExecutableResponses().get(0).getAsync().getCallbackIds(0);
     PmsStepParameters parameters = nodeExecution.getResolvedParams();
 
     String orgId = parameters.get(PipelineStageStepParametersKeys.org).toString();
     String projectId = parameters.get(PipelineStageStepParametersKeys.project).toString();
-    return getExecutionDetailDTO(accountId, childStageNodeId, executionSummaryEntity, entityGitDetails,
-        childExecutionId, orgId, projectId, stageNodeExecutionId);
+    return getChildGraph(
+        accountId, childStageNodeId, entityGitDetails, childExecutionId, orgId, projectId, stageNodeExecutionId);
   }
 
-  private PipelineExecutionDetailDTO getExecutionDetailDTO(String accountId, String childStageNodeId,
-      PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails, String childExecutionId,
-      String orgId, String projectId, String stageNodeExecutionId) {
+  private ChildExecutionDetailDTO getChildGraph(String accountId, String childStageNodeId,
+      EntityGitDetails entityGitDetails, String childExecutionId, String orgId, String projectId,
+      String stageNodeExecutionId) {
     PipelineExecutionSummaryEntity executionSummaryEntityForChild =
         pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, childExecutionId, false);
 
@@ -189,21 +201,15 @@ public class PipelineStageHelper {
         PipelineRbacPermissions.PIPELINE_VIEW);
 
     EntityGitDetails entityGitDetailsForChild;
-    if (executionSummaryEntity.getEntityGitDetails() == null) {
+    if (entityGitDetails == null) {
       entityGitDetailsForChild =
           pmsGitSyncHelper.getEntityGitDetailsFromBytes(executionSummaryEntityForChild.getGitSyncBranchContext());
     } else {
       entityGitDetailsForChild = executionSummaryEntityForChild.getEntityGitDetails();
     }
 
-    // Top graph of parent execution
-    PipelineExecutionDetailDTOBuilder pipelineStageGraphBuilder =
-        PipelineExecutionDetailDTO.builder().pipelineExecutionSummary(
-            PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails));
-
-    ChildExecutionDetailDTO childGraph = getChildGraph(childStageNodeId, childExecutionId,
-        executionSummaryEntityForChild, entityGitDetailsForChild, stageNodeExecutionId);
-    return pipelineStageGraphBuilder.childGraph(childGraph).build();
+    return getChildGraph(childStageNodeId, childExecutionId, executionSummaryEntityForChild, entityGitDetailsForChild,
+        stageNodeExecutionId);
   }
 
   private ChildExecutionDetailDTO getChildGraph(String childStageNodeId, String childExecutionId,

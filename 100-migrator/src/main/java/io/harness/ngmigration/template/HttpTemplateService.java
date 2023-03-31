@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.template;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
+
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.serializer.JsonUtils;
@@ -34,6 +36,7 @@ public class HttpTemplateService implements NgTemplateService {
 
     templateSpec.put("url", httpTemplate.getUrl());
     templateSpec.put("method", httpTemplate.getMethod());
+    templateSpec.put("delegateSelectors", RUNTIME_INPUT);
     if (EmptyPredicate.isNotEmpty(httpTemplate.getBody())) {
       templateSpec.put("requestBody", httpTemplate.getBody());
     }

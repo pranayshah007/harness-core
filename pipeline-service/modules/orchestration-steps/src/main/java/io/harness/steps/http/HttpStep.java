@@ -23,7 +23,7 @@ import io.harness.delegate.task.http.HttpTaskParametersNg;
 import io.harness.delegate.task.http.HttpTaskParametersNg.HttpTaskParametersNgBuilder;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
@@ -39,6 +39,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
@@ -60,6 +61,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +77,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Inject private StepHelper stepHelper;
+  @Inject private EngineExpressionService engineExpressionService;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -151,7 +154,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
 
       Map<String, Object> outputVariables =
           httpStepParameters.getOutputVariables() == null ? null : httpStepParameters.getOutputVariables().getValue();
-      Map<String, String> outputVariablesEvaluated = evaluateOutputVariables(outputVariables, httpStepResponse);
+      Map<String, String> outputVariablesEvaluated =
+          evaluateOutputVariables(outputVariables, httpStepResponse, ambiance);
 
       logCallback.saveExecutionLog("Validating the assertions...");
       boolean assertionSuccessful = validateAssertions(httpStepResponse, httpStepParameters);
@@ -218,17 +222,18 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     }
   }
 
-  public static Map<String, String> evaluateOutputVariables(
-      Map<String, Object> outputVariables, HttpStepResponse httpStepResponse) {
+  public Map<String, String> evaluateOutputVariables(
+      Map<String, Object> outputVariables, HttpStepResponse httpStepResponse, Ambiance ambiance) {
     Map<String, String> outputVariablesEvaluated = new LinkedHashMap<>();
     if (outputVariables != null) {
-      EngineExpressionEvaluator expressionEvaluator = new HttpExpressionEvaluator(httpStepResponse);
+      Map<String, String> contextMap = buildContextMapFromResponse(httpStepResponse);
       outputVariables.keySet().forEach(name -> {
         Object expression = outputVariables.get(name);
         if (expression instanceof ParameterField) {
           ParameterField<?> expr = (ParameterField<?>) expression;
           if (expr.isExpression()) {
-            Object evaluatedValue = expressionEvaluator.evaluateExpression(expr.getExpressionValue());
+            Object evaluatedValue = engineExpressionService.resolve(
+                ambiance, expr.getExpressionValue(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED, contextMap);
             if (evaluatedValue != null) {
               outputVariablesEvaluated.put(name, evaluatedValue.toString());
             }
@@ -239,6 +244,14 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
       });
     }
     return outputVariablesEvaluated;
+  }
+
+  private Map<String, String> buildContextMapFromResponse(HttpStepResponse httpStepResponse) {
+    Map<String, String> contextMap = new HashMap<>();
+    contextMap.put("httpResponseBody", httpStepResponse.getHttpResponseBody());
+    contextMap.put("httpResponseCode", String.valueOf(httpStepResponse.getHttpResponseCode()));
+
+    return contextMap;
   }
 
   @Override

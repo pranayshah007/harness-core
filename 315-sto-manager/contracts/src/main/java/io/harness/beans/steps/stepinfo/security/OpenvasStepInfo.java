@@ -12,9 +12,12 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlInstance;
 import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
@@ -30,6 +33,10 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.OpenvasStepInfo")
 public class OpenvasStepInfo extends STOGenericStepInfo {
+  @JsonProperty protected STOYamlInstance instance;
+
+  @JsonProperty protected STOYamlAuth auth;
+
   @NotNull
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlGenericConfig")
   protected STOYamlGenericConfig config;

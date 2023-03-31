@@ -11,4 +11,10 @@ import java.util.concurrent.TimeUnit;
 
 public class TerraformConstants {
   static final long DEFAULT_TERRAFORM_COMMAND_TIMEOUT = TimeUnit.MINUTES.toMillis(30);
+  static final String INIT = "INIT";
+  static final String WORKSPACE = "WORKSPACE";
+  static final String REFRESH = "REFRESH";
+  static final String PLAN = "PLAN";
+  static final String APPLY = "APPLY";
+  static final String DESTROY = "DESTROY";
 }

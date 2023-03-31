@@ -36,12 +36,19 @@ import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.downtime.transformer.DowntimeSpecDetailsTransformer;
+import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
+import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
+import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
+import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.services.api.SLIConsecutiveMinutesProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIDataUnavailabilityInstancesHandlerServiceImpl;
@@ -81,6 +88,8 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
   @Mock VerificationTaskService verificationTaskService;
 
   @Inject EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
+
+  @Inject SLIConsecutiveMinutesProcessorService sliConsecutiveMinutesProcessorService;
 
   @Inject DowntimeService downtimeService;
   @Mock SLIDataUnavailabilityInstancesHandlerServiceImpl sliDataUnavailabilityInstancesHandlerService;
@@ -147,6 +156,59 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
     SLOHealthIndicator sloHealthIndicator = sloHealthIndicatorService.getBySLOIdentifier(
         builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier());
     assertThat(sloHealthIndicator.getErrorBudgetRemainingPercentage()).isEqualTo(99.94212962962963);
+  }
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testExecuteWithConsecutiveMinutes() {
+    serviceLevelObjective.setIdentifier("identifier2");
+    SimpleServiceLevelObjectiveSpec spec = (SimpleServiceLevelObjectiveSpec) serviceLevelObjective.getSpec();
+    WindowBasedServiceLevelIndicatorSpec windowBasedServiceLevelIndicatorSpec =
+        WindowBasedServiceLevelIndicatorSpec.builder()
+            .sliMissingDataType(SLIMissingDataType.GOOD)
+            .type(SLIMetricType.RATIO)
+            .spec(RatioSLIMetricSpec.builder()
+                      .thresholdType(ThresholdType.GREATER_THAN)
+                      .thresholdValue(20.0)
+                      .eventType(RatioSLIMetricEventType.GOOD)
+                      .metric1("metric1")
+                      .metric2("metric2")
+                      .considerConsecutiveMinutes(6)
+                      .considerAllConsecutiveMinutesFromStartAsBad(true)
+                      .build())
+            .build();
+    spec.getServiceLevelIndicators().get(0).setSpec(windowBasedServiceLevelIndicatorSpec);
+    spec.getServiceLevelIndicators().get(0).setIdentifier("sli_identifier");
+
+    serviceLevelObjective.setSpec(spec);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjective);
+    serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
+        ((SimpleServiceLevelObjectiveSpec) serviceLevelObjective.getSpec())
+            .getServiceLevelIndicators()
+            .get(0)
+            .getIdentifier());
+    verificationTaskId = serviceLevelIndicator.getUuid();
+    AnalysisInput input =
+        AnalysisInput.builder().verificationTaskId(verificationTaskId).startTime(startTime).endTime(endTime).build();
+
+    when(verificationTaskService.getSliId(any())).thenReturn(verificationTaskId);
+    sliMetricAnalysisState = SLIMetricAnalysisState.builder().build();
+    sliMetricAnalysisState.setInputs(input);
+
+    sliMetricAnalysisState = (SLIMetricAnalysisState) sliMetricAnalysisStateExecutor.execute(sliMetricAnalysisState);
+    List<SLIRecord> sliRecordList = hPersistence.createQuery(SLIRecord.class)
+                                        .filter(SLIRecordKeys.sliId, serviceLevelIndicator.getUuid())
+                                        .field(SLIRecordKeys.timestamp)
+                                        .greaterThanOrEq(startTime)
+                                        .field(SLIRecordKeys.timestamp)
+                                        .lessThan(endTime)
+                                        .order(SLIRecordKeys.timestamp)
+                                        .asList();
+    assertThat(sliMetricAnalysisState.getStatus().name()).isEqualTo(AnalysisStatus.SUCCESS.name());
+    assertThat(sliRecordList.size()).isEqualTo(5);
+    assertThat(sliRecordList.get(0).getSliState()).isEqualTo(SLIRecord.SLIState.BAD);
+    assertThat(sliRecordList.get(4).getRunningGoodCount()).isEqualTo(5);
+    assertThat(sliRecordList.get(4).getRunningBadCount()).isEqualTo(0);
   }
 
   @Test

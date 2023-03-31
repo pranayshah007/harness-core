@@ -8,9 +8,14 @@
 package software.wings.search.entities.environment;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.SPG_OPTIMIZE_ENVIRONMENT_VIEW_BUILDER;
+
+import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_ENVIDS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.WorkflowType;
+import io.harness.ff.FeatureFlagService;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 
 import software.wings.audit.AuditHeader;
@@ -38,6 +43,8 @@ import software.wings.search.framework.SearchEntityUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.DBObject;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,6 +66,7 @@ import java.util.Set;
 class EnvironmentViewBuilder {
   @Inject private WingsPersistence wingsPersistence;
   @Inject private RelatedAuditViewBuilder relatedAuditViewBuilder;
+  @Inject private FeatureFlagService featureFlagService;
   private static final String ENV_ID_KEY = "envId";
   private static final int DAYS_TO_RETAIN = 7;
   private static final int MAX_RELATED_ENTITIES_COUNT = 3;
@@ -127,16 +135,30 @@ class EnvironmentViewBuilder {
     long startTimestamp = SearchEntityUtils.getTimestampNdaysBackInMillis(DAYS_TO_RETAIN);
     List<Long> deploymentTimestamps = new ArrayList<>();
     List<RelatedDeploymentView> deployments = new ArrayList<>();
-    try (HIterator<WorkflowExecution> iterator =
-             new HIterator<>(wingsPersistence.createQuery(WorkflowExecution.class)
-                                 .field(WorkflowExecutionKeys.appId)
-                                 .equal(environment.getAppId())
-                                 .field(WorkflowExecutionKeys.envId)
-                                 .equal(environment.getUuid())
-                                 .field(EnvironmentKeys.createdAt)
-                                 .greaterThanOrEq(startTimestamp)
-                                 .order(Sort.descending(WorkflowExecutionKeys.createdAt))
-                                 .fetch())) {
+    Query<WorkflowExecution> query = wingsPersistence.createQuery(WorkflowExecution.class)
+                                         .filter(WorkflowExecutionKeys.accountId, environment.getAccountId())
+                                         .filter(WorkflowExecutionKeys.appId, environment.getAppId())
+                                         .filter(WorkflowExecutionKeys.envId, environment.getUuid())
+                                         .field(EnvironmentKeys.createdAt)
+                                         .greaterThanOrEq(startTimestamp)
+                                         .order(Sort.descending(WorkflowExecutionKeys.createdAt));
+    FindOptions findOptions = new FindOptions();
+
+    if (featureFlagService.isEnabled(SPG_OPTIMIZE_ENVIRONMENT_VIEW_BUILDER, environment.getAccountId())) {
+      query.field(WorkflowExecutionKeys.envIds)
+          .hasThisOne(environment.getUuid())
+          .project(WorkflowExecutionKeys.createdAt, true)
+          .project(WorkflowExecutionKeys.status, true)
+          .project(WorkflowExecutionKeys.name, true)
+          .project(WorkflowExecutionKeys.pipelineExecutionId, true)
+          .project(WorkflowExecutionKeys.workflowType, true)
+          .project(WorkflowExecutionKeys.envId, true)
+          .project(WorkflowExecutionKeys.workflowId, true)
+          .project(WorkflowExecutionKeys.envIds, true);
+      findOptions.hint(BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_ENVIDS));
+    }
+
+    try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch(findOptions))) {
       while (iterator.hasNext()) {
         final WorkflowExecution workflowExecution = iterator.next();
         if (workflowExecution.getWorkflowType() == WorkflowType.ORCHESTRATION) {

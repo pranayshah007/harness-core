@@ -19,8 +19,8 @@ PROJFILE="$SHDIR/jira-projects.txt"
 check_file_present $PROJFILE
 PROJECTS=$(<$PROJFILE)
 
-git log --remotes=origin/release/* --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq | tr '[:lower:]' '[:upper:]' > release.txt
-git log --remotes=origin/develop* --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq | tr '[:lower:]' '[:upper:]' > develop.txt
+git log --remotes=origin/release/* --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | tr '[:lower:]' '[:upper:]'| sort | uniq  > release.txt
+git log --remotes=origin/develop* --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | tr '[:lower:]' '[:upper:]'| sort | uniq > develop.txt
 NOT_MERGED=`comm -23 release.txt develop.txt | tr '\n' ' '`
 
 if [ -z "$NOT_MERGED" ]

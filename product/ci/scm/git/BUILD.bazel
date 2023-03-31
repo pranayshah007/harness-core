@@ -19,6 +19,9 @@ go_library(
         "@com_github_drone_go_scm//scm/driver/github",
         "@com_github_drone_go_scm//scm/transport",
         "@com_github_drone_go_scm//scm/transport/oauth2",
+        "@com_github_wings_software_autogen_go//builder",
+        "@com_github_wings_software_autogen_go//chroot",
+        "@com_github_wings_software_autogen_go//cloner",
         "@org_uber_go_zap//:zap",
     ],
 )

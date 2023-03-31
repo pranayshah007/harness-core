@@ -13,9 +13,11 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.provision.terraform.TerraformCloudCliStepConfigurationParameters.TerraformCloudCliStepConfigurationParametersBuilder;
 import io.harness.validation.Validator;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,11 +30,14 @@ public class TerraformCloudCliStepConfiguration {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
 
   @JsonProperty("spec") TerraformCloudCliExecutionData terraformCloudCliExecutionData;
+  @VariableExpression(skipVariableExpression = true) List<TerraformCliOptionFlag> commandFlags;
 
   public TerraformCloudCliStepConfigurationParameters toStepParameters() {
     TerraformCloudCliStepConfigurationParametersBuilder builder =
         TerraformCloudCliStepConfigurationParameters.builder();
     validateParams();
+    builder.commandFlags(commandFlags);
+
     if (terraformCloudCliExecutionData != null) {
       builder.spec(terraformCloudCliExecutionData.toStepParameters());
     }

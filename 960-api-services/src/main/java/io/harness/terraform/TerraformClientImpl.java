@@ -12,6 +12,12 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.WARN;
 import static io.harness.provision.TerraformConstants.SECONDS_TO_WAIT_FOR_GRACEFUL_SHUTDOWN;
+import static io.harness.terraform.TerraformConstants.APPLY;
+import static io.harness.terraform.TerraformConstants.DESTROY;
+import static io.harness.terraform.TerraformConstants.INIT;
+import static io.harness.terraform.TerraformConstants.PLAN;
+import static io.harness.terraform.TerraformConstants.REFRESH;
+import static io.harness.terraform.TerraformConstants.WORKSPACE;
 
 import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
@@ -68,10 +74,13 @@ public class TerraformClientImpl implements TerraformClient {
   public CliResponse init(TerraformInitCommandRequest terraformInitCommandRequest, long timeoutInMillis,
       Map<String, String> envVariables, String scriptDirectory, @Nonnull LogCallback executionLogCallback)
       throws InterruptedException, TimeoutException, IOException {
-    String command = format("terraform init -input=false %s",
+    String additionalCliOption = getAdditionalCliOption(terraformInitCommandRequest.getAdditionalCliFlags(), INIT);
+
+    String command = format("terraform init -input=false %s %s",
         isEmpty(terraformInitCommandRequest.getTfBackendConfigsFilePath())
             ? EMPTY
-            : format("-backend-config=%s", terraformInitCommandRequest.getTfBackendConfigsFilePath()));
+            : format("-backend-config=%s", terraformInitCommandRequest.getTfBackendConfigsFilePath()),
+        additionalCliOption);
 
     /**
      * echo "no" is to prevent copying of state from local to remote by suppressing the
@@ -88,20 +97,24 @@ public class TerraformClientImpl implements TerraformClient {
   public CliResponse destroy(TerraformDestroyCommandRequest terraformDestroyCommandRequest, long timeoutInMillis,
       Map<String, String> envVariables, String scriptDirectory, @Nonnull LogCallback executionLogCallback)
       throws InterruptedException, TimeoutException, IOException {
+    String additionalCliOption =
+        getAdditionalCliOption(terraformDestroyCommandRequest.getAdditionalCliFlags(), DESTROY);
     String command;
 
     if (terraformDestroyCommandRequest.isTerraformCloudCli()) {
       // terraform Cloud var files are located in script directory having this suffix .auto.tfvars, so we don't pass
       // them as arguments -var-file
-      command = format("echo yes | terraform destroy %s %s",
+      command = format("echo yes | terraform destroy %s %s %s",
           TerraformHelperUtils.getAutoApproveArgument(version(timeoutInMillis, scriptDirectory)),
-          TerraformHelperUtils.generateCommandFlagsString(terraformDestroyCommandRequest.getTargets(), TARGET_PARAM));
+          TerraformHelperUtils.generateCommandFlagsString(terraformDestroyCommandRequest.getTargets(), TARGET_PARAM),
+          additionalCliOption);
     } else {
-      command = format("terraform destroy %s %s %s",
+      command = format("terraform destroy %s %s %s %s",
           TerraformHelperUtils.getAutoApproveArgument(version(timeoutInMillis, scriptDirectory)),
           TerraformHelperUtils.generateCommandFlagsString(terraformDestroyCommandRequest.getTargets(), TARGET_PARAM),
           TerraformHelperUtils.generateCommandFlagsString(
-              terraformDestroyCommandRequest.getVarFilePaths(), VAR_FILE_PARAM));
+              terraformDestroyCommandRequest.getVarFilePaths(), VAR_FILE_PARAM),
+          additionalCliOption);
     }
     return executeTerraformCLICommand(command, timeoutInMillis, envVariables, scriptDirectory, executionLogCallback,
         command, new LogCallbackOutputStream(executionLogCallback));
@@ -112,28 +125,33 @@ public class TerraformClientImpl implements TerraformClient {
   public CliResponse plan(TerraformPlanCommandRequest terraformPlanCommandRequest, long timeoutInMillis,
       Map<String, String> envVariables, String scriptDirectory, @Nonnull LogCallback executionLogCallback)
       throws InterruptedException, TimeoutException, IOException {
+    String additionalCliOption = getAdditionalCliOption(terraformPlanCommandRequest.getAdditionalCliFlags(), PLAN);
     String command;
     if (terraformPlanCommandRequest.isDestroySet()) {
       if (terraformPlanCommandRequest.isTerraformCloudCli()) {
         // terraform Cloud var files are located in script directory having this suffix .auto.tfvars, so we don't pass
         // them as arguments -var-file
-        command = format("terraform plan -input=false -detailed-exitcode -destroy %s",
-            TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM));
+        command = format("terraform plan -input=false -detailed-exitcode -destroy %s %s",
+            TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM),
+            additionalCliOption);
       } else {
-        command = format("terraform plan -input=false -detailed-exitcode -destroy -out=tfdestroyplan %s %s",
+        command = format("terraform plan -input=false -detailed-exitcode -destroy -out=tfdestroyplan %s %s %s",
             TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM),
             TerraformHelperUtils.generateCommandFlagsString(
-                terraformPlanCommandRequest.getVarFilePaths(), VAR_FILE_PARAM));
+                terraformPlanCommandRequest.getVarFilePaths(), VAR_FILE_PARAM),
+            additionalCliOption);
       }
     } else {
       if (terraformPlanCommandRequest.isTerraformCloudCli()) {
-        command = format("terraform plan -input=false -detailed-exitcode %s",
-            TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM));
+        command = format("terraform plan -input=false -detailed-exitcode %s %s",
+            TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM),
+            additionalCliOption);
       } else {
-        command = format("terraform plan -input=false -detailed-exitcode -out=tfplan %s %s",
+        command = format("terraform plan -input=false -detailed-exitcode -out=tfplan %s %s %s",
             TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM),
             TerraformHelperUtils.generateCommandFlagsString(
-                terraformPlanCommandRequest.getVarFilePaths(), VAR_FILE_PARAM));
+                terraformPlanCommandRequest.getVarFilePaths(), VAR_FILE_PARAM),
+            additionalCliOption);
       }
     }
 
@@ -154,11 +172,15 @@ public class TerraformClientImpl implements TerraformClient {
   public CliResponse refresh(TerraformRefreshCommandRequest terraformRefreshCommandRequest, long timeoutInMillis,
       Map<String, String> envVariables, String scriptDirectory, @Nonnull LogCallback executionLogCallback)
       throws InterruptedException, TimeoutException, IOException {
+    String additionalCliOption =
+        getAdditionalCliOption(terraformRefreshCommandRequest.getAdditionalCliFlags(), REFRESH);
+
     String command;
     command = "terraform refresh -input=false "
         + TerraformHelperUtils.generateCommandFlagsString(terraformRefreshCommandRequest.getTargets(), TARGET_PARAM)
         + TerraformHelperUtils.generateCommandFlagsString(
-            terraformRefreshCommandRequest.getVarFilePaths(), VAR_FILE_PARAM);
+            terraformRefreshCommandRequest.getVarFilePaths(), VAR_FILE_PARAM)
+        + additionalCliOption;
 
     if (isNotEmpty(terraformRefreshCommandRequest.getVarParams())) {
       String loggingCommand = command + terraformRefreshCommandRequest.getUiLogs();
@@ -175,14 +197,17 @@ public class TerraformClientImpl implements TerraformClient {
   public CliResponse apply(TerraformApplyCommandRequest terraformApplyCommandRequest, long timeoutInMillis,
       Map<String, String> envVariables, String scriptDirectory, @Nonnull LogCallback executionLogCallback)
       throws InterruptedException, TimeoutException, IOException {
+    String additionalCliOption = getAdditionalCliOption(terraformApplyCommandRequest.getAdditionalCliFlags(), APPLY);
     String command;
     if (terraformApplyCommandRequest.isTerraformCloudCli()) {
       // terraform Cloud var files are located in script directory having this suffix .auto.tfvars, so we don't pass
       // them as arguments -var-file
-      command = format("echo yes | terraform apply %s",
-          TerraformHelperUtils.generateCommandFlagsString(terraformApplyCommandRequest.getTargets(), TARGET_PARAM));
+      command = format("echo yes | terraform apply %s %s",
+          TerraformHelperUtils.generateCommandFlagsString(terraformApplyCommandRequest.getTargets(), TARGET_PARAM),
+          additionalCliOption);
     } else {
-      command = "terraform apply -input=false " + terraformApplyCommandRequest.getPlanName();
+      command =
+          format("terraform apply -input=false %s %s", additionalCliOption, terraformApplyCommandRequest.getPlanName());
     }
     return executeTerraformCLICommand(command, timeoutInMillis, envVariables, scriptDirectory, executionLogCallback,
         command, new LogCallbackOutputStream(executionLogCallback));
@@ -191,10 +216,11 @@ public class TerraformClientImpl implements TerraformClient {
   @Nonnull
   @Override
   public CliResponse workspace(String workspace, boolean isExistingWorkspace, long timeoutInMillis,
-      Map<String, String> envVariables, String scriptDirectory, @Nonnull LogCallback executionLogCallback)
-      throws InterruptedException, TimeoutException, IOException {
-    String command =
-        isExistingWorkspace ? "terraform workspace select " + workspace : "terraform workspace new " + workspace;
+      Map<String, String> envVariables, String scriptDirectory, @Nonnull LogCallback executionLogCallback,
+      Map<String, String> additionalCliFlags) throws InterruptedException, TimeoutException, IOException {
+    String additionalCliOption = getAdditionalCliOption(additionalCliFlags, WORKSPACE);
+    String command = isExistingWorkspace ? "terraform workspace select " + workspace
+                                         : format("terraform workspace new %s %s", additionalCliOption, workspace);
     return executeTerraformCLICommand(command, timeoutInMillis, envVariables, scriptDirectory, executionLogCallback,
         command, new LogCallbackOutputStream(executionLogCallback));
   }
@@ -361,5 +387,14 @@ public class TerraformClientImpl implements TerraformClient {
     return cliHelper.executeCliCommand(command, timeoutInMillis, envVariables, scriptDirectory, executionLogCallBack,
         loggingCommand, logOutputStream, new TerraformCliErrorLogOutputStream(executionLogCallBack),
         SECONDS_TO_WAIT_FOR_GRACEFUL_SHUTDOWN);
+  }
+
+  private String getAdditionalCliOption(Map<String, String> additionalCliFlags, String tfCommand) {
+    String additionalCliOption = EMPTY;
+    if (additionalCliFlags != null) {
+      additionalCliOption = additionalCliFlags.getOrDefault(tfCommand, EMPTY);
+    }
+
+    return additionalCliOption;
   }
 }

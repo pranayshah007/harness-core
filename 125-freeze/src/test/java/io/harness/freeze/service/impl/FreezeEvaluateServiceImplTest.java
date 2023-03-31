@@ -8,6 +8,7 @@
 package io.harness.freeze.service.impl;
 
 import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
+import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
@@ -64,6 +65,7 @@ public class FreezeEvaluateServiceImplTest {
   private final String ORG_IDENTIFIER = "oId";
   private final String PROJ_IDENTIFIER = "pId";
   private final String FREEZE_IDENTIFIER = "id";
+  private final String PIPELINE_IDENTIFIER = "pipelineid";
   public DateTimeFormatter dtf = new DateTimeFormatterBuilder()
                                      .parseCaseInsensitive()
                                      .appendPattern("yyyy-MM-dd hh:mm a")
@@ -424,7 +426,7 @@ public class FreezeEvaluateServiceImplTest {
         .thenReturn(accountLevelActiveGlobalFreezeWindow);
 
     List<FreezeSummaryResponseDTO> activeFreezeConfigs =
-        freezeEvaluateService.getActiveFreezeEntities(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+        freezeEvaluateService.getActiveFreezeEntities(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "pipelineId");
     assertThat(activeFreezeConfigs.size()).isEqualTo(6);
   }
 
@@ -470,7 +472,7 @@ public class FreezeEvaluateServiceImplTest {
         .thenReturn(accountLevelActiveGlobalFreezeWindow);
 
     List<FreezeSummaryResponseDTO> activeFreezeConfigs =
-        freezeEvaluateService.getActiveFreezeEntities(ACCOUNT_ID, ORG_IDENTIFIER, null);
+        freezeEvaluateService.getActiveFreezeEntities(ACCOUNT_ID, ORG_IDENTIFIER, null, "pipelineId");
     assertThat(activeFreezeConfigs.size()).isEqualTo(4);
   }
 
@@ -516,8 +518,85 @@ public class FreezeEvaluateServiceImplTest {
         .thenReturn(accountLevelActiveGlobalFreezeWindow);
 
     List<FreezeSummaryResponseDTO> activeFreezeConfigs =
-        freezeEvaluateService.getActiveFreezeEntities(ACCOUNT_ID, null, null);
+        freezeEvaluateService.getActiveFreezeEntities(ACCOUNT_ID, null, null, "pipelineId");
     assertThat(activeFreezeConfigs.size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void getAnyActiveFreezeEntitiesAtProjectScopeForPipelineEntity() {
+    Criteria projectCriteria = FreezeFilterHelper.createCriteriaForGetList(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, FreezeType.MANUAL, FreezeStatus.ENABLED, null, null);
+    Criteria orgCriteria = FreezeFilterHelper.createCriteriaForGetList(
+        ACCOUNT_ID, ORG_IDENTIFIER, null, null, FreezeType.MANUAL, FreezeStatus.ENABLED, null, null);
+    Criteria accountCriteria = FreezeFilterHelper.createCriteriaForGetList(
+        ACCOUNT_ID, null, null, null, FreezeType.MANUAL, FreezeStatus.ENABLED, null, null);
+    PageRequest pageRequest = PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, FreezeConfigEntityKeys.createdAt));
+
+    FreezeSummaryResponseDTO projectLevelActiveFreezeWindow = constructActiveFreezeWindowForPipelineEntity(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "id1", Scope.PROJECT, FreezeType.MANUAL, PIPELINE_IDENTIFIER);
+    FreezeSummaryResponseDTO orgLevelActiveFreezeWindow =
+        constructActiveFreezeWindow(ACCOUNT_ID, ORG_IDENTIFIER, null, "id2", Scope.PROJECT, FreezeType.MANUAL);
+    FreezeSummaryResponseDTO accountLevelActiveFreezeWindow =
+        constructActiveFreezeWindow(ACCOUNT_ID, null, null, "id3", Scope.PROJECT, FreezeType.MANUAL);
+    Page<FreezeSummaryResponseDTO> projectLevelFreezeConfigs = PageableExecutionUtils.getPage(
+        Collections.singletonList(projectLevelActiveFreezeWindow), pageRequest, () -> 1L);
+    Page<FreezeSummaryResponseDTO> orgLevelFreezeConfigs =
+        PageableExecutionUtils.getPage(Collections.singletonList(orgLevelActiveFreezeWindow), pageRequest, () -> 1L);
+    Page<FreezeSummaryResponseDTO> accountLevelFreezeConfigs = PageableExecutionUtils.getPage(
+        Collections.singletonList(accountLevelActiveFreezeWindow), pageRequest, () -> 1L);
+    when(freezeCRUDService.list(projectCriteria, pageRequest)).thenReturn(projectLevelFreezeConfigs);
+    when(freezeCRUDService.list(orgCriteria, pageRequest)).thenReturn(orgLevelFreezeConfigs);
+    when(freezeCRUDService.list(accountCriteria, pageRequest)).thenReturn(accountLevelFreezeConfigs);
+
+    FreezeSummaryResponseDTO projectLevelActiveGlobalFreezeWindow = constructActiveFreezeWindow(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "gId1", Scope.PROJECT, FreezeType.GLOBAL);
+    FreezeSummaryResponseDTO orgLevelActiveGlobalFreezeWindow =
+        constructActiveFreezeWindow(ACCOUNT_ID, ORG_IDENTIFIER, null, "gId2", Scope.PROJECT, FreezeType.GLOBAL);
+    FreezeSummaryResponseDTO accountLevelActiveGlobalFreezeWindow =
+        constructActiveFreezeWindow(ACCOUNT_ID, null, null, "gId3", Scope.PROJECT, FreezeType.GLOBAL);
+    when(freezeCRUDService.getGlobalFreezeSummary(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER))
+        .thenReturn(projectLevelActiveGlobalFreezeWindow);
+    when(freezeCRUDService.getGlobalFreezeSummary(ACCOUNT_ID, ORG_IDENTIFIER, null))
+        .thenReturn(orgLevelActiveGlobalFreezeWindow);
+    when(freezeCRUDService.getGlobalFreezeSummary(ACCOUNT_ID, null, null))
+        .thenReturn(accountLevelActiveGlobalFreezeWindow);
+
+    List<FreezeSummaryResponseDTO> activeFreezeConfigs =
+        freezeEvaluateService.getActiveFreezeEntities(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER);
+    assertThat(activeFreezeConfigs.size()).isEqualTo(6);
+  }
+
+  private FreezeSummaryResponseDTO constructActiveFreezeWindowForPipelineEntity(String accountId, String orgId,
+      String projectId, String freezeId, Scope freezeScope, FreezeType freezeType, String pipelineId) {
+    EntityConfig entityConfig = new EntityConfig();
+    entityConfig.setFreezeEntityType(FreezeEntityType.PIPELINE);
+    entityConfig.setFilterType(FilterType.EQUALS);
+    entityConfig.setEntityReference(List.of(pipelineId));
+    FreezeEntityRule freezeEntityRule = new FreezeEntityRule();
+    freezeEntityRule.setEntityConfigList(Arrays.asList(entityConfig));
+    freezeEntityRule.setName("Rule");
+    FreezeWindow freezeWindow = new FreezeWindow();
+    freezeWindow.setDuration("30m");
+    freezeWindow.setStartTime(getCurrentTimeInString());
+    freezeWindow.setTimeZone("UTC");
+    CurrentOrUpcomingWindow currentOrUpcomingWindow =
+        FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(Arrays.asList(freezeWindow));
+    return FreezeSummaryResponseDTO.builder()
+        .accountId(accountId)
+        .projectIdentifier(projectId)
+        .accountId(orgId)
+        .identifier(freezeId)
+        .freezeScope(freezeScope)
+        .windows(Arrays.asList(freezeWindow))
+        .status(FreezeStatus.ENABLED)
+        .rules(Arrays.asList(freezeEntityRule))
+        .yaml("yaml")
+        .name("freeze")
+        .type(freezeType)
+        .currentOrUpcomingWindow(currentOrUpcomingWindow)
+        .build();
   }
 
   private FreezeSummaryResponseDTO constructActiveFreezeWindow(

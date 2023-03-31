@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.NoopPipelineSettingServiceImpl;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
@@ -52,6 +54,7 @@ import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import java.io.IOException;
@@ -77,6 +80,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private PipelineAsyncValidationService pipelineAsyncValidationService;
   @Mock private PipelineValidationService pipelineValidationService;
   @Mock private ProjectClient projectClient;
+  @Mock private PmsFeatureFlagService pmsFeatureFlagService;
 
   String accountIdentifier = "acc";
   String orgIdentifier = "org";
@@ -90,7 +94,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     pipelineService =
         new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper, pmsPipelineTemplateHelper, null,
             null, gitSyncSdkService, null, null, null, new NoopPipelineSettingServiceImpl(), entitySetupUsageClient,
-            pipelineAsyncValidationService, pipelineValidationService, projectClient);
+            pipelineAsyncValidationService, pipelineValidationService, projectClient, pmsFeatureFlagService);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)
@@ -101,6 +105,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)
         .resolveTemplatesAndValidatePipeline(any(), anyBoolean(), anyBoolean());
+    doReturn(false).when(pmsFeatureFlagService).isEnabled(anyString(), (FeatureName) any());
   }
 
   @Test

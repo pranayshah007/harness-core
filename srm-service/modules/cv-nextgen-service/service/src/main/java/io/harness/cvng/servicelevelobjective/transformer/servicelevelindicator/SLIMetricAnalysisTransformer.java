@@ -38,6 +38,8 @@ public class SLIMetricAnalysisTransformer {
             -> SLIRecordParam.builder()
                    .sliState(sliAnalyseResponse.getSliState())
                    .timeStamp(sliAnalyseResponse.getTimeStamp())
+                   .goodEventCount(sliAnalyseResponse.getGoodEventCount())
+                   .badEventCount(sliAnalyseResponse.getBadEventCount())
                    .build())
         .collect(Collectors.toList());
   }

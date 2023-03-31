@@ -43,7 +43,7 @@ import static io.harness.logging.LogLevel.WARN;
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
-import static software.wings.delegatetasks.helm.HelmTaskHelper.REGISTRY_URL_PREFIX;
+import static software.wings.delegatetasks.helm.constants.HelmConstants.REGISTRY_URL_PREFIX;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -143,6 +143,8 @@ public class HelmTaskHelperBase {
   private static final String CHMOD = "chmod go-r ";
   private static final int DEFAULT_PORT = 443;
   private static final String PROCESS_RESULT_OUTPUT_FORMAT = "Output: [%s]";
+
+  private static final String OCI_PREFIX = "oci://";
 
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
   @Inject private NgChartmuseumClientFactory ngChartmuseumClientFactory;
@@ -735,10 +737,10 @@ public class HelmTaskHelperBase {
       String destinationDirectory) throws Exception {
     String repoName;
     if (OciHelmAuthType.USER_PASSWORD.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
-      loginOciRegistry(ociHelmConnectorDTO.getHelmRepoUrl(), getOciHelmUsername(ociHelmConnectorDTO),
-          getOciHelmPassword(ociHelmConnectorDTO), HelmVersion.V380, timeoutInMillis, destinationDirectory);
-      repoName =
-          String.format(REGISTRY_URL_PREFIX, Paths.get(ociHelmConnectorDTO.getHelmRepoUrl(), basePath).normalize());
+      String repoUrl = getParsedUrlForUserNamePwd(ociHelmConnectorDTO.getHelmRepoUrl());
+      loginOciRegistry(repoUrl, getOciHelmUsername(ociHelmConnectorDTO), getOciHelmPassword(ociHelmConnectorDTO),
+          HelmVersion.V380, timeoutInMillis, destinationDirectory);
+      repoName = format(REGISTRY_URL_PREFIX, Paths.get(repoUrl, basePath).normalize());
     } else if (OciHelmAuthType.ANONYMOUS.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
       String ociUrl = getParsedURI(ociHelmConnectorDTO.getHelmRepoUrl()).toString();
       repoName = addBasePathToOciUrl(ociUrl, basePath);
@@ -1577,14 +1579,30 @@ public class HelmTaskHelperBase {
 
   @VisibleForTesting
   URI getParsedURI(String ociUrl) throws URISyntaxException {
-    URI uri = new URI(ociUrl);
-    if (isEmpty(uri.getScheme())) {
-      uri = URI.create(format(REGISTRY_URL_PREFIX, ociUrl));
+    /*
+    If the ociUrl string does not start with '://'
+    then the URI() method fails to correctly read the appended port number
+     */
+    if (!ociUrl.contains("://")) {
+      ociUrl = OCI_PREFIX + ociUrl;
     }
+    URI uri = new URI(ociUrl);
     if (uri.getPort() < 0) {
       uri = URI.create(uri + ":" + DEFAULT_PORT);
     }
     return uri;
+  }
+
+  @VisibleForTesting
+  String getParsedUrlForUserNamePwd(String ociUrl) {
+    /*
+    Ensure that OCI url does not start with oci://
+    Reason: helm registry login command fails if the registry url contains prefix: 'oci://'
+     */
+    if (ociUrl.startsWith(OCI_PREFIX)) {
+      ociUrl = ociUrl.substring(OCI_PREFIX.length());
+    }
+    return ociUrl;
   }
 
   private String addBasePathToOciUrl(String ociUrl, String basePath) {

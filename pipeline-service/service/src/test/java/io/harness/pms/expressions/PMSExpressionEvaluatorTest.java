@@ -375,7 +375,7 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
 
   public static class SampleEngineExpressionEvaluator extends PMSExpressionEvaluator {
     public SampleEngineExpressionEvaluator(Ambiance ambiance, PmsSdkInstanceService pmsSdkInstanceService) {
-      super(null, ambiance, null, false);
+      super(null, ambiance, null, false, null);
       this.pmsSdkInstanceService = pmsSdkInstanceService;
     }
 

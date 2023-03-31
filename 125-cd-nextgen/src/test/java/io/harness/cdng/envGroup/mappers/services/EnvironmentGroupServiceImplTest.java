@@ -70,7 +70,6 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
 
   @Mock private EnvironmentGroupRepository environmentGroupRepository;
   @Mock private Producer eventProducer;
-  @Mock private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Mock private EntitySetupUsageService entitySetupUsageService;
   @Mock private EnvironmentGroupServiceHelper environmentGroupServiceHelper;
 
@@ -97,7 +96,6 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
   public void testCreate() {
     EnvironmentGroupEntity savedEntity = getEnvironmentGroupEntity(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID);
     doReturn(savedEntity).when(environmentGroupRepository).create(savedEntity);
-    mockIdentifierRefProto(savedEntity);
 
     environmentGroupService.create(savedEntity);
     verify(environmentGroupRepository, times(1)).create(savedEntity);
@@ -142,8 +140,6 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
                                       .projectIdentifier(entity.getProjectIdentifier())
                                       .identifier(entity.getIdentifier())
                                       .build();
-
-    mockIdentifierRefProto(entity);
 
     PageImpl<EntitySetupUsageDTO> entitySetupUsageDTOPage = new PageImpl<>(Arrays.asList());
     doReturn(entitySetupUsageDTOPage)
@@ -193,8 +189,6 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
                                                .withEnvIdentifiers(Arrays.asList("env1", "env2"))
                                                .withYaml("newYaml");
 
-    mockIdentifierRefProto(updatedEntity);
-
     doReturn(Optional.of(originalEntity))
         .when(environmentGroupRepository)
         .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
@@ -215,21 +209,6 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
     assertThat(capturedUpdatedEntity.getColor()).isEqualTo("newColor");
     assertThat(capturedUpdatedEntity.getLastModifiedAt()).isNotEqualTo(10L);
     assertThat(capturedUpdatedEntity.getEnvIdentifiers()).contains("env2");
-  }
-
-  private void mockIdentifierRefProto(EnvironmentGroupEntity environmentGroupEntity) {
-    IdentifierRefProtoDTO identifierRefProtoDTO = IdentifierRefProtoDTO.newBuilder()
-                                                      .setIdentifier(StringValue.of(ENV_GROUP_ID))
-                                                      .setAccountIdentifier(StringValue.of(ACC_ID))
-                                                      .setOrgIdentifier(StringValue.of(ORG_ID))
-                                                      .setProjectIdentifier(StringValue.of(PRO_ID))
-                                                      .build();
-
-    doReturn(identifierRefProtoDTO)
-        .when(identifierRefProtoDTOHelper)
-        .createIdentifierRefProtoDTO(environmentGroupEntity.getAccountIdentifier(),
-            environmentGroupEntity.getOrgIdentifier(), environmentGroupEntity.getProjectIdentifier(),
-            environmentGroupEntity.getIdentifier());
   }
 
   @Test
@@ -303,8 +282,6 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
   public void testSetUpUsagesWithNonDeletedEntity() {
     EnvironmentGroupEntity entity = getEnvironmentGroupEntity(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID);
 
-    mockIdentifierRefProto(entity);
-
     ArgumentCaptor<Message> captorForEvent = ArgumentCaptor.forClass(Message.class);
     doReturn(null).when(eventProducer).send(captorForEvent.capture());
     environmentGroupService.setupUsagesForEnvironmentList(entity);
@@ -323,7 +300,7 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
 
     EntityDetailProtoDTO envGroupDetails =
         EntityDetailProtoDTO.newBuilder()
-            .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(entity.getAccountId(),
+            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(entity.getAccountId(),
                 entity.getOrgIdentifier(), entity.getProjectIdentifier(), entity.getIdentifier()))
             .setType(EntityTypeProtoEnum.ENVIRONMENT_GROUP)
             .setName(entity.getName())
@@ -348,8 +325,6 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
 
     entity = entity.withDeleted(true);
 
-    mockIdentifierRefProto(entity);
-
     ArgumentCaptor<Message> captorForEvent = ArgumentCaptor.forClass(Message.class);
     doReturn(null).when(eventProducer).send(captorForEvent.capture());
     environmentGroupService.setupUsagesForEnvironmentList(entity);
@@ -366,7 +341,7 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
     // Data
     EntityDetailProtoDTO envGroupDetails =
         EntityDetailProtoDTO.newBuilder()
-            .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(entity.getAccountId(),
+            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(entity.getAccountId(),
                 entity.getOrgIdentifier(), entity.getProjectIdentifier(), entity.getIdentifier()))
             .setType(EntityTypeProtoEnum.ENVIRONMENT_GROUP)
             .setName(entity.getName())
@@ -447,7 +422,6 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
   public void testCreateOrgLevelEnvGroup() {
     EnvironmentGroupEntity savedOrgLevelEntity = getEnvironmentGroupEntity(ACC_ID, ORG_ID, null, ENV_GROUP_ID);
     doReturn(savedOrgLevelEntity).when(environmentGroupRepository).create(savedOrgLevelEntity);
-    mockIdentifierRefProto(savedOrgLevelEntity);
 
     environmentGroupService.create(savedOrgLevelEntity);
     verify(environmentGroupRepository, times(1)).create(savedOrgLevelEntity);

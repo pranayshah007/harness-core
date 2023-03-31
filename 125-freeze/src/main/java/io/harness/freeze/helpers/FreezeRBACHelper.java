@@ -66,7 +66,7 @@ public class FreezeRBACHelper {
     }
   }
 
-  public boolean checkIfUserHasFreezeOverrideAccessWithPrincipal(NGFeatureFlagHelperService featureFlagHelperService,
+  public boolean checkIfUserHasFreezeOverrideAccessWithoutPrincipal(NGFeatureFlagHelperService featureFlagHelperService,
       String accountId, String projectId, String orgId, AccessControlClient accessControlClient) {
     Principal principal = getPrincipalInfoFromSecurityContext();
     PrincipalType principalType = getPrincipalTypeFromSecurityContext(principal);
@@ -120,6 +120,10 @@ public class FreezeRBACHelper {
       }
       case ENVIRONMENT: {
         result = MutablePair.of("ENVIRONMENT", "core_environment_view");
+        break;
+      }
+      case PIPELINE: {
+        result = MutablePair.of("PIPELINE", "core_pipeline_view");
         break;
       }
       default: {

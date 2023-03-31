@@ -62,4 +62,11 @@ public class GitProviderUtils {
   private boolean isBitbucketSaas(ScmConnector scmConnector) {
     return isBitbucket(scmConnector) && GitClientHelper.isBitBucketSAAS(scmConnector.getUrl());
   }
+
+  public String buildRepoForGitlab(String namespace, String repoName) {
+    if (!namespace.contains("/")) {
+      return repoName;
+    }
+    return namespace.substring(namespace.indexOf('/') + 1) + "/" + repoName;
+  }
 }

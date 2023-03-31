@@ -780,6 +780,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
                 .testHostFrequencyData(testHostFrequencyData)
                 .count(getCountFromTotalTestFrequencyData(totalTestFrequencyData))
                 .feedback(testClusterSummary.getFeedback())
+                .feedbackApplied(testClusterSummary.getFeedbackApplied())
                 .averageControlFrequencyData(averageControlFrequencyData);
         if (testClusterSummary.getClusterType().equals(ClusterType.KNOWN_EVENT)
             || testClusterSummary.getClusterType().equals(ClusterType.UNEXPECTED_FREQUENCY)) {

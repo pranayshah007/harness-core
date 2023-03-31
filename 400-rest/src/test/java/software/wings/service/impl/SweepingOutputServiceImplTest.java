@@ -36,6 +36,7 @@ import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceBuilder;
 import io.harness.category.element.UnitTests;
 import io.harness.deployment.InstanceDetails;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
@@ -48,6 +49,7 @@ import software.wings.api.NoopContextElementParamMapper;
 import software.wings.api.PcfInstanceElement;
 import software.wings.api.PhaseElement;
 import software.wings.api.instancedetails.InstanceInfoVariables;
+import software.wings.beans.Application;
 import software.wings.beans.Environment;
 import software.wings.common.VariableProcessor;
 import software.wings.expression.ManagerExpressionEvaluator;
@@ -459,9 +461,12 @@ public class SweepingOutputServiceImplTest extends WingsBaseTest {
     WorkflowStandardParams workflowStandardParams = spy(WorkflowStandardParams.class);
     doReturn(appId).when(workflowStandardParams).getAppId();
 
+    Application app = new Application();
+    app.setAccountId(ACCOUNT_ID);
+
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
         spy(new WorkflowStandardParamsExtensionService(null, null, null, null, null, null, null));
-    doReturn(null).when(workflowStandardParamsExtensionService).getApp(workflowStandardParams);
+    doReturn(app).when(workflowStandardParamsExtensionService).getApp(workflowStandardParams);
     doReturn(null).when(workflowStandardParamsExtensionService).getEnv(workflowStandardParams);
 
     // mock paramMapper and factory
@@ -499,6 +504,8 @@ public class SweepingOutputServiceImplTest extends WingsBaseTest {
     ExecutionContextImpl context = new ExecutionContextImpl(stateExecutionInstance);
     on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+    FeatureFlagService ffService = mock(FeatureFlagService.class);
+    on(context).set("featureFlagService", ffService);
 
     return context;
   }

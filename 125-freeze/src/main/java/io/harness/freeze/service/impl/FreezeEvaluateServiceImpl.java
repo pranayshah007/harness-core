@@ -7,6 +7,8 @@
 
 package io.harness.freeze.service.impl;
 
+import static java.util.Objects.isNull;
+
 import io.harness.encryption.Scope;
 import io.harness.freeze.beans.CurrentOrUpcomingWindow;
 import io.harness.freeze.beans.EntityConfig;
@@ -109,12 +111,15 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
 
   @Override
   public List<FreezeSummaryResponseDTO> getActiveFreezeEntities(
-      String accountId, String orgIdentifier, String projectIdentifier) {
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
     List<FreezeSummaryResponseDTO> activeFreezeList = new LinkedList<>();
     activeFreezeList.addAll(anyGlobalFreezeActive(accountId, orgIdentifier, projectIdentifier));
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
     entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(orgIdentifier));
     entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(projectIdentifier));
+    if (!isNull(pipelineIdentifier)) {
+      entityMap.put(FreezeEntityType.PIPELINE, Lists.newArrayList(pipelineIdentifier));
+    }
     Scope scope = NGFreezeDtoMapper.getScopeFromFreezeDto(orgIdentifier, projectIdentifier);
     switch (scope) {
       case PROJECT:

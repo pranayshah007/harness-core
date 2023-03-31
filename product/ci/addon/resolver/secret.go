@@ -23,6 +23,8 @@ var (
 	// 2. ${ngSecretManager.obtain(\\\\\\\"account.testSecret\\\\\\\", 115)}
 	// 2. ${ngSecretManager.obtain("account.testSecret", 12345)}
 	secretRegex = regexp.MustCompile(`\${ngSecretManager.obtain\((\\+|)"([^\\"]*)(\\+|)", [^\)]*\)}`)
+	// Only allow secret key which is supported by k8
+	allowedSecretRegex = regexp.MustCompile(`[^_a-zA-Z0-9]`)
 )
 
 // ResolveSecretInList replaces secrets in the given list
@@ -97,9 +99,9 @@ func getSecretEnvVal(secret string) (string, error) {
 func getSecretLevelAndID(secret string) (string, string, error) {
 	s := strings.Split(secret, ".")
 	if len(s) == 1 && s[0] != "" {
-		return defaultLevel, s[0], nil
+		return defaultLevel, allowedSecretRegex.ReplaceAllString(s[0], "_"), nil
 	} else if len(s) == 2 && s[0] != "" && s[1] != "" {
-		return s[0], s[1], nil
+		return s[0], allowedSecretRegex.ReplaceAllString(s[1], "_"), nil
 	} else {
 		return "", "", fmt.Errorf("Invalid secret format %s", secret)
 	}

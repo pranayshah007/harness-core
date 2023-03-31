@@ -83,6 +83,7 @@ public interface EntityTypeConstants {
   String SECURITY = "Security";
   String AQUA_TRIVY = "AquaTrivy";
   String AWS_ECR = "AWSECR";
+  String AWS_SECURITY_HUB = "AWSSecurityHub";
   String BANDIT = "Bandit";
   String BLACKDUCK = "BlackDuck";
   String BRAKEMAN = "Brakeman";
@@ -91,6 +92,7 @@ public interface EntityTypeConstants {
   String CLAIR = "Clair";
   String DATA_THEOREM = "DataTheorem";
   String DOCKER_CONTENT_TRUST = "DockerContentTrust";
+  String CUSTOM_INGEST = "CustomIngest";
   String EXTERNAL = "External";
   String FORTIFY_ON_DEMAND = "FortifyOnDemand";
   String GRYPE = "Grype";
@@ -226,4 +228,5 @@ public interface EntityTypeConstants {
   String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
   String CD_SSCA_ORCHESTRATION = "CdSscaOrchestration";
   String TAS_ROUTE_MAPPING = "TasRouteMapping";
+  String BACKSTAGE_ENVIRONMENT_VARIABLE = "BackstageEnvironmentVariable";
 }

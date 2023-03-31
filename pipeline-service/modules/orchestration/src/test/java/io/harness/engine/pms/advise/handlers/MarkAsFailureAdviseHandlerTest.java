@@ -8,6 +8,7 @@
 package io.harness.engine.pms.advise.handlers;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.pms.contracts.plan.ExecutionMode.NORMAL;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +36,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
@@ -67,7 +69,14 @@ public class MarkAsFailureAdviseHandlerTest extends CategoryTest {
     AdviserResponse adviserResponse =
         AdviserResponse.newBuilder().setNextStepAdvise(NextStepAdvise.newBuilder().build()).build();
     doNothing().when(engine).endNodeExecution(any());
-    markAsFailureAdviseHandler.handleAdvise(NodeExecution.builder().status(Status.FAILED).build(), adviserResponse);
+    markAsFailureAdviseHandler.handleAdvise(
+        NodeExecution.builder()
+            .ambiance(Ambiance.newBuilder()
+                          .setMetadata(ExecutionMetadata.newBuilder().setExecutionMode(NORMAL).build())
+                          .build())
+            .status(Status.FAILED)
+            .build(),
+        adviserResponse);
     verify(engine).endNodeExecution(any());
   }
 
@@ -82,7 +91,14 @@ public class MarkAsFailureAdviseHandlerTest extends CategoryTest {
     doNothing().when(engine).endNodeExecution(any());
     doReturn(updatedNodeExecution).when(nodeExecutionServiceImpl).updateStatusWithOps(any(), any(), any(), any());
 
-    markAsFailureAdviseHandler.handleAdvise(NodeExecution.builder().status(Status.EXPIRED).build(), adviserResponse);
+    markAsFailureAdviseHandler.handleAdvise(
+        NodeExecution.builder()
+            .status(Status.EXPIRED)
+            .ambiance(Ambiance.newBuilder()
+                          .setMetadata(ExecutionMetadata.newBuilder().setExecutionMode(NORMAL).build())
+                          .build())
+            .build(),
+        adviserResponse);
     verify(engine).endNodeExecution(any());
   }
 

@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.utils.PageTestUtils.getPage;
+import static io.harness.utils.PageUtils.getPageRequest;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,10 +27,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.beans.SortOrder;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
@@ -64,6 +67,7 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -82,10 +86,19 @@ public class VariableServiceImplTest extends CategoryTest {
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
   @Captor private ArgumentCaptor<VariableCreateEvent> variableCreateEventArgumentCaptor;
   @Captor private ArgumentCaptor<VariableUpdateEvent> variableUpdateEventArgumentCaptor;
+  PageRequest pageRequest;
+  Pageable pageable;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    pageRequest = PageRequest.builder()
+                      .pageIndex(0)
+                      .pageSize(10)
+                      .sortOrders(List.of(
+                          SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build()))
+                      .build();
+    pageable = getPageRequest(pageRequest);
     this.variableService = new VariableServiceImpl(
         variableRepository, variableMapper, transactionTemplate, outboxService, projectService, organizationService);
   }
@@ -296,7 +309,7 @@ public class VariableServiceImplTest extends CategoryTest {
     VariableResponseDTO variableResponseDTO = getVariableResponseDTO(varID, null, null, varID);
     when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
     when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
-    PageResponse<VariableResponseDTO> list = variableService.list(accountIdentifier, null, null, 0, 10, null, false);
+    PageResponse<VariableResponseDTO> list = variableService.list(accountIdentifier, null, null, null, false, pageable);
     verify(variableRepository, times(1)).findAll(any(), any());
     assertThat(list.getContent().size()).isEqualTo(varList.size());
   }
@@ -315,7 +328,7 @@ public class VariableServiceImplTest extends CategoryTest {
     when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
     when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
     PageResponse<VariableResponseDTO> list =
-        variableService.list(accountIdentifier, orgIdentifier, null, 0, 10, null, false);
+        variableService.list(accountIdentifier, orgIdentifier, null, null, false, pageable);
     verify(variableRepository, times(1)).findAll(any(), any());
     System.out.println(list.getContent().get(0));
     assertThat(list.getContent().size()).isEqualTo(varList.size());
@@ -338,7 +351,7 @@ public class VariableServiceImplTest extends CategoryTest {
     when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
     when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
     PageResponse<VariableResponseDTO> list =
-        variableService.list(accountIdentifier, orgIdentifier, projectIdentifier, 0, 10, null, false);
+        variableService.list(accountIdentifier, orgIdentifier, projectIdentifier, null, false, pageable);
     verify(variableRepository, times(1)).findAll(any(), any());
     assertThat(list.getContent().size()).isEqualTo(varList.size());
     assertThat(list.getContent().get(0).getVariable().getOrgIdentifier()).isEqualTo(orgIdentifier);
@@ -360,7 +373,7 @@ public class VariableServiceImplTest extends CategoryTest {
     when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
     when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
     PageResponse<VariableResponseDTO> list =
-        variableService.list(accountIdentifier, orgIdentifier, projectIdentifier, 0, 10, varID, false);
+        variableService.list(accountIdentifier, orgIdentifier, projectIdentifier, varID, false, pageable);
     verify(variableRepository, times(1)).findAll(any(), any());
     assertThat(list.getContent().size()).isEqualTo(varList.size());
     assertThat(list.getContent().get(0).getVariable().getOrgIdentifier()).isEqualTo(orgIdentifier);

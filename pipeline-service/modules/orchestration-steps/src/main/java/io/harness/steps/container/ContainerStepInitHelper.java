@@ -35,6 +35,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.StepContainerUtils;
 import io.harness.ci.utils.ContainerSecretEvaluator;
 import io.harness.ci.utils.PortFinder;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
@@ -43,6 +44,7 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.delegate.beans.ci.pod.ContainerSecrets;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
+import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
@@ -76,7 +78,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -97,6 +98,7 @@ public class ContainerStepInitHelper {
   @Inject K8sPodInitUtils k8sPodInitUtils;
   @Inject SecretUtils secretUtils;
   @Inject PluginExecutionConfigHelper pluginExecutionConfigHelper;
+  @Inject PluginUtils pluginUtils;
 
   public CIK8InitializeTaskParams getK8InitializeTaskParams(
       ContainerStepSpec containerStepInfo, Ambiance ambiance, String logPrefix) {
@@ -138,7 +140,7 @@ public class ContainerStepInitHelper {
       String logPrefix) {
     String podName = getPodName(ambiance, containerStepInfo.getIdentifier().toLowerCase());
     Map<String, String> buildLabels =
-        k8sPodInitUtils.getLabels(ambiance, containerStepInfo.getIdentifier().replace("_", ""));
+        k8sPodInitUtils.getLabels(ambiance, getKubernetesStandardPodName(containerStepInfo.getIdentifier()));
     Map<String, String> annotations = ExpressionResolverUtils.resolveMapParameter(
         "annotations", "ContainerStep", "stepSetup", k8sDirectInfraYaml.getSpec().getAnnotations(), false);
     Map<String, String> labels = ExpressionResolverUtils.resolveMapParameter(
@@ -175,6 +177,10 @@ public class ContainerStepInitHelper {
         .activeDeadLineSeconds(CIConstants.POD_MAX_TTL_SECS)
         .volumes(volumes)
         .build();
+  }
+
+  public static String getKubernetesStandardPodName(String containerStepInfo) {
+    return containerStepInfo.replace("_", "");
   }
 
   private Pair<CIK8ContainerParams, List<CIK8ContainerParams>> getStepContainers(ContainerStepSpec containerStepInfo,
@@ -223,14 +229,31 @@ public class ContainerStepInitHelper {
       List<SecretVariableDetails> secretVariableDetails, List<CIK8ContainerParams> containerParams) {
     List<ContainerDefinitionInfo> stepCtrDefinitions =
         getStepContainerDefinitions(containerStepInfo, infrastructure, ambiance);
+    Map<String, List<ConnectorConversionInfo>> stepConnectorMap = getStepConnectorRefs(containerStepInfo);
     for (ContainerDefinitionInfo containerDefinitionInfo : stepCtrDefinitions) {
       CIK8ContainerParams cik8ContainerParams =
           createCIK8ContainerParams(ngAccess, containerDefinitionInfo, harnessInternalImageConnector, commonEnvVars,
-              Collections.emptyMap(), volumeToMountPath, k8sPodInitUtils.getWorkDir(),
+              stepConnectorMap, volumeToMountPath, k8sPodInitUtils.getWorkDir(),
               k8sPodInitUtils.getCtrSecurityContext(infrastructure), logPrefix, secretVariableDetails, os);
       containerParams.add(cik8ContainerParams);
     }
     return stepCtrDefinitions;
+  }
+
+  private Map<String, List<ConnectorConversionInfo>> getStepConnectorRefs(ContainerStepSpec containerStepInfo) {
+    Map<String, List<ConnectorConversionInfo>> stepConnectorMap = new HashMap<>();
+    if (containerStepInfo instanceof PluginStep) {
+      PluginStep pluginStep = (PluginStep) containerStepInfo;
+      stepConnectorMap.put(containerStepInfo.getIdentifier(), new ArrayList<>());
+      String connectorRef = PluginUtils.getConnectorRef(pluginStep);
+      if (EmptyPredicate.isEmpty(connectorRef)) {
+        return stepConnectorMap;
+      }
+      Map<EnvVariableEnum, String> envToSecretMap = PluginUtils.getConnectorSecretEnvMap(pluginStep.getType());
+      stepConnectorMap.get(containerStepInfo.getIdentifier())
+          .add(ConnectorConversionInfo.builder().connectorRef(connectorRef).envToSecretsMap(envToSecretMap).build());
+    }
+    return stepConnectorMap;
   }
 
   private CIK8ContainerParams getLiteEngineContainerParams(ContainerDetailsSweepingOutput k8PodDetails,
@@ -347,8 +370,8 @@ public class ContainerStepInitHelper {
     Set<Integer> usedPorts = new HashSet<>();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
 
-    ContainerDefinitionInfo stepCtrDefinitionInfos =
-        createStepContainerDefinitions(initializeStepInfo, portFinder, AmbianceUtils.getAccountId(ambiance), os);
+    ContainerDefinitionInfo stepCtrDefinitionInfos = createStepContainerDefinitions(
+        initializeStepInfo, portFinder, AmbianceUtils.getAccountId(ambiance), os, ambiance);
 
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     containerDefinitionInfos.add(stepCtrDefinitionInfos);
@@ -381,27 +404,28 @@ public class ContainerStepInitHelper {
   }
 
   private ContainerDefinitionInfo createStepContainerDefinitions(
-      ContainerStepSpec containerStepInfo, PortFinder portFinder, String accountId, OSType os) {
+      ContainerStepSpec containerStepInfo, PortFinder portFinder, String accountId, OSType os, Ambiance ambiance) {
     switch (containerStepInfo.getType()) {
       case RUN_CONTAINER:
         return createStepContainerDefinition((ContainerStepInfo) containerStepInfo, portFinder, accountId, os);
       case CD_SSCA_ORCHESTRATION:
-        return createPluginStepContainerDefinition((PluginStep) containerStepInfo, portFinder, accountId, os);
+        return createPluginStepContainerDefinition((PluginStep) containerStepInfo, portFinder, accountId, os, ambiance);
       default:
         throw new ContainerStepExecutionException("Container step initialization not handled");
     }
   }
 
   private ContainerDefinitionInfo createPluginStepContainerDefinition(
-      PluginStep pluginStep, PortFinder portFinder, String accountId, OSType os) {
+      PluginStep pluginStep, PortFinder portFinder, String accountId, OSType os, Ambiance ambiance) {
     Integer port = portFinder.getNextPort();
 
-    String identifier = pluginStep.getIdentifier().replace("_", "");
+    String identifier = getKubernetesStandardPodName(pluginStep.getIdentifier());
     String containerName = format("%s%s", STEP_PREFIX, identifier).toLowerCase();
 
-    Map<String, String> envMap = new HashMap<>(PluginUtils.getPluginCompatibleEnvVariables(pluginStep, identifier));
+    Map<String, String> envMap =
+        new HashMap<>(pluginUtils.getPluginCompatibleEnvVariables(pluginStep, identifier, ambiance));
     Map<String, SecretNGVariable> secretNGVariableMap =
-        new HashMap<>(PluginUtils.getPluginCompatibleSecretVars(pluginStep));
+        new HashMap<>(pluginUtils.getPluginCompatibleSecretVars(pluginStep));
 
     return ContainerDefinitionInfo.builder()
         .name(containerName)
@@ -434,7 +458,7 @@ public class ContainerStepInitHelper {
     if (runStepInfo.getConnectorRef() == null) {
       throw new ContainerStepExecutionException("connector ref can't be empty in k8s infrastructure");
     }
-    String identifier = runStepInfo.getIdentifier().replace("_", "");
+    String identifier = getKubernetesStandardPodName(runStepInfo.getIdentifier());
     Integer port = portFinder.getNextPort();
     String containerName = format("%s%s", STEP_PREFIX, identifier).toLowerCase();
 

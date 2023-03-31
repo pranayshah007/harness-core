@@ -32,11 +32,13 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
+import lombok.experimental.FieldNameConstants;
 
 @Data
 @Builder
 @RecasterAlias("io.harness.cdng.environment.yaml.EnvironmentsYaml")
 @SimpleVisitorHelper(helperClass = EnvironmentsVisitorHelper.class)
+@FieldNameConstants(innerTypeName = "keys")
 public class EnvironmentsYaml implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

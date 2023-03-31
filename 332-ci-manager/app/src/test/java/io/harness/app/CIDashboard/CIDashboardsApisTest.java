@@ -11,7 +11,9 @@ import static io.harness.rule.OwnerRule.JAMIE;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -37,10 +39,14 @@ import io.harness.app.beans.entities.RepositoryInformation;
 import io.harness.app.beans.entities.StatusAndTime;
 import io.harness.category.element.UnitTests;
 import io.harness.core.ci.services.CIOverviewDashboardServiceImpl;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.usage.beans.ReferenceDTO;
 import io.harness.licensing.usage.beans.UsageDataDTO;
 import io.harness.ng.core.dashboard.AuthorInfo;
+import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.project.remote.ProjectClient;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -49,18 +55,22 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
 
 public class CIDashboardsApisTest extends CategoryTest {
   @Mock TimeScaleDBService timeScaleDBService;
+  @Mock ProjectClient projectClient;
   @InjectMocks @Spy private CIOverviewDashboardServiceImpl ciOverviewDashboardServiceImpl;
 
   @Before
@@ -130,7 +140,7 @@ public class CIDashboardsApisTest extends CategoryTest {
 
     doReturn(statusAndTime)
         .when(ciOverviewDashboardServiceImpl)
-        .queryCalculatorForStatusAndTime(anyString(), anyString(), anyString(), anyLong(), anyLong());
+        .queryCalculatorForStatusAndTime(anyString(), anyObject(), anyLong(), anyLong());
 
     DashboardBuildsHealthInfo resultBuildHealth = ciOverviewDashboardServiceImpl.getDashBoardBuildHealthInfoWithRate(
         "acc", "org", "pro", startInterval, endInterval, previousInterval);
@@ -179,7 +189,11 @@ public class CIDashboardsApisTest extends CategoryTest {
 
     doReturn(statusAndTime)
         .when(ciOverviewDashboardServiceImpl)
-        .queryCalculatorForStatusAndTime(anyString(), anyString(), anyString(), anyLong(), anyLong());
+        .queryCalculatorForStatusAndTime(anyString(), anyObject(), anyLong(), anyLong());
+
+    Mockito.mockStatic(NGRestUtils.class);
+    when(NGRestUtils.getResponse(any()))
+        .thenReturn(Collections.singletonList(ProjectDTO.builder().orgIdentifier("org").identifier("pro").build()));
 
     DashboardBuildExecutionInfo resultBuildExecution = ciOverviewDashboardServiceImpl.getBuildExecutionBetweenIntervals(
         "acc", "org", "pro", startInterval, endInterval);
@@ -213,6 +227,18 @@ public class CIDashboardsApisTest extends CategoryTest {
         DashboardBuildExecutionInfo.builder().buildExecutionInfoList(buildExecutionInfoList).build();
 
     assertThat(resultBuildExecution).isEqualTo(expectedBuildExecution);
+
+    when(NGRestUtils.getResponse(any()))
+        .thenReturn(Arrays.asList(ProjectDTO.builder().orgIdentifier("org1").identifier("pro1").build(),
+            ProjectDTO.builder().orgIdentifier("org2").identifier("proj2").build()));
+
+    resultBuildExecution =
+        ciOverviewDashboardServiceImpl.getBuildExecutionBetweenIntervals("acc", null, null, startInterval, endInterval);
+    assertThat(resultBuildExecution).isEqualTo(expectedBuildExecution);
+    assertThatThrownBy(()
+                           -> ciOverviewDashboardServiceImpl.getBuildExecutionBetweenIntervals(
+                               "acc", "org", "proj", startInterval, endInterval))
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test

@@ -10,6 +10,7 @@ package io.harness.waiter;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.waiter.NotifyEvent.Builder.aNotifyEvent;
 
 import static java.lang.System.currentTimeMillis;
@@ -18,7 +19,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.logging.AutoLogRemoveContext;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ErrorResponseData;
 import io.harness.tasks.ProgressData;
@@ -179,7 +179,7 @@ public class WaitNotifyEngine {
   }
 
   public void sendNotification(WaitInstance waitInstance) {
-    try (AutoLogRemoveContext ignore = new AutoLogRemoveContext(WaitInstanceLogContext.ID)) {
+    try (WaitInstanceLogContext ignore = new WaitInstanceLogContext(waitInstance.getUuid(), OVERRIDE_ERROR)) {
       String publisher = waitInstance.getPublisher();
 
       final NotifyQueuePublisher notifyQueuePublisher = publisherRegister.obtain(waitInstance.getPublisher());

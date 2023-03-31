@@ -17,7 +17,7 @@ public class RemainingPercentageTemplateDataGenerator
     extends SLOTemplateDataGenerator<SLOErrorBudgetRemainingPercentageCondition> {
   @Override
   public String getHeaderMessage(Map<String, String> notificationDataMap) {
-    return "error budget remains less than " + notificationDataMap.get(REMAINING_PERCENTAGE) + "% for";
+    return "error budget remains less than " + notificationDataMap.get(REMAINING_PERCENTAGE) + "%";
   }
 
   @Override

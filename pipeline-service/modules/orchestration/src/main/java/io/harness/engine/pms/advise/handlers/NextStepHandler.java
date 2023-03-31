@@ -23,11 +23,14 @@ import io.harness.execution.NodeExecution;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.NodeType;
+import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.NextStepAdvise;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
+import io.harness.utils.ExecutionModeUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -45,14 +48,15 @@ public class NextStepHandler implements AdviserResponseHandler {
   @Override
   public void handleAdvise(NodeExecution prevNodeExecution, AdviserResponse adviserResponse) {
     NextStepAdvise advise = adviserResponse.getNextStepAdvise();
-    runNextNode(prevNodeExecution, advise.getNextNodeId());
+    ExecutionMode executionMode = prevNodeExecution.getAmbiance().getMetadata().getExecutionMode();
+    runNextNode(prevNodeExecution, advise.getNextNodeId(), executionMode);
   }
 
-  public void runNextNode(NodeExecution prevNodeExecution, String nextNodeId) {
+  public void runNextNode(NodeExecution prevNodeExecution, String nextNodeId, ExecutionMode executionMode) {
     if (EmptyPredicate.isNotEmpty(nextNodeId)) {
       Node nextNode =
           Preconditions.checkNotNull(planService.fetchNode(prevNodeExecution.getAmbiance().getPlanId(), nextNodeId));
-      nextNode = createIdentityNodeIfRequired(nextNode, prevNodeExecution);
+      nextNode = createIdentityNodeIfRequired(nextNode, prevNodeExecution, executionMode);
       String runtimeId = generateUuid();
       // Update NodeExecution nextId and endTs
       nodeExecutionService.updateV2(prevNodeExecution.getUuid(),
@@ -67,9 +71,10 @@ public class NextStepHandler implements AdviserResponseHandler {
   }
 
   @VisibleForTesting
-  Node createIdentityNodeIfRequired(Node nextNode, NodeExecution prevNodeExecution) {
-    // If nextNode already instance of IdentityPlanNode, then return the nextNode.
-    if (nextNode instanceof IdentityPlanNode) {
+  Node createIdentityNodeIfRequired(Node nextNode, NodeExecution prevNodeExecution, ExecutionMode executionMode) {
+    // If nextNode already instance of IdentityPlanNode, or if in rollback mode, the plan node received is to be
+    // preserved, then return the node as is.
+    if (checkIfSameNodeIsRequired(nextNode, executionMode)) {
       return nextNode;
     }
     if (EmptyPredicate.isEmpty(prevNodeExecution.getParentId())) {
@@ -89,5 +94,10 @@ public class NextStepHandler implements AdviserResponseHandler {
       return identityNode;
     }
     return nextNode;
+  }
+
+  boolean checkIfSameNodeIsRequired(Node nextNode, ExecutionMode executionMode) {
+    return nextNode.getNodeType().equals(NodeType.IDENTITY_PLAN_NODE)
+        || (ExecutionModeUtils.isRollbackMode(executionMode) && ((PlanNode) nextNode).isPreserveInRollbackMode());
   }
 }

@@ -1,0 +1,111 @@
+template:
+  name: PipelineTempWithStageTemplate2345
+  identifier: PipelineTempWithStageTemplate2345
+  versionLabel: v1
+  type: Pipeline
+  projectIdentifier: InputsTest
+  orgIdentifier: default
+  tags: {}
+  spec:
+    stages:
+      - stage:
+          name: s1
+          identifier: s1
+          template:
+            templateRef: StageTempWithDef1234
+            versionLabel: v1
+            templateInputs:
+              type: Deployment
+              spec:
+                service:
+                  serviceInputs:
+                    serviceDefinition:
+                      type: Kubernetes
+                      spec:
+                        variables:
+                          - name: var1
+                            type: String
+                            default: WITHOUT_FF
+                            value: <+input>
+                environment:
+                  environmentInputs:
+                    identifier: PROD_BEFORE
+                    type: Production
+                    variables:
+                      - name: env_var1
+                        type: String
+                        value: <+input>
+                        default: WITHOUT_FF
+                  serviceOverrideInputs:
+                    variables:
+                      - name: var1
+                        type: String
+                        value: <+input>
+                  infrastructureDefinitions:
+                    - identifier: prod_infra1
+                      inputs:
+                        identifier: prod_infra1
+                        type: KubernetesDirect
+                        spec:
+                          namespace: <+input>
+      - stage:
+          name: nontempstage
+          identifier: nontempstage
+          description: ""
+          type: Deployment
+          spec:
+            deploymentType: Kubernetes
+            service:
+              serviceRef: postserviceFFON
+              serviceInputs:
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    variables:
+                      - name: var1
+                        type: String
+                        default: DEFAULT_FF_ON
+                        value: <+input>.default(DEFAULT_FF_ON)
+            environment:
+              environmentRef: PROD_BEFORE_FF
+              environmentInputs:
+                identifier: PROD_BEFORE_FF
+                type: Production
+                variables:
+                  - name: envVar1
+                    type: String
+                    value: <+input>.default(DEFAULT_IN_ENV)
+                    default: DEFAULT_IN_ENV
+              deployToAll: false
+              infrastructureDefinitions:
+                - identifier: infra1
+                  inputs:
+                    identifier: infra1
+                    type: KubernetesDirect
+                    spec:
+                      namespace: <+input>.default(defaultEnvNamespace)
+            execution:
+              steps:
+                - step:
+                    name: Rollout Deployment
+                    identifier: rolloutDeployment
+                    type: K8sRollingDeploy
+                    timeout: 10m
+                    spec:
+                      skipDryRun: false
+                      pruningEnabled: false
+              rollbackSteps:
+                - step:
+                    name: Rollback Rollout Deployment
+                    identifier: rollbackRolloutDeployment
+                    type: K8sRollingRollback
+                    timeout: 10m
+                    spec:
+                      pruningEnabled: false
+          tags: {}
+          failureStrategies:
+            - onFailure:
+                errors:
+                  - AllErrors
+                action:
+                  type: StageRollback

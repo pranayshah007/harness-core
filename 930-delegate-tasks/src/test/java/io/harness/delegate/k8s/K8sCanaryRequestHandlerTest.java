@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -121,7 +122,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, logCallback);
+        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
     doReturn(logCallback)
         .when(k8sTaskHelperBase)
         .getLogCallback(eq(iLogStreamingTaskClient), anyString(), anyBoolean(), any());
@@ -218,7 +219,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
             .useLatestKustomizeVersion(true)
             .accountId(accountId)
             .build();
-    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest).get(0)).isEqualTo("patch1");
+    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest, emptyMap()).get(0))
+        .isEqualTo("patch1");
 
     canaryDeployRequest = K8sCanaryDeployRequest.builder()
                               .releaseName(releaseName)
@@ -227,7 +229,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
                               .valuesYamlList(valuesYamlList)
                               .accountId(accountId)
                               .build();
-    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest).get(0)).isEqualTo("value1");
+    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest, emptyMap()).get(0))
+        .isEqualTo("value1");
 
     canaryDeployRequest = K8sCanaryDeployRequest.builder()
                               .releaseName(releaseName)
@@ -236,7 +239,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
                               .useLatestKustomizeVersion(true)
                               .accountId(accountId)
                               .build();
-    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest).get(0)).isEqualTo("param1");
+    assertThat(k8sCanaryRequestHandler.getManifestOverrideFlies(canaryDeployRequest, emptyMap()).get(0))
+        .isEqualTo("param1");
   }
 
   @Test
@@ -417,7 +421,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
             .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
             .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
             .build();
-    final K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
+    final K8sDelegateTaskParams delegateTaskParams =
+        K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
 
     when(k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory,
              emptyList(), releaseName, namespace, logCallback, timeoutIntervalInMin))

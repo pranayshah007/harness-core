@@ -25,5 +25,5 @@ public class LogFeedback {
   long createdAt;
   long updatedAt;
   String createdBy;
-  String updatedby;
+  String updatedBy;
 }

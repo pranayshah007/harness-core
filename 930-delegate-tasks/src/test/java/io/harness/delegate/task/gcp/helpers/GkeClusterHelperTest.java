@@ -8,10 +8,14 @@
 package io.harness.delegate.task.gcp.helpers;
 
 import static io.harness.delegate.task.gcp.helpers.GcpHelperService.LOCATION_DELIMITER;
+import static io.harness.k8s.K8sConstants.API_VERSION;
+import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
+import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_INSTALL_HINT;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.BOGDAN;
 import static io.harness.rule.OwnerRule.BRETT;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.SATYAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,6 +26,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,6 +40,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.k8s.model.GcpAccessTokenSupplier;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.kubeconfig.Exec;
+import io.harness.k8s.model.kubeconfig.InteractiveMode;
+import io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper;
 import io.harness.rule.Owner;
 
 import com.google.api.client.auth.oauth2.StoredCredential;
@@ -74,7 +82,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -291,9 +298,12 @@ public class GkeClusterHelperTest extends CategoryTest {
     GoogleCredential creds =
         GoogleCredential.fromStream(new ByteArrayInputStream(DUMMY_GCP_KEY.getBytes(StandardCharsets.UTF_8)));
     when(gcpHelperService.getGoogleCredential(eq(DUMMY_GCP_KEY_CHARS), eq(false))).thenReturn(creds);
+    MockedStatic mockedStaticAuthPlugin = mockStatic(KubeConfigAuthPluginHelper.class);
+    when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(false);
 
     // when
     KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default");
+    mockedStaticAuthPlugin.close();
 
     // then
     verify(clusters).get(anyString());
@@ -308,7 +318,7 @@ public class GkeClusterHelperTest extends CategoryTest {
     // given
     GoogleCredential googleCredential =
         GoogleCredential.fromStream(new ByteArrayInputStream(DUMMY_GCP_KEY.getBytes(StandardCharsets.UTF_8)));
-    try (MockedStatic<GoogleCredential> mockStatic = Mockito.mockStatic(GoogleCredential.class)) {
+    try (MockedStatic<GoogleCredential> mockStatic = mockStatic(GoogleCredential.class)) {
       mockStatic.when(() -> GoogleCredential.getApplicationDefault(any(), any())).thenReturn(googleCredential);
       mockStatic.when(() -> GoogleCredential.getApplicationDefault()).thenReturn(googleCredential);
       when(clustersGet.execute()).thenReturn(CLUSTER_1_19);
@@ -455,5 +465,75 @@ public class GkeClusterHelperTest extends CategoryTest {
     when(clustersList.execute()).thenThrow(responseException);
     assertThatThrownBy(() -> gkeClusterHelper.listClusters(DUMMY_GCP_KEY_CHARS, false))
         .isInstanceOf(GcpServerException.class);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void shouldGetClusterWithExec() throws Exception {
+    when(clustersGet.execute()).thenReturn(CLUSTER_1_8);
+
+    GoogleCredential creds =
+        GoogleCredential.fromStream(new ByteArrayInputStream(DUMMY_GCP_KEY.getBytes(StandardCharsets.UTF_8)));
+    when(gcpHelperService.getGoogleCredential(eq(DUMMY_GCP_KEY_CHARS), eq(false))).thenReturn(creds);
+    MockedStatic mockedStaticAuthPlugin = mockStatic(KubeConfigAuthPluginHelper.class);
+    when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
+
+    // when
+    KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default");
+    mockedStaticAuthPlugin.close();
+
+    // then
+    verify(clusters).get(anyString());
+    assertThat(config.getServiceAccountTokenSupplier()).isNull();
+    assertThat(config.getExec())
+        .isEqualTo(Exec.builder()
+                       .command(GCP_AUTH_PLUGIN_BINARY)
+                       .apiVersion(API_VERSION)
+                       .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
+                       .provideClusterInfo(true)
+                       .interactiveMode(InteractiveMode.NEVER)
+                       .build());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void shouldGetClusterWithExecAndGkeTokenSupplierIfVersion119orBigger() throws Exception {
+    // given
+    Instant now = Instant.now();
+    when(clock.instant()).thenReturn(now);
+
+    String accessToken = "access_token";
+    StoredCredential storedCredential =
+        new StoredCredential()
+            .setAccessToken(accessToken)
+            .setExpirationTimeMilliseconds(now.plus(Duration.ofMinutes(30)).toEpochMilli());
+
+    when(clustersGet.execute()).thenReturn(CLUSTER_1_19);
+    when(dataStore.get(eq("mock-account-id@mock-project.iam.gserviceaccount.com"))).thenReturn(storedCredential);
+
+    GoogleCredential creds =
+        GoogleCredential.fromStream(new ByteArrayInputStream(DUMMY_GCP_KEY.getBytes(StandardCharsets.UTF_8)));
+    when(gcpHelperService.getGoogleCredential(eq(DUMMY_GCP_KEY_CHARS), eq(false))).thenReturn(creds);
+    MockedStatic mockedStaticAuthPlugin = mockStatic(KubeConfigAuthPluginHelper.class);
+    when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
+
+    // when
+    KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default");
+    mockedStaticAuthPlugin.close();
+
+    // then
+    verify(clusters).get(anyString());
+    assertThat(config.getServiceAccountTokenSupplier().get()).isEqualTo(accessToken);
+    assertThat(config.getGcpAccountKeyFileContent()).hasValue(DUMMY_GCP_KEY);
+    assertThat(config.getExec())
+        .isEqualTo(Exec.builder()
+                       .command(GCP_AUTH_PLUGIN_BINARY)
+                       .apiVersion(API_VERSION)
+                       .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
+                       .provideClusterInfo(true)
+                       .interactiveMode(InteractiveMode.NEVER)
+                       .build());
   }
 }

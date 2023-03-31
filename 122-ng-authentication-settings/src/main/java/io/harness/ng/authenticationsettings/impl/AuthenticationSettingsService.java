@@ -7,12 +7,14 @@
 
 package io.harness.ng.authenticationsettings.impl;
 
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.authenticationsettings.dtos.AuthenticationSettingsResponse;
 import io.harness.ng.authenticationsettings.dtos.mechanisms.LDAPSettings;
 import io.harness.ng.authenticationsettings.dtos.mechanisms.OAuthSettings;
 import io.harness.ng.core.account.AuthenticationMechanism;
+import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
 
 import software.wings.beans.loginSettings.LoginSettings;
@@ -46,5 +48,9 @@ public interface AuthenticationSettingsService {
   void deleteLdapSettings(@NotNull String accountIdentifier);
   boolean setTwoFactorAuthAtAccountLevel(
       String accountIdentifier, TwoFactorAdminOverrideSettings twoFactorAdminOverrideSettings);
+
+  boolean setSessionTimeoutAtAccountLevel(
+      @AccountIdentifier String accountIdentifier, SessionTimeoutSettings sessionTimeoutSettings);
+
   PasswordStrengthPolicy getPasswordStrengthSettings(String accountIdentifier);
 }

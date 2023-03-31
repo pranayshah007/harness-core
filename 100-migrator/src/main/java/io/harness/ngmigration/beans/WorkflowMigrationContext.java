@@ -32,17 +32,7 @@ public class WorkflowMigrationContext {
   private Map<CgEntityId, NGYamlFile> migratedEntities;
   private Workflow workflow;
   private CaseFormat identifierCaseFormat;
-
-  public static WorkflowMigrationContext newInstance(Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow, CaseFormat caseFormat) {
-    return WorkflowMigrationContext.builder()
-        .workflow(workflow)
-        .entities(entities)
-        .migratedEntities(migratedEntities)
-        .stepExpressionFunctors(new ArrayList<>())
-        .identifierCaseFormat(caseFormat)
-        .build();
-  }
+  private boolean templatizeStepParams;
 
   public static WorkflowMigrationContext newInstance(MigrationContext migrationContext, Workflow workflow) {
     return WorkflowMigrationContext.builder()
@@ -51,6 +41,7 @@ public class WorkflowMigrationContext {
         .migratedEntities(migrationContext.getMigratedEntities())
         .stepExpressionFunctors(new ArrayList<>())
         .identifierCaseFormat(migrationContext.getInputDTO().getIdentifierCaseFormat())
+        .templatizeStepParams(false)
         .build();
   }
 }

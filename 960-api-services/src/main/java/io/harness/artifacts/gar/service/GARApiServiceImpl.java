@@ -20,6 +20,8 @@ import io.harness.artifacts.gar.GarRestClient;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
 import io.harness.artifacts.gar.beans.GarPackageVersionResponse;
 import io.harness.artifacts.gar.beans.GarTags;
+import io.harness.beans.ArtifactMetaInfo;
+import io.harness.beans.ArtifactMetaInfo.ArtifactMetaInfoBuilder;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
@@ -51,8 +53,19 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 public class GARApiServiceImpl implements GarApiService {
   // For now google api is supporting 500 page size, but in future they may decrease api response page limit.
   private static final int PAGESIZE = 500;
+  private static final String COULD_NOT_FETCH_IMAGE_MANIFEST = "Could not fetch image manifest";
+
   private GarRestClient getGarRestClient(GarInternalConfig garinternalConfig) {
     String url = getUrl();
+    return getGarRestClientHelper(garinternalConfig, url);
+  }
+
+  private GarRestClient getGarRestClientDockerRegistryAPI(GarInternalConfig garinternalConfig) {
+    String url = getGarRestClientDockerRegistryAPIUrl(garinternalConfig.getRegion());
+    return getGarRestClientHelper(garinternalConfig, url);
+  }
+
+  private GarRestClient getGarRestClientHelper(GarInternalConfig garinternalConfig, String url) {
     OkHttpClient okHttpClient = Http.getOkHttpClient(url, garinternalConfig.isCertValidationRequired());
     Retrofit retrofit = new Retrofit.Builder()
                             .client(okHttpClient)
@@ -63,6 +76,10 @@ public class GARApiServiceImpl implements GarApiService {
   }
   public String getUrl() {
     return "https://artifactregistry.googleapis.com";
+  }
+
+  public String getGarRestClientDockerRegistryAPIUrl(String region) {
+    return String.format("https://%s-docker.pkg.dev", region);
   }
 
   @Override
@@ -241,6 +258,29 @@ public class GARApiServiceImpl implements GarApiService {
       }
       return Collections.emptyList();
     }
+  }
+
+  @Override
+  public ArtifactMetaInfo getArtifactMetaInfo(GarInternalConfig garInternalConfig, String version) {
+    String imageName = garInternalConfig.getPkg();
+    ArtifactMetaInfoBuilder artifactMetaInfoBuilder = ArtifactMetaInfo.builder();
+    try {
+      GarRestClient garRestClient = getGarRestClientDockerRegistryAPI(garInternalConfig);
+      Response<GarPackageVersionResponse> response =
+          garRestClient
+              .getImageManifest(garInternalConfig.getBearerToken(), garInternalConfig.getProject(),
+                  garInternalConfig.getRepositoryName(), imageName, version)
+              .execute();
+      if (!GARUtils.checkIfResponseNull(response) && response.isSuccessful()) {
+        String sha = response.headers().get("Docker-Content-Digest");
+        artifactMetaInfoBuilder.shaV2(sha);
+      } else if (!GARUtils.checkIfResponseNull(response)) {
+        isSuccessful(response.code(), response.errorBody().toString());
+      }
+    } catch (Exception e) {
+      log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
+    }
+    return artifactMetaInfoBuilder.build();
   }
 
   private String getImageName(GarInternalConfig garinternalConfig, String tag) {

@@ -56,7 +56,7 @@ public class BambooArtifactOutcome implements ArtifactOutcome {
 
   @Override
   public ArtifactSummary getArtifactSummary() {
-    return BambooArtifactSummary.builder().planKey(planKey).build(build).build();
+    return BambooArtifactSummary.builder().planKey(planKey).build(build).tag(planKey + ":" + build).build();
   }
 
   @Override

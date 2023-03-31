@@ -12,6 +12,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.gcp.helpers.GcpHelperService.ALL_LOCATIONS;
 import static io.harness.delegate.task.gcp.helpers.GcpHelperService.LOCATION_DELIMITER;
 import static io.harness.eraro.ErrorCode.CLUSTER_NOT_FOUND;
+import static io.harness.k8s.K8sConstants.API_VERSION;
+import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
+import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_INSTALL_HINT;
+import static io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
@@ -32,6 +36,9 @@ import io.harness.k8s.model.GcpAccessTokenSupplier;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesConfig.KubernetesConfigBuilder;
+import io.harness.k8s.model.kubeconfig.Exec;
+import io.harness.k8s.model.kubeconfig.InteractiveMode;
+import io.harness.logging.LogCallback;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.TaskType;
@@ -128,6 +135,11 @@ public class GkeClusterHelper {
 
   public KubernetesConfig getCluster(
       char[] serviceAccountKeyFileContent, boolean useDelegate, String locationClusterName, String namespace) {
+    return getCluster(serviceAccountKeyFileContent, useDelegate, locationClusterName, namespace, null);
+  }
+
+  public KubernetesConfig getCluster(char[] serviceAccountKeyFileContent, boolean useDelegate,
+      String locationClusterName, String namespace, LogCallback logCallback) {
     Container gkeContainerService = gcpHelperService.getGkeContainerService(serviceAccountKeyFileContent, useDelegate);
     String projectId = getProjectIdFromCredentials(serviceAccountKeyFileContent, useDelegate);
     if (EmptyPredicate.isEmpty(locationClusterName)) {
@@ -151,7 +163,7 @@ public class GkeClusterHelper {
       log.info("Cluster status: {}", cluster.getStatus());
       log.debug("Master endpoint: {}", cluster.getEndpoint());
 
-      return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate);
+      return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate, logCallback);
     } catch (IOException e) {
       // PL-1118: In case the cluster is being destroyed/torn down. Return null will immediately reclaim the service
       // instances
@@ -202,6 +214,11 @@ public class GkeClusterHelper {
 
   private KubernetesConfig configFromCluster(
       Cluster cluster, String namespace, char[] serviceAccountKeyFileContent, boolean useDelegate) {
+    return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate, null);
+  }
+
+  private KubernetesConfig configFromCluster(Cluster cluster, String namespace, char[] serviceAccountKeyFileContent,
+      boolean useDelegate, LogCallback logCallback) {
     MasterAuth masterAuth = cluster.getMasterAuth();
     KubernetesConfigBuilder kubernetesConfigBuilder = KubernetesConfig.builder()
                                                           .masterUrl("https://" + cluster.getEndpoint() + "/")
@@ -230,6 +247,10 @@ public class GkeClusterHelper {
         tokenSupplier = createForServiceAccount(serviceAccountKeyFileContent);
       }
       kubernetesConfigBuilder.serviceAccountTokenSupplier(tokenSupplier);
+    }
+    if (isExecAuthPluginBinaryAvailable(GCP_AUTH_PLUGIN_BINARY, logCallback)) {
+      kubernetesConfigBuilder.authType(KubernetesClusterAuthType.EXEC_OAUTH);
+      kubernetesConfigBuilder.exec(getGkeUserExecConfig());
     }
     return kubernetesConfigBuilder.build();
   }
@@ -304,5 +325,15 @@ public class GkeClusterHelper {
       log.error(
           format("Error %s cluster %s in location %s for project %s", actionVerb, clusterName, location, projectId), e);
     }
+  }
+
+  private Exec getGkeUserExecConfig() {
+    return Exec.builder()
+        .apiVersion(API_VERSION)
+        .command(GCP_AUTH_PLUGIN_BINARY)
+        .interactiveMode(InteractiveMode.NEVER)
+        .provideClusterInfo(true)
+        .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
+        .build();
   }
 }

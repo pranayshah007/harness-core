@@ -154,7 +154,8 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
   private ShellExecutorConfig getShellExecutorConfig(ShellScriptTaskParametersNG taskParameters) {
     String kubeConfigFileContent = taskParameters.getScript().contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH)
             && taskParameters.getK8sInfraDelegateConfig() != null
-        ? containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(taskParameters.getK8sInfraDelegateConfig())
+        ? containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(
+            taskParameters.getK8sInfraDelegateConfig(), taskParameters.getWorkingDirectory())
         : "";
 
     char[] serviceAccountKeyFileContent = null;

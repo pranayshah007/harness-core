@@ -12,6 +12,7 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
+import java.util.Map;
 import java.util.Set;
 
 public class SampleExpressionEvaluatorProvider implements ExpressionEvaluatorProvider {
@@ -23,7 +24,7 @@ public class SampleExpressionEvaluatorProvider implements ExpressionEvaluatorPro
 
   @Override
   public EngineExpressionEvaluator get(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
-      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific) {
+      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific, Map<String, String> contextMap) {
     return new SampleExpressionEvaluator(variableResolverTracker, supportStringUtils);
   }
 }
