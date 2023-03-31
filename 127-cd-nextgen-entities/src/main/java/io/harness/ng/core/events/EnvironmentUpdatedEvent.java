@@ -15,6 +15,8 @@ import static io.harness.ng.core.ResourceConstants.RESOURCE_TYPE;
 import static io.harness.ng.core.ResourceConstants.SERVICE_OVERRIDE_NAME;
 import static io.harness.ng.core.ResourceConstants.STATUS;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.event.Event;
 import io.harness.ng.core.AccountScope;
@@ -133,7 +135,8 @@ public class EnvironmentUpdatedEvent implements Event {
       case SERVICE_OVERRIDE:
         NGServiceOverridesEntity ngServiceOverridesEntity =
             newServiceOverridesEntity == null ? oldServiceOverridesEntity : newServiceOverridesEntity;
-        return ngServiceOverridesEntity.getEnvironmentRef();
+        return isNotBlank(ngServiceOverridesEntity.getEnvIdentifier()) ? ngServiceOverridesEntity.getEnvIdentifier()
+                                                                       : ngServiceOverridesEntity.getEnvironmentRef();
       case INFRASTRUCTURE:
         InfrastructureEntity infrastructure =
             newInfrastructureEntity == null ? oldInfrastructureEntity : newInfrastructureEntity;

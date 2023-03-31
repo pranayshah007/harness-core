@@ -28,6 +28,7 @@ import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Long.parseLong;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 import io.harness.NGCommonEntityConstants;
@@ -719,12 +720,15 @@ public class EnvironmentResourceV2 {
         serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getAccountId());
     environmentValidationHelper.checkThatEnvExists(serviceOverridesEntity.getAccountId(),
         serviceOverridesEntity.getOrgIdentifier(), serviceOverridesEntity.getProjectIdentifier(),
-        serviceOverridesEntity.getEnvironmentRef());
+        isNotBlank(serviceOverridesEntity.getEnvIdentifier()) ? serviceOverridesEntity.getEnvIdentifier()
+                                                              : serviceOverridesEntity.getEnvironmentRef());
     serviceEntityValidationHelper.checkThatServiceExists(serviceOverridesEntity.getAccountId(),
         serviceOverridesEntity.getOrgIdentifier(), serviceOverridesEntity.getProjectIdentifier(),
         serviceOverridesEntity.getServiceRef());
     checkForServiceOverrideUpdateAccess(accountId, serviceOverridesEntity.getOrgIdentifier(),
-        serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getEnvironmentRef(),
+        serviceOverridesEntity.getProjectIdentifier(),
+        isNotBlank(serviceOverridesEntity.getEnvIdentifier()) ? serviceOverridesEntity.getEnvIdentifier()
+                                                              : serviceOverridesEntity.getEnvironmentRef(),
         serviceOverridesEntity.getServiceRef());
     validateServiceOverrides(serviceOverridesEntity);
 
@@ -776,7 +780,9 @@ public class EnvironmentResourceV2 {
           && serviceOverrideInfoConfig.getConnectionStrings() == null) {
         final Optional<NGServiceOverridesEntity> optionalNGServiceOverrides =
             serviceOverrideService.get(serviceOverridesEntity.getAccountId(), serviceOverridesEntity.getOrgIdentifier(),
-                serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getEnvironmentRef(),
+                serviceOverridesEntity.getProjectIdentifier(),
+                isNotBlank(serviceOverridesEntity.getEnvIdentifier()) ? serviceOverridesEntity.getEnvIdentifier()
+                                                                      : serviceOverridesEntity.getEnvironmentRef(),
                 serviceOverridesEntity.getServiceRef());
         if (optionalNGServiceOverrides.isEmpty()) {
           throw new InvalidRequestException("No overrides found in request");

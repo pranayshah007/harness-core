@@ -10,6 +10,8 @@ package io.harness.ng.core.serviceoverride.mapper;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
 import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
@@ -60,7 +62,9 @@ public class NGServiceOverrideEntityConfigMapper {
     }
     return NGServiceOverrideConfig.builder()
         .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
-                                       .environmentRef(serviceOverridesEntity.getEnvironmentRef())
+                                       .environmentRef(isNotBlank(serviceOverridesEntity.getEnvIdentifier())
+                                               ? serviceOverridesEntity.getEnvIdentifier()
+                                               : serviceOverridesEntity.getEnvironmentRef())
                                        .serviceRef(serviceOverridesEntity.getServiceRef())
                                        .variables(variableOverride)
                                        .manifests(manifestsList)

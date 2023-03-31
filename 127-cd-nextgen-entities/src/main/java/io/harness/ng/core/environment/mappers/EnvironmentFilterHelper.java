@@ -313,13 +313,19 @@ public class EnvironmentFilterHelper {
         org.apache.commons.lang3.StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     if (envRefSplit == null || envRefSplit.length == 1) {
       criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
-      criteria.and(NGServiceOverridesEntityKeys.environmentRef).is(environmentRef);
+      Criteria envIdOrRefCriteria =
+          new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.environmentRef).is(environmentRef),
+              Criteria.where(NGServiceOverridesEntityKeys.envIdentifier).is(environmentRef));
+      criteria.andOperator(envIdOrRefCriteria);
     } else {
       IdentifierRef envIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(environmentRef, accountId, orgIdentifier, projectIdentifier);
       criteria = CoreCriteriaUtils.createCriteriaForGetList(envIdentifierRef.getAccountIdentifier(),
           envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier());
-      criteria.and(NGServiceOverridesEntityKeys.environmentRef).is(envIdentifierRef.getIdentifier());
+      Criteria envIdOrRefCriteria = new Criteria().orOperator(
+          Criteria.where(NGServiceOverridesEntityKeys.environmentRef).is(envIdentifierRef.getIdentifier()),
+          Criteria.where(NGServiceOverridesEntityKeys.envIdentifier).is(envIdentifierRef.getIdentifier()));
+      criteria.andOperator(envIdOrRefCriteria);
     }
 
     if (isNotBlank(serviceRef)) {
@@ -358,7 +364,9 @@ public class EnvironmentFilterHelper {
     update.set(NGServiceOverridesEntityKeys.accountId, serviceOverridesEntity.getAccountId());
     update.set(NGServiceOverridesEntityKeys.orgIdentifier, serviceOverridesEntity.getOrgIdentifier());
     update.set(NGServiceOverridesEntityKeys.projectIdentifier, serviceOverridesEntity.getProjectIdentifier());
-    update.set(NGServiceOverridesEntityKeys.environmentRef, serviceOverridesEntity.getEnvironmentRef());
+    update.set(NGServiceOverridesEntityKeys.envIdentifier,
+        isNotBlank(serviceOverridesEntity.getEnvIdentifier()) ? serviceOverridesEntity.getEnvIdentifier()
+                                                              : serviceOverridesEntity.getEnvironmentRef());
     update.set(NGServiceOverridesEntityKeys.serviceRef, serviceOverridesEntity.getServiceRef());
     update.set(NGServiceOverridesEntityKeys.yaml, serviceOverridesEntity.getYaml());
     update.setOnInsert(NGServiceOverridesEntityKeys.createdAt, System.currentTimeMillis());

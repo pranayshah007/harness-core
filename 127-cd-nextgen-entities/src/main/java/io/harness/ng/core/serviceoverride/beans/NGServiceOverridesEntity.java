@@ -52,7 +52,7 @@ public class NGServiceOverridesEntity implements PersistentEntity, ScopeAware {
                  .field(NGServiceOverridesEntityKeys.accountId)
                  .field(NGServiceOverridesEntityKeys.orgIdentifier)
                  .field(NGServiceOverridesEntityKeys.projectIdentifier)
-                 .field(NGServiceOverridesEntityKeys.environmentRef)
+                 .field(NGServiceOverridesEntityKeys.envIdentifier)
                  .field(NGServiceOverridesEntityKeys.serviceRef)
                  .build())
         .build();

@@ -15,6 +15,7 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -112,14 +113,18 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
   @Override
   public NGServiceOverridesEntity upsert(NGServiceOverridesEntity requestServiceOverride) {
     // todo: FF based check
-    validatePresenceOfRequiredFields(requestServiceOverride.getAccountId(), requestServiceOverride.getEnvironmentRef(),
+    validatePresenceOfRequiredFields(requestServiceOverride.getAccountId(),
+        isNotBlank(requestServiceOverride.getEnvIdentifier()) ? requestServiceOverride.getEnvIdentifier()
+                                                              : requestServiceOverride.getEnvironmentRef(),
         requestServiceOverride.getServiceRef());
     validateOverrideValues(requestServiceOverride);
     Criteria criteria = getServiceOverrideEqualityCriteria(requestServiceOverride);
 
     Optional<NGServiceOverridesEntity> serviceOverrideOptional = get(requestServiceOverride.getAccountId(),
         requestServiceOverride.getOrgIdentifier(), requestServiceOverride.getProjectIdentifier(),
-        requestServiceOverride.getEnvironmentRef(), requestServiceOverride.getServiceRef());
+        isNotBlank(requestServiceOverride.getEnvIdentifier()) ? requestServiceOverride.getEnvIdentifier()
+                                                              : requestServiceOverride.getEnvironmentRef(),
+        requestServiceOverride.getServiceRef());
 
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       NGServiceOverridesEntity tempResult = serviceOverrideRepository.upsert(criteria, requestServiceOverride);
@@ -127,7 +132,9 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
         throw new InvalidRequestException(String.format(
             "NGServiceOverridesEntity under Project[%s], Organization [%s], Environment [%s] and Service [%s] couldn't be upserted or doesn't exist.",
             requestServiceOverride.getProjectIdentifier(), requestServiceOverride.getOrgIdentifier(),
-            requestServiceOverride.getEnvironmentRef(), requestServiceOverride.getServiceRef()));
+            isNotBlank(requestServiceOverride.getEnvIdentifier()) ? requestServiceOverride.getEnvIdentifier()
+                                                                  : requestServiceOverride.getEnvironmentRef(),
+            requestServiceOverride.getServiceRef()));
       }
       if (serviceOverrideOptional.isPresent()) {
         outboxService.save(EnvironmentUpdatedEvent.builder()
@@ -215,7 +222,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
                                                           .accountId(accountId)
                                                           .orgIdentifier(orgIdentifier)
                                                           .projectIdentifier(projectIdentifier)
-                                                          .environmentRef(environmentRef)
+                                                          .envIdentifier(environmentRef)
                                                           .serviceRef(serviceRef)
                                                           .build();
 
@@ -358,33 +365,68 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
   }
 
   private Criteria getServiceOverrideEqualityCriteria(NGServiceOverridesEntity requestServiceOverride) {
-    String[] environmentRefSplit =
-        StringUtils.split(requestServiceOverride.getEnvironmentRef(), ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    String[] environmentRefSplit = StringUtils.split(isNotBlank(requestServiceOverride.getEnvIdentifier())
+            ? requestServiceOverride.getEnvIdentifier()
+            : requestServiceOverride.getEnvironmentRef(),
+        ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     if (environmentRefSplit == null || environmentRefSplit.length == 1) {
-      return Criteria.where(NGServiceOverridesEntityKeys.accountId)
-          .is(requestServiceOverride.getAccountId())
-          .and(NGServiceOverridesEntityKeys.orgIdentifier)
-          .is(requestServiceOverride.getOrgIdentifier())
-          .and(NGServiceOverridesEntityKeys.projectIdentifier)
-          .is(requestServiceOverride.getProjectIdentifier())
-          .and(NGServiceOverridesEntityKeys.environmentRef)
-          .is(requestServiceOverride.getEnvironmentRef())
-          .and(NGServiceOverridesEntityKeys.serviceRef)
-          .is(requestServiceOverride.getServiceRef());
+      Criteria criteriaWithEnvRef =
+          Criteria.where(NGServiceOverridesEntityKeys.accountId)
+              .is(requestServiceOverride.getAccountId())
+              .and(NGServiceOverridesEntityKeys.orgIdentifier)
+              .is(requestServiceOverride.getOrgIdentifier())
+              .and(NGServiceOverridesEntityKeys.projectIdentifier)
+              .is(requestServiceOverride.getProjectIdentifier())
+              .and(NGServiceOverridesEntityKeys.environmentRef)
+              .is(isNotBlank(requestServiceOverride.getEnvIdentifier()) ? requestServiceOverride.getEnvIdentifier()
+                                                                        : requestServiceOverride.getEnvironmentRef())
+              .and(NGServiceOverridesEntityKeys.serviceRef)
+              .is(requestServiceOverride.getServiceRef());
+
+      Criteria criteriaWithEnvIdentifier =
+          Criteria.where(NGServiceOverridesEntityKeys.accountId)
+              .is(requestServiceOverride.getAccountId())
+              .and(NGServiceOverridesEntityKeys.orgIdentifier)
+              .is(requestServiceOverride.getOrgIdentifier())
+              .and(NGServiceOverridesEntityKeys.projectIdentifier)
+              .is(requestServiceOverride.getProjectIdentifier())
+              .and(NGServiceOverridesEntityKeys.envIdentifier)
+              .is(isNotBlank(requestServiceOverride.getEnvIdentifier()) ? requestServiceOverride.getEnvIdentifier()
+                                                                        : requestServiceOverride.getEnvironmentRef())
+              .and(NGServiceOverridesEntityKeys.serviceRef)
+              .is(requestServiceOverride.getServiceRef());
+
+      return new Criteria().orOperator(criteriaWithEnvIdentifier, criteriaWithEnvRef);
     } else {
-      IdentifierRef envIdentifierRef = IdentifierRefHelper.getIdentifierRef(requestServiceOverride.getEnvironmentRef(),
+      IdentifierRef envIdentifierRef = IdentifierRefHelper.getIdentifierRef(
+          isNotBlank(requestServiceOverride.getEnvIdentifier()) ? requestServiceOverride.getEnvIdentifier()
+                                                                : requestServiceOverride.getEnvironmentRef(),
           requestServiceOverride.getAccountId(), requestServiceOverride.getOrgIdentifier(),
           requestServiceOverride.getProjectIdentifier());
-      return Criteria.where(NGServiceOverridesEntityKeys.accountId)
-          .is(envIdentifierRef.getAccountIdentifier())
-          .and(NGServiceOverridesEntityKeys.orgIdentifier)
-          .is(envIdentifierRef.getOrgIdentifier())
-          .and(NGServiceOverridesEntityKeys.projectIdentifier)
-          .is(envIdentifierRef.getProjectIdentifier())
-          .and(NGServiceOverridesEntityKeys.environmentRef)
-          .is(envIdentifierRef.getIdentifier())
-          .and(NGServiceOverridesEntityKeys.serviceRef)
-          .is(requestServiceOverride.getServiceRef());
+
+      Criteria criteriaWithEnvRef = Criteria.where(NGServiceOverridesEntityKeys.accountId)
+                                        .is(envIdentifierRef.getAccountIdentifier())
+                                        .and(NGServiceOverridesEntityKeys.orgIdentifier)
+                                        .is(envIdentifierRef.getOrgIdentifier())
+                                        .and(NGServiceOverridesEntityKeys.projectIdentifier)
+                                        .is(envIdentifierRef.getProjectIdentifier())
+                                        .and(NGServiceOverridesEntityKeys.environmentRef)
+                                        .is(envIdentifierRef.getIdentifier())
+                                        .and(NGServiceOverridesEntityKeys.serviceRef)
+                                        .is(requestServiceOverride.getServiceRef());
+
+      Criteria criteriaWithEnvIdentifier = Criteria.where(NGServiceOverridesEntityKeys.accountId)
+                                               .is(envIdentifierRef.getAccountIdentifier())
+                                               .and(NGServiceOverridesEntityKeys.orgIdentifier)
+                                               .is(envIdentifierRef.getOrgIdentifier())
+                                               .and(NGServiceOverridesEntityKeys.projectIdentifier)
+                                               .is(envIdentifierRef.getProjectIdentifier())
+                                               .and(NGServiceOverridesEntityKeys.envIdentifier)
+                                               .is(envIdentifierRef.getIdentifier())
+                                               .and(NGServiceOverridesEntityKeys.serviceRef)
+                                               .is(requestServiceOverride.getServiceRef());
+
+      return new Criteria().orOperator(criteriaWithEnvIdentifier, criteriaWithEnvRef);
     }
   }
 
@@ -392,24 +434,46 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
       String accountId, String orgId, String projId, String envId) {
     String[] environmentRefSplit = StringUtils.split(envId, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     if (environmentRefSplit == null || environmentRefSplit.length == 1) {
-      return Criteria.where(NGServiceOverridesEntityKeys.accountId)
-          .is(accountId)
-          .and(NGServiceOverridesEntityKeys.orgIdentifier)
-          .is(orgId)
-          .and(NGServiceOverridesEntityKeys.projectIdentifier)
-          .is(projId)
-          .and(NGServiceOverridesEntityKeys.environmentRef)
-          .is(envId);
+      Criteria criteriaForEnvRef = Criteria.where(NGServiceOverridesEntityKeys.accountId)
+                                       .is(accountId)
+                                       .and(NGServiceOverridesEntityKeys.orgIdentifier)
+                                       .is(orgId)
+                                       .and(NGServiceOverridesEntityKeys.projectIdentifier)
+                                       .is(projId)
+                                       .and(NGServiceOverridesEntityKeys.environmentRef)
+                                       .is(envId);
+
+      Criteria criteriaForEnvIdentifier = Criteria.where(NGServiceOverridesEntityKeys.accountId)
+                                              .is(accountId)
+                                              .and(NGServiceOverridesEntityKeys.orgIdentifier)
+                                              .is(orgId)
+                                              .and(NGServiceOverridesEntityKeys.projectIdentifier)
+                                              .is(projId)
+                                              .and(NGServiceOverridesEntityKeys.envIdentifier)
+                                              .is(envId);
+
+      return new Criteria().orOperator(criteriaForEnvRef, criteriaForEnvIdentifier);
     } else {
       IdentifierRef envIdentifierRef = IdentifierRefHelper.getIdentifierRef(envId, accountId, orgId, projId);
-      return Criteria.where(NGServiceOverridesEntityKeys.accountId)
-          .is(envIdentifierRef.getAccountIdentifier())
-          .and(NGServiceOverridesEntityKeys.orgIdentifier)
-          .is(envIdentifierRef.getOrgIdentifier())
-          .and(NGServiceOverridesEntityKeys.projectIdentifier)
-          .is(envIdentifierRef.getProjectIdentifier())
-          .and(NGServiceOverridesEntityKeys.environmentRef)
-          .is(envIdentifierRef.getIdentifier());
+      Criteria criteriaWithEnvRef = Criteria.where(NGServiceOverridesEntityKeys.accountId)
+                                        .is(envIdentifierRef.getAccountIdentifier())
+                                        .and(NGServiceOverridesEntityKeys.orgIdentifier)
+                                        .is(envIdentifierRef.getOrgIdentifier())
+                                        .and(NGServiceOverridesEntityKeys.projectIdentifier)
+                                        .is(envIdentifierRef.getProjectIdentifier())
+                                        .and(NGServiceOverridesEntityKeys.environmentRef)
+                                        .is(envIdentifierRef.getIdentifier());
+
+      Criteria criteriaWithEnvIdentifier = Criteria.where(NGServiceOverridesEntityKeys.accountId)
+                                               .is(envIdentifierRef.getAccountIdentifier())
+                                               .and(NGServiceOverridesEntityKeys.orgIdentifier)
+                                               .is(envIdentifierRef.getOrgIdentifier())
+                                               .and(NGServiceOverridesEntityKeys.projectIdentifier)
+                                               .is(envIdentifierRef.getProjectIdentifier())
+                                               .and(NGServiceOverridesEntityKeys.envIdentifier)
+                                               .is(envIdentifierRef.getIdentifier());
+
+      return new Criteria().orOperator(criteriaWithEnvIdentifier, criteriaWithEnvRef);
     }
   }
 

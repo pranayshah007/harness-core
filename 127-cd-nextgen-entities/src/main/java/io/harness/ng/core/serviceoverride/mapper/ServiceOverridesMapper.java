@@ -7,6 +7,8 @@
 
 package io.harness.ng.core.serviceoverride.mapper;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -30,7 +32,7 @@ public class ServiceOverridesMapper {
             .accountId(accountId)
             .orgIdentifier(serviceOverrideRequestDTO.getOrgIdentifier())
             .projectIdentifier(serviceOverrideRequestDTO.getProjectIdentifier())
-            .environmentRef(serviceOverrideRequestDTO.getEnvironmentIdentifier())
+            .envIdentifier(serviceOverrideRequestDTO.getEnvironmentIdentifier())
             .serviceRef(serviceOverrideRequestDTO.getServiceIdentifier())
             .yaml(serviceOverrideRequestDTO.getYaml())
             .build();
@@ -45,7 +47,9 @@ public class ServiceOverridesMapper {
         .accountId(serviceOverridesEntity.getAccountId())
         .orgIdentifier(serviceOverridesEntity.getOrgIdentifier())
         .projectIdentifier(serviceOverridesEntity.getProjectIdentifier())
-        .environmentRef(serviceOverridesEntity.getEnvironmentRef())
+        .environmentRef(isNotBlank(serviceOverridesEntity.getEnvIdentifier())
+                ? serviceOverridesEntity.getEnvIdentifier()
+                : serviceOverridesEntity.getEnvironmentRef())
         .serviceRef(serviceOverridesEntity.getServiceRef())
         .yaml(serviceOverridesEntity.getYaml())
         .build();
