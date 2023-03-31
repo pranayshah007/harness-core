@@ -75,7 +75,6 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                                           .subTopic(delegateTask.getAccountId())
                                           .producerName(topic)
                                           .build();
-
       EnqueueResponse response = hsqsClientService.enqueue(enqueueRequest);
       log.info("Delegate task {} queued with item ID {}", delegateTask.getUuid(), response.getItemId());
     } catch (Exception e) {
@@ -144,28 +143,15 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
         || isResourceAvailableToAssignTask(delegateTaskDequeue.getDelegateTask());
   }
 
-  public boolean isResourceAvailableToAssignTask(DelegateTask delegateTask) {
-    if (delegateTask.getTaskDataV2() != null) {
-      return isResourceAvailableToAssignTaskV2(delegateTask);
-    }
-
-    TaskType taskType = TaskType.valueOf(delegateTask.getData().getTaskType());
-    String accountId = delegateTask.getAccountId();
-    List<Delegate> delegateList = getDelegatesList(delegateTask.getEligibleToExecuteDelegateIds(), accountId);
-    Optional<List<String>> filteredDelegateList =
-        delegateSelectionCheckForTask.perform(delegateList, taskType, accountId);
-    if (filteredDelegateList.isEmpty() || isEmpty(filteredDelegateList.get())) {
-      return false;
-    }
-    delegateTask.setEligibleToExecuteDelegateIds(new LinkedList<>(filteredDelegateList.get()));
-    return true;
-  }
 
   @VisibleForTesting
-  boolean isResourceAvailableToAssignTaskV2(DelegateTask delegateTask) {
+  public boolean isResourceAvailableToAssignTask(DelegateTask delegateTask) {
+    log.info("HQS: Start isResourceAvailableToAssignTask check");
     TaskType taskType = TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType());
+    log.info("HQS: task type {}", taskType.getDisplayName());
     String accountId = delegateTask.getAccountId();
     List<Delegate> delegateList = getDelegatesList(delegateTask.getEligibleToExecuteDelegateIds(), accountId);
+    log.info("HQS: delegate list {}", delegateList);
     Optional<List<String>> filteredDelegateList =
         delegateSelectionCheckForTask.perform(delegateList, taskType, accountId);
     if (filteredDelegateList.isEmpty() || isEmpty(filteredDelegateList.get())) {

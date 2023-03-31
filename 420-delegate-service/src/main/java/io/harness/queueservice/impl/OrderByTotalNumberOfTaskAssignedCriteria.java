@@ -63,7 +63,7 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
           getTotalNumberOfTaskAssignedInDelegate(accountId, taskType, delegate.getUuid());
       numberOfTaskAssigned.put(delegate.getUuid(), delegateTaskList.size());
     });
-
+    log.info("HQS: number of task assigned {}", numberOfTaskAssigned);
     return numberOfTaskAssigned.entrySet()
         .stream()
         .sorted(valueComparator)

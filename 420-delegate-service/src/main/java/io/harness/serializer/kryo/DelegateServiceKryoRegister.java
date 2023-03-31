@@ -9,6 +9,7 @@ package io.harness.serializer.kryo;
 
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateCapacity;
+import io.harness.delegate.beans.DelegateGroup;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.serializer.KryoRegistrar;
 
@@ -20,6 +21,7 @@ public class DelegateServiceKryoRegister implements KryoRegistrar {
     // nothing to do
     kryo.register(PerpetualTaskClientContext.class, 40030);
     kryo.register(Delegate.class, 40031);
+    kryo.register(DelegateGroup.class, 40042);
     kryo.register(DelegateCapacity.class, 5808);
   }
 }
