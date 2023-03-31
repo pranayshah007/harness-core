@@ -53,8 +53,8 @@ public class TemplateRbacHelperTest extends CategoryTest {
                  .accountId(ACC_ID)
                  .orgIdentifier(ORG_ID)
                  .projectIdentifier(PRO_ID)
-                 .identifier("newService1")
-                 .name("newService1")
+                 .identifier("newTemplate1")
+                 .name("newTemplate1")
                  .createdAt(1L)
                  .yaml("yaml")
                  .build());
@@ -62,8 +62,8 @@ public class TemplateRbacHelperTest extends CategoryTest {
                  .accountId(ACC_ID)
                  .orgIdentifier(ORG_ID)
                  .projectIdentifier(PRO_ID)
-                 .identifier("newService2")
-                 .name("newService2")
+                 .identifier("newTemplate2")
+                 .name("newTemplate2")
                  .createdAt(1L)
                  .yaml("yaml")
                  .build());
