@@ -13,6 +13,7 @@ import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
@@ -120,6 +121,10 @@ public class InfrastructureChangeDataHandler extends AbstractChangeDataHandler {
         break;
       case "SERVERLESS_AWS_LAMBDA":
         region = ((ServerlessAwsLambdaInfrastructure) infrastructure).getRegion().getValue();
+        break;
+      case "KUBERNETES_AWS":
+        cluster = ((K8sAwsInfrastructure) infrastructure).getCluster().getValue();
+        namespace = ((K8sAwsInfrastructure) infrastructure).getNamespace().getValue();
         break;
       default:
         break;

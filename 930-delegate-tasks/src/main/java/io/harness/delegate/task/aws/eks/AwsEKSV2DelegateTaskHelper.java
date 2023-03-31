@@ -88,7 +88,8 @@ public class AwsEKSV2DelegateTaskHelper {
           KubernetesConfig.builder()
               .masterUrl(cluster.endpoint() + "/")
               .namespace(isNotBlank(namespace) ? namespace : "default")
-              .caCert((cluster.certificateAuthority().data()).toCharArray());
+              .caCert((cluster.certificateAuthority().data()).toCharArray())
+              .useKubeconfigAuthentication(true);
       if (isExecAuthPluginBinaryAvailable(EKS_AUTH_PLUGIN_BINARY, logCallback)) {
         kubernetesConfigBuilder.authType(KubernetesClusterAuthType.EXEC_OAUTH);
         kubernetesConfigBuilder.exec(getEksExecConfig(clusterName, awsInternalConfig));
