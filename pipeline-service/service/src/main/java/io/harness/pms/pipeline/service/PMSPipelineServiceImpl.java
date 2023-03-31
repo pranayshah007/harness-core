@@ -8,7 +8,6 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
@@ -53,14 +52,25 @@ import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
-import io.harness.ng.core.dto.GitEntitySetupUsageDTO;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
-import io.harness.pms.pipeline.*;
+import io.harness.pms.pipeline.ClonePipelineDTO;
+import io.harness.pms.pipeline.CommonStepInfo;
+import io.harness.pms.pipeline.ExecutionSummaryInfo;
+import io.harness.pms.pipeline.MoveConfigOperationDTO;
+import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
+import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.pipeline.PipelineEntityWithReferencesDTO;
+import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
+import io.harness.pms.pipeline.PipelineSetupUsageHelper;
+import io.harness.pms.pipeline.StepCategory;
+import io.harness.pms.pipeline.StepPalleteFilterWrapper;
+import io.harness.pms.pipeline.StepPalleteInfo;
+import io.harness.pms.pipeline.StepPalleteModuleInfo;
 import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
@@ -164,7 +174,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
 
-      // UPDATING PIPELINE INFO AND PUBLISHING SETUP USAGES.
+      // UPDATING PIPELINE INFO.
       PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
 
@@ -175,7 +185,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
 
-      // POPULATE GIT INFO FOR REFERRED ENTITIES.
+      // PUBLISHING SETUP USAGES
       if (doPublishSetupUsages(createdEntity)) {
         pipelineSetupUsageHelper.publishSetupUsageEvent(
             pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities());

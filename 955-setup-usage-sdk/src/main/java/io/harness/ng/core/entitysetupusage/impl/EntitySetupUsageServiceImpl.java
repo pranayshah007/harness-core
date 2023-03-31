@@ -310,26 +310,4 @@ public class EntitySetupUsageServiceImpl implements EntitySetupUsageService {
         accountIdentifier, referredEntityFQNs, EntityType.FILES);
     return entityReferenceRepository.countAll(criteria);
   }
-
-  @Override
-  public Boolean populateGitInfoForReferredEntities(String accountId, String orgId, String projectId,
-      String referredByFQN, EntityType entityType, GitEntitySetupUsageDTO gitEntitySetupUsageDTO) {
-    Criteria criteria =
-        entitySetupUsageFilterHelper.createCriteriaForListAllReferredUsages(accountId, referredByFQN, null, null);
-    Pageable pageable = getPageRequest(0, 10000, Sort.by(Sort.Direction.DESC, EntitySetupUsageKeys.createdAt));
-    Page<EntitySetupUsage> entityReferences = entityReferenceRepository.findAll(criteria, pageable);
-    List<EntitySetupUsage> setupUsages = entityReferences.getContent();
-
-    List<EntityDetail> referredByEntity =
-        setupUsages.stream().map(EntitySetupUsage::getReferredByEntity).collect(Collectors.toList());
-
-    String branch = gitEntitySetupUsageDTO.getBranch();
-    for (EntityDetail e : referredByEntity) {
-      e.getEntityRef().setBranch(branch);
-    }
-
-    saveMultiple(setupUsages);
-
-    return true;
-  }
 }
