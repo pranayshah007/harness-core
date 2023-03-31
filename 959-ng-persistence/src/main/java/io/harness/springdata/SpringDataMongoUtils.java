@@ -21,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -64,6 +65,7 @@ public class SpringDataMongoUtils {
   public static <T> Page<T> getPaginatedResult(
       Criteria criteria, Pageable pageable, Class<T> clazz, MongoTemplate mongoTemplate) {
     Query query = new Query(criteria).with(pageable);
+    query.collation(Collation.of("en").strength(Collation.ComparisonLevel.secondary()));
     List<T> objects = mongoTemplate.find(query, clazz);
     return PageableExecutionUtils.getPage(
         objects, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1L), clazz));
