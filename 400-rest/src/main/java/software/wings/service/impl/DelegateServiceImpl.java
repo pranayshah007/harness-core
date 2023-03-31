@@ -1170,6 +1170,10 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public Delegate updateTags(Delegate delegate) {
+    return doUpdateTags(delegate, true);
+  }
+
+  private Delegate doUpdateTags(Delegate delegate, boolean audit) {
     UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
 
     // this is important to keep only unique list of tags in db.
@@ -1187,10 +1191,11 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     subject.fireInform(DelegateObserver::onDelegateTagsUpdated, delegate.getAccountId());
-    auditServiceHelper.reportForAuditingUsingAccountId(
-        delegate.getAccountId(), delegate, updatedDelegate, Type.UPDATE_TAG);
-    log.info("Auditing updation of Tags for delegate={} in account={}", delegate.getUuid(), delegate.getAccountId());
-
+    if (audit) {
+      auditServiceHelper.reportForAuditingUsingAccountId(
+          delegate.getAccountId(), delegate, updatedDelegate, Type.UPDATE_TAG);
+      log.info("Auditing updation of Tags for delegate={} in account={}", delegate.getUuid(), delegate.getAccountId());
+    }
     return updatedDelegate;
   }
 
@@ -3677,6 +3682,15 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public DelegateDTO addDelegateTags(String accountId, String delegateId, DelegateTags delegateTags) {
+    return doAddDelegateTags(accountId, delegateId, delegateTags, true);
+  }
+
+  @Override
+  public DelegateDTO addDelegateTagsFromApi(String accountId, String delegateId, DelegateTags delegateTags) {
+    return doAddDelegateTags(accountId, delegateId, delegateTags, false);
+  }
+
+  private DelegateDTO doAddDelegateTags(String accountId, String delegateId, DelegateTags delegateTags, boolean audit) {
     Delegate delegate = delegateCache.get(accountId, delegateId, true);
     if (delegate == null) {
       throw new InvalidRequestException(
@@ -3689,31 +3703,50 @@ public class DelegateServiceImpl implements DelegateService {
     } else {
       delegate.setTags(delegateTags.getTags());
     }
-    Delegate updatedDelegate = updateTags(delegate);
+    Delegate updatedDelegate = doUpdateTags(delegate, audit);
     return DelegateDTO.convertToDTO(updatedDelegate, null);
   }
 
   @Override
   public DelegateDTO updateDelegateTags(String accountId, String delegateId, DelegateTags delegateTags) {
+    return doUpdateDelegateTags(accountId, delegateId, delegateTags, true);
+  }
+
+  @Override
+  public DelegateDTO updateDelegateTagsFromApi(String accountId, String delegateId, DelegateTags delegateTags) {
+    return doUpdateDelegateTags(accountId, delegateId, delegateTags, false);
+  }
+
+  private DelegateDTO doUpdateDelegateTags(
+      String accountId, String delegateId, DelegateTags delegateTags, boolean audit) {
     Delegate delegate = delegateCache.get(accountId, delegateId, true);
     if (delegate == null) {
       throw new InvalidRequestException(
           format("Delegate with accountId: %s and delegateId: %s does not exists.", accountId, delegateId));
     }
     delegate.setTags(delegateTags.getTags());
-    Delegate updatedDelegate = updateTags(delegate);
+    Delegate updatedDelegate = doUpdateTags(delegate, audit);
     return DelegateDTO.convertToDTO(updatedDelegate, null);
   }
 
   @Override
   public DelegateDTO deleteDelegateTags(String accountId, String delegateId) {
+    return doDeleteDelegateTags(accountId, delegateId, true);
+  }
+
+  @Override
+  public DelegateDTO deleteDelegateTagsFromApi(String accountId, String delegateId) {
+    return doDeleteDelegateTags(accountId, delegateId, false);
+  }
+
+  private DelegateDTO doDeleteDelegateTags(String accountId, String delegateId, boolean audit) {
     Delegate delegate = delegateCache.get(accountId, delegateId, true);
     if (delegate == null) {
       throw new InvalidRequestException(
           format("Delegate with accountId: %s and delegateId: %s does not exists.", accountId, delegateId));
     }
     delegate.setTags(emptyList());
-    Delegate updatedDelegate = updateTags(delegate);
+    Delegate updatedDelegate = doUpdateTags(delegate, audit);
     return DelegateDTO.convertToDTO(updatedDelegate, null);
   }
 

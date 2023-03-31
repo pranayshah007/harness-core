@@ -17,6 +17,7 @@ import static io.harness.eraro.ErrorCode.NOT_WHITELISTED_IP;
 import static io.harness.exception.WingsException.USER;
 
 import static software.wings.security.AuthenticationFilter.API_KEY_HEADER;
+import static software.wings.utils.HttpRequestUtils.X_API_KEY;
 
 import static java.util.Arrays.asList;
 import static javax.ws.rs.HttpMethod.OPTIONS;
@@ -220,12 +221,12 @@ public class AuthRuleFilter implements ContainerRequestFilter {
     MultivaluedMap<String, String> queryParameters = requestContext.getUriInfo().getQueryParameters();
 
     String accountId = getRequestParamFromContext("accountId", pathParameters, queryParameters);
-    if (isNotEmpty(requestContext.getHeaderString("X-Api-Key"))) {
+    if (isNotEmpty(requestContext.getHeaderString(X_API_KEY))) {
       if (isEmpty(accountId)) {
-        accountId = apiKeyService.getAccountIdFromApiKey(requestContext.getHeaderString("X-Api-Key"));
+        accountId = apiKeyService.getAccountIdFromApiKey(requestContext.getHeaderString(X_API_KEY));
       }
       if (isNotEmpty(accountId)) {
-        ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(requestContext.getHeaderString("X-Api-Key"), accountId);
+        ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(requestContext.getHeaderString(X_API_KEY), accountId);
         auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, apiKeyEntry, Event.Type.INVOKED);
       }
     }

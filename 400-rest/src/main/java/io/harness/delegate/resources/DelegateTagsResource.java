@@ -27,12 +27,14 @@ import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.DelegateService;
+import software.wings.utils.HttpRequestUtils;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.DELETE;
@@ -43,6 +45,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.http.Body;
 
@@ -81,11 +84,14 @@ public class DelegateTagsResource {
   @ExceptionMetered
   @AuthRule(permissionType = MANAGE_DELEGATES)
   @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
-  public RestResponse<DelegateDTO> addTags(@PathParam("delegateId") @NotEmpty String delegateId,
-      @QueryParam("accountId") @NotEmpty String accountId, @Body @NotNull DelegateTags delegateTags) {
+  public RestResponse<DelegateDTO> addTags(@Context HttpServletRequest request,
+      @PathParam("delegateId") @NotEmpty String delegateId, @QueryParam("accountId") @NotEmpty String accountId,
+      @Body @NotNull DelegateTags delegateTags) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-      return new RestResponse<>(delegateService.addDelegateTags(accountId, delegateId, delegateTags));
+      return new RestResponse<>(HttpRequestUtils.hasApiKey(request)
+              ? delegateService.addDelegateTagsFromApi(accountId, delegateId, delegateTags)
+              : delegateService.addDelegateTags(accountId, delegateId, delegateTags));
     }
   }
 
@@ -95,11 +101,14 @@ public class DelegateTagsResource {
   @ExceptionMetered
   @AuthRule(permissionType = MANAGE_DELEGATES)
   @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
-  public RestResponse<DelegateDTO> updateTags(@PathParam("delegateId") @NotEmpty String delegateId,
-      @QueryParam("accountId") @NotEmpty String accountId, @Body @NotNull DelegateTags delegateTags) {
+  public RestResponse<DelegateDTO> updateTags(@Context HttpServletRequest request,
+      @PathParam("delegateId") @NotEmpty String delegateId, @QueryParam("accountId") @NotEmpty String accountId,
+      @Body @NotNull DelegateTags delegateTags) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-      return new RestResponse<>(delegateService.updateDelegateTags(accountId, delegateId, delegateTags));
+      return new RestResponse<>(HttpRequestUtils.hasApiKey(request)
+              ? delegateService.updateDelegateTagsFromApi(accountId, delegateId, delegateTags)
+              : delegateService.updateDelegateTags(accountId, delegateId, delegateTags));
     }
   }
 
@@ -109,11 +118,13 @@ public class DelegateTagsResource {
   @ExceptionMetered
   @AuthRule(permissionType = MANAGE_DELEGATES)
   @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
-  public RestResponse<DelegateDTO> deleteTags(
+  public RestResponse<DelegateDTO> deleteTags(@Context HttpServletRequest request,
       @PathParam("delegateId") @NotEmpty String delegateId, @QueryParam("accountId") @NotEmpty String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-      return new RestResponse<>(delegateService.deleteDelegateTags(accountId, delegateId));
+      return new RestResponse<>(HttpRequestUtils.hasApiKey(request)
+              ? delegateService.deleteDelegateTagsFromApi(accountId, delegateId)
+              : delegateService.deleteDelegateTags(accountId, delegateId));
     }
   }
 

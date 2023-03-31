@@ -232,9 +232,15 @@ public interface DelegateService extends OwnedByAccount {
 
   DelegateDTO addDelegateTags(String accountId, String delegateId, DelegateTags delegateTags);
 
+  DelegateDTO addDelegateTagsFromApi(String accountId, String delegateId, DelegateTags delegateTags);
+
   DelegateDTO updateDelegateTags(String accountId, String delegateId, DelegateTags delegateTags);
 
+  DelegateDTO updateDelegateTagsFromApi(String accountId, String delegateId, DelegateTags delegateTags);
+
   DelegateDTO deleteDelegateTags(String accountId, String delegateId);
+
+  DelegateDTO deleteDelegateTagsFromApi(String accountId, String delegateId);
 
   DelegateApprovalResponse approveDelegatesUsingProfile(
       String accountId, String delegateProfileId, DelegateApproval action) throws InvalidRequestException;

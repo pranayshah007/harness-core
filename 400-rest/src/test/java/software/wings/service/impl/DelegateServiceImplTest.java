@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.GAURAV;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.INDER;
@@ -68,6 +69,7 @@ import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateConfiguration;
+import io.harness.delegate.beans.DelegateDTO;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateInitializationDetails;
@@ -78,6 +80,7 @@ import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSetupDetails.DelegateSetupDetailsBuilder;
 import io.harness.delegate.beans.DelegateSize;
 import io.harness.delegate.beans.DelegateStringResponseData;
+import io.harness.delegate.beans.DelegateTags;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.DelegateTaskResponse.ResponseCode;
@@ -120,6 +123,7 @@ import io.harness.version.VersionInfoManager;
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 import software.wings.beans.CEDelegateStatus;
+import software.wings.beans.Event;
 import software.wings.beans.HttpStateExecutionResponse;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.TaskType;
@@ -199,6 +203,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Mock private DelegateProfileService delegateProfileService;
   @Mock private DelegateCache delegateCache;
   @Mock private DelegateNgTokenService delegateNgTokenService;
+  @Mock private AuditServiceHelper auditServiceHelper;
   @InjectMocks @Inject private DelegateServiceImpl delegateService;
   @InjectMocks @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
   @InjectMocks @Inject private DelegateSyncServiceImpl delegateSyncService;
@@ -1834,6 +1839,85 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     delegateTaskServiceClassic.handleDriverResponse(delegateTask, delegateTaskResponse);
 
     verify(delegateCallbackService).publishAsyncTaskResponse(delegateTask.getUuid(), responseData);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDoNotAuditWhenUpdateDelegateTagsFromApi() {
+    final Delegate delegate = Delegate.builder().accountId(ACCOUNT_ID).uuid(DELEGATE_ID).build();
+    when(delegateCache.get(ACCOUNT_ID, DELEGATE_ID, true)).thenReturn(delegate);
+
+    final DelegateDTO dto =
+        delegateService.updateDelegateTagsFromApi(ACCOUNT_ID, DELEGATE_ID, new DelegateTags(List.of("abc", "def")));
+    assertThat(dto).isNotNull();
+    verify(auditServiceHelper, never())
+        .reportForAuditingUsingAccountId(any(), eq(delegate), any(), eq(Event.Type.UPDATE_TAG));
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDoNotAuditWhenDeleteDelegateTagsFromApi() {
+    final Delegate delegate = Delegate.builder().accountId(ACCOUNT_ID).uuid(DELEGATE_ID).build();
+    when(delegateCache.get(ACCOUNT_ID, DELEGATE_ID, true)).thenReturn(delegate);
+
+    final DelegateDTO dto = delegateService.deleteDelegateTagsFromApi(ACCOUNT_ID, DELEGATE_ID);
+    assertThat(dto).isNotNull();
+    verify(auditServiceHelper, never())
+        .reportForAuditingUsingAccountId(any(), eq(delegate), any(), eq(Event.Type.UPDATE_TAG));
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDoNotAuditWhenAddDelegateTagsFromApi() {
+    final Delegate delegate = Delegate.builder().accountId(ACCOUNT_ID).uuid(DELEGATE_ID).build();
+    when(delegateCache.get(ACCOUNT_ID, DELEGATE_ID, true)).thenReturn(delegate);
+
+    final DelegateDTO dto =
+        delegateService.addDelegateTagsFromApi(ACCOUNT_ID, DELEGATE_ID, new DelegateTags(List.of("abc", "def")));
+    assertThat(dto).isNotNull();
+    verify(auditServiceHelper, never())
+        .reportForAuditingUsingAccountId(any(), eq(delegate), any(), eq(Event.Type.UPDATE_TAG));
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldAuditWhenUpdateDelegateTags() {
+    final Delegate delegate = Delegate.builder().accountId(ACCOUNT_ID).uuid(DELEGATE_ID).build();
+    when(delegateCache.get(ACCOUNT_ID, DELEGATE_ID, true)).thenReturn(delegate);
+
+    final DelegateDTO dto =
+        delegateService.updateDelegateTags(ACCOUNT_ID, DELEGATE_ID, new DelegateTags(List.of("abc", "def")));
+    assertThat(dto).isNotNull();
+    verify(auditServiceHelper).reportForAuditingUsingAccountId(any(), eq(delegate), any(), eq(Event.Type.UPDATE_TAG));
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldAuditWhenDeleteDelegateTags() {
+    final Delegate delegate = Delegate.builder().accountId(ACCOUNT_ID).uuid(DELEGATE_ID).build();
+    when(delegateCache.get(ACCOUNT_ID, DELEGATE_ID, true)).thenReturn(delegate);
+
+    final DelegateDTO dto = delegateService.deleteDelegateTags(ACCOUNT_ID, DELEGATE_ID);
+    assertThat(dto).isNotNull();
+    verify(auditServiceHelper).reportForAuditingUsingAccountId(any(), eq(delegate), any(), eq(Event.Type.UPDATE_TAG));
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldAuditWhenAddDelegateTags() {
+    final Delegate delegate = Delegate.builder().accountId(ACCOUNT_ID).uuid(DELEGATE_ID).build();
+    when(delegateCache.get(ACCOUNT_ID, DELEGATE_ID, true)).thenReturn(delegate);
+
+    final DelegateDTO dto =
+        delegateService.addDelegateTags(ACCOUNT_ID, DELEGATE_ID, new DelegateTags(List.of("abc", "def")));
+    assertThat(dto).isNotNull();
+    verify(auditServiceHelper).reportForAuditingUsingAccountId(any(), eq(delegate), any(), eq(Event.Type.UPDATE_TAG));
   }
 
   private List<String> setUpDelegatesForInitializationTest() {
