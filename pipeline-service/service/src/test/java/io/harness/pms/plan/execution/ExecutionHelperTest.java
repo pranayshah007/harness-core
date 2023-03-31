@@ -316,7 +316,7 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getProcessedYaml()).isEqualTo(YamlUtils.injectUuid(mergedPipelineYaml));
     verify(pipelineGovernanceService, times(1))
         .fetchExpandedPipelineJSONFromYaml(
-            accountId, orgId, projectId, mergedPipelineYaml, true, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
+            accountId, orgId, projectId, mergedPipelineYaml, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
 
     buildExecutionMetadataVerifications(pipelineEntity);
   }
@@ -352,7 +352,7 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getProcessedYaml()).isEqualTo(YamlUtils.injectUuid(mergedPipelineYaml));
     verify(pipelineGovernanceService, times(1))
         .fetchExpandedPipelineJSONFromYaml(
-            accountId, orgId, projectId, mergedPipelineYaml, true, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
+            accountId, orgId, projectId, mergedPipelineYaml, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
 
     buildExecutionMetadataVerifications(inlinePipeline);
   }
@@ -388,7 +388,7 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getProcessedYaml()).isEqualTo(YamlUtils.injectUuid(mergedPipelineYaml));
     verify(pipelineGovernanceService, times(1))
         .fetchExpandedPipelineJSONFromYaml(
-            accountId, orgId, projectId, mergedPipelineYaml, true, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
+            accountId, orgId, projectId, mergedPipelineYaml, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
 
     buildExecutionMetadataVerifications(remotePipeline);
   }
@@ -432,7 +432,7 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
     verify(pipelineGovernanceService, times(1))
         .fetchExpandedPipelineJSONFromYaml(
-            accountId, orgId, projectId, mergedPipelineYaml, true, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
+            accountId, orgId, projectId, mergedPipelineYaml, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
   }
 
   @Test
@@ -468,8 +468,8 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getStagesExecutionMetadata().getExpressionValues()).isNull();
     assertThat(planExecutionMetadata.getProcessedYaml()).isEqualTo(YamlUtils.injectUuid(mergedPipelineYamlForS2));
     verify(pipelineGovernanceService, times(1))
-        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYamlForS2, true,
-            OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
+        .fetchExpandedPipelineJSONFromYaml(
+            accountId, orgId, projectId, mergedPipelineYamlForS2, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
 
     verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
     verify(pmsGitSyncHelper, times(1))
@@ -528,7 +528,7 @@ public class ExecutionHelperTest extends CategoryTest {
             accountId, orgId, projectId, pipelineId, pipelineYamlWithExpressions);
     verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
     verify(pipelineGovernanceService, times(1))
-        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYamlForS2WithExpression, true,
+        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYamlForS2WithExpression,
             OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
   }
 
@@ -874,7 +874,7 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getStagesExecutionMetadata().isStagesExecution()).isFalse();
     verify(pipelineGovernanceService, times(1))
         .fetchExpandedPipelineJSONFromYaml(
-            accountId, orgId, projectId, pipelineYamlV1, true, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
+            accountId, orgId, projectId, pipelineYamlV1, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
     verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
     verify(pmsGitSyncHelper, times(1))
         .getGitSyncBranchContextBytesThreadLocal(pipelineEntity, pipelineEntity.getStoreType(), null, null);
