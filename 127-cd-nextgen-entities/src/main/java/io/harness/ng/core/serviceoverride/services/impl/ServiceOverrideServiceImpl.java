@@ -97,16 +97,26 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef) {
     String[] environmentRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     if (environmentRefSplit == null || environmentRefSplit.length == 1) {
-      return serviceOverrideRepository
-          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRef(
+      Optional<NGServiceOverridesEntity> entityOptionalByEnvIdentifier =
+          serviceOverrideRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndServiceRef(
+              accountId, orgIdentifier, projectIdentifier, environmentRef, serviceRef);
+
+      return entityOptionalByEnvIdentifier.isPresent()
+          ? entityOptionalByEnvIdentifier
+          : serviceOverrideRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRef(
               accountId, orgIdentifier, projectIdentifier, environmentRef, serviceRef);
     } else {
       IdentifierRef envIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(environmentRef, accountId, orgIdentifier, projectIdentifier);
-      return serviceOverrideRepository
-          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRef(
+      Optional<NGServiceOverridesEntity> entityOptionalByEnvIdentifier =
+          serviceOverrideRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndServiceRef(
               envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
               envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), serviceRef);
+
+      return entityOptionalByEnvIdentifier.isPresent()
+          ? entityOptionalByEnvIdentifier
+          : serviceOverrideRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRef(
+              accountId, orgIdentifier, projectIdentifier, environmentRef, serviceRef);
     }
   }
 

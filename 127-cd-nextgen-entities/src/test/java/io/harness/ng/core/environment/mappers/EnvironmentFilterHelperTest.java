@@ -30,14 +30,17 @@ import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import com.mongodb.BasicDBList;
 import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
@@ -203,8 +206,31 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
     assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.accountId)).isEqualTo(accountIdentifier);
     assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.projectIdentifier)).isEqualTo(projectIdentifier);
     assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.orgIdentifier)).isEqualTo(orgIdentifier);
-    assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.environmentRef)).isEqualTo(environmentIdentifier);
     assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.serviceRef)).isEqualTo(serviceIdentifier);
+
+    BasicDBList andOp = (BasicDBList) criteriaObj.get("$and");
+    Document orDocument = (Document) andOp.get(0);
+    BasicDBList orOp = (BasicDBList) orDocument.get("$or");
+    assertThat(orOp.size()).isEqualTo(2);
+    List<String> keysInCriteria = orOp.stream()
+                                      .map(o -> (Document) o)
+                                      .map(Document::keySet)
+                                      .flatMap(Collection::stream)
+                                      .collect(Collectors.toList());
+    List<String> valuesInCriteria = orOp.stream()
+                                        .map(o -> (Document) o)
+                                        .map(Document::values)
+                                        .flatMap(Collection::stream)
+                                        .collect(Collectors.toList())
+                                        .stream()
+                                        .map(o -> (String) o)
+                                        .collect(Collectors.toList());
+
+    assertThat(keysInCriteria)
+        .containsExactlyInAnyOrder(
+            NGServiceOverridesEntityKeys.environmentRef, NGServiceOverridesEntityKeys.envIdentifier);
+    assertThat(valuesInCriteria).hasSize(2);
+    assertThat(valuesInCriteria).containsExactlyInAnyOrder(environmentIdentifier, environmentIdentifier);
   }
 
   @Test

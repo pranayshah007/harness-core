@@ -120,8 +120,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
     assertThat(upsertedServiceOverridesEntity.getProjectIdentifier())
         .isEqualTo(serviceOverridesEntity.getProjectIdentifier());
     assertThat(upsertedServiceOverridesEntity.getServiceRef()).isEqualTo(serviceOverridesEntity.getServiceRef());
-    assertThat(upsertedServiceOverridesEntity.getEnvironmentRef())
-        .isEqualTo(serviceOverridesEntity.getEnvironmentRef());
+    assertThat(upsertedServiceOverridesEntity.getEnvIdentifier()).isEqualTo(serviceOverridesEntity.getEnvironmentRef());
     assertThat(upsertedServiceOverridesEntity.getYaml()).isNotNull();
 
     // list
@@ -393,8 +392,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
     assertThat(upsertedServiceOverridesEntity.getProjectIdentifier())
         .isEqualTo(serviceOverridesEntity.getProjectIdentifier());
     assertThat(upsertedServiceOverridesEntity.getServiceRef()).isEqualTo(serviceOverridesEntity.getServiceRef());
-    assertThat(upsertedServiceOverridesEntity.getEnvironmentRef())
-        .isEqualTo(serviceOverridesEntity.getEnvironmentRef());
+    assertThat(upsertedServiceOverridesEntity.getEnvIdentifier()).isEqualTo(serviceOverridesEntity.getEnvironmentRef());
     assertThat(upsertedServiceOverridesEntity.getYaml()).isNotNull();
 
     NGServiceOverridesEntity serviceOverridesEntity2 =

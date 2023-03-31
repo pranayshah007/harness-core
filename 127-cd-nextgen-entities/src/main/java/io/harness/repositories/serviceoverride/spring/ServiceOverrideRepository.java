@@ -19,4 +19,7 @@ public interface ServiceOverrideRepository
     extends PagingAndSortingRepository<NGServiceOverridesEntity, String>, ServiceOverrideRepositoryCustom {
   Optional<NGServiceOverridesEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRef(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef);
+
+  Optional<NGServiceOverridesEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndServiceRef(
+      String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef);
 }
