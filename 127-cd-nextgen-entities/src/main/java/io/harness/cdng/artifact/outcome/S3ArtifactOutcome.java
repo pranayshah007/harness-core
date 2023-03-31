@@ -54,7 +54,7 @@ public class S3ArtifactOutcome implements ArtifactOutcome {
 
   @Override
   public ArtifactSummary getArtifactSummary() {
-    return S3ArtifactSummary.builder().bucketName(bucketName).filePath(filePath).build();
+    return S3ArtifactSummary.builder().bucketName(bucketName).filePath(filePath).tag(bucketName).build();
   }
 
   @Override
