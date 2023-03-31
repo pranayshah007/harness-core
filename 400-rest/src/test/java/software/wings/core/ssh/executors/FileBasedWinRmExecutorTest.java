@@ -15,10 +15,10 @@ import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.apache.commons.io.IOUtils.contentEquals;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -100,8 +100,8 @@ public class FileBasedWinRmExecutorTest extends CategoryTest {
     mockStatic(SshHelperUtils.class);
     mockStatic(InstallUtils.class);
     mockRemoteCommandStatus(executor, SUCCESS);
-    when(SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(),
-             anyMapOf(String.class, String.class)))
+    when(SshHelperUtils.executeLocalCommand(
+             anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMap()))
         .thenAnswer(i -> true);
     when(InstallUtils.getPath(any(), any())).thenAnswer(i -> "/tmp/dummypath/tool");
     doReturn(buildByteInputStream(size))

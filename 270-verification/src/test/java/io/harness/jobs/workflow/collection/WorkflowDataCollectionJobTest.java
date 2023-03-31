@@ -11,7 +11,7 @@ import static io.harness.rule.OwnerRule.RAGHU;
 
 import static software.wings.common.VerificationConstants.DELAY_MINUTES;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;

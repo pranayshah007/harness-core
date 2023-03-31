@@ -68,14 +68,12 @@ import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -86,8 +84,8 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -169,7 +167,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.command.CommandUnit;
 import software.wings.beans.container.HelmChartSpecification;
 import software.wings.beans.yaml.GitCommandExecutionResponse;
 import software.wings.beans.yaml.GitCommandExecutionResponse.GitCommandStatus;
@@ -436,7 +433,7 @@ public class HelmDeployStateTest extends CategoryTest {
     when(infrastructureDefinitionService.get(APP_ID, INFRA_DEFINITION_ID)).thenReturn(infrastructureDefinition);
 
     when(activityService.save(any(Activity.class))).thenReturn(Activity.builder().uuid(ACTIVITY_ID).build());
-    when(secretManager.getEncryptionDetails(anyObject(), anyString(), anyString())).thenReturn(Collections.emptyList());
+    when(secretManager.getEncryptionDetails(any(), anyString(), anyString())).thenReturn(Collections.emptyList());
     when(configuration.getPortal()).thenReturn(portalConfig);
     when(portalConfig.getUrl()).thenReturn("http://www.url.com");
     when(serviceTemplateService.getTemplateRefKeysByService(APP_ID, SERVICE_ID, ENV_ID))
@@ -970,8 +967,7 @@ public class HelmDeployStateTest extends CategoryTest {
 
     verify(activityService).updateStatus("activityId", APP_ID, ExecutionStatus.FAILED);
     verify(applicationManifestUtils, times(0))
-        .getValuesFilesFromGitFetchFilesResponse(
-            anyMapOf(K8sValuesLocation.class, ApplicationManifest.class), any(GitCommandExecutionResponse.class));
+        .getValuesFilesFromGitFetchFilesResponse(anyMap(), any(GitCommandExecutionResponse.class));
 
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
   }
@@ -996,8 +992,7 @@ public class HelmDeployStateTest extends CategoryTest {
 
     verify(activityService).updateStatus("activityId", APP_ID, ExecutionStatus.FAILED);
     verify(applicationManifestUtils, times(0))
-        .getValuesFilesFromGitFetchFilesResponse(
-            anyMapOf(K8sValuesLocation.class, ApplicationManifest.class), any(GitCommandExecutionResponse.class));
+        .getValuesFilesFromGitFetchFilesResponse(any(), any(GitCommandExecutionResponse.class));
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
   }
 
@@ -1245,7 +1240,7 @@ public class HelmDeployStateTest extends CategoryTest {
     doReturn(true).when(logService).batchedSaveCommandUnitLogs(any(), any(), any());
     doReturn(Activity.builder().uuid(ACTIVITY_ID).build())
         .when(spyHelmDeployState)
-        .createActivity(eq(context), anyListOf(CommandUnit.class));
+        .createActivity(eq(context), anyList());
 
     spyHelmDeployState.executeInternal(context);
     verify(spyHelmDeployState, times(1)).isRollBackNotNeeded(context);
@@ -1484,7 +1479,7 @@ public class HelmDeployStateTest extends CategoryTest {
     reset(executionSummary);
     HelmReleaseHistoryCommandResponse commandResponse = HelmReleaseHistoryCommandResponse.builder().build();
     helmDeployState.updateHelmExecutionSummary(context, commandResponse);
-    verifyZeroInteractions(executionSummary);
+    verifyNoInteractions(executionSummary);
   }
 
   private void testUpdateHelmExecutionSummaryWithoutHelmDeployStateType(HelmExecutionSummary executionSummary) {
@@ -1492,7 +1487,7 @@ public class HelmDeployStateTest extends CategoryTest {
     HelmInstallCommandResponse commandResponse = HelmInstallCommandResponse.builder().build();
     helmDeployState.setStateType("NON_HELM_DEPLOY");
     helmDeployState.updateHelmExecutionSummary(context, commandResponse);
-    verifyZeroInteractions(executionSummary);
+    verifyNoInteractions(executionSummary);
   }
 
   private void testUpdateHelmExecutionSummaryWithoutHelmChartInfo(HelmExecutionSummary executionSummary) {
@@ -1500,7 +1495,7 @@ public class HelmDeployStateTest extends CategoryTest {
     HelmInstallCommandResponse commandResponse = HelmInstallCommandResponse.builder().helmChartInfo(null).build();
     helmDeployState.setStateType(HELM_DEPLOY.name());
     helmDeployState.updateHelmExecutionSummary(context, commandResponse);
-    verifyZeroInteractions(executionSummary);
+    verifyNoInteractions(executionSummary);
   }
 
   private void testUpdateHelmExecutionSummaryWithException() {

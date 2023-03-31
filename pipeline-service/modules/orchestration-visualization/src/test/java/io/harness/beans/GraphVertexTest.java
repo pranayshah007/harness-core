@@ -10,7 +10,7 @@ package io.harness.beans;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 
 import io.harness.OrchestrationVisualizationTestBase;
 import io.harness.category.element.UnitTests;

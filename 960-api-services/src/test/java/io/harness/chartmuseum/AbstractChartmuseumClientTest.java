@@ -12,9 +12,9 @@ import static io.harness.chartmuseum.ChartMuseumConstants.DISABLE_STATEFILES;
 import static io.harness.rule.OwnerRule.ABOSII;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -50,7 +50,7 @@ public class AbstractChartmuseumClientTest extends CategoryTest {
   public void setup() throws IOException {
     MockitoAnnotations.initMocks(this);
 
-    doReturn(chartMuseumServer).when(clientHelper).startServer(anyString(), anyMapOf(String.class, String.class));
+    doReturn(chartMuseumServer).when(clientHelper).startServer(anyString(), anyMap());
     doReturn(startedProcess).when(chartMuseumServer).getStartedProcess();
   }
 

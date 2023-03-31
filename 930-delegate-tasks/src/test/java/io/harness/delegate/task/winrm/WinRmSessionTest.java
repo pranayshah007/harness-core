@@ -21,16 +21,16 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.spy;
@@ -122,8 +122,7 @@ public class WinRmSessionTest extends CategoryTest {
       ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
       SshHelperUtils.generateTGT(captor.capture(), any(), any(), any(), any());
       assertThat(captor.getValue()).isEqualTo("TestUser@KRB.LOCAL");
-      SshHelperUtils.executeLocalCommand(
-          anyString(), eq(logCallback), eq(writer), eq(false), anyMapOf(String.class, String.class));
+      SshHelperUtils.executeLocalCommand(anyString(), eq(logCallback), eq(writer), eq(false), anyMap());
     }
   }
 
@@ -142,13 +141,13 @@ public class WinRmSessionTest extends CategoryTest {
                                .build();
       mockStatic
           .when(()
-                    -> SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), nullable(Writer.class),
-                        anyBoolean(), anyMapOf(String.class, String.class)))
+                    -> SshHelperUtils.executeLocalCommand(
+                        anyString(), any(LogCallback.class), nullable(Writer.class), anyBoolean(), anyMap()))
           .thenReturn(true);
       winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
       mockStatic.verify(()
-                            -> SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class),
-                                nullable(Writer.class), anyBoolean(), anyMapOf(String.class, String.class)));
+                            -> SshHelperUtils.executeLocalCommand(
+                                anyString(), any(LogCallback.class), nullable(Writer.class), anyBoolean(), anyMap()));
     }
   }
 
@@ -167,8 +166,8 @@ public class WinRmSessionTest extends CategoryTest {
                                .build();
       mockStatic
           .when(()
-                    -> SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), any(Writer.class),
-                        anyBoolean(), anyMapOf(String.class, String.class)))
+                    -> SshHelperUtils.executeLocalCommand(
+                        anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMap()))
           .thenReturn(false);
       try {
         winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
@@ -193,8 +192,8 @@ public class WinRmSessionTest extends CategoryTest {
                                .build();
       mockStatic
           .when(()
-                    -> SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), nullable(Writer.class),
-                        anyBoolean(), anyMapOf(String.class, String.class)))
+                    -> SshHelperUtils.executeLocalCommand(
+                        anyString(), any(LogCallback.class), nullable(Writer.class), anyBoolean(), anyMap()))
           .thenReturn(true);
       winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
 
@@ -219,8 +218,8 @@ public class WinRmSessionTest extends CategoryTest {
                                .build();
       mockStatic
           .when(()
-                    -> SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), nullable(Writer.class),
-                        anyBoolean(), anyMapOf(String.class, String.class)))
+                    -> SshHelperUtils.executeLocalCommand(
+                        anyString(), any(LogCallback.class), nullable(Writer.class), anyBoolean(), anyMap()))
           .thenReturn(true);
       winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
 
@@ -237,8 +236,8 @@ public class WinRmSessionTest extends CategoryTest {
     try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic
           .when(()
-                    -> SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), any(Writer.class),
-                        anyBoolean(), anyMapOf(String.class, String.class)))
+                    -> SshHelperUtils.executeLocalCommand(
+                        anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMap()))
           .thenReturn(true);
       winRmSessionConfig = io.harness.delegate.task.winrm.WinRmSessionConfig.builder()
                                .domain("KRB.LOCAL")
@@ -261,8 +260,8 @@ public class WinRmSessionTest extends CategoryTest {
     try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
       mockStatic
           .when(()
-                    -> SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class), any(Writer.class),
-                        anyBoolean(), anyMapOf(String.class, String.class)))
+                    -> SshHelperUtils.executeLocalCommand(
+                        anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMap()))
           .thenReturn(true);
       winRmSessionConfig = io.harness.delegate.task.winrm.WinRmSessionConfig.builder()
                                .skipCertChecks(true)
@@ -414,7 +413,7 @@ public class WinRmSessionTest extends CategoryTest {
 
     winRmSession.executeCommandsList(commandsList, writer, error, false, null);
     verify(winRmTool).executeCommand(commands);
-    verifyZeroInteractions(shell);
+    verifyNoInteractions(shell);
   }
 
   @Test

@@ -10,8 +10,8 @@ package io.harness.delegate.task.git;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -34,7 +34,6 @@ import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
 
@@ -64,7 +63,7 @@ public class GitDecryptionHelperTest extends CategoryTest {
   public void testDecryptGitConfig() {
     gitDecryptionHelper.decryptGitConfig(
         GitConfigDTO.builder().gitAuth(mock(GitAuthenticationDTO.class)).build(), new ArrayList<>());
-    verify(decryptionHelper, times(1)).decrypt(any(GitAuthenticationDTO.class), anyListOf(EncryptedDataDetail.class));
+    verify(decryptionHelper, times(1)).decrypt(any(GitAuthenticationDTO.class), anyList());
   }
 
   @Test
@@ -74,7 +73,7 @@ public class GitDecryptionHelperTest extends CategoryTest {
     SshSessionConfig expectedSshSessionConfig = SshSessionConfig.Builder.aSshSessionConfig().build();
     doReturn(expectedSshSessionConfig)
         .when(sshSessionConfigMapper)
-        .getSSHSessionConfig(any(SSHKeySpecDTO.class), anyListOf(EncryptedDataDetail.class));
+        .getSSHSessionConfig(any(SSHKeySpecDTO.class), anyList());
     SshSessionConfig actualSshSessionConfig =
         gitDecryptionHelper.getSSHSessionConfig(SSHKeySpecDTO.builder().build(), new ArrayList<>());
     assertThat(actualSshSessionConfig).isEqualTo(expectedSshSessionConfig);
@@ -98,11 +97,9 @@ public class GitDecryptionHelperTest extends CategoryTest {
                                                 .spec(GithubAppSpecDTO.builder().build())
                                                 .build())
                                  .build();
-    doReturn(connector)
-        .when(decryptionService)
-        .decrypt(any(DecryptableEntity.class), anyListOf(EncryptedDataDetail.class));
+    doReturn(connector).when(decryptionService).decrypt(any(DecryptableEntity.class), anyList());
 
     gitDecryptionHelper.decryptApiAccessConfig(connector, new ArrayList<>());
-    verify(decryptionHelper, times(1)).decrypt(any(DecryptableEntity.class), anyListOf(EncryptedDataDetail.class));
+    verify(decryptionHelper, times(1)).decrypt(any(DecryptableEntity.class), anyList());
   }
 }

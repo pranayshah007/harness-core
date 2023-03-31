@@ -20,7 +20,7 @@ import static software.wings.sm.states.ApprovalState.ApprovalStateType.USER_GROU
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.powermock.api.mockito.PowerMockito.when;
 

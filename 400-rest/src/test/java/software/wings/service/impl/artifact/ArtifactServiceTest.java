@@ -41,10 +41,9 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.data.MapEntry.entry;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
@@ -162,7 +161,7 @@ public class ArtifactServiceTest extends WingsBaseTest {
   public void setUp() {
     persistence.save(Service.builder().appId(APP_ID).artifactType(ArtifactType.WAR).uuid(SERVICE_ID).build());
     persistence.save(CustomArtifactStream.builder().uuid(ARTIFACT_STREAM_ID).name(ARTIFACT_STREAM_NAME).build());
-    when(appQuery.filter(any(), anyObject())).thenReturn(appQuery);
+    when(appQuery.filter(any(), any())).thenReturn(appQuery);
 
     when(appService.exist(APP_ID)).thenReturn(true);
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(jenkinsArtifactStream);

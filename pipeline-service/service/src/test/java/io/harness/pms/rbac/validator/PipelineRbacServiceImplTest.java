@@ -11,9 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -120,7 +120,7 @@ public class PipelineRbacServiceImplTest extends CategoryTest {
                               .permitted(false)
                               .build());
 
-    when(accessControlClient.checkForAccess(anyListOf(PermissionCheckDTO.class)))
+    when(accessControlClient.checkForAccess(anyList()))
         .thenReturn(AccessCheckResponseDTO.builder().accessControlList(accessControlList).build());
     assertThatThrownBy(()
                            -> pipelineRbacService.extractAndValidateStaticallyReferredEntities(

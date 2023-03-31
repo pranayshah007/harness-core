@@ -14,8 +14,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.GEORGE;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -111,7 +110,7 @@ public class WingsExceptionMapperTest extends WingsBaseTest implements MockableT
 
     InOrder inOrder = inOrder(mockLogger);
     inOrder.verify(mockLogger, never()).error(any());
-    inOrder.verify(mockLogger, never()).error(any(), (Object) anyObject());
+    inOrder.verify(mockLogger, never()).error(any(), (Object) any());
     inOrder.verify(mockLogger, never()).error(any(), (Throwable) any());
   }
 

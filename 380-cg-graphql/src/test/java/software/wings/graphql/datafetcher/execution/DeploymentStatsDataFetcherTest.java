@@ -19,9 +19,9 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -97,8 +97,8 @@ import lombok.experimental.FieldNameConstants;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -137,7 +137,7 @@ public class DeploymentStatsDataFetcherTest extends WingsBaseTest {
   }
 
   private void mockTagHelper() {
-    when(tagHelper.getEntityIdsFromTags(anyString(), anyListOf(QLTagInput.class), Matchers.any(EntityType.class)))
+    when(tagHelper.getEntityIdsFromTags(anyString(), anyList(), ArgumentMatchers.any(EntityType.class)))
         .thenReturn(Collections.setOf(asList("DATA1", "DATA2")));
   }
 
@@ -377,7 +377,7 @@ public class DeploymentStatsDataFetcherTest extends WingsBaseTest {
   }
 
   private void mockStatHelper() {
-    when(statsHelper.getEntityName(Matchers.any(DeploymentMetaDataFields.class), anyString()))
+    when(statsHelper.getEntityName(ArgumentMatchers.any(DeploymentMetaDataFields.class), anyString()))
         .thenAnswer(new Answer<String>() {
           @Override
           public String answer(InvocationOnMock invocation) throws Throwable {
