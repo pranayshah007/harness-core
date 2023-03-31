@@ -35,6 +35,7 @@ public class EnvironmentExpansionHandler implements JsonExpansionHandler {
   @Inject private EnvironmentService envService;
   @Inject private InfrastructureEntityService infraService;
   @Inject private EnvironmentExpansionUtils utils;
+
   private final ObjectMapper objectMapper = new ObjectMapper();
   @Override
   public ExpansionResponse expand(JsonNode envJsonNode, ExpansionRequestMetadata metadata, String fqn) {

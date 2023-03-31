@@ -16,4 +16,5 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.CDC)
 public class ExpansionConstants {
   static final String CONNECTOR_PROP_NAME = "connector";
+  static final String ENVIRONMENTS_PARALLEL_KEY = "parallel";
 }

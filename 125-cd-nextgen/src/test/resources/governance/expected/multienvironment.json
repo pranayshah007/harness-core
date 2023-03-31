@@ -1,0 +1,44 @@
+{
+  "metadata" : {
+    "parallel" : true
+  },
+  "values" : [ {
+    "environmentRef" : "my_environment",
+    "identifier" : "my_environment",
+    "name" : "dev_environment",
+    "description" : "description",
+    "type" : "PreProduction",
+    "accountIdentifier" : "accountId",
+    "orgIdentifier" : "orgId",
+    "projectIdentifier" : "projectId",
+    "tags" : {
+      "prod" : "false"
+    },
+    "infrastructures" : [ {
+      "type" : "KubernetesDirect",
+      "spec" : {
+        "namespace" : "harness",
+        "releaseName" : "dev-0001",
+        "connector" : {
+          "name" : "k8s_connector_name",
+          "identifier" : "k8s_connector",
+          "description" : null,
+          "orgIdentifier" : null,
+          "projectIdentifier" : null,
+          "tags" : null,
+          "type" : "K8sCluster",
+          "spec" : {
+            "credential" : null,
+            "delegateSelectors" : [ "del-1" ]
+          }
+        }
+      }
+    }, {
+      "type" : "ECS",
+      "spec" : {
+        "cluster" : "us-east-1-cluster",
+        "region" : "us-east-1"
+      }
+    } ]
+  }, { } ]
+}

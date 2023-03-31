@@ -163,6 +163,7 @@ import io.harness.pms.expressions.functors.ImagePullSecretFunctor;
 import io.harness.pms.expressions.functors.InstanceFunctor;
 import io.harness.pms.governance.EnvironmentExpansionHandler;
 import io.harness.pms.governance.EnvironmentRefExpansionHandler;
+import io.harness.pms.governance.MultiEnvironmentExpansionHandler;
 import io.harness.pms.governance.ServiceRefExpansionHandler;
 import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
 import io.harness.pms.redisConsumer.PipelineExecutionSummaryCDRedisEventConsumer;
@@ -780,10 +781,22 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                                                   .expansionHandler(EnvironmentExpansionHandler.class)
                                                   .build();
 
+    JsonExpansionInfo multiEnvironmentInfo =
+        JsonExpansionInfo.newBuilder()
+            .setKey("stage/spec/environments")
+            .setExpansionType(ExpansionRequestType.LOCAL_FQN)
+            .setStageType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("Deployment").build())
+            .build();
+    JsonExpansionHandlerInfo multiEnvironmentHandlerInfo = JsonExpansionHandlerInfo.builder()
+                                                               .jsonExpansionInfo(multiEnvironmentInfo)
+                                                               .expansionHandler(MultiEnvironmentExpansionHandler.class)
+                                                               .build();
+
     jsonExpansionHandlers.add(connRefHandlerInfo);
     jsonExpansionHandlers.add(serviceRefHandlerInfo);
     jsonExpansionHandlers.add(envRefHandlerInfo);
     jsonExpansionHandlers.add(envHandlerInfo);
+    jsonExpansionHandlers.add(multiEnvironmentHandlerInfo);
     return jsonExpansionHandlers;
   }
 
