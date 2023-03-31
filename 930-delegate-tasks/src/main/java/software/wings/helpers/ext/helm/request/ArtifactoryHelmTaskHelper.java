@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.delegatetasks.helm;
+package software.wings.helpers.ext.helm.request;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
@@ -16,7 +16,6 @@ import io.harness.artifactory.ArtifactoryConfigRequest;
 
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
 import software.wings.helpers.ext.artifactory.ArtifactoryService;
-import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;

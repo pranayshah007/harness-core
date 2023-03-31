@@ -31,6 +31,7 @@ import software.wings.delegatetasks.DelegateCVActivityLogService;
 import software.wings.service.impl.analysis.MetricElement;
 import software.wings.service.impl.instana.InstanaAnalyzeMetrics;
 import software.wings.service.impl.instana.InstanaDataCollectionInfo;
+import software.wings.service.impl.instana.InstanaDataCollector;
 import software.wings.service.impl.instana.InstanaInfraMetrics;
 import software.wings.service.intfc.instana.InstanaDelegateService;
 

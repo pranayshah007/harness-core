@@ -5,16 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.perpetualtask.manifest;
+package software.wings.delegatetasks.helm;
 
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.delegate.task.manifests.request.ManifestCollectionParams;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.perpetualtask.manifest.ManifestRepositoryService;
 
 import software.wings.beans.dto.HelmChart;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
-import software.wings.delegatetasks.helm.ArtifactoryHelmTaskHelper;
 import software.wings.helpers.ext.artifactory.ArtifactoryService;
+import software.wings.helpers.ext.helm.request.ArtifactoryHelmTaskHelper;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.service.intfc.security.EncryptionService;
 
