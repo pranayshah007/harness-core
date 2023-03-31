@@ -124,6 +124,7 @@ public class SSOServiceTest extends WingsBaseTest {
     account.setAccountName("account_name");
     account.setCompanyName("company_name");
     account.setUuid("accountId");
+    final String friendlyName = "testFriendlyName";
 
     account.setAuthenticationMechanism(AuthenticationMechanism.SAML);
     String xml = IOUtils.toString(getClass().getResourceAsStream("/okta-IDP-metadata.xml"), Charset.defaultCharset());
@@ -137,19 +138,22 @@ public class SSOServiceTest extends WingsBaseTest {
         "https://dev-274703.oktapreview.com/app/harnessiodev274703_testapp_1/exkefa5xlgHhrU1Mc0h7/sso/saml");
     mockSamlSettings.setMetaDataFile(xml);
     mockSamlSettings.setDisplayName("Okta");
+    mockSamlSettings.setFriendlySamlAppName(friendlyName);
     when(SSO_SETTING_SERVICE.getSamlSettingsByAccountId(anyString())).thenReturn(mockSamlSettings);
 
     SSOConfig settings = ssoService.uploadSamlConfiguration(account.getUuid(),
         getClass().getResourceAsStream("/okta-IDP-metadata.xml"), "Okta", "group", true, logoutUrl, "app.harness.io",
-        SAMLProviderType.OKTA.name(), anyString(), any(), false);
+        SAMLProviderType.OKTA.name(), anyString(), any(), friendlyName, false);
     String idpRedirectUrl = ((SamlSettings) settings.getSsoSettings().get(0)).getUrl();
     assertThat(idpRedirectUrl)
         .isEqualTo("https://dev-274703.oktapreview.com/app/harnessiodev274703_testapp_1/exkefa5xlgHhrU1Mc0h7/sso/saml");
     assertThat(settings.getSsoSettings().get(0).getDisplayName()).isEqualTo("Okta");
+    assertThat(((SamlSettings) settings.getSsoSettings().get(0)).getFriendlySamlAppName()).isEqualTo(friendlyName);
 
     try {
       ssoService.uploadSamlConfiguration(account.getUuid(), getClass().getResourceAsStream("/SamlResponse.txt"), "Okta",
-          "group", true, logoutUrl, "app.harness.io", SAMLProviderType.OKTA.name(), anyString(), any(), false);
+          "group", true, logoutUrl, "app.harness.io", SAMLProviderType.OKTA.name(), anyString(), any(), friendlyName,
+          false);
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (WingsException e) {
       assertThat(e.getMessage()).isEqualTo(ErrorCode.INVALID_SAML_CONFIGURATION.name());
@@ -297,5 +301,40 @@ public class SSOServiceTest extends WingsBaseTest {
     assertThat(withEncryptedDataAndPasswordDetail.getEncryptedPwdDataDetail().getEncryptedData().getName())
         .isEqualTo(testLdapRecordName);
     assertThat(withEncryptedDataAndPasswordDetail.getEncryptedPwdDataDetail().getFieldName()).isEqualTo(password);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void updateSamlConfiguration() throws IOException, SamlException {
+    Account account = new Account();
+    account.setAccountName("account_name");
+    account.setCompanyName("company_name");
+    account.setUuid("accountId");
+    final String friendlyName = "testFriendlyName";
+
+    account.setAuthenticationMechanism(AuthenticationMechanism.SAML);
+    String xml = IOUtils.toString(getClass().getResourceAsStream("/okta-IDP-metadata.xml"), Charset.defaultCharset());
+    when(ACCOUNT_SERVICE.get(anyString())).thenReturn(account);
+    when(ACCOUNT_SERVICE.update(account)).thenReturn(account);
+    when(SAML_CLIENT_SERVICE.getSamlClient(anyString(), anyString())).thenCallRealMethod();
+
+    SamlSettings mockSamlSettings = SamlSettings.builder().build();
+    mockSamlSettings.setAccountId(account.getUuid());
+    mockSamlSettings.setUrl(
+        "https://dev-274703.oktapreview.com/app/harnessiodev274703_testapp_1/exkefa5xlgHhrU1Mc0h7/sso/saml");
+    mockSamlSettings.setMetaDataFile(xml);
+    mockSamlSettings.setDisplayName("Okta");
+    mockSamlSettings.setFriendlySamlAppName(friendlyName);
+    when(SSO_SETTING_SERVICE.getSamlSettingsByAccountId(anyString())).thenReturn(mockSamlSettings);
+
+    SSOConfig settings = ssoService.updateSamlConfiguration(account.getUuid(),
+        getClass().getResourceAsStream("/okta-IDP-metadata.xml"), "Okta", "group", true, logoutUrl, "app.harness.io",
+        SAMLProviderType.OKTA.name(), anyString(), any(), false);
+    String idpRedirectUrl = ((SamlSettings) settings.getSsoSettings().get(0)).getUrl();
+    assertThat(idpRedirectUrl)
+        .isEqualTo("https://dev-274703.oktapreview.com/app/harnessiodev274703_testapp_1/exkefa5xlgHhrU1Mc0h7/sso/saml");
+    assertThat(settings.getSsoSettings().get(0).getDisplayName()).isEqualTo("Okta");
+    assertThat(((SamlSettings) settings.getSsoSettings().get(0)).getFriendlySamlAppName()).isEqualTo(friendlyName);
   }
 }

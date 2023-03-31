@@ -274,7 +274,9 @@ public class AuthenticationSettingsResource {
       @Parameter(description = "SAML provider type") @FormDataParam("samlProviderType") String samlProviderType,
       @Parameter(description = "Optional SAML clientId for Azure SSO") @FormDataParam("clientId") String clientId,
       @Parameter(description = "Optional SAML clientSecret reference string for Azure SSO") @FormDataParam(
-          "clientSecret") String clientSecret) {
+          "clientSecret") String clientSecret,
+      @Parameter(description = "Friendly name of the app on SAML SSO provider end in Harness") @FormDataParam(
+          "friendlySamlAppName") String friendlySamlAppName) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     try {
@@ -282,9 +284,9 @@ public class AuthenticationSettingsResource {
           new BoundedInputStream(uploadedInputStream, mainConfiguration.getFileUploadLimits().getCommandUploadLimit()));
       final MultipartBody.Part formData =
           MultipartBody.Part.createFormData("file", null, RequestBody.create(MultipartBody.FORM, bytes));
-      SSOConfig response =
-          authenticationSettingsService.uploadSAMLMetadata(accountId, formData, displayName, groupMembershipAttr,
-              authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId, clientSecret);
+      SSOConfig response = authenticationSettingsService.uploadSAMLMetadata(accountId, formData, displayName,
+          groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
+          clientSecret, friendlySamlAppName);
       return new RestResponse<>(response);
     } catch (Exception e) {
       throw new GeneralException("Error while creating new SAML Config", e);
@@ -317,7 +319,9 @@ public class AuthenticationSettingsResource {
       @Parameter(description = "SAML provider type") @FormDataParam("samlProviderType") String samlProviderType,
       @Parameter(description = "Optional SAML clientId for Azure SSO") @FormDataParam("clientId") String clientId,
       @Parameter(description = "Optional SAML clientSecret reference string for Azure SSO") @FormDataParam(
-          "clientSecret") String clientSecret) {
+          "clientSecret") String clientSecret,
+      @Parameter(description = "Friendly name of the app on SAML SSO provider end in Harness") @FormDataParam(
+          "friendlySamlAppName") String friendlySamlAppName) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     try {
@@ -330,6 +334,54 @@ public class AuthenticationSettingsResource {
       SSOConfig response =
           authenticationSettingsService.updateSAMLMetadata(accountId, formData, displayName, groupMembershipAttr,
               authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId, clientSecret);
+      return new RestResponse<>(response);
+    } catch (Exception e) {
+      throw new GeneralException("Error while editing saml-config", e);
+    }
+  }
+
+  @Multipart
+  @PUT
+  @Path("/saml-metadata-upload/{samlSSOId}")
+  @Consumes("multipart/form-data")
+  @ApiOperation(value = "Edit SAML Config", nickname = "updateSamlMetaData")
+  @Operation(operationId = "updateSamlMetaData", summary = "Update SAML metadata",
+      description = "Updates SAML metadata of the SAML configuration configured for an account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Successfully updated SAML metadata of SAML setting configured for an account")
+      })
+  public RestResponse<SSOConfig>
+  updateSamlMetaData(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam("accountId") @NotNull String accountId,
+      @Parameter(description = "Saml Settings Identifier") @PathParam("samlSSOId") String samlSSOId,
+      @Parameter(description = "SAML Metadata input file") @FormDataParam("file") InputStream uploadedInputStream,
+      @Parameter(description = "Input file metadata") @FormDataParam(
+          "fileMetadata") FormDataContentDisposition fileDetail,
+      @Parameter(description = "Display Name of the SAML") @FormDataParam("displayName") String displayName,
+      @Parameter(description = "Group membership attribute") @FormDataParam(
+          "groupMembershipAttr") String groupMembershipAttr,
+      @Parameter(description = "Specify whether or not to enable authorization") @FormDataParam("authorizationEnabled")
+      Boolean authorizationEnabled, @Parameter(description = "Logout URL") @FormDataParam("logoutUrl") String logoutUrl,
+      @Parameter(description = "SAML metadata Identifier") @FormDataParam("entityIdentifier") String entityIdentifier,
+      @Parameter(description = "SAML provider type") @FormDataParam("samlProviderType") String samlProviderType,
+      @Parameter(description = "Optional SAML clientId for Azure SSO") @FormDataParam("clientId") String clientId,
+      @Parameter(description = "Optional SAML clientSecret reference string for Azure SSO") @FormDataParam(
+          "clientSecret") String clientSecret,
+      @Parameter(description = "Friendly name of the app on SAML SSO provider end in Harness") @FormDataParam(
+          "friendlySamlAppName") String friendlySamlAppName) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
+    try {
+      MultipartBody.Part formData = null;
+      if (uploadedInputStream != null) {
+        byte[] bytes = IOUtils.toByteArray(new BoundedInputStream(
+            uploadedInputStream, mainConfiguration.getFileUploadLimits().getCommandUploadLimit()));
+        formData = MultipartBody.Part.createFormData("file", null, RequestBody.create(MultipartBody.FORM, bytes));
+      }
+      SSOConfig response = authenticationSettingsService.updateSAMLMetadata(accountId, samlSSOId, formData, displayName,
+          groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
+          clientSecret, friendlySamlAppName);
       return new RestResponse<>(response);
     } catch (Exception e) {
       throw new GeneralException("Error while editing saml-config", e);

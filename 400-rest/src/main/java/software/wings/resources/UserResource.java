@@ -82,6 +82,7 @@ import software.wings.security.annotations.IdentityServiceAuth;
 import software.wings.security.annotations.Scope;
 import software.wings.security.authentication.AuthenticationManager;
 import software.wings.security.authentication.LoginTypeResponse;
+import software.wings.security.authentication.LoginTypeResponseV2;
 import software.wings.security.authentication.SsoRedirectRequest;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
 import software.wings.security.authentication.TwoFactorAuthenticationMechanism;
@@ -770,6 +771,22 @@ public class UserResource {
     return new RestResponse<>(authenticationManager.getLoginTypeResponse(loginTypeRequest.getUserName(), accountId));
   }
 
+  /**
+   * Return the specified user's login types (including auth mechanism and redirect request if SSO).
+   *
+   * If accountId is specified, it will return using the specified account's login type. Otherwise
+   * it will authenticate using the user's default/primary account's auth mechanism.
+   *
+   * @return the rest response
+   */
+  @POST
+  @Path("v2/logintype")
+  @PublicApi
+  public RestResponse<LoginTypeResponseV2> getLoginTypeV2(
+      @NotNull LoginTypeRequest loginTypeRequest, @QueryParam("accountId") String accountId) {
+    return new RestResponse<>(authenticationManager.getLoginTypeResponseV2(loginTypeRequest.getUserName(), accountId));
+  }
+
   @GET
   @Path("onprem-logintype")
   @PublicApi
@@ -777,6 +794,15 @@ public class UserResource {
   @ExceptionMetered
   public RestResponse<LoginTypeResponse> getLoginTypeForOnPremSetup() {
     return new RestResponse<>(authenticationManager.getLoginTypeResponseForOnPrem());
+  }
+
+  @GET
+  @Path("v2/onprem-logintype")
+  @PublicApi
+  @Timed
+  @ExceptionMetered
+  public RestResponse<LoginTypeResponseV2> getLoginTypeForOnPremSetupV2() {
+    return new RestResponse<>(authenticationManager.getLoginTypeResponseForOnPremV2());
   }
 
   @GET

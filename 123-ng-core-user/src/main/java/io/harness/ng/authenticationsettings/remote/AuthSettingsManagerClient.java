@@ -90,7 +90,8 @@ public interface AuthSettingsManagerClient {
       @Part("groupMembershipAttr") RequestBody groupMembershipAttr,
       @Part("authorizationEnabled") RequestBody authorizationEnabled, @Part("logoutUrl") RequestBody logoutUrl,
       @Part("entityIdentifier") RequestBody entityIdentifier, @Part("samlProviderType") RequestBody samlProviderType,
-      @Part("clientId") RequestBody clientId, @Part("clientSecret") RequestBody clientSecret);
+      @Part("clientId") RequestBody clientId, @Part("clientSecret") RequestBody clientSecret,
+      @Part("friendlySamlAppName") RequestBody friendlySamlAppName);
 
   @Multipart
   @PUT(API_PREFIX + "sso/saml-idp-metadata-upload")
@@ -100,6 +101,16 @@ public interface AuthSettingsManagerClient {
       @Part("authorizationEnabled") RequestBody authorizationEnabled, @Part("logoutUrl") RequestBody logoutUrl,
       @Part("entityIdentifier") RequestBody entityIdentifier, @Part("samlProviderType") RequestBody samlProviderType,
       @Part("clientId") RequestBody clientId, @Part("clientSecret") RequestBody clientSecret);
+
+  @Multipart
+  @PUT(API_PREFIX + "sso/saml-idp-metadata-upload-sso-id")
+  Call<RestResponse<SSOConfig>> updateSAMLMetadata(@Query("accountId") String accountId,
+      @Query("samlSSOId") String samlSSOId, @Part MultipartBody.Part uploadedInputStream,
+      @Part("displayName") RequestBody displayName, @Part("groupMembershipAttr") RequestBody groupMembershipAttr,
+      @Part("authorizationEnabled") RequestBody authorizationEnabled, @Part("logoutUrl") RequestBody logoutUrl,
+      @Part("entityIdentifier") RequestBody entityIdentifier, @Part("samlProviderType") RequestBody samlProviderType,
+      @Part("clientId") RequestBody clientId, @Part("clientSecret") RequestBody clientSecret,
+      @Part("friendlySamlAppName") RequestBody friendlySamlAppName);
 
   @DELETE(API_PREFIX + "sso/delete-saml-idp-metadata")
   Call<RestResponse<SSOConfig>> deleteSAMLMetadata(@Query("accountId") String accountIdentifier);

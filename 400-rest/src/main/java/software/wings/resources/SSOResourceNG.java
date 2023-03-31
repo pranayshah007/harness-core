@@ -29,6 +29,7 @@ import io.harness.exception.WingsException;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.rest.RestResponse;
 import io.harness.secretmanagers.SecretManagerConfigService;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.sso.LdapSettings;
@@ -50,6 +51,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import java.io.InputStream;
+import java.util.ArrayList;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -141,11 +143,12 @@ public class SSOResourceNG {
       @FormDataParam("authorizationEnabled") Boolean authorizationEnabled, @FormDataParam("logoutUrl") String logoutUrl,
       @FormDataParam("entityIdentifier") String entityIdentifier,
       @FormDataParam("samlProviderType") String samlProviderType, @FormDataParam("clientId") String clientId,
-      @FormDataParam("clientSecret") String clientSecret) {
+      @FormDataParam("clientSecret") String clientSecret,
+      @FormDataParam("friendlySamlAppName") String friendlySamlAppName) {
     final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, true, clientId, clientSecret);
     return new RestResponse<>(ssoService.uploadSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), true));
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), friendlySamlAppName, true));
   }
 
   @PUT
@@ -164,6 +167,27 @@ public class SSOResourceNG {
     return new RestResponse<>(ssoService.updateSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
         isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), true));
+  }
+
+  @PUT
+  @Path("saml-idp-metadata-upload-sso-id")
+  @Timed
+  @AuthRule(permissionType = LOGGED_IN)
+  @ExceptionMetered
+  @InternalApi
+  public RestResponse<SSOConfig> updateSamlMetaData(@QueryParam("accountId") String accountId,
+      @QueryParam("samlSSOId") String samlSSOId, @FormDataParam("file") InputStream uploadedInputStream,
+      @FormDataParam("displayName") String displayName,
+      @FormDataParam("groupMembershipAttr") String groupMembershipAttr,
+      @FormDataParam("authorizationEnabled") Boolean authorizationEnabled, @FormDataParam("logoutUrl") String logoutUrl,
+      @FormDataParam("entityIdentifier") String entityIdentifier,
+      @FormDataParam("samlProviderType") String samlProviderType, @FormDataParam("clientId") String clientId,
+      @FormDataParam("clientSecret") String clientSecret,
+      @FormDataParam("friendlySamlAppName") String friendlySamlAppName) {
+    final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, false, clientId, clientSecret);
+    return new RestResponse<>(ssoService.updateSamlConfiguration(accountId, samlSSOId, uploadedInputStream, displayName,
+        groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), friendlySamlAppName, true));
   }
 
   @DELETE

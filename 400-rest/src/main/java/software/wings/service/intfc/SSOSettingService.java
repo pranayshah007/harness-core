@@ -41,12 +41,11 @@ public interface SSOSettingService extends OwnedByAccount {
 
   OauthSettings getOauthSettingsByAccountId(String accountId);
 
-  @ValidationGroups(Create.class) SamlSettings saveSamlSettings(@Valid SamlSettings settings);
+  @ValidationGroups(Create.class) SamlSettings saveSamlSettings(@Valid SamlSettings settings, boolean isUpdateCase);
 
   // This function is meant to be called for ng sso settings, as the license check is already done in NG Service
   SamlSettings saveSamlSettingsWithoutCGLicenseCheck(
-      @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings);
-
+      @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings, boolean isUpdateCase);
   OauthSettings saveOauthSettings(OauthSettings settings);
 
   boolean deleteSamlSettings(@NotNull String accountId);
@@ -72,6 +71,10 @@ public interface SSOSettingService extends OwnedByAccount {
   boolean isLdapSettingsPresent(@NotBlank String uuid);
 
   SSOSettings getSsoSettings(@NotBlank String uuid);
+
+  List<SamlSettings> getSamlSettingsListByAccountId(@NotNull String accountId);
+
+  SamlSettings getSamlSettingsByAccountIdAndUuid(@NotNull String accountId, String uuid);
 
   /**
    * Raise group sync alert specifying the cause of the failure

@@ -83,7 +83,7 @@ public class SSOSettingServiceTest extends WingsBaseTest {
                                     .origin("TestOrigin")
                                     .build();
 
-    samlSettings = ssoSettingService.saveSamlSettings(samlSettings);
+    samlSettings = ssoSettingService.saveSamlSettings(samlSettings, false);
     assertThat(samlSettings.getUrl()).isEqualTo("TestURL");
     assertThat(samlSettings.getAccountId()).isEqualTo("TestAccountID");
     assertThat(samlSettings.getMetaDataFile()).isEqualTo("TestMetaDataFile");
@@ -117,7 +117,7 @@ public class SSOSettingServiceTest extends WingsBaseTest {
                                     .origin("TestOrigin")
                                     .build();
 
-    samlSettings = ssoSettingService.saveSamlSettings(samlSettings);
+    samlSettings = ssoSettingService.saveSamlSettings(samlSettings, false);
     assertThat(samlSettings.getUrl()).isEqualTo("TestURL");
     assertThat(samlSettings.getAccountId()).isEqualTo("TestAccountID");
     assertThat(samlSettings.getMetaDataFile()).isEqualTo("TestMetaDataFile");
@@ -153,7 +153,7 @@ public class SSOSettingServiceTest extends WingsBaseTest {
                        .origin("TestOrigin2")
                        .build();
 
-    samlSettings = ssoSettingService.saveSamlSettings(samlSettings);
+    samlSettings = ssoSettingService.saveSamlSettings(samlSettings, false);
     assertThat(samlSettings.getUrl()).isEqualTo("TestURL2");
     assertThat(samlSettings.getAccountId()).isEqualTo("TestAccountID");
     assertThat(samlSettings.getMetaDataFile()).isEqualTo("TestMetaDataFile2");
@@ -211,7 +211,7 @@ public class SSOSettingServiceTest extends WingsBaseTest {
   public void testNegativeTest() {
     try {
       SamlSettings samlSettings = SamlSettings.builder().build();
-      ssoSettingService.saveSamlSettings(samlSettings);
+      ssoSettingService.saveSamlSettings(samlSettings, false);
       failBecauseExceptionWasNotThrown(ConstraintViolationException.class);
     } catch (javax.validation.ConstraintViolationException e) {
       assertThat(e.getConstraintViolations().size()).isEqualTo(5);

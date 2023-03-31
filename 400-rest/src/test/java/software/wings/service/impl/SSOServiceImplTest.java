@@ -24,6 +24,7 @@ import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyListOf;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -185,7 +186,8 @@ public class SSOServiceImplTest extends WingsBaseTest {
 
     // Upload SAML config and enable
     ssoService.uploadSamlConfiguration(accountId, new ByteArrayInputStream("test data".getBytes()), "test", "", false,
-        "", "", SAMLProviderType.ONELOGIN.name(), anyString(), any(), false);
+        "", "", SAMLProviderType.ONELOGIN.name(), "testClientId", "testClientSecret".toCharArray(), "testOtherName",
+        false);
     ssoService.setAuthenticationMechanism(accountId, SAML);
     account = accountService.get(account.getUuid());
     assertThat(account.getAuthenticationMechanism()).isEqualTo(SAML);
@@ -222,7 +224,8 @@ public class SSOServiceImplTest extends WingsBaseTest {
 
     // Upload SAML config and enable
     ssoService.uploadSamlConfiguration(accountId, new ByteArrayInputStream("test data".getBytes()), "test", "", false,
-        "", "", SAMLProviderType.ONELOGIN.name(), anyString(), any(), false);
+        "", "", SAMLProviderType.ONELOGIN.name(), "testClientId", "testClientSecret".toCharArray(), "testOtherName",
+        false);
     ssoService.setAuthenticationMechanism(accountId, SAML);
     account = accountService.get(account.getUuid());
     assertThat(account.getAuthenticationMechanism()).isEqualTo(SAML);

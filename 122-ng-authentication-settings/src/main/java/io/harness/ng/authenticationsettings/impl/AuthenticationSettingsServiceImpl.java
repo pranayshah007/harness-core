@@ -162,6 +162,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
                                              .displayName(samlSettings.getDisplayName())
                                              .authorizationEnabled(samlSettings.isAuthorizationEnabled())
                                              .entityIdentifier(samlSettings.getEntityIdentifier())
+                                             .friendlySamlAppName(samlSettings.getFriendlySamlAppName())
                                              .build();
 
         if (null != samlSettings.getSamlProviderType()) {
@@ -214,7 +215,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   public SSOConfig uploadSAMLMetadata(@NotNull @AccountIdentifier String accountId,
       @NotNull MultipartBody.Part inputStream, @NotNull String displayName, String groupMembershipAttr,
       @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier, String samlProviderType,
-      String clientId, String clientSecret) {
+      String clientId, String clientSecret, String friendlySamlAppName) {
     RequestBody displayNamePart = createPartFromString(displayName);
     RequestBody groupMembershipAttrPart = createPartFromString(groupMembershipAttr);
     RequestBody authorizationEnabledPart = createPartFromString(String.valueOf(authorizationEnabled));
@@ -223,9 +224,10 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     RequestBody samlProviderTypePart = createPartFromString(samlProviderType);
     RequestBody clientIdPart = createPartFromString(clientId);
     RequestBody clientSecretPart = createPartFromString(clientSecret);
+    RequestBody friendlySamlAppNamePart = createPartFromString(friendlySamlAppName);
     return getResponse(managerClient.uploadSAMLMetadata(accountId, inputStream, displayNamePart,
         groupMembershipAttrPart, authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart,
-        clientIdPart, clientSecretPart));
+        clientIdPart, clientSecretPart, friendlySamlAppNamePart));
   }
 
   @Override
@@ -244,6 +246,26 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     return getResponse(managerClient.updateSAMLMetadata(accountId, inputStream, displayNamePart,
         groupMembershipAttrPart, authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart,
         clientIdPart, clientSecretPart));
+  }
+
+  @Override
+  @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
+  public SSOConfig updateSAMLMetadata(@NotNull @AccountIdentifier String accountId, @NotNull String samlSSOId,
+      MultipartBody.Part inputStream, String displayName, String groupMembershipAttr,
+      @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier, String samlProviderType,
+      String clientId, String clientSecret, String friendlySamlAppName) {
+    RequestBody displayNamePart = createPartFromString(displayName);
+    RequestBody groupMembershipAttrPart = createPartFromString(groupMembershipAttr);
+    RequestBody authorizationEnabledPart = createPartFromString(String.valueOf(authorizationEnabled));
+    RequestBody logoutUrlPart = createPartFromString(logoutUrl);
+    RequestBody entityIdentifierPart = createPartFromString(entityIdentifier);
+    RequestBody samlProviderTypePart = createPartFromString(samlProviderType);
+    RequestBody clientIdPart = createPartFromString(clientId);
+    RequestBody clientSecretPart = createPartFromString(clientSecret);
+    RequestBody friendlySamlAppNamePart = createPartFromString(friendlySamlAppName);
+    return getResponse(managerClient.updateSAMLMetadata(accountId, samlSSOId, inputStream, displayNamePart,
+        groupMembershipAttrPart, authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart,
+        clientIdPart, clientSecretPart, friendlySamlAppNamePart));
   }
 
   @Override
