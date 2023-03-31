@@ -267,7 +267,7 @@ public class ExecutionHelper {
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
       }
       String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
-          pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef, true,
+          pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef,
           OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
       planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
       PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataBuilder.build();
