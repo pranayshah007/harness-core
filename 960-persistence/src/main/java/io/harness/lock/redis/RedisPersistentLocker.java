@@ -50,7 +50,7 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
     this.client = RedissonClientFactory.getClient(redisLockConfig);
     String envNamespace = redisLockConfig.getEnvNamespace();
     this.lockNamespace = EmptyPredicate.isEmpty(envNamespace) ? LOCK_PREFIX.concat(":")
-            : String.format("%s:%s:", envNamespace, LOCK_PREFIX);
+                                                              : String.format("%s:%s:", envNamespace, LOCK_PREFIX);
   }
 
   private String getLockName(String name) {
@@ -128,7 +128,7 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
 
   @Override
   public AcquiredLock waitToAcquireLock(
-          Class entityClass, String entityId, Duration lockTimeout, Duration waitTimeout) {
+      Class entityClass, String entityId, Duration lockTimeout, Duration waitTimeout) {
     return waitToAcquireLock(entityClass.getName() + "-" + entityId, lockTimeout, waitTimeout);
   }
 

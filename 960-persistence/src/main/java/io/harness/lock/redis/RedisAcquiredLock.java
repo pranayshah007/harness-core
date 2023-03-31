@@ -14,20 +14,25 @@ import io.harness.lock.AcquiredLock;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 
 @OwnedBy(PL)
 @Value
 @Builder
+@Slf4j
 public class RedisAcquiredLock implements AcquiredLock<RLock> {
   RLock lock;
   boolean isLeaseInfinite;
 
   @Override
   public void release() {
+    log.info("Releasing lock");
     if (lock != null && (lock.isLocked() || isLeaseInfinite)) {
+      log.info("Releasing lock - Check for lock.isLocked() passed");
       lock.unlock();
     }
+    log.info("Released Lock");
   }
 
   @Override
