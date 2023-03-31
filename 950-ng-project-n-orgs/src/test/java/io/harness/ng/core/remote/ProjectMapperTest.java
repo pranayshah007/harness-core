@@ -17,6 +17,7 @@ import static junit.framework.TestCase.assertNotNull;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
 import io.harness.CategoryTest;
+import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.dto.ProjectDTO;
@@ -48,7 +49,7 @@ public class ProjectMapperTest extends CategoryTest {
                   .color(randomAlphabetic(10))
                   .description("")
                   .tags(emptyList())
-                  .modules(emptyList())
+                  .modules(ModuleType.getModules())
                   .lastModifiedAt(10L)
                   .build();
   }

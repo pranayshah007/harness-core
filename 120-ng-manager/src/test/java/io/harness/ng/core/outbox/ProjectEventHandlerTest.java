@@ -82,12 +82,7 @@ public class ProjectEventHandlerTest extends CategoryTest {
     List<ModuleType> moduleTypes = new ArrayList<>();
     moduleTypes.add(ModuleType.CD);
 
-    return ProjectDTO.builder()
-        .orgIdentifier(orgIdentifier)
-        .identifier(identifier)
-        .name(randomAlphabetic(10))
-        .modules(moduleTypes)
-        .build();
+    return ProjectDTO.builder().orgIdentifier(orgIdentifier).identifier(identifier).name(randomAlphabetic(10)).build();
   }
 
   @Test
