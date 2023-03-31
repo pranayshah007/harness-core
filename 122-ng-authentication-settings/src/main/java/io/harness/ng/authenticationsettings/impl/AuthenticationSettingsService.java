@@ -29,6 +29,7 @@ import okhttp3.MultipartBody;
 @OwnedBy(HarnessTeam.PL)
 public interface AuthenticationSettingsService {
   AuthenticationSettingsResponse getAuthenticationSettings(String accountIdentifier);
+  AuthenticationSettingsResponse getAuthenticationSettingsV2(String accountIdentifier);
   void updateOauthProviders(String accountId, OAuthSettings settings);
   void updateAuthMechanism(String accountId, AuthenticationMechanism authenticationMechanism);
   void removeOauthMechanism(String accountId);
@@ -47,6 +48,7 @@ public interface AuthenticationSettingsService {
       String friendlySamlAppName);
   SSOConfig deleteSAMLMetadata(@NotNull String accountIdentifier);
   LoginTypeResponse getSAMLLoginTest(@NotNull String accountIdentifier);
+  LoginTypeResponse getSAMLLoginTestV2(@NotNull String accountIdentifier, @NotNull String samlSSOId);
   LDAPSettings getLdapSettings(@NotNull String accountIdentifier);
   LDAPSettings createLdapSettings(@NotNull String accountIdentifier, LDAPSettings ldapSettings);
   LDAPSettings updateLdapSettings(@NotNull String accountIdentifier, LDAPSettings ldapSettings);

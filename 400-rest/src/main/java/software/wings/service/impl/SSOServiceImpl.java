@@ -294,6 +294,17 @@ public class SSOServiceImpl implements SSOService {
         .build();
   }
 
+  @Override
+  public SSOConfig getAccountAccessManagementSettingsV2(String accountId) {
+    authorizeAccessManagementCall();
+    Account account = accountService.get(accountId);
+    return SSOConfig.builder()
+        .accountId(accountId)
+        .authenticationMechanism(account.getAuthenticationMechanism())
+        .ssoSettings(getSSOSettingsV2(account))
+        .build();
+  }
+
   private void authorizeAccessManagementCall() {
     PermissionAttribute userReadPermissionAttribute =
         new PermissionAttribute(PermissionType.USER_PERMISSION_READ, Action.READ);
@@ -320,6 +331,23 @@ public class SSOServiceImpl implements SSOService {
     SamlSettings samlSettings = ssoSettingService.getSamlSettingsByAccountId(account.getUuid());
     if (samlSettings != null) {
       settings.add(samlSettings.getPublicSSOSettings());
+    }
+    LdapSettings ldapSettings = ssoSettingService.getLdapSettingsByAccountId(account.getUuid());
+    if (ldapSettings != null) {
+      settings.add(ldapSettings.getPublicSSOSettings());
+    }
+    OauthSettings oauthSettings = ssoSettingService.getOauthSettingsByAccountId(account.getUuid());
+    if (oauthSettings != null) {
+      settings.add(oauthSettings.getPublicSSOSettings());
+    }
+    return settings;
+  }
+
+  private List<SSOSettings> getSSOSettingsV2(Account account) {
+    List<SSOSettings> settings = new ArrayList<>();
+    List<SamlSettings> samlSettings = ssoSettingService.getSamlSettingsListByAccountId(account.getUuid());
+    if (isNotEmpty(samlSettings)) {
+      samlSettings.forEach(setting -> settings.add(setting.getPublicSSOSettings()));
     }
     LdapSettings ldapSettings = ssoSettingService.getLdapSettingsByAccountId(account.getUuid());
     if (ldapSettings != null) {

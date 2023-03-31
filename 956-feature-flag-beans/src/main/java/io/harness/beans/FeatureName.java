@@ -665,6 +665,7 @@ public enum FeatureName {
   CDS_RANCHER_SUPPORT_NG("Enable Rancher support in NG.", HarnessTeam.CDP),
   PL_SELECT_SPECIFIC_SERVICE_ACCOUNT_IN_RESOURCE_GROUP(
       "Allow selection of specific service accounts in Resource group", HarnessTeam.PL),
+  PL_ENABLE_MULTIPLE_IDP_SUPPORT("Enable support of multiple SSO IDP", HarnessTeam.PL),
   SPG_SERVICES_OVERVIEW_RBAC(
       "Applies RBAC on services overview page, only displays services which the user has access to read",
       HarnessTeam.SPG),

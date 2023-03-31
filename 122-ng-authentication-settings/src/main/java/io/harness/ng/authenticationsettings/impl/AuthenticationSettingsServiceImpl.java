@@ -86,6 +86,27 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   }
 
   @Override
+  public AuthenticationSettingsResponse getAuthenticationSettingsV2(String accountIdentifier) {
+    Set<String> whitelistedDomains = getResponse(managerClient.getWhitelistedDomains(accountIdentifier));
+    log.info("Whitelisted domains for accountId {}: {}", accountIdentifier, whitelistedDomains);
+    SSOConfig ssoConfig = getResponse(managerClient.getAccountAccessManagementSettingsV2(accountIdentifier));
+
+    List<NGAuthSettings> settingsList = buildAuthSettingsList(ssoConfig, accountIdentifier);
+    log.info("NGAuthSettings list for accountId {}: {}", accountIdentifier, settingsList);
+
+    boolean twoFactorEnabled = getResponse(managerClient.twoFactorEnabled(accountIdentifier));
+    Integer sessionTimeoutInMinutes = getResponse(managerClient.getSessionTimeoutAtAccountLevel(accountIdentifier));
+
+    return AuthenticationSettingsResponse.builder()
+        .whitelistedDomains(whitelistedDomains)
+        .ngAuthSettings(settingsList)
+        .authenticationMechanism(ssoConfig.getAuthenticationMechanism())
+        .twoFactorEnabled(twoFactorEnabled)
+        .sessionTimeoutInMinutes(sessionTimeoutInMinutes)
+        .build();
+  }
+
+  @Override
   @FeatureRestrictionCheck(FeatureRestrictionName.OAUTH_SUPPORT)
   public void updateOauthProviders(@AccountIdentifier String accountId, OAuthSettings oAuthSettings) {
     getResponse(managerClient.uploadOauthSettings(accountId,
@@ -285,6 +306,12 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
   public LoginTypeResponse getSAMLLoginTest(@NotNull @AccountIdentifier String accountIdentifier) {
     return getResponse(managerClient.getSAMLLoginTest(accountIdentifier));
+  }
+
+  @Override
+  @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
+  public LoginTypeResponse getSAMLLoginTestV2(@NotNull @AccountIdentifier String accountIdentifier, @NotNull String samlSSOId) {
+    return getResponse(managerClient.getSAMLLoginTestV2(accountIdentifier, samlSSOId));
   }
 
   @Override

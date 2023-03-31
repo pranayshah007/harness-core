@@ -59,6 +59,8 @@ public interface SSOService {
 
   SSOConfig getAccountAccessManagementSettings(@NotNull String accountId);
 
+  SSOConfig getAccountAccessManagementSettingsV2(@NotNull String accountId);
+
   LdapSettings createLdapSettings(@NotNull LdapSettings settings);
 
   LdapSettings updateLdapSettings(@NotNull LdapSettings settings);

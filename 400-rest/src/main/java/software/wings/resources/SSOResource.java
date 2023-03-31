@@ -36,6 +36,7 @@ import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.security.authentication.LoginTypeResponse;
 import software.wings.security.authentication.LoginTypeResponse.LoginTypeResponseBuilder;
+import software.wings.security.authentication.LoginTypeResponseV2;
 import software.wings.security.authentication.SSOConfig;
 import software.wings.security.saml.SamlClientService;
 import software.wings.service.intfc.SSOService;
@@ -350,8 +351,7 @@ public class SSOResource {
   public RestResponse<LoginTypeResponse> getSamlLoginTest(@QueryParam("accountId") @NotBlank String accountId) {
     LoginTypeResponseBuilder builder = LoginTypeResponse.builder();
     try {
-      //      builder.SSORequest(new ArrayList<>() {{ add(samlClientService.generateTestSamlRequest(accountId)); }});
-      //      builder.SSORequest.add(samlClientService.generateTestSamlRequest(accountId));
+      builder.SSORequest(samlClientService.generateTestSamlRequest(accountId));
       return new RestResponse<>(builder.authenticationMechanism(AuthenticationMechanism.SAML).build());
     } catch (Exception e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION);

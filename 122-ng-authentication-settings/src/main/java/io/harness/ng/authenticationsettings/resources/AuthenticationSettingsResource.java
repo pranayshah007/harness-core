@@ -121,6 +121,27 @@ public class AuthenticationSettingsResource {
   }
 
   @GET
+  @Path("/v2")
+  @ApiOperation(value = "Get authentication settings for an account", nickname = "getAuthenticationSettings")
+  @Operation(operationId = "getAuthenticationSettings",
+      summary = "Gets authentication settings for the given Account ID",
+      description = "Gets authentication settings for the given Account ID.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Successfully returns authentication settings of an Account")
+      })
+  public RestResponse<AuthenticationSettingsResponse>
+  getAuthenticationSettingsV2(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+      "accountIdentifier") @NotNull String accountIdentifier) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, null, null), Resource.of(AUTHSETTING, null), VIEW_AUTHSETTING_PERMISSION);
+    AuthenticationSettingsResponse response =
+        authenticationSettingsService.getAuthenticationSettingsV2(accountIdentifier);
+    return new RestResponse<>(response);
+  }
+
+  @GET
   @Path("/login-settings/password-strength")
   @ApiOperation(value = "Get Password strength settings", nickname = "getPasswordStrengthSettings")
   @Operation(operationId = "getPasswordStrengthSettings", summary = "Get password strength",
@@ -422,6 +443,25 @@ public class AuthenticationSettingsResource {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), VIEW_AUTHSETTING_PERMISSION);
     LoginTypeResponse response = authenticationSettingsService.getSAMLLoginTest(accountId);
+    return new RestResponse<>(response);
+  }
+
+  @GET
+  @Path("v2/saml-login-test")
+  @ApiOperation(value = "Get SAML Login Test", nickname = "getSamlLoginTest")
+  @Operation(operationId = "getSamlLoginTest", summary = "Test SAML connectivity",
+      description = "Tests SAML connectivity for the given Account ID.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns connectivity status")
+      })
+  public RestResponse<LoginTypeResponse>
+  getSamlLoginTest(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam("accountId") @NotNull String accountId,
+      @Parameter(description = "Saml setting id") @QueryParam("samlSSOId") @NotNull String samlSSOId) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), VIEW_AUTHSETTING_PERMISSION);
+    LoginTypeResponse response = authenticationSettingsService.getSAMLLoginTestV2(accountId, samlSSOId);
     return new RestResponse<>(response);
   }
 

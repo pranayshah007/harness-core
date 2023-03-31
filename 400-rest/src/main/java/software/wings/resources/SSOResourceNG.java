@@ -97,6 +97,15 @@ public class SSOResourceNG {
     return new RestResponse<>(ssoService.getAccountAccessManagementSettings(accountId));
   }
 
+  @GET
+  @Path("v2/get-access-management")
+  @Timed
+  @AuthRule(permissionType = LOGGED_IN)
+  @ExceptionMetered
+  public RestResponse<SSOConfig> getAccountAccessManagementSettingsV2(@QueryParam("accountId") String accountId) {
+    return new RestResponse<>(ssoService.getAccountAccessManagementSettingsV2(accountId));
+  }
+
   @POST
   @Path("oauth-settings-upload")
   @Timed
@@ -205,6 +214,18 @@ public class SSOResourceNG {
     LoginTypeResponseBuilder builder = LoginTypeResponse.builder();
     try {
       builder.SSORequest(samlClientService.generateTestSamlRequest(accountId));
+      return new RestResponse<>(builder.authenticationMechanism(AuthenticationMechanism.SAML).build());
+    } catch (Exception e) {
+      throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION);
+    }
+  }
+
+  @GET
+  @Path("v2/saml-login-test")
+  public RestResponse<LoginTypeResponse> getSamlLoginTest(@QueryParam("accountId") @NotBlank String accountId, @QueryParam("samlSSOId") @NotNull String samlSSOId) {
+    LoginTypeResponseBuilder builder = LoginTypeResponse.builder();
+    try {
+      builder.SSORequest(samlClientService.generateTestSamlRequest(accountId, samlSSOId));
       return new RestResponse<>(builder.authenticationMechanism(AuthenticationMechanism.SAML).build());
     } catch (Exception e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION);

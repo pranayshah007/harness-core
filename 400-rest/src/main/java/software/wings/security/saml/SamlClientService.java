@@ -9,6 +9,7 @@ package software.wings.security.saml;
 
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
@@ -39,10 +40,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
 import org.hibernate.validator.constraints.NotBlank;
@@ -76,23 +80,24 @@ public class SamlClientService {
     return getSamlClient(ssoSettingService.getSamlSettingsByAccountId(account.getUuid()));
   }
 
-  public List<SamlClient> getSamlClientListFromAccount(Account account) throws SamlException {
-    List<SamlClient> samlClients = new ArrayList<>();
-    List<SamlSettings> samlSettings = ssoSettingService.getSamlSettingsListByAccountId(account.getUuid());
+  public Map<String, SamlClientFriendlyName> getSamlClientListFromSamlSettingList(List<SamlSettings> samlSettings)
+      throws SamlException {
+    Map<String, SamlClientFriendlyName> samlClientMap = new HashMap<>();
     if (isNotEmpty(samlSettings)) {
       samlSettings.forEach(setting -> {
         try {
-          samlClients.add(getSamlClient(setting));
+          samlClientMap.put(
+              setting.getUuid(), new SamlClientFriendlyName(getSamlClient(setting), setting.getFriendlySamlAppName()));
         } catch (SamlException se) {
           log.warn("Error generating saml client for saml setting id {} in account {}", setting.getUuid(),
               setting.getAccountId());
         }
       });
     }
-    return samlClients;
+    return samlClientMap;
   }
 
-  public SamlClient getSamlClientFromAccount(Account account, String samlUuid) throws SamlException {
+  public SamlClient getSamlClientFromAccountAndSamlId(Account account, String samlUuid) throws SamlException {
     List<SamlSettings> samlSettings = ssoSettingService.getSamlSettingsListByAccountId(account.getUuid());
     SamlSettings filterSetting =
         samlSettings.stream().filter(setting -> samlUuid.equals(setting.getUuid())).findFirst().orElse(null);
@@ -137,6 +142,11 @@ public class SamlClientService {
     return generateSamlRequestFromAccount(account, true);
   }
 
+  public SSORequest generateTestSamlRequest(String accountId, String samlSSOId) {
+    Account account = accountServiceImpl.get(accountId);
+    return generateSamlRequestFromAccountAndSamlId(account, samlSSOId, true);
+  }
+
   /**
    * To be used generateSamlRequest and generateSamlRequest for common functionality
    * @param account account passed from previous functions
@@ -144,10 +154,21 @@ public class SamlClientService {
    * @throws Exception error while creating request
    */
   public SSORequest generateSamlRequestFromAccount(Account account, boolean isTestConnectionRequest) {
+    return generateSamlSSORequestInternal(account, isTestConnectionRequest, null);
+  }
+
+  public SSORequest generateSamlRequestFromAccountAndSamlId(
+      Account account, String samlSSOId, boolean isTestConnectionRequest) {
+    return generateSamlSSORequestInternal(account, isTestConnectionRequest, samlSSOId);
+  }
+
+  private SSORequest generateSamlSSORequestInternal(
+      Account account, boolean isTestConnectionRequest, String samlSSOId) {
     SSORequest ssoRequest = new SSORequest();
     String triggerType = isTestConnectionRequest ? "test" : "login";
     try {
-      SamlClient samlClient = getSamlClientFromAccount(account);
+      SamlClient samlClient = isEmpty(samlSSOId) ? getSamlClientFromAccount(account)
+                                                 : getSamlClientFromAccountAndSamlId(account, samlSSOId);
       URIBuilder redirectionUri = new URIBuilder(samlClient.getIdentityProviderUrl());
       redirectionUri.addParameter(SAML_REQUEST_URI_KEY, encodeParamaeters(samlClient.getSamlRequest()));
       redirectionUri.addParameter("RelayState", SAML_TRIGGER_TYPE + "=" + triggerType);
@@ -161,15 +182,19 @@ public class SamlClientService {
 
   public List<SSORequest> generateSamlRequestListFromAccount(Account account, boolean isTestConnectionRequest) {
     List<SSORequest> ssoRequests = new ArrayList<>();
-    SSORequest ssoRequest = new SSORequest();
     String triggerType = isTestConnectionRequest ? "test" : "login";
     try {
-      List<SamlClient> samlClients = getSamlClientListFromAccount(account);
-      for (SamlClient samlClient : samlClients) {
-        URIBuilder redirectionUri = new URIBuilder(samlClient.getIdentityProviderUrl());
-        redirectionUri.addParameter(SAML_REQUEST_URI_KEY, encodeParamaeters(samlClient.getSamlRequest()));
+      List<SamlSettings> samlSettings = ssoSettingService.getSamlSettingsListByAccountId(account.getUuid());
+      Map<String, SamlClientFriendlyName> samlClientMap = getSamlClientListFromSamlSettingList(samlSettings);
+      for (Map.Entry<String, SamlClientFriendlyName> entry : samlClientMap.entrySet()) {
+        SSORequest ssoRequest = new SSORequest();
+        URIBuilder redirectionUri = new URIBuilder(entry.getValue().getSamlClient().getIdentityProviderUrl());
+        redirectionUri.addParameter(
+            SAML_REQUEST_URI_KEY, encodeParamaeters(entry.getValue().getSamlClient().getSamlRequest()));
         redirectionUri.addParameter("RelayState", SAML_TRIGGER_TYPE + "=" + triggerType);
         ssoRequest.setIdpRedirectUrl(redirectionUri.toString());
+        ssoRequest.setFriendlySamlAppName(entry.getValue().getFriendlySamlAppName());
+        ssoRequest.setSsoId(entry.getKey());
         ssoRequests.add(ssoRequest);
       }
     } catch (SamlException | URISyntaxException | IOException e) {
@@ -206,4 +231,10 @@ public class SamlClientService {
   }
 
   public enum HostType { GOOGLE, AZURE, OTHER }
+
+  @Value
+  public static class SamlClientFriendlyName {
+    SamlClient samlClient;
+    String friendlySamlAppName;
+  }
 }
