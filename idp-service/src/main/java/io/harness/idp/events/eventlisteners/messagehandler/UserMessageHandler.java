@@ -7,14 +7,14 @@
 
 package io.harness.idp.events.eventlisteners.messagehandler;
 
-import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.*;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
-import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.events.eventlisteners.utility.EventListenerLogger;
+import io.harness.idp.user.service.UserRefreshServiceImpl;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -23,21 +23,20 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
-public class SecretMessageHandler implements EventMessageHandler {
-  private static final String ACCOUNT_ID = "accountId";
-  private BackstageEnvVariableService backstageEnvVariableService;
+public class UserMessageHandler implements EventMessageHandler {
+  private UserRefreshServiceImpl userRefreshService;
 
   @Override
   public void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) {
     EventListenerLogger.logForEventReceived(message);
-    String secretIdentifier = entityChangeDTO.getIdentifier().getValue();
-    String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
     switch (action) {
       case UPDATE_ACTION:
-        backstageEnvVariableService.processSecretUpdate(entityChangeDTO);
+      case CREATE_ACTION:
+      case DELETE_ACTION:
+        userRefreshService.processEntityUpdate(message, entityChangeDTO);
         break;
       default:
-        log.warn("ACTION - {} is not to be handled by IDP secret event handler", action);
+        log.warn("ACTION - {} is not to be handled by IDP connector event handler", action);
     }
   }
 }

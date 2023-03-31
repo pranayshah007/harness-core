@@ -5,14 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.namespace.beans.entity;
+package io.harness.idp.user.beans.entity;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.ng.DbAliases;
+import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.UpdatedAtAware;
 
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
@@ -26,17 +28,16 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
-@FieldNameConstants(innerTypeName = "NamespaceKeys")
+@FieldNameConstants(innerTypeName = "UserEventKeys")
 @StoreIn(DbAliases.IDP)
-@Entity(value = "backstageNamespace", noClassnameStored = true)
-@Document("backstageNamespace")
+@Entity(value = "userEvents", noClassnameStored = true)
+@Document("userEvents")
 @Persistent
 @OwnedBy(HarnessTeam.IDP)
-public class NamespaceEntity implements PersistentEntity {
+public class UserEventEntity implements PersistentEntity, UpdatedAtAware, CreatedAtAware {
   @Id @org.mongodb.morphia.annotations.Id private String id;
   @FdUniqueIndex private String accountIdentifier;
-  @CreatedDate Long createdAt;
-  @LastModifiedDate Long lastModifiedAt;
-  private boolean isDeleted;
-  private long deletedAt;
+  private boolean hasEvent;
+  @CreatedDate private long createdAt;
+  @LastModifiedDate private long lastUpdatedAt;
 }
