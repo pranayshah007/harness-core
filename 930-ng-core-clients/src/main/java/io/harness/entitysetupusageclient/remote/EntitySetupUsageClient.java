@@ -114,5 +114,5 @@ public interface EntitySetupUsageClient {
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query(REFERRED_ENTITY_FQN) String referredEntityFQN, @Query(REFERRED_ENTITY_TYPE) EntityType entityType,
-      GitEntitySetupUsageDTO gitMetaData);
+      @Body GitEntitySetupUsageDTO gitMetaData);
 }
