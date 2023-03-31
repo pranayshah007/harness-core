@@ -48,6 +48,7 @@ import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.VirtualMachineData;
 import io.harness.azure.model.tag.TagDetails;
 import io.harness.azure.utility.AzureUtils;
+import io.harness.azurecli.AzureCliClient;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
@@ -152,6 +153,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   private static String REPOSITORY = "test/appimage";
   private static String REGISTRY = "testreg";
   private static String REGISTRY_URL = format("%s.azurecr.io", REGISTRY.toLowerCase());
+  private static String WORKING_DIR = "./repository/k8s/";
 
   @Before
   public void setUp() throws Exception {
@@ -882,7 +884,8 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
 
     mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
 
-    KubernetesConfig clusterConfig = azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, logCallback);
+    KubernetesConfig clusterConfig =
+        azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, WORKING_DIR, logCallback);
 
     assertThat(clusterConfig.getMasterUrl())
         .isEqualTo("https://cdp-test-a-cdp-test-rg-20d6a9-19a8a771.hcp.eastus.azmk8s.io:443");
@@ -948,7 +951,8 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(false);
     mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
 
-    KubernetesConfig clusterConfig = azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, logCallback);
+    KubernetesConfig clusterConfig =
+        azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, WORKING_DIR, logCallback);
     mockedStaticKubernetesAuthPlugin.close();
 
     assertThat(clusterConfig.getMasterUrl())
@@ -962,36 +966,42 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     assertThat(clusterConfig.getAzureConfig().getAadIdToken()).isEqualTo(aadToken);
 
     // Using Azure Auth Plugin
-    if (!AzureAuthenticationType.SERVICE_PRINCIPAL_CERT.equals(azureConfig.getAzureAuthenticationType())) {
-      when(azureKubernetesClient.getClusterCredentials(
-               any(), any(), any(), any(), any(), anyBoolean(), eq(AzureKubeconfigFormat.EXEC)))
-          .thenReturn(readResourceFileContent("azure/userKubeConfigContentExec.yaml"));
-      mockedStaticKubernetesAuthPlugin = mockStatic(KubeConfigAuthPluginHelper.class);
-      when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
+    when(azureKubernetesClient.getClusterCredentials(
+             any(), any(), any(), any(), any(), anyBoolean(), eq(AzureKubeconfigFormat.EXEC)))
+        .thenReturn(readResourceFileContent("azure/userKubeConfigContentExec.yaml"));
+    mockedStaticKubernetesAuthPlugin = mockStatic(KubeConfigAuthPluginHelper.class);
+    when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
 
-      clusterConfig = azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, logCallback);
-      mockedStaticKubernetesAuthPlugin.close();
-
-      assertThat(clusterConfig.getMasterUrl())
-          .isEqualTo("https://cdp-azure-test-aks-dns-baa4bbdc.hcp.eastus.azmk8s.io:443");
-      assertThat(clusterConfig.getNamespace()).isEqualTo("default");
-      assertThat(clusterConfig.getCaCert())
-          .isEqualTo(
-              "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUU2RENDQXRDZ0F3SUJBZ0lRUU45cldqaGVpTFJReXpWRVFYUS9jakFOQmdrcWhraUc5dzBCQVFzRkFEQU4KTVFzd0NRWURWUVFERXdKallUQWdGdzB5TWpBMU1UZ3hOVEU0TURCYUdBOHlNRFV5TURVeE9ERTFNamd3TUZvdwpEVEVMTUFrR0ExVUVBeE1DWTJFd2dnSWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUNEd0F3Z2dJS0FvSUNBUUNrCmdKSFhQYlV1M1pZS1Jjdi93cWVsUGordm9FY2I4MTE0M1pnWExSemZXM1FkVEVVTENBbDEwb29DTytZaTJRKy8KQjVTN3p1NG9OSjFRbVRGdEtBdW0xUHJpNWc5L003alZwYTVLdk1hZ2pMdUdxVG9QanZkQzZSZFF0UVpiamI0WAoxZC9KNEtkYXU2Zk51b2NmV0ZKMExUMnJocXpVZVk4ODhXeXZFeTI5OGRwZDFTKzRLMGNBUTdvWVhGd2dob1h6CjFKenQvaU5rMFRmRVNFTzZqNmtCZkh3SHlOQnBNK0R1UXZGamd0bmZWV2FYZk9wVVVCZDM4WGoyOTA4Z2tnQUYKL1FxeWozWHRXV0ExWFQ4S2VjZFBmN0hFK2RQMXlHeXJJOWlsdjJFVTZMbEtWOFRqd0FzQ3hvTU1aNWtQKzJhUApFcUlZbVdBZWhKVjRtb1FXeWdkZGJ6N1cyZVNxUmpoSklENUNxRjMrbzA2M1R3V2xUVzFBdXBVR0JJSHVWa2tOCkdubkJUTmNBMmk5VFpiY1VEenMzQnpMN3NEamZ3bDFOS1hUL2craTQzYkFnRkswd3JoTmYzb0phbVdVSU9uVWcKNjd5NE9iNm11K0pnb0Q2bUNFR3FCTXVjakpPaVd5SGZBMDBmZW5hODFWK2Z4cGw2RWNVSW9NZmM2MmY2S1JBawpiRG9qK29ycEF5Wm1SdmRRVzRPNDVVc3VrNWs1dytTTGNBQnI3bkFtc2JOYU85WERueGZWaEhTU2JXeTVGU1U2CnpQakJIRXRSVEkxVEZYYnp6MVZja1FJUHd1ZHJTLzF4N1I0ZGd1MG5OODlwcVd4VHJBRnpDRFQydGpWd2J3OGYKQWozZ1dJTS9wbnRPbS93cUdQMExWTXM2d21jUmF3TklkbXI3dldrVEJRSURBUUFCbzBJd1FEQU9CZ05WSFE4QgpBZjhFQkFNQ0FxUXdEd1lEVlIwVEFRSC9CQVV3QXdFQi96QWRCZ05WSFE0RUZnUVVFVFI1eFdqVjI4akZCYVY0CjZNWmxpRG9PeUU0d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dJQkFIVGZRV0w2MUFUVkNTM0Z5a2hFYklEaVkyY2UKS2MzbHdlYmVObW9PR1NYREFqcXV3ZzRlU3BtYy9OQkJqWEh1cGZvMjczbk5NZ2RlaGEyMkNKb1JwbXpQNmNJbgpQRVoxcUsycnhjZFRuVWhZenA3eEhRU3hFYW1aS2traVZLVG5aRHl5Z1REMVpPTi9va2tYbEE4NHQyVGFGTkVpClpMdGczM2RQb0QvaUM4Z2liWDhvOVMyRzJzODRzME94N3pqMDZKSHVOZW5wdWZldGRPSEd2OWYvREVXQ3BQMDcKMzZHaCtSQUZ3TE40ZU1ZMy9JWXJDNFJvUTlCdTlReEVuZlJndmNJS0Q5bHAvOERTVVR2Z1hYYjBTZFV4aUxpcgpYTW9VTGZiZ3dBNmZNL1kvLzFRRytUeERrTjY4VVlBRVE4cGUwZjU5OEU4Q0MyZWh5NU5MRnZHTG5MckhtVUVoCjVtTlF0QmVaNWRjbFFNYktUenVOUUpZWXV6WUtsTnFCSGIwRzdpVzdsdkxoMHlHNXpyVXRBalJGcVFWQllicTcKdHJVTDRuNjFmNzNvYlBqdDMzWm1NR0RDQ1pyT1ZJb3l4aC9WcERmWURZZU1tTGw4a2RWc0hqMGhzVERoOXVpOAp0dmswV0gxYkNBOTlzeXZSdGpvY3c4NUVMTE9RMG83ZCtoSE9FQ3dkVEhVV0loZk1zSUVENzVOUXhSamJ3Nmp2Cnd5UHJxM1R6SnJYVVVpbXJBSUh5N3BrYzMrVlpnMCtscHFiTCtEOXRxQ2dWcWZNeUFWekx0Tm94Nm9aS2w1L2IKQVQydFVURk14cmk4bTFKSXNlVDcveVZ1WVJCWHhrRTFibU5NOCtkL0grTHdjUXhnMVplcEhEVmM5dGRUeHhvRAozWllsOVYrc3YyZWwwdmVjCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0F"
-                  .toCharArray());
-      assertThat(clusterConfig.getUsername()).isEqualTo("clusterUser_cdp-test-rg_cdp-azure-test-aks".toCharArray());
-      assertThat(clusterConfig.getAzureConfig().getAadIdToken()).isEqualTo(aadToken);
-      assertThat(clusterConfig.getExec())
-          .isEqualTo(Exec.builder()
-                         .command("kubelogin")
-                         .apiVersion("client.authentication.k8s.io/v1beta1")
-                         .installHint(AZURE_AUTH_PLUGIN_INSTALL_HINT)
-                         .provideClusterInfo(false)
-                         .interactiveMode(InteractiveMode.NEVER)
-                         .env(null)
-                         .args(getArgsForKubeconfig(azureConfig.getAzureAuthenticationType()))
-                         .build());
+    if (AzureAuthenticationType.SERVICE_PRINCIPAL_CERT.equals(azureConfig.getAzureAuthenticationType())) {
+      MockedStatic azureCliClientMockedStatic = mockStatic(AzureCliClient.class);
+      azureCliClientMockedStatic.when(() -> AzureCliClient.loginToAksCluster(any(), any(), any(), any()))
+          .thenAnswer((Answer<Void>) invocation -> null);
+      clusterConfig = azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, WORKING_DIR, logCallback);
+      azureCliClientMockedStatic.close();
+    } else {
+      clusterConfig = azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, WORKING_DIR, logCallback);
     }
+    mockedStaticKubernetesAuthPlugin.close();
+
+    assertThat(clusterConfig.getMasterUrl())
+        .isEqualTo("https://cdp-azure-test-aks-dns-baa4bbdc.hcp.eastus.azmk8s.io:443");
+    assertThat(clusterConfig.getNamespace()).isEqualTo("default");
+    assertThat(clusterConfig.getCaCert())
+        .isEqualTo(
+            "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUU2RENDQXRDZ0F3SUJBZ0lRUU45cldqaGVpTFJReXpWRVFYUS9jakFOQmdrcWhraUc5dzBCQVFzRkFEQU4KTVFzd0NRWURWUVFERXdKallUQWdGdzB5TWpBMU1UZ3hOVEU0TURCYUdBOHlNRFV5TURVeE9ERTFNamd3TUZvdwpEVEVMTUFrR0ExVUVBeE1DWTJFd2dnSWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUNEd0F3Z2dJS0FvSUNBUUNrCmdKSFhQYlV1M1pZS1Jjdi93cWVsUGordm9FY2I4MTE0M1pnWExSemZXM1FkVEVVTENBbDEwb29DTytZaTJRKy8KQjVTN3p1NG9OSjFRbVRGdEtBdW0xUHJpNWc5L003alZwYTVLdk1hZ2pMdUdxVG9QanZkQzZSZFF0UVpiamI0WAoxZC9KNEtkYXU2Zk51b2NmV0ZKMExUMnJocXpVZVk4ODhXeXZFeTI5OGRwZDFTKzRLMGNBUTdvWVhGd2dob1h6CjFKenQvaU5rMFRmRVNFTzZqNmtCZkh3SHlOQnBNK0R1UXZGamd0bmZWV2FYZk9wVVVCZDM4WGoyOTA4Z2tnQUYKL1FxeWozWHRXV0ExWFQ4S2VjZFBmN0hFK2RQMXlHeXJJOWlsdjJFVTZMbEtWOFRqd0FzQ3hvTU1aNWtQKzJhUApFcUlZbVdBZWhKVjRtb1FXeWdkZGJ6N1cyZVNxUmpoSklENUNxRjMrbzA2M1R3V2xUVzFBdXBVR0JJSHVWa2tOCkdubkJUTmNBMmk5VFpiY1VEenMzQnpMN3NEamZ3bDFOS1hUL2craTQzYkFnRkswd3JoTmYzb0phbVdVSU9uVWcKNjd5NE9iNm11K0pnb0Q2bUNFR3FCTXVjakpPaVd5SGZBMDBmZW5hODFWK2Z4cGw2RWNVSW9NZmM2MmY2S1JBawpiRG9qK29ycEF5Wm1SdmRRVzRPNDVVc3VrNWs1dytTTGNBQnI3bkFtc2JOYU85WERueGZWaEhTU2JXeTVGU1U2CnpQakJIRXRSVEkxVEZYYnp6MVZja1FJUHd1ZHJTLzF4N1I0ZGd1MG5OODlwcVd4VHJBRnpDRFQydGpWd2J3OGYKQWozZ1dJTS9wbnRPbS93cUdQMExWTXM2d21jUmF3TklkbXI3dldrVEJRSURBUUFCbzBJd1FEQU9CZ05WSFE4QgpBZjhFQkFNQ0FxUXdEd1lEVlIwVEFRSC9CQVV3QXdFQi96QWRCZ05WSFE0RUZnUVVFVFI1eFdqVjI4akZCYVY0CjZNWmxpRG9PeUU0d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dJQkFIVGZRV0w2MUFUVkNTM0Z5a2hFYklEaVkyY2UKS2MzbHdlYmVObW9PR1NYREFqcXV3ZzRlU3BtYy9OQkJqWEh1cGZvMjczbk5NZ2RlaGEyMkNKb1JwbXpQNmNJbgpQRVoxcUsycnhjZFRuVWhZenA3eEhRU3hFYW1aS2traVZLVG5aRHl5Z1REMVpPTi9va2tYbEE4NHQyVGFGTkVpClpMdGczM2RQb0QvaUM4Z2liWDhvOVMyRzJzODRzME94N3pqMDZKSHVOZW5wdWZldGRPSEd2OWYvREVXQ3BQMDcKMzZHaCtSQUZ3TE40ZU1ZMy9JWXJDNFJvUTlCdTlReEVuZlJndmNJS0Q5bHAvOERTVVR2Z1hYYjBTZFV4aUxpcgpYTW9VTGZiZ3dBNmZNL1kvLzFRRytUeERrTjY4VVlBRVE4cGUwZjU5OEU4Q0MyZWh5NU5MRnZHTG5MckhtVUVoCjVtTlF0QmVaNWRjbFFNYktUenVOUUpZWXV6WUtsTnFCSGIwRzdpVzdsdkxoMHlHNXpyVXRBalJGcVFWQllicTcKdHJVTDRuNjFmNzNvYlBqdDMzWm1NR0RDQ1pyT1ZJb3l4aC9WcERmWURZZU1tTGw4a2RWc0hqMGhzVERoOXVpOAp0dmswV0gxYkNBOTlzeXZSdGpvY3c4NUVMTE9RMG83ZCtoSE9FQ3dkVEhVV0loZk1zSUVENzVOUXhSamJ3Nmp2Cnd5UHJxM1R6SnJYVVVpbXJBSUh5N3BrYzMrVlpnMCtscHFiTCtEOXRxQ2dWcWZNeUFWekx0Tm94Nm9aS2w1L2IKQVQydFVURk14cmk4bTFKSXNlVDcveVZ1WVJCWHhrRTFibU5NOCtkL0grTHdjUXhnMVplcEhEVmM5dGRUeHhvRAozWllsOVYrc3YyZWwwdmVjCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0F"
+                .toCharArray());
+    assertThat(clusterConfig.getUsername()).isEqualTo("clusterUser_cdp-test-rg_cdp-azure-test-aks".toCharArray());
+    assertThat(clusterConfig.getAzureConfig().getAadIdToken()).isEqualTo(aadToken);
+    assertThat(clusterConfig.getExec())
+        .isEqualTo(Exec.builder()
+                       .command("kubelogin")
+                       .apiVersion("client.authentication.k8s.io/v1beta1")
+                       .installHint(AZURE_AUTH_PLUGIN_INSTALL_HINT)
+                       .provideClusterInfo(false)
+                       .interactiveMode(InteractiveMode.NEVER)
+                       .env(Collections.emptyList())
+                       .args(getArgsForKubeconfig(azureConfig.getAzureAuthenticationType()))
+                       .build());
   }
 
   private void testGetImageTags(AzureConfig azureConfig) {
@@ -1140,9 +1150,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
             "AzurePublicCloud", "--client-id", "clientId", "--tenant-id", "tenantId", "--client-secret", "pass",
             "--login", "spn");
       case SERVICE_PRINCIPAL_CERT:
-        return Arrays.asList("get-token", "--server-id", "6dae42f8-4368-4678-94ff-3960e28e3630", "--environment",
-            "AzurePublicCloud", "--client-id", "clientId", "--tenant-id", "tenantId", "--client-certificate",
-            "azure-cert.pem", "--login", "spn");
+        return Arrays.asList("get-token", "--server-id", "6dae42f8-4368-4678-94ff-3960e28e3630", "--login", "azurecli");
       case MANAGED_IDENTITY_SYSTEM_ASSIGNED:
         return Arrays.asList("get-token", "--server-id", "6dae42f8-4368-4678-94ff-3960e28e3630", "--login", "msi");
       case MANAGED_IDENTITY_USER_ASSIGNED:

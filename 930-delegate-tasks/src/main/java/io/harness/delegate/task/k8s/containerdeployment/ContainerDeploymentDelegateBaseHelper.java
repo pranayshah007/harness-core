@@ -127,6 +127,11 @@ public class ContainerDeploymentDelegateBaseHelper {
   }
 
   public KubernetesConfig createKubernetesConfig(K8sInfraDelegateConfig clusterConfigDTO, LogCallback logCallback) {
+    return createKubernetesConfig(clusterConfigDTO, null, logCallback);
+  }
+
+  public KubernetesConfig createKubernetesConfig(
+      K8sInfraDelegateConfig clusterConfigDTO, String workingKubeconfigDirectory, LogCallback logCallback) {
     if (clusterConfigDTO instanceof DirectK8sInfraDelegateConfig) {
       return k8sYamlToDelegateDTOMapper.createKubernetesConfigFromClusterConfig(
           ((DirectK8sInfraDelegateConfig) clusterConfigDTO).getKubernetesClusterConfigDTO(),
@@ -152,7 +157,7 @@ public class ContainerDeploymentDelegateBaseHelper {
                 .useClusterAdminCredentials(azureK8sInfraDelegateConfig.isUseClusterAdminCredentials())
                 .certificateWorkingDirectory(workingDirectory)
                 .build();
-        return azureAsyncTaskHelper.getClusterConfig(azureConfigContext, logCallback);
+        return azureAsyncTaskHelper.getClusterConfig(azureConfigContext, workingKubeconfigDirectory, logCallback);
       } catch (IOException ioe) {
         throw NestedExceptionUtils.hintWithExplanationException("Failed to authenticate with Azure",
             "Please check you Azure connector configuration or delegate filesystem permissions.",
@@ -176,18 +181,20 @@ public class ContainerDeploymentDelegateBaseHelper {
     return null;
   }
 
-  public String getKubeconfigFileContent(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
+  public String getKubeconfigFileContent(K8sInfraDelegateConfig k8sInfraDelegateConfig, String workingDirectory) {
     decryptK8sInfraDelegateConfig(k8sInfraDelegateConfig);
-    return kubernetesContainerService.getConfigFileContent(createKubernetesConfig(k8sInfraDelegateConfig, null));
+    return kubernetesContainerService.getConfigFileContent(
+        createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, null));
   }
 
   public void persistKubernetesConfig(KubernetesConfig kubernetesConfig, String directory) throws IOException {
     kubernetesContainerService.persistKubernetesConfig(kubernetesConfig, directory);
   }
 
-  public KubernetesConfig decryptAndGetKubernetesConfig(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
+  public KubernetesConfig decryptAndGetKubernetesConfig(
+      K8sInfraDelegateConfig k8sInfraDelegateConfig, String workingDirectory) {
     decryptK8sInfraDelegateConfig(k8sInfraDelegateConfig);
-    return createKubernetesConfig(k8sInfraDelegateConfig, null);
+    return createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, null);
   }
 
   public void decryptK8sInfraDelegateConfig(K8sInfraDelegateConfig k8sInfraDelegateConfig) {

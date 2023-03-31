@@ -99,6 +99,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
   final CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
   @Mock private IK8sReleaseHistory releaseHistory;
   @Mock private IK8sRelease release;
+  final String workingDirectory = "./repo/k8s";
 
   @Before
   public void setup() throws Exception {
@@ -110,7 +111,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
 
     doReturn(KubernetesConfig.builder().namespace("default").build())
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(any(K8sInfraDelegateConfig.class), any(LogCallback.class));
+        .createKubernetesConfig(any(K8sInfraDelegateConfig.class), anyString(), any(LogCallback.class));
 
     doReturn(releaseHandler).when(taskHelperBase).getReleaseHandler(anyBoolean());
     doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
@@ -129,7 +130,8 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
             .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().kustomizeDirPath("dir").build())
             .useDeclarativeRollback(true)
             .build();
-    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
+    K8sDelegateTaskParams delegateTaskParams =
+        K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
 
     doReturn(singletonList(deployment()))
         .when(taskHelperBase)
@@ -157,7 +159,8 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
             .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().kustomizeDirPath("dir").build())
             .useDeclarativeRollback(false)
             .build();
-    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
+    K8sDelegateTaskParams delegateTaskParams =
+        K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
 
     K8SLegacyReleaseHistory releaseHistory = mock(K8SLegacyReleaseHistory.class);
     ReleaseHistory releaseHistoryContent = mock(ReleaseHistory.class);
@@ -197,7 +200,8 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
             .releaseName("releaseName")
             .useDeclarativeRollback(true)
             .build();
-    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
+    K8sDelegateTaskParams delegateTaskParams =
+        K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
     InvalidRequestException thrownException = new InvalidRequestException("Failed to get pods");
     K8sClient k8sClient = mock(K8sClient.class);
     doReturn(k8sClient).when(taskHelperBase).getKubernetesClient(anyBoolean());
@@ -234,7 +238,8 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testExecuteTaskInternalWithPruning() throws Exception {
-    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
+    K8sDelegateTaskParams delegateTaskParams =
+        K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
     K8sRollingDeployRequest deployRequestWithPruningEnabled =
         K8sRollingDeployRequest.builder()
             .releaseName("releaseName")

@@ -252,7 +252,8 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     helmInstallCommandRequestNG = createHelmInstallCommandRequestNG();
     helmRollbackCommandRequestNG = createHelmRollbackCommandRequestNG();
     kubernetesConfig = KubernetesConfig.builder().build();
-    when(containerDeploymentDelegateBaseHelper.createKubernetesConfig(any(), any())).thenReturn(kubernetesConfig);
+    when(containerDeploymentDelegateBaseHelper.createKubernetesConfig(any(), any(), any()))
+        .thenReturn(kubernetesConfig);
     spyHelmDeployService = spy(helmDeployService);
     doNothing()
         .when(helmTaskHelperBase)

@@ -122,7 +122,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, logCallback);
+        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
     doReturn(logCallback)
         .when(k8sTaskHelperBase)
         .getLogCallback(eq(iLogStreamingTaskClient), anyString(), anyBoolean(), any());
@@ -421,7 +421,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
             .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
             .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
             .build();
-    final K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
+    final K8sDelegateTaskParams delegateTaskParams =
+        K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
 
     when(k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory,
              emptyList(), releaseName, namespace, logCallback, timeoutIntervalInMin))

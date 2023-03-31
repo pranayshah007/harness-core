@@ -130,10 +130,10 @@ public class K8sTaskNGTest extends CategoryTest {
     doReturn(rollingRequestHandler).when(k8sTaskTypeToRequestHandler).get(K8sTaskType.DEPLOYMENT_ROLLING.name());
     doReturn(mockKubeConfigFileContent)
         .when(containerDeploymentDelegateBaseHelper)
-        .getKubeconfigFileContent(k8sInfraDelegateConfig);
+        .getKubeconfigFileContent(any(K8sInfraDelegateConfig.class), anyString());
     doReturn(mockKubeConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .decryptAndGetKubernetesConfig(k8sInfraDelegateConfig);
+        .decryptAndGetKubernetesConfig(any(K8sInfraDelegateConfig.class), anyString());
     doReturn(kubectlPath).when(k8sGlobalConfigService).getKubectlPath(anyBoolean());
     doReturn(goTemplateClientPath).when(k8sGlobalConfigService).getGoTemplateClientPath();
     doReturn(helmV2Path).when(k8sGlobalConfigService).getHelmPath(HelmVersion.V2);

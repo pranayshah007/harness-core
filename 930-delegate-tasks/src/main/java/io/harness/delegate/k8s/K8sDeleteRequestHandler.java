@@ -149,8 +149,9 @@ public class K8sDeleteRequestHandler extends K8sRequestHandler {
     }
 
     client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
-    kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        k8sDeleteRequest.getK8sInfraDelegateConfig(), executionLogCallback);
+    kubernetesConfig =
+        containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sDeleteRequest.getK8sInfraDelegateConfig(),
+            k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
 
     if (isEmpty(k8sDeleteRequest.getFilePaths())) {
       executionLogCallback.saveExecutionLog(color("\nNo file specified in the state", Yellow, Bold));
@@ -206,8 +207,9 @@ public class K8sDeleteRequestHandler extends K8sRequestHandler {
       executionLogCallback.saveExecutionLog(color(String.format("Release Name: [%s]", releaseName), Yellow, Bold));
     }
     client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
-    kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        k8sDeleteRequest.getK8sInfraDelegateConfig(), executionLogCallback);
+    kubernetesConfig =
+        containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sDeleteRequest.getK8sInfraDelegateConfig(),
+            k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
 
     try {
       resourceIdsToDelete =
