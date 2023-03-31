@@ -10,6 +10,7 @@ package io.harness.ng.core.variable.resources;
 import static io.harness.ng.core.variable.VariablePermissions.VARIABLE_EDIT_PERMISSION;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
+import static io.harness.utils.PageUtils.getPageRequest;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,7 +23,9 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.beans.SortOrder;
 import io.harness.category.element.UnitTests;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.variable.dto.VariableDTO;
@@ -34,6 +37,7 @@ import io.harness.ng.core.variable.mappers.VariableMapper;
 import io.harness.ng.core.variable.services.VariableService;
 import io.harness.rule.Owner;
 
+import java.util.List;
 import java.util.Optional;
 import javax.ws.rs.NotFoundException;
 import org.junit.Before;
@@ -128,11 +132,20 @@ public class VariableResourceImplTest extends CategoryTest {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
-    when(variableService.list(accountIdentifier, orgIdentifier, projectIdentifier, 0, 10, null, false))
+    PageRequest pageRequest =
+        PageRequest.builder()
+            .pageIndex(0)
+            .pageSize(10)
+            .sortOrders(
+                List.of(SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build()))
+            .build();
+    when(variableService.list(
+             accountIdentifier, orgIdentifier, projectIdentifier, null, false, getPageRequest(pageRequest)))
         .thenReturn(PageResponse.<VariableResponseDTO>builder().build());
     ResponseDTO<PageResponse<VariableResponseDTO>> list =
-        variableResource.list(accountIdentifier, orgIdentifier, projectIdentifier, 0, 10, null, false);
+        variableResource.list(accountIdentifier, orgIdentifier, projectIdentifier, null, false, pageRequest);
     assertThat(list).isNotNull();
-    verify(variableService, times(1)).list(accountIdentifier, orgIdentifier, projectIdentifier, 0, 10, null, false);
+    verify(variableService, times(1))
+        .list(accountIdentifier, orgIdentifier, projectIdentifier, null, false, getPageRequest(pageRequest));
   }
 }
