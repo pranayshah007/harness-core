@@ -2719,7 +2719,6 @@ public class K8sTaskHelperBase {
       HelmChartManifestDelegateConfig helmChartManifestConfig =
           (HelmChartManifestDelegateConfig) manifestDelegateConfig;
       logCallback.saveExecutionLog(color(format("%nFetching files from helm chart repo"), White, Bold));
-      helmTaskHelperBase.printHelmChartInfoInExecutionLogs(helmChartManifestConfig, logCallback);
 
       helmTaskHelperBase.initHelm(destinationDirectory, helmChartManifestConfig.getHelmVersion(), timeoutInMillis);
       if (HTTP_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
@@ -2733,6 +2732,8 @@ public class K8sTaskHelperBase {
             helmChartManifestConfig, destinationDirectory, timeoutInMillis);
       }
 
+      helmTaskHelperBase.printHelmChartInfoWithVersionInExecutionLogs(
+          destinationDirectory, helmChartManifestConfig, logCallback);
       logCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
       logCallback.saveExecutionLog(getManifestFileNamesInLogFormat(destinationDirectory));
       logCallback.saveExecutionLog("Done.", INFO, SUCCESS);
