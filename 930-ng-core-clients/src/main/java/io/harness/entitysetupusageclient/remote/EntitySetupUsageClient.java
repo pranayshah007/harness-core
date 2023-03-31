@@ -19,7 +19,6 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.GitEntitySetupUsageDTO;
 import io.harness.ng.core.dto.ResponseDTO;

@@ -53,7 +53,6 @@ import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.ng.core.dto.GitEntitySetupUsageDTO;
-import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
