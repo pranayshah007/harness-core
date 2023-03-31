@@ -511,11 +511,7 @@ paths:
       security:
         - x-api-key: []
       parameters:
-        - schema:
-            type: string
-          in: header
-          name: Harness-Account
-          description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+        - $ref: '#/components/parameters/AccountHeader'
       requestBody:
         $ref: '#/components/requestBodies/AppConfigRequest'
       x-internal: true
@@ -529,11 +525,7 @@ paths:
         '200':
           $ref: '#/components/responses/AppConfigResponse'
       parameters:
-        - schema:
-            type: string
-          in: header
-          name: Harness-Account
-          description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+        - $ref: '#/components/parameters/AccountHeader'
       security:
         - x-api-key: []
       requestBody:
@@ -1032,6 +1024,8 @@ components:
           $ref: '#/components/schemas/PluginInfo'
           x-stoplight:
             id: ogk72ix9uoil2
+      required:
+        - plugin
     PluginDetailedInfoResponse:
       title: PluginDetailedInfoResponse
       x-stoplight:
@@ -1042,6 +1036,8 @@ components:
           $ref: '#/components/schemas/PluginDetailedInfo'
           x-stoplight:
             id: ogk72ix9uoil3
+      required:
+        - plugin
     PluginDetailedInfo:
       title: PluginDetailedInfo
       x-stoplight:
@@ -1121,7 +1117,7 @@ components:
       type: object
       x-examples: {}
       properties:
-        configId:
+        config_id:
           type: string
           x-stoplight:
             id: 4c46nx9p25z4g
@@ -1148,6 +1144,10 @@ components:
           x-stoplight:
             id: gjoqaxs5xj4g5
           format: int64
+      required:
+        - config_id
+        - configs
+        - enabled
     AppConfigRequest:
       title: AppConfigRequest
       x-stoplight:
@@ -1158,6 +1158,8 @@ components:
           $ref: '#/components/schemas/AppConfig'
           x-stoplight:
             id: mvm9nhd3eenq6
+      required:
+        - app_config
     AppConfigResponse:
       title: AppConfigResponse
       x-stoplight:
@@ -1168,6 +1170,8 @@ components:
           $ref: '#/components/schemas/AppConfig'
           x-stoplight:
             id: 7rhhzvrxp6grz
+      required:
+        - app_config
     ConnectorInfoRequest:
       title: ConnectorInfoRequest
       x-stoplight:
@@ -1215,12 +1219,14 @@ components:
       x-stoplight:
         id: vc33058szl2a4
       type: object
+      description: Merged Config for all Enabled Plugins.
       properties:
         config:
           type: string
           x-stoplight:
             id: 9tuk5lnb9qem9
-      description: Merged Config for all Enabled Plugins.
+      required:
+        - config
     MergedPluginConfigResponse:
       title: MergedPluginConfigResponse
       x-stoplight:
@@ -1232,6 +1238,8 @@ components:
           $ref: '#/components/schemas/MergedPluginConfigs'
           x-stoplight:
             id: 4cbw2qu8gjz0n
+      required:
+        - merged_config
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1328,7 +1336,7 @@ components:
     Enabled:
       name: enabled
       in: query
-      required: false
+      required: true
       schema:
         type: boolean
       description: flag for checking enablement/disablement
@@ -1439,7 +1447,7 @@ components:
             Example 1:
               value:
                 app_config:
-                  configId: snyk-security
+                  config_id: snyk-security
                   configs: |-
                     proxy:
                       '/snyk':

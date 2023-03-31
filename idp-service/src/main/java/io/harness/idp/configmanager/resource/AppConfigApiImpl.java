@@ -68,7 +68,7 @@ public class AppConfigApiImpl implements AppConfigApi {
   }
 
   @Override
-  public Response togglePluginForAccount(String pluginId, String harnessAccount, Boolean isEnabled) {
+  public Response togglePluginForAccount(String pluginId, Boolean isEnabled, String harnessAccount) {
     try {
       AppConfig disabledPluginAppConfig =
           configManagerService.toggleConfigForAccount(harnessAccount, pluginId, isEnabled, ConfigType.PLUGIN);
