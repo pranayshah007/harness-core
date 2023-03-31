@@ -64,8 +64,8 @@ public class NGServiceOverridesEntity implements PersistentEntity, ScopeAware {
   @Trimmed String orgIdentifier;
   @Trimmed String projectIdentifier;
   @NotNull @Trimmed String serviceRef;
-  @NotNull @Trimmed String environmentRef;
-  @NotNull @Trimmed String envIdentifier;
+  @Trimmed String environmentRef;
+  @Trimmed String envIdentifier;
 
   String yaml;
 
