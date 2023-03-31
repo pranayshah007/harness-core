@@ -132,8 +132,8 @@ public class CgK8sInstancesDetailsFetcherTest {
                                                                          .withName("nginxPod")
                                                                          .withNamespace("namespace")
                                                                          .withUid("podId")
-                                                                         .build()
-                                                                         .clusterName("cluster")));
+                                                                         .withClusterName("cluster")
+                                                                         .build()));
 
     doReturn(k8sPodList)
         .when(kubernetesContainerService)

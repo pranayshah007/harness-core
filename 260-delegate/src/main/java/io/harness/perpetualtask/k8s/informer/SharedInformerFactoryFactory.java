@@ -25,7 +25,6 @@ import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
-import io.kubernetes.client.openapi.apis.BatchV1beta1Api;
 import io.kubernetes.client.openapi.models.V1DaemonSet;
 import io.kubernetes.client.openapi.models.V1DaemonSetList;
 import io.kubernetes.client.openapi.models.V1Deployment;
@@ -66,7 +65,7 @@ public class SharedInformerFactoryFactory {
   }
 
   private void addHandlerForCronJob(SharedInformerFactory factory, ApiClient apiClient, ClusterDetails clusterDetails) {
-    BatchV1beta1Api batchV1beta1Api = new BatchV1beta1Api(apiClient);
+    BatchV1Api batchV1beta1Api = new BatchV1Api(apiClient);
     factory
         .sharedIndexInformerFor((CallGeneratorParams params)
                                     -> batchV1beta1Api.listCronJobForAllNamespacesCall(null, null, null, null, null,
