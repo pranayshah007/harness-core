@@ -80,6 +80,7 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
   private final Integer releaseNumber = 2;
   private final Integer timeoutIntervalInMin = 10;
   private final String releaseName = "releaseName";
+  private final String workingDirectory = "/tmp";
 
   @Before
   public void setUp() {
@@ -89,7 +90,7 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
         .getLogCallback(eq(logStreamingTaskClient), anyString(), anyBoolean(), any());
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, logCallback);
+        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
 
     rollbackHandlerConfig = k8sRollingRollbackRequestHandler.getRollbackHandlerConfig();
     k8sRollingRollbackDeployRequest = K8sRollingRollbackDeployRequest.builder()
@@ -98,7 +99,7 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
                                           .releaseNumber(releaseNumber)
                                           .timeoutIntervalInMin(timeoutIntervalInMin)
                                           .build();
-    k8sDelegateTaskParams = K8sDelegateTaskParams.builder().build();
+    k8sDelegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
   }
 
   @Test
