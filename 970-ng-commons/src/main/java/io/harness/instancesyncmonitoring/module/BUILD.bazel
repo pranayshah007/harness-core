@@ -12,12 +12,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//970-ng-commons/src/main/java/io/harness/pms/yaml/validation:module",
-        "//979-recaster/src/main/java/io/harness/annotation:module",
-        "//980-commons/src/main/java/io/harness/expression:module",
-        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
-        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
-        "@maven//:org_apache_commons_commons_lang3",
+        "//970-ng-commons/src/main/java/io/harness/instancesyncmonitoring/service:module",
+        "@maven//:com_google_inject_guice",
     ],
 )
 
