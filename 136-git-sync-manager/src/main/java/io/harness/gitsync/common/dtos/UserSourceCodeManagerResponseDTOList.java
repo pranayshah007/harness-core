@@ -9,16 +9,14 @@ package io.harness.gitsync.common.dtos;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.userprofile.commons.SCMType;
 
+import java.util.List;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 @OwnedBy(HarnessTeam.PIPELINE)
-public abstract class UserSourceCodeManagerResponseDTO {
-  String accountIdentifier;
-  String userIdentifier;
-  SCMType type;
-
-  public abstract SCMType getType();
+public class UserSourceCodeManagerResponseDTOList {
+  List<UserSourceCodeManagerResponseDTO> userSourceCodeManagerResponseDTOList;
 }
