@@ -55,16 +55,7 @@ import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
-import io.harness.pms.pipeline.ClonePipelineDTO;
-import io.harness.pms.pipeline.DestinationPipelineConfig;
-import io.harness.pms.pipeline.ExecutionSummaryInfo;
-import io.harness.pms.pipeline.MoveConfigOperationDTO;
-import io.harness.pms.pipeline.MoveConfigOperationType;
-import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.SourceIdentifierConfig;
-import io.harness.pms.pipeline.StepCategory;
-import io.harness.pms.pipeline.StepData;
-import io.harness.pms.pipeline.StepPalleteInfo;
+import io.harness.pms.pipeline.*;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.PipelineVersion;
@@ -328,7 +319,9 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
-    doReturn(updatedPipelineEntity)
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(updatedPipelineEntity).build();
+    doReturn(pipelineEntityWithReferencesDTO)
         .when(pmsPipelineServiceHelper)
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
     MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
@@ -346,7 +339,9 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   public void testUpdatePipelineYaml() throws IOException {
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
-    doReturn(updatedPipelineEntity)
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(updatedPipelineEntity).build();
+    doReturn(pipelineEntityWithReferencesDTO)
         .when(pmsPipelineServiceHelper)
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
     assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true))
@@ -356,7 +351,11 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
         .thenReturn(projDTOCall);
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
-    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO1 =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(updatedPipelineEntity).build();
+    doReturn(pipelineEntityWithReferencesDTO1)
+        .when(pmsPipelineServiceHelper)
+        .updatePipelineInfo(any(), eq(PipelineVersion.V0));
     pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true);
   }
 
@@ -425,7 +424,9 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
-    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), any());
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(updatedPipelineEntity).build();
+    doReturn(pipelineEntityWithReferencesDTO).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), any());
     doNothing().when(pmsPipelineServiceHelper).resolveTemplatesAndValidatePipelineEntity(pipelineEntity, false);
     doReturn(PIPELINE_YAML).when(pipelineCloneHelper).updatePipelineMetadataInSourceYaml(any(), any(), any());
     doReturn(true).when(pmsFeatureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
@@ -455,7 +456,11 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
-    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(updatedPipelineEntity).build();
+    doReturn(pipelineEntityWithReferencesDTO)
+        .when(pmsPipelineServiceHelper)
+        .updatePipelineInfo(any(), eq(PipelineVersion.V0));
     doNothing().when(pmsPipelineServiceHelper).resolveTemplatesAndValidatePipelineEntity(pipelineEntity, false);
     doReturn(PIPELINE_YAML).when(pipelineCloneHelper).updatePipelineMetadataInSourceYaml(any(), any(), any());
     doReturn(true).when(pmsFeatureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
@@ -495,7 +500,11 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   public void testUpdateDraft() throws IOException {
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     pipelineEntity.setIsDraft(true);
-    doReturn(pipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(pipelineEntity).build();
+    doReturn(pipelineEntityWithReferencesDTO)
+        .when(pmsPipelineServiceHelper)
+        .updatePipelineInfo(any(), eq(PipelineVersion.V0));
     pmsPipelineRepository.save(pipelineEntity);
     MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
@@ -513,7 +522,9 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     pipelineEntity.setHarnessVersion(null);
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
-    doReturn(updatedPipelineEntity)
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(updatedPipelineEntity).build();
+    doReturn(pipelineEntityWithReferencesDTO)
         .when(pmsPipelineServiceHelper)
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
     assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true))
@@ -523,7 +534,11 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
         .thenReturn(projDTOCall);
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
-    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO1 =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(updatedPipelineEntity).build();
+    doReturn(pipelineEntityWithReferencesDTO1)
+        .when(pmsPipelineServiceHelper)
+        .updatePipelineInfo(any(), eq(PipelineVersion.V0));
     pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true);
   }
 
@@ -600,7 +615,9 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
-    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), any());
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(updatedPipelineEntity).build();
+    doReturn(pipelineEntityWithReferencesDTO).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), any());
     doNothing().when(pmsPipelineServiceHelper).resolveTemplatesAndValidatePipelineEntity(pipelineEntity, false);
     doReturn(PIPELINE_YAML_V1).when(pipelineCloneHelper).updatePipelineMetadataInSourceYamlV1(any(), any());
     doReturn(true).when(pmsFeatureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
@@ -628,7 +645,9 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
-    doReturn(updatedPipelineEntity)
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(updatedPipelineEntity).build();
+    doReturn(pipelineEntityWithReferencesDTO)
         .when(pmsPipelineServiceHelper)
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
     MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);

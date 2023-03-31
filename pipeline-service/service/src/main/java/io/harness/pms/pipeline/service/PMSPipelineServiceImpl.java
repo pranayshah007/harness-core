@@ -58,19 +58,9 @@ import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
-import io.harness.pms.pipeline.ClonePipelineDTO;
-import io.harness.pms.pipeline.CommonStepInfo;
-import io.harness.pms.pipeline.ExecutionSummaryInfo;
-import io.harness.pms.pipeline.MoveConfigOperationDTO;
-import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
-import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.*;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
-import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
-import io.harness.pms.pipeline.StepCategory;
-import io.harness.pms.pipeline.StepPalleteFilterWrapper;
-import io.harness.pms.pipeline.StepPalleteInfo;
-import io.harness.pms.pipeline.StepPalleteModuleInfo;
 import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
@@ -141,7 +131,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PipelineValidationService pipelineValidationService;
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
-  @Inject FilterCreatorMergeService filterCreatorMergeService;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -174,8 +163,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       }
 
       // UPDATING PIPELINE INFO AND PUBLISHING SETUP USAGES.
-      PipelineEntity entityWithUpdatedInfo =
+      PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
+
+      PipelineEntity entityWithUpdatedInfo = entityWithUpdatedInfoWithReferences.getPipelineEntity();
 
       // PIPELINE CREATE FLOW.
       PipelineEntity createdEntity;
@@ -183,10 +174,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       createdEntity = pipelineCRUDResult.getPipelineEntity();
 
       // POPULATE GIT INFO FOR REFERRED ENTITIES.
-      if (filterCreatorMergeService.doPublishSetupUsages(createdEntity)) {
+      /*if (filterCreatorMergeService.doPublishSetupUsages(createdEntity)) {
         populateGitInfoForReferredEntities(pipelineEntity);
       }
-
+*/
       try {
         String branchInRequest = GitAwareContextHelper.getBranchInRequest();
         pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(createdEntity,
@@ -334,13 +325,15 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     } else if (pipelineEntity.getStoreType() == StoreType.REMOTE && !loadFromCache) {
       try {
         // PUBLISHING SETUP USAGES.
-        pipelineEntity =
+        PipelineEntityWithReferencesDTO pipelineEntityWithReferences =
             pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
 
+        pipelineEntity = pipelineEntityWithReferences.getPipelineEntity();
+
         // POPULATE GIT INFO FOR REFERRED ENTITIES.
-        if (filterCreatorMergeService.doPublishSetupUsages(pipelineEntity)) {
+        /*if (filterCreatorMergeService.doPublishSetupUsages(pipelineEntity)) {
           populateGitInfoForReferredEntities(pipelineEntity);
-        }
+        }*/
 
       } catch (IOException e) {
         throw new InvalidRequestException(
@@ -569,8 +562,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
         entityWithUpdatedInfo = pipelineEntity;
       } else {
-        entityWithUpdatedInfo =
+        PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences =
             pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
+
+        entityWithUpdatedInfo = entityWithUpdatedInfoWithReferences.getPipelineEntity();
       }
 
       // PIPELINE UPDATE FLOW.
@@ -583,9 +578,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       }
 
       // POPULATE GIT INFO FOR REFERRED ENTITIES.
-      if (filterCreatorMergeService.doPublishSetupUsages(pipelineEntity)) {
+      /*if (filterCreatorMergeService.doPublishSetupUsages(pipelineEntity)) {
         populateGitInfoForReferredEntities(pipelineEntity);
-      }
+      }*/
 
       if (updatedResult == null) {
         throw new InvalidRequestException(format(
@@ -763,17 +758,19 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
     try {
       // PUBLISHING SETUP USAGES.
-      PipelineEntity entityWithUpdatedInfo =
+      PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineVersion);
+
+      PipelineEntity entityWithUpdatedInfo = entityWithUpdatedInfoWithReferences.getPipelineEntity();
 
       // PIPELINE SAVE FLOW.
       PipelineEntity savedPipelineEntity =
           pmsPipelineRepository.savePipelineEntityForImportedYAML(entityWithUpdatedInfo);
 
       // POPULATE GIT INFO FOR REFERRED ENTITIES.
-      if (filterCreatorMergeService.doPublishSetupUsages(pipelineEntity)) {
+      /*if (filterCreatorMergeService.doPublishSetupUsages(pipelineEntity)) {
         populateGitInfoForReferredEntities(pipelineEntity);
-      }
+      }*/
 
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(savedPipelineEntity, CREATING_PIPELINE);
 

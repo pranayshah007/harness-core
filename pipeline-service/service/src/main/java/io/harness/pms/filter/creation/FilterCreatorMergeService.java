@@ -137,6 +137,7 @@ public class FilterCreatorMergeService {
         .filters(filters)
         .stageCount(response.getStageCount())
         .stageNames(new ArrayList<>(response.getStageNamesList()))
+        .referredEntities(response.getReferredEntitiesList())
         .build();
   }
 

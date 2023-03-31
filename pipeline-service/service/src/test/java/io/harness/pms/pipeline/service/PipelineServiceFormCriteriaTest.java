@@ -33,6 +33,7 @@ import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.pipeline.PipelineEntityWithReferencesDTO;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
@@ -120,7 +121,9 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
-    doReturn(updatedPipelineEntity)
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(updatedPipelineEntity).build();
+    doReturn(pipelineEntityWithReferencesDTO)
         .when(pmsPipelineServiceHelperMocked)
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
