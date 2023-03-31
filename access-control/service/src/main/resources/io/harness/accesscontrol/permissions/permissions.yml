@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 50
+version: 51
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1438,3 +1438,35 @@ permissions:
     includedInAllRoles: false
     allowedScopeLevels:
       - account
+  - identifier: code_repo_view
+    name: View a Code Repository
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: code_repo_edit
+    name: Create or Edit a Code Repository
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: code_repo_delete
+    name: Delete a Code Repository
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: code_repo_push
+    name: Push to a Code Repository
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
