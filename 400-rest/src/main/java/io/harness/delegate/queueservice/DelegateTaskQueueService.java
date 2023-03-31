@@ -184,28 +184,6 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
   void acknowledgeAndProcessDelegateTask(DelegateTaskDequeue delegateTaskDequeue) {
     try {
       if (delegateTaskDequeue.getDelegateTask() != null) {
-        if (delegateTaskDequeue.getDelegateTask().getTaskDataV2() != null) {
-          acknowledgeAndProcessDelegateTaskV2(delegateTaskDequeue);
-        }
-        String itemId =
-            acknowledge(delegateTaskDequeue.getItemId(), delegateTaskDequeue.getDelegateTask().getAccountId());
-        log.info("Delegate task {} acknowledge with item id {} from Queue Service",
-            delegateTaskDequeue.getDelegateTask().getUuid(), itemId);
-        if (isNotEmpty(itemId)) {
-          String taskId =
-              delegateTaskServiceClassic.saveAndBroadcastDelegateTask(delegateTaskDequeue.getDelegateTask());
-          log.info("Queued task {} broadcasting to delegate.", taskId);
-        }
-      }
-    } catch (Exception e) {
-      log.error("Unable to acknowledge queue service on dequeue delegate task id {}, item Id {}",
-          delegateTaskDequeue.getDelegateTask().getUuid(), delegateTaskDequeue.getItemId(), e);
-    }
-  }
-  @VisibleForTesting
-  void acknowledgeAndProcessDelegateTaskV2(DelegateTaskDequeue delegateTaskDequeue) {
-    try {
-      if (delegateTaskDequeue.getDelegateTask() != null) {
         String itemId =
             acknowledge(delegateTaskDequeue.getItemId(), delegateTaskDequeue.getDelegateTask().getAccountId());
         log.info("Delegate task {} acknowledge with item id {} from Queue Service",
@@ -254,7 +232,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     try (AutoLogContext ignore1 = new TaskLogContext(delegateTaskId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       Set<String> delegateTaskAborted = delegateCache.getAbortedTaskList(accountId);
-      if (delegateTaskAborted.contains(delegateTaskId)) {
+      if (isNotEmpty(delegateTaskAborted) && delegateTaskAborted.contains(delegateTaskId)) {
         log.info("Aborting delegate task from queue {}", delegateTaskDequeue.getDelegateTask().getUuid());
         return true;
       }
