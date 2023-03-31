@@ -50,7 +50,7 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
     this.client = RedissonClientFactory.getClient(redisLockConfig);
     String envNamespace = redisLockConfig.getEnvNamespace();
     this.lockNamespace = EmptyPredicate.isEmpty(envNamespace) ? LOCK_PREFIX.concat(":")
-                                                              : String.format("%s:%s:", envNamespace, LOCK_PREFIX);
+            : String.format("%s:%s:", envNamespace, LOCK_PREFIX);
   }
 
   private String getLockName(String name) {
@@ -65,7 +65,7 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
       boolean locked = lock.tryLock(0, timeout.toMillis(), TimeUnit.MILLISECONDS);
       if (locked) {
         log.debug("Lock acquired on {} for timeout {}", name, timeout);
-        return RedisAcquiredLock.builder().lock(lock).isSentinelMode(client.getConfig().isSentinelConfig()).build();
+        return RedisAcquiredLock.builder().lock(lock).build();
       }
     } catch (Exception ex) {
       throw new UnexpectedException(format(ERROR_MESSAGE, name), ex);
@@ -102,7 +102,6 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
     try {
       return acquireLock(name, timeout);
     } catch (WingsException exception) {
-      log.error("[RedisPersistentLocker]: Exception during locking {}", exception);
       return null;
     }
   }
@@ -114,11 +113,7 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
       RLock lock = client.getLock(name);
       boolean locked = lock.tryLock(waitTime.toMillis(), -1, TimeUnit.MILLISECONDS);
       if (locked) {
-        return RedisAcquiredLock.builder()
-            .lock(lock)
-            .isLeaseInfinite(true)
-            .isSentinelMode(client.getConfig().isSentinelConfig())
-            .build();
+        return RedisAcquiredLock.builder().lock(lock).isLeaseInfinite(true).build();
       }
     } catch (Exception ex) {
       throw new UnexpectedException(format(ERROR_MESSAGE, name), ex);
@@ -133,7 +128,7 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
 
   @Override
   public AcquiredLock waitToAcquireLock(
-      Class entityClass, String entityId, Duration lockTimeout, Duration waitTimeout) {
+          Class entityClass, String entityId, Duration lockTimeout, Duration waitTimeout) {
     return waitToAcquireLock(entityClass.getName() + "-" + entityId, lockTimeout, waitTimeout);
   }
 
@@ -145,7 +140,7 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
       boolean locked = lock.tryLock(waitTimeout.toMillis(), lockTimeout.toMillis(), TimeUnit.MILLISECONDS);
       if (locked) {
         log.debug("Acquired lock on {} for {} having a wait Timeout of {}", name, lockTimeout, waitTimeout);
-        return RedisAcquiredLock.builder().lock(lock).isSentinelMode(client.getConfig().isSentinelConfig()).build();
+        return RedisAcquiredLock.builder().lock(lock).build();
       }
     } catch (Exception ex) {
       throw new UnexpectedException(format(ERROR_MESSAGE, name), ex);
