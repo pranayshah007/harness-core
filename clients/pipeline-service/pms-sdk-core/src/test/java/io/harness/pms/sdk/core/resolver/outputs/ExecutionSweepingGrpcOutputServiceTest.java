@@ -9,7 +9,7 @@ package io.harness.pms.sdk.core.resolver.outputs;
 
 import static io.harness.rule.OwnerRule.SAHIL;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
