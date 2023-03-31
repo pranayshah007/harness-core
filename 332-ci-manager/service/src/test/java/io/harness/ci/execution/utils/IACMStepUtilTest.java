@@ -72,80 +72,6 @@ public class IACMStepUtilTest extends CategoryTest {
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testIACMGetStackVariables() {
-    Map<String, ParameterField<String>> stepVars = new HashMap<>();
-    stepVars.put("STACK_ID", ParameterField.createValueField("stackID"));
-    stepVars.put("WORKFLOW", ParameterField.createValueField("provision"));
-    Map<String, ParameterField<String>> envVars = new HashMap<>();
-    envVars.put("Key1", ParameterField.createValueField("Value1"));
-    envVars.put("Key2", ParameterField.createValueField("Value1"));
-    Map<String, ParameterField<String>> tfVars = new HashMap<>();
-    tfVars.put("tfvar1", ParameterField.createValueField("TfValue1"));
-    tfVars.put("tfvar2", ParameterField.createValueField("Value1"));
-    Map<String, JsonNode> setting = new HashMap<>();
-    ObjectMapper mapper = new ObjectMapper();
-    setting.put("operation", mapper.valueToTree("initialise"));
-    PluginStepInfo stepInfo = PluginStepInfo.builder()
-                                  .envVariables(ParameterField.createValueField(stepVars))
-                                  .settings(ParameterField.createValueField(setting))
-                                  .build();
-    StackVariables[] stackVariables = new StackVariables[] {StackVariables.builder()
-                                                                .stack("123")
-                                                                .account("abc")
-                                                                .key("keytest1")
-                                                                .kind("env")
-                                                                .value("keyValue1")
-                                                                .value_type("secret")
-                                                                .build(),
-        StackVariables.builder()
-            .stack("123")
-            .account("abc")
-            .key("keytest2")
-            .kind("env")
-            .value("keyValue2")
-            .value_type("string")
-            .build(),
-        StackVariables.builder()
-            .stack("123")
-            .account("abc")
-            .key("keytest3")
-            .kind("tf")
-            .value("keyValue3")
-            .value_type("secret")
-            .build(),
-        StackVariables.builder()
-            .stack("123")
-            .account("abc")
-            .key("keytest4")
-            .kind("tf")
-            .value("keyValue4")
-            .value_type("tf")
-            .build()};
-
-    Mockito.mockStatic(CIStepInfoUtils.class);
-    when(CIStepInfoUtils.getPluginCustomStepImage(any(), any(), any(), any())).thenReturn("imageName");
-    Stack stack = Stack.builder().provider_connector("awsTest").provisioner("terraform").build();
-    when(iacmServiceUtils.getIACMStackInfo(any(), any(), any(), any())).thenReturn(stack);
-    when(iacmServiceUtils.getIacmStackEnvs(any(), any(), any(), any())).thenReturn(stackVariables);
-    when(harnessImageUtils.getHarnessImageConnectorDetailsForVM(any(), any()))
-        .thenReturn(ConnectorDetails.builder().build());
-    Mockito.mockStatic(IntegrationStageUtils.class);
-    when(IntegrationStageUtils.getFullyQualifiedImageName(any(), any())).thenReturn("imageName");
-    Mockito.mockStatic(PluginSettingUtils.class);
-    when(PluginSettingUtils.getConnectorSecretEnvMap(any())).thenReturn(new HashMap<>());
-    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(ConnectorDetails.builder().build());
-
-    VmPluginStep vmPluginStep = iacmStepsUtils.injectIACMInfo(ambiance, stepInfo, null, null);
-    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(8);
-    assertThat(vmPluginStep.getEnvVariables().get("ENV_SECRETS_keytest1")).contains("${ngSecretManager.obtain");
-    assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_keytest2")).isEqualTo("keyValue2");
-    assertThat(vmPluginStep.getEnvVariables().get("TFVARS_SECRETS_keytest3")).contains("${ngSecretManager.obtain");
-    assertThat(vmPluginStep.getEnvVariables().get("TF_VARS_keytest4")).isEqualTo("keyValue4");
-  }
-
-  @Test
-  @Owner(developers = NGONZALEZ)
-  @Category(UnitTests.class)
   public void testIACMGetConnectorRef() {
     Map<String, ParameterField<String>> stepVars = new HashMap<>();
     stepVars.put("STACK_ID", ParameterField.createValueField("stackID"));
@@ -181,7 +107,7 @@ public class IACMStepUtilTest extends CategoryTest {
         .thenReturn(ConnectorDetails.builder().connectorType(ConnectorType.AWS).build());
 
     VmPluginStep vmPluginStep = iacmStepsUtils.injectIACMInfo(ambiance, stepInfo, null, null);
-    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(4);
+    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
     assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_ROOT_DIR")).isEqualTo("root");
     assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_TF_VERSION")).isEqualTo("1.2.3");
     assertThat(vmPluginStep.getConnector().getConnectorType()).isEqualTo(ConnectorType.AWS);
@@ -230,11 +156,11 @@ public class IACMStepUtilTest extends CategoryTest {
                                       .build();
         VmPluginStep vmPluginStep = iacmStepsUtils.injectIACMInfo(ambiance, stepInfo, null, null);
         if (i == 0) {
-          assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(4);
+          assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
           assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("initialise");
         }
         if (i == 1) {
-          assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(4);
+          assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
           if (j == 0) {
             assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("evaluate-plan");
           } else {
@@ -242,7 +168,7 @@ public class IACMStepUtilTest extends CategoryTest {
           }
         }
         if (i == 2) {
-          assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(4);
+          assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
           if (j == 0) {
             assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("execute-apply");
           } else {
@@ -250,6 +176,129 @@ public class IACMStepUtilTest extends CategoryTest {
           }
         }
       }
+    }
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testIACMEnvVarsTransformation() {
+    Map<String, ParameterField<String>> stepVars = new HashMap<>();
+    stepVars.put("STACK_ID", ParameterField.createValueField("stackID"));
+    stepVars.put("WORKFLOW", ParameterField.createValueField("provision"));
+    Map<String, JsonNode> setting = new HashMap<>();
+    ObjectMapper mapper = new ObjectMapper();
+    setting.put("operation", mapper.valueToTree("initialise"));
+    PluginStepInfo stepInfo = PluginStepInfo.builder()
+                                  .envVariables(ParameterField.createValueField(stepVars))
+                                  .settings(ParameterField.createValueField(setting))
+                                  .build();
+
+    Mockito.mockStatic(CIStepInfoUtils.class);
+    when(CIStepInfoUtils.getPluginCustomStepImage(any(), any(), any(), any())).thenReturn("imageName");
+    Stack stack = Stack.builder()
+                      .provider_connector("awsTest")
+                      .repository_path("root")
+                      .provisioner_version("1.2.3")
+                      .provisioner("terraform")
+                      .build();
+    when(iacmServiceUtils.getIACMStackInfo(any(), any(), any(), any())).thenReturn(stack);
+    when(harnessImageUtils.getHarnessImageConnectorDetailsForVM(any(), any()))
+        .thenReturn(ConnectorDetails.builder().build());
+    Mockito.mockStatic(IntegrationStageUtils.class);
+    when(IntegrationStageUtils.getFullyQualifiedImageName(any(), any())).thenReturn("imageName");
+    Mockito.mockStatic(PluginSettingUtils.class);
+    Map<EnvVariableEnum, String> map = new HashMap<>();
+    map.put(EnvVariableEnum.AWS_ACCESS_KEY, PLUGIN_ACCESS_KEY);
+    map.put(EnvVariableEnum.AWS_SECRET_KEY, PLUGIN_SECRET_KEY);
+    when(PluginSettingUtils.getConnectorSecretEnvMap(any())).thenReturn(map);
+    when(connectorUtils.getConnectorDetails(any(), any()))
+        .thenReturn(ConnectorDetails.builder().connectorType(ConnectorType.AWS).build());
+
+    String[][] expectedResults = new String[][] {
+        {"{\"keytest2\":\"keyValue2\",\"keytest1\":\"keyValue1\"}",
+            "{\"keytest4\":\"keyValue4\",\"keytest3\":\"keyValue3\"}"},
+        {"{\"keytest2\":\"keyValue2\",\"keytest1\":\"${ngSecretManager.obtain(\"keytest1\", -871314908)}\"}",
+            "{\"keytest4\":\"keyValue4\",\"keytest3\":\"${ngSecretManager.obtain(\"keytest3\", -871314908)}\"}"},
+        {"{}", "{}"},
+
+    };
+
+    StackVariables[][] testCases = {
+        {StackVariables.builder()
+                .stack("123")
+                .account("abc")
+                .key("keytest1")
+                .kind("env")
+                .value("keyValue1")
+                .value_type("string")
+                .build(),
+            StackVariables.builder()
+                .stack("123")
+                .account("abc")
+                .key("keytest2")
+                .kind("env")
+                .value("keyValue2")
+                .value_type("string")
+                .build(),
+            StackVariables.builder()
+                .stack("123")
+                .account("abc")
+                .key("keytest3")
+                .kind("tf")
+                .value("keyValue3")
+                .value_type("string")
+                .build(),
+            StackVariables.builder()
+                .stack("123")
+                .account("abc")
+                .key("keytest4")
+                .kind("tf")
+                .value("keyValue4")
+                .value_type("string")
+                .build()},
+
+        {StackVariables.builder()
+                .stack("123")
+                .account("abc")
+                .key("keytest1")
+                .kind("env")
+                .value("keyValue1")
+                .value_type("secret")
+                .build(),
+            StackVariables.builder()
+                .stack("123")
+                .account("abc")
+                .key("keytest2")
+                .kind("env")
+                .value("keyValue2")
+                .value_type("string")
+                .build(),
+            StackVariables.builder()
+                .stack("123")
+                .account("abc")
+                .key("keytest3")
+                .kind("tf")
+                .value("keyValue3")
+                .value_type("secret")
+                .build(),
+            StackVariables.builder()
+                .stack("123")
+                .account("abc")
+                .key("keytest4")
+                .kind("tf")
+                .value("keyValue4")
+                .value_type("string")
+                .build()},
+
+        {},
+    };
+
+    for (int i = 0; i < testCases.length; i++) {
+      when(iacmServiceUtils.getIacmStackEnvs(any(), any(), any(), any())).thenReturn(testCases[i]);
+      VmPluginStep vmPluginStep = iacmStepsUtils.injectIACMInfo(ambiance, stepInfo, null, null);
+      assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_ENV_VARS")).isEqualTo(expectedResults[i][0]);
+      assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_VARS")).isEqualTo(expectedResults[i][1]);
     }
   }
 }
