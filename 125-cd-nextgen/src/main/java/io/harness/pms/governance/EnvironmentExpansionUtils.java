@@ -37,7 +37,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
@@ -98,6 +100,36 @@ public class EnvironmentExpansionUtils {
       }
     }
 
+    return Optional.empty();
+  }
+
+  static List<InfrastructureDataBag> getInfraRefAndInputs(JsonNode fieldValue) {
+    final List<InfrastructureDataBag> dataBag = new ArrayList<>();
+
+    // handle infra definitions
+    final JsonNode infraDefinitionsNode = fieldValue.get(YamlTypes.INFRASTRUCTURE_DEFS);
+    if (infraDefinitionsNode != null && infraDefinitionsNode.isArray()) {
+      for (JsonNode jsonNode : infraDefinitionsNode) {
+        getInfraDataBag(jsonNode).ifPresent(dataBag::add);
+      }
+    }
+
+    final JsonNode infraDefinitionNode = fieldValue.get(YamlTypes.INFRASTRUCTURE_DEF);
+    getInfraDataBag(infraDefinitionNode).ifPresent(dataBag::add);
+
+    return dataBag;
+  }
+
+  private static Optional<InfrastructureDataBag> getInfraDataBag(JsonNode infraNode) {
+    if (infraNode != null && infraNode.isObject()
+        && (infraNode.get(YamlTypes.IDENTIFIER) != null && infraNode.get(YamlTypes.IDENTIFIER).isTextual())) {
+      String identifier = infraNode.get(YamlTypes.IDENTIFIER).asText();
+      if (infraNode.get(YamlTypes.INPUTS) != null) {
+        return Optional.of(new InfrastructureDataBag(identifier, infraNode.get(YamlTypes.INPUTS)));
+      } else {
+        return Optional.of(new InfrastructureDataBag(identifier, null));
+      }
+    }
     return Optional.empty();
   }
 

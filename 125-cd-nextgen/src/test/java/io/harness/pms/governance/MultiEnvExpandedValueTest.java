@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,6 +39,7 @@ public class MultiEnvExpandedValueTest extends CategoryTest {
     JsonNode connectorNode = new ObjectMapper().readTree(connectorNodeJson);
     MultiEnvExpandedValue value =
         MultiEnvExpandedValue.builder()
+            .metadata(Map.of("parallel", true))
             .environments(
                 List.of(SingleEnvironmentExpandedValue.builder()
                             .name("my env")
