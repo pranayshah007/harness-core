@@ -331,7 +331,7 @@ public class GraphDataServiceImpl implements GraphDataService {
     long totalErrorBudget =
         getTotalErrorBudget(serviceLevelIndicator, totalErrorBudgetMinutes, sliValue, serviceLevelObjective);
     if (totalErrorBudget == 0l) {
-      return 0.0;
+      return 100.0;
     }
     return ((totalErrorBudget - sliValue.getBadCount()) * 100.0) / totalErrorBudget;
   }

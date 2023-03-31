@@ -485,7 +485,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     List<Long> goodCounts = Arrays.asList(0l, 0l, 0l, 0l);
     List<Long> badCounts = Arrays.asList(0l, 0l, 0l, 0l);
     List<Double> expectedSLITrend = Lists.newArrayList(100.0, 100.0, 100.0, 100.0);
-    List<Double> expectedBurndown = Lists.newArrayList(0.0, 0.0, 0.0, 0.0);
+    List<Double> expectedBurndown = Lists.newArrayList(100.0, 100.0, 100.0, 100.0);
     testGraphCalculation_Request(
         sliStates, goodCounts, badCounts, SLIMissingDataType.BAD, expectedSLITrend, expectedBurndown, 0, 0, 0, 0);
   }
