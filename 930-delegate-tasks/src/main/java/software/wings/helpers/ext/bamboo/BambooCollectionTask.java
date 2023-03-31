@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.delegatetasks.collect.artifacts;
+package software.wings.helpers.ext.bamboo;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
@@ -24,7 +24,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.beans.BambooConfig;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.helpers.ext.bamboo.BambooService;
+import software.wings.delegatetasks.collect.artifacts.ArtifactCollectionTaskHelper;
 
 import com.google.inject.Inject;
 import java.util.List;

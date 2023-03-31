@@ -5,9 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.delegatetasks.cv;
+package software.wings.service.impl.instana;
 
 import static software.wings.delegatetasks.cv.CVConstants.DEFAULT_GROUP_NAME;
+import static software.wings.delegatetasks.cv.CVConstants.DUMMY_HOST_NAME;
 import static software.wings.delegatetasks.cv.CVConstants.INSTANA_DOCKER_PLUGIN;
 import static software.wings.delegatetasks.cv.CVConstants.INSTANA_GROUPBY_TAG_TRACE_NAME;
 import static software.wings.delegatetasks.cv.CVConstants.VERIFICATION_HOST_PLACEHOLDER;
@@ -15,16 +16,10 @@ import static software.wings.delegatetasks.cv.CVConstants.VERIFICATION_HOST_PLAC
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 
+import software.wings.delegatetasks.cv.DataCollectionException;
+import software.wings.delegatetasks.cv.DataCollectionExecutionContext;
+import software.wings.delegatetasks.cv.MetricsDataCollector;
 import software.wings.service.impl.analysis.MetricElement;
-import software.wings.service.impl.instana.InstanaAnalyzeMetricRequest;
-import software.wings.service.impl.instana.InstanaAnalyzeMetrics;
-import software.wings.service.impl.instana.InstanaDataCollectionInfo;
-import software.wings.service.impl.instana.InstanaInfraMetricRequest;
-import software.wings.service.impl.instana.InstanaInfraMetrics;
-import software.wings.service.impl.instana.InstanaMetricTemplate;
-import software.wings.service.impl.instana.InstanaTagFilter;
-import software.wings.service.impl.instana.InstanaTimeFrame;
-import software.wings.service.impl.instana.InstanaUtils;
 import software.wings.service.intfc.instana.InstanaDelegateService;
 
 import com.google.common.base.Preconditions;
@@ -209,7 +204,7 @@ public class InstanaDataCollector implements MetricsDataCollector<InstanaDataCol
         dataCollectionInfo.getInstanaConfig(), dataCollectionInfo.getEncryptedDataDetails(),
         instanaAnalyzeMetricRequest, dataCollectionExecutionContext.createApiCallLog());
     List<MetricElement> metricElements = new ArrayList<>();
-    metricElements.addAll(getMetricElements(instanaAnalyzeMetrics, CVConstants.DUMMY_HOST_NAME));
+    metricElements.addAll(getMetricElements(instanaAnalyzeMetrics, DUMMY_HOST_NAME));
     return metricElements;
   }
 }

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.delegatetasks;
+package software.wings.delegatetasks.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonicalForm;
@@ -37,7 +37,6 @@ import software.wings.beans.settings.helm.HelmRepoConfigValidationResponse;
 import software.wings.beans.settings.helm.HelmRepoConfigValidationTaskParams;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
 import software.wings.beans.settings.helm.OciHelmRepoConfig;
-import software.wings.delegatetasks.helm.HelmTaskHelper;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;
