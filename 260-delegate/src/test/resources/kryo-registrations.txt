@@ -2753,3 +2753,5 @@
 10000519:io.harness.delegate.task.aws.lambda.AwsLambdaCustomArtifactConfig
 10000520:io.harness.delegate.task.pcf.request.CfRouteMappingRequestNG
 10000521:io.harness.delegate.task.pcf.response.CfRouteMappingResponseNG
+10000522:io.harness.delegate.task.pcf.artifact.BambooTasArtifactRequestDetails
+10000523:io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails
