@@ -221,6 +221,7 @@ public class PlanCreatorMergeService {
             finalResponseBuilder, currIterationResponse.getStartingNodeId());
         PlanCreationBlobResponseUtils.mergeLayoutNodeInfo(finalResponseBuilder, currIterationResponse);
         PlanCreationBlobResponseUtils.mergePreservedNodesInRollbackMode(finalResponseBuilder, currIterationResponse);
+        PlanCreationBlobResponseUtils.mergeServiceAffinityMap(finalResponseBuilder, currIterationResponse);
         if (EmptyPredicate.isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap())) {
           throw new InvalidRequestException(
               PmsExceptionUtils.getUnresolvedDependencyPathsErrorMessage(finalResponseBuilder.getDeps()));
@@ -287,7 +288,10 @@ public class PlanCreatorMergeService {
         dependencyBatch.put(dependency.getKey(), dependency.getValue());
         if (dependencyBatch.size() >= planCreatorMergeServiceDependencyBatch) {
           Dependencies batchDependency = PmsSdkHelper.createBatchDependency(responseBuilder.getDeps(), dependencyBatch);
-          executeDependenciesAsync(completableFutures, serviceInfo, batchDependency, responseBuilder.getContextMap());
+          Map<String, String> batchServiceAffinityMap = PmsSdkHelper.createBatchServiceAffinityMap(
+              dependencyBatch.keySet(), responseBuilder.getServiceAffinityMap());
+          executeDependenciesAsync(completableFutures, serviceInfo, batchDependency, batchServiceAffinityMap,
+              responseBuilder.getContextMap());
           dependencyBatch = new HashMap<>();
         }
       }
@@ -295,7 +299,10 @@ public class PlanCreatorMergeService {
       // call completable future for leftover batch
       if (dependencyBatch.size() > 0) {
         Dependencies batchDependency = PmsSdkHelper.createBatchDependency(responseBuilder.getDeps(), dependencyBatch);
-        executeDependenciesAsync(completableFutures, serviceInfo, batchDependency, responseBuilder.getContextMap());
+        Map<String, String> batchServiceAffinityMap = PmsSdkHelper.createBatchServiceAffinityMap(
+            dependencyBatch.keySet(), responseBuilder.getServiceAffinityMap());
+        executeDependenciesAsync(
+            completableFutures, serviceInfo, batchDependency, batchServiceAffinityMap, responseBuilder.getContextMap());
       }
     }
   }
@@ -331,7 +338,7 @@ public class PlanCreatorMergeService {
                   () -> new InvalidRequestException("Pipeline Service service provider information is missing."));
 
       String affinityService =
-          PmsSdkHelper.getServiceAffinityForGivenDependency(responseBuilder.getDeps(), dependencyEntry);
+          PmsSdkHelper.getServiceAffinityForGivenDependency(responseBuilder.getServiceAffinityMap(), dependencyEntry);
       Map.Entry<String, PlanCreatorServiceInfo> affinityServicePlanCreatorService =
           services.entrySet()
               .stream()
@@ -362,14 +369,18 @@ public class PlanCreatorMergeService {
   // Sending batch dependency requests for a single service in a async fashion.
   private void executeDependenciesAsync(CompletableFutures<PlanCreationResponse> completableFutures,
       Map.Entry<String, PlanCreatorServiceInfo> serviceInfo, Dependencies batchDependency,
-      Map<String, PlanCreationContextValue> contextMap) {
+      Map<String, String> batchServiceAffinityMap, Map<String, PlanCreationContextValue> contextMap) {
     PlanCreationContextValue metadata = contextMap.get("metadata");
     completableFutures.supplyAsync(() -> {
       try (AutoLogContext ignore = PlanCreatorUtils.autoLogContext(metadata.getMetadata(),
                metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
         try {
           return PmsGrpcClientUtils.retryAndProcessException(serviceInfo.getValue().getPlanCreationClient()::createPlan,
-              PlanCreationBlobRequest.newBuilder().setDeps(batchDependency).putAllContext(contextMap).build());
+              PlanCreationBlobRequest.newBuilder()
+                  .setDeps(batchDependency)
+                  .putAllContext(contextMap)
+                  .putAllServiceAffinity(batchServiceAffinityMap)
+                  .build());
         } catch (StatusRuntimeException ex) {
           log.error(
               String.format("Error connecting with service: [%s]. Is this service Running?", serviceInfo.getKey()), ex);

@@ -96,8 +96,8 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
     try (AutoLogContext ignore = PlanCreatorUtils.autoLogContextWithRandomRequestId(metadata.getMetadata(),
              metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
       try {
-        MergePlanCreationResponse finalResponse =
-            createPlanForDependenciesRecursive(request.getDeps(), request.getContextMap());
+        MergePlanCreationResponse finalResponse = createPlanForDependenciesRecursive(
+            request.getDeps(), request.getContextMap(), request.getServiceAffinityMap());
         planCreationResponse = getPlanCreationResponseFromFinalResponse(finalResponse);
       } catch (Exception ex) {
         log.error(ExceptionUtils.getMessage(ex), ex);
@@ -118,10 +118,11 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
     responseObserver.onCompleted();
   }
 
-  private MergePlanCreationResponse createPlanForDependenciesRecursive(
-      Dependencies initialDependencies, Map<String, PlanCreationContextValue> context) {
+  private MergePlanCreationResponse createPlanForDependenciesRecursive(Dependencies initialDependencies,
+      Map<String, PlanCreationContextValue> context, Map<String, String> serviceAffinityMap) {
     // TODO: Add patch version before sending the response back
-    MergePlanCreationResponse finalResponse = MergePlanCreationResponse.builder().build();
+    MergePlanCreationResponse finalResponse =
+        MergePlanCreationResponse.builder().serviceAffinityMap(serviceAffinityMap).build();
     if (EmptyPredicate.isEmpty(planCreators) || EmptyPredicate.isEmpty(initialDependencies.getDependenciesMap())) {
       return finalResponse;
     }
@@ -132,7 +133,8 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
              pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(ctx.getGitSyncBranchContext(), true)) {
       Dependencies dependencies = initialDependencies.toBuilder().build();
       while (!dependencies.getDependenciesMap().isEmpty()) {
-        dependencies = createPlanForDependencies(ctx, finalResponse, dependencies);
+        dependencies =
+            createPlanForDependencies(ctx, finalResponse, dependencies, finalResponse.getServiceAffinityMap());
         PlanCreatorServiceHelper.removeInitialDependencies(dependencies, initialDependencies);
       }
       log.info("[PMS_PlanCreatorService_Time] RecursiveDependencies total time took {}ms for dependencies size {}",
@@ -147,8 +149,8 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
     return finalResponse;
   }
 
-  public Dependencies createPlanForDependencies(
-      PlanCreationContext ctx, MergePlanCreationResponse finalResponse, Dependencies dependencies) {
+  public Dependencies createPlanForDependencies(PlanCreationContext ctx, MergePlanCreationResponse finalResponse,
+      Dependencies dependencies, Map<String, String> serviceAffinityMap) {
     if (EmptyPredicate.isEmpty(dependencies.getDependenciesMap())) {
       return dependencies;
     }
@@ -168,7 +170,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
     dependenciesList.forEach(key -> completableFutures.supplyAsync(() -> {
       try {
         return createPlanForDependencyInternal(currentYaml, fullField.fromYamlPath(key.getValue()), ctx,
-            dependencies.getDependencyMetadataMap().get(key.getKey()));
+            dependencies.getDependencyMetadataMap().get(key.getKey()), serviceAffinityMap.get(key.getKey()));
       } catch (IOException e) {
         throw new InvalidRequestException("Unable to parse the field in the path:" + key.getValue());
       }
@@ -242,8 +244,8 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
 
   // Method to create plan for single dependency.
   // Dependency passed from parent to its children plan creator
-  private PlanCreationResponse createPlanForDependencyInternal(
-      String currentYaml, YamlField field, PlanCreationContext ctx, Dependency dependency) {
+  private PlanCreationResponse createPlanForDependencyInternal(String currentYaml, YamlField field,
+      PlanCreationContext ctx, Dependency dependency, String currentNodeServiceAffinity) {
     try (AutoLogContext ignore = PlanCreatorUtils.autoLogContext(ctx.getAccountIdentifier(), ctx.getOrgIdentifier(),
              ctx.getProjectIdentifier(), ctx.getPipelineIdentifier(), ctx.getExecutionUuid())) {
       try {
@@ -271,7 +273,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
           }
           PlanCreatorServiceHelper.decorateNodesWithStageFqn(field, planForField, ctx.getYamlVersion());
           PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(
-              planForField, dependency, serviceName, field);
+              planForField, serviceName, field, currentNodeServiceAffinity);
           return planForField;
         } catch (Exception ex) {
           log.error(format("Error creating plan for node: %s", fullyQualifiedName), ex);
