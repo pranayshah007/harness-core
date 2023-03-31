@@ -198,7 +198,8 @@ public class EntitySetupUsageResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(REFERRED_ENTITY_FQN) String referredEntityFQN,
-      @QueryParam(REFERRED_ENTITY_TYPE) EntityType entityType, GitEntitySetupUsageDTO gitMetaData) {
-    return ResponseDTO.newResponse(true);
+      @QueryParam(REFERRED_ENTITY_TYPE) EntityType entityType, @Body GitEntitySetupUsageDTO gitMetaData) {
+    return ResponseDTO.newResponse(entitySetupUsageService.populateGitInfoForReferredEntities(
+        accountIdentifier, orgIdentifier, projectIdentifier, referredEntityFQN, entityType, gitMetaData));
   }
 }
