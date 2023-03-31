@@ -44,6 +44,7 @@ import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.PipelineEntityWithReferencesDTO;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
@@ -122,7 +123,11 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .build();
     PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToSave.withStageCount(0);
     PipelineEntity pipelineEntitySaved = pipelineToSaveWithUpdatedInfo.withVersion(0L);
-    doReturn(pipelineToSaveWithUpdatedInfo)
+
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(pipelineToSaveWithUpdatedInfo).build();
+
+    doReturn(pipelineEntityWithReferencesDTO)
         .when(pipelineServiceHelper)
         .updatePipelineInfo(pipelineToSave, PipelineVersion.V0);
     doReturn(pipelineEntitySaved).when(pipelineRepository).save(pipelineToSaveWithUpdatedInfo);
@@ -155,7 +160,11 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .build();
     PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToSave.withStageCount(0);
     PipelineEntity pipelineEntitySaved = pipelineToSaveWithUpdatedInfo.withVersion(0L);
-    doReturn(pipelineToSaveWithUpdatedInfo)
+
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(pipelineToSaveWithUpdatedInfo).build();
+
+    doReturn(pipelineEntityWithReferencesDTO)
         .when(pipelineServiceHelper)
         .updatePipelineInfo(pipelineToSave, PipelineVersion.V0);
     doReturn(pipelineEntitySaved).when(pipelineRepository).save(pipelineToSaveWithUpdatedInfo);
@@ -236,7 +245,9 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .harnessVersion(PipelineVersion.V0)
                                         .build();
     PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToSave.withStageCount(0);
-    doReturn(pipelineToSaveWithUpdatedInfo)
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(pipelineToSaveWithUpdatedInfo).build();
+    doReturn(pipelineEntityWithReferencesDTO)
         .when(pipelineServiceHelper)
         .updatePipelineInfo(pipelineToSave, PipelineVersion.V0);
     doThrow(new HintException("this is a hint")).when(pipelineRepository).save(pipelineToSaveWithUpdatedInfo);
@@ -280,7 +291,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testGetRemotePipeline() {
+  public void testGetRemotePipeline() throws IOException {
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .accountId(accountIdentifier)
                                         .orgIdentifier(orgIdentifier)
@@ -289,6 +300,12 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .yaml(pipelineYaml)
                                         .storeType(StoreType.REMOTE)
                                         .build();
+
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(pipelineEntity).build();
+
+    doReturn(pipelineEntityWithReferencesDTO).when(pipelineServiceHelper).updatePipelineInfo(any(), any());
+
     doReturn(Optional.of(pipelineEntity))
         .when(pipelineRepository)
         .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false, false);
@@ -302,7 +319,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testGetRemotePipelineWithNoData() {
+  public void testGetRemotePipelineWithNoData() throws IOException {
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .accountId(accountIdentifier)
                                         .orgIdentifier(orgIdentifier)
@@ -310,9 +327,16 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .identifier(pipelineId)
                                         .storeType(StoreType.REMOTE)
                                         .build();
+
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(pipelineEntity).build();
+
     doReturn(Optional.of(pipelineEntity))
         .when(pipelineRepository)
         .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false, false);
+
+    doReturn(pipelineEntityWithReferencesDTO).when(pipelineServiceHelper).updatePipelineInfo(any(), any());
+
     assertThatThrownBy(()
                            -> pipelineService.getAndValidatePipeline(
                                accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, false))
@@ -435,7 +459,9 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)
         .validatePipeline(eq(pipelineToUpdate), any(), anyBoolean());
-    doReturn(pipelineToSaveWithUpdatedInfo)
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(pipelineToSaveWithUpdatedInfo).build();
+    doReturn(pipelineEntityWithReferencesDTO)
         .when(pipelineServiceHelper)
         .updatePipelineInfo(pipelineToUpdate, PipelineVersion.V0);
 
@@ -469,7 +495,9 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)
         .validatePipeline(eq(pipelineToUpdate), any(), anyBoolean());
-    doReturn(pipelineToSaveWithUpdatedInfo)
+    PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
+        PipelineEntityWithReferencesDTO.builder().pipelineEntity(pipelineToSaveWithUpdatedInfo).build();
+    doReturn(pipelineEntityWithReferencesDTO)
         .when(pipelineServiceHelper)
         .updatePipelineInfo(pipelineToUpdate, PipelineVersion.V0);
 

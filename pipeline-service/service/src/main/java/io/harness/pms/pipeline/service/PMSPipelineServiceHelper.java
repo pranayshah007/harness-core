@@ -47,12 +47,8 @@ import io.harness.pms.filter.utils.ModuleInfoFilterUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.instrumentaion.PipelineInstrumentationConstants;
 import io.harness.pms.instrumentaion.PipelineInstrumentationUtils;
-import io.harness.pms.pipeline.MoveConfigOperationDTO;
-import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.*;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
-import io.harness.pms.pipeline.PipelineEntityUtils;
-import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
-import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
@@ -143,10 +139,11 @@ public class PMSPipelineServiceHelper {
     return criteria;
   }
 
-  public PipelineEntity updatePipelineInfo(PipelineEntity pipelineEntity, String pipelineVersion) throws IOException {
+  public PipelineEntityWithReferencesDTO updatePipelineInfo(PipelineEntity pipelineEntity, String pipelineVersion)
+      throws IOException {
     switch (pipelineVersion) {
       case PipelineVersion.V1:
-        return pipelineEntity;
+        return PipelineEntityWithReferencesDTO.builder().pipelineEntity(pipelineEntity).referredEntities(null).build();
       case PipelineVersion.V0:
         return updatePipelineInfoInternal(pipelineEntity);
       default:
@@ -507,7 +504,7 @@ public class PMSPipelineServiceHelper {
     return totalInstancesOfYAML > 0;
   }
 
-  private PipelineEntity updatePipelineInfoInternal(PipelineEntity pipelineEntity) throws IOException {
+  private PipelineEntityWithReferencesDTO updatePipelineInfoInternal(PipelineEntity pipelineEntity) throws IOException {
     FilterCreatorMergeServiceResponse filtersAndStageCount = filterCreatorMergeService.getPipelineInfo(pipelineEntity);
     PipelineEntity newEntity = pipelineEntity.withStageCount(filtersAndStageCount.getStageCount())
                                    .withStageNames(filtersAndStageCount.getStageNames());
@@ -529,7 +526,11 @@ public class PMSPipelineServiceHelper {
     } catch (Exception e) {
       log.error("Unable to parse the Filter value", e);
     }
-    return newEntity;
+
+    return PipelineEntityWithReferencesDTO.builder()
+        .pipelineEntity(newEntity)
+        .referredEntities(filtersAndStageCount.getReferredEntities())
+        .build();
   }
 
   public Criteria getPipelineMetadataV2Criteria(
