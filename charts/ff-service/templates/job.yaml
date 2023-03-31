@@ -1,0 +1,141 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ff-service-db-migrate-1-945-{{ lower ( randAlphaNum 6 ) }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+  labels:
+    {{- include "ff-service.labels" . | nindent 4 }}
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 1
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{ include "ff-service.pullSecrets" . | nindent 6 }}
+      containers:
+      - name: ff-service-db-migrate
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.jobs.postgres_migration.image "global" .Values.global) }}
+        imagePullPolicy: {{ .Values.jobs.postgres_migration.image.pullPolicy}}
+        # check if curl is install or run this command from within the image.
+        # command: ["/bin/bash", "-c", "curl -sf -XPOST http://127.0.0.1:15020/quitquitquit" ]
+        env:
+          - name: DB_DRIVER
+            valueFrom:
+              configMapKeyRef:
+                name: ff-service
+                key: DB_DRIVER
+          - name : DB_PASS
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.timescaleSecret.password.name }}
+                key: {{ .Values.timescaleSecret.password.key }}
+          - name: DB_USER
+            value: postgres
+          - name: DB_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: ff-service
+                key: DB_HOST
+          - name: DB_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: ff-service
+                key: DB_PORT
+          - name: DB_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: ff-service
+                key: DB_NAME
+          - name: SSL_MODE
+            valueFrom:
+              configMapKeyRef:
+                name: ff-service
+                key: SSL_MODE
+      restartPolicy: Never
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ff-service-timescale-db-migrate-1-945-{{ lower ( randAlphaNum 6 ) }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+  labels:
+    {{- include "ff-service.labels" . | nindent 4 }}
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 1
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{ include "ff-service.pullSecrets" . | nindent 6 }}
+      containers:
+      - name: ff-service-timescale-db-migrate
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.jobs.timescaledb_migrate.image "global" .Values.global) }}
+        imagePullPolicy: {{ .Values.jobs.timescaledb_migrate.image.pullPolicy}}
+        # check if curl is install or run this command from within the image.
+        # command: ["/bin/bash", "-c", "curl -sf -XPOST http://127.0.0.1:15020/quitquitquit" ]
+        env:
+          - name: DB_DRIVER
+            valueFrom:
+              configMapKeyRef:
+                name: ff-service
+                key: ANALYTICS_DB_DRIVER
+          - name : DB_PASS
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.timescaleSecret.password.name }}
+                key: {{ .Values.timescaleSecret.password.key }}
+          - name: DB_USER
+            value: postgres
+          - name: DB_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: ff-service
+                key: ANALYTICS_DB_HOST
+          - name: DB_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: ff-service
+                key: ANALYTICS_DB_PORT
+          - name: DB_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: ff-service
+                key: ANALYTICS_DB_NAME
+          - name: SSL_MODE
+            valueFrom:
+              configMapKeyRef:
+                name: ff-service
+                key: ANALYTICS_SSL_MODE
+      restartPolicy: Never
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.tolerations "context" $) | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ff-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ff-service.labels" . | nindent 4 }}
+spec:
+  type: {{.Values.service.type}}
+  ports:
+  - name: http-ff-service
+    port: {{.Values.service.port}}
+    protocol: TCP
+    targetPort: {{.Values.service.targetport}}
+  - name: grpc-gitsync
+    port: {{.Values.service.grpcport}}
+    protocol: TCP
+    targetPort: {{.Values.service.targetgrpcport}}
+  selector:
+     {{- include "ff-service.selectorLabels" . | nindent 4 }}

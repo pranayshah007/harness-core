@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ff-pushpin-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: ff-pushpin-service
+    {{- include "ff-pushpin-service.labels" . | nindent 4 }}
+spec:
+  progressDeadlineSeconds: 600
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.maxSurge }}
+      maxUnavailable: {{ .Values.maxUnavailable }}
+  selector:
+    matchLabels:
+      app: ff-pushpin-service
+      {{- include "ff-pushpin-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: ff-pushpin-service
+        {{- include "ff-pushpin-service.selectorLabels" . | nindent 8 }}
+    spec:
+      {{ include "ff-pushpin-service.pullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "ff-pushpin-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      terminationGracePeriodSeconds: 30
+      initContainers:
+      - name: wait-for-mongo
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=mongodb-replicaset"
+      - name: wait-for-timescale
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=timescaledb-single-chart"
+      - name: wait-for-redis
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=redis-sentinel"
+      containers:
+        - name: ff-pushpin
+          image: {{ include "ff-pushpin-service.pushpinImage" . }}
+          imagePullPolicy: {{ .Values.pushpin.image.pullPolicy }}
+          securityContext:
+              {{- toYaml .Values.pushpin.securityContext | nindent 12 }}
+          ports:
+            - containerPort: 7999
+            - containerPort: 443
+            - containerPort: 5560
+            - containerPort: 5561
+            - containerPort: 5562
+            - containerPort: 5563
+            - containerPort: 5555
+          resources:
+              {{- toYaml .Values.pushpin.resources | nindent 12 }}
+          envFrom:
+          - configMapRef:
+              name: ff-pushpin
+          livenessProbe:
+            tcpSocket:
+              port: 7999
+            initialDelaySeconds: 15
+            periodSeconds: 20
+        - name: ff-pushpin-worker
+          image: {{ include "ff-pushpin-service.pushpinworkerImage" . }}
+          imagePullPolicy: {{ .Values.pushpinworker.image.pullPolicy }}
+          securityContext:
+              {{- toYaml .Values.pushpinworker.securityContext | nindent 12 }}
+          ports:
+            - name: ff-worker-http
+              containerPort: 5000
+              protocol: "TCP"
+          resources:
+              {{- toYaml .Values.pushpin.resources | nindent 12 }}
+          envFrom:
+          - configMapRef:
+              name: ff-pushpin-worker
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 60
+            timeoutSeconds: 5
+            periodSeconds: 5
+            failureThreshold: 8
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 40
+            timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 20
+      {{ if or .Values.global.ha .Values.affinity }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - ff-pushpin-service
+            topologyKey: "kubernetes.io/hostname"
+      {{- with .Values.affinity }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{ end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

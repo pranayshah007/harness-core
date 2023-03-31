@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ff-service
+  namespace: {{ .Release.Namespace | quote }}
+data:
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  MEMORY: '{{ .Values.memory }}m'
+  DB_DRIVER: postgres
+  EVENT_BUS: "msg-broker"
+  MSG_BROKER_PROVIDER: redis
+  REDIS_STREAM_MAX_LENGTH: "2048"
+  REDIS_STREAM_APPROX_LENGTH: "true"
+  REDIS_STREAM_VISIBILITY_TIMEOUT: 5s
+  REDIS_STREAM_BLOCKING_TIMEOUT: 10s
+  REDIS_STREAM_RECLAIM_INTERVAL: 5s
+  REDIS_STREAM_BUFFER_SIZE: "100"
+  REDIS_STREAM_CONCURRENCY: "100"
+  EVENTS_FRAMEWORK_REDIS_SSL_ENABLED: "false"
+  EVENTS_FRAMEWORK_USE_REDIS_PASSWORD: "false"
+  EVENTS_FRAMEWORK_REDIS_USE_SENTINEL: "true"
+  EVENTS_FRAMEWORK_REDIS_SENTINEL_MASTER: 'harness-redis'
+  EVENTS_FRAMEWORK_REDIS_SENTINEL_URLS: 'redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
+  SSL_MODE: disable
+  GRIP_URL: "http://pushpin-clusterip:5561"
+  PLATFORM_INTEGRATION_ENABLED: "true"
+  PLATFORM_BASE_URL: 'http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090'
+  ADMIN_ENABLE: "true"
+  CLIENT_ENABLE: "true"
+  METRICS_ENABLE: "true"
+  METRICS_PROCESSING: "true"
+  ANALYTICS_SSL_MODE: disable
+  ANALYTICS_DB_DRIVER: postgres
+  LOG_LEVEL: {{ .Values.appLogLevel }}
+  USE_CF_REDIS: "false"
+  ACCESS_CONTROL_SERVICE: 'http://access-control.{{ .Release.Namespace }}.svc.cluster.local:9006'
+  ACCESS_CONTROL_BASE_PATH: "/api"
+  GIT_SYNC_URL: "ng-manager:13002"
+  GIT_SYNC_AUTHORITY: "ng-manager:13002"
+  GIT_SYNC_ENABLED: "true"
+  GIT_SYNC_WEBHOOK_LISTEN_ADDR: "localhost:3001"
+  SEGMENT_API_KEY: CFCommonVariable
+  ANALYTICS_DB_HOST: 'timescaledb-single-chart.{{ .Release.Namespace }}'
+  ANALYTICS_DB_PORT: "5432"
+  ANALYTICS_DB_NAME: harnesscf
+  DB_HOST: 'timescaledb-single-chart.{{ .Release.Namespace }}'
+  DB_NAME: cf_db
+  DB_PORT: "5432"
+  PLATFORM_SECRET_KEY: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+  AUTH_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+  {{- if .Values.global.opa.enabled }}
+  POLICY_MGMT_SERVICE_URL: 'http://policy-mgmt.{{ .Release.Namespace }}.svc.cluster.local:3000/'
+  POLICY_MGMT_SECRET: "HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU="
+  POLICY_MGMT_ENABLED: 'true'
+  {{- end }}
+{{- if .Values.configmap }}
+{{- include "common.tplvalues.render" (dict "value" .Values.configmap "context" $) | nindent 4 }}
+{{- end }}

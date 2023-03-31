@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ff-pushpin-worker
+  namespace: {{ .Release.Namespace | quote }}
+data:
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  LOG_LEVEL: {{ .Values.appLogLevel }}
+  MEMORY: '{{ .Values.memory }}m'
+  EVENT_BUS: msg-broker
+  MSG_BROKER_PROVIDER: redis
+  MSG_BROKER_URL: 'redis://localhost:6379'
+  REDIS_STREAM_MAX_LENGTH: "10000"
+  REDIS_STREAM_APPROX_LENGTH: "true"
+  REDIS_STREAM_VISIBILITY_TIMEOUT: 5s
+  REDIS_STREAM_BLOCKING_TIMEOUT: 10s
+  REDIS_STREAM_RECLAIM_INTERVAL: 5s
+  REDIS_STREAM_BUFFER_SIZE: "100"
+  REDIS_STREAM_CONCURRENCY: "100"
+  EVENTS_FRAMEWORK_REDIS_SSL_ENABLED: "false"
+  EVENTS_FRAMEWORK_USE_REDIS_PASSWORD: "false"
+  EVENTS_FRAMEWORK_ENV_NAMESPACE: ""
+  EVENTS_FRAMEWORK_REDIS_USE_SENTINEL: "true"
+  EVENTS_FRAMEWORK_REDIS_SENTINEL_MASTER: 'harness-redis'
+  EVENTS_FRAMEWORK_REDIS_SENTINEL_URLS: 'redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
+{{- if .Values.configmap }}
+{{- include "common.tplvalues.render" (dict "value" .Values.configmap "context" $) | nindent 4 }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ff-pushpin
+  namespace: {{ .Release.Namespace | quote }}
+data:
+  target: "ff-service:16001"
+  http-port: "7998"
