@@ -1,6 +1,6 @@
 openapi: 3.0.0
 x-stoplight:
-  id: uo2r4f4vt18on
+  id: 2hxrtfd4bq62u
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1'
@@ -683,6 +683,7 @@ components:
       type: object
       x-stoplight:
         id: 6c15cb29289e9
+      x-internal: true
       properties:
         status:
           type: string
@@ -698,7 +699,8 @@ components:
           type: integer
           format: int64
           description: End time of the Evaluation
-      x-internal: true
+        template_validation_response:
+          $ref: '#/components/schemas/TemplateValidationResponseBody'
     PipelineValidationUUIDResponseBody:
       title: Pipeline Validation UUID Response Body
       description: Contains the UUID of the Pipeline Validation Event that's started
@@ -1876,7 +1878,7 @@ components:
       x-stoplight:
         id: ed578c29cb9dc
       type: object
-      description: 'Request body for moving a pipeline configuration'
+      description: Request body for moving a pipeline configuration
       properties:
         git_details:
           $ref: '#/components/schemas/GitMoveDetails'
@@ -1889,7 +1891,7 @@ components:
       x-stoplight:
         id: e4ec161edc199
       type: object
-      description: 'Response body for configuration to move a pipeline'
+      description: Response body for configuration to move a pipeline
       properties:
         pipeline_identifier:
           type: string
@@ -1916,7 +1918,7 @@ components:
       properties:
         branch_name:
           type: string
-          description: Name of the branch. When moving an inline pipeline or a remote pipeline, this branch is where the remote entity is created or fetched.
+          description: 'Name of the branch. When moving an inline pipeline or a remote pipeline, this branch is where the remote entity is created or fetched.'
         file_path:
           type: string
           description: File path of the entity in the repository.
@@ -1937,7 +1939,7 @@ components:
       x-stoplight:
         id: gf4xlhs210icv
       type: object
-      description: 'Request body for moving an input set configuration.'
+      description: Request body for moving an input set configuration.
       properties:
         git_details:
           $ref: '#/components/schemas/GitMoveDetails'
@@ -1955,7 +1957,18 @@ components:
       properties:
         input_set_identifier:
           type: string
-      description: 'Response body for moving an input set configuration.'
+      description: Response body for moving an input set configuration.
+    TemplateValidationResponseBody:
+      title: TemplateValidationResponseBody
+      x-stoplight:
+        id: fulzeg8b945v8
+      type: object
+      description: Has Template Resolution Response.
+      properties:
+        valid_yaml:
+          type: boolean
+        exception_message:
+          type: string
   securitySchemes:
     x-api-key:
       name: x-api-key

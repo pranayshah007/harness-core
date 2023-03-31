@@ -5,18 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.pipeline.validation.async.beans;
-
-import io.harness.governance.GovernanceMetadata;
-import io.harness.pms.pipeline.TemplateValidationResponseDTO;
+package io.harness.pms.pipeline;
 
 import lombok.Builder;
 import lombok.Value;
-import lombok.With;
 
 @Value
 @Builder
-public class ValidationResult {
-  TemplateValidationResponseDTO templateValidationResponse;
-  @With GovernanceMetadata governanceMetadata;
+public class TemplateValidationResponseDTO {
+  boolean validYaml;
+  String exceptionMessage;
 }

@@ -32,6 +32,7 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.pipeline.TemplateValidationResponseDTO;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
@@ -343,10 +344,15 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetPipelineValidateResult() {
-    doReturn(Optional.of(PipelineValidationEvent.builder()
-                             .status(ValidationStatus.IN_PROGRESS)
-                             .result(ValidationResult.builder().build())
-                             .build()))
+    doReturn(
+        Optional.of(
+            PipelineValidationEvent.builder()
+                .status(ValidationStatus.IN_PROGRESS)
+                .result(ValidationResult.builder()
+                            .templateValidationResponse(
+                                TemplateValidationResponseDTO.builder().validYaml(true).exceptionMessage("").build())
+                            .build())
+                .build()))
         .when(pipelineAsyncValidationService)
         .getEventByUuid("uuid1");
 
