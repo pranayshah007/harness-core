@@ -36,7 +36,7 @@ public class CIExecutionConfigService {
   @Inject CIExecutionConfigRepository configRepository;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
 
-  private static final String unexpectedErrFormat = "Unexpected value: %s";
+  private static final String UNEXPECTED_ERR_FORMAT = "Unexpected value: %s";
   public CIExecutionServiceConfig getCiExecutionServiceConfig() {
     return ciExecutionServiceConfig;
   }
@@ -511,7 +511,7 @@ public class CIExecutionConfigService {
         }
         break;
       default:
-        throw new BadRequestException(format(unexpectedErrFormat, stepInfoType));
+        throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
     return StepImageConfig.builder()
         .entrypoint(stepImageConfig.getEntrypoint())
@@ -550,7 +550,7 @@ public class CIExecutionConfigService {
       case SSCA_ORCHESTRATION:
         return ciExecutionServiceConfig.getStepConfig().getSscaOrchestrationConfig();
       default:
-        throw new BadRequestException(format(unexpectedErrFormat, stepInfoType));
+        throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
   }
 
@@ -636,7 +636,7 @@ public class CIExecutionConfigService {
         }
         break;
       default:
-        throw new BadRequestException(format(unexpectedErrFormat, stepInfoType));
+        throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
     return image;
   }
@@ -673,7 +673,7 @@ public class CIExecutionConfigService {
       case SSCA_ORCHESTRATION:
         break;
       default:
-        throw new BadRequestException(format(unexpectedErrFormat, stepInfoType));
+        throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
     return name;
   }
@@ -711,7 +711,7 @@ public class CIExecutionConfigService {
       case SSCA_ORCHESTRATION:
         return vmImageConfig.getSscaOrchestration();
       default:
-        throw new BadRequestException(format(unexpectedErrFormat, stepInfoType));
+        throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
   }
 }
