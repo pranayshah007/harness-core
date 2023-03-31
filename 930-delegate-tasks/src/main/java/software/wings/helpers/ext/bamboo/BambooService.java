@@ -147,4 +147,17 @@ public interface BambooService {
 
   Pair<String, InputStream> downloadArtifact(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails,
       String artifactFileName, String artifactFilePath);
+
+  /**
+   * Download artifacts for given buildNumber
+   * @param bambooConfig
+   * @param encryptionDetails
+   * @param buildNo
+   * @param planKey
+   * @param artifactPaths
+   * @return
+   */
+  @SuppressWarnings("squid:S00107")
+  Pair<String, InputStream> downloadArtifacts(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails,
+      List<String> artifactPaths, String planKey, String buildNo);
 }
