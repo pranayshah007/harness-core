@@ -30,8 +30,6 @@ import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.repositories.entitysetupusage.EntitySetupUsageRepository;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 
-import software.wings.beans.EntityReference;
-
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
