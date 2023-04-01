@@ -292,16 +292,13 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
           jenkinsBuild, attributesRequest.getUnitName(), jenkinsInternalConfig, executionLogCallback);
       jenkinsBuildTaskNGResponse.setJobUrl(jenkinsBuildWithDetails.getUrl());
 
-      if (attributesRequest.isCaptureEnvironmentVariable()) {
-        executionLogCallback.saveExecutionLog("Collecting environment variables for Jenkins task", LogLevel.INFO);
-        try {
-          jenkinsBuildTaskNGResponse.setEnvVars(
-              jenkinsRegistryUtils.getEnvVars(jenkinsBuildWithDetails.getUrl(), jenkinsInternalConfig));
-        } catch (WingsException e) {
-          executionLogCallback.saveExecutionLog(
-              "Failed to collect environment variables from Jenkins ", LogLevel.ERROR);
-          throw e;
-        }
+      executionLogCallback.saveExecutionLog("Collecting environment variables for Jenkins task", LogLevel.INFO);
+      try {
+        jenkinsBuildTaskNGResponse.setEnvVars(
+            jenkinsRegistryUtils.getEnvVars(jenkinsBuildWithDetails.getUrl(), jenkinsInternalConfig));
+      } catch (WingsException e) {
+        executionLogCallback.saveExecutionLog(
+            "Failed to collect environment variables from Jenkins: " + e.getMessage(), LogLevel.ERROR);
       }
 
       executionLogCallback.saveExecutionLog("Jenkins task execution complete ", LogLevel.INFO);
