@@ -24,10 +24,10 @@ import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -1162,7 +1162,7 @@ public class InstanceHelperTest extends WingsBaseTest {
 
     instanceHelper.createPerpetualTaskForNewDeploymentIfEnabled(infrastructureMapping, deploymentSummaries);
 
-    verifyZeroInteractions(instanceSyncPerpetualTaskService);
+    verifyNoInteractions(instanceSyncPerpetualTaskService);
   }
 
   @Test
@@ -1219,7 +1219,7 @@ public class InstanceHelperTest extends WingsBaseTest {
 
     instanceHelper.processInstanceSyncResponseFromPerpetualTask(
         perpetualTaskId, getPcfCommandExecutionResponse(CommandExecutionStatus.SUCCESS));
-    Mockito.verifyZeroInteractions(instanceSyncPerpetualTaskService);
+    Mockito.verifyNoInteractions(instanceSyncPerpetualTaskService);
 
     instanceHelper.processInstanceSyncResponseFromPerpetualTask(
         perpetualTaskId, getPcfCommandExecutionResponse(CommandExecutionStatus.FAILURE));

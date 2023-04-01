@@ -25,8 +25,7 @@ import static software.wings.utils.WingsTestConstants.SERVICE_NAME;
 import static software.wings.utils.WingsTestConstants.mockChecker;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.DeprecatedIntegrationTests;
@@ -98,7 +97,7 @@ public class ConfigFileIntegrationTest extends IntegrationTestBase {
     FieldUtils.writeField(configService, "secretManager", secretManager, true);
     loginAdminUser();
     kmsId = KMS_ID;
-    when(delegateProxyFactory.getV2(anyObject(), any(SyncTaskContext.class))).thenReturn(delegateService);
+    when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(delegateService);
     when(limitCheckerFactory.getInstance(Mockito.any())).thenReturn(mockChecker());
 
     app = appService.save(anApplication().accountId(ACCOUNT_ID).name(APP_NAME + System.currentTimeMillis()).build());

@@ -25,8 +25,8 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -326,42 +326,42 @@ public class AzureHelperServiceTest extends WingsBaseTest {
       ArgumentCaptor<HttpPipeline> finalCaptor = captor;
       ArgumentCaptor<AzureProfile> finalCaptor2 = captor2;
       azureMockedStatic.verify(
-          times(1), () -> AzureResourceManager.authenticate(finalCaptor.capture(), finalCaptor2.capture()));
+          () -> AzureResourceManager.authenticate(finalCaptor.capture(), finalCaptor2.capture()), times(1));
       assertThat(captor2.getValue().getEnvironment().getManagementEndpoint())
           .isEqualTo("https://management.core.windows.net/");
 
       azureConfig.setAzureEnvironmentType(AzureEnvironmentType.AZURE_US_GOVERNMENT);
       azureDelegateHelperService.getAzureClient(azureConfig);
       azureMockedStatic.verify(
-          times(2), () -> AzureResourceManager.authenticate(finalCaptor.capture(), finalCaptor2.capture()));
+          () -> AzureResourceManager.authenticate(finalCaptor.capture(), finalCaptor2.capture()), times(2));
       assertThat(captor2.getValue().getEnvironment().getManagementEndpoint())
           .isEqualTo("https://management.core.usgovcloudapi.net/");
 
       azureConfig.setAzureEnvironmentType(AzureEnvironmentType.AZURE);
       azureDelegateHelperService.getAzureClient(azureConfig);
       azureMockedStatic.verify(
-          times(3), () -> AzureResourceManager.authenticate(finalCaptor.capture(), finalCaptor2.capture()));
+          () -> AzureResourceManager.authenticate(finalCaptor.capture(), finalCaptor2.capture()), times(3));
       assertThat(finalCaptor2.getValue().getEnvironment().getManagementEndpoint())
           .isEqualTo("https://management.core.windows.net/");
 
       when(authenticated.withSubscription("subscriptionId")).thenReturn(azure);
       azureDelegateHelperService.getAzureClient(azureConfig, "subscriptionId");
       azureMockedStatic.verify(
-          times(4), () -> AzureResourceManager.authenticate(finalCaptor.capture(), finalCaptor2.capture()));
+          () -> AzureResourceManager.authenticate(finalCaptor.capture(), finalCaptor2.capture()), times(4));
       assertThat(finalCaptor2.getValue().getEnvironment().getManagementEndpoint())
           .isEqualTo("https://management.core.windows.net/");
 
       azureConfig.setAzureEnvironmentType(AzureEnvironmentType.AZURE_US_GOVERNMENT);
       azureDelegateHelperService.getAzureClient(azureConfig, "subscriptionId");
       azureMockedStatic.verify(
-          times(5), () -> AzureResourceManager.authenticate(finalCaptor.capture(), finalCaptor2.capture()));
+          () -> AzureResourceManager.authenticate(finalCaptor.capture(), finalCaptor2.capture()), times(5));
       assertThat(finalCaptor2.getValue().getEnvironment().getManagementEndpoint())
           .isEqualTo("https://management.core.usgovcloudapi.net/");
 
       azureConfig.setAzureEnvironmentType(AzureEnvironmentType.AZURE);
       azureDelegateHelperService.getAzureClient(azureConfig, "subscriptionId");
       azureMockedStatic.verify(
-          times(6), () -> AzureResourceManager.authenticate(finalCaptor.capture(), finalCaptor2.capture()));
+          () -> AzureResourceManager.authenticate(finalCaptor.capture(), finalCaptor2.capture()), times(6));
       assertThat(finalCaptor2.getValue().getEnvironment().getManagementEndpoint())
           .isEqualTo("https://management.core.windows.net/");
     }
@@ -416,19 +416,19 @@ public class AzureHelperServiceTest extends WingsBaseTest {
       azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
       ArgumentCaptor<HttpPipeline> captor = ArgumentCaptor.forClass(HttpPipeline.class);
       ArgumentCaptor<AzureProfile> captor2 = ArgumentCaptor.forClass(AzureProfile.class);
-      azureMockedStatic.verify(times(1), () -> AzureResourceManager.authenticate(captor.capture(), captor2.capture()));
+      azureMockedStatic.verify(() -> AzureResourceManager.authenticate(captor.capture(), captor2.capture()), times(1));
       assertThat(captor2.getValue().getEnvironment().getManagementEndpoint())
           .isEqualTo("https://management.core.windows.net/");
 
       azureVaultConfig.setAzureEnvironmentType(AZURE_US_GOVERNMENT);
       azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
-      azureMockedStatic.verify(times(2), () -> AzureResourceManager.authenticate(captor.capture(), captor2.capture()));
+      azureMockedStatic.verify(() -> AzureResourceManager.authenticate(captor.capture(), captor2.capture()), times(2));
       assertThat(captor2.getValue().getEnvironment().getManagementEndpoint())
           .isEqualTo("https://management.core.usgovcloudapi.net/");
 
       azureVaultConfig.setAzureEnvironmentType(AZURE);
       azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
-      azureMockedStatic.verify(times(3), () -> AzureResourceManager.authenticate(captor.capture(), captor2.capture()));
+      azureMockedStatic.verify(() -> AzureResourceManager.authenticate(captor.capture(), captor2.capture()), times(3));
       assertThat(captor2.getValue().getEnvironment().getManagementEndpoint())
           .isEqualTo("https://management.core.windows.net/");
     }

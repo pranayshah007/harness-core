@@ -10,7 +10,7 @@ package software.wings.helpers.ext.jenkins;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;

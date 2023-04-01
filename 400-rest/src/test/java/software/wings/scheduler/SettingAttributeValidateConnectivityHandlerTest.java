@@ -12,10 +12,10 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static software.wings.utils.WingsTestConstants.SETTING_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
@@ -125,7 +125,7 @@ public class SettingAttributeValidateConnectivityHandlerTest extends WingsBaseTe
         SettingAttribute.Builder.aSettingAttribute().withUuid(SETTING_ID).withConnectivityError(errMsg).build();
     when(settingValidationService.validate(settingAttribute)).thenThrow(new InvalidArtifactServerException(errMsg));
     settingAttributeValidateConnectivityHandler.handle(settingAttribute);
-    verifyZeroInteractions(settingsService);
+    verifyNoInteractions(settingsService);
   }
 
   @Test
@@ -136,7 +136,7 @@ public class SettingAttributeValidateConnectivityHandlerTest extends WingsBaseTe
     SettingAttribute settingAttribute = SettingAttribute.Builder.aSettingAttribute().withUuid(SETTING_ID).build();
     when(settingValidationService.validate(settingAttribute)).thenThrow(new InvalidRequestException(errMsg));
     settingAttributeValidateConnectivityHandler.handle(settingAttribute);
-    verifyZeroInteractions(settingsService);
+    verifyNoInteractions(settingsService);
   }
 
   @Test
@@ -147,7 +147,7 @@ public class SettingAttributeValidateConnectivityHandlerTest extends WingsBaseTe
     SettingAttribute settingAttribute = SettingAttribute.Builder.aSettingAttribute().withUuid(SETTING_ID).build();
     when(settingValidationService.validate(settingAttribute)).thenThrow(new RuntimeException(errMsg));
     settingAttributeValidateConnectivityHandler.handle(settingAttribute);
-    verifyZeroInteractions(settingsService);
+    verifyNoInteractions(settingsService);
   }
 
   @Test
@@ -157,7 +157,7 @@ public class SettingAttributeValidateConnectivityHandlerTest extends WingsBaseTe
     SettingAttribute settingAttribute = SettingAttribute.Builder.aSettingAttribute().withUuid(SETTING_ID).build();
     when(settingValidationService.validate(settingAttribute)).thenReturn(true);
     settingAttributeValidateConnectivityHandler.handle(settingAttribute);
-    verifyZeroInteractions(settingsService);
+    verifyNoInteractions(settingsService);
   }
 
   @Test
