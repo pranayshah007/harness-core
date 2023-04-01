@@ -35,13 +35,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Fail.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -999,9 +997,8 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     List<V1Pod> result = kubernetesContainerService.getRunningPodsWithLabels(KUBERNETES_CONFIG, "default", labels);
     ArgumentCaptor<List<Pair>> queryParamsCaptor = ArgumentCaptor.forClass((Class) List.class);
     verify(k8sApiClient, times(1))
-        .buildCall(anyString(), eq("GET"), queryParamsCaptor.capture(), anyListOf(Pair.class), any(),
-            anyMapOf(String.class, String.class), anyMapOf(String.class, String.class),
-            anyMapOf(String.class, Object.class), any(String[].class), any());
+        .buildCall(anyString(), eq("GET"), queryParamsCaptor.capture(), anyList(), any(), anyMap(), anyMap(), anyMap(),
+            any(String[].class), any());
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getMetadata().getName()).isEqualTo("pod-1");
     Optional<Pair> labelSelector =
