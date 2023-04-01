@@ -64,8 +64,9 @@ public class SyncStepInfo extends SyncBaseStepInfo implements CDAbstractStepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public SyncStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<Boolean> prune,
-      List<AgentApplicationTargets> applicationsList, ParameterField<Boolean> dryRun, ParameterField<Boolean> applyOnly,
-      ParameterField<Boolean> forceApply, SyncOptions syncOptions, SyncRetryStrategy retryStrategy) {
+      ParameterField<List<AgentApplicationTargets>> applicationsList, ParameterField<Boolean> dryRun,
+      ParameterField<Boolean> applyOnly, ParameterField<Boolean> forceApply, SyncOptions syncOptions,
+      SyncRetryStrategy retryStrategy) {
     super(delegateSelectors, prune, applicationsList, dryRun, applyOnly, forceApply, syncOptions, retryStrategy);
     this.prune = prune;
     this.applicationsList = applicationsList;

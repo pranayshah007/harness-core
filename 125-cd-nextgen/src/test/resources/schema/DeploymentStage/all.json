@@ -311,28 +311,10 @@
       ],
       "properties": {
         "agentId": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "applicationName": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -15124,16 +15106,7 @@
       ],
       "properties": {
         "baseBackoffDuration": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "increaseBackoffByFactor": {
           "oneOf": [
@@ -15160,16 +15133,7 @@
           ]
         },
         "maxBackoffDuration": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -15190,10 +15154,19 @@
           ],
           "properties": {
             "applicationsList": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/AgentApplicationTargets"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/AgentApplicationTargets"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "applyOnly": {
               "oneOf": [

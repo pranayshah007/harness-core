@@ -7,7 +7,6 @@
 
 package io.harness.cdng.gitops.syncstep;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
@@ -31,7 +30,6 @@ public class SyncRetryStrategy {
   @NotNull
   public ParameterField<Integer> limit;
 
-  @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @NotNull
   public ParameterField<String> baseBackoffDuration;
@@ -42,7 +40,6 @@ public class SyncRetryStrategy {
   @NotNull
   public ParameterField<Integer> increaseBackoffByFactor;
 
-  @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @NotNull
   public ParameterField<String> maxBackoffDuration;
