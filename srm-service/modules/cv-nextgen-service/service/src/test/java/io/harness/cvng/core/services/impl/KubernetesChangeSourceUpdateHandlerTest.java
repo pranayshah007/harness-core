@@ -9,11 +9,11 @@ package io.harness.cvng.core.services.impl;
 
 import static io.harness.rule.OwnerRule.ANJAN;
 
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -65,6 +65,6 @@ public class KubernetesChangeSourceUpdateHandlerTest extends CvNextGenTestBase {
     KubernetesChangeSource kubeChangeSource =
         KubernetesChangeSource.builder().accountId(accountIdentifier).dataCollectionRequired(true).build();
     updateHandler.handleDelete(kubeChangeSource);
-    verifyZeroInteractions(verificationManagerService);
+    verifyNoInteractions(verificationManagerService);
   }
 }
