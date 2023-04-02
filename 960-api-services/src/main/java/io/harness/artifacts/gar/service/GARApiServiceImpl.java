@@ -16,12 +16,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.docker.service.DockerRegistryUtils;
+import io.harness.artifacts.gar.GarDockerRestClient;
 import io.harness.artifacts.gar.GarRestClient;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
 import io.harness.artifacts.gar.beans.GarPackageVersionResponse;
-import io.harness.artifacts.gar.beans.GarTags;
 import io.harness.beans.ArtifactMetaInfo;
-import io.harness.beans.ArtifactMetaInfo.ArtifactMetaInfoBuilder;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
@@ -32,6 +33,7 @@ import io.harness.exception.WingsException;
 import io.harness.expression.RegexFunctor;
 import io.harness.network.Http;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,21 +53,13 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Singleton
 @Slf4j
 public class GARApiServiceImpl implements GarApiService {
+  @Inject DockerRegistryUtils dockerRegistryUtils;
   // For now google api is supporting 500 page size, but in future they may decrease api response page limit.
   private static final int PAGESIZE = 500;
   private static final String COULD_NOT_FETCH_IMAGE_MANIFEST = "Could not fetch image manifest";
 
   private GarRestClient getGarRestClient(GarInternalConfig garinternalConfig) {
     String url = getUrl();
-    return getGarRestClientHelper(garinternalConfig, url);
-  }
-
-  private GarRestClient getGarRestClientDockerRegistryAPI(GarInternalConfig garinternalConfig) {
-    String url = getGarRestClientDockerRegistryAPIUrl(garinternalConfig.getRegion());
-    return getGarRestClientHelper(garinternalConfig, url);
-  }
-
-  private GarRestClient getGarRestClientHelper(GarInternalConfig garinternalConfig, String url) {
     OkHttpClient okHttpClient = Http.getOkHttpClient(url, garinternalConfig.isCertValidationRequired());
     Retrofit retrofit = new Retrofit.Builder()
                             .client(okHttpClient)
@@ -74,6 +68,18 @@ public class GARApiServiceImpl implements GarApiService {
                             .build();
     return retrofit.create(GarRestClient.class);
   }
+
+  private GarDockerRestClient getGarRestClientDockerRegistryAPI(GarInternalConfig garinternalConfig) {
+    String url = getGarRestClientDockerRegistryAPIUrl(garinternalConfig.getRegion());
+    OkHttpClient okHttpClient = Http.getOkHttpClient(url, garinternalConfig.isCertValidationRequired());
+    Retrofit retrofit = new Retrofit.Builder()
+                            .client(okHttpClient)
+                            .baseUrl(url)
+                            .addConverterFactory(JacksonConverterFactory.create())
+                            .build();
+    return retrofit.create(GarDockerRestClient.class);
+  }
+
   public String getUrl() {
     return "https://artifactregistry.googleapis.com";
   }
@@ -108,7 +114,7 @@ public class GARApiServiceImpl implements GarApiService {
           "Please check versionRegex Provided",
           new InvalidArtifactServerException("No versions found with versionRegex provided for the given package"));
     }
-    return builds.get(0);
+    return verifyBuildNumber(garinternalConfig, builds.get(0).getNumber());
   }
 
   @Override
@@ -117,41 +123,51 @@ public class GARApiServiceImpl implements GarApiService {
     String region = garinternalConfig.getRegion();
     String repositories = garinternalConfig.getRepositoryName();
     String pkg = garinternalConfig.getPkg();
+    String errorMessage = "";
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().build();
+
     try {
-      GarRestClient garRestClient = getGarRestClient(garinternalConfig);
-      Response<GarTags> response =
-          garRestClient.getversioninfo(garinternalConfig.getBearerToken(), project, region, repositories, pkg, version)
-              .execute();
-      if (response == null) {
-        throw NestedExceptionUtils.hintWithExplanationException("Response Is Null",
-            "Please Check Whether Artifact exists or not",
-            new InvalidArtifactServerException(response.errorBody().toString(), USER));
+      ArtifactMetaInfo artifactMetaInfoSchemaVersion1 = getArtifactMetaInfoV1(garinternalConfig, version);
+      if (artifactMetaInfoSchemaVersion1 != null) {
+        artifactMetaInfo.setSha(artifactMetaInfoSchemaVersion1.getSha());
+        artifactMetaInfo.setLabels(artifactMetaInfoSchemaVersion1.getLabels());
       }
-      if (!response.isSuccessful()) {
-        log.error("Request not successful. Reason: {}", response);
-        if (!isSuccessful(response.code(), response.errorBody().toString())) {
-          throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the versions for the package",
-              "Please check region field", new InvalidArtifactServerException(response.message(), USER));
-        }
-      }
-      GarTags garTags = response.body();
-      int index = garTags.getName().lastIndexOf("/");
-      String tagFinal = garTags.getName().substring(index + 1);
-      Map<String, String> metadata = new HashMap();
-      String registryHostname = String.format("%s-docker.pkg.dev", region);
-      String image = String.format("%s-docker.pkg.dev/%s/%s/%s:%s", region, project, repositories, pkg, tagFinal);
-      metadata.put(ArtifactMetadataKeys.IMAGE, image);
-      metadata.put("registryHostname", registryHostname);
-      return BuildDetailsInternal.builder()
-          .uiDisplayName("Tag# " + tagFinal)
-          .number(tagFinal)
-          .metadata(metadata)
-          .build();
-    } catch (IOException e) {
-      throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the given tag for the image",
-          "The tag provided for the image may be incorrect.",
-          new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
+    } catch (Exception e) {
+      log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
+      errorMessage = e.getMessage();
     }
+    try {
+      ArtifactMetaInfo artifactMetaInfoSchemaVersion2 = getArtifactMetaInfoV2(garinternalConfig, version);
+      if (artifactMetaInfoSchemaVersion2 != null) {
+        artifactMetaInfo.setShaV2(artifactMetaInfoSchemaVersion2.getSha());
+      }
+    } catch (Exception e) {
+      log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
+      errorMessage = e.getMessage();
+    }
+
+    if (EmptyPredicate.isEmpty(artifactMetaInfo.getSha()) && EmptyPredicate.isEmpty(artifactMetaInfo.getShaV2())) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          errorMessage, errorMessage, new ArtifactServerException(errorMessage));
+    }
+
+    Map<String, String> metadata = new HashMap();
+    String registryHostname = String.format("%s-docker.pkg.dev", region);
+    String image;
+    if (GARUtils.isSHA(version)) {
+      image = String.format("%s-docker.pkg.dev/%s/%s/%s@%s", region, project, repositories, pkg, version);
+    } else {
+      image = String.format("%s-docker.pkg.dev/%s/%s/%s:%s", region, project, repositories, pkg, version);
+    }
+
+    metadata.put(ArtifactMetadataKeys.IMAGE, image);
+    metadata.put("registryHostname", registryHostname);
+    return BuildDetailsInternal.builder()
+        .uiDisplayName("Tag# " + version)
+        .number(version)
+        .metadata(metadata)
+        .artifactMetaInfo(artifactMetaInfo)
+        .build();
   }
 
   private List<BuildDetailsInternal> paginate(GarInternalConfig garinternalConfig, GarRestClient garRestClient,
@@ -261,26 +277,38 @@ public class GARApiServiceImpl implements GarApiService {
   }
 
   @Override
-  public ArtifactMetaInfo getArtifactMetaInfo(GarInternalConfig garInternalConfig, String version) {
+  public ArtifactMetaInfo getArtifactMetaInfoV1(GarInternalConfig garInternalConfig, String version)
+      throws IOException {
     String imageName = garInternalConfig.getPkg();
-    ArtifactMetaInfoBuilder artifactMetaInfoBuilder = ArtifactMetaInfo.builder();
-    try {
-      GarRestClient garRestClient = getGarRestClientDockerRegistryAPI(garInternalConfig);
-      Response<GarPackageVersionResponse> response =
-          garRestClient
-              .getImageManifest(garInternalConfig.getBearerToken(), garInternalConfig.getProject(),
-                  garInternalConfig.getRepositoryName(), imageName, version)
-              .execute();
-      if (!GARUtils.checkIfResponseNull(response) && response.isSuccessful()) {
-        String sha = response.headers().get("Docker-Content-Digest");
-        artifactMetaInfoBuilder.shaV2(sha);
-      } else if (!GARUtils.checkIfResponseNull(response)) {
-        isSuccessful(response.code(), response.errorBody().toString());
-      }
-    } catch (Exception e) {
-      log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
+    GarDockerRestClient garRestClient = getGarRestClientDockerRegistryAPI(garInternalConfig);
+    Response<DockerImageManifestResponse> response =
+        garRestClient
+            .getImageManifestV1(garInternalConfig.getBearerToken(), garInternalConfig.getProject(),
+                garInternalConfig.getRepositoryName(), imageName, version)
+            .execute();
+    return getArtifactMetaInfoHelper(response, getImageName(garInternalConfig, version));
+  }
+
+  @Override
+  public ArtifactMetaInfo getArtifactMetaInfoV2(GarInternalConfig garInternalConfig, String version)
+      throws IOException {
+    String imageName = garInternalConfig.getPkg();
+    GarDockerRestClient garRestClient = getGarRestClientDockerRegistryAPI(garInternalConfig);
+    Response<DockerImageManifestResponse> response =
+        garRestClient
+            .getImageManifest(garInternalConfig.getBearerToken(), garInternalConfig.getProject(),
+                garInternalConfig.getRepositoryName(), imageName, version)
+            .execute();
+    return getArtifactMetaInfoHelper(response, getImageName(garInternalConfig, version));
+  }
+
+  private ArtifactMetaInfo getArtifactMetaInfoHelper(Response<DockerImageManifestResponse> response, String image) {
+    if (!GARUtils.checkIfResponseNull(response) && response.isSuccessful()) {
+      return dockerRegistryUtils.parseArtifactMetaInfoResponse(response, image);
+    } else if (!GARUtils.checkIfResponseNull(response)) {
+      isSuccessful(response.code(), response.errorBody().toString());
     }
-    return artifactMetaInfoBuilder.build();
+    return null;
   }
 
   private String getImageName(GarInternalConfig garinternalConfig, String tag) {

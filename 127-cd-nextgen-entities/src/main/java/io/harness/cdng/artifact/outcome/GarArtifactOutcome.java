@@ -44,6 +44,7 @@ public class GarArtifactOutcome implements ArtifactOutcome {
   String imagePullSecret;
   String repositoryType;
   Map<String, String> metadata;
+  Map<String, String> label;
   boolean primaryArtifact;
   @Override
   public ArtifactSummary getArtifactSummary() {

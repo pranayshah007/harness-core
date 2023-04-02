@@ -13,6 +13,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -21,10 +22,14 @@ import lombok.Value;
 @EqualsAndHashCode(callSuper = false)
 public class GarDelegateResponse extends ArtifactDelegateResponse {
   String version;
+  Map<String, String> label;
+
   @Builder
-  public GarDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType, String version) {
+  public GarDelegateResponse(
+      ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType, String version, Map<String, String> label) {
     super(buildDetails, sourceType);
     this.version = version;
+    this.label = label;
   }
 
   @Override

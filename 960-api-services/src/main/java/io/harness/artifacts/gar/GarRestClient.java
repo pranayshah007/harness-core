@@ -33,10 +33,4 @@ public interface GarRestClient {
       @Path(value = "project", encoded = true) String project, @Path(value = "region", encoded = true) String region,
       @Path(value = "repositories", encoded = true) String repositories, @Path(value = "package") String pkg,
       @Path(value = "tag", encoded = true) String version);
-
-  @GET("/v2/{project}/{repositories}/{package}/manifests/{tag}")
-  Call<GarPackageVersionResponse> getImageManifest(@Header("Authorization") String bearerAuthHeader,
-      @Path(value = "project", encoded = true) String project,
-      @Path(value = "repositories", encoded = true) String repositories, @Path(value = "package") String pkg,
-      @Path(value = "tag", encoded = true) String version);
 }

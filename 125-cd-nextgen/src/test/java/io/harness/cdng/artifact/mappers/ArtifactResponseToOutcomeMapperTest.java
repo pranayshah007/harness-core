@@ -553,9 +553,13 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     Map<String, String> metaData = new HashMap<>();
     metaData.put(ArtifactMetadataKeys.REGISTRY_HOSTNAME, ArtifactMetadataKeys.REGISTRY_HOSTNAME);
     metaData.put(ArtifactMetadataKeys.IMAGE, ArtifactMetadataKeys.IMAGE);
+    Map<String, String> label = new HashMap<>();
+    label.put("1", "2");
+    label.put("3", "4");
     GarDelegateResponse garDelegateResponse =
         GarDelegateResponse.builder()
             .version(versionRegex)
+            .label(label)
             .buildDetails(ArtifactBuildDetailsNG.builder().metadata(metaData).build())
             .build();
     GarArtifactOutcome garArtifactOutcome = (GarArtifactOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
@@ -574,5 +578,6 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     assertThat(garArtifactOutcome.getImage()).isEqualTo(ArtifactMetadataKeys.IMAGE);
     assertThat(garArtifactOutcome.getMetadata()).isEqualTo(metaData);
     assertThat(garArtifactOutcome.getRepositoryType()).isEqualTo(type);
+    assertThat(garArtifactOutcome.getLabel()).isEqualTo(label);
   }
 }

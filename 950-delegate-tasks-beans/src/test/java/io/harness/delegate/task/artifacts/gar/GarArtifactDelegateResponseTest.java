@@ -16,6 +16,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.rule.Owner;
 
+import java.util.HashMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,7 +33,8 @@ public class GarArtifactDelegateResponseTest {
   @Category(UnitTests.class)
   public void testDescribe() {
     ArtifactBuildDetailsNG buildDetailsNG = ArtifactBuildDetailsNG.builder().build();
-    garDelegateResponse = new GarDelegateResponse(buildDetailsNG, ArtifactSourceType.ECR, "v3.0");
+    garDelegateResponse =
+        new GarDelegateResponse(buildDetailsNG, ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY, "v3.0", new HashMap<>());
     String resp = garDelegateResponse.describe();
     String[] values = resp.split("\n");
     assertThat(resp).isNotNull();
