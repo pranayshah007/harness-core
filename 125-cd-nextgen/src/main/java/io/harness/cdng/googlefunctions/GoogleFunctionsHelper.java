@@ -31,8 +31,12 @@ import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.sweepingoutput.EcsServiceCustomSweepingOutput;
+import io.harness.cdng.service.steps.sweepingoutput.GoogleFunctionsServiceCustomSweepingOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -75,6 +79,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -108,6 +113,10 @@ public class GoogleFunctionsHelper extends CDStepHelper {
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   private final String GOOGLE_FUNCTION_PREPARE_ROLLBACK_COMMAND_NAME = "PrepareRollbackCloudFunction";
+  private final String GOOGLE_FUNCTION_GEN_TWO_ENV_TYPE = "GenTwo";
+  private final String GOOGLE_FUNCTION_GEN_ONE_ENV_TYPE = "GenOne";
+  private final String INVALID_ENV_TYPE = "Environment version is invalid in Google Function Service";
+
 
   public TaskChainResponse startChainLink(GoogleFunctionsStepExecutor googleFunctionsStepExecutor, Ambiance ambiance,
       StepElementParameters stepElementParameters) {
@@ -129,6 +138,21 @@ public class GoogleFunctionsHelper extends CDStepHelper {
 
     LogCallback logCallback = getLogCallback(EcsCommandUnitConstants.fetchManifests.toString(), ambiance, true);
 
+    // fetch environment type
+    String environmentType = GOOGLE_FUNCTION_GEN_TWO_ENV_TYPE;
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
+            ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.GOOGLE_FUNCTION_SERVICE_SWEEPING_OUTPUT));
+    if (optionalSweepingOutput.isFound()) {
+      GoogleFunctionsServiceCustomSweepingOutput googleFunctionsServiceCustomSweepingOutput =
+              (GoogleFunctionsServiceCustomSweepingOutput) optionalSweepingOutput.getOutput();
+      if(!GOOGLE_FUNCTION_GEN_ONE_ENV_TYPE.equals(googleFunctionsServiceCustomSweepingOutput.getEnvironmentType()) &&
+              !GOOGLE_FUNCTION_GEN_TWO_ENV_TYPE.equals(googleFunctionsServiceCustomSweepingOutput.getEnvironmentType()))
+      {
+        throw new InvalidRequestException(INVALID_ENV_TYPE, USER);
+      }
+      environmentType = googleFunctionsServiceCustomSweepingOutput.getEnvironmentType();
+    }
+
     if (isHarnessStoreManifest(googleFunctionsManifestOutcome)) {
       // get Harness Store Manifests Content
       String manifestContent =
@@ -138,6 +162,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
               .manifestOutcome(googleFunctionsManifestOutcome)
               .manifestContent(manifestContent)
               .infrastructureOutcome(infrastructureOutcome)
+               .environmentType(environmentType)
               .build();
       UnitProgressData unitProgressData = getCommandUnitProgressData(
           GoogleFunctionsCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
@@ -145,7 +170,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
           ambiance, stepElementParameters, googleFunctionsPrepareRollbackStepPassThroughData, unitProgressData);
     } else {
       return prepareManifestGitFetchTask(
-          infrastructureOutcome, ambiance, stepElementParameters, googleFunctionsManifestOutcome);
+          infrastructureOutcome, ambiance, stepElementParameters, googleFunctionsManifestOutcome, environmentType);
     }
   }
 
@@ -184,16 +209,28 @@ public class GoogleFunctionsHelper extends CDStepHelper {
   public TaskChainResponse executePrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
       GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData, UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructureOutcome = googleFunctionsStepPassThroughData.getInfrastructureOutcome();
+    if(GOOGLE_FUNCTION_GEN_TWO_ENV_TYPE.equals(googleFunctionsStepPassThroughData.getEnvironmentType())) {
+      GoogleFunctionPrepareRollbackRequestBuilder googleFunctionPrepareRollbackRequestBuilder =
+              GoogleFunctionPrepareRollbackRequest.builder()
+                      .googleFunctionCommandType(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_PREPARE_ROLLBACK)
+                      .commandName(GOOGLE_FUNCTION_PREPARE_ROLLBACK_COMMAND_NAME)
+                      .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+                      .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+                      .googleFunctionInfraConfig(getInfraConfig(infrastructureOutcome, ambiance))
+                      .googleFunctionDeployManifestContent(googleFunctionsStepPassThroughData.getManifestContent());
+      return queueTask(stepParameters, googleFunctionPrepareRollbackRequestBuilder.build(), ambiance,
+              googleFunctionsStepPassThroughData, false, TaskType.GOOGLE_FUNCTION_PREPARE_ROLLBACK_TASK);
+    }
     GoogleFunctionPrepareRollbackRequestBuilder googleFunctionPrepareRollbackRequestBuilder =
-        GoogleFunctionPrepareRollbackRequest.builder()
-            .googleFunctionCommandType(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_PREPARE_ROLLBACK)
-            .commandName(GOOGLE_FUNCTION_PREPARE_ROLLBACK_COMMAND_NAME)
-            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-            .googleFunctionInfraConfig(getInfraConfig(infrastructureOutcome, ambiance))
-            .googleFunctionDeployManifestContent(googleFunctionsStepPassThroughData.getManifestContent());
+            GoogleFunctionPrepareRollbackRequest.builder()
+                    .googleFunctionCommandType(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_PREPARE_ROLLBACK)
+                    .commandName(GOOGLE_FUNCTION_PREPARE_ROLLBACK_COMMAND_NAME)
+                    .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+                    .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+                    .googleFunctionInfraConfig(getInfraConfig(infrastructureOutcome, ambiance))
+                    .googleFunctionDeployManifestContent(googleFunctionsStepPassThroughData.getManifestContent());
     return queueTask(stepParameters, googleFunctionPrepareRollbackRequestBuilder.build(), ambiance,
-        googleFunctionsStepPassThroughData, false, TaskType.GOOGLE_FUNCTION_PREPARE_ROLLBACK_TASK);
+            googleFunctionsStepPassThroughData, false, TaskType.GOOGLE_FUNCTION_PREPARE_ROLLBACK_TASK);
   }
 
   public TaskChainResponse executeNextLink(GoogleFunctionsStepExecutor googleFunctionsStepExecutor, Ambiance ambiance,
@@ -349,7 +386,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
   }
 
   private TaskChainResponse prepareManifestGitFetchTask(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance,
-      StepElementParameters stepElementParameters, ManifestOutcome manifestOutcome) {
+      StepElementParameters stepElementParameters, ManifestOutcome manifestOutcome, String environmentType) {
     GitRequestFileConfig gitRequestFileConfig = null;
 
     if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
@@ -360,6 +397,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
         GoogleFunctionsStepPassThroughData.builder()
             .manifestOutcome(manifestOutcome)
             .infrastructureOutcome(infrastructureOutcome)
+            .environmentType(environmentType)
             .build();
 
     return getGitFetchFileTaskResponse(

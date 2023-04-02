@@ -570,7 +570,13 @@ public enum EntityType {
       ModuleType.STO, EntityTypeConstants.CUSTOM_INGEST, IdentifierRef.class, EntityYamlRootNames.CUSTOM_INGEST),
   @JsonProperty(EntityTypeConstants.BACKSTAGE_ENVIRONMENT_VARIABLE)
   BACKSTAGE_ENVIRONMENT_VARIABLE(
-      ModuleType.IDP, EntityTypeConstants.BACKSTAGE_ENVIRONMENT_VARIABLE, IdentifierRef.class);
+      ModuleType.IDP, EntityTypeConstants.BACKSTAGE_ENVIRONMENT_VARIABLE, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY)
+  GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY,
+          IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY),
+  @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK)
+  GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK,
+          IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;

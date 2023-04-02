@@ -843,4 +843,9 @@ io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStepPara
 io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStepNode
 io.harness.cdng.googlefunctions.rollbackgenone.GoogleFunctionsGenOneRollbackStepParameters
 io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStepInfo
+<<<<<<< HEAD
 io.harness.cdng.deploymentmetadata.GoogleCloudFunctionDeploymentMetaData
+=======
+io.harness.cdng.manifest.yaml.kinds.GoogleCloudFunctionGenOneDefinitionManifest
+io.harness.cdng.manifest.yaml.GoogleCloudFunctionGenOneDefinitionManifestOutcome
+>>>>>>> 7504a147d59 ([CDS-53807]: [feat]: manager logic)

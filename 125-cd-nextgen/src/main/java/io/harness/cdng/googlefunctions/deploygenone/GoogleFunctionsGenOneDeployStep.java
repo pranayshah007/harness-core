@@ -7,10 +7,14 @@
 
 package io.harness.cdng.googlefunctions.deploygenone;
 
+import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.googlefunctions.GoogleFunctionsEntityHelper;
+import io.harness.cdng.googlefunctions.GoogleFunctionsHelper;
 import io.harness.cdng.googlefunctions.GoogleFunctionsStepExecutor;
 import io.harness.cdng.googlefunctions.GoogleFunctionsStepPassThroughData;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -36,6 +40,9 @@ public class GoogleFunctionsGenOneDeployStep
           .setType(ExecutionNodeType.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY.getYamlType())
           .setStepCategory(StepCategory.STEP)
           .build();
+  @Inject private InstanceInfoService instanceInfoService;
+  @Inject private GoogleFunctionsHelper googleFunctionsHelper;
+  @Inject private GoogleFunctionsEntityHelper googleFunctionsEntityHelper;
 
   @Override
   public TaskChainResponse executeTask(Ambiance ambiance, StepElementParameters stepParameters,
@@ -69,6 +76,6 @@ public class GoogleFunctionsGenOneDeployStep
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return null;
+    return googleFunctionsHelper.startChainLink(this, ambiance, stepParameters);
   }
 }

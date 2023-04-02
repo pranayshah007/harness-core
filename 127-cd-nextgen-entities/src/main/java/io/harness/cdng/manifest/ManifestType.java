@@ -58,6 +58,7 @@ public interface ManifestType {
   String AsgScalingPolicy = "AsgScalingPolicy";
   String AsgScheduledUpdateGroupAction = "AsgScheduledUpdateGroupAction";
   String GoogleCloudFunctionDefinition = "GoogleCloudFunctionDefinition";
+  String GoogleCloudFunctionGenOneDefinition = "GoogleCloudFunctionGenOneDefinition";
   String HelmRepoOverride = "HelmRepoOverride";
   String AwsLambdaFunctionDefinition = "AwsLambdaFunctionDefinition";
   String AwsLambdaFunctionAliasDefinition = "AwsLambdaFunctionAliasDefinition";
@@ -72,6 +73,6 @@ public interface ManifestType {
         ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER, AsgLaunchTemplate, AsgConfiguration, AsgScalingPolicy,
         AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition,
         ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition,
-        ManifestType.AwsSamDirectory));
+        ManifestType.AwsSamDirectory, ManifestType.GoogleCloudFunctionGenOneDefinition));
   }
 }

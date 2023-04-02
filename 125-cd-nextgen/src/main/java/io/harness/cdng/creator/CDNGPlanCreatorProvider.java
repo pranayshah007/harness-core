@@ -156,10 +156,7 @@ import io.harness.cdng.creator.plan.steps.ecs.EcsRunTaskStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupBGStageSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSwapRouteStepPlanCreator;
-import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsDeployStepPlanCreator;
-import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsDeployWithoutTrafficStepPlanCreator;
-import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsRollbackStepPlanCreator;
-import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsTrafficShiftStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.googlefunctions.*;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terraformcloud.TerraformCloudRollbackStepPlanCreator;
@@ -225,10 +222,7 @@ import io.harness.cdng.creator.variables.aws.AwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.AwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.sam.AwsSamDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.sam.AwsSamRollbackStepVariableCreator;
-import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployStepVariableCreator;
-import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployWithoutTrafficStepVariableCreator;
-import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsRollbackStepVariableCreator;
-import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsTrafficShiftStepVariableCreator;
+import io.harness.cdng.creator.variables.googlefunctions.*;
 import io.harness.cdng.customDeployment.constants.CustomDeploymentConstants;
 import io.harness.cdng.customDeployment.variablecreator.FetchInstanceScriptStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
@@ -337,7 +331,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
       ManifestType.AsgLaunchTemplate, ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy,
       ManifestType.AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition,
       ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition,
-      ManifestType.AwsSamDirectory);
+      ManifestType.AwsSamDirectory, ManifestType.GoogleCloudFunctionGenOneDefinition);
   private static final Set<String> EMPTY_ENVIRONMENT_TYPES =
       Sets.newHashSet(YamlTypes.ENV_PRODUCTION, YamlTypes.ENV_PRE_PRODUCTION);
   private static final Set<String> EMPTY_PRIMARY_TYPES =
@@ -465,6 +459,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new GoogleFunctionsDeployWithoutTrafficStepPlanCreator());
     planCreators.add(new GoogleFunctionsTrafficShiftStepPlanCreator());
     planCreators.add(new GoogleFunctionsRollbackStepPlanCreator());
+    planCreators.add(new GoogleFunctionsGenOneDeployStepPlanCreator());
+    planCreators.add(new GoogleFunctionsGenOneRollbackStepPlanCreator());
+
     // Terraform Cloud
     planCreators.add(new TerraformCloudRunStepPlanCreator());
     planCreators.add(new BambooCreateStepPlanCreator());
@@ -609,6 +606,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new GoogleFunctionsDeployWithoutTrafficStepVariableCreator());
     variableCreators.add(new GoogleFunctionsTrafficShiftStepVariableCreator());
     variableCreators.add(new GoogleFunctionsRollbackStepVariableCreator());
+    variableCreators.add(new GoogleFunctionsGenOneDeployStepVariableCreator());
+    variableCreators.add(new GoogleFunctionsGenOneRollbackStepVariableCreator());
     // Terraform Cloud
     variableCreators.add(new TerraformCloudRunStepVariableCreator());
     variableCreators.add(new TerraformCloudRollbackStepVariableCreator());
@@ -915,6 +914,24 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                 StepMetaData.newBuilder().addCategory("GoogleCloudFunctions").setFolderPath("Google Functions").build())
             .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
             .build();
+
+    StepInfo googleFunctionGenOneDeploy =
+            StepInfo.newBuilder()
+                    .setName("Google Function Deploy")
+                    .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY)
+                    .setStepMetaData(
+                            StepMetaData.newBuilder().addCategory("GoogleCloudFunctionsGenOne").setFolderPath("Google Functions").build())
+                    .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
+                    .build();
+
+    StepInfo googleFunctionGenOneRollback =
+            StepInfo.newBuilder()
+                    .setName("Google Function Rollback")
+                    .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK)
+                    .setStepMetaData(
+                            StepMetaData.newBuilder().addCategory("GoogleCloudFunctionsGenOne").setFolderPath("Google Functions").build())
+                    .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
+                    .build();
 
     StepInfo awsLambdaDeploy = StepInfo.newBuilder()
                                    .setName("Aws Lambda Deploy")
@@ -1427,6 +1444,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(terraformCloudRollback);
     stepInfos.add(awsLambdaRollback);
     stepInfos.add(tasRouteMapping);
+    stepInfos.add(googleFunctionGenOneDeploy);
+    stepInfos.add(googleFunctionGenOneRollback);
+
     return stepInfos;
   }
 }
