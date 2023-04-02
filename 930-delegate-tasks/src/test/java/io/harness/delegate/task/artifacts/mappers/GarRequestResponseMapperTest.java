@@ -18,6 +18,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
 import io.harness.rule.Owner;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -30,12 +32,16 @@ public class GarRequestResponseMapperTest {
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void toGarResponseTest() {
-    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().build();
-    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().shaV2(SHA_V2).sha(SHA).build();
-    GarDelegateResponse garDelegateResponse =
-        GarRequestResponseMapper.toGarResponse(buildDetailsInternal, null, artifactMetaInfo);
+    Map<String, String> label = new HashMap<>();
+    label.put("a", "b");
+    label.put("c", "d");
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().shaV2(SHA_V2).sha(SHA).labels(label).build();
+    BuildDetailsInternal buildDetailsInternal =
+        BuildDetailsInternal.builder().artifactMetaInfo(artifactMetaInfo).build();
+    GarDelegateResponse garDelegateResponse = GarRequestResponseMapper.toGarResponse(buildDetailsInternal, null);
     assertThat(garDelegateResponse.getBuildDetails().getMetadata().get(ArtifactMetadataKeys.SHA)).isEqualTo(SHA);
     assertThat(garDelegateResponse.getBuildDetails().getMetadata().get(ArtifactMetadataKeys.SHAV2)).isEqualTo(SHA_V2);
+    assertThat(garDelegateResponse.getLabel()).isEqualTo(label);
   }
 
   @Test
@@ -43,7 +49,7 @@ public class GarRequestResponseMapperTest {
   @Category(UnitTests.class)
   public void toGarResponseTest_withoutMetaInfo() {
     BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number(NUMBER).build();
-    GarDelegateResponse garDelegateResponse = GarRequestResponseMapper.toGarResponse(buildDetailsInternal, null, null);
+    GarDelegateResponse garDelegateResponse = GarRequestResponseMapper.toGarResponse(buildDetailsInternal, null);
     assertThat(garDelegateResponse.getVersion()).isEqualTo(NUMBER);
   }
 }

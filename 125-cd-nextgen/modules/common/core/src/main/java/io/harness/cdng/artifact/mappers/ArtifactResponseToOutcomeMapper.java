@@ -380,6 +380,7 @@ public class ArtifactResponseToOutcomeMapper {
         .image(getImageValue(garDelegateResponse))
         .metadata(useDelegateResponse ? getMetadata(garDelegateResponse) : null)
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(googleArtifactRegistryConfig)))
+        .label(getLabels(garDelegateResponse))
         .repositoryType(googleArtifactRegistryConfig.getGoogleArtifactRegistryType().getValue())
         .build();
   }
@@ -662,6 +663,13 @@ public class ArtifactResponseToOutcomeMapper {
   }
 
   private Map<String, String> getLabels(DockerArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || EmptyPredicate.isEmpty(artifactDelegateResponse.getLabel())) {
+      return Collections.emptyMap();
+    }
+    return artifactDelegateResponse.getLabel();
+  }
+
+  private Map<String, String> getLabels(GarDelegateResponse artifactDelegateResponse) {
     if (artifactDelegateResponse == null || artifactDelegateResponse.getLabel() == null) {
       return Collections.emptyMap();
     }

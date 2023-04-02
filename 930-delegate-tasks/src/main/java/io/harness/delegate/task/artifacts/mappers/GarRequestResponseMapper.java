@@ -15,6 +15,7 @@ import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -29,16 +30,16 @@ public class GarRequestResponseMapper {
         .maxBuilds(request.getMaxBuilds())
         .build();
   }
+
   public static GarDelegateResponse toGarResponse(
       BuildDetailsInternal buildDetailsInternal, GarDelegateRequest request) {
-    return toGarResponse(buildDetailsInternal, request, null);
-  }
-  public static GarDelegateResponse toGarResponse(
-      BuildDetailsInternal buildDetailsInternal, GarDelegateRequest request, ArtifactMetaInfo artifactMetaInfo) {
     ArtifactBuildDetailsNG artifactBuildDetailsNG;
+    Map<String, String> label = null;
+    ArtifactMetaInfo artifactMetaInfo = buildDetailsInternal.getArtifactMetaInfo();
     if (artifactMetaInfo != null) {
       artifactBuildDetailsNG = ArtifactBuildDetailsMapper.toBuildDetailsNG(
           buildDetailsInternal, artifactMetaInfo.getSha(), artifactMetaInfo.getShaV2());
+      label = artifactMetaInfo.getLabels();
     } else {
       artifactBuildDetailsNG = ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal);
     }
@@ -46,6 +47,7 @@ public class GarRequestResponseMapper {
         .buildDetails(artifactBuildDetailsNG)
         .sourceType(ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY)
         .version(buildDetailsInternal.getNumber())
+        .label(label)
         .build();
   }
 }

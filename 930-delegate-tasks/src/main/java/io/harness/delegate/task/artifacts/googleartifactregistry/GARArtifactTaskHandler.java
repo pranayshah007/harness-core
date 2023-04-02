@@ -18,7 +18,6 @@ import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
 import io.harness.artifacts.gar.service.GarApiService;
-import io.harness.beans.ArtifactMetaInfo;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
@@ -58,7 +57,6 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(GarDelegateRequest attributesRequest) {
     BuildDetailsInternal lastSuccessfulBuild;
     GarInternalConfig garInternalConfig;
-    ArtifactMetaInfo artifactMetaInfo;
     try {
       garInternalConfig = getGarInternalConfig(attributesRequest);
     } catch (IOException e) {
@@ -70,12 +68,10 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
       String versionRegex =
           isRegex(attributesRequest) ? attributesRequest.getVersionRegex() : attributesRequest.getVersion();
       lastSuccessfulBuild = garApiService.getLastSuccessfulBuildFromRegex(garInternalConfig, versionRegex);
-      artifactMetaInfo = garApiService.getArtifactMetaInfo(garInternalConfig, lastSuccessfulBuild.getNumber());
     } else {
       lastSuccessfulBuild = garApiService.verifyBuildNumber(garInternalConfig, attributesRequest.getVersion());
-      artifactMetaInfo = garApiService.getArtifactMetaInfo(garInternalConfig, attributesRequest.getVersion());
     }
-    GarDelegateResponse garDelegateResponse = toGarResponse(lastSuccessfulBuild, attributesRequest, artifactMetaInfo);
+    GarDelegateResponse garDelegateResponse = toGarResponse(lastSuccessfulBuild, attributesRequest);
     return getSuccessTaskExecutionResponse(Collections.singletonList(garDelegateResponse));
   }
 
