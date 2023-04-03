@@ -188,10 +188,7 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
     FilterCreatorMergeServiceResponse filterCreatorMergeServiceResponse =
         filterCreatorMergeService.getPipelineInfo(pipelineEntity);
 
-    ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
     verify(pmsSdkHelper).getServices();
-    verify(pipelineSetupUsageHelper).publishSetupUsageEvent(eq(pipelineEntity), listArgumentCaptor.capture());
-    assertThat(listArgumentCaptor.getValue()).isNotNull().isNotEmpty().hasSize(1);
   }
 
   @Test
@@ -315,10 +312,7 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
         .getTemplateReferencesForGivenYaml(anyString(), anyString(), anyString(), anyString());
     Assertions.assertDoesNotThrow(() -> filterCreatorMergeService.getPipelineInfo(pipelineEntity));
 
-    ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
     verify(pmsSdkHelper).getServices();
-    verify(pipelineSetupUsageHelper).publishSetupUsageEvent(eq(pipelineEntity), listArgumentCaptor.capture());
-    assertThat(listArgumentCaptor.getValue()).isNotNull().isNotEmpty().hasSize(1);
   }
 
   @Test

@@ -25,4 +25,5 @@ message EntityDetailProtoDTO {
     InfraDefinitionReferenceProtoDTO infraDefRef = 6;
   }
   string name = 4;
+  string branch = 7;
 }

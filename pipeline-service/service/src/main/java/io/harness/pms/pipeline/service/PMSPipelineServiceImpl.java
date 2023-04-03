@@ -141,7 +141,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PipelineValidationService pipelineValidationService;
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
-
   private final PipelineSetupUsageHelper pipelineSetupUsageHelper;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
@@ -185,10 +184,14 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
 
+      // GIT RESPONSE BRANCH
+      ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
+      String branch = gitMetaData.getBranchName();
+
       // PUBLISHING SETUP USAGES
       if (doPublishSetupUsages(createdEntity)) {
         pipelineSetupUsageHelper.publishSetupUsageEvent(
-            pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities());
+            pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
       }
 
       try {
@@ -357,10 +360,14 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
         pipelineEntity = pipelineEntityWithReferences.getPipelineEntity();
 
+        // GIT RESPONSE BRANCH
+        ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
+        String branch = gitMetaData.getBranchName();
+
         // POPULATE GIT INFO FOR REFERRED ENTITIES.
         if (doPublishSetupUsages(pipelineEntity)) {
           pipelineSetupUsageHelper.publishSetupUsageEvent(
-              pipelineEntity, pipelineEntityWithReferences.getReferredEntities());
+              pipelineEntity, pipelineEntityWithReferences.getReferredEntities(), branch);
         }
 
       } catch (IOException e) {
@@ -606,10 +613,14 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         updatedResult = pmsPipelineRepository.updatePipelineYaml(entityWithUpdatedInfo);
       }
 
+      // GIT RESPONSE BRANCH
+      ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
+      String branch = gitMetaData.getBranchName();
+
       // POPULATE GIT INFO FOR REFERRED ENTITIES.
       if (doPublishSetupUsages(pipelineEntity)) {
         pipelineSetupUsageHelper.publishSetupUsageEvent(
-            pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities());
+            pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
       }
 
       if (updatedResult == null) {
@@ -634,11 +645,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       throw new InvalidRequestException(String.format(
           "Error while updating pipeline [%s]: %s", pipelineEntity.getIdentifier(), ExceptionUtils.getMessage(e)));
     }
-  }
-
-  public void publishSetupUsageEntities(PipelineEntity pipelineEntity, List<EntityDetailProtoDTO> referredEntities) {
-    // GET SCM GIT METADATA RESPONSE.
-    ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
   }
 
   @Override
@@ -778,10 +784,14 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       PipelineEntity savedPipelineEntity =
           pmsPipelineRepository.savePipelineEntityForImportedYAML(entityWithUpdatedInfo);
 
+      // GIT RESPONSE BRANCH
+      ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
+      String branch = gitMetaData.getBranchName();
+
       // POPULATE GIT INFO FOR REFERRED ENTITIES.
       if (doPublishSetupUsages(pipelineEntity)) {
         pipelineSetupUsageHelper.publishSetupUsageEvent(
-            pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities());
+            pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
       }
 
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(savedPipelineEntity, CREATING_PIPELINE);
