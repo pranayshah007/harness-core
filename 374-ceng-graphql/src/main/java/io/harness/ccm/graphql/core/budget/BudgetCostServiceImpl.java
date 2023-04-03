@@ -33,6 +33,7 @@ import io.harness.ccm.commons.entities.budget.BudgetCostData;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.ccm.graphql.core.perspectives.PerspectiveTimeSeriesHelper;
 import io.harness.ccm.views.dto.TimeSeriesDataPoints;
+import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
@@ -438,8 +439,9 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     filters.add(viewsQueryHelper.getViewMetadataFilter(perspectiveId));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(startTime, AFTER));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
-    return viewsBillingService.getActualCostGroupedByPeriod(filters, groupBy,
-        viewsQueryHelper.getPerspectiveTotalCostAggregation(),
-        viewsQueryHelper.buildQueryParams(accountId, false, false, false, false, true));
+    ViewQueryParams viewQueryParams =
+        viewsQueryHelper.buildQueryParamsWithSkipGroupBy(viewsQueryHelper.buildQueryParams(accountId, false), true);
+    return viewsBillingService.getActualCostGroupedByPeriod(
+        filters, groupBy, viewsQueryHelper.getPerspectiveTotalCostAggregation(), viewQueryParams);
   }
 }
