@@ -19,11 +19,15 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.FileChange;
 import io.harness.gitsync.FullSyncChangeSet;
 import io.harness.gitsync.ScopeDetails;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.entityInfo.AbstractGitSdkEntityHandler;
 import io.harness.gitsync.entityInfo.GitSdkEntityHandlerInterface;
+import io.harness.gitsync.helpers.GitContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.grpc.utils.StringValueUtils;
@@ -56,13 +60,16 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   private final PMSPipelineService pmsPipelineService;
   private final PMSPipelineServiceHelper pipelineServiceHelper;
   private final PipelineFullGitSyncHandler pipelineFullGitSyncHandler;
+  private final GitExperienceSettingsHelper gitExperienceSettingsHelper;
 
   @Inject
   public PipelineEntityGitSyncHelper(PMSPipelineService pmsPipelineService,
-      PMSPipelineServiceHelper pipelineServiceHelper, PipelineFullGitSyncHandler pipelineFullGitSyncHandler) {
+      PMSPipelineServiceHelper pipelineServiceHelper, PipelineFullGitSyncHandler pipelineFullGitSyncHandler,
+      GitExperienceSettingsHelper gitExperienceSettingsHelper) {
     this.pmsPipelineService = pmsPipelineService;
     this.pipelineServiceHelper = pipelineServiceHelper;
     this.pipelineFullGitSyncHandler = pipelineFullGitSyncHandler;
+    this.gitExperienceSettingsHelper = gitExperienceSettingsHelper;
   }
 
   @Override
@@ -197,5 +204,19 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
           StringValueUtils.getStringFromStringValue(identifierRef.getIdentifier())));
     }
     return pipelineEntity.get().getYaml();
+  }
+
+  public void enforceGitExperienceIfApplicable(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, StoreType storeType) {
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+
+    if (gitExperienceSettingsHelper.isGitExperienceEnforcedInSettings(
+            accountIdentifier, orgIdentifier, projectIdentifier)
+        && StoreType.INLINE.equals(gitEntityInfo.getStoreType())) {
+      throw new InvalidRequestException(String.format(
+          "Git Experience is enforced for the current scope with accountId: %s, orgIdentifier: %s and projIdentifier: %s",
+          accountIdentifier, orgIdentifier, projectIdentifier));
+    }
   }
 }
