@@ -91,7 +91,7 @@ public class SubscriptionResource {
   private static final String CUSTOMER_ID = "customerId";
   @Inject private SubscriptionService subscriptionService;
 
-  @GET
+  @POST
   @Path("/recommendation-rc")
   @ApiOperation(value = "Retrieves subscription recommendation", nickname = "retrieveRecommendation-rc")
   @Operation(operationId = "retrieveRecommendation-rc", summary = "Retrieves subscription recommendation",
