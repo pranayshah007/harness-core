@@ -33,6 +33,7 @@ import io.dropwizard.lifecycle.Managed;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.RedissonSpinLock;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 
@@ -61,12 +62,20 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
   public AcquiredLock acquireLock(String name, Duration timeout) {
     try {
       name = getLockName(name);
-      RLock lock = client.getLock(name);
-      boolean locked = lock.tryLock(0, timeout.toMillis(), TimeUnit.MILLISECONDS);
+      boolean locked = false;
+      RLock lock = null;
+      if (client.getConfig().isSentinelConfig()) {
+        log.info("Acquiring RedissonSpinLock for sentinel mode");
+        lock = client.getSpinLock(name);
+      } else {
+        lock = client.getLock(name);
+      }
+      locked = lock.tryLock(0, timeout.toMillis(), TimeUnit.MILLISECONDS);
       if (locked) {
         log.debug("Lock acquired on {} for timeout {}", name, timeout);
         return RedisAcquiredLock.builder().lock(lock).build();
       }
+
     } catch (Exception ex) {
       throw new UnexpectedException(format(ERROR_MESSAGE, name), ex);
     }
