@@ -123,7 +123,6 @@ import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
 import io.harness.ng.core.handler.NGVaultUnsetRenewalHandler;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
-import io.harness.ng.core.migration.NgLocalToGlobalSecretsMigrationJob;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
 import io.harness.ng.core.remote.UserGroupRestrictionUsageImpl;
@@ -834,7 +833,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
-    environment.lifecycle().manage(injector.getInstance(NgLocalToGlobalSecretsMigrationJob.class));
     createConsumerThreadsToListenToEvents(environment, injector);
   }
 
