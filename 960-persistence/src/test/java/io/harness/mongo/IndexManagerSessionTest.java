@@ -44,7 +44,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testMongoBehaviorCreateIndexWithExistingMatchingFields() {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
@@ -69,7 +69,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testMongoBehaviorCreateIndexWithExistingNonMatchingFields() {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
@@ -92,7 +92,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testMongoRebuiltIndexInTime() {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
@@ -132,7 +132,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testIndexCreators() {
     Morphia morphia = new Morphia();
     morphia.map(TestIndexEntity.class);
@@ -167,7 +167,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testCreateTwoFieldIndexesEntity() {
     Morphia morphia = new Morphia();
     morphia.map(TestTwoFieldIndexesEntity.class);
@@ -183,7 +183,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testUniqueFlagIndexEntity() {
     Morphia morphia = new Morphia();
     morphia.map(TestUniqueFlagIndexEntity.class);
@@ -199,7 +199,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testTwoSameFieldsEntity() {
     Morphia morphia = new Morphia();
     morphia.map(TestTwoSameFieldsEntity.class);

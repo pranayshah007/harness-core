@@ -203,7 +203,7 @@ public class ApplicationManifestServiceTest extends WingsBaseTest {
   @Test(expected = WingsException.class)
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testDuplicateManifestFileNames() {
     when(serviceResourceService.exist(anyString(), anyString())).thenReturn(true);
 
@@ -690,7 +690,7 @@ public class ApplicationManifestServiceTest extends WingsBaseTest {
   @Test(expected = WingsException.class)
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testDuplicateManifestFileName() {
     persistence.ensureIndexForTesting(ManifestFile.class);
     upsertManifestFile("abc/def", "abc/def");

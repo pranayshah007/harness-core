@@ -37,7 +37,7 @@ public class SweepingOutputServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = PRASHANT, intermittent = true)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldGetInstanceId() {
     persistence.ensureIndexForTesting(SweepingOutputInstance.class);
 

@@ -66,7 +66,7 @@ public class EngineExpressionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   @Ignore("Move to PmsServiceImpl Test")
@@ -78,7 +78,7 @@ public class EngineExpressionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   @Ignore("Move to PmsServiceImpl Test")
@@ -90,7 +90,7 @@ public class EngineExpressionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   @Ignore("Move to PmsServiceImpl Test")

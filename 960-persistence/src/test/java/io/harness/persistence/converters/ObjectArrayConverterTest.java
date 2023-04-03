@@ -26,7 +26,7 @@ public class ObjectArrayConverterTest extends PersistenceTestBase {
   @Inject private HPersistence persistence;
 
   @Test
-  @RealMongo
+  
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void testConverter() {
@@ -43,7 +43,7 @@ public class ObjectArrayConverterTest extends PersistenceTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void testConverterForNull() {
@@ -57,7 +57,7 @@ public class ObjectArrayConverterTest extends PersistenceTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void testConverterForEmpty() {

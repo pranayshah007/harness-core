@@ -89,7 +89,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   @Spy @Inject @InjectMocks PlanExecutionService planExecutionService;
 
   @Test
-  @RealMongo
+  
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void shouldTestSave() {
@@ -99,7 +99,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void shouldTestFindAllByPlanExecutionIdIn() {
@@ -116,7 +116,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void shouldTestCalculateStatusExcluding() {
@@ -141,7 +141,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void shouldTestFindAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps() {
@@ -179,7 +179,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestUpdateStatusWithoutOps() {
@@ -189,7 +189,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestUpdateStatusWithOps() {
@@ -200,7 +200,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestUpdateStatusForcefulReturningNull() {
@@ -214,7 +214,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestUpdateStatusForceful() {
@@ -229,7 +229,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestGet() {
@@ -240,7 +240,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void shouldFetchPlanExecutionsByStatus() {
@@ -292,7 +292,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestOnNodeStatusUpdate() {
@@ -319,7 +319,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestFindPrevUnTerminatedPlanExecutionsByExecutionTag() {
@@ -354,7 +354,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestCalculateStatus() {
@@ -367,7 +367,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestUpdateCalculatedStatus() {
@@ -384,7 +384,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestFindByStatusWithProjections() {

@@ -66,7 +66,7 @@ public class WorkflowResumePropagatorTest extends WingsBaseTest {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void shouldTestHandleStatusUpdateForWorkflowRunning() {
@@ -88,7 +88,7 @@ public class WorkflowResumePropagatorTest extends WingsBaseTest {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = POOJA, intermittent = true)
   @Category(UnitTests.class)
   public void shouldTestHandleStatusUpdateForWorkflowPaused() {

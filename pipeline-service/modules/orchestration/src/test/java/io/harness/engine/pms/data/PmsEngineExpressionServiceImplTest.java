@@ -50,7 +50,7 @@ public class PmsEngineExpressionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void shouldTestRenderExpressionOutcome() {
@@ -61,7 +61,7 @@ public class PmsEngineExpressionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void shouldTestRenderExpressionOutput() {
@@ -72,7 +72,7 @@ public class PmsEngineExpressionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void shouldTestEvaluateExpression() {

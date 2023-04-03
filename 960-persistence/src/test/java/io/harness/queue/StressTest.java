@@ -41,7 +41,7 @@ public class StressTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(StressTests.class)
-  @RealMongo
+  
   @Ignore("This is stress test we should ignore it to allow for simple run of unit tests")
   public void topicPerformance() throws IOException {
     assertThatCode(() -> {
@@ -85,7 +85,7 @@ public class StressTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(StressTests.class)
-  @RealMongo
+  
   @Ignore("This is stress test we should ignore it to allow for simple run of unit tests")
   public void noTopicPerformance() throws IOException {
     assertThatCode(() -> {

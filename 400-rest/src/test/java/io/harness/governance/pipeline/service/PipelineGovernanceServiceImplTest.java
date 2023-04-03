@@ -90,7 +90,7 @@ public class PipelineGovernanceServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = ANKIT)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testAddAndUpdate() {
     PipelineGovernanceConfig config = new PipelineGovernanceConfig(
         null, SOME_ACCOUNT_ID, "name", "description", Collections.emptyList(), Collections.emptyList(), true);

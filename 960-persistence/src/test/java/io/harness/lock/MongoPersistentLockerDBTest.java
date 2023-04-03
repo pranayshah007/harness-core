@@ -52,7 +52,7 @@ public class MongoPersistentLockerDBTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testAcquireLockDoLock() {
     String uuid = generateUuid();
     try (AcquiredLock lock = mongoPersistentLocker.acquireLock(uuid, Duration.ofSeconds(1))) {
@@ -78,7 +78,7 @@ public class MongoPersistentLockerDBTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testAcquireEphemeralLock() {
     String uuid = generateUuid();
     try (AcquiredLock lock = mongoPersistentLocker.acquireEphemeralLock(uuid, Duration.ofSeconds(1))) {
@@ -93,7 +93,7 @@ public class MongoPersistentLockerDBTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testConcurrentAcquireEphemeralLock() {
     String uuid = generateUuid();
 
@@ -108,7 +108,7 @@ public class MongoPersistentLockerDBTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testAcquireLockAfterDestroy() {
     assertThatCode(() -> {
       String uuid = generateUuid();
@@ -126,7 +126,7 @@ public class MongoPersistentLockerDBTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testTryToAcquireEphemeralLock() {
     assertThatCode(() -> {
       String uuid = generateUuid();
@@ -139,7 +139,7 @@ public class MongoPersistentLockerDBTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testTryToAcquireLock() {
     String uuid = generateUuid();
     try (AcquiredLock outer = mongoPersistentLocker.tryToAcquireLock(AcquiredLock.class, uuid, Duration.ofSeconds(1))) {
@@ -154,7 +154,7 @@ public class MongoPersistentLockerDBTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   @HarnessAlwaysRun
   public void testAcquireAfterTimeout() throws InterruptedException {
     assumeThat("The underlining code respects lock after timeout.").isEqualTo("true");

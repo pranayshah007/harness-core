@@ -75,7 +75,7 @@ public class OrchestrationEndEventHandlerTest extends OrchestrationVisualization
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   @Ignore("Ignoring till injection issue is fixed")
   public void shouldUpdateGraphWithStatusAndEndTs() {
     PlanExecution planExecution = PlanExecution.builder()

@@ -58,7 +58,7 @@ public class SpringPersistenceWrapperTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testDeleteWaitInstancesWithinBatchSize() {
     Reflect.on(persistenceWrapper).set("timeoutEngine", timeoutEngine);
     Reflect.on(persistenceWrapper).set("mongoTemplate", mongoTemplateMock);
@@ -87,7 +87,7 @@ public class SpringPersistenceWrapperTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testSave() {
     String waitInstanceId = generateUuid();
     String correlationId = generateUuid();
@@ -107,7 +107,7 @@ public class SpringPersistenceWrapperTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testFetchForProcessingWaitInstance() {
     String waitInstanceId = generateUuid();
     String correlationId = generateUuid();
@@ -132,7 +132,7 @@ public class SpringPersistenceWrapperTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testModifyAndFetchWaitInstance() {
     String waitInstanceId = generateUuid();
     String correlationId = generateUuid();
@@ -153,7 +153,7 @@ public class SpringPersistenceWrapperTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testModifyAndFetchWaitInstanceForNoExistingResponse() {
     String waitInstanceId = generateUuid();
     String correlationId = generateUuid();
@@ -174,7 +174,7 @@ public class SpringPersistenceWrapperTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testModifyAndFetchWaitInstanceForExistingResponse() {
     String waitInstanceId = generateUuid();
     String correlationId = generateUuid();
@@ -202,7 +202,7 @@ public class SpringPersistenceWrapperTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testFetchWaitInstances() {
     String waitInstanceId1 = generateUuid();
     String waitInstanceId2 = generateUuid();
@@ -238,7 +238,7 @@ public class SpringPersistenceWrapperTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldTestFetchNotifyResponseKeys() {
     long now = System.currentTimeMillis();
     long queryTime = now - Duration.ofSeconds(10).toMillis();

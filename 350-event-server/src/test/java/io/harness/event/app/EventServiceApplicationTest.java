@@ -68,7 +68,7 @@ public class EventServiceApplicationTest extends EventServerTestBase {
   @Test
   @Owner(developers = AVMOHAN, intermittent = true)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldEventuallyPersistPublishedEvent() throws Exception {
     hPersistence.save(
         Account.Builder.anAccount().withUuid(DEFAULT_ACCOUNT_ID).withAccountKey(DEFAULT_ACCOUNT_SECRET).build());

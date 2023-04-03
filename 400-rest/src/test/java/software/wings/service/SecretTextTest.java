@@ -582,7 +582,7 @@ public class SecretTextTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void updateSecretRef() {
     String secretName1 = "s1" + generateUuid();
     String secretValue1 = "v2";
@@ -1298,7 +1298,7 @@ public class SecretTextTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void multipleFileRefrence() throws IOException {
     final long seed = System.currentTimeMillis();
     log.info("seed: " + seed);
@@ -1396,7 +1396,7 @@ public class SecretTextTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void deleteSecretFile() throws IOException, InterruptedException {
     final long seed = System.currentTimeMillis();
     log.info("seed: " + seed);
@@ -1490,7 +1490,7 @@ public class SecretTextTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void deleteEncryptedConfigFile() throws IOException, InterruptedException {
     final long seed = System.currentTimeMillis();
     log.info("seed: " + seed);
@@ -1558,7 +1558,7 @@ public class SecretTextTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void serviceVariableSearchTags() throws InterruptedException {
     String secretName = "name1";
     String secretValue = generateUuid();
@@ -1723,7 +1723,7 @@ public class SecretTextTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void serviceVariableTemplateSearchTags() {
     String secretName = "name1";
     String secretValue = generateUuid();
@@ -1910,7 +1910,7 @@ public class SecretTextTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void serviceVariableEnvironmentSearchTags() {
     String secretName = "name1";
     String secretValue = generateUuid();

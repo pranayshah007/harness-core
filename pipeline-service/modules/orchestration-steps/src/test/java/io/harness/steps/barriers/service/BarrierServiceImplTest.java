@@ -69,7 +69,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldSaveBarrierNode() {
     String uuid = generateUuid();
     String planExecutionId = generateUuid();
@@ -84,7 +84,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldGetSavedBarrierNode() {
     String uuid = generateUuid();
     String planExecutionId = generateUuid();
@@ -101,7 +101,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldSaveAllBarrierNode() {
     String identifier = "identifier";
     String planExecutionId = generateUuid();
@@ -127,7 +127,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldThrowInvalidRequestException() {
     String uuid = generateUuid();
     assertThatThrownBy(() -> barrierService.get(uuid))
@@ -138,7 +138,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldFindByIdentifier() {
     String identifier = generateUuid();
     String planExecutionId = generateUuid();
@@ -160,7 +160,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testDeleteBarrierInstancesForNonExistentPlanExecution() {
     String identifier = generateUuid();
     String planExecutionId = generateUuid();
@@ -190,7 +190,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testDeleteBarrierInstancesForPartialPlanExecutionIdsDelete() {
     String identifier1 = generateUuid();
     String planExecutionId1 = generateUuid();
@@ -249,7 +249,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldUpdateState() {
     String uuid = generateUuid();
     String planExecutionId = generateUuid();
@@ -269,7 +269,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldFindByStageIdentifierAndPlanExecutionIdAnsStateIn() {
     String planExecutionId = generateUuid();
     String stageIdentifier = generateUuid();
@@ -380,7 +380,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldFindByPlanNodeIdAndPlanExecutionId() {
     String identifier = "identifier";
     String planExecutionId = generateUuid();
@@ -407,7 +407,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldUpdatePositionForStep() {
     String identifier = generateUuid();
     String planExecutionId = generateUuid();
@@ -442,7 +442,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldUpdatePositionForStepGroup() {
     String identifier = generateUuid();
     String planExecutionId = generateUuid();
@@ -477,7 +477,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldUpdatePositionForStage() {
     String identifier = generateUuid();
     String planExecutionId = generateUuid();
@@ -512,7 +512,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldTestUpdateStanding() {
     BarrierExecutionInstance barrierExecutionInstance = obtainBarrierExecutionInstance();
     barrierService.save(barrierExecutionInstance);
@@ -530,7 +530,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldTestUpdateEndure() {
     BarrierExecutionInstance barrierExecutionInstance = obtainBarrierExecutionInstance();
     barrierService.save(barrierExecutionInstance);
@@ -548,7 +548,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldTestUpdateTimedOut() {
     BarrierExecutionInstance barrierExecutionInstance = obtainBarrierExecutionInstance();
     barrierService.save(barrierExecutionInstance);

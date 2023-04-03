@@ -39,7 +39,7 @@ public class PlanExecutionStatusUpdateEventHandlerTest extends OrchestrationVisu
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldUpdateGraphWithStatusAndEndTs() {
     PlanExecution planExecution = PlanExecution.builder()
                                       .uuid(generateUuid())

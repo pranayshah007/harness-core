@@ -96,7 +96,7 @@ public class PmsExecutionSummaryReadHelperTest extends OrchestrationVisualizatio
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testFindCount() {

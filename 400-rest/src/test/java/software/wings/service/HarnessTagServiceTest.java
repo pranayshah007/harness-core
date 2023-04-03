@@ -170,7 +170,7 @@ public class HarnessTagServiceTest extends WingsBaseTest {
 
   @Test
   @Owner(developers = PUNEET)
-  @RealMongo
+  
   @Category(UnitTests.class)
   public void updateTest() {
     harnessTagService.create(colorTag);
@@ -517,7 +517,7 @@ public class HarnessTagServiceTest extends WingsBaseTest {
 
   @Test
   @Owner(developers = ANSHUL)
-  @RealMongo
+  
   @Category(UnitTests.class)
   public void testUpdateTagAllowedValues() {
     harnessTagService.create(colorTag);
