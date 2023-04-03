@@ -17,7 +17,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.EntityDetail;
-import io.harness.ng.core.dto.GitEntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageQueryFilterHelper;
 import io.harness.ng.core.entitysetupusage.dto.EntityReferencesDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageBatchDTO;
