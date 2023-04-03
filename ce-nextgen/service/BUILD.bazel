@@ -10,6 +10,7 @@ load("//:tools/bazel/macros.bzl", "run_analysis")
 HarnessTeam = "CE"
 
 shared_dependencies = [
+    "@maven//:com_fasterxml_jackson_core_jackson_databind",
     "@ce-nextgen//:com_azure_azure_core",
     "@ce-nextgen//:com_azure_azure_core_management",
     "@ce-nextgen//:com_azure_azure_storage_blob",
