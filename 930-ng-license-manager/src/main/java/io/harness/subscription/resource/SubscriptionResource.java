@@ -93,8 +93,8 @@ public class SubscriptionResource {
 
   @GET
   @Path("/recommendation-rc")
-  @ApiOperation(value = "Retrieves subscription recommendation", nickname = "retrieveRecommendation")
-  @Operation(operationId = "retrieveRecommendation", summary = "Retrieves subscription recommendation",
+  @ApiOperation(value = "Retrieves subscription recommendation", nickname = "retrieveRecommendation-rc")
+  @Operation(operationId = "retrieveRecommendation-rc", summary = "Retrieves subscription recommendation",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
