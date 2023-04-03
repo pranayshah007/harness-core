@@ -23,5 +23,5 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("sscaOrchestrationStepOutcome")
 @JsonTypeName("sscaOrchestrationStepOutcome")
 public class CdSscaOrchestrationStepOutcome implements Outcome {
-  PublishedSbomArtifact artifact;
+  PublishedSbomArtifact sbomArtifact;
 }

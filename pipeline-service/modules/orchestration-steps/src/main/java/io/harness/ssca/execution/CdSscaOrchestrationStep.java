@@ -40,31 +40,29 @@ public class CdSscaOrchestrationStep extends AbstractContainerStep {
     }
 
     String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    SBOMArtifactResponse response = getSbomArtifactResponse(
-        ambiance, stageLevel.get().getIdentifier(), stepParameters.getIdentifier(), stepExecutionId);
+    SBOMArtifactResponse response = getSbomArtifactResponse(ambiance, stepExecutionId);
 
     if (response == null) {
       return null;
     }
 
     return CdSscaOrchestrationStepOutcome.builder()
-        .artifact(PublishedSbomArtifact.builder()
-                      .id(response.getArtifact().getId())
-                      .url(response.getArtifact().getUrl())
-                      .imageName(response.getArtifact().getName())
-                      .isSbomAttested(response.getAttestation().isAttested())
-                      .sbomName(response.getSbom().getName())
-                      .sbomUrl(response.getSbom().getUrl())
-                      .stepExecutionId(stepExecutionId)
-                      .build())
+        .sbomArtifact(PublishedSbomArtifact.builder()
+                          .id(response.getArtifact().getId())
+                          .url(response.getArtifact().getUrl())
+                          .imageName(response.getArtifact().getName())
+                          .isSbomAttested(response.getAttestation().isAttested())
+                          .sbomName(response.getSbom().getName())
+                          .sbomUrl(response.getSbom().getUrl())
+                          .stepExecutionId(stepExecutionId)
+                          .build())
         .build();
   }
 
-  private SBOMArtifactResponse getSbomArtifactResponse(
-      Ambiance ambiance, String stageIdentifier, String stepIdentifier, String stepExecutionId) {
-    Call<SBOMArtifactResponse> call = sscaServiceClient.getArtifactInfo(stepExecutionId, stageIdentifier,
-        stepIdentifier, AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-        AmbianceUtils.getProjectIdentifier(ambiance));
+  private SBOMArtifactResponse getSbomArtifactResponse(Ambiance ambiance, String stepExecutionId) {
+    Call<SBOMArtifactResponse> call =
+        sscaServiceClient.getArtifactInfoV2(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
 
     try {
       Response<SBOMArtifactResponse> response = call.execute();
