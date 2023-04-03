@@ -14,6 +14,7 @@ import com.google.inject.Inject;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,17 @@ public class IpAllowlistApiImpl implements IpAllowlistApi {
   @Override
   public Response updateIpAllowlistConfig(
       String ipConfigIdentifier, @Valid IPAllowlistConfigRequest body, String harnessAccount) {
+    return null;
+  }
+
+  @Override
+  public Response validateIpAddressAllowlistedOrNot(
+      @NotNull String ipAddress, String harnessAccount, String ipAddressBlock) {
+    return null;
+  }
+
+  @Override
+  public Response validateUniqueIpAllowlistConfigIdentifier(String ipConfigIdentifier, String harnessAccount) {
     return null;
   }
 }
