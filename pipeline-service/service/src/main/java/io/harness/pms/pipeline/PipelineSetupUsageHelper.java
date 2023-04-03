@@ -145,6 +145,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
                 pipelineEntity.getIdentifier()))
             .setType(EntityTypeProtoEnum.PIPELINES)
             .setName(pipelineEntity.getName())
+            .setBranch(branch)
             .build();
 
     Map<String, List<EntityDetailProtoDTO>> referredEntityTypeToReferredEntities = new HashMap<>();
