@@ -65,7 +65,6 @@ import io.harness.yaml.core.variables.StringNGVariable;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import software.wings.api.DeploymentType;
-import software.wings.beans.BasicOrchestrationWorkflow;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.FailureStrategy;
 import software.wings.beans.GraphNode;
@@ -546,7 +545,8 @@ public abstract class WorkflowHandler {
   }
 
   private DeploymentType getDeploymentTypeFromPhase(Workflow workflow) {
-    BasicOrchestrationWorkflow orchestrationWorkflow = (BasicOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
     if (orchestrationWorkflow == null) {
       return null;
     }
