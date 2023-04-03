@@ -362,4 +362,21 @@ public class AmbianceUtils {
     }
     return null;
   }
+
+  public static boolean isCurrentLevelChildOfStep(Ambiance ambiance, String stepName) {
+    if (isEmpty(ambiance.getLevelsList()) || ambiance.getLevelsCount() == 1) {
+      return false;
+    }
+    List<Level> levels = ambiance.getLevelsList();
+
+    int currentLevelIdx = levels.size() - 1;
+    for (int i = 0; i < currentLevelIdx; i++) {
+      Level level = levels.get(i);
+      if (level.hasStepType() && Objects.equals(stepName, level.getStepType().getType())) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }

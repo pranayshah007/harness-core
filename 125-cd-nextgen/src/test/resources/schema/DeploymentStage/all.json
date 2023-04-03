@@ -1086,6 +1086,9 @@
             "metadata": {
               "type": "string"
             },
+            "provisioner": {
+              "type": "string"
+            },
             "region": {
               "type": "string",
               "minLength": 1
@@ -1441,6 +1444,9 @@
             "metadata": {
               "type": "string"
             },
+            "provisioner": {
+              "type": "string"
+            },
             "region": {
               "type": "string",
               "minLength": 1
@@ -1589,6 +1595,9 @@
               "minLength": 1
             },
             "metadata": {
+              "type": "string"
+            },
+            "provisioner": {
               "type": "string"
             },
             "region": {
@@ -2172,6 +2181,9 @@
             "connectorRef": {
               "type": "string",
               "minLength": 1
+            },
+            "provisioner": {
+              "type": "string"
             },
             "resourceGroup": {
               "type": "string",
@@ -3732,6 +3744,9 @@
             "metadata": {
               "type": "string"
             },
+            "provisioner": {
+              "type": "string"
+            },
             "variables": {
               "type": "array",
               "items": {
@@ -4663,6 +4678,9 @@
             "metadata": {
               "type": "string"
             },
+            "provisioner": {
+              "type": "string"
+            },
             "region": {
               "type": "string",
               "minLength": 1
@@ -5068,6 +5086,9 @@
               "type": "string"
             },
             "metadata": {
+              "type": "string"
+            },
+            "provisioner": {
               "type": "string"
             }
           }
@@ -6444,6 +6465,9 @@
             "project": {
               "type": "string",
               "minLength": 1
+            },
+            "provisioner": {
+              "type": "string"
             },
             "region": {
               "type": "string",
@@ -7871,6 +7895,9 @@
               ],
               "minLength": 1
             },
+            "provisioner": {
+              "type": "string"
+            },
             "releaseName": {
               "type": "string",
               "minLength": 1
@@ -8015,6 +8042,9 @@
               ],
               "minLength": 1
             },
+            "provisioner": {
+              "type": "string"
+            },
             "releaseName": {
               "type": "string",
               "minLength": 1
@@ -8061,6 +8091,9 @@
                 }
               ],
               "minLength": 1
+            },
+            "provisioner": {
+              "type": "string"
             },
             "releaseName": {
               "type": "string",
@@ -8352,6 +8385,9 @@
               ],
               "minLength": 1
             },
+            "provisioner": {
+              "type": "string"
+            },
             "releaseName": {
               "type": "string",
               "minLength": 1
@@ -8459,6 +8495,9 @@
                 }
               ],
               "minLength": 1
+            },
+            "provisioner": {
+              "type": "string"
             },
             "releaseName": {
               "type": "string",
@@ -10476,6 +10515,57 @@
           "required": [
             "credentialsRef",
             "hostFilter",
+            "hostArrayPath"
+          ],
+          "properties": {
+            "credentialsRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "hostArrayPath": {
+              "type": "string"
+            },
+            "hostAttributes": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostFilter": {
+              "$ref": "#/definitions/HostFilter"
+            },
+            "provisioner": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "credentialsRef",
+            "hostFilter",
             "connectorRef"
           ],
           "properties": {
@@ -10500,16 +10590,6 @@
                 }
               ]
             },
-            "dynamicallyProvisioned": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
             "hostAttributes": {
               "oneOf": [
                 {
@@ -10525,6 +10605,9 @@
             },
             "hostFilter": {
               "$ref": "#/definitions/HostFilter"
+            },
+            "provisioner": {
+              "type": "string"
             }
           },
           "additionalProperties": false
@@ -10552,16 +10635,6 @@
                   "type": "string",
                   "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
-                }
-              ]
-            },
-            "dynamicallyProvisioned": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
                 }
               ]
             },
@@ -10593,73 +10666,9 @@
                   "type": "string"
                 }
               ]
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "credentialsRef",
-            "hostFilter",
-            "hostObjectArray"
-          ],
-          "properties": {
-            "credentialsRef": {
+            },
+            "provisioner": {
               "type": "string"
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "dynamicallyProvisioned": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "hostAttributes": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "hostFilter": {
-              "$ref": "#/definitions/HostFilter"
-            },
-            "hostObjectArray": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/JsonNode"
-                },
-                {
-                  "type": "string",
-                  "pattern": "(<\\+.+>.*)",
-                  "minLength": 1
-                }
-              ]
             }
           },
           "additionalProperties": false
@@ -11570,6 +11579,9 @@
               "minLength": 1
             },
             "metadata": {
+              "type": "string"
+            },
+            "provisioner": {
               "type": "string"
             },
             "region": {
@@ -12947,6 +12959,9 @@
               ],
               "minLength": 1
             },
+            "provisioner": {
+              "type": "string"
+            },
             "region": {
               "type": "string",
               "minLength": 1
@@ -12987,6 +13002,9 @@
                 "PublicIP"
               ],
               "minLength": 1
+            },
+            "provisioner": {
+              "type": "string"
             },
             "resourceGroup": {
               "type": "string",
@@ -15401,6 +15419,9 @@
               "type": "string"
             },
             "organization": {
+              "type": "string"
+            },
+            "provisioner": {
               "type": "string"
             },
             "space": {
