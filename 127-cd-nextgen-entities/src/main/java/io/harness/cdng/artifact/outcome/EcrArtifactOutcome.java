@@ -49,7 +49,7 @@ public class EcrArtifactOutcome implements ArtifactOutcome {
   String image;
   /** imagePullSecret for Ecr credentials base encoded.*/
   String imagePullSecret;
-
+  Map<String, String> metadata;
   Map<String, String> label;
   @Override
   public ArtifactSummary getArtifactSummary() {
