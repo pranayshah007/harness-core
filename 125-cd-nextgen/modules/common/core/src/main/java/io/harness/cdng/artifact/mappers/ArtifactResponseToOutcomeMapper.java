@@ -403,6 +403,7 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(ecrArtifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(ecrArtifactConfig)))
         .label(getEcrLabels(ecrArtifactDelegateResponse))
+        .metadata(getMetadata(ecrArtifactDelegateResponse))
         .build();
   }
 
