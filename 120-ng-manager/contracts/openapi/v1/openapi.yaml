@@ -1873,12 +1873,12 @@ components:
           description: 'If true, it will allow all the IPs that are part of the config and block others.'
         tags:
           type: object
-        allowedSourceType:
+        allowed_source_type:
           type: array
           uniqueItems: true
           items:
             $ref: '#/components/schemas/AllowedSourceType'
-        ipAddress:
+        ip_address:
           type: string
       required:
         - name
@@ -1897,21 +1897,21 @@ components:
       x-stoplight:
         id: xgbzir9wm0meq
       type: object
-      properties:
-        ipAllowlistConfig:
-          $ref: '#/components/schemas/IPAllowlistConfig'
       description: This is the request spec to create IP Allowlist config in Harness
+      properties:
+        ip_allowlist_config:
+          $ref: '#/components/schemas/IPAllowlistConfig'
     IPAllowlistConfigResponse:
       title: IPAllowlistConfigResponse
       x-stoplight:
         id: ykl8b62ijl5wt
       type: object
       properties:
-        ipAllowlistConfig:
+        ip_allowlist_config:
           $ref: '#/components/schemas/IPAllowlistConfig'
-        createdAt:
+        created:
           type: string
-        lastModifiedAt:
+        updated:
           type: string
   securitySchemes:
     x-api-key:

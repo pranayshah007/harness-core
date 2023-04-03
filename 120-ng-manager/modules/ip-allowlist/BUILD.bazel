@@ -16,6 +16,7 @@ java_library(
     visibility = ["//120-ng-manager:__subpackages__"],
     deps = [
         "//:lombok",
+        "//120-ng-manager/contracts/openapi/v1:ng-manager-server-spec-module",
         "//120-ng-manager/modules/ng-settings/contracts:module",
         "//930-ng-core-clients:module",
         "//930-ng-license-manager:module",
