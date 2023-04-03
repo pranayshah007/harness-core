@@ -4710,7 +4710,7 @@ plain_artifacts = [
     "com.esotericsoftware:reflectasm:1.11.6",
     "com.fasterxml.jackson.core:jackson-annotations:2.14.2",
     "com.fasterxml.jackson.core:jackson-core:2.14.2",
-    "com.fasterxml.jackson.core:jackson-databind:2.14.2",
+    "com.fasterxml.jackson.core:jackson-databind:2.13.4.2",
     "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.14.2",
     "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.14.2",
     "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.14.2",
