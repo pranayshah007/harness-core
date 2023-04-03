@@ -55,17 +55,7 @@ import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
-import io.harness.pms.pipeline.ClonePipelineDTO;
-import io.harness.pms.pipeline.DestinationPipelineConfig;
-import io.harness.pms.pipeline.ExecutionSummaryInfo;
-import io.harness.pms.pipeline.MoveConfigOperationDTO;
-import io.harness.pms.pipeline.MoveConfigOperationType;
-import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.PipelineEntityWithReferencesDTO;
-import io.harness.pms.pipeline.SourceIdentifierConfig;
-import io.harness.pms.pipeline.StepCategory;
-import io.harness.pms.pipeline.StepData;
-import io.harness.pms.pipeline.StepPalleteInfo;
+import io.harness.pms.pipeline.*;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.PipelineVersion;
@@ -118,6 +108,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private PipelineAsyncValidationService pipelineAsyncValidationService;
   @Mock private ProjectClient projectClient;
+  @Mock private PipelineSetupUsageHelper pipelineSetupUsageHelper;
 
   StepCategory library;
   StepCategory cv;
@@ -204,6 +195,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(TemplateMergeResponseDTO.builder().build())
         .when(pmsPipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(any(), anyBoolean(), anyBoolean());
+    doNothing().when(pipelineSetupUsageHelper).publishSetupUsageEvent(any(), any(), any());
 
     String pipeline_yaml_filename = "clonePipelineInput.yaml";
     PIPELINE_YAML = Resources.toString(

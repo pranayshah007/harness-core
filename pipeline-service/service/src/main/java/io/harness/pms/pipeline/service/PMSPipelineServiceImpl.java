@@ -639,7 +639,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       }
 
       // POPULATE GIT INFO FOR REFERRED ENTITIES.
-      if (doPublishSetupUsages(pipelineEntity)) {
+      if (doPublishSetupUsages(pipelineEntity) && entityWithUpdatedInfoWithReferences != null) {
         pipelineSetupUsageHelper.publishSetupUsageEvent(
             pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
       }
