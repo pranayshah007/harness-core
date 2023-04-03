@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.YOGESH;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
+import static io.harness.shell.SshSessionFactory.getSSHSession;
 
 import static software.wings.beans.yaml.GitFileChange.Builder.aGitFileChange;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -44,9 +45,6 @@ import io.harness.git.model.ChangeType;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.rule.Owner;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.ssh.SshFactory;
-import io.harness.shell.ssh.client.jsch.JschConnection;
-import io.harness.shell.ssh.exception.SshClientException;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.GitConfig;
@@ -307,8 +305,8 @@ public class GitClientImplTest extends WingsBaseTest {
                                          .build();
 
         try {
-          session = ((JschConnection) SshFactory.getSshClient(newConfig).getConnection()).getSession();
-        } catch (SshClientException jse) {
+          session = getSSHSession(newConfig);
+        } catch (Exception jse) {
           log.info("Could not get SSH session : " + jse.getMessage());
         }
       }

@@ -33,9 +33,11 @@ import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
+import io.harness.shell.SshSessionFactory;
 import io.harness.shell.ssh.SshFactory;
 
 import com.google.inject.Inject;
+import com.jcraft.jsch.Session;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -69,7 +71,7 @@ public class SshHostConnectionCapabilityCheck implements CapabilityCheck {
       log.info("Validating ssh Session to Host: {}, Port: {}", config.getHost(), config.getPort());
 
       try {
-        SshFactory.getSshClient(config).testConnection();
+        connect(config);
         capabilityResponseBuilder.validated(true);
       } catch (Exception e) {
         log.info("Exception in SshSession Connection: ", ExceptionMessageSanitizer.sanitizeException(e));
@@ -81,6 +83,15 @@ public class SshHostConnectionCapabilityCheck implements CapabilityCheck {
     }
 
     return capabilityResponseBuilder.build();
+  }
+
+  void connect(SshSessionConfig config) throws Exception {
+    if (config.isUseSshClient()) {
+      SshFactory.getSshClient(config).testConnection();
+    } else {
+      Session session = SshSessionFactory.getSSHSession(config);
+      session.disconnect();
+    }
   }
 
   private SshSessionConfig generateSshSessionConfigForKerberos(SSHAuthDTO authDTO, String host,
