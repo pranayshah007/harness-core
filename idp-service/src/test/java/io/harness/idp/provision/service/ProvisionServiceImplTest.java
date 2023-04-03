@@ -8,6 +8,7 @@
 package io.harness.idp.provision.service;
 
 import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
+import static io.harness.rule.OwnerRule.VIGNESWARA;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -52,6 +53,7 @@ public class ProvisionServiceImplTest {
   }
 
   @Test
+  @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testCheckUserAuthorization() {
     MockedStatic<SecurityContextBuilder> mockSecurityContext = Mockito.mockStatic(SecurityContextBuilder.class);
@@ -77,6 +79,7 @@ public class ProvisionServiceImplTest {
   }
 
   @Test
+  @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testCheckUserAuthorizationThrowsException() {
     MockedStatic<SecurityContextBuilder> mockSecurityContext = Mockito.mockStatic(SecurityContextBuilder.class);

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.status.repositories;
+package io.harness.idp.plugin.repositories;
 
 import static io.harness.rule.OwnerRule.VIGNESWARA;
 
@@ -17,10 +17,8 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.idp.status.beans.StatusInfoEntity;
-import io.harness.idp.status.enums.StatusType;
+import io.harness.idp.plugin.beans.PluginInfoEntity;
 import io.harness.rule.Owner;
-import io.harness.spec.server.idp.v1.model.StatusInfo;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -33,8 +31,9 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.IDP)
-public class StatusInfoRepositoryCustomImplTest {
-  @InjectMocks private StatusInfoRepositoryCustomImpl statusInfoRepositoryCustomImpl;
+public class PluginInfoRepositoryCustomImplTest {
+  @InjectMocks private PluginInfoRepositoryCustomImpl pluginInfoRepositoryCustomImpl;
+
   @Mock private MongoTemplate mongoTemplate;
 
   @Before
@@ -45,26 +44,21 @@ public class StatusInfoRepositoryCustomImplTest {
   @Test
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
-  public void testSaveOrUpdateStatusInfo() {
-    StatusInfoEntity statusInfoEntity = initializeStatusInfoEntity();
-    when(mongoTemplate.findOne(any(Query.class), eq(StatusInfoEntity.class))).thenReturn(null);
-    when(mongoTemplate.save(any(StatusInfoEntity.class))).thenReturn(statusInfoEntity);
-    StatusInfoEntity entity = statusInfoRepositoryCustomImpl.saveOrUpdate(statusInfoEntity);
+  public void testSaveOrUpdate() {
+    PluginInfoEntity pluginInfoEntity = initializePluginInfoEntity();
+    when(mongoTemplate.findOne(any(Query.class), eq(PluginInfoEntity.class))).thenReturn(null);
+    when(mongoTemplate.save(any(PluginInfoEntity.class))).thenReturn(pluginInfoEntity);
+    PluginInfoEntity entity = pluginInfoRepositoryCustomImpl.saveOrUpdate(pluginInfoEntity);
     assertNotNull(entity);
 
-    when(mongoTemplate.findOne(any(Query.class), eq(StatusInfoEntity.class))).thenReturn(statusInfoEntity);
-    when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(), eq(StatusInfoEntity.class)))
-        .thenReturn(statusInfoEntity);
-    entity = statusInfoRepositoryCustomImpl.saveOrUpdate(statusInfoEntity);
+    when(mongoTemplate.findOne(any(Query.class), eq(PluginInfoEntity.class))).thenReturn(pluginInfoEntity);
+    when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(), eq(PluginInfoEntity.class)))
+        .thenReturn(pluginInfoEntity);
+    entity = pluginInfoRepositoryCustomImpl.saveOrUpdate(pluginInfoEntity);
     assertNotNull(entity);
   }
 
-  StatusInfoEntity initializeStatusInfoEntity() {
-    return StatusInfoEntity.builder()
-        .type(StatusType.ONBOARDING)
-        .status(StatusInfo.CurrentStatusEnum.COMPLETED)
-        .reason("completed successfully")
-        .lastModifiedAt(System.currentTimeMillis())
-        .build();
+  private PluginInfoEntity initializePluginInfoEntity() {
+    return PluginInfoEntity.builder().name("PagerDuty").identifier("pager-duty").build();
   }
 }

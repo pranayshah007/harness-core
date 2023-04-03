@@ -7,8 +7,9 @@
 
 package io.harness.idp.status.service;
 
+import static io.harness.rule.OwnerRule.VIGNESWARA;
+
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
@@ -18,6 +19,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.idp.status.beans.StatusInfoEntity;
 import io.harness.idp.status.enums.StatusType;
 import io.harness.idp.status.repositories.StatusInfoRepository;
+import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
 
 import java.util.Optional;
@@ -42,6 +44,7 @@ public class StatusInfoServiceImplTest {
   }
 
   @Test
+  @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testFindByAccountIdentifierAndType() {
     type = StatusType.ONBOARDING.toString();
@@ -53,6 +56,7 @@ public class StatusInfoServiceImplTest {
   }
 
   @Test
+  @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testSave() {
     type = StatusType.ONBOARDING.toString();
