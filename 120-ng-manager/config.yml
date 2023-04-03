@@ -331,7 +331,7 @@ segmentConfiguration:
   certValidationRequired: false
 
 subscriptionConfig:
-  stripeApiKey: dummy
+  stripeApiKey: sk_test_51IykZ0Iqk5P9Eha3lDEdilJNRufZDw6xXt79RT39C5RhwDLAV2IZvvSsdqZV8q9HvENsVmAnc1MITqrLap8ElwxH00EJp5orGK
 
 accessControlClient:
   enableAccessControl: false

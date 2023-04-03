@@ -589,9 +589,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   private void isSelfServiceEnable() {
-    if (deployMode.equals("KUBERNETES_ONPREM")) {
-      throw new UnsupportedOperationException("Self Service is not available for OnPrem deployments.");
-    }
+   return;
   }
 
   private void sendTelemetryEvent(String event, String email, String accountId, String module) {
