@@ -1,0 +1,8 @@
+ENTITY_ID|PARENT_ENTITY_ID|ENTITY_TYPE|QUESTION_TYPE|ENTITY_TEXT|POINTS_WEIGHTAGE
+sectiona | - | SECTION | - |sectionabcd | -
+question1 | section1 | QUESTION | YES_NO | question abcd | -
+opt1 | question1 | OPTION | - | opt1_txt | 10
+`opt2 | question1 | OPTION | - | opt2_txt | 10
+question2 | section1 | QUESTION | YES_NO | question abcd | -
+opt1 | question1 | OPTION | - |opt1_txt | 10
+opt2 | question1 | OPTION | - | opt2_txt | 2

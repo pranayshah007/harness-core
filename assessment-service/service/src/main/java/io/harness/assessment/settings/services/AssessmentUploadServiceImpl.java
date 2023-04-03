@@ -87,6 +87,7 @@ public class AssessmentUploadServiceImpl implements AssessmentUploadService {
   @Override
   public AssessmentUploadResponse updateAssessment(AssessmentUploadRequest assessmentUploadRequest) {
     // TODO check if its a allowed update.
+    // TODO Change of question type is also new assessment.
     log.info("Updating assessment with request: {}", assessmentUploadRequest);
     String assessmentId = assessmentUploadRequest.getAssessmentId();
     Assessment assessmentUploaded = AssessmentUploadMapper.fromDTO(assessmentUploadRequest);
