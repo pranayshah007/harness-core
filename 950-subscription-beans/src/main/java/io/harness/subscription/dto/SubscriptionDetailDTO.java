@@ -22,7 +22,6 @@ public class SubscriptionDetailDTO {
   private String subscriptionId;
   private String accountIdentifier;
   private String customerId;
-  private ModuleType moduletype;
   private String status;
   private Long cancelAt;
   private Long canceledAt;
