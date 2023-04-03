@@ -12,6 +12,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.ccm.license.CeLicenseInfo;
+import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
 
 import software.wings.beans.Account;
 import software.wings.beans.LicenseInfo;
@@ -46,5 +48,12 @@ public interface LicenseService {
 
   void setLicense(Account account);
 
-  boolean updateLicenseForProduct(String productCode, String accountId, Integer orderQuantity, long expirationTime);
+  Edition getDimensionPlan(String dimension);
+
+  Long getNumberOfClientMAUs(Edition plan);
+
+  LicenseType getModuleLicenseType(String dimension, Edition plan);
+
+  boolean updateLicenseForProduct(
+      String productCode, String accountId, Integer orderQuantity, long expirationTime, String dimension);
 }

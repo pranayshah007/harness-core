@@ -16,4 +16,6 @@ import javax.ws.rs.core.Response;
 @OwnedBy(CDP)
 public interface AwsMarketPlaceApiHandler {
   Response processAWSMarktPlaceOrder(String token);
+
+  Integer getDimensionQuantity(String dimension);
 }
