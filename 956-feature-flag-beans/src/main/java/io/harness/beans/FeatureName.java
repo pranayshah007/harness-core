@@ -653,8 +653,6 @@ public enum FeatureName {
   CHAOS_GAMEDAY_ENABLED("Enable gameday feature in CHAOS", HarnessTeam.CHAOS),
   CDS_JIRA_PAT_AUTH("PAT auth support for jira connector", HarnessTeam.CDC),
   SRM_LOG_FEEDBACK_ENABLE_UI("Enable FE for Log feedback", HarnessTeam.CV),
-  PL_MIGRATE_SECRETS_FROM_LOCAL_TO_GCP_KMS_PROD3(
-      "Allow migration of secrets from local to gcpKms in ng prod3", HarnessTeam.PL),
   CDS_SERVICE_CONFIG_LAST_STEP(
       "Allows landing users on the last step of manifest/artifact/config files, if these configs are in edit mode",
       HarnessTeam.CDP),
