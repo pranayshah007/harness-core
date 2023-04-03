@@ -46,6 +46,8 @@ import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.models.constants.InstanceSyncFlow;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
 import io.harness.service.instance.InstanceService;
@@ -118,6 +120,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     this.instanceSyncMonitoringService = instanceSyncMonitoringService;
     this.accountClient = accountClient;
   }
+
   @Override
   public void processInstanceSyncForNewDeployment(DeploymentEvent deploymentEvent) {
     int retryCount = 0;
@@ -339,6 +342,36 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
         }
       }
     }
+  }
+
+  public InstanceSyncTaskDetails fetchTaskDetails(String accountIdentifier, String perpetualTaskId) {
+    List<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOList =
+        instanceSyncPerpetualTaskInfoService.findAll(accountIdentifier, perpetualTaskId);
+    List<DeploymentReleaseDetails> deploymentReleaseDetailsList = new ArrayList<>();
+    for (InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO : instanceSyncPerpetualTaskInfoDTOList) {
+      Optional<InfrastructureMappingDTO> infrastructureMappingDTOOptional =
+          infrastructureMappingService.getByInfrastructureMappingId(
+              instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId());
+      if (infrastructureMappingDTOOptional.isEmpty()) {
+        log.error(
+            "Infrastructure mapping not found for {}", instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId());
+        continue;
+      }
+      InfrastructureMappingDTO infrastructureMappingDTO = infrastructureMappingDTOOptional.get();
+
+      if (instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList().isEmpty()) {
+        continue;
+      }
+
+      AbstractInstanceSyncHandler instanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+          instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList().get(0).getDeploymentInfoDTO().getType(),
+          infrastructureMappingDTO.getInfrastructureKind());
+
+      deploymentReleaseDetailsList.add(instanceSyncHandler.getDeploymentReleaseDetails(
+          instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()));
+    }
+
+    return InstanceSyncTaskDetails.newBuilder().addAllDetails(deploymentReleaseDetailsList).build();
   }
 
   // ------------------------------- PRIVATE METHODS --------------------------------------
