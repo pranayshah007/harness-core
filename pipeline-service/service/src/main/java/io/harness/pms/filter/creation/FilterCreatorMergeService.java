@@ -278,7 +278,7 @@ public class FilterCreatorMergeService {
 
   @VisibleForTesting
   public Optional<EntityDetailProtoDTO> getGitConnectorReference(PipelineEntity pipelineEntity) {
-    GitAwareContextHelper.initDefaultScmGitMetaData();
+    // GitAwareContextHelper.initDefaultScmGitMetaData();
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     if (isGitSimplificationEnabled(pipelineEntity, gitEntityInfo)) {
       IdentifierRef identifierRef =
