@@ -15,7 +15,6 @@ import static io.harness.rule.OwnerRule.ANSHUL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -92,7 +91,6 @@ public class K8sRollingRollbackStepTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     ManifestsOutcome mockOutcomes = mock(ManifestsOutcome.class);
     doReturn(mockOutcomes).when(k8sStepHelper).resolveManifestsOutcome(any());
-    doNothing().when(cdStepHelper).validateManifestsOutcome(any(), any());
     doReturn(null).when(k8sStepHelper).getK8sSupportedManifestOutcome(any());
   }
 
