@@ -1960,6 +1960,7 @@
 40029:com.google.protobuf.Duration
 40030:io.harness.perpetualtask.PerpetualTaskClientContext
 40031:io.harness.delegate.beans.Delegate
+40041:io.harness.delegate.beans.DelegateGroup
 40051:io.harness.ccm.cluster.entities.DirectKubernetesCluster
 40052:io.harness.ccm.cluster.entities.EcsCluster
 40053:io.harness.ccm.cluster.entities.GcpKubernetesCluster
