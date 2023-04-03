@@ -71,7 +71,7 @@ public class DelegateAgentModule extends AbstractModule {
     install(new DelegateManagerGrpcClientModule(configuration));
 
     configureCcmEventPublishing();
-    install(new PerpetualTaskWorkerModule());
+    install(new PerpetualTaskWorkerModule(configuration));
 
     install(KubernetesClientFactoryModule.getInstance());
     install(KubernetesApiClientFactoryModule.getInstance());

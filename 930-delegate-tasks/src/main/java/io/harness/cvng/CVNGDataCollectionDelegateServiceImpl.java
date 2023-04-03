@@ -20,7 +20,9 @@ import io.harness.cvng.beans.cvnglog.ApiCallLogDTO.ApiCallLogDTOField;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.RuntimeParameters;
+import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.perpetualtask.datacollection.DataCollectionLogContext;
+import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.JsonUtils;
@@ -35,6 +37,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import javax.net.ssl.KeyManager;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -46,6 +49,7 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
   @Inject private Clock clock;
   @Inject private DelegateLogService delegateLogService;
   @Inject @Named("cvngSyncCallExecutor") protected ExecutorService cvngSyncCallExecutor;
+  @Inject DelegateConfiguration configuration;
 
   @Override
   public String getDataCollectionResult(String accountId, DataCollectionRequest dataCollectionRequest,
@@ -76,6 +80,10 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
       try {
         String dsl = dataCollectionRequest.getDSL();
         Instant now = clock.instant();
+        KeyManager keyManager = new X509KeyManagerBuilder()
+                                    .withClientCertificateFromFile(this.configuration.getClientCertificateFilePath(),
+                                        this.configuration.getClientCertificateKeyFilePath())
+                                    .build();
         final RuntimeParameters runtimeParameters = RuntimeParameters.builder()
                                                         .baseUrl(dataCollectionRequest.getBaseUrl())
                                                         .commonHeaders(dataCollectionRequest.collectionHeaders())
@@ -83,6 +91,7 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
                                                         .otherEnvVariables(dataCollectionRequest.fetchDslEnvVariables())
                                                         .endTime(dataCollectionRequest.getEndTime(now))
                                                         .startTime(dataCollectionRequest.getStartTime(now))
+                                                        .keyManager(keyManager)
                                                         .build();
         dataCollectionDSLService.registerDatacollectionExecutorService(cvngSyncCallExecutor);
         log.info("Starting execution of DSL ");

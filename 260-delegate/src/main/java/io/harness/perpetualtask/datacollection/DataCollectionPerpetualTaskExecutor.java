@@ -30,6 +30,7 @@ import io.harness.datacollection.entity.LogDataRecord;
 import io.harness.datacollection.entity.RuntimeParameters;
 import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.service.HostRecordDataStoreService;
 import io.harness.delegate.service.LogRecordDataStoreService;
 import io.harness.delegate.service.TimeSeriesDataStoreService;
@@ -38,6 +39,7 @@ import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
+import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.KryoSerializer;
@@ -60,6 +62,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.net.ssl.KeyManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -80,6 +83,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
   @Inject private CVNGRequestExecutor cvngRequestExecutor;
   @Inject @Named("verificationDataCollectorExecutor") protected ExecutorService dataCollectionService;
   @Inject @Named("cvngParallelExecutor") protected ExecutorService parallelExecutor;
+  @Inject DelegateConfiguration configuration;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -165,6 +169,10 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
       DataCollectionInfo dataCollectionInfo = dataCollectionTask.getDataCollectionInfo();
       log.info("collecting data for {}", dataCollectionTask.getVerificationTaskId());
       List<ExecutionLog> executionLogs = new ArrayList<>();
+      KeyManager keyManager = new X509KeyManagerBuilder()
+                                  .withClientCertificateFromFile(this.configuration.getClientCertificateFilePath(),
+                                      this.configuration.getClientCertificateKeyFilePath())
+                                  .build();
       final RuntimeParameters runtimeParameters =
           RuntimeParameters.builder()
               .baseUrl(dataCollectionTask.getDataCollectionInfo().getBaseUrl(connectorConfigDTO))
@@ -173,6 +181,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
               .otherEnvVariables(dataCollectionInfo.getDslEnvVariables(connectorConfigDTO))
               .endTime(dataCollectionTask.getEndTime())
               .startTime(dataCollectionTask.getStartTime())
+              .keyManager(keyManager)
               .build();
       switch (dataCollectionInfo.getVerificationType()) {
         case TIME_SERIES:
