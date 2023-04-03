@@ -4,9 +4,9 @@ metadata:
   name: template-service
   namespace: {{ .Release.Namespace }}
 data:
-  CACHE_BACKEND: {{ .Values.config.CACHE_BACKEND }}
-  CACHE_CONFIG_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
-  CACHE_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.CACHE_CONFIG_SENTINEL_MASTER_NAME }}
+  CACHE_BACKEND: {{ .Values.config.CACHE_BACKEND | quote }}
+  CACHE_CONFIG_REDIS_SENTINELS: {{ .Values.config.CACHE_CONFIG_REDIS_SENTINELS | default ("redis://redis-sentinel-harness-announce-0.NAMESPACE:26379,redis://redis-sentinel-harness-announce-1.NAMESPACE:26379,redis://redis-sentinel-harness-announce-2.NAMESPACE:26379" | replace "NAMESPACE" .Release.Namespace ) }}
+  CACHE_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.CACHE_CONFIG_SENTINEL_MASTER_NAME | quote }}
   CACHE_CONFIG_USE_SENTINEL: {{ .Values.config.CACHE_CONFIG_USE_SENTINEL | quote }}
   DEPLOY_MODE: {{ .Values.config.DEPLOY_MODE }}
   LOGGING_LEVEL: {{ .Values.appLogLevel }} 
@@ -17,9 +17,9 @@ data:
   NG_MANAGER_GITSYNC_AUTHORITY: ng-manager:13002 {{ .Values.config.MANAGER_AUTHORITY | default "harness-manager:9879" }}
   SCM_SERVICE_URI: {{ .Values.config.SCM_SERVICE_URI | default "scm-service:8091" }}
   EVENTS_FRAMEWORK_REDIS_URL: {{ .Values.config.EVENTS_FRAMEWORK_REDIS_URL | default "redis://localhost:6379" }}
-  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.config.EVENTS_FRAMEWORK_USE_SENTINEL }}
+  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.config.EVENTS_FRAMEWORK_USE_SENTINEL | quote }}
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: {{ .Values.config.EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME }}
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ .Values.config.EVENTS_FRAMEWORK_REDIS_SENTINELS | default ("redis://redis-sentinel-harness-announce-0.NAMESPACE:26379,redis://redis-sentinel-harness-announce-1.NAMESPACE:26379,redis://redis-sentinel-harness-announce-2.NAMESPACE:26379" | replace "NAMESPACE" .Release.Namespace ) }}
   ENABLE_AUTH: {{ .Values.config.ENABLE_AUTH | quote }}
   ENABLE_GIT_SYNC: {{ .Values.config.ENABLE_GIT_SYNC | quote }}
   ENABLE_AUDIT: {{ .Values.config.ENABLE_AUDIT | quote }}

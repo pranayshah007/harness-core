@@ -25,7 +25,7 @@ maxUnavailable: 0
 
 config:
   CACHE_BACKEND: REDIS
-  CACHE_CONFIG_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
+  CACHE_CONFIG_REDIS_SENTINELS: ''
   CACHE_CONFIG_SENTINEL_MASTER_NAME: harness-redis
   CACHE_CONFIG_USE_SENTINEL: true
   DEPLOY_MODE: KUBERNETES_ONPREM
@@ -37,7 +37,7 @@ config:
   EVENTS_FRAMEWORK_REDIS_URL:
   EVENTS_FRAMEWORK_USE_SENTINEL: true
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: ''
   ENABLE_AUTH: true
   ENABLE_GIT_SYNC: true
   ENABLE_AUDIT: true
