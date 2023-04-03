@@ -15,6 +15,7 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/customdeploymentng:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment/yaml:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/evaluators:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/rbac:module",
         "//127-cd-nextgen-entities:module",
         "//440-connector-nextgen:module",

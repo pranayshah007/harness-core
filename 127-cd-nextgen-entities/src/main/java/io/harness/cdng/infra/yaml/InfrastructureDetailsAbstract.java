@@ -7,14 +7,25 @@
 
 package io.harness.cdng.infra.yaml;
 
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import io.harness.beans.SwaggerConstants;
+import io.harness.pms.yaml.ParameterField;
+
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
+@SuperBuilder
+@NoArgsConstructor
 public abstract class InfrastructureDetailsAbstract {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   public String infraIdentifier;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) public String infraName;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> provisioner;
 
   @ApiModelProperty(hidden = true) public Boolean skipInstances;
 
@@ -36,5 +47,21 @@ public abstract class InfrastructureDetailsAbstract {
   }
   public void setSkipInstances(boolean skipInstances) {
     this.skipInstances = skipInstances;
+  }
+
+  public boolean isDynamicallyProvisioned() {
+    return isNotEmpty(getParameterFieldValue(provisioner));
+  }
+
+  public String getProvisionerStepIdentifier() {
+    return getParameterFieldValue(provisioner);
+  }
+
+  public ParameterField<String> getProvisioner() {
+    return provisioner;
+  }
+
+  public void setProvisioner(ParameterField<String> provisioner) {
+    this.provisioner = provisioner;
   }
 }

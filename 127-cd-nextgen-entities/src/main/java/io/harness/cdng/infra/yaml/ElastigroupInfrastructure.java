@@ -30,15 +30,19 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Value;
 import lombok.With;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CDP)
 @Value
-@Builder
+@SuperBuilder
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @JsonTypeName(InfrastructureKind.ELASTIGROUP)
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("elastigroupInfrastructure")
@@ -99,6 +103,9 @@ public class ElastigroupInfrastructure
 
     if (config.getConfiguration() != null) {
       resultantInfra = resultantInfra.withConfiguration(config.getConfiguration());
+    }
+    if (!ParameterField.isNull(config.getProvisioner())) {
+      resultantInfra.setProvisioner(config.getProvisioner());
     }
 
     return resultantInfra;

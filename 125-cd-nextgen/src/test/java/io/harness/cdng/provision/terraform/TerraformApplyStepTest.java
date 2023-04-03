@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -26,6 +27,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.TerraformCommandFlagType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -60,6 +62,7 @@ import io.harness.steps.TaskRequestsUtils;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -88,6 +91,7 @@ public class TerraformApplyStepTest extends CategoryTest {
   @InjectMocks private TerraformApplyStep terraformApplyStep;
   @Mock private StepHelper stepHelper;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock private ProvisionerOutputHelper provisionerOutputHelper;
 
   private Ambiance getAmbiance() {
     return Ambiance.newBuilder()
@@ -98,6 +102,11 @@ public class TerraformApplyStepTest extends CategoryTest {
   }
 
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
+
+  @Before
+  public void setUpMocks() {
+    doNothing().when(provisionerOutputHelper).saveProvisionerOutputByStepIdentifier(any(), any());
+  }
 
   @Test
   @Owner(developers = NAMAN_TALAYCHA)

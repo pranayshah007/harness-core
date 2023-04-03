@@ -7,13 +7,15 @@
 
 package io.harness.cdng.infra;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.yaml.Infrastructure;
-import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.evaluators.ProviderExpressionEvaluatorProvider;
+import io.harness.evaluators.ProvisionerExpressionEvaluator;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.steps.environment.EnvironmentOutcome;
 
 import com.google.inject.Inject;
@@ -21,20 +23,18 @@ import com.google.inject.Singleton;
 import javax.annotation.Nonnull;
 
 @Singleton
-@OwnedBy(HarnessTeam.CDP)
+@OwnedBy(CDP)
 public class InfrastructureOutcomeProvider {
-  @Inject private InfrastructureProvisionerMapper infrastructureProvisionerMapper;
   @Inject private InfrastructureMapper infrastructureMapper;
+  @Inject private ProviderExpressionEvaluatorProvider providerExpressionEvaluatorProvider;
 
-  public InfrastructureOutcome getOutcome(@Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome,
-      ServiceStepOutcome service, final String accountIdentifier, final String orgIdentifier,
-      final String projectIdentifier) {
-    if (InfrastructureKind.PDC.equals(infrastructure.getKind())
-        && ((PdcInfrastructure) infrastructure).isDynamicallyProvisioned()) {
-      return infrastructureProvisionerMapper.toOutcome(infrastructure, environmentOutcome, service);
-    }
-
-    return infrastructureMapper.toOutcome(
-        infrastructure, environmentOutcome, service, accountIdentifier, orgIdentifier, projectIdentifier);
+  public InfrastructureOutcome getOutcome(Ambiance ambiance, @Nonnull Infrastructure infrastructure,
+      EnvironmentOutcome environmentOutcome, ServiceStepOutcome service, final String accountIdentifier,
+      final String orgIdentifier, final String projectIdentifier) {
+    ProvisionerExpressionEvaluator expressionEvaluator =
+        providerExpressionEvaluatorProvider.getProviderExpressionEvaluator(
+            ambiance, infrastructure.getProvisionerStepIdentifier());
+    return infrastructureMapper.toOutcome(infrastructure, expressionEvaluator, environmentOutcome, service,
+        accountIdentifier, orgIdentifier, projectIdentifier);
   }
 }
