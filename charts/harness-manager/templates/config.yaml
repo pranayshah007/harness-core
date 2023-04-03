@@ -49,10 +49,10 @@ data:
   EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM: {{ .Values.config.EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM | quote }}
   EVENTS_FRAMEWORK_REDIS_URL: {{ .Values.config.EVENTS_FRAMEWORK_REDIS_URL }}
   HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: {{ .Values.config.HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER | quote }}
-  MONGO_SSL_CONFIG: {{ .Values.config.MONGO_SSL_CONFIG }}
-  ENABLE_ITERATORS: {{ .Values.config.ENABLE_ITERATORS }}
+  MONGO_SSL_CONFIG: {{ .Values.config.MONGO_SSL_CONFIG | quote }}
+  ENABLE_ITERATORS: {{ .Values.config.ENABLE_ITERATORS | quote }}
   ITERATOR_CONFIG_PATH: {{ .Values.config.ITERATOR_CONFIG_PATH }}
-  LICENSE_INFO: {{ .Values.config.LICENSE_INFO | default .Values.global.license.cg }}
+  LICENSE_INFO: {{ .Values.config.LICENSE_INFO | default .Values.global.license.cg | quote }}
 
 ---
 apiVersion: v1

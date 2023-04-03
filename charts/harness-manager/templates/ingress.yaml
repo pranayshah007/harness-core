@@ -3,10 +3,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: harness-manager-api
-  annotations:
-    {{- if .Values.global.ingress.objects.annotations }}
-    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.ingress.objects.annotations "context" $) | nindent 4 }}
-    {{- end }}
 spec:
   ingressClassName: {{ .Values.global.ingress.className | quote }}
   rules:
@@ -37,9 +33,6 @@ kind: Ingress
 metadata:
   name: harness-manager-stream
   namespace: {{ .Release.Namespace }}
-  {{- if .Values.global.ingress.nginx.objects.annotations }}
-  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.global.ingress.nginx.objects.annotations "context" $ ) | nindent 4 }}
-  {{- end }}
 spec:
   ingressClassName: {{ .Values.global.ingress.className | quote }}
   rules:
