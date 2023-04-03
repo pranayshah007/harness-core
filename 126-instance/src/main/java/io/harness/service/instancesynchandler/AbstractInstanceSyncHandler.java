@@ -14,8 +14,10 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.InstanceDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
+import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.entities.InstanceType;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
+import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +31,11 @@ public abstract class AbstractInstanceSyncHandler implements IInstanceSyncHandle
   public abstract String getPerpetualTaskType();
 
   public String getPerpetualTaskV2Type() {
+    throw new UnsupportedOperationException();
+  }
+
+  public DeploymentReleaseDetails getDeploymentReleaseDetails(
+      List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList) {
     throw new UnsupportedOperationException();
   }
 
