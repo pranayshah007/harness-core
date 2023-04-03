@@ -13,6 +13,8 @@ import io.harness.assessment.settings.services.AssessmentUploadService;
 import io.harness.eraro.ResponseMessage;
 
 import com.google.inject.Inject;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -28,12 +30,16 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Path("/v1/assessment")
+@Api("assessment-upload")
 public class AssessmentUploadResource {
   private AssessmentUploadService assessmentUploadService;
   @POST
   @Consumes({"application/json"})
   @Produces({"application/json"})
-  public Response uploadAssessment(@Valid AssessmentUploadRequest body) {
+  @ApiOperation(value = "Upload an assessment to the system.", nickname = "uploadAssessment",
+      response = AssessmentUploadResponse.class)
+  public Response
+  uploadAssessment(@Valid AssessmentUploadRequest body) {
     try {
       return Response.status(Response.Status.OK).entity(assessmentUploadService.uploadNewAssessment(body)).build();
     } catch (Exception e) {
@@ -46,7 +52,10 @@ public class AssessmentUploadResource {
   @GET
   @Path("{assessmentId}/template")
   @Produces({"application/json"})
-  public Response getAssessment(@PathParam("assessmentId") String assessmentId) {
+  @ApiOperation(
+      value = "Get an assessment in the system.", nickname = "getAssessment", response = AssessmentUploadResponse.class)
+  public Response
+  getAssessment(@PathParam("assessmentId") String assessmentId) {
     try {
       AssessmentUploadResponse assessmentUploadResponse = assessmentUploadService.getAssessment(assessmentId);
       return Response.status(Response.Status.OK).entity(assessmentUploadResponse).build();
@@ -60,7 +69,10 @@ public class AssessmentUploadResource {
   @PATCH
   @Path("{assessmentId}/publish")
   @Produces({"application/json"})
-  public Response publishAssessment(@PathParam("assessmentId") String assessmentId) {
+  @ApiOperation(
+      value = "Publish an assessment.", nickname = "publishAssessment", response = AssessmentUploadResponse.class)
+  public Response
+  publishAssessment(@PathParam("assessmentId") String assessmentId) {
     try {
       AssessmentUploadResponse assessmentUploadResponse = assessmentUploadService.publishAssessment(assessmentId);
       return Response.status(Response.Status.OK).entity(assessmentUploadResponse).build();
@@ -74,7 +86,10 @@ public class AssessmentUploadResource {
   @PUT
   @Consumes({"application/json"})
   @Produces({"application/json"})
-  public Response updateAssessment(@Valid AssessmentUploadRequest body) {
+  @ApiOperation(value = "Update an assessment to the system.", nickname = "updateAssessment",
+      response = AssessmentUploadResponse.class)
+  public Response
+  updateAssessment(@Valid AssessmentUploadRequest body) {
     try {
       return Response.status(Response.Status.OK).entity(assessmentUploadService.updateAssessment(body)).build();
     } catch (Exception e) {

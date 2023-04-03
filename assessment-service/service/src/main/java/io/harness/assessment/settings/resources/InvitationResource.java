@@ -12,6 +12,8 @@ import io.harness.assessment.settings.services.InvitationService;
 import io.harness.eraro.ResponseMessage;
 
 import com.google.inject.Inject;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -23,13 +25,34 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Path("/v1/assessment")
+@Api("invitation")
 public class InvitationResource {
   InvitationService invitationService;
   @POST
   @Consumes({"application/json"})
   @Produces({"application/json"})
   @Path("invite")
-  public Response sendAssessmentInvite(@Valid AssessmentInviteDTO body) {
+  /*  @Operation(
+            operationId = "sendAssessmentInvite",
+            summary = "Send Invitation of assessments to user email",
+            description = "Creates invites in the system with unique sign-up code, which is sent to the respective
+    emails", tags = {"Assessment"}
+    )
+    @ApiResponses({@ApiResponse(
+            responseCode = "200",
+            description = "Success response",
+            content = {@Content(
+                    mediaType = "application/json",
+                    schema = @Schema(
+                            implementation = AssessmentInviteDTO.class
+                    )
+            )}
+    )})*/
+  @ApiOperation(
+      value = "Creates invites in the system with unique sign-up code, which is sent to the respective emails",
+      nickname = "sendAssessmentInvite", response = AssessmentInviteDTO.class)
+  public Response
+  sendAssessmentInvite(@Valid AssessmentInviteDTO body) {
     // A uniquely generated non guessable link.
     try {
       return Response.status(Response.Status.OK).entity(invitationService.sendAssessmentInvite(body)).build();
