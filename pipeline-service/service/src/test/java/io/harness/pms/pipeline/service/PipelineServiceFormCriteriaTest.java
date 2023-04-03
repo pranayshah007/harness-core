@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -34,6 +35,7 @@ import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineEntityWithReferencesDTO;
+import io.harness.pms.pipeline.PipelineSetupUsageHelper;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
@@ -81,6 +83,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
   @Mock private ProjectClient projectClient;
+  @Mock private PipelineSetupUsageHelper pipelineSetupUsageHelper;
 
   private final String accountId = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
@@ -121,6 +124,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
+    doNothing().when(pipelineSetupUsageHelper).publishSetupUsageEvent(any(), any(), any());
     PipelineEntityWithReferencesDTO pipelineEntityWithReferencesDTO =
         PipelineEntityWithReferencesDTO.builder().pipelineEntity(updatedPipelineEntity).build();
     doReturn(pipelineEntityWithReferencesDTO)

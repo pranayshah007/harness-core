@@ -319,7 +319,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testPublishSetupUsageEvent() {
     MockedStatic<IdentifierRefProtoDTOHelper> mockedStatic = Mockito.mockStatic(IdentifierRefProtoDTOHelper.class);
-    mockedStatic.when(() -> IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(ACCOUNT_ID, null, null, null))
+    mockedStatic.when(() -> IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(any(), any(), any(), any(), any()))
         .thenReturn(IdentifierRefProtoDTO.newBuilder().build());
     List<EntityDetailProtoDTO> referredEntities = new ArrayList<>();
     EntityDetailProtoDTO secretManagerDetails =
@@ -364,7 +364,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
         EntityDetailProtoDTO.newBuilder()
             .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(pipelineEntity.getAccountId(),
                 pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
-                pipelineEntity.getIdentifier()))
+                pipelineEntity.getIdentifier(), null))
             .setType(EntityTypeProtoEnum.PIPELINES)
             .setName(pipelineEntity.getName())
             .build();
