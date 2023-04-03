@@ -836,3 +836,9 @@ io.harness.cdng.provision.terraform.TerraformCliOptionFlag
 io.harness.cdng.infra.yaml.K8sRancherInfrastructure
 io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome
 io.harness.cdng.infra.beans.K8sRancherInfraMapping
+io.harness.cdng.googlefunctions.rollbackgenone.GoogleFunctionsGenOneRollbackStepNode
+io.harness.cdng.googlefunctions.rollbackgenone.GoogleFunctionsGenOneRollbackStepInfo
+io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStepParameters
+io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStepNode
+io.harness.cdng.googlefunctions.rollbackgenone.GoogleFunctionsGenOneRollbackStepParameters
+io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStepInfo
