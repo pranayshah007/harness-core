@@ -24,6 +24,7 @@ import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -41,7 +42,7 @@ public class PluginMetadataService {
   @Inject PluginMetadataRepository pluginMetadataRepository;
   @Inject PluginMetadataStatusRepository pluginMetadataStatusRepository;
 
-  public PageResponse<PluginMetadataResponse> listPlugins(String searchTerm, int page, int size) {
+  public PageResponse<PluginMetadataResponse> listPlugins(String searchTerm, String kind, int page, int size) {
     PluginMetadataStatus pluginMetadataStatus = pluginMetadataStatusRepository.find();
     if (pluginMetadataStatus == null) {
       throw new InternalServerErrorException("Plugin schema is not populated");
@@ -49,9 +50,17 @@ public class PluginMetadataService {
 
     int version = pluginMetadataStatus.getVersion();
     Criteria criteria = Criteria.where(PluginMetadataConfigKeys.version).is(version);
+
+    List<Criteria> andCriterias = new ArrayList<>();
     if (!StringUtils.isEmpty(searchTerm)) {
-      criteria = criteria.andOperator(Criteria.where(PluginMetadataConfigKeys.metadata + ".name")
-                                          .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+      andCriterias.add(Criteria.where(PluginMetadataConfigKeys.metadata + ".name")
+                           .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+    }
+    if (!StringUtils.isEmpty(kind)) {
+      andCriterias.add(Criteria.where(PluginMetadataConfigKeys.metadata + ".kind").is(kind));
+    }
+    if (!andCriterias.isEmpty()) {
+      criteria = criteria.andOperator(andCriterias);
     }
 
     List<SortOrder> sortOrders = Arrays.asList(
