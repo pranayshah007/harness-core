@@ -25,6 +25,7 @@ import io.harness.yaml.core.intfc.OverridesApplier;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.Serializable;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -47,7 +48,7 @@ public class ConfigFile implements OverridesApplier<ConfigFile>, WithIdentifier,
 
   @NotNull @EntityIdentifier String identifier;
 
-  @NotNull @JsonProperty("spec") ConfigFileAttributes spec;
+  @NotNull @JsonProperty("spec") @Valid ConfigFileAttributes spec;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
