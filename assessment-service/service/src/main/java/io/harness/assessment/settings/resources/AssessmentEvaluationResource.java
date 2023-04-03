@@ -7,11 +7,15 @@
 
 package io.harness.assessment.settings.resources;
 
+import io.harness.assessment.settings.beans.dto.AssessmentResultsResponse;
+import io.harness.assessment.settings.beans.dto.UserAssessmentDTO;
 import io.harness.assessment.settings.beans.dto.UserResponsesRequest;
 import io.harness.assessment.settings.services.AssessmentEvaluationService;
 import io.harness.eraro.ResponseMessage;
 
 import com.google.inject.Inject;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -26,12 +30,16 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Path("/v1")
+@Api("assessment-evaluation")
 public class AssessmentEvaluationResource {
   private AssessmentEvaluationService assessmentEvaluationService;
   @GET
   @Path(("attempt/{assessmentInviteId}"))
   @Produces({"application/json"})
-  public Response getAssessmentForUser(@PathParam("assessmentInviteId") String assessmentInviteId) {
+  @ApiOperation(value = "View assessment for a particular invite code", nickname = "getAssessmentForUser",
+      response = UserAssessmentDTO.class)
+  public Response
+  getAssessmentForUser(@PathParam("assessmentInviteId") String assessmentInviteId) {
     // Get token info and validate user.
     return Response.status(Response.Status.OK)
         .entity(assessmentEvaluationService.getAssessmentForUser(assessmentInviteId))
@@ -42,8 +50,11 @@ public class AssessmentEvaluationResource {
   @Path(("attempt/{assessmentId}"))
   @Consumes({"application/json"})
   @Produces({"application/json"})
-  public Response submitAssessmentResponse(@PathParam("assessmentId") String assessmentId,
-      @Valid UserResponsesRequest body, @HeaderParam("Auth") String auth) {
+  @ApiOperation(value = "Submit response for an assessment, and view the results", nickname = "getAssessmentForUser",
+      response = AssessmentResultsResponse.class)
+  public Response
+  submitAssessmentResponse(@PathParam("assessmentId") String assessmentId, @Valid UserResponsesRequest body,
+      @HeaderParam("Auth") String auth) {
     try {
       return Response.status(Response.Status.OK)
           .entity(assessmentEvaluationService.submitAssessmentResponse(body, auth))
@@ -59,10 +70,13 @@ public class AssessmentEvaluationResource {
   @Path(("attempt/save"))
   @Consumes({"application/json"})
   @Produces({"application/json"})
-  public Response saveAssessmentResponse(@Valid UserResponsesRequest body, @HeaderParam("Auth") String auth) {
+  @ApiOperation(value = "Save response for an assessment, and continue it for later.",
+      nickname = "saveAssessmentResponse", response = UserAssessmentDTO.class)
+  public Response
+  saveAssessmentResponse(@Valid UserResponsesRequest body, @HeaderParam("Auth") String auth) {
     try {
       return Response.status(Response.Status.OK)
-          .entity(assessmentEvaluationService.submitAssessmentResponse(body, auth))
+          .entity(assessmentEvaluationService.saveAssessmentResponse(body, auth))
           .build();
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
