@@ -15207,12 +15207,6 @@
     },
     "SyncRetryStrategy": {
       "type": "object",
-      "required": [
-        "baseBackoffDuration",
-        "increaseBackoffByFactor",
-        "limit",
-        "maxBackoffDuration"
-      ],
       "properties": {
         "baseBackoffDuration": {
           "type": "string"

@@ -52,8 +52,8 @@ public class SyncStepHelper {
 
   public static ApplicationSyncRequest getSyncRequest(Application application, SyncStepParameters syncStepParameters) {
     ApplicationSyncRequestBuilder syncRequestBuilder = ApplicationSyncRequest.builder();
-    syncRequestBuilder.dryRun(syncStepParameters.getDryRun().getValue());
-    syncRequestBuilder.prune(syncStepParameters.getPrune().getValue());
+    syncRequestBuilder.dryRun(toBoolean(syncStepParameters.getDryRun().getValue()));
+    syncRequestBuilder.prune(toBoolean(syncStepParameters.getPrune().getValue()));
     syncRequestBuilder.applicationName(application.getName());
     syncRequestBuilder.targetRevision(application.getRevision());
 
@@ -63,13 +63,33 @@ public class SyncStepHelper {
     return syncRequestBuilder.build();
   }
 
+  public static boolean toBoolean(Object value) {
+    if (value instanceof Boolean) {
+      return (boolean) value;
+    } else if (value instanceof String) {
+      return Boolean.parseBoolean((String) value);
+    } else {
+      throw new IllegalArgumentException("Cannot convert " + value.getClass().getName() + " to boolean");
+    }
+  }
+
+  public static int toNumber(Object obj) {
+    if (obj instanceof Integer) {
+      return (int) obj;
+    } else if (obj instanceof Double) {
+      return ((Double) obj).intValue();
+    } else {
+      throw new IllegalArgumentException("Cannot convert " + obj.getClass().getName() + " to integer");
+    }
+  }
+
   private static void mapSyncStrategy(
       SyncStepParameters syncStepParameters, ApplicationSyncRequestBuilder syncRequestBuilder) {
     SyncStrategyApply strategyApply =
-        SyncStrategyApply.builder().force(syncStepParameters.getForceApply().getValue()).build();
+        SyncStrategyApply.builder().force(toBoolean(syncStepParameters.getForceApply().getValue())).build();
 
     // if applyOnly is true => strategy is apply, else hook
-    if (Boolean.TRUE.equals(syncStepParameters.getApplyOnly().getValue())) {
+    if (Boolean.TRUE.equals(toBoolean(syncStepParameters.getApplyOnly().getValue()))) {
       syncRequestBuilder.strategy(SyncStrategy.builder().apply(strategyApply).build());
     } else {
       SyncStrategyHook strategyHook = SyncStrategyHook.builder().syncStrategyApply(strategyApply).build();
@@ -80,14 +100,17 @@ public class SyncStepHelper {
   private static void mapSyncRetryStrategy(
       SyncStepParameters syncStepParameters, ApplicationSyncRequestBuilder syncRequestBuilder) {
     SyncRetryStrategy syncRetryStrategy = syncStepParameters.getRetryStrategy();
-    if (syncRetryStrategy != null) {
+    if (syncRetryStrategy != null && syncRetryStrategy.getLimit().getValue() != null
+        && syncRetryStrategy.getBaseBackoffDuration().getValue() != null
+        && syncRetryStrategy.getMaxBackoffDuration().getValue() != null
+        && syncRetryStrategy.getIncreaseBackoffByFactor().getValue() != null) {
       syncRequestBuilder.retryStrategy(
           RetryStrategy.builder()
-              .limit(syncRetryStrategy.getLimit().getValue())
+              .limit(toNumber(syncRetryStrategy.getLimit().getValue()))
               .backoff(Backoff.builder()
                            .baseDuration(syncRetryStrategy.getBaseBackoffDuration().getValue())
                            .maxDuration(syncRetryStrategy.getMaxBackoffDuration().getValue())
-                           .factor(syncRetryStrategy.getIncreaseBackoffByFactor().getValue())
+                           .factor(toNumber(syncRetryStrategy.getIncreaseBackoffByFactor().getValue()))
                            .build())
               .build());
     }
@@ -102,19 +125,19 @@ public class SyncStepHelper {
     SyncOptions requestSyncOptions = syncStepParameters.getSyncOptions();
 
     // if skipSchemaValidation is selected in UI, the Validate parameter to GitOps service should be false
-    getSyncOptionAsString(
-        SyncOptionsEnum.VALIDATE.getValue(), !requestSyncOptions.getSkipSchemaValidation().getValue(), items);
+    getSyncOptionAsString(SyncOptionsEnum.VALIDATE.getValue(),
+        !toBoolean(requestSyncOptions.getSkipSchemaValidation().getValue()), items);
 
-    getSyncOptionAsString(
-        SyncOptionsEnum.CREATE_NAMESPACE.getValue(), requestSyncOptions.getAutoCreateNamespace().getValue(), items);
-    getSyncOptionAsString(
-        SyncOptionsEnum.PRUNE_LAST.getValue(), requestSyncOptions.getPruneResourcesAtLast().getValue(), items);
+    getSyncOptionAsString(SyncOptionsEnum.CREATE_NAMESPACE.getValue(),
+        toBoolean(requestSyncOptions.getAutoCreateNamespace().getValue()), items);
+    getSyncOptionAsString(SyncOptionsEnum.PRUNE_LAST.getValue(),
+        toBoolean(requestSyncOptions.getPruneResourcesAtLast().getValue()), items);
     getSyncOptionAsString(SyncOptionsEnum.APPLY_OUT_OF_SYNC_ONLY.getValue(),
-        requestSyncOptions.getApplyOutOfSyncOnly().getValue(), items);
+        toBoolean(requestSyncOptions.getApplyOutOfSyncOnly().getValue()), items);
     getSyncOptionAsString(SyncOptionsEnum.PRUNE_PROPAGATION_POLICY.getValue(),
         requestSyncOptions.getPrunePropagationPolicy().getValue(), items);
     getSyncOptionAsString(
-        SyncOptionsEnum.REPLACE.getValue(), requestSyncOptions.getReplaceResources().getValue(), items);
+        SyncOptionsEnum.REPLACE.getValue(), toBoolean(requestSyncOptions.getReplaceResources().getValue()), items);
 
     syncRequestBuilder.syncOptions(syncOptionsBuilder.items(items).build());
   }
