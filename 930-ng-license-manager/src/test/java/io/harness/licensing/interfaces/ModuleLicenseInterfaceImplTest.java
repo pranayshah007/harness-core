@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -11,6 +11,7 @@ import static io.harness.licensing.LicenseConstant.UNLIMITED;
 import static io.harness.licensing.LicenseTestConstant.ACCOUNT_IDENTIFIER;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -18,11 +19,13 @@ import io.harness.CategoryTest;
 import io.harness.ModuleType;
 import io.harness.category.element.UnitTests;
 import io.harness.cd.CDLicenseType;
+import io.harness.exception.UnsupportedOperationException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
+import io.harness.licensing.beans.modules.CETModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
 import io.harness.licensing.beans.modules.IACMModuleLicenseDTO;
@@ -32,6 +35,7 @@ import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 import io.harness.licensing.interfaces.clients.ModuleLicenseClient;
 import io.harness.licensing.interfaces.clients.local.CDLocalClient;
 import io.harness.licensing.interfaces.clients.local.CELocalClient;
+import io.harness.licensing.interfaces.clients.local.CETLocalClient;
 import io.harness.licensing.interfaces.clients.local.CFLocalClient;
 import io.harness.licensing.interfaces.clients.local.CILocalClient;
 import io.harness.licensing.interfaces.clients.local.IACMLocalClient;
@@ -602,5 +606,59 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
         (IACMModuleLicenseDTO) moduleLicenseInterface.generateFreeLicense(ACCOUNT_IDENTIFIER, ModuleType.IACM);
     dto.setStartTime(0L);
     assertThat(dto).isEqualTo(expectedDTO);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.COREY)
+  @Category(UnitTests.class)
+  public void testStartEnterpriseTrialOnCET() {
+    when(clientMap.get(ModuleType.CET)).thenReturn(new CETLocalClient());
+    ModuleLicenseDTO expectedDTO = CETModuleLicenseDTO.builder()
+                                       .numberOfAgents(Integer.valueOf(UNLIMITED))
+                                       .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                       .moduleType(ModuleType.CET)
+                                       .licenseType(LicenseType.TRIAL)
+                                       .edition(Edition.ENTERPRISE)
+                                       .status(LicenseStatus.ACTIVE)
+                                       .startTime(0)
+                                       .expiryTime(0)
+                                       .build();
+    CETModuleLicenseDTO dto = (CETModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
+        Edition.ENTERPRISE, ACCOUNT_IDENTIFIER, ModuleType.CET);
+    dto.setStartTime(0L);
+    dto.setExpiryTime(0);
+    assertThat(dto).isEqualTo(expectedDTO);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.COREY)
+  @Category(UnitTests.class)
+  public void testStartTeamTrialOnCET() {
+    when(clientMap.get(ModuleType.CET)).thenReturn(new CETLocalClient());
+
+    Throwable thrown = catchThrowable(() -> {
+      CETModuleLicenseDTO dto = (CETModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
+          Edition.TEAM, ACCOUNT_IDENTIFIER, ModuleType.CET);
+    });
+
+    assertThat(thrown)
+        .isInstanceOf(UnsupportedOperationException.class)
+        .hasMessageContaining("Requested edition is not supported");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.COREY)
+  @Category(UnitTests.class)
+  public void testStartFreeTrialOnCET() {
+    when(clientMap.get(ModuleType.CET)).thenReturn(new CETLocalClient());
+
+    Throwable thrown = catchThrowable(() -> {
+      CETModuleLicenseDTO dto = (CETModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
+          Edition.FREE, ACCOUNT_IDENTIFIER, ModuleType.CET);
+    });
+
+    assertThat(thrown)
+        .isInstanceOf(UnsupportedOperationException.class)
+        .hasMessageContaining("Requested edition is not supported");
   }
 }

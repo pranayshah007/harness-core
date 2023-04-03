@@ -14,7 +14,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.models.InstanceStats;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import java.sql.Connection;
@@ -85,7 +85,7 @@ public class InstanceStatsRepositoryImpl implements InstanceStatsRepository {
   private PreparedStatement getScopedStatement(
       Connection dbConnection, String accountId, String orgId, String projectId, String serviceId) throws SQLException {
     IdentifierRef serviceIdentifierRef =
-        FullyQualifiedIdentifierHelper.getIdentifierRefWithScope(accountId, orgId, projectId, serviceId);
+        IdentifierRefHelper.getIdentifierRefWithScope(accountId, orgId, projectId, serviceId);
     PreparedStatement statement = null;
     switch (serviceIdentifierRef.getScope()) {
       case ACCOUNT:

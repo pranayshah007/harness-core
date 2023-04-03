@@ -1,3 +1,4 @@
-azure:
-  - host: HOST_VALUE
-    token: ${AZURE_TOKEN}
+integrations:
+  azure:
+    - host: dev.azure.com
+      token: ${AZURE_TOKEN}

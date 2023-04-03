@@ -23,4 +23,7 @@ public interface AppConfigRepository extends CrudRepository<AppConfigEntity, Str
   Optional<AppConfigEntity> findByAccountIdentifierAndConfigIdAndConfigType(
       String accountIdentifier, String configId, ConfigType configType);
   List<AppConfigEntity> findAllByAccountIdentifierAndEnabled(String accountIdentifier, Boolean enabled);
+
+  List<AppConfigEntity> findAllByAccountIdentifierAndConfigTypeAndEnabled(
+      String accountIdentifier, ConfigType configType, Boolean enabled);
 }

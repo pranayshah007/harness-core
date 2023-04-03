@@ -11,6 +11,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
+import io.harness.engine.expressions.usages.beans.ExpressionCategory;
+import io.harness.engine.expressions.usages.beans.ExpressionMetadata;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.logging.AutoLogContext;

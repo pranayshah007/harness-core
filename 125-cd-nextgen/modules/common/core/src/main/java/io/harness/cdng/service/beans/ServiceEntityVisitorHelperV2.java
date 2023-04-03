@@ -13,6 +13,7 @@ import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
@@ -84,6 +85,9 @@ public class ServiceEntityVisitorHelperV2 implements ConfigValidator, EntityRefe
     final Set<EntityDetailProtoDTO> result = new HashSet<>();
     if (!serviceYamlV2.getServiceRef().isExpression()) {
       String serviceRefString = serviceYamlV2.getServiceRef().getValue();
+      if (EmptyPredicate.isEmpty(serviceRefString)) {
+        return result;
+      }
       IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
           serviceRefString, accountIdentifier, orgIdentifier, projectIdentifier, metadata);
 

@@ -50,8 +50,9 @@ public class SscaGenericStep extends AbstractStepExecutable {
     }
 
     String stageIdentifier = stageLevel.get().getIdentifier();
-    Call<SBOMArtifactResponse> call = sscaServiceClient.getArtifactInfo(AmbianceUtils.obtainCurrentRuntimeId(ambiance),
-        stageIdentifier, stepIdentifier, AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+    String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    Call<SBOMArtifactResponse> call = sscaServiceClient.getArtifactInfo(stepExecutionId, stageIdentifier,
+        stepIdentifier, AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
         AmbianceUtils.getProjectIdentifier(ambiance));
 
     Response<SBOMArtifactResponse> response = null;
@@ -76,7 +77,7 @@ public class SscaGenericStep extends AbstractStepExecutable {
                                                  .isSbomAttested(sbomArtifactResponse.getAttestation().isAttested())
                                                  .sbomName(sbomArtifactResponse.getSbom().getName())
                                                  .sbomUrl(sbomArtifactResponse.getSbom().getUrl())
-                                                 .stepExecutionId(sbomArtifactResponse.getStepExecutionId())
+                                                 .stepExecutionId(stepExecutionId)
                                                  .build())
                                        .build());
   }

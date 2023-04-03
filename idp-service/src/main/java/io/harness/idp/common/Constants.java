@@ -19,5 +19,6 @@ public class Constants {
   public static final String IDP_PREFIX = "idp_";
   public static final String IDP_RESOURCE_TYPE = "IDP_SETTINGS";
   public static final String IDP_PERMISSION = "idp_idpsettings_manage";
-  public static final List<String> pluginIds = List.of("pager-duty", "snyk-security", "harness-ci-cd");
+  public static final List<String> pluginIds =
+      List.of("github-pull-requests-board", "pager-duty", "snyk-security", "harness-ci-cd");
 }

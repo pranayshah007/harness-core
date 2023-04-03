@@ -22,6 +22,9 @@ import static java.util.Collections.emptyList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.azure.AzureConfigContext;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialSpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
@@ -29,6 +32,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialD
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
+import io.harness.delegate.task.aws.eks.AwsEKSV2DelegateTaskHelper;
 import io.harness.delegate.task.gcp.helpers.GkeClusterHelper;
 import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.ExceptionUtils;
@@ -73,6 +77,7 @@ public class ContainerDeploymentDelegateBaseHelper {
   @Inject private GkeClusterHelper gkeClusterHelper;
   @Inject private EncryptionService encryptionService;
   @Inject private AzureAsyncTaskHelper azureAsyncTaskHelper;
+  @Inject private AwsEKSV2DelegateTaskHelper awsEKSDelegateTaskHelper;
 
   public static final LoadingCache<String, Object> lockObjects =
       CacheBuilder.newBuilder().expireAfterAccess(30, TimeUnit.MINUTES).build(CacheLoader.from(Object::new));
@@ -122,6 +127,11 @@ public class ContainerDeploymentDelegateBaseHelper {
   }
 
   public KubernetesConfig createKubernetesConfig(K8sInfraDelegateConfig clusterConfigDTO, LogCallback logCallback) {
+    return createKubernetesConfig(clusterConfigDTO, null, logCallback);
+  }
+
+  public KubernetesConfig createKubernetesConfig(
+      K8sInfraDelegateConfig clusterConfigDTO, String workingKubeconfigDirectory, LogCallback logCallback) {
     if (clusterConfigDTO instanceof DirectK8sInfraDelegateConfig) {
       return k8sYamlToDelegateDTOMapper.createKubernetesConfigFromClusterConfig(
           ((DirectK8sInfraDelegateConfig) clusterConfigDTO).getKubernetesClusterConfigDTO(),
@@ -147,12 +157,17 @@ public class ContainerDeploymentDelegateBaseHelper {
                 .useClusterAdminCredentials(azureK8sInfraDelegateConfig.isUseClusterAdminCredentials())
                 .certificateWorkingDirectory(workingDirectory)
                 .build();
-        return azureAsyncTaskHelper.getClusterConfig(azureConfigContext, logCallback);
+        return azureAsyncTaskHelper.getClusterConfig(azureConfigContext, workingKubeconfigDirectory, logCallback);
       } catch (IOException ioe) {
         throw NestedExceptionUtils.hintWithExplanationException("Failed to authenticate with Azure",
             "Please check you Azure connector configuration or delegate filesystem permissions.",
             new AzureAuthenticationException(ioe.getMessage()));
       }
+    } else if (clusterConfigDTO instanceof EksK8sInfraDelegateConfig) {
+      EksK8sInfraDelegateConfig eksK8sInfraDelegateConfig = (EksK8sInfraDelegateConfig) clusterConfigDTO;
+      AwsConnectorDTO awsConnectorDTO = eksK8sInfraDelegateConfig.getAwsConnectorDTO();
+      return awsEKSDelegateTaskHelper.getKubeConfig(awsConnectorDTO, eksK8sInfraDelegateConfig.getCluster(),
+          eksK8sInfraDelegateConfig.getNamespace(), logCallback);
     } else {
       throw new InvalidRequestException("Unhandled K8sInfraDelegateConfig " + clusterConfigDTO.getClass());
     }
@@ -166,18 +181,20 @@ public class ContainerDeploymentDelegateBaseHelper {
     return null;
   }
 
-  public String getKubeconfigFileContent(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
+  public String getKubeconfigFileContent(K8sInfraDelegateConfig k8sInfraDelegateConfig, String workingDirectory) {
     decryptK8sInfraDelegateConfig(k8sInfraDelegateConfig);
-    return kubernetesContainerService.getConfigFileContent(createKubernetesConfig(k8sInfraDelegateConfig, null));
+    return kubernetesContainerService.getConfigFileContent(
+        createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, null));
   }
 
   public void persistKubernetesConfig(KubernetesConfig kubernetesConfig, String directory) throws IOException {
     kubernetesContainerService.persistKubernetesConfig(kubernetesConfig, directory);
   }
 
-  public KubernetesConfig decryptAndGetKubernetesConfig(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
+  public KubernetesConfig decryptAndGetKubernetesConfig(
+      K8sInfraDelegateConfig k8sInfraDelegateConfig, String workingDirectory) {
     decryptK8sInfraDelegateConfig(k8sInfraDelegateConfig);
-    return createKubernetesConfig(k8sInfraDelegateConfig, null);
+    return createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, null);
   }
 
   public void decryptK8sInfraDelegateConfig(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
@@ -189,6 +206,10 @@ public class ContainerDeploymentDelegateBaseHelper {
       GcpK8sInfraDelegateConfig k8sGcpInfraDelegateConfig = (GcpK8sInfraDelegateConfig) k8sInfraDelegateConfig;
       decryptGcpClusterConfig(
           k8sGcpInfraDelegateConfig.getGcpConnectorDTO(), k8sGcpInfraDelegateConfig.getEncryptionDataDetails());
+    } else if (k8sInfraDelegateConfig instanceof EksK8sInfraDelegateConfig) {
+      EksK8sInfraDelegateConfig k8sEksInfraDelegateConfig = (EksK8sInfraDelegateConfig) k8sInfraDelegateConfig;
+      decryptAwsClusterConfig(
+          k8sEksInfraDelegateConfig.getAwsConnectorDTO(), k8sEksInfraDelegateConfig.getEncryptionDataDetails());
     }
   }
 
@@ -208,6 +229,14 @@ public class ContainerDeploymentDelegateBaseHelper {
       GcpManualDetailsDTO gcpCredentialSpecDTO = (GcpManualDetailsDTO) gcpConnectorDTO.getCredential().getConfig();
       secretDecryptionService.decrypt(gcpCredentialSpecDTO, encryptedDataDetails);
       ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gcpCredentialSpecDTO, encryptedDataDetails);
+    }
+  }
+
+  public void decryptAwsClusterConfig(AwsConnectorDTO awsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
+    if (awsConnectorDTO.getCredential().getAwsCredentialType() == AwsCredentialType.MANUAL_CREDENTIALS) {
+      AwsCredentialSpecDTO awsCredentialSpecDTO = awsConnectorDTO.getCredential().getConfig();
+      secretDecryptionService.decrypt(awsCredentialSpecDTO, encryptedDataDetails);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsCredentialSpecDTO, encryptedDataDetails);
     }
   }
 

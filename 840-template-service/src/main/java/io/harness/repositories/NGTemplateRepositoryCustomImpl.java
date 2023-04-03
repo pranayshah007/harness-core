@@ -280,6 +280,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
             .repoName(savedEntity.getRepo())
             .entityType(EntityType.TEMPLATE)
             .loadFromCache(loadFromCache)
+            .getOnlyFileContent(TemplateUtils.isExecutionFlow())
             .build(),
         Collections.emptyMap());
   }

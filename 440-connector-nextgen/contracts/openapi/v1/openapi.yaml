@@ -6,18 +6,18 @@ info:
   contact:
     email: contact@harness.io
 servers:
-  - url: 'https://api.harness.io'
+  - url: 'https://app.harness.io'
     description: Harness host URL.
 tags:
   - name: Account Connector
     description: This contains APIs for Account-scoped Connectors.
-    x-displayName: Account Connectors
+    x-displayName: Account Connectors [Beta]
   - name: Org Connector
     description: This contains APIs for Organization-scoped Connectors.
-    x-displayName: Organization Connectors
+    x-displayName: Organization Connectors [Beta]
   - name: Project Connector
     description: This contains APIs for Project-scoped Connectors.
-    x-displayName: Project Connectors
+    x-displayName: Project Connectors [Beta]
 paths:
   /v1/connectors:
     post:
@@ -54,6 +54,8 @@ paths:
         - $ref: '#/components/parameters/SearchTerm'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
         - $ref: '#/components/parameters/AccountHeader'
       security:
         - x-api-key: []
@@ -166,6 +168,8 @@ paths:
         - $ref: '#/components/parameters/SearchTerm'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
         - $ref: '#/components/parameters/AccountHeader'
       security:
         - x-api-key: []
@@ -281,6 +285,8 @@ paths:
         - $ref: '#/components/parameters/SearchTerm'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
         - $ref: '#/components/parameters/AccountHeader'
       security:
         - x-api-key: []
@@ -2049,6 +2055,28 @@ components:
       schema:
         type: string
       description: This would be used to filter resources having attributes matching with search term.
+    Sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - name
+          - identifier
+          - created
+          - updated
+      description: Parameter on the basis of which sorting is done.
+    Order:
+      name: order
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - ASC
+          - DESC
+      description: Order on the basis of which sorting is done.
     AccountHeader:
       name: Harness-Account
       in: header

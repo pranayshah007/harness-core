@@ -10,6 +10,7 @@ package io.harness.cvng.servicelevelobjective.entities;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
+import io.harness.exception.InvalidArgumentsException;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
@@ -48,6 +49,16 @@ public class RequestServiceLevelIndicator extends ServiceLevelIndicator {
     metricForRatioSLI.add(metric1);
     metricForRatioSLI.add(metric2);
     return metricForRatioSLI;
+  }
+
+  @Override
+  public Integer getConsiderConsecutiveMinutes() {
+    throw new InvalidArgumentsException("Value doesn't exist For request based slo");
+  }
+
+  @Override
+  public Boolean getConsiderAllConsecutiveMinutesFromStartAsBad() {
+    throw new InvalidArgumentsException("Value doesn't exist For request based slo");
   }
 
   @Override

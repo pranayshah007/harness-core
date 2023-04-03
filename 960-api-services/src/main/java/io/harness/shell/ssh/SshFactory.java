@@ -7,32 +7,52 @@
 
 package io.harness.shell.ssh;
 
-import io.harness.logging.LogCallback;
-import io.harness.shell.SshSessionConfig;
+import static io.harness.shell.AccessType.KEY_SUDO_APP_USER;
+import static io.harness.shell.AccessType.KEY_SU_APP_USER;
+import static io.harness.shell.ExecutorType.BASTION_HOST;
+import static io.harness.shell.ExecutorType.KEY_AUTH;
+import static io.harness.shell.ExecutorType.PASSWORD_AUTH;
 
+import io.harness.logging.LogCallback;
+import io.harness.logging.NoopExecutionCallback;
+import io.harness.shell.AccessType;
+import io.harness.shell.SshSessionConfig;
+import io.harness.shell.ssh.agent.SshClient;
+import io.harness.shell.ssh.agent.jsch.JschClient;
+
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
 
 @Slf4j
+@UtilityClass
 public class SshFactory {
-  public SshClient getSshClient(SshClientType sshClientType, SshSessionConfig config, LogCallback logCallback) {
-    SshClient client;
+  public static SshClient getSshClient(SshSessionConfig config) {
+    return getSshClient(config, new NoopExecutionCallback());
+  }
 
-    if (null == sshClientType) {
-      client = new JschClient();
+  public static SshClient getSshClient(SshSessionConfig config, LogCallback logCallback) {
+    init(config);
+
+    if (config.isVaultSSH()) {
+      // this flow is planned to be migrated to SSHJ flows
+      return new JschClient(config, logCallback);
     } else {
-      switch (sshClientType) {
-        case JSCH:
-          client = new JschClient();
-          break;
-        default:
-          throw new NotImplementedException("Ssh client type not implemented: " + sshClientType);
+      return new JschClient(config, logCallback);
+    }
+  }
+
+  private static void init(SshSessionConfig config) {
+    if (config.getExecutorType() == null) {
+      if (config.getBastionHostConfig() != null) {
+        config.setExecutorType(BASTION_HOST);
+      } else {
+        if (config.getAccessType() == AccessType.KEY || config.getAccessType() == KEY_SU_APP_USER
+            || config.getAccessType() == KEY_SUDO_APP_USER) {
+          config.setExecutorType(KEY_AUTH);
+        } else {
+          config.setExecutorType(PASSWORD_AUTH);
+        }
       }
     }
-
-    client.init(config, logCallback);
-
-    return client;
   }
-  public enum SshClientType { JSCH, SSHJ }
 }

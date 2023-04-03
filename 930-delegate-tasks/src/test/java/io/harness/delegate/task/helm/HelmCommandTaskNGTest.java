@@ -91,7 +91,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
     String kubeConfigLocation = ".kube/config";
 
     doReturn(logCallback).when(dummyCommandRequest).getLogCallback();
-    doReturn(kubernetesConfig).when(containerDeploymentDelegateBaseHelper).createKubernetesConfig(any(), any());
+    doReturn(kubernetesConfig).when(containerDeploymentDelegateBaseHelper).createKubernetesConfig(any(), any(), any());
     doReturn(kubeConfigLocation).when(containerDeploymentDelegateBaseHelper).createKubeConfig(eq(kubernetesConfig));
 
     assertThatThrownBy(() -> spyHelmCommandTask.run(dummyCommandRequest)).isInstanceOf(TaskNGDataException.class);

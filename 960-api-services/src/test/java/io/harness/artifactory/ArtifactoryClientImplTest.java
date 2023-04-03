@@ -28,6 +28,7 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -110,6 +111,8 @@ public class ArtifactoryClientImplTest extends CategoryTest {
     assertThat(builds).isNotNull();
     assertThat(builds)
         .extracting(BuildDetails::getNumber)
+        .isEqualTo(Lists.newArrayList("1.2/todolist-1.2.war", "1.0.1.0-SNAPSHOT/todolist-1.0.1.0-20170930.195729-1.war",
+            "1.0.0-SNAPSHOT/todolist-1.0.0-20170930.195402-1.war", "1.1/todolist-1.1.war", "1.0/todolist-1.0.war"))
         .contains("1.0.0-SNAPSHOT/todolist-1.0.0-20170930.195402-1.war");
   }
 
@@ -122,7 +125,8 @@ public class ArtifactoryClientImplTest extends CategoryTest {
     assertThat(builds).isNotNull();
     assertThat(builds)
         .extracting(BuildDetails::getNumber)
-        .contains("1.0.0-SNAPSHOT/todolist-1.0.0-20170930.195402-1.war");
+        .isEqualTo(Lists.newArrayList("1.2/todolist-1.2.war", "1.0.1.0-SNAPSHOT/todolist-1.0.1.0-20170930.195729-1.war",
+            "1.0.0-SNAPSHOT/todolist-1.0.0-20170930.195402-1.war", "1.1/todolist-1.1.war", "1.0/todolist-1.0.war"));
   }
 
   @Test
@@ -134,7 +138,10 @@ public class ArtifactoryClientImplTest extends CategoryTest {
     assertThat(builds).isNotNull();
     assertThat(builds)
         .extracting(BuildDetails::getNumber)
-        .contains("io/harness/todolist/todolist/1.0/todolist-1.0.war");
+        .isEqualTo(Lists.newArrayList("io/harness/todolist/todolist/1.2/todolist-1.2.war",
+            "io/harness/todolist/todolist/1.0.1.0-SNAPSHOT/todolist-1.0.1.0-20170930.195729-1.war",
+            "io/harness/todolist/todolist/1.0.0-SNAPSHOT/todolist-1.0.0-20170930.195402-1.war",
+            "io/harness/todolist/todolist/1.1/todolist-1.1.war", "io/harness/todolist/todolist/1.0/todolist-1.0.war"));
   }
 
   @Test

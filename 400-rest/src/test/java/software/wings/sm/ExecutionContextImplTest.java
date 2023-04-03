@@ -45,6 +45,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.eq;
@@ -57,6 +58,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.ArtifactMetadata;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SweepingOutput;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.SweepingOutputInstance.Scope;
@@ -175,6 +177,8 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
   @Before
   public void setup() {
+    when(featureFlagService.isEnabled(eq(FeatureName.SPG_ADOPT_DELEGATE_DECRYPTION_ON_SERVICE_VARIABLES), anyString()))
+        .thenReturn(false);
     when(settingsService.getGlobalSettingAttributesByType(ACCOUNT_ID, SettingVariableTypes.APP_DYNAMICS.name()))
         .thenReturn(Lists.newArrayList(aSettingAttribute().withUuid("id").build()));
     on(appService).set("settingsService", settingsService);

@@ -9,6 +9,7 @@ package io.harness.ngmigration.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.infrastructure.InfrastructureResourceClient;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.pipeline.remote.PipelineServiceClient;
@@ -31,6 +32,7 @@ public class MigrationTemplateUtils {
   @Inject private TemplateResourceClient templateResourceClient;
   @Inject PipelineServiceClient pipelineServiceClient;
   @Inject ServiceResourceClient serviceResourceClient;
+  @Inject InfrastructureResourceClient infrastructureResourceClient;
 
   public JsonNode getTemplateInputs(NgEntityDetail ngEntityDetail, String accountIdentifier) {
     try {
@@ -74,6 +76,21 @@ public class MigrationTemplateUtils {
       return YamlUtils.read(response.getInputSetTemplateYaml(), JsonNode.class);
     } catch (Exception ex) {
       log.error("Error when getting service templates input - ", ex);
+      return null;
+    }
+  }
+
+  public JsonNode getInfraInput(String accountIdentifier, String envIdentifier, NgEntityDetail ngEntityDetail) {
+    try {
+      NGEntityTemplateResponseDTO response = NGRestUtils.getResponse(
+          infrastructureResourceClient.getInfrastructureInputs(accountIdentifier, ngEntityDetail.getOrgIdentifier(),
+              ngEntityDetail.getProjectIdentifier(), envIdentifier, ngEntityDetail.getIdentifier()));
+      if (response == null || StringUtils.isBlank(response.getInputSetTemplateYaml())) {
+        return null;
+      }
+      return YamlUtils.read(response.getInputSetTemplateYaml(), JsonNode.class);
+    } catch (Exception ex) {
+      log.error("Error when getting infra templates inputs - ", ex);
       return null;
     }
   }

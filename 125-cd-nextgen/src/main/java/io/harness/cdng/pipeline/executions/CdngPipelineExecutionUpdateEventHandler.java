@@ -52,14 +52,20 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEventHandler {
-  private static final Set<String> k8sSteps =
-      Sets.newHashSet(StepSpecTypeConstants.GITOPS_CREATE_PR, StepSpecTypeConstants.GITOPS_MERGE_PR,
-          StepSpecTypeConstants.GITOPS_SYNC, StepSpecTypeConstants.K8S_ROLLING_DEPLOY,
-          StepSpecTypeConstants.K8S_ROLLING_ROLLBACK, StepSpecTypeConstants.K8S_BLUE_GREEN_DEPLOY,
-          StepSpecTypeConstants.K8S_APPLY, StepSpecTypeConstants.K8S_SCALE, StepSpecTypeConstants.K8S_BG_SWAP_SERVICES,
-          StepSpecTypeConstants.K8S_CANARY_DELETE, StepSpecTypeConstants.K8S_CANARY_DEPLOY,
-          StepSpecTypeConstants.K8S_DELETE, StepSpecTypeConstants.HELM_DEPLOY, StepSpecTypeConstants.HELM_ROLLBACK,
-          StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO, StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST);
+  private static final Set<String> STEPS_TO_UPDATE_LOG_STREAMS = Sets.newHashSet(StepSpecTypeConstants.GITOPS_CREATE_PR,
+      StepSpecTypeConstants.GITOPS_MERGE_PR, StepSpecTypeConstants.GITOPS_SYNC,
+      StepSpecTypeConstants.K8S_ROLLING_DEPLOY, StepSpecTypeConstants.K8S_ROLLING_ROLLBACK,
+      StepSpecTypeConstants.K8S_BLUE_GREEN_DEPLOY, StepSpecTypeConstants.K8S_APPLY, StepSpecTypeConstants.K8S_SCALE,
+      StepSpecTypeConstants.K8S_BG_SWAP_SERVICES, StepSpecTypeConstants.K8S_CANARY_DELETE,
+      StepSpecTypeConstants.K8S_CANARY_DEPLOY, StepSpecTypeConstants.K8S_DELETE, StepSpecTypeConstants.HELM_DEPLOY,
+      StepSpecTypeConstants.HELM_ROLLBACK, StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO,
+      StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST, StepSpecTypeConstants.COMMAND,
+      StepSpecTypeConstants.ASG_ROLLING_DEPLOY, StepSpecTypeConstants.ASG_ROLLING_ROLLBACK,
+      StepSpecTypeConstants.ASG_CANARY_DEPLOY, StepSpecTypeConstants.ASG_CANARY_DELETE,
+      StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY, StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK,
+      StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE, StepSpecTypeConstants.ELASTIGROUP_SETUP,
+      StepSpecTypeConstants.ELASTIGROUP_DEPLOY, StepSpecTypeConstants.ELASTIGROUP_ROLLBACK,
+      StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP, StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE);
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;
@@ -79,7 +85,7 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
         stepHelper.sendRollbackTelemetryEvent(event.getAmbiance(), event.getStatus(), accountName);
       }
 
-      if (updateK8sLogStreams(event)) {
+      if (updateLogStreams(event)) {
         List<String> logKeys = StepUtils.generateLogKeys(event.getAmbiance(), Collections.emptyList());
         if (EmptyPredicate.isNotEmpty(logKeys)) {
           String prefix = logKeys.get(0);
@@ -214,9 +220,9 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
     return level != null && level.getStepType() != null && stepSpecType.equals(level.getStepType().getType());
   }
 
-  private boolean updateK8sLogStreams(OrchestrationEvent event) {
+  private boolean updateLogStreams(OrchestrationEvent event) {
     return StatusUtils.isFinalStatus(event.getStatus())
-        && k8sSteps.contains(
+        && STEPS_TO_UPDATE_LOG_STREAMS.contains(
             Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(event.getAmbiance())).getStepType().getType());
   }
 }

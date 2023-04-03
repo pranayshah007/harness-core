@@ -74,6 +74,7 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
     GarDelegateResponse garDelegateResponse = toGarResponse(lastSuccessfulBuild, attributesRequest);
     return getSuccessTaskExecutionResponse(Collections.singletonList(garDelegateResponse));
   }
+
   @Override
   public ArtifactTaskExecutionResponse getBuilds(GarDelegateRequest attributesRequest) {
     List<BuildDetailsInternal> builds;

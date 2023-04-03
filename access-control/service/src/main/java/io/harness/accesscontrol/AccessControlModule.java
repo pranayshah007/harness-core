@@ -132,6 +132,7 @@ import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.TokenClientModule;
+import io.harness.user.UserClientModule;
 import io.harness.usergroups.UserGroupClientModule;
 import io.harness.usermembership.UserMembershipClientModule;
 import io.harness.version.VersionModule;
@@ -324,6 +325,9 @@ public class AccessControlModule extends AbstractModule {
       install(AggregatorModule.getInstance(config.getAggregatorConfiguration()));
       bind(ChangeEventFailureHandler.class).to(AccessControlChangeEventFailureHandler.class);
     }
+    install(UserClientModule.getInstance(config.getAccountClientConfiguration().getAccountServiceConfig(),
+        config.getAccountClientConfiguration().getAccountServiceSecret(), ACCESS_CONTROL_SERVICE.toString()));
+
     bind(TimeLimiter.class).toInstance(HTimeLimiter.create());
 
     bind(OutboxEventHandler.class).to(AccessControlOutboxEventHandler.class);

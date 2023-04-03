@@ -9,6 +9,7 @@ package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
+import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BUCKET;
@@ -38,6 +39,8 @@ import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CICacheIntelligenceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.serializer.SerializerUtils;
 import io.harness.ci.utils.CIStepInfoUtils;
@@ -77,10 +80,12 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class VmPluginStepSerializer {
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
+  @Inject CIExecutionConfigService ciExecutionConfigService;
   @Inject ConnectorUtils connectorUtils;
   @Inject HarnessImageUtils harnessImageUtils;
   @Inject CIStepInfoUtils ciStepInfoUtils;
   @Inject private IACMStepsUtils iacmStepsUtils;
+  @Inject private CIFeatureFlagService featureFlagService;
 
   public VmStepInfo serialize(PluginStepInfo pluginStepInfo, StageInfraDetails stageInfraDetails, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance, List<CIRegistry> registries,
@@ -127,13 +132,23 @@ public class VmPluginStepSerializer {
       if (isNotEmpty(uses)) {
         log.warn("Both image and uses are set for plugin step. Ignoring uses field");
       }
+
+      String accountID = AmbianceUtils.getAccountId(ambiance);
+      if (isGitCloneStep(identifier, pluginStepInfo)
+          && CIStepInfoUtils.canRunVmStepOnHost(
+              GIT_CLONE, stageInfraDetails, accountID, ciExecutionConfigService, featureFlagService)) {
+        String name = ciExecutionConfigService.getContainerlessPluginNameForVM(GIT_CLONE);
+        List<String> entrypoint = Arrays.asList("plugin", "-kind", "harness", "-name", name);
+        return convertContainerlessStep(identifier, entrypoint, envVars, timeout, pluginStepInfo);
+      }
       return convertContainerStep(
           ambiance, identifier, image, connectorIdentifier, envVars, timeout, stageInfraDetails, pluginStepInfo);
     } else if (isNotEmpty(uses)) {
       if (stageInfraDetails.getType() != StageInfraDetails.Type.DLITE_VM) {
         throw new CIStageExecutionException(format("uses field is applicable only for cloud builds"));
       }
-      return convertContainerlessStep(identifier, uses, envVars, timeout, pluginStepInfo);
+      List<String> entrypoint = Arrays.asList("plugin", "-kind", "harness", "-repo", uses);
+      return convertContainerlessStep(identifier, entrypoint, envVars, timeout, pluginStepInfo);
     } else {
       throw new CIStageExecutionException("Either image or uses field needs to be set");
     }
@@ -148,7 +163,7 @@ public class VmPluginStepSerializer {
 
     // if the plugin type is git clone use default harnessImage Connector
     // else if the connector is given in plugin, use that.
-    if (identifier.equals(GIT_CLONE_STEP_ID) && pluginStepInfo.isHarnessManagedImage()) {
+    if (isGitCloneStep(identifier, pluginStepInfo)) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       ConnectorDetails harnessInternalImageConnector =
           harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, stageInfraDetails);
@@ -177,13 +192,10 @@ public class VmPluginStepSerializer {
     return pluginStepBuilder.build();
   }
 
-  private VmRunStep convertContainerlessStep(
-      String identifier, String uses, Map<String, String> envVars, long timeout, PluginStepInfo pluginStepInfo) {
-    VmRunStepBuilder stepBuilder = VmRunStep.builder()
-                                       .entrypoint(Arrays.asList("plugin", "-kind", "harness", "-repo"))
-                                       .command(uses)
-                                       .envVariables(envVars)
-                                       .timeoutSecs(timeout);
+  private VmRunStep convertContainerlessStep(String identifier, List<String> entrypoint, Map<String, String> envVars,
+      long timeout, PluginStepInfo pluginStepInfo) {
+    VmRunStepBuilder stepBuilder =
+        VmRunStep.builder().entrypoint(entrypoint).envVariables(envVars).timeoutSecs(timeout);
     if (pluginStepInfo.getReports().getValue() != null) {
       if (pluginStepInfo.getReports().getValue().getType() == UnitTestReportType.JUNIT) {
         JUnitTestReport junitTestReport = (JUnitTestReport) pluginStepInfo.getReports().getValue().getSpec();
@@ -216,5 +228,9 @@ public class VmPluginStepSerializer {
           break;
       }
     }
+  }
+
+  private boolean isGitCloneStep(String identifier, PluginStepInfo pluginStepInfo) {
+    return identifier.equals(GIT_CLONE_STEP_ID) && pluginStepInfo.isHarnessManagedImage();
   }
 }

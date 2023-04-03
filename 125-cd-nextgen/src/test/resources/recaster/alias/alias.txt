@@ -833,3 +833,6 @@ io.harness.cdng.tas.TasRouteMappingStepParameters
 io.harness.cdng.tas.TasRouteMappingStepNode
 io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput
 io.harness.cdng.provision.terraform.TerraformCliOptionFlag
+io.harness.cdng.infra.yaml.K8sRancherInfrastructure
+io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome
+io.harness.cdng.infra.beans.K8sRancherInfraMapping

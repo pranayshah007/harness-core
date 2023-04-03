@@ -115,7 +115,6 @@ public class PerpetualTaskRecord
   long failedExecutionCount;
 
   String exception;
-  boolean referenceFalseKryoSerializer;
 
   @Override
   public Long obtainNextIteration(String fieldName) {

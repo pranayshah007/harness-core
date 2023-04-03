@@ -26,6 +26,7 @@ public enum FeatureName {
   SPG_ALLOW_GET_BUILD_SYNC("Allow get builds sync from gcs", HarnessTeam.SPG),
   SPG_ALLOW_FILTER_BY_PATHS_GCS("Enables filtering by path on database GCS-type stream artifacts.", HarnessTeam.SPG),
   SPG_ENABLE_SHARING_FILTERS("Enables account admin share deployments filter using usergroups", HarnessTeam.SPG),
+  SPG_REMOVE_REDUNDANT_UPDATE_IN_AUDIT("It removes a redudant update on the audit", HarnessTeam.SPG),
   SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE("Enables refresh pipeline when trigger "
           + "continue pipeline execution",
       HarnessTeam.SPG),
@@ -70,6 +71,8 @@ public enum FeatureName {
   CI_INDIRECT_LOG_UPLOAD,
   CI_LE_STATUS_REST_ENABLED(
       "Used for sending step status for CI via REST APIs instead of gRPC from Lite Engine to manager", HarnessTeam.CI),
+  CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED(
+      "If enabled, OOTB steps will run directly on host in cloud infra", HarnessTeam.CI),
   CUSTOM_DASHBOARD,
   CUSTOM_DEPLOYMENT_ARTIFACT_FROM_INSTANCE_JSON,
   CUSTOM_MAX_PAGE_SIZE,
@@ -243,11 +246,11 @@ public enum FeatureName {
   RATE_LIMITED_TOTP,
   USE_IMMUTABLE_DELEGATE("Use immutable delegate on download delegate from UI", HarnessTeam.DEL),
   DELEGATE_TASK_LOAD_DISTRIBUTION("Delegate task load distribution among delegates", HarnessTeam.DEL),
+  QUEUE_DELEGATE_TASK("Delegate task queueing with queue service(HQS)", HarnessTeam.DEL),
   ACTIVE_MIGRATION_FROM_LOCAL_TO_GCP_KMS,
   TERRAFORM_AWS_CP_AUTHENTICATION,
   CI_DOCKER_INFRASTRUCTURE,
   CI_TESTTAB_NAVIGATION,
-  CI_DISABLE_GIT_SAFEDIR,
   OPTIMIZED_TF_PLAN,
   SELF_SERVICE_ENABLED,
   CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES,
@@ -362,6 +365,8 @@ public enum FeatureName {
   REMOVE_USERGROUP_CHECK(
       "Customers started facing NPE due to migration of usergroup reference, removed null check behind FF - ticket ID - CDS-39770, CG",
       HarnessTeam.SPG),
+
+  STO_STEP_PALETTE_V1("Enable first iteration of individual steps for STO", HarnessTeam.STO),
   STO_STEP_PALETTE_Q1_2023(
       "Enable following steps for STO: AWSECR, AWSSecurityHub, Brakeman, CustomIngest, OWASP, Nikto, Nmap, Prowler",
       HarnessTeam.STO),
@@ -453,6 +458,8 @@ public enum FeatureName {
       "Make the workflowExecutions listing better providing appId for children ids", HarnessTeam.SPG),
   SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING_GRAPHQL(
       "Make the workflowExecutions listing better providing appId for children ids on graphql", HarnessTeam.SPG),
+  SPG_OPTIMIZE_ENVIRONMENT_VIEW_BUILDER(
+      "Optimizes environment view builder queries for workflowExecutions", HarnessTeam.SPG),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
   SRM_HOST_SAMPLING_ENABLE("Enables Host Sampling feature for Learning Engine.", HarnessTeam.CV),
   SRM_LOG_HOST_SAMPLING_ENABLE("Enables Host Sampling for log for Learning Engine.", HarnessTeam.CV),
@@ -654,11 +661,12 @@ public enum FeatureName {
   CHAOS_SRM_EVENT(
       "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS),
   PIE_DEPRECATE_PAUSE_INTERRUPT_NG("Deprecate Pause and Resume interrupts in NG", HarnessTeam.PIPELINE),
-  PIE_EXECUTION_AUDIT_EVENTS("Enables audits events for PipelineExecution.", HarnessTeam.PIPELINE),
   PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", GTM),
   CDS_SERVICE_OVERRIDES_2_0("Revamped experience service and environment overrides in NG", HarnessTeam.CDC),
   CDS_USE_OLD_SERVICE_V1("Feature flag to use service v1. NG_SVC_ENV_REDESIGN will be deprecated", HarnessTeam.CDC),
   CDS_PROPAGATE_STAGE_TEMPLATE("Allow user to propagate service in a templatized stage in pipeline", HarnessTeam.CDC),
+  CDS_NG_TRIGGER_EXECUTION_REFACTOR(
+      "Refactor trigger execution to use same logic used in manual execution", HarnessTeam.SPG),
   CDS_K8S_SOCKET_CAPABILITY_CHECK_NG(
       "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP),
   NG_CDS_NATIVE_EKS_SUPPORT("Enable native EKS support for K8s/Native Helm Infrastructures", HarnessTeam.CDP),
@@ -668,6 +676,7 @@ public enum FeatureName {
   SPG_SERVICES_OVERVIEW_RBAC(
       "Applies RBAC on services overview page, only displays services which the user has access to read",
       HarnessTeam.SPG),
+  CDS_ENABLE_TRIGGER_YAML_VALIDATION("Enables trigger yaml validation", HarnessTeam.SPG),
   CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG(
       "Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP),
   SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
@@ -680,9 +689,18 @@ public enum FeatureName {
   CDS_TERRAFORM_CONFIG_INSPECT_V1_2(
       "Enables usage of terraform-config-inspect v1.2 built from commit 7c9946b1df498f1b0634c7b33257790f01c819f3 of https://github.com/hashicorp/terraform-config-inspect and GO 1.19.6",
       HarnessTeam.CDP),
+  CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE(
+      "With enabling this FF with serviceV2 setup, pipeline in different projects but having the same infra key can be executed parallely",
+      HarnessTeam.CDC),
   CDS_TERRAFORM_CLI_OPTIONS_NG("Enable terraform CLI Options", HarnessTeam.CDP),
+  CD_ONBOARDING_HELP_ENABLED("Enables help panel for CD onboarding ", HarnessTeam.CDP),
   PIE_USE_SECRET_FUNCTOR_WITH_RBAC("Perform Rbac on secrets when used in pipeline execution", HarnessTeam.PIPELINE),
-  CDS_REMOVE_COMMENTS_FROM_VALUES_YAML("Remove comments from values.yaml files", HarnessTeam.CDP);
+  SPG_ADOPT_DELEGATE_DECRYPTION_ON_SERVICE_VARIABLES(
+      "Enable to resolve expression using nested values from secret.getValue from service variables", HarnessTeam.SPG),
+  CDS_REMOVE_COMMENTS_FROM_VALUES_YAML("Remove comments from values.yaml files", HarnessTeam.CDP),
+  BAMBOO_BUILD("Bamboo Build Step", HarnessTeam.CDC),
+  CDS_AWS_BACKOFF_STRATEGY("Enable AWS SDK Client Backoff Strategy", HarnessTeam.CDP),
+  PIE_GITX_OAUTH("Use users' oauth creds to fetch and commit in git", HarnessTeam.PIPELINE);
 
   @Deprecated
   FeatureName() {

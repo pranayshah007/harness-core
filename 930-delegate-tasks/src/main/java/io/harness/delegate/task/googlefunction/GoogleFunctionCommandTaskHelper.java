@@ -681,7 +681,7 @@ public class GoogleFunctionCommandTaskHelper {
         : Optional.empty();
   }
 
-  private String getFunctionParent(String project, String region) {
+  public String getFunctionParent(String project, String region) {
     return "projects/" + project + "/locations/" + region;
   }
 
@@ -800,7 +800,7 @@ public class GoogleFunctionCommandTaskHelper {
     return revisions;
   }
 
-  private GcpInternalConfig getGcpInternalConfig(GcpConnectorDTO gcpConnectorDTO, String region, String project) {
+  public GcpInternalConfig getGcpInternalConfig(GcpConnectorDTO gcpConnectorDTO, String region, String project) {
     if (gcpConnectorDTO == null) {
       throw new InvalidArgumentsException("GCP Connector cannot be null");
     }

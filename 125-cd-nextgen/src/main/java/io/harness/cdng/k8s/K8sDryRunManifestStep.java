@@ -116,6 +116,7 @@ public class K8sDryRunManifestStep extends TaskChainExecutableWithRollbackAndRba
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
+            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);

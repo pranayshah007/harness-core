@@ -27,6 +27,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.EcsDeploymentRelease;
 import io.harness.perpetualtask.instancesync.EcsInstanceSyncPerpetualTaskParams;
+import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -39,9 +40,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(HarnessTeam.CDP)
-public class EcsInstanceSyncPerpetualTaskExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
+public class EcsInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
-
+  @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private EcsTaskHelperBase ecsTaskHelperBase;
 
@@ -51,13 +52,12 @@ public class EcsInstanceSyncPerpetualTaskExecutor extends PerpetualTaskExecutorB
     log.info("Running the ECS InstanceSync perpetual task executor for task id: {}", taskId);
     EcsInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), EcsInstanceSyncPerpetualTaskParams.class);
-    return executeEcsInstanceSyncTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
+    return executeEcsInstanceSyncTask(taskId, taskParams);
   }
 
   public PerpetualTaskResponse executeEcsInstanceSyncTask(
-      PerpetualTaskId taskId, EcsInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
-    List<EcsDeploymentReleaseData> deploymentReleaseDataList =
-        getEcsDeploymentReleaseData(taskParams, referenceFalseKryoSerializer);
+      PerpetualTaskId taskId, EcsInstanceSyncPerpetualTaskParams taskParams) {
+    List<EcsDeploymentReleaseData> deploymentReleaseDataList = getEcsDeploymentReleaseData(taskParams);
 
     List<ServerInstanceInfo> serverInstanceInfos = deploymentReleaseDataList.stream()
                                                        .map(this::getServerInstanceInfoList)
@@ -80,19 +80,17 @@ public class EcsInstanceSyncPerpetualTaskExecutor extends PerpetualTaskExecutorB
     }
   }
 
-  private List<EcsDeploymentReleaseData> getEcsDeploymentReleaseData(
-      EcsInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
+  private List<EcsDeploymentReleaseData> getEcsDeploymentReleaseData(EcsInstanceSyncPerpetualTaskParams taskParams) {
     return taskParams.getEcsDeploymentReleaseListList()
         .stream()
-        .map(data -> toEcsDeploymentReleaseData(data, referenceFalseKryoSerializer))
+        .map(this::toEcsDeploymentReleaseData)
         .collect(Collectors.toList());
   }
 
-  private EcsDeploymentReleaseData toEcsDeploymentReleaseData(
-      EcsDeploymentRelease ecsDeploymentRelease, boolean referenceFalseKryoSerializer) {
+  private EcsDeploymentReleaseData toEcsDeploymentReleaseData(EcsDeploymentRelease ecsDeploymentRelease) {
     return EcsDeploymentReleaseData.builder()
-        .ecsInfraConfig((EcsInfraConfig) getKryoSerializer(referenceFalseKryoSerializer)
-                            .asObject(ecsDeploymentRelease.getEcsInfraConfig().toByteArray()))
+        .ecsInfraConfig(
+            (EcsInfraConfig) kryoSerializer.asObject(ecsDeploymentRelease.getEcsInfraConfig().toByteArray()))
         .serviceName(ecsDeploymentRelease.getServiceName())
         .build();
   }

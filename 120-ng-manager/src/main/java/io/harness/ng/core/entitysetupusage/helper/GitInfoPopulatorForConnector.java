@@ -17,6 +17,7 @@ import io.harness.beans.EntityReference;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.services.ConnectorService;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -25,6 +26,7 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -36,6 +38,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(HarnessTeam.DX)
 @Slf4j
@@ -123,9 +126,11 @@ public class GitInfoPopulatorForConnector {
       int page = 0;
       int size = 100;
       do {
-        connectorPage = connectorService.list(page, size, accountId,
+        connectorPage = connectorService.list(accountId,
             ConnectorFilterPropertiesDTO.builder().connectorIdentifiers(connectorIdentifiers).build(), orgId, projectId,
-            null, null, null, false);
+            null, null, null, false,
+            PageUtils.getPageRequest(
+                page, size, List.of(ConnectorKeys.lastModifiedAt, Sort.Direction.DESC.toString())));
         if (connectorPage != null && isNotEmpty(connectorPage.getContent())) {
           connectorResponseDTOS.addAll(connectorPage.getContent());
         }

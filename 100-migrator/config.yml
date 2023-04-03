@@ -706,12 +706,15 @@ cg:
   enableOpentelemetry: false
 
   delegateQueueServiceConfig:
-    queueServiceConfig:
-      baseUrl: http://localhost:9091/
-      connectTimeOutSeconds: 15
-      readTimeOutSeconds: 15
     topic: "delegate-service"
     enableQueueAndDequeue: false
+    queueServiceClientConfig:
+      httpClientConfig:
+        baseUrl: http://localhost:9091/
+        connectTimeOutSeconds: 15
+        readTimeOutSeconds: 15
+      queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+      envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
 
 ngClientConfig:
   baseUrl: https://127.0.0.1:7090

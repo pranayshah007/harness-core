@@ -165,7 +165,6 @@ public class OrgProjectApiImplTest extends CategoryTest {
   public void testGetOrgScopedProjectList() {
     String searchTerm = randomAlphabetic(10);
     ProjectDTO projectDTO = getProjectDTO(org, identifier, name);
-    projectDTO.setModules(Collections.singletonList(ModuleType.CD));
     Project project = toProject(projectDTO);
     project.setVersion((long) 0);
     ArgumentCaptor<ProjectFilterDTO> argumentCaptor = ArgumentCaptor.forClass(ProjectFilterDTO.class);

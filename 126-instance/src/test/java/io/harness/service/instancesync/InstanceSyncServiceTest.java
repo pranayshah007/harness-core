@@ -40,6 +40,7 @@ import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.dtos.DeploymentSummaryDTO;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.InstanceDTO;
+import io.harness.dtos.InstanceSyncPerpetualTaskMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
@@ -227,7 +228,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     when(instanceSyncPerpetualTaskService.createPerpetualTask(any(), any(), any(), any()))
         .thenReturn(PERPETUAL_TASK_ID);
     when(instanceSyncPerpetualTaskService.isInstanceSyncV2Enabled()).thenReturn(true);
-    when(instanceSyncPerpetualTaskService.createPerpetualTaskV2()).thenReturn("perpetualTaskId");
+    when(instanceSyncPerpetualTaskService.createPerpetualTaskV2(any(), any(), any())).thenReturn("perpetualTaskId");
     when(connectorService.getByRef(any(), any(), any(), anyString()))
         .thenReturn(Optional.ofNullable(
             ConnectorResponseDTO.builder()
@@ -241,6 +242,8 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     when(instanceSyncServiceUtils.getSyncKeyToInstancesFromServerMap(any(), any()))
         .thenReturn(mockSyncKeyToInstancesFromServerMap(deploymentSummaryDTO.getServerInstanceInfoList().get(0)));
     when(instanceSyncServiceUtils.initMapForTrackingFinalListOfInstances()).thenReturn(initInstancesToBeModified());
+
+    when(instanceSyncPerpetualTaskMappingService.save(any())).thenReturn(getMockInstanceSyncPerpetualTaskMapping());
 
     instanceSyncService.processInstanceSyncForNewDeployment(deploymentEvent);
 
@@ -731,6 +734,14 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     return infrastructureOutcome;
   }
 
+  private InstanceSyncPerpetualTaskMappingDTO getMockInstanceSyncPerpetualTaskMapping() {
+    return InstanceSyncPerpetualTaskMappingDTO.builder()
+        .accountId("accountId")
+        .orgId("orgId")
+        .perpetualTaskId(PERPETUAL_TASK_ID)
+        .connectorIdentifier(TEST_CONNECTOR_REF)
+        .build();
+  }
   private InstanceSyncPerpetualTaskInfoDTO getMockInstanceSyncPerpetualTaskInfo(String releaseName) {
     DeploymentInfoDTO deploymentInfoDTOOld = getMockDeploymentInfo(releaseName);
     DeploymentInfoDetailsDTO deploymentInfoDetailsDTO =

@@ -33,7 +33,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
-import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
@@ -245,14 +244,12 @@ public class AuditServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testModuleTypeActionAndEnvironmentIdentifierAuditFilter() {
     String accountIdentifier = randomAlphabetic(10);
-    ModuleType moduleType = ModuleType.CD;
     Action action = Action.CREATE;
     String environmentIdentifier = randomAlphabetic(10);
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
     when(auditRepository.findAll(any(Criteria.class), any(Pageable.class))).thenReturn(getPage(emptyList(), 0));
     AuditFilterPropertiesDTO correctFilter =
         AuditFilterPropertiesDTO.builder()
-            .modules(singletonList(ModuleType.CD))
             .actions(singletonList(action))
             .environments(singletonList(Environment.builder().identifier(environmentIdentifier).build()))
             .build();
@@ -264,19 +261,10 @@ public class AuditServiceImplTest extends CategoryTest {
     List<Document> docList = (List<Document>) criteria.getCriteriaObject().get("$and");
     BasicDBList andList = (BasicDBList) docList.get(0).get("$and");
     assertNotNull(andList);
-    assertEquals(6, andList.size());
     Document accountDocument = (Document) andList.get(0);
     assertEquals(accountIdentifier, accountDocument.getString(AuditEventKeys.ACCOUNT_IDENTIFIER_KEY));
 
-    Document moduleTypeDocument = (Document) andList.get(1);
-    assertNotNull(moduleTypeDocument);
-    Document moduleTypeListDocument = (Document) moduleTypeDocument.get(AuditEventKeys.module);
-    assertNotNull(moduleTypeListDocument);
-    List<ModuleType> moduleTypeList = (List<ModuleType>) moduleTypeListDocument.get("$in");
-    assertEquals(1, moduleTypeList.size());
-    assertEquals(moduleType, moduleTypeList.get(0));
-
-    Document actionDocument = (Document) andList.get(2);
+    Document actionDocument = (Document) andList.get(1);
     assertNotNull(actionDocument);
     Document actionListDocument = (Document) actionDocument.get(AuditEventKeys.action);
     assertNotNull(actionListDocument);
@@ -284,7 +272,7 @@ public class AuditServiceImplTest extends CategoryTest {
     assertEquals(1, actionList.size());
     assertEquals(action, actionList.get(0));
 
-    Document environmentDocument = (Document) andList.get(3);
+    Document environmentDocument = (Document) andList.get(2);
     BasicDBList environmentList = (BasicDBList) environmentDocument.get("$or");
     assertEquals(1, environmentList.size());
     Document environmentIdentifierDocument = (Document) environmentList.get(0);

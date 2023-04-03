@@ -21,6 +21,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome.ClusterData;
+import io.harness.cdng.gitops.syncstep.EnvironmentClusterListing.EnvironmentClusterListingBuilder;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.eraro.Level;
@@ -71,7 +72,7 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import retrofit2.Response;
 
 @Slf4j
@@ -123,7 +124,7 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
 
     SyncStepParameters syncStepParameters = (SyncStepParameters) stepParameters.getSpec();
 
-    final LogCallback logger = new NGLogCallback(logStreamingStepClientFactory, ambiance, null, true);
+    final NGLogCallback logger = new NGLogCallback(logStreamingStepClientFactory, ambiance, null, true);
 
     List<Application> applicationsToBeSynced = getApplicationsToBeSynced(ambiance, syncStepParameters);
     if (isEmpty(applicationsToBeSynced)) {
@@ -134,7 +135,11 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
     }
 
     Set<String> serviceIdsInPipelineExecution = getServiceIdsInPipelineExecution(ambiance);
-    Set<String> clusterIdsInPipelineExecution = getClusterIdsInPipelineExecution(ambiance);
+    EnvironmentClusterListing envClusterIds = getEnvAndClusterIdsInPipelineExecution(ambiance);
+    Set<String> envIdsInPipelineExecution =
+        (Set<String>) CollectionUtils.emptyIfNull(envClusterIds.getEnvironmentIds());
+    Set<String> clusterIdsInPipelineExecution =
+        (Set<String>) CollectionUtils.emptyIfNull(envClusterIds.getClusterIds());
 
     Set<Application> applicationsFailedToSync = new HashSet<>();
 
@@ -151,7 +156,7 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
     // check sync eligibility for applications
     logExecutionInfo("Checking application(s) eligibility for sync...", logger);
     prepareApplicationForSync(applicationsToBeSynced, applicationsFailedToSync, accountId, orgId, projectId,
-        serviceIdsInPipelineExecution, clusterIdsInPipelineExecution, logger);
+        serviceIdsInPipelineExecution, envIdsInPipelineExecution, clusterIdsInPipelineExecution, logger);
     List<Application> applicationsEligibleForSync =
         getApplicationsToBeSyncedAndPolled(applicationsToBeSynced, applicationsFailedToSync);
 
@@ -180,6 +185,9 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
     if (isNotEmpty(applicationsFailedOnArgoSync)) {
       printErroredApplications(applicationsFailedOnArgoSync, "Application(s) errored while syncing", logger);
     }
+
+    // applications failed while syncing/refreshing can still be synced successfully while polling
+    applicationsFailedToSync.removeAll(applicationsSucceededOnArgoSync);
     applicationsFailedToSync.addAll(applicationsFailedOnArgoSync);
 
     final SyncStepOutcome outcome = SyncStepOutcome.builder().applications(applicationsSucceededOnArgoSync).build();
@@ -191,16 +199,25 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
         .build();
   }
 
-  private Set<String> getClusterIdsInPipelineExecution(Ambiance ambiance) {
+  private EnvironmentClusterListing getEnvAndClusterIdsInPipelineExecution(Ambiance ambiance) {
     OptionalSweepingOutput optionalSweepingOutputForEnv = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(GITOPS_SWEEPING_OUTPUT));
-    return optionalSweepingOutputForEnv != null && optionalSweepingOutputForEnv.isFound()
-        ? ((GitopsClustersOutcome) optionalSweepingOutputForEnv.getOutput())
-              .getClustersData()
-              .stream()
-              .map(ClusterData::getClusterId)
-              .collect(Collectors.toSet())
-        : new HashSet<>();
+
+    EnvironmentClusterListingBuilder environmentClusterListing = EnvironmentClusterListing.builder();
+    if (optionalSweepingOutputForEnv != null && optionalSweepingOutputForEnv.isFound()) {
+      GitopsClustersOutcome outcome = (GitopsClustersOutcome) optionalSweepingOutputForEnv.getOutput();
+      environmentClusterListing.clusterIds(getClusterIdsInPipelineExecution(outcome))
+          .environmentIds(getEnvIdsInPipelineExecution(outcome));
+    }
+    return environmentClusterListing.build();
+  }
+
+  private Set<String> getEnvIdsInPipelineExecution(GitopsClustersOutcome outcome) {
+    return outcome.getClustersData().stream().map(ClusterData::getEnvId).collect(Collectors.toSet());
+  }
+
+  private Set<String> getClusterIdsInPipelineExecution(GitopsClustersOutcome outcome) {
+    return outcome.getClustersData().stream().map(ClusterData::getClusterId).collect(Collectors.toSet());
   }
 
   private Set<String> getServiceIdsInPipelineExecution(Ambiance ambiance) {
@@ -235,8 +252,9 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
     List<Application> applications = optionalSweepingOutput != null && optionalSweepingOutput.isFound()
         ? ((GitOpsLinkedAppsOutcome) optionalSweepingOutput.getOutput()).getApps()
         : new ArrayList<>();
-    if (syncStepParameters.getApplicationsList() != null) {
-      applications.addAll(SyncStepHelper.getApplicationsToBeSynced(syncStepParameters.getApplicationsList()));
+    if (syncStepParameters.getApplicationsList().getValue() != null) {
+      applications.addAll(
+          SyncStepHelper.getApplicationsToBeSynced(syncStepParameters.getApplicationsList().getValue()));
     }
     return new ArrayList<>(applications);
   }
@@ -250,7 +268,8 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
 
   private void prepareApplicationForSync(List<Application> applicationsToBeSynced,
       Set<Application> failedToSyncApplications, String accountId, String orgId, String projectId,
-      Set<String> serviceIdsInPipelineExecution, Set<String> clusterIdsInPipelineExecution, LogCallback logger) {
+      Set<String> serviceIdsInPipelineExecution, Set<String> envIdsInPipelineExecution,
+      Set<String> clusterIdsInPipelineExecution, LogCallback logger) {
     for (Application application : applicationsToBeSynced) {
       if (failedToSyncApplications.contains(application)) {
         continue;
@@ -258,8 +277,8 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
       ApplicationResource latestApplicationState = getApplication(application, accountId, orgId, projectId, logger);
 
       if (latestApplicationState == null
-          || !isApplicationEligibleForSync(
-              latestApplicationState, application, serviceIdsInPipelineExecution, clusterIdsInPipelineExecution)) {
+          || !isApplicationEligibleForSync(latestApplicationState, application, serviceIdsInPipelineExecution,
+              envIdsInPipelineExecution, clusterIdsInPipelineExecution)) {
         failedToSyncApplications.add(application);
         continue;
       }
@@ -316,13 +335,13 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
       String projectId, LogCallback logger) {
     Set<Application> applicationsPolled = new HashSet<>();
     List<Application> waitingForApplications = new ArrayList<>();
-    long startTimeMillis = System.currentTimeMillis();
-    // stopping 10 seconds before the step timeout
-    long deadlineInMillis = startTimeMillis + pollForMillis - (SyncStepHelper.STOP_BEFORE_STEP_TIMEOUT_SECS * 1000);
 
-    long currentTimeMillis = System.currentTimeMillis();
-    while (currentTimeMillis < deadlineInMillis) {
-      log.debug("Polling for another {} milliseconds", deadlineInMillis - currentTimeMillis);
+    long startTimeMillis = System.currentTimeMillis();
+    // stopping 30 seconds before the step timeout
+    long deadlineInMillis = startTimeMillis + pollForMillis - (SyncStepHelper.STOP_BEFORE_STEP_TIMEOUT_SECS * 1000);
+    long millisRemaining = deadlineInMillis - startTimeMillis;
+
+    while (millisRemaining > 0) {
       for (Application application : applicationsToBePolled) {
         if (applicationsPolled.contains(application)) {
           continue;
@@ -345,7 +364,8 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
         if (isApplicationSyncComplete(currentApplicationState, syncStatus, syncStartTime)) {
           applicationsPolled.add(application);
           logExecutionInfo(
-              format("Application %s is synced. Sync status: %s, message: %s, Application health status: %s",
+              format(
+                  "Sync is attempted for application %s. Sync status: %s, message: %s, Application health status: %s",
                   application.getName(), syncStatus, syncMessage, healthStatus),
               logger);
         } else {
@@ -355,7 +375,7 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
       }
       if (applicationsPolled.size() == applicationsToBePolled.size()) {
         if (isNotEmpty(applicationsFailedToSync)) {
-          logExecutionInfo("Sync is complete for eligible application(s).", logger);
+          logExecutionInfo("Sync is attempted for eligible application(s).", logger);
         } else {
           logExecutionInfo("All applications have been synced.", logger);
         }
@@ -370,6 +390,10 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
         Thread.currentThread().interrupt();
         throw new RuntimeException("Application polling interrupted.");
       }
+
+      long currentTimeMillis = System.currentTimeMillis();
+      millisRemaining = deadlineInMillis - currentTimeMillis;
+      log.info("Polling for another {} milliseconds", millisRemaining);
     }
     logExecutionWarning(format("Sync is still running for application(s) %s. Please refer to their statuses in GitOps",
                             waitingForApplications),
@@ -431,10 +455,17 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
   }
 
   private boolean isApplicationEligibleForSync(ApplicationResource latestApplicationState, Application application,
-      Set<String> serviceIdsInPipelineExecution, Set<String> clusterIdsInPipelineExecution) {
+      Set<String> serviceIdsInPipelineExecution, Set<String> envIdsInPipelineExecution,
+      Set<String> clusterIdsInPipelineExecution) {
     if (!isApplicationCorrespondsToServiceInExecution(latestApplicationState, serviceIdsInPipelineExecution)) {
       application.setSyncMessage(
           "Application does not correspond to the service(s) selected in the pipeline execution.");
+      return false;
+    }
+
+    if (!isApplicationCorrespondsToEnvInExecution(latestApplicationState, envIdsInPipelineExecution)) {
+      application.setSyncMessage(
+          "Application does not correspond to the environment(s) selected in the pipeline execution.");
       return false;
     }
 
@@ -456,6 +487,11 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
       return false;
     }
     return true;
+  }
+
+  private boolean isApplicationCorrespondsToEnvInExecution(
+      ApplicationResource latestApplicationState, Set<String> envIdsInPipelineExecution) {
+    return envIdsInPipelineExecution.contains(latestApplicationState.getEnvironmentRef());
   }
 
   private boolean isApplicationCorrespondsToClusterInExecution(
@@ -533,7 +569,7 @@ public class SyncStep implements SyncExecutableWithRbac<StepElementParameters> {
   }
 
   private boolean isAutoSyncEnabled(SyncPolicy syncPolicy) {
-    return syncPolicy.getAutomated() != null;
+    return syncPolicy != null && syncPolicy.getAutomated() != null;
   }
 
   @Override

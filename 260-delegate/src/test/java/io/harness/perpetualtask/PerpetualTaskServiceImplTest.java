@@ -900,7 +900,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   public void testPerpetualTaskContext_withNullTaskParams() {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
     perpetualTaskRecordDao.save(perpetualTaskRecord);
-    perpetualTaskService.perpetualTaskContext(perpetualTaskRecord.getUuid(), false);
+    perpetualTaskService.perpetualTaskContext(perpetualTaskRecord.getUuid());
     PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
     assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_INVALID);
   }
@@ -910,7 +910,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testPerpetualTaskContext_withNullTaskParamsAndAfterMaxAssignTry() {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecordAndAssignTryCountAsMax();
-    perpetualTaskService.perpetualTaskContext(perpetualTaskRecord.getUuid(), false);
+    perpetualTaskService.perpetualTaskContext(perpetualTaskRecord.getUuid());
     PerpetualTaskRecord updatedPtRecord = perpetualTaskRecordDao.getTask(perpetualTaskRecord.getUuid());
     assertThat(updatedPtRecord.getState()).isEqualTo(PerpetualTaskState.TASK_INVALID);
   }

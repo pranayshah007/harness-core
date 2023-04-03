@@ -7,6 +7,7 @@
 
 package io.harness.cvng.downtime.services.impl;
 
+import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 import static io.harness.rule.TestUserProvider.testUserProvider;
 
@@ -44,6 +45,7 @@ import io.harness.cvng.downtime.beans.EntitiesRule;
 import io.harness.cvng.downtime.beans.EntityDetails;
 import io.harness.cvng.downtime.beans.EntityIdentifiersRule;
 import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
 import io.harness.cvng.downtime.beans.RecurringDowntimeSpec;
@@ -965,9 +967,37 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
     List<MonitoredServiceDetail> response =
         downtimeService.getAssociatedMonitoredServices(projectParams, recurringDowntimeDTO.getIdentifier());
     assertThat(response.size()).isEqualTo(1);
-    assertThat(response.size()).isEqualTo(1);
     assertThat(response.get(0).getServiceName()).isEqualTo("Mocked service name");
     assertThat(response.get(0).getEnvironmentName()).isEqualTo("Mocked env name");
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetMonitoredServicesAssociatedUnavailabilityInstances() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    OnetimeDowntimeSpec onetimeDowntimeSpec = (OnetimeDowntimeSpec) oneTimeDurationBasedDowntimeDTO.getSpec().getSpec();
+    onetimeDowntimeSpec.setStartTime(clock.instant().plus(Duration.ofMinutes(10)).getEpochSecond());
+    oneTimeDurationBasedDowntimeDTO.getSpec().setSpec(onetimeDowntimeSpec);
+    downtimeService.create(builderFactory.getProjectParams(), oneTimeDurationBasedDowntimeDTO);
+
+    RecurringDowntimeSpec recurringDowntimeSpec = (RecurringDowntimeSpec) recurringDowntimeDTO.getSpec().getSpec();
+    recurringDowntimeSpec.setStartTime(clock.instant().plus(Duration.ofMinutes(5)).getEpochSecond());
+    recurringDowntimeDTO.getSpec().setSpec(recurringDowntimeSpec);
+    downtimeService.create(projectParams, recurringDowntimeDTO);
+
+    Map<String, EntityUnavailabilityStatusesDTO> response =
+        downtimeService.getMonitoredServicesAssociatedUnavailabilityInstanceMap(
+            projectParams, Collections.singleton(monitoredServiceIdentifier));
+    assertThat(response.size()).isEqualTo(1);
+    assertThat(response.get(monitoredServiceIdentifier).getStatus())
+        .isEqualTo(EntityUnavailabilityStatus.MAINTENANCE_WINDOW);
+    // will get the unavailability instance with next nearest start time
+    assertThat(response.get(monitoredServiceIdentifier).getStartTime())
+        .isEqualTo(clock.instant().plus(Duration.ofMinutes(5)).getEpochSecond());
+    assertThat(response.get(monitoredServiceIdentifier).getEndTime())
+        .isEqualTo(clock.instant().plus(Duration.ofMinutes(35)).getEpochSecond());
   }
 
   @Test
@@ -979,10 +1009,10 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
     List<MonitoredServiceDetail> response =
         downtimeService.getAssociatedMonitoredServices(projectParams, recurringDowntimeDTO.getIdentifier());
     assertThat(response.size()).isEqualTo(1);
-    assertThat(response.size()).isEqualTo(1);
     assertThat(response.get(0).getServiceName()).isEqualTo("Mocked service name");
     assertThat(response.get(0).getEnvironmentName()).isEqualTo("Mocked env name");
   }
+
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)

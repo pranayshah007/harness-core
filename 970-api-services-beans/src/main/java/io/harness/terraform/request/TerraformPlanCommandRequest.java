@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
@@ -25,4 +26,5 @@ public class TerraformPlanCommandRequest {
   String uiLogs; // Needed in CG to prevent printing secrets
   boolean destroySet;
   boolean isTerraformCloudCli;
+  Map<String, String> additionalCliFlags;
 }

@@ -5062,7 +5062,7 @@ plain_artifacts = [
     "net.jodah:expiringmap:0.5.7",
     "net.jodah:failsafe:2.2.0",
     "net.minidev:accessors-smart:1.2",
-    "net.minidev:json-smart:2.4.8",
+    "net.minidev:json-smart:2.4.10",
     "net.openhft:affinity:3.2.2",
     "net.openhft:chronicle-bytes:2.19.0",
     "net.openhft:chronicle-core:2.19.0",
@@ -5312,16 +5312,16 @@ plain_artifacts = [
     "org.springframework.kafka:spring-kafka:2.3.7.RELEASE",
     "org.springframework.retry:spring-retry:1.2.5.RELEASE",
     "org.springframework.security:spring-security-crypto:5.3.5.RELEASE",
-    "org.springframework:spring-aop:5.3.23",
-    "org.springframework:spring-beans:5.3.25",
-    "org.springframework:spring-context:5.3.25",
-    "org.springframework:spring-core:5.3.25",
-    "org.springframework:spring-expression:5.3.25",
-    "org.springframework:spring-jcl:5.3.25",
-    "org.springframework:spring-messaging:5.3.25",
-    "org.springframework:spring-test:5.3.25",
-    "org.springframework:spring-tx:5.3.25",
-    "org.springframework:spring-web:5.3.25",
+    "org.springframework:spring-aop:5.3.26",
+    "org.springframework:spring-beans:5.3.26",
+    "org.springframework:spring-context:5.3.26",
+    "org.springframework:spring-core:5.3.26",
+    "org.springframework:spring-expression:5.3.26",
+    "org.springframework:spring-jcl:5.3.26",
+    "org.springframework:spring-messaging:5.3.26",
+    "org.springframework:spring-test:5.3.26",
+    "org.springframework:spring-tx:5.3.26",
+    "org.springframework:spring-web:5.3.26",
     "org.threeten:threetenbp:1.4.1",
     "org.webjars.npm:viz.js-for-graphviz-java:2.1.3",
     "org.xerial.snappy:snappy-java:1.1.7.3",
@@ -5412,6 +5412,7 @@ amazon_v2_artifacts = [
         "health",
         "elasticloadbalancingv2",
         "lambda",
+        "eks",
     ]
 ]
 
@@ -5851,6 +5852,34 @@ go_repository(
     importpath = "github.com/bmatcuk/doublestar",
     sum = "h1:1jLE2y0VpSrOn/QR9G4f2RmrCtkM3AuATcWradjHUvM=",
     version = "v1.3.0",
+)
+
+go_repository(
+    name = "com_github_wings_software_autogen_go",
+    importpath = "github.com/wings-software/autogen-go",
+    sum = "h1:Ovgmeh04oFhEFg+LZy9c4Yo/Yv9Lkl0rFYFJ7jlhtN4=",
+    version = "v1.0.0",
+)
+
+go_repository(
+    name = "com_github_drone_spec",
+    importpath = "github.com/drone/spec",
+    sum = "h1:SCRvpZOFAS/kFo6q0c+oeH+ID0OBDPLpDAx4uHYQwYo=",
+    version = "v0.0.0-20230328162846-c2bc4a6d62ab",
+)
+
+go_repository(
+    name = "com_github_99designs_httpsignatures_go",
+    importpath = "github.com/99designs/httpsignatures-go",
+    sum = "h1:Xa6lInWHNQnuWoF0YPSsx+INFA9qk7/7pTjwb3PInkY=",
+    version = "v0.0.0-20170731043157-88528bf4ca7e",
+)
+
+go_repository(
+    name = "com_github_drone_go_convert",
+    importpath = "github.com/drone/go-convert",
+    sum = "h1:ybfe4Po+BUQjm2BpIZjEpng9fXBYgPvAehNe2edC0lY=",
+    version = "v0.0.0-20230329091825-a238380a6b0e",
 )
 
 # Contrib rules jvm for build cleaner.

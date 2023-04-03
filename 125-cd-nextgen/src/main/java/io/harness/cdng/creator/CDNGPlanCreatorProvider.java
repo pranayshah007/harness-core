@@ -1020,6 +1020,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.BAMBOO_BUILD)
             .setFeatureRestrictionName(FeatureRestrictionName.BAMBOO_BUILD.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory(BUILD_STEP).addFolderPaths("Builds").build())
+            .setFeatureFlag(FeatureName.BAMBOO_BUILD.name())
             .build();
 
     StepInfo azureCreateARMResources =
@@ -1350,7 +1351,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Aws Lambda Rollback")
             .setType(StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_LAMBDA).setFolderPath(AWS_LAMBDA).build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_LAMBDA).setFolderPath("Aws Lambda").build())
             .setFeatureFlag(FeatureName.CDS_AWS_NATIVE_LAMBDA.name())
             .build();
 

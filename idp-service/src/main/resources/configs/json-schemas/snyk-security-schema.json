@@ -1,0 +1,69 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1679771547.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proxy"
+  ],
+  "properties": {
+    "proxy": {
+      "$id": "#root/proxy",
+      "title": "Proxy",
+      "type": "object",
+      "required": [
+        "/snyk"
+      ],
+      "properties": {
+        "/snyk": {
+          "$id": "#root/proxy//snyk",
+          "title": "/snyk",
+          "type": "object",
+          "required": [
+            "target",
+            "headers"
+          ],
+          "properties": {
+            "target": {
+              "$id": "#root/proxy//snyk/target",
+              "title": "Target",
+              "type": "string",
+              "default": "",
+              "pattern": "^.*$"
+            },
+            "headers": {
+              "$id": "#root/proxy//snyk/headers",
+              "title": "Headers",
+              "type": "object",
+              "required": [
+                "User-Agent",
+                "Authorization"
+              ],
+              "properties": {
+                "User-Agent": {
+                  "$id": "#root/proxy//snyk/headers/User-Agent",
+                  "title": "User-agent",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                },
+                "Authorization": {
+                  "$id": "#root/proxy//snyk/headers/Authorization",
+                  "title": "Authorization",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                }
+              }
+            }
+
+          }
+        }
+
+      }
+    }
+
+  }
+}

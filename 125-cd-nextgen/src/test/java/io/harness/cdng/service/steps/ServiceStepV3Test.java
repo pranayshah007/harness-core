@@ -344,7 +344,7 @@ public class ServiceStepV3Test extends CategoryTest {
     verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
 
     Map<FreezeEntityType, List<String>> entityMap = captor.getValue();
-    assertThat(entityMap.size()).isEqualTo(5);
+    assertThat(entityMap.size()).isEqualTo(6);
     assertThat(entityMap.get(FreezeEntityType.ENVIRONMENT)).isEqualTo(Lists.newArrayList("envId"));
     assertThat(entityMap.get(FreezeEntityType.SERVICE)).isEqualTo(Lists.newArrayList("service-id"));
     assertThat(entityMap.get(FreezeEntityType.ORG)).isEqualTo(Lists.newArrayList("ORG_ID"));
@@ -376,7 +376,7 @@ public class ServiceStepV3Test extends CategoryTest {
     verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
 
     Map<FreezeEntityType, List<String>> entityMap = captor.getValue();
-    assertThat(entityMap.size()).isEqualTo(5);
+    assertThat(entityMap.size()).isEqualTo(6);
     assertThat(entityMap.get(FreezeEntityType.ENVIRONMENT)).isEqualTo(Lists.newArrayList("org.envId"));
     assertThat(entityMap.get(FreezeEntityType.SERVICE)).isEqualTo(Lists.newArrayList("org.service-id"));
     assertThat(entityMap.get(FreezeEntityType.ORG)).isEqualTo(Lists.newArrayList("ORG_ID"));
@@ -408,7 +408,7 @@ public class ServiceStepV3Test extends CategoryTest {
     verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
 
     Map<FreezeEntityType, List<String>> entityMap = captor.getValue();
-    assertThat(entityMap.size()).isEqualTo(5);
+    assertThat(entityMap.size()).isEqualTo(6);
     assertThat(entityMap.get(FreezeEntityType.ENVIRONMENT)).isEqualTo(Lists.newArrayList("account.envId"));
     assertThat(entityMap.get(FreezeEntityType.SERVICE)).isEqualTo(Lists.newArrayList("account.service-id"));
     assertThat(entityMap.get(FreezeEntityType.ORG)).isEqualTo(Lists.newArrayList("ORG_ID"));
@@ -1169,11 +1169,12 @@ public class ServiceStepV3Test extends CategoryTest {
                    .build());
     return Ambiance.newBuilder()
         .setPlanExecutionId(UUIDGenerator.generateUuid())
-        .putAllSetupAbstractions(
-            Map.of("accountId", "ACCOUNT_ID", "projectIdentifier", "PROJECT_ID", "orgIdentifier", "ORG_ID"))
+        .putAllSetupAbstractions(Map.of("accountId", "ACCOUNT_ID", "projectIdentifier", "PROJECT_ID", "orgIdentifier",
+            "ORG_ID", "pipelineId", "PIPELINE_ID"))
         .addAllLevels(levels)
         .setExpressionFunctorToken(1234L)
         .setMetadata(ExecutionMetadata.newBuilder()
+                         .setPipelineIdentifier("pipelineId")
                          .setPrincipalInfo(ExecutionPrincipalInfo.newBuilder()
                                                .setPrincipal("prinicipal")
                                                .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)

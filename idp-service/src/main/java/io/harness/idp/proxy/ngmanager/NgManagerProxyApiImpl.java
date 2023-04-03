@@ -14,8 +14,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.PmsAuthInterceptor;
+import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -25,7 +27,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import javax.enterprise.context.RequestScoped;
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -38,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 @RequestScoped
+@NextGenManagerAuth
 public class NgManagerProxyApiImpl implements NgManagerProxyApi {
   private static final String PROXY_PATH = "v1/idp-proxy/ng-manager";
   private static final String PATH_DELIMITER = "/";
@@ -49,6 +51,7 @@ public class NgManagerProxyApiImpl implements NgManagerProxyApi {
 
   private static final List<String> allowList = Arrays.asList(USERS, USER_GROUPS);
 
+  @IdpServiceAuthIfHasApiKey
   @Override
   public Response deleteProxyNgManager(UriInfo uriInfo, HttpHeaders headers, String url, String harnessAccount) {
     OkHttpClient client = getOkHttpClient();
@@ -73,6 +76,7 @@ public class NgManagerProxyApiImpl implements NgManagerProxyApi {
     }
   }
 
+  @IdpServiceAuthIfHasApiKey
   @Override
   public Response getProxyNgManager(UriInfo uriInfo, HttpHeaders headers, String url, String harnessAccount) {
     OkHttpClient client = getOkHttpClient();
@@ -97,6 +101,7 @@ public class NgManagerProxyApiImpl implements NgManagerProxyApi {
     }
   }
 
+  @IdpServiceAuthIfHasApiKey
   @Override
   public Response postProxyNgManager(
       UriInfo uriInfo, HttpHeaders headers, String url, String harnessAccount, String body) {
@@ -134,6 +139,7 @@ public class NgManagerProxyApiImpl implements NgManagerProxyApi {
     }
   }
 
+  @IdpServiceAuthIfHasApiKey
   @Override
   public Response putProxyNgManager(
       UriInfo uriInfo, HttpHeaders headers, String url, String harnessAccount, String body) {

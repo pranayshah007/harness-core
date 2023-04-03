@@ -43,6 +43,11 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
   }
 
   @Override
+  public String getPerpetualTaskV2Type() {
+    return PerpetualTaskType.K8S_INSTANCE_SYNC_V2;
+  }
+
+  @Override
   public InstanceType getInstanceType() {
     return InstanceType.K8S_INSTANCE;
   }

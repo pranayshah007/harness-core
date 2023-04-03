@@ -22,6 +22,7 @@ import lombok.Value;
 public class VmRunStep implements VmStepInfo {
   private String image;
   private ConnectorDetails imageConnector;
+  private ConnectorDetails connector;
   private String pullPolicy; // always, if-not-exists or never
   private String runAsUser;
   private boolean privileged;

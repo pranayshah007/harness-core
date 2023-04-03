@@ -9,6 +9,7 @@ package io.harness.pms.approval.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
+import static io.harness.pms.approval.ApprovalUtils.sendTaskIdProgressUpdate;
 
 import static software.wings.beans.TaskType.SERVICENOW_TASK_NG;
 
@@ -174,6 +175,9 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
           "ServiceNow url: %s", serviceNowTaskNGParameters.getServiceNowConnectorDTO().getServiceNowUrl()));
 
       String taskId = queueTask(ambiance, instanceId, serviceNowTaskNGParameters);
+
+      sendTaskIdProgressUpdate(taskId, instanceId, waitNotifyEngine);
+
       logCallback.saveExecutionLog(String.format("Created ServiceNow task with id: %s", taskId));
 
     } catch (Exception ex) {

@@ -3,9 +3,10 @@ name: Harness CI/CD
 description: This plugin lets you view Harness pipeline execution details inside Backstage.
 createdBy: harness.io
 category: CI/CD
+core: true
 source: https://github.com/harness/backstage-plugins/tree/main/plugins/harness-ci-cd
 iconUrl: https://static.harness.io/ng-static/images/favicon.png
-layout:
-  imageUrl: ''
-  packageName: ''
-  exports: []
+imageUrl: ''
+exports:
+  defaultEntityTypes: []
+  exportDetails: []

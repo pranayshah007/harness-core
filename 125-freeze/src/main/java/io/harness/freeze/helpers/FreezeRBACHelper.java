@@ -122,6 +122,10 @@ public class FreezeRBACHelper {
         result = MutablePair.of("ENVIRONMENT", "core_environment_view");
         break;
       }
+      case PIPELINE: {
+        result = MutablePair.of("PIPELINE", "core_pipeline_view");
+        break;
+      }
       default: {
         break;
       }

@@ -210,7 +210,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
           PMSPipelineResponseDTO.builder()
               .yamlPipeline(pe.getYaml())
               .governanceMetadata(pe.getGovernanceMetadata())
-              .entityValidityDetails(EntityValidityDetails.builder().valid(false).invalidYaml(pe.getYaml()).build())
+              .entityValidityDetails(EntityValidityDetails.builder().valid(true).invalidYaml(pe.getYaml()).build())
               .gitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata())
               .build());
     } catch (InvalidYamlException e) {

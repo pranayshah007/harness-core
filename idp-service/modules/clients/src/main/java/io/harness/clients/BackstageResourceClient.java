@@ -25,6 +25,7 @@ import retrofit2.http.Path;
 public interface BackstageResourceClient {
   String CATALOG_API = "{accountIdentifier}/idp/api/catalog";
   String LAYOUT_API = "{accountIdentifier}/idp/api/layout";
+  String HARNESS_REFRESH_API = "{accountIdentifier}/idp/api/harness/provider";
 
   @POST(CATALOG_API + "/locations")
   Call<Object> createCatalogLocation(@Path("accountIdentifier") String accountIdentifier,
@@ -50,4 +51,7 @@ public interface BackstageResourceClient {
   @HTTP(method = "DELETE", path = LAYOUT_API, hasBody = true)
   Call<Object> deleteLayout(@Body LayoutRequest body, @Header("Authorization") String authorization,
       @Path("accountIdentifier") String accountIdentifier);
+
+  @GET(HARNESS_REFRESH_API + "/refresh")
+  Call<Object> providerRefresh(@Path("accountIdentifier") String accountIdentifier);
 }
