@@ -138,14 +138,16 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
       return;
     }
 
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("BRANCH", branch);
+
     EntityDetailProtoDTO pipelineDetails =
         EntityDetailProtoDTO.newBuilder()
             .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(pipelineEntity.getAccountId(),
                 pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
-                pipelineEntity.getIdentifier()))
+                pipelineEntity.getIdentifier(), metadata))
             .setType(EntityTypeProtoEnum.PIPELINES)
             .setName(pipelineEntity.getName())
-            .setBranch(branch)
             .build();
 
     Map<String, List<EntityDetailProtoDTO>> referredEntityTypeToReferredEntities = new HashMap<>();

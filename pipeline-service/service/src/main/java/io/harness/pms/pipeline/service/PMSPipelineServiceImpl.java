@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
@@ -173,10 +174,15 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
 
+      // SETTING THE BOOLEAN - isDefaultBranch
+      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+      if (gitEntityInfo != null) {
+        gitEntityInfo.setDefaultBranch(isEmpty(gitEntityInfo.getBranch()));
+      }
+
       // UPDATING PIPELINE INFO.
       PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
-
       PipelineEntity entityWithUpdatedInfo = entityWithUpdatedInfoWithReferences.getPipelineEntity();
 
       // PIPELINE CREATE FLOW.
@@ -186,7 +192,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
       // GIT RESPONSE BRANCH
       ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
-      String branch = gitMetaData.getBranchName();
+      String branch = null;
+      if (gitMetaData != null) {
+        branch = gitMetaData.getBranchName();
+      }
 
       // PUBLISHING SETUP USAGES
       if (doPublishSetupUsages(createdEntity)) {
@@ -352,7 +361,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       validateStoredYaml(pipelineEntity);
 
       return optionalPipelineEntity;
-    } else if (pipelineEntity.getStoreType() == StoreType.REMOTE && !loadFromCache) {
+    } else if (pipelineEntity.getStoreType() == StoreType.REMOTE) {
       try {
         // PUBLISHING SETUP USAGES.
         PipelineEntityWithReferencesDTO pipelineEntityWithReferences =
@@ -362,7 +371,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
         // GIT RESPONSE BRANCH
         ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
-        String branch = gitMetaData.getBranchName();
+        String branch = null;
+        if (gitMetaData != null) {
+          branch = gitMetaData.getBranchName();
+        }
 
         // POPULATE GIT INFO FOR REFERRED ENTITIES.
         if (doPublishSetupUsages(pipelineEntity)) {
@@ -604,6 +616,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         entityWithUpdatedInfo = entityWithUpdatedInfoWithReferences.getPipelineEntity();
       }
 
+      // SETTING THE BOOLEAN - isDefaultBranch
+      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+      if (gitEntityInfo != null) {
+        gitEntityInfo.setDefaultBranch(isEmpty(gitEntityInfo.getBranch()));
+      }
+
       // PIPELINE UPDATE FLOW.
       PipelineEntity updatedResult;
       if (isOldFlow) {
@@ -615,7 +633,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
       // GIT RESPONSE BRANCH
       ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
-      String branch = gitMetaData.getBranchName();
+      String branch = null;
+      if (gitMetaData != null) {
+        branch = gitMetaData.getBranchName();
+      }
 
       // POPULATE GIT INFO FOR REFERRED ENTITIES.
       if (doPublishSetupUsages(pipelineEntity)) {
@@ -774,7 +795,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     pipelineEntity.setRepoURL(repoUrl);
 
     try {
-      // PUBLISHING SETUP USAGES.
+      // UPDATING PIPELINE INFO
       PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineVersion);
 
@@ -783,16 +804,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       // PIPELINE SAVE FLOW.
       PipelineEntity savedPipelineEntity =
           pmsPipelineRepository.savePipelineEntityForImportedYAML(entityWithUpdatedInfo);
-
-      // GIT RESPONSE BRANCH
-      ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
-      String branch = gitMetaData.getBranchName();
-
-      // POPULATE GIT INFO FOR REFERRED ENTITIES.
-      if (doPublishSetupUsages(pipelineEntity)) {
-        pipelineSetupUsageHelper.publishSetupUsageEvent(
-            pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
-      }
 
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(savedPipelineEntity, CREATING_PIPELINE);
 
