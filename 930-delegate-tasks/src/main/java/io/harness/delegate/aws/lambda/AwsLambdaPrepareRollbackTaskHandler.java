@@ -37,6 +37,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -184,19 +185,26 @@ public class AwsLambdaPrepareRollbackTaskHandler {
 
   protected Optional<FunctionConfiguration> getLatestFunctionConfiguration(
       String functionName, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, LogCallback logCallback) {
-    ListVersionsByFunctionRequest listVersionByFunction =
-        ListVersionsByFunctionRequest.builder().functionName(functionName).build();
+    ListVersionsByFunctionRequest.Builder listVersionsByFunctionBuilder =
+        ListVersionsByFunctionRequest.builder().functionName(functionName);
 
-    ListVersionsByFunctionResponse listVersionsByFunctionResponse = awsLambdaClient.listVersionsByFunction(
-        awsLambdaTaskHelper.getAwsInternalConfig(
-            awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion()),
-        listVersionByFunction);
+    ListVersionsByFunctionResponse listVersionsByFunctionResponse = null;
+    List<FunctionConfiguration> versionsList = new ArrayList<>();
+
+    do {
+      if (listVersionsByFunctionResponse != null) {
+        listVersionsByFunctionBuilder.marker(listVersionsByFunctionResponse.nextMarker());
+      }
+      listVersionsByFunctionResponse = awsLambdaClient.listVersionsByFunction(
+          awsLambdaTaskHelper.getAwsInternalConfig(
+              awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion()),
+          listVersionsByFunctionBuilder.build());
+      versionsList.addAll(listVersionsByFunctionResponse.versions());
+    } while (listVersionsByFunctionResponse.nextMarker() != null);
 
     // We remove $LATEST since it is the unpublished version
-    List<FunctionConfiguration> listActualFunctionVersions = listVersionsByFunctionResponse.versions()
-                                                                 .stream()
-                                                                 .filter(v -> !v.version().contains(LATEST))
-                                                                 .collect(Collectors.toList());
+    List<FunctionConfiguration> listActualFunctionVersions =
+        versionsList.stream().filter(v -> !v.version().contains(LATEST)).collect(Collectors.toList());
 
     if (listActualFunctionVersions.isEmpty()) {
       String msg = format("No published version found for the existing function: %s", functionName);
