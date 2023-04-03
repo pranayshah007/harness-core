@@ -16,6 +16,7 @@ import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
 import io.harness.artifacts.gcr.service.GcrApiService;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
@@ -73,6 +74,7 @@ public class GcrArtifactTaskHandler extends DelegateArtifactTaskHandler<GcrArtif
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(GcrArtifactDelegateRequest attributesRequest) {
     BuildDetailsInternal lastSuccessfulBuild;
     GcrInternalConfig gcrInternalConfig;
+    ArtifactMetaInfo artifactMetaInfo;
     try {
       gcrInternalConfig = getGcrInternalConfig(attributesRequest);
     } catch (IOException e) {

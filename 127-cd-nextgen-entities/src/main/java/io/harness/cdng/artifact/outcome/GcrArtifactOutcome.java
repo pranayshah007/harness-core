@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.GcrArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -48,6 +49,8 @@ public class GcrArtifactOutcome implements ArtifactOutcome {
   String image;
   /** imagePullSecret for Gcr credentials base encoded.*/
   String imagePullSecret;
+  Map<String, String> metadata;
+  Map<String, String> label;
 
   @Override
   public ArtifactSummary getArtifactSummary() {
