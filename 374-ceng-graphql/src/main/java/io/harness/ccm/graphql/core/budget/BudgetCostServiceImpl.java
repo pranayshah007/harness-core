@@ -439,6 +439,7 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(startTime, AFTER));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
     return viewsBillingService.getActualCostGroupedByPeriod(filters, groupBy,
-        viewsQueryHelper.getPerspectiveTotalCostAggregation(), viewsQueryHelper.buildQueryParams(accountId, false));
+        viewsQueryHelper.getPerspectiveTotalCostAggregation(),
+        viewsQueryHelper.buildQueryParams(accountId, false, false, false, false, true));
   }
 }
