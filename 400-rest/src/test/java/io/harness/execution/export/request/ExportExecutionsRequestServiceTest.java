@@ -74,7 +74,7 @@ public class ExportExecutionsRequestServiceTest extends WingsBaseTest {
 
   @Test
   @Owner(developers = GARVIT)
-  @RealMongo
+  
   @Category(UnitTests.class)
   public void testQueueExportExecutionRequest() {
     saveWorkflowExecution();
@@ -116,7 +116,7 @@ public class ExportExecutionsRequestServiceTest extends WingsBaseTest {
 
   @Test
   @Owner(developers = GARVIT)
-  @RealMongo
+  
   @Category(UnitTests.class)
   public void testPrepareLimitChecks() {
     saveWorkflowExecution();

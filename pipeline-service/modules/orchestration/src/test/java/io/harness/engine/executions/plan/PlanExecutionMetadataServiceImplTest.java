@@ -34,7 +34,7 @@ public class PlanExecutionMetadataServiceImplTest extends OrchestrationTestBase 
   @Inject private PlanExecutionMetadataService planExecutionMetadataService;
 
   @Test
-  @RealMongo
+  
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void findByPlanExecutionId() {
@@ -49,7 +49,7 @@ public class PlanExecutionMetadataServiceImplTest extends OrchestrationTestBase 
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void save() {

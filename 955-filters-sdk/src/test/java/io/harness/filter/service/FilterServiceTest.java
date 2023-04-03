@@ -50,7 +50,7 @@ public class FilterServiceTest extends FiltersTestBase {
   @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testListForAccountLevelFilter() {
     for (int i = 0; i < 5; i++) {
       FilterDTO inputFilterDTO = createFilter(accountIdentifier, null, null, filterIdentifier);
@@ -66,7 +66,7 @@ public class FilterServiceTest extends FiltersTestBase {
   @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testListForOrgLevelFilter() {
     for (int i = 0; i < 5; i++) {
       FilterDTO inputFilterDTO = createFilter(accountIdentifier, orgIdentifier, null, filterIdentifier);
@@ -82,7 +82,7 @@ public class FilterServiceTest extends FiltersTestBase {
   @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testListForProjectLevelFilter() {
     for (int i = 0; i < 5; i++) {
       FilterDTO inputFilterDTO = createFilter(accountIdentifier, null, null, filterIdentifier);

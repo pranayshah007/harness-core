@@ -65,7 +65,7 @@ public class WorkflowPausePropagatorTest extends WingsBaseTest {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = POOJA)
   @Category(UnitTests.class)
   public void shouldTestHandleStatusUpdateForWorkflow() {

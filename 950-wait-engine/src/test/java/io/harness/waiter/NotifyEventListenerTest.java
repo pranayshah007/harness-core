@@ -61,7 +61,7 @@ public class NotifyEventListenerTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testOnMessageWithMorphia() {
     String waitInstanceId = generateUuid();
     String correlationId = generateUuid();
@@ -76,7 +76,7 @@ public class NotifyEventListenerTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  @RealMongo
+  
   @SpringWaiter
   public void testOnMessageWithSpring() {
     String waitInstanceId = generateUuid();

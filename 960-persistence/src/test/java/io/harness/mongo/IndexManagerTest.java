@@ -35,7 +35,7 @@ public class IndexManagerTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testMongoBehaviorCreateIndexWithExistingMatchingFields() {
     Morphia morphia = new Morphia();
     morphia.getMapper().getOptions().setMapSubPackages(true);

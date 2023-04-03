@@ -102,7 +102,7 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldDoNothingIfRuntimeIdIsNull() {
     String planExecutionId = generateUuid();
     eventHandlerV2.handleEvent(planExecutionId, null, OrchestrationGraph.builder().build());
@@ -113,7 +113,7 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   @Ignore("Using event sourcing now, will remove/update")
   public void shouldAddRootNodeIdToTheGraphAndAddVertex() {
     when(planExecutionMetadataService.findByPlanExecutionId(any()))
@@ -178,7 +178,7 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldUpdateExistingVertexInGraphAndAddOutcomes() {
     when(planExecutionMetadataService.findByPlanExecutionId(any()))
         .thenReturn(Optional.of(PlanExecutionMetadata.builder().build()));

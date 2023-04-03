@@ -41,7 +41,7 @@ public class ProgressUpdateServiceTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testModifyAndFetchWaitInstanceForNoExistingResponse() throws InterruptedException {
     final WaitInstance waitInstance = WaitInstance.builder()
                                           .uuid(waitInstanceId)
@@ -78,7 +78,7 @@ public class ProgressUpdateServiceTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testModifyAndFetchWaitInstanceForNoExistingResponseUsingKryoWithoutReference()
       throws InterruptedException {
     final WaitInstance waitInstance = WaitInstance.builder()
@@ -118,7 +118,7 @@ public class ProgressUpdateServiceTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testModifyAndFetchWaitInstanceForNoExistingResponseAndNullUsingKryoWithoutReference()
       throws InterruptedException {
     final WaitInstance waitInstance = WaitInstance.builder()

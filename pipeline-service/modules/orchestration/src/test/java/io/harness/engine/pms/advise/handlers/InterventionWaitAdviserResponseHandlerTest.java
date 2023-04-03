@@ -101,7 +101,7 @@ public class InterventionWaitAdviserResponseHandlerTest extends OrchestrationTes
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void shouldTestHandleAdvise() {

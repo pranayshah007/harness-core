@@ -819,7 +819,7 @@ public class StateMachineExecutorTest extends WingsBaseTest {
     callback.await();
   }
 
-  @RealMongo
+  
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)

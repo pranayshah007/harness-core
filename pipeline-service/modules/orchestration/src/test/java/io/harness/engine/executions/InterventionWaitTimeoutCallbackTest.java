@@ -42,7 +42,7 @@ public class InterventionWaitTimeoutCallbackTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+  
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void shouldTestGetInterruptPackage() {

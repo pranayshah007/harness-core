@@ -46,7 +46,7 @@ public class OrchestrationStartEventHandlerTest extends OrchestrationVisualizati
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldThrowInvalidRequestException() {
     String planExecutionId = generateUuid();
     PlanExecutionMetadata planExecutionMetadata =
@@ -67,7 +67,7 @@ public class OrchestrationStartEventHandlerTest extends OrchestrationVisualizati
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void shouldSaveCachedGraph() {
     PlanExecution planExecution =
         PlanExecution.builder().uuid(generateUuid()).startTs(System.currentTimeMillis()).status(Status.RUNNING).build();

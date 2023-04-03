@@ -48,7 +48,7 @@ public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testFindIndexByFields() {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
@@ -69,7 +69,7 @@ public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testFindIndexByFieldsAndDirection() {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
@@ -90,7 +90,7 @@ public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testFindIndexByName() {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
@@ -105,7 +105,7 @@ public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testIsRebuiltNeeded() {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
@@ -133,7 +133,7 @@ public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testIsCreateNeeded() {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
@@ -150,7 +150,7 @@ public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void obsoleteIndexes() {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
@@ -170,7 +170,7 @@ public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void testisUniqueFlag() {
     persistence.ensureIndexForTesting(TestIndexEntity.class);
 

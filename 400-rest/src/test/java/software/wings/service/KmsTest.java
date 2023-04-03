@@ -323,7 +323,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void getGetGlobalKmsConfig() {
     KmsConfig globalKmsConfig = secretManagementTestHelper.getKmsConfig();
     globalKmsConfig.setName("Global config");
@@ -343,7 +343,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void updateFileWithGlobalKms() throws IOException {
     KmsConfig globalKmsConfig = secretManagementTestHelper.getKmsConfig();
     globalKmsConfig.setName("Global config");
@@ -1297,7 +1297,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void kmsEncryptionSaveServiceVariable() throws IllegalAccessException {
     final KmsConfig kmsConfig = secretManagementTestHelper.getKmsConfig();
     kmsResource.saveKmsConfig(accountId, kmsConfig);
@@ -1434,7 +1434,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void kmsEncryptionUpdateServiceVariable() {
     final KmsConfig kmsConfig = secretManagementTestHelper.getKmsConfig();
     kmsResource.saveKmsConfig(accountId, kmsConfig);
@@ -2131,7 +2131,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = ANKIT, intermittent = true)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void transitionKmsForConfigFile() throws IOException, InterruptedException, IllegalAccessException {
     Thread listenerThread = startTransitionListener();
     try {
@@ -2259,7 +2259,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void saveUpdateConfigFileNoKms() throws IOException, IllegalAccessException {
     final long seed = System.currentTimeMillis();
     log.info("seed: " + seed);
@@ -2370,7 +2370,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void saveConfigFileNoEncryption() throws IOException {
     final long seed = System.currentTimeMillis();
     log.info("seed: " + seed);
@@ -2424,7 +2424,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void saveConfigFileWithEncryption() throws IOException, IllegalAccessException {
     final long seed = System.currentTimeMillis();
     log.info("seed: " + seed);
@@ -2566,7 +2566,7 @@ public class KmsTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
+  
   public void saveConfigFileTemplateWithEncryption() throws IOException {
     final long seed = System.currentTimeMillis();
     log.info("seed: " + seed);
