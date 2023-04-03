@@ -604,7 +604,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   private PipelineEntity makePipelineUpdateCall(
       PipelineEntity pipelineEntity, PipelineEntity oldEntity, ChangeType changeType, boolean isOldFlow) {
     try {
-      // UPDATING PIPELINE INFO AND PUBLISHING SETUP USAGES.
+      // UPDATING PIPELINE INFO.
       PipelineEntity entityWithUpdatedInfo;
       PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences = null;
       if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
@@ -795,7 +795,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     pipelineEntity.setRepoURL(repoUrl);
 
     try {
-      // UPDATING PIPELINE INFO
+      // UPDATING PIPELINE INFO.
       PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineVersion);
 

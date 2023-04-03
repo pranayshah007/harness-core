@@ -139,7 +139,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
     }
 
     Map<String, String> metadata = new HashMap<>();
-    metadata.put("BRANCH", branch);
+    metadata.put("branch", branch);
 
     EntityDetailProtoDTO pipelineDetails =
         EntityDetailProtoDTO.newBuilder()

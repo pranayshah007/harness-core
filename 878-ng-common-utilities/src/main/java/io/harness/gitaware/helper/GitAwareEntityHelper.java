@@ -59,6 +59,7 @@ public class GitAwareEntityHelper {
     // if branch is empty, then git sdk will figure out the default branch for the repo by itself
     String branch =
         isNullOrDefault(gitContextRequestParams.getBranchName()) ? "" : gitContextRequestParams.getBranchName();
+
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     gitEntityInfo.setDefaultBranch(isEmpty(branch));
 
