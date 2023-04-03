@@ -49,6 +49,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -109,7 +110,7 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
     String gcpProjectId = config.getGcpConfig().getGcpProjectId();
     String cloudProviderTableName = format("%s.%s.%s", gcpProjectId, DATA_SET_NAME, TABLE_NAME);
     long endOfDay = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS).toEpochMilli();
-    long licenseStartTime = getLicenseStartTime(accountIdentifier);
+    long licenseStartTime = getLicenseStartTime(accountIdentifier, endOfDay);
     String query = format(QUERY_TEMPLATE, cloudProviderTableName, licenseStartTime, endOfDay, accountIdentifier);
 
     BigQuery bigQuery = bigQueryService.get();
@@ -128,6 +129,13 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
             CCMLicenseUsageHelper.getActiveSpendResultSetDTOs(result)));
     properties.put("ccm_license_startTime", licenseStartTime);
     return properties;
+  }
+
+  private long getLicenseStartTime(String accountIdentifier, long endOfDay) {
+    long licenseStartTime = getLicenseStartTime(accountIdentifier);
+    long numberOfYears = (endOfDay - licenseStartTime) / TimeUnit.MILLISECONDS.convert(365, TimeUnit.DAYS);
+    licenseStartTime += TimeUnit.MILLISECONDS.convert((int) numberOfYears, TimeUnit.DAYS);
+    return licenseStartTime;
   }
 
   private long getLicenseStartTime(String accountId) {
