@@ -37,6 +37,9 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.UserGroupDTO;
@@ -51,6 +54,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -70,15 +74,17 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final UserMembershipRepository userMembershipRepository;
   private static final String DEBUG_MESSAGE = "DefaultUserGroupServiceImpl: ";
+  private PersistentLocker persistentLocker;
 
   @Inject
   public DefaultUserGroupServiceImpl(UserGroupService userGroupService,
       AccessControlAdminClient accessControlAdminClient, NGFeatureFlagHelperService ngFeatureFlagHelperService,
-      UserMembershipRepository userMembershipRepository) {
+      UserMembershipRepository userMembershipRepository, PersistentLocker persistentLocker) {
     this.userGroupService = userGroupService;
     this.accessControlAdminClient = accessControlAdminClient;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.userMembershipRepository = userMembershipRepository;
+    this.persistentLocker = persistentLocker;
   }
 
   @Override
@@ -246,12 +252,22 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
 
   private void addUserToDefaultUserGroup(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String userGroupId, String userId) {
-    Optional<UserGroup> userGroupOptional =
-        userGroupService.get(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId);
-    if (userGroupOptional.isPresent()
-        && !userGroupService.checkMember(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId, userId)) {
-      userGroupService.addMemberToDefaultUserGroup(
-          accountIdentifier, orgIdentifier, projectIdentifier, userGroupId, userId);
+    String lockName =
+        String.format("userGroup/%s/%s/%s/%s", accountIdentifier, orgIdentifier, projectIdentifier, userGroupId);
+    try (AcquiredLock<?> lock =
+             persistentLocker.waitToAcquireLock(lockName, Duration.ofSeconds(1), Duration.ofSeconds(2))) {
+      if (lock == null) {
+        log.error(String.format("Count not acquire lock- %s while adding user- %s via SCIM", lockName, userId));
+        throw new InvalidRequestException(
+            String.format("Unable to add user %s via SCIM due to internal error. Please try again", userId));
+      }
+      Optional<UserGroup> userGroupOptional =
+          userGroupService.get(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId);
+      if (userGroupOptional.isPresent()
+          && !userGroupService.checkMember(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId, userId)) {
+        userGroupService.addMemberToDefaultUserGroup(
+            accountIdentifier, orgIdentifier, projectIdentifier, userGroupId, userId);
+      }
     }
   }
 

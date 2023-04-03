@@ -56,6 +56,8 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.ng.accesscontrol.scopes.ScopeNameDTO;
 import io.harness.ng.accesscontrol.scopes.ScopeNameMapper;
 import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
@@ -99,6 +101,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import io.serializer.HObjectMapper;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -132,6 +135,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   private final AccessControlAdminClient accessControlAdminClient;
   private final AccessControlClient accessControlClient;
   private final ScopeNameMapper scopeNameMapper;
+  private final PersistentLocker persistentLocker;
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private static final List<String> defaultUserGroups = ImmutableList.of(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER,
@@ -142,7 +146,8 @@ public class UserGroupServiceImpl implements UserGroupService {
       OutboxService outboxService, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
       NgUserService ngUserService, AuthSettingsManagerClient managerClient, LastAdminCheckService lastAdminCheckService,
       AccessControlAdminClient accessControlAdminClient, AccessControlClient accessControlClient,
-      ScopeNameMapper scopeNameMapper, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      ScopeNameMapper scopeNameMapper, NGFeatureFlagHelperService ngFeatureFlagHelperService,
+      PersistentLocker persistentLocker) {
     this.userGroupRepository = userGroupRepository;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
@@ -153,6 +158,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     this.accessControlClient = accessControlClient;
     this.scopeNameMapper = scopeNameMapper;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.persistentLocker = persistentLocker;
   }
 
   @Override
@@ -487,17 +493,28 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   private UserGroup addMemberInternal(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String userGroupIdentifier, String userIdentifier) {
-    UserGroup existingUserGroup = getOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
-    UserGroupDTO oldUserGroup = (UserGroupDTO) HObjectMapper.clone(toDTO(existingUserGroup));
+    String lockName = String.format(
+        "userGroup/%s/%s/%s/%s", accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
+    try (AcquiredLock<?> lock =
+             persistentLocker.waitToAcquireLock(lockName, Duration.ofSeconds(1), Duration.ofSeconds(2))) {
+      if (lock == null) {
+        log.error(String.format("Count not acquire lock- %s while adding user- %s via SCIM", lockName, userIdentifier));
+        throw new InvalidRequestException(
+            String.format("Unable to add user %s via SCIM due to internal error. Please try again", userIdentifier));
+      }
+      UserGroup existingUserGroup =
+          getOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
+      UserGroupDTO oldUserGroup = (UserGroupDTO) HObjectMapper.clone(toDTO(existingUserGroup));
 
-    if (existingUserGroup.getUsers().stream().noneMatch(userIdentifier::equals)) {
-      log.info("[NGSamlUserGroupSync] Adding member {} to Existing Usergroup: {}", userIdentifier, existingUserGroup);
-      existingUserGroup.getUsers().add(userIdentifier);
-    } else {
-      throw new InvalidRequestException(
-          String.format("User %s is already part of User Group %s", userIdentifier, userGroupIdentifier));
+      if (existingUserGroup.getUsers().stream().noneMatch(userIdentifier::equals)) {
+        log.info("[NGSamlUserGroupSync] Adding member {} to Existing Usergroup: {}", userIdentifier, existingUserGroup);
+        existingUserGroup.getUsers().add(userIdentifier);
+      } else {
+        throw new InvalidRequestException(
+            String.format("User %s is already part of User Group %s", userIdentifier, userGroupIdentifier));
+      }
+      return updateInternal(existingUserGroup, oldUserGroup);
     }
-    return updateInternal(existingUserGroup, oldUserGroup);
   }
 
   @Override
