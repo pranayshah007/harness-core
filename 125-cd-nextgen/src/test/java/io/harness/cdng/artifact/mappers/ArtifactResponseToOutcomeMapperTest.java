@@ -29,6 +29,7 @@ import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptInfo;
@@ -44,6 +45,7 @@ import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
@@ -52,6 +54,7 @@ import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
+import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
@@ -579,5 +582,49 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     assertThat(garArtifactOutcome.getMetadata()).isEqualTo(metaData);
     assertThat(garArtifactOutcome.getRepositoryType()).isEqualTo(type);
     assertThat(garArtifactOutcome.getLabel()).isEqualTo(label);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getGCRArtifactOutcomeTest() {
+    final String connectorRef = "connectorRef";
+    final String versionRegex = "versionRegex";
+    final String identifier = "identifier";
+    final String imagePath = "imagePath";
+
+    GcrArtifactConfig gcrArtifactConfig =
+        GcrArtifactConfig.builder()
+            .connectorRef(ParameterField.createValueField(connectorRef))
+            .identifier(identifier)
+            .registryHostname(ParameterField.createValueField(ArtifactMetadataKeys.REGISTRY_HOSTNAME))
+            .tagRegex(ParameterField.createValueField(versionRegex))
+            .isPrimaryArtifact(true)
+            .imagePath(ParameterField.createValueField(imagePath))
+            .build();
+    Map<String, String> metaData = new HashMap<>();
+    metaData.put(ArtifactMetadataKeys.IMAGE, ArtifactMetadataKeys.IMAGE);
+    Map<String, String> label = new HashMap<>();
+    label.put("1", "2");
+    label.put("3", "4");
+    GcrArtifactDelegateResponse gcrArtifactDelegateResponse =
+        GcrArtifactDelegateResponse.builder()
+            .tag(versionRegex)
+            .label(label)
+            .buildDetails(ArtifactBuildDetailsNG.builder().metadata(metaData).build())
+            .build();
+    GcrArtifactOutcome gcrArtifactOutcome = (GcrArtifactOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+        gcrArtifactConfig, gcrArtifactDelegateResponse, true);
+    assertThat(gcrArtifactOutcome.getTag()).isEqualTo(versionRegex);
+    assertThat(gcrArtifactOutcome.getRegistryHostname()).isEqualTo(ArtifactMetadataKeys.REGISTRY_HOSTNAME);
+    assertThat(gcrArtifactOutcome.getConnectorRef()).isEqualTo(connectorRef);
+    assertThat(gcrArtifactOutcome.getTagRegex()).isEqualTo(versionRegex);
+    assertThat(gcrArtifactOutcome.getType()).isEqualTo(ArtifactSourceType.GCR.getDisplayName());
+    assertThat(gcrArtifactOutcome.getIdentifier()).isEqualTo(identifier);
+    assertThat(gcrArtifactOutcome.isPrimaryArtifact()).isEqualTo(true);
+    assertThat(gcrArtifactOutcome.getImage()).isEqualTo(ArtifactMetadataKeys.IMAGE);
+    assertThat(gcrArtifactOutcome.getMetadata()).isEqualTo(metaData);
+    assertThat(gcrArtifactOutcome.getImagePath()).isEqualTo(imagePath);
+    assertThat(gcrArtifactOutcome.getLabel()).isEqualTo(label);
   }
 }

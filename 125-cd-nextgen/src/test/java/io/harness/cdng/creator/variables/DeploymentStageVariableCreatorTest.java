@@ -507,12 +507,13 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "artifacts.sidecars.gcr_test.tagRegex", "artifacts.sidecars.gcr_test.registryHostname",
                 "artifacts.sidecars.gcr_test.identifier", "artifacts.sidecars.gcr_test.type",
                 "artifacts.sidecars.gcr_test.primaryArtifact", "artifacts.sidecars.gcr_test.image",
-                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.primary.connectorRef",
-                "artifacts.primary.imagePath", "artifacts.primary.tag", "artifacts.primary.tagRegex",
-                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
-                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.label",
-                "artifacts.primary.displayName", "artifacts.primary.digest", "artifacts.primary.metadata",
-                "serviceVariables.svar2", "serviceVariables.envVar1", "serviceVariables.svar1"))
+                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.sidecars.gcr_test.metadata",
+                "artifacts.sidecars.gcr_test.label", "artifacts.primary.connectorRef", "artifacts.primary.imagePath",
+                "artifacts.primary.tag", "artifacts.primary.tagRegex", "artifacts.primary.identifier",
+                "artifacts.primary.type", "artifacts.primary.primaryArtifact", "artifacts.primary.image",
+                "artifacts.primary.imagePullSecret", "artifacts.primary.label", "artifacts.primary.displayName",
+                "artifacts.primary.digest", "artifacts.primary.metadata", "serviceVariables.svar2",
+                "serviceVariables.envVar1", "serviceVariables.svar1"))
             .expectedEnvFqn(
                 List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
                     "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
@@ -543,12 +544,13 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "artifacts.sidecars.gcr_test.tagRegex", "artifacts.sidecars.gcr_test.registryHostname",
                 "artifacts.sidecars.gcr_test.identifier", "artifacts.sidecars.gcr_test.type",
                 "artifacts.sidecars.gcr_test.primaryArtifact", "artifacts.sidecars.gcr_test.image",
-                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.primary.connectorRef",
-                "artifacts.primary.imagePath", "artifacts.primary.tag", "artifacts.primary.tagRegex",
-                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
-                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.label",
-                "artifacts.primary.displayName", "artifacts.primary.digest", "artifacts.primary.metadata",
-                "serviceVariables.svar2", "serviceVariables.envVar1", "serviceVariables.svar1"))
+                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.sidecars.gcr_test.metadata",
+                "artifacts.sidecars.gcr_test.label", "artifacts.primary.connectorRef", "artifacts.primary.imagePath",
+                "artifacts.primary.tag", "artifacts.primary.tagRegex", "artifacts.primary.identifier",
+                "artifacts.primary.type", "artifacts.primary.primaryArtifact", "artifacts.primary.image",
+                "artifacts.primary.imagePullSecret", "artifacts.primary.label", "artifacts.primary.displayName",
+                "artifacts.primary.digest", "artifacts.primary.metadata", "serviceVariables.svar2",
+                "serviceVariables.envVar1", "serviceVariables.svar1"))
             .expectedEnvFqn(
                 List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
                     "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
@@ -580,12 +582,13 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "artifacts.sidecars.gcr_test.tagRegex", "artifacts.sidecars.gcr_test.registryHostname",
                 "artifacts.sidecars.gcr_test.identifier", "artifacts.sidecars.gcr_test.type",
                 "artifacts.sidecars.gcr_test.primaryArtifact", "artifacts.sidecars.gcr_test.image",
-                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.primary.connectorRef",
-                "artifacts.primary.imagePath", "artifacts.primary.tag", "artifacts.primary.tagRegex",
-                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
-                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.label",
-                "artifacts.primary.displayName", "artifacts.primary.digest", "artifacts.primary.metadata",
-                "serviceVariables.svar2", "serviceVariables.envVar1", "serviceVariables.svar1"))
+                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.sidecars.gcr_test.metadata",
+                "artifacts.sidecars.gcr_test.label", "artifacts.primary.connectorRef", "artifacts.primary.imagePath",
+                "artifacts.primary.tag", "artifacts.primary.tagRegex", "artifacts.primary.identifier",
+                "artifacts.primary.type", "artifacts.primary.primaryArtifact", "artifacts.primary.image",
+                "artifacts.primary.imagePullSecret", "artifacts.primary.label", "artifacts.primary.displayName",
+                "artifacts.primary.digest", "artifacts.primary.metadata", "serviceVariables.svar2",
+                "serviceVariables.envVar1", "serviceVariables.svar1"))
             .expectedEnvFqn(
                 List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
                     "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))

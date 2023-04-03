@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -356,6 +357,8 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.GCR.getDisplayName())
         .primaryArtifact(gcrArtifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(gcrArtifactConfig)))
+        .metadata(useDelegateResponse ? getMetadata(gcrArtifactDelegateResponse) : null)
+        .label(getLabels(gcrArtifactDelegateResponse))
         .build();
   }
   private static GarArtifactOutcome getGarArtifactOutcome(GoogleArtifactRegistryConfig googleArtifactRegistryConfig,
@@ -675,6 +678,13 @@ public class ArtifactResponseToOutcomeMapper {
     }
     return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getLabel()) ? artifactDelegateResponse.getLabel()
                                                                           : Collections.emptyMap();
+  }
+
+  private Map<String, String> getLabels(GcrArtifactDelegateResponse gcrArtifactDelegateResponse) {
+    if (gcrArtifactDelegateResponse == null || isEmpty(gcrArtifactDelegateResponse.getLabel())) {
+      return Collections.emptyMap();
+    }
+    return gcrArtifactDelegateResponse.getLabel();
   }
 
   private String getRegistryHostnameValue(ArtifactDelegateResponse artifactDelegateResponse) {
