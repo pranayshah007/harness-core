@@ -45,7 +45,7 @@ public class SyncStepInfo extends SyncBaseStepInfo implements CDAbstractStepInfo
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.SYNC;
+    return OrchestrationFacilitatorType.ASYNC;
   }
 
   @Override
