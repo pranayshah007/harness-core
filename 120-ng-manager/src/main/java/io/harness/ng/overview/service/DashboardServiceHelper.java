@@ -641,26 +641,28 @@ public class DashboardServiceHelper {
         Set<EnvironmentType> envTypes = new HashSet<>();
         Integer totalCount = 0;
         Set<String> artifacts = new HashSet<>();
+        if(EmptyPredicate.isEmpty(envGroupEntity.getEnvIdentifiers())) {
+          continue;
+        }
         for (String envId : envGroupEntity.getEnvIdentifiers()) {
           if(!envToCountMap.containsKey(envId)) {
             continue;
           }
-          final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
-          if(!environmentFilterPropertiesDTO.getEnvironmentTypes().contains(envType)) {
-            continue;
-          }
-          envIds.add(envId);
-          final Integer count = envToCountMap.get(envId);
-          totalCount += count;
           final ArtifactDeploymentDetail artifactDeploymentDetail = artifactDeploymentDetailsMap.get(envId);
           if (artifactDeploymentDetail == null) {
             continue;
           }
-          envTypes.add(envType);
-          if(!artifacts.contains(artifactDeploymentDetail.getArtifact())) {
-            artifactDeploymentDetailMap.put(envType, artifactDeploymentDetail);
-            artifacts.add(artifactDeploymentDetail.getArtifact());
+          final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
+          if(environmentFilterPropertiesDTO != null && !environmentFilterPropertiesDTO.getEnvironmentTypes().contains(envType)) {
+            continue;
           }
+
+          envIds.add(envId);
+          final Integer count = envToCountMap.get(envId);
+          totalCount += count;
+          envTypes.add(envType);
+          artifactDeploymentDetailList.add(artifactDeploymentDetail);
+          artifacts.add(artifactDeploymentDetail.getArtifact());
 //          environmentInstanceDetails.add(EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
 //                  .environmentType(envType)
 //                  .envId(envId)

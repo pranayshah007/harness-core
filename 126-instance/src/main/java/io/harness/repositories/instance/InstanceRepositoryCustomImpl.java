@@ -459,17 +459,15 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     GroupOperation groupOperation;
 
     if (isEnvironmentCard) {
-      groupOperation = group(InstanceKeys.envIdentifier, InstanceKeys.envGroupRef);
+      groupOperation = group(InstanceKeys.envIdentifier);
     } else {
-      groupOperation = group(InstanceKeys.envIdentifier, InstanceKeys.envGroupRef, DISPLAY_NAME);
+      groupOperation = group(InstanceKeys.envIdentifier, DISPLAY_NAME);
     }
 
     groupOperation = groupOperation.first(InstanceKeys.envIdentifier)
                          .as(InstanceKeys.envIdentifier)
                          .first(DISPLAY_NAME)
                          .as(DISPLAY_NAME)
-            .first(InstanceKeys.envGroupRef)
-            .as(InstanceKeys.envGroupRef)
                          .first(InstanceKeys.lastDeployedAt)
                          .as(InstanceKeys.lastDeployedAt);
     return mongoTemplate.aggregate(newAggregation(sortOperation, matchOperation, projectionOperation, groupOperation),

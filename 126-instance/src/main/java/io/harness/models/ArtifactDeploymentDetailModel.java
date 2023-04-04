@@ -16,7 +16,6 @@ import lombok.Getter;
 @EqualsAndHashCode
 public class ArtifactDeploymentDetailModel {
   private String envIdentifier;
-  private String envGroupRef;
   private String displayName;
   private long lastDeployedAt;
 }
