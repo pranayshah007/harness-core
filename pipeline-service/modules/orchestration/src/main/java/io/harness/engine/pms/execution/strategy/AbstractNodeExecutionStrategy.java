@@ -77,7 +77,7 @@ public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends Pm
 
   @Override
   public void handleSdkResponseEvent(SdkResponseEventProto event) {
-    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(event.getAmbiance())) {
+    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(event.getAmbiance(), event.getSdkResponseEventType())) {
       log.info("Event for SdkResponseEvent received for eventType {}", event.getSdkResponseEventType());
       SdkResponseProcessor handler = sdkResponseProcessorFactory.getHandler(event.getSdkResponseEventType());
       handler.handleEvent(event);
