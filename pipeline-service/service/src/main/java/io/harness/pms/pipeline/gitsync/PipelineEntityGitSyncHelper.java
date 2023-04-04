@@ -19,15 +19,11 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.git.model.ChangeType;
-import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.FileChange;
 import io.harness.gitsync.FullSyncChangeSet;
 import io.harness.gitsync.ScopeDetails;
-import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.entityInfo.AbstractGitSdkEntityHandler;
 import io.harness.gitsync.entityInfo.GitSdkEntityHandlerInterface;
-import io.harness.gitsync.helpers.GitContextHelper;
-import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.grpc.utils.StringValueUtils;
@@ -60,16 +56,13 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   private final PMSPipelineService pmsPipelineService;
   private final PMSPipelineServiceHelper pipelineServiceHelper;
   private final PipelineFullGitSyncHandler pipelineFullGitSyncHandler;
-  private final GitExperienceSettingsHelper gitExperienceSettingsHelper;
 
   @Inject
   public PipelineEntityGitSyncHelper(PMSPipelineService pmsPipelineService,
-      PMSPipelineServiceHelper pipelineServiceHelper, PipelineFullGitSyncHandler pipelineFullGitSyncHandler,
-      GitExperienceSettingsHelper gitExperienceSettingsHelper) {
+      PMSPipelineServiceHelper pipelineServiceHelper, PipelineFullGitSyncHandler pipelineFullGitSyncHandler) {
     this.pmsPipelineService = pmsPipelineService;
     this.pipelineServiceHelper = pipelineServiceHelper;
     this.pipelineFullGitSyncHandler = pipelineFullGitSyncHandler;
-    this.gitExperienceSettingsHelper = gitExperienceSettingsHelper;
   }
 
   @Override
