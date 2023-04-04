@@ -8,7 +8,6 @@
 package io.harness.azure.model;
 
 import com.google.common.collect.ImmutableSet;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;

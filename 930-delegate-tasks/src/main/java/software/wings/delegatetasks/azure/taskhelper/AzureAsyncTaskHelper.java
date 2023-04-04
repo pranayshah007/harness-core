@@ -836,7 +836,7 @@ public class AzureAsyncTaskHelper {
         .args(getArgsForAzureKubeconfig(azureConfig, serverId))
         .command(AZURE_AUTH_PLUGIN_BINARY)
         .env(envVariableList.stream()
-                 .filter(envVariable -> (envVariable != null && envVariable.getValue() != null))
+                 .filter(envVariable -> envVariable != null && envVariable.getValue() != null)
                  .collect(Collectors.toUnmodifiableList()))
         .installHint(AZURE_AUTH_PLUGIN_INSTALL_HINT)
         .interactiveMode(InteractiveMode.NEVER)

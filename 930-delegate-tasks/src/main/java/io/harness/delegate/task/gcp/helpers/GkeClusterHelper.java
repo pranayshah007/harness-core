@@ -336,7 +336,7 @@ public class GkeClusterHelper {
         .apiVersion(API_VERSION)
         .command(GCP_AUTH_PLUGIN_BINARY)
         .env(envVariableList.stream()
-                 .filter(envVariable -> (envVariable != null && envVariable.getValue() != null))
+                 .filter(envVariable -> envVariable != null && envVariable.getValue() != null)
                  .collect(Collectors.toUnmodifiableList()))
         .interactiveMode(InteractiveMode.NEVER)
         .provideClusterInfo(true)
