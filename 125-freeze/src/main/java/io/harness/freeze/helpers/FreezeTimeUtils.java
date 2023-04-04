@@ -14,6 +14,7 @@ import io.harness.freeze.beans.FreezeDuration;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeWindow;
 import io.harness.freeze.beans.Recurrence;
+import io.harness.freeze.beans.RecurrenceSpec;
 import io.harness.freeze.beans.RecurrenceType;
 
 import java.text.ParseException;
@@ -81,16 +82,25 @@ public class FreezeTimeUtils {
         return null;
       } else {
         return fetchCurrentOrUpcomingTimeWindow(firstWindowStartTime, firstWindowEndTime, lastWindowEndTimeEpoch,
-            freezeWindow.getRecurrence().getRecurrenceType(), timeZone);
+            freezeWindow.getRecurrence().getRecurrenceType(), timeZone, freezeWindow.getRecurrence().getSpec());
       }
     }
   }
 
   private CurrentOrUpcomingWindow fetchCurrentOrUpcomingTimeWindow(LocalDateTime firstWindowStartTime,
-      LocalDateTime firstWindowEndTime, Long lastWindowEndTimeEpoch, RecurrenceType recurrenceType, TimeZone timeZone) {
+      LocalDateTime firstWindowEndTime, Long lastWindowEndTimeEpoch, RecurrenceType recurrenceType, TimeZone timeZone,
+      RecurrenceSpec recurrenceSpec) {
     int recurrenceNumber = 0;
-    Long currentWindowStartTime = getEpochValue(recurrenceType, firstWindowStartTime, timeZone, recurrenceNumber);
-    Long currentWindowEndTime = getEpochValue(recurrenceType, firstWindowEndTime, timeZone, recurrenceNumber);
+    int valueMultiplier = 1;
+    if (recurrenceSpec != null) {
+      if (recurrenceSpec.getValue() != null) {
+        valueMultiplier = recurrenceSpec.getValue();
+      }
+    }
+    Long currentWindowStartTime =
+        getEpochValue(recurrenceType, firstWindowStartTime, timeZone, valueMultiplier * recurrenceNumber);
+    Long currentWindowEndTime =
+        getEpochValue(recurrenceType, firstWindowEndTime, timeZone, valueMultiplier * recurrenceNumber);
     while (currentWindowStartTime < lastWindowEndTimeEpoch) {
       if (currentWindowIsActive(currentWindowStartTime, currentWindowEndTime)
           || getCurrentTime() < currentWindowStartTime) {
@@ -100,8 +110,10 @@ public class FreezeTimeUtils {
             .build();
       }
       recurrenceNumber++;
-      currentWindowStartTime = getEpochValue(recurrenceType, firstWindowStartTime, timeZone, recurrenceNumber);
-      currentWindowEndTime = getEpochValue(recurrenceType, firstWindowEndTime, timeZone, recurrenceNumber);
+      currentWindowStartTime =
+          getEpochValue(recurrenceType, firstWindowStartTime, timeZone, valueMultiplier * recurrenceNumber);
+      currentWindowEndTime =
+          getEpochValue(recurrenceType, firstWindowEndTime, timeZone, valueMultiplier * recurrenceNumber);
     }
     return null;
   }
@@ -143,7 +155,7 @@ public class FreezeTimeUtils {
       return new ArrayList<>();
     } else {
       return fetchUpcomingTimeWindow(firstWindowStartTime, firstWindowEndTime, lastWindowEndTimeEpoch,
-          freezeWindow.getRecurrence().getRecurrenceType(), timeZone);
+          freezeWindow.getRecurrence().getRecurrenceType(), timeZone, freezeWindow.getRecurrence().getSpec());
     }
   }
 
@@ -171,11 +183,18 @@ public class FreezeTimeUtils {
   }
 
   private List<Long> fetchUpcomingTimeWindow(LocalDateTime firstWindowStartTime, LocalDateTime firstWindowEndTime,
-      Long lastWindowEndTimeEpoch, RecurrenceType recurrenceType, TimeZone timeZone) {
+      Long lastWindowEndTimeEpoch, RecurrenceType recurrenceType, TimeZone timeZone, RecurrenceSpec recurrenceSpec) {
     int recurrenceNumber = 0;
     int cnt = 1;
+    int valueMultiplier = 1;
+    if (recurrenceSpec != null) {
+      if (recurrenceSpec.getValue() != null) {
+        valueMultiplier = recurrenceSpec.getValue();
+      }
+    }
     List<Long> upcomingWindows = new ArrayList<>();
-    Long currentWindowStartTime = getEpochValue(recurrenceType, firstWindowStartTime, timeZone, recurrenceNumber);
+    Long currentWindowStartTime =
+        getEpochValue(recurrenceType, firstWindowStartTime, timeZone, valueMultiplier * recurrenceNumber);
     while (currentWindowStartTime < lastWindowEndTimeEpoch) {
       if (getCurrentTime() < currentWindowStartTime) {
         upcomingWindows.add(currentWindowStartTime);
@@ -185,7 +204,8 @@ public class FreezeTimeUtils {
         }
       }
       recurrenceNumber++;
-      currentWindowStartTime = getEpochValue(recurrenceType, firstWindowStartTime, timeZone, recurrenceNumber);
+      currentWindowStartTime =
+          getEpochValue(recurrenceType, firstWindowStartTime, timeZone, valueMultiplier * recurrenceNumber);
     }
     return upcomingWindows;
   }
@@ -308,11 +328,22 @@ public class FreezeTimeUtils {
       if (recurrence.getRecurrenceType() == null) {
         throw new InvalidRequestException("Recurrence Type cannot be empty");
       }
-      if (recurrence.getSpec() != null && recurrence.getSpec().getUntil() != null) {
-        LocalDateTime until = LocalDateTime.parse(freezeWindow.getRecurrence().getSpec().getUntil(), dtf);
-        Long untilMs = getEpochValue(recurrence.getRecurrenceType(), until, timeZone, 0);
-        if (untilMs < getCurrentTime() && FreezeStatus.ENABLED.equals(freezeStatus)) {
-          throw new InvalidRequestException("End time for recurrence cannot be less than current time");
+      if (recurrence.getSpec() != null) {
+        if (recurrence.getSpec().getUntil() != null) {
+          LocalDateTime until = LocalDateTime.parse(freezeWindow.getRecurrence().getSpec().getUntil(), dtf);
+          Long untilMs = getEpochValue(recurrence.getRecurrenceType(), until, timeZone, 0);
+          if (untilMs < getCurrentTime() && FreezeStatus.ENABLED.equals(freezeStatus)) {
+            throw new InvalidRequestException("End time for recurrence cannot be less than current time");
+          }
+        }
+        if (recurrence.getSpec().getValue() != null) {
+          if (!RecurrenceType.MONTHLY.equals(recurrence.getRecurrenceType())) {
+            throw new InvalidRequestException("Value is only supported for Monthly recurrence type");
+          } else {
+            if (recurrence.getSpec().getValue() < 2 || recurrence.getSpec().getValue() > 11) {
+              throw new InvalidRequestException("Value can range only between 2 to 11");
+            }
+          }
         }
       }
     } else {
