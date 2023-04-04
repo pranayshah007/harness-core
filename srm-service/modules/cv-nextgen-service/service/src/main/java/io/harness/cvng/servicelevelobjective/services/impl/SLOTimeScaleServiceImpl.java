@@ -22,13 +22,16 @@ import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjectiv
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOTimeScaleService;
+import io.harness.persistence.HPersistence;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Calendar;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +43,7 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
   @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
   @Inject private ServiceLevelObjectiveV2ServiceImpl serviceLevelObjectiveV2Service;
   @Inject Clock clock;
+  @Inject HPersistence hPersistence;
   private static final String UPSERT_SERVICE_LEVEL_OBJECTIVE =
       "INSERT INTO SERVICE_LEVEL_OBJECTIVE (REPORTEDAT,UPDATEDAT,ACCOUNTID,ORGID,PROJECTID,SLOID,SLONAME,USERJOURNEY,PERIODLENGTH,SLITYPE,PERIODTYPE,SLOPERCENTAGE,TOTALERRORBUDGET,SERVICE,ENV) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
       + "ON CONFLICT(ACCOUNTID,ORGID,PROJECTID,SLOID) DO UPDATE SET UPDATEDAT = EXCLUDED.UPDATEDAT, USERJOURNEY = EXCLUDED.USERJOURNEY, PERIODLENGTH = EXCLUDED.PERIODLENGTH, SLITYPE = EXCLUDED.SLITYPE,  "
@@ -140,16 +144,30 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
          PreparedStatement insertStatement = connection.prepareStatement(INSERT_SLO_HISTORY);) {
       if (serviceLevelObjective instanceof SimpleServiceLevelObjective) {
         SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjective;
+        LocalDate currentDate = LocalDate.now();
+        LocalDateTime currentLocalDate =
+            LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
         ProjectParams projectParams = ProjectParams.builder()
                                           .accountIdentifier(serviceLevelObjective.getAccountId())
                                           .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
                                           .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
                                           .build();
-        LocalDateTime currentLocalDate =
-            LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
         SLODashboardWidget.SLOGraphData sloGraphData =
             sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective);
         TimePeriod timePeriod = simpleServiceLevelObjective.getTarget().getCurrentTimeRange(currentLocalDate);
+        LocalDate newSloPushDate;
+        if (simpleServiceLevelObjective.getTarget().getType().equals(SLOTargetType.ROLLING)
+            && simpleServiceLevelObjective.getLastSLOHistoryPush().isBefore(currentDate)) {
+          LocalDate previousDay = currentDate.minusDays(1);
+          timePeriod = new TimePeriod(previousDay, currentDate);
+          newSloPushDate = currentDate;
+        } else if (simpleServiceLevelObjective.getTarget().getType().equals(SLOTargetType.CALENDER)
+            && simpleServiceLevelObjective.getLastSLOHistoryPush().isBefore(currentDate)
+            && timePeriod.getEndTime().equals(currentLocalDate)) {
+          newSloPushDate = currentDate;
+        } else {
+          return;
+        }
         insertStatement.setTimestamp(
             1, new Timestamp(timePeriod.getStartTime().getSecond() * 1000L), Calendar.getInstance());
         insertStatement.setTimestamp(
@@ -169,6 +187,11 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
         insertStatement.setInt(11, getPeriodDays(simpleServiceLevelObjective.getTarget()));
         insertStatement.setInt(12, simpleServiceLevelObjective.getTotalErrorBudgetMinutes(currentLocalDate));
         insertStatement.execute();
+        UpdateOperations<AbstractServiceLevelObjective> updateOperations =
+            hPersistence.createUpdateOperations(AbstractServiceLevelObjective.class);
+        updateOperations.set(
+            AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.lastSLOHistoryPush, newSloPushDate);
+        hPersistence.update(serviceLevelObjective, updateOperations);
       }
     } catch (Exception ex) {
       log.error("error while upserting slo data.");

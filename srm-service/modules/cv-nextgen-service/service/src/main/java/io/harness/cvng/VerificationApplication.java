@@ -101,8 +101,6 @@ import io.harness.cvng.notification.jobs.SLONotificationHandler;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys;
-import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
-import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHealthIndicatorKeys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
 import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
@@ -480,8 +478,8 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerCreateNextDataCollectionTaskIterator(injector);
     registerCVNGDemoPerpetualTaskIterator(injector);
     registerSLORecalculationFailure(injector);
-    sloHistoryTimescale(injector);
-    sloHealthIndicatorTimescale(injector);
+    injector.getInstance(SLOHistoryTimescaleHandler.class).registerIterator();
+    injector.getInstance(SLOHealthIndicatorTimescaleHandler.class).registerIterator();
     registerDataCollectionTasksPerpetualTaskStatusUpdateIterator(injector);
     registerCompositeSLODataExecutorTaskIterator(injector);
     injector.getInstance(CVNGStepTaskHandler.class).registerIterator();
@@ -869,59 +867,6 @@ public class VerificationApplication extends Application<VerificationConfigurati
     injector.injectMembers(sloRecalculationFailureHandlerIterator);
     dataCollectionExecutor.scheduleWithFixedDelay(
         () -> sloRecalculationFailureHandlerIterator.process(), 0, 1, TimeUnit.MINUTES);
-  }
-  private void sloHistoryTimescale(Injector injector) {
-    ScheduledThreadPoolExecutor dataCollectionExecutor =
-        new ScheduledThreadPoolExecutor(3, new ThreadFactoryBuilder().setNameFormat("slo-history-timescale").build());
-    SLOHistoryTimescaleHandler sloHistoryTimescaleHandler = injector.getInstance(SLOHistoryTimescaleHandler.class);
-    PersistenceIterator sloHistoryTimescaleHandlerIterator =
-        MongoPersistenceIterator
-            .<AbstractServiceLevelObjective, MorphiaFilterExpander<AbstractServiceLevelObjective>>builder()
-            .mode(PersistenceIterator.ProcessMode.PUMP)
-            .iteratorName("SLOHistoryTimescaleHandlerIterator")
-            .clazz(AbstractServiceLevelObjective.class)
-            .fieldName(ServiceLevelObjectiveV2Keys.sloHistoryTimescaleIteration)
-            .targetInterval(ofHours(24))
-            .acceptableNoAlertDelay(ofMinutes(1))
-            .executorService(dataCollectionExecutor)
-            .semaphore(new Semaphore(3))
-            .handler(sloHistoryTimescaleHandler)
-            .schedulingType(REGULAR)
-            .filterExpander(query
-                -> query.criteria(ServiceLevelObjectiveV2Keys.lastUpdatedAt)
-                       .greaterThan(
-                           injector.getInstance(Clock.class).instant().minus(45, ChronoUnit.MINUTES).toEpochMilli()))
-            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
-            .redistribute(true)
-            .build();
-    injector.injectMembers(sloHistoryTimescaleHandlerIterator);
-    dataCollectionExecutor.scheduleWithFixedDelay(
-        () -> sloHistoryTimescaleHandlerIterator.process(), 0, 1, TimeUnit.MINUTES);
-  }
-
-  private void sloHealthIndicatorTimescale(Injector injector) {
-    ScheduledThreadPoolExecutor dataCollectionExecutor = new ScheduledThreadPoolExecutor(
-        3, new ThreadFactoryBuilder().setNameFormat("slo-health-indicator-timescale").build());
-    SLOHealthIndicatorTimescaleHandler sloHealthIndicatorTimescaleHandler =
-        injector.getInstance(SLOHealthIndicatorTimescaleHandler.class);
-    PersistenceIterator sloHealthIndicatorTimescaleHandlerIterator =
-        MongoPersistenceIterator.<SLOHealthIndicator, MorphiaFilterExpander<SLOHealthIndicator>>builder()
-            .mode(PersistenceIterator.ProcessMode.PUMP)
-            .iteratorName("SLOHealthIndicatorTimescaleHandlerIterator")
-            .clazz(SLOHealthIndicator.class)
-            .fieldName(SLOHealthIndicatorKeys.timescaleIteration)
-            .targetInterval(ofMinutes(60))
-            .acceptableNoAlertDelay(ofMinutes(1))
-            .executorService(dataCollectionExecutor)
-            .semaphore(new Semaphore(3))
-            .handler(sloHealthIndicatorTimescaleHandler)
-            .schedulingType(REGULAR)
-            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
-            .redistribute(true)
-            .build();
-    injector.injectMembers(sloHealthIndicatorTimescaleHandler);
-    dataCollectionExecutor.scheduleWithFixedDelay(
-        () -> sloHealthIndicatorTimescaleHandlerIterator.process(), 0, 60, TimeUnit.MINUTES);
   }
 
   private void registerCVNGDemoPerpetualTaskIterator(Injector injector) {

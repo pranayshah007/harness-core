@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import dev.morphia.query.UpdateOperations;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
@@ -86,6 +87,7 @@ public abstract class AbstractServiceLevelObjective
   @FdIndex private long createNextTaskIteration;
   @FdIndex private long recordMetricIteration;
   @FdIndex private long sloHistoryTimescaleIteration;
+  private LocalDate lastSLOHistoryPush;
   @NotNull ServiceLevelObjectiveType type;
 
   public static List<MongoIndex> mongoIndexes() {
