@@ -24,4 +24,9 @@ public interface SSCAServiceClient {
       @Path("stageId") String stageId, @Path("stepId") String stepId,
       @Query("accountIdentifier") String accountIdentifier, @Query("orgIdentifier") String orgIdentifier,
       @Query("projectIdentifier") String projectIdentifier);
+
+  @GET(SSCACommonEndpointConstants.SSCA_SERVICE_ARTIFACT_ENDPOINT + "stepExecutions/{stepExecutionId}")
+  Call<SBOMArtifactResponse> getArtifactInfoV2(@Path("stepExecutionId") String stepExecutionId,
+      @Query("accountIdentifier") String accountIdentifier, @Query("orgIdentifier") String orgIdentifier,
+      @Query("projectIdentifier") String projectIdentifier);
 }

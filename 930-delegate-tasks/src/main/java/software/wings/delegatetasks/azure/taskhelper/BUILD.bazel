@@ -18,6 +18,7 @@ java_library(
         "//960-api-services/src/main/java/io/harness/artifacts/comparator:module",
         "//960-api-services/src/main/java/io/harness/azure/client:module",
         "//960-api-services/src/main/java/io/harness/azure/utility:module",
+        "//960-api-services/src/main/java/io/harness/azurecli:module",
         "//960-api-services/src/main/java/io/harness/k8s/model:module",
         "//960-api-services/src/main/java/io/harness/security/encryption:module",
         "//960-api-services/src/main/java/software/wings/helpers/ext/azure:module",

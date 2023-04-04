@@ -815,7 +815,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       return null;
     }
     return pipelineGovernanceService.getExpandedPipelineJSONFromYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineEntityOptional.get().getYaml(), false, null, null);
+        accountId, orgIdentifier, projectIdentifier, pipelineEntityOptional.get().getYaml(), null, null);
   }
 
   @Override

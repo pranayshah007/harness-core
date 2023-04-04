@@ -23,9 +23,12 @@ import lombok.Getter;
 public enum FeatureName {
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
   SPG_HTTP_STEP_CERTIFICATE("Allow enforce SSL/TLS certificate in HTTP step", HarnessTeam.SPG),
+  SPG_GRAPHQL_VERIFY_APPLICATION_FROM_USER_GROUP(
+      "Verify if application references from a user group still exist", HarnessTeam.SPG),
   SPG_ALLOW_GET_BUILD_SYNC("Allow get builds sync from gcs", HarnessTeam.SPG),
   SPG_ALLOW_FILTER_BY_PATHS_GCS("Enables filtering by path on database GCS-type stream artifacts.", HarnessTeam.SPG),
   SPG_ENABLE_SHARING_FILTERS("Enables account admin share deployments filter using usergroups", HarnessTeam.SPG),
+  SPG_REMOVE_REDUNDANT_UPDATE_IN_AUDIT("It removes a redudant update on the audit", HarnessTeam.SPG),
   SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE("Enables refresh pipeline when trigger "
           + "continue pipeline execution",
       HarnessTeam.SPG),
@@ -245,6 +248,7 @@ public enum FeatureName {
   RATE_LIMITED_TOTP,
   USE_IMMUTABLE_DELEGATE("Use immutable delegate on download delegate from UI", HarnessTeam.DEL),
   DELEGATE_TASK_LOAD_DISTRIBUTION("Delegate task load distribution among delegates", HarnessTeam.DEL),
+  QUEUE_DELEGATE_TASK("Delegate task queueing with queue service(HQS)", HarnessTeam.DEL),
   ACTIVE_MIGRATION_FROM_LOCAL_TO_GCP_KMS,
   TERRAFORM_AWS_CP_AUTHENTICATION,
   CI_DOCKER_INFRASTRUCTURE,
@@ -511,13 +515,11 @@ public enum FeatureName {
   CIE_HOSTED_VMS_MAC("FF for enabling hosted builds for mac os", HarnessTeam.CI),
   SPG_DELETE_ENVIRONMENTS_ON_SERVICE_RENAME_GIT_SYNC(
       "On service rename delete stale folders inside environments folders.", HarnessTeam.SPG),
-  SPG_DASHBOARD_PROJECTION("Enables projection on CG Dashboard", HarnessTeam.SPG),
   PL_HIDE_LAUNCH_NEXTGEN("FF to hide Launch NextGen button", HarnessTeam.PL),
   PL_LDAP_PARALLEL_GROUP_SYNC(
       "Enables User Group sync operation to fetch data from Ldap Server in Parallel. Enable only if Ldap Server can take the load",
       HarnessTeam.PL),
   CDS_TAS_NG("FF for enabling TAS deployment in NG", HarnessTeam.CDP),
-  SPG_WFE_OPTIMIZE_UPDATE_PIPELINE_ESTIMATES("Optimization for updatePipelineEstimates method", HarnessTeam.SPG),
   CDS_OrgAccountLevelServiceEnvEnvGroup(
       "Support Creation and Use of Org and Account level Services and Environments", HarnessTeam.CDC),
   CE_NET_AMORTISED_COST_ENABLED("Enable cost calculation through Net Amortised cost", HarnessTeam.CE),
@@ -651,8 +653,6 @@ public enum FeatureName {
   CHAOS_GAMEDAY_ENABLED("Enable gameday feature in CHAOS", HarnessTeam.CHAOS),
   CDS_JIRA_PAT_AUTH("PAT auth support for jira connector", HarnessTeam.CDC),
   SRM_LOG_FEEDBACK_ENABLE_UI("Enable FE for Log feedback", HarnessTeam.CV),
-  PL_MIGRATE_SECRETS_FROM_LOCAL_TO_GCP_KMS_PROD3(
-      "Allow migration of secrets from local to gcpKms in ng prod3", HarnessTeam.PL),
   CDS_SERVICE_CONFIG_LAST_STEP(
       "Allows landing users on the last step of manifest/artifact/config files, if these configs are in edit mode",
       HarnessTeam.CDP),
@@ -687,6 +687,8 @@ public enum FeatureName {
   CDS_TERRAFORM_CONFIG_INSPECT_V1_2(
       "Enables usage of terraform-config-inspect v1.2 built from commit 7c9946b1df498f1b0634c7b33257790f01c819f3 of https://github.com/hashicorp/terraform-config-inspect and GO 1.19.6",
       HarnessTeam.CDP),
+  CDS_NG_TRIGGER_AUTHENTICATION_WITH_DELEGATE_SELECTOR(
+      "Make NG Trigger authentication use the same delegate selectors as the secret's manager", HarnessTeam.CDC),
   CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE(
       "With enabling this FF with serviceV2 setup, pipeline in different projects but having the same infra key can be executed parallely",
       HarnessTeam.CDC),
@@ -697,7 +699,10 @@ public enum FeatureName {
       "Enable to resolve expression using nested values from secret.getValue from service variables", HarnessTeam.SPG),
   CDS_REMOVE_COMMENTS_FROM_VALUES_YAML("Remove comments from values.yaml files", HarnessTeam.CDP),
   BAMBOO_BUILD("Bamboo Build Step", HarnessTeam.CDC),
-  CDS_AWS_BACKOFF_STRATEGY("Enable AWS SDK Client Backoff Strategy", HarnessTeam.CDP);
+  CDS_AWS_BACKOFF_STRATEGY("Enable AWS SDK Client Backoff Strategy", HarnessTeam.CDP),
+  PIE_GITX_OAUTH("Use users' oauth creds to fetch and commit in git", HarnessTeam.PIPELINE),
+  CDS_NG_CONFIG_FILE_EXPRESSION(
+      "Enable Harness variable rendering in Hanress config files (SSH/WinRM)", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

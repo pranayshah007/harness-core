@@ -633,12 +633,16 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
           String.format("Execution with id [%s] is not present or deleted", planExecutionId));
     }
     PlanExecutionMetadata metadata = planExecutionMetadata.get();
-
+    String resolvedYaml = "";
+    if (EmptyPredicate.isNotEmpty(metadata.getInputSetYaml())) {
+      resolvedYaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(metadata.getInputSetYaml(), planExecutionId);
+    }
     return ExecutionMetaDataResponseDetailsDTO.builder()
         .executionYaml(metadata.getYaml())
         .planExecutionId(planExecutionId)
         .inputYaml(metadata.getInputSetYaml())
         .triggerPayload(metadata.getTriggerPayload())
+        .resolvedYaml(resolvedYaml)
         .build();
   }
 

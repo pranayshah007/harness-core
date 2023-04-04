@@ -162,6 +162,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty(value = "disableFreezeNotificationTemplate") private boolean disableFreezeNotificationTemplate;
   @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
+  @JsonProperty("triggerAuthenticationPoolConfig") private ThreadPoolConfig triggerAuthenticationPoolConfig;
 
   private String managerServiceSecret;
   private String managerTarget;

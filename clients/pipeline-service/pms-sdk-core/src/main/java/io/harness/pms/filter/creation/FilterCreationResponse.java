@@ -14,14 +14,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.pms.contracts.plan.Dependencies;
-import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
@@ -37,6 +38,9 @@ public class FilterCreationResponse implements CreatorResponse {
   @Default Dependencies dependencies = Dependencies.newBuilder().build();
   @Default Dependencies resolvedDependencies = Dependencies.newBuilder().build();
   YamlUpdates yamlUpdates;
+
+  // Dependencies uuids to serviceAffinity map
+  Map<String, String> serviceAffinityMap;
 
   public Dependencies getDependencies() {
     return dependencies;
@@ -74,14 +78,14 @@ public class FilterCreationResponse implements CreatorResponse {
   }
 
   @Override
-  public void addAffinityToDependencyMetadata(String dependencyKey, String serviceAffinity) {
-    if (!dependencies.getDependencyMetadataMap().containsKey(dependencyKey)) {
-      Dependency dependency = Dependency.newBuilder().setServiceAffinity(serviceAffinity).build();
-      dependencies = dependencies.toBuilder().putDependencyMetadata(dependencyKey, dependency).build();
-    } else {
-      Dependency dependency = dependencies.getDependencyMetadataMap().get(dependencyKey);
-      Dependency dependencyWithAffinity = dependency.toBuilder().setServiceAffinity(serviceAffinity).build();
-      dependencies = dependencies.toBuilder().putDependencyMetadata(dependencyKey, dependencyWithAffinity).build();
+  public void addServiceAffinityToResponse(String dependencyKey, String serviceAffinity) {
+    if (serviceAffinityMap == null) {
+      serviceAffinityMap = new HashMap<>();
+    } else if (!(serviceAffinityMap instanceof HashMap)) {
+      serviceAffinityMap = new HashMap<>(serviceAffinityMap);
+    }
+    if (EmptyPredicate.isNotEmpty(serviceAffinity)) {
+      serviceAffinityMap.put(dependencyKey, serviceAffinity);
     }
   }
 

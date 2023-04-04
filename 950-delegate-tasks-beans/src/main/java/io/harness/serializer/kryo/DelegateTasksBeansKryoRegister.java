@@ -795,6 +795,8 @@ import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.artifact.ArtifactoryTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AwsS3TasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AzureDevOpsTasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.BambooTasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.JenkinsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
@@ -2456,5 +2458,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsLambdaCustomArtifactConfig.class, 10000519);
     kryo.register(CfRouteMappingRequestNG.class, 10000520);
     kryo.register(CfRouteMappingResponseNG.class, 10000521);
+
+    kryo.register(BambooTasArtifactRequestDetails.class, 10000522);
+    kryo.register(GoogleCloudStorageTasArtifactRequestDetails.class, 10000523);
   }
 }

@@ -112,7 +112,9 @@ public abstract class ServiceLevelIndicator
       if (this.shouldReAnalysis(serviceLevelIndicator)) {
         return true;
       }
-      Preconditions.checkArgument(this.getSliMissingDataType().equals(serviceLevelIndicator.getSliMissingDataType()));
+      if (serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW) {
+        Preconditions.checkArgument(this.getSliMissingDataType().equals(serviceLevelIndicator.getSliMissingDataType()));
+      }
       return false;
     } catch (IllegalArgumentException ex) {
       return true;
@@ -136,9 +138,7 @@ public abstract class ServiceLevelIndicator
   public abstract static class ServiceLevelIndicatorUpdatableEntity<T extends ServiceLevelIndicator, D
                                                                         extends ServiceLevelIndicator>
       implements UpdatableEntity<T, D> {
-    protected void setCommonOperations(UpdateOperations<T> updateOperations, D serviceLevelIndicator) {
-      updateOperations.set(ServiceLevelIndicatorKeys.sliMissingDataType, serviceLevelIndicator.getSliMissingDataType());
-    }
+    protected void setCommonOperations(UpdateOperations<T> updateOperations, D serviceLevelIndicator) {}
   }
   @FdIndex Long createNextTaskIteration;
   public static List<MongoIndex> mongoIndexes() {

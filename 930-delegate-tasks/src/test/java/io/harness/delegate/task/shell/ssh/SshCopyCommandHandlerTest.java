@@ -221,6 +221,14 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
     doReturn(fileBasedProcessScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
     when(fileBasedProcessScriptExecutorNG.copyConfigFiles(any(), any())).thenReturn(CommandExecutionStatus.SUCCESS);
 
+    when(secretDecryptionService.decrypt(any(), any()))
+        .thenReturn(SecretConfigFile.builder()
+                        .encryptedConfigFile(SecretRefData.builder()
+                                                 .identifier("secret-ref")
+                                                 .decryptedValue("This is a secret".toCharArray())
+                                                 .build())
+                        .build());
+
     CommandExecutionStatus status =
         sshCopyCommandHandler
             .handle(getParameters(true, null, getEmptyFileDelegateConfig()), copyConfigCommandUnit,
@@ -230,6 +238,32 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
     ArgumentCaptor<ConfigFileParameters> configFileArgumentCaptor = ArgumentCaptor.forClass(ConfigFileParameters.class);
     verify(fileBasedProcessScriptExecutorNG, times(1)).copyConfigFiles(eq("/test"), configFileArgumentCaptor.capture());
     assertEmptyConfigFile(configFileArgumentCaptor.getValue());
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testShouldRecalculateConfigFileWithSshFileExecutorOnDelegate() {
+    doReturn(fileBasedProcessScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedProcessScriptExecutorNG.copyConfigFiles(any(), any())).thenReturn(CommandExecutionStatus.SUCCESS);
+
+    when(secretDecryptionService.decrypt(any(), any()))
+        .thenReturn(SecretConfigFile.builder()
+                        .encryptedConfigFile(SecretRefData.builder()
+                                                 .identifier("secret-ref")
+                                                 .decryptedValue("This is a secret".toCharArray())
+                                                 .build())
+                        .build());
+
+    CommandExecutionStatus status =
+        sshCopyCommandHandler
+            .handle(getParameters(true, null, getFileDelegateConfigWithoutSize()), copyConfigCommandUnit,
+                logStreamingTaskClient, commandUnitsProgress, taskContext)
+            .getStatus();
+    assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
+    ArgumentCaptor<ConfigFileParameters> configFileArgumentCaptor = ArgumentCaptor.forClass(ConfigFileParameters.class);
+    verify(fileBasedProcessScriptExecutorNG, times(2)).copyConfigFiles(eq("/test"), configFileArgumentCaptor.capture());
+    assertConfigFile(configFileArgumentCaptor.getValue());
   }
 
   @Test
@@ -328,6 +362,25 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
                                                .fileName("test.txt")
                                                .fileSize(11L)
                                                .build(),
+                    ConfigFileParameters.builder()
+                        .fileName("secret-ref")
+                        .isEncrypted(true)
+                        .encryptionDataDetails(Arrays.asList(encryptedDataDetail))
+                        .secretConfigFile(
+                            SecretConfigFile.builder()
+                                .encryptedConfigFile(SecretRefData.builder().identifier("secret-ref").build())
+                                .build())
+                        .build()))
+                .build()))
+        .build();
+  }
+
+  private FileDelegateConfig getFileDelegateConfigWithoutSize() {
+    return FileDelegateConfig.builder()
+        .stores(Arrays.asList(
+            HarnessStoreDelegateConfig.builder()
+                .configFiles(Arrays.asList(
+                    ConfigFileParameters.builder().fileContent("hello world").fileName("test.txt").fileSize(0L).build(),
                     ConfigFileParameters.builder()
                         .fileName("secret-ref")
                         .isEncrypted(true)

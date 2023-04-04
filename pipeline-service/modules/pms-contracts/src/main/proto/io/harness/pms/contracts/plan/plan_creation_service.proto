@@ -28,6 +28,7 @@ message PlanCreationBlobRequest {
   map<string, YamlFieldBlob> dependencies = 1 [deprecated = true];
   map<string, PlanCreationContextValue> context = 4;
   Dependencies deps = 5;
+  map<string, string> serviceAffinity = 6;
 }
 
 message PlanCreationResponse {
@@ -46,6 +47,7 @@ message PlanCreationBlobResponse {
   Dependencies deps = 6;
   YamlUpdates yamlUpdates = 7;
   repeated string preservedNodesInRollbackMode = 8;
+  map<string, string> serviceAffinity = 9;
 }
 
 message GraphLayoutInfo {
@@ -159,7 +161,6 @@ message Dependencies {
 
 message Dependency {
   map<string, bytes> metadata = 2;
-  string service_affinity = 3;
 }
 
 // TODO: Looking forward to implement this Dependency model

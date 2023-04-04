@@ -293,7 +293,7 @@ public class K8InitializeTaskParamsBuilder {
         getStageContainerDefinitions(initializeStepInfo, infrastructure, ambiance);
     consumePortDetails(ambiance, stageCtrDefinitions);
     Map<String, List<ConnectorConversionInfo>> stepConnectors =
-        k8InitializeStepUtils.getStepConnectorRefs(initializeStepInfo.getStageElementConfig(), ambiance);
+        k8InitializeStepUtils.getStepConnectorRefs(initializeStepInfo.getExecutionElementConfig(), ambiance);
     for (ContainerDefinitionInfo containerDefinitionInfo : stageCtrDefinitions) {
       CIK8ContainerParams cik8ContainerParams = createCIK8ContainerParams(ngAccess, containerDefinitionInfo,
           harnessInternalImageConnector, commonEnvVars, stoEnvVars, stepConnectors, volumeToMountPath,

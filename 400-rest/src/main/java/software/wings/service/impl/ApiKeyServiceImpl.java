@@ -173,35 +173,6 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     return secretManager.encryptSecretUsingGlobalSM(accountId, secretText, false);
   }
 
-  @Override
-  public ApiKeyEntry migrateToKMS(ApiKeyEntry apiKeyEntry) {
-    String uuid = apiKeyEntry.getUuid();
-    String accountId = apiKeyEntry.getAccountId();
-
-    if (!isNull(apiKeyEntry.getEncryptedDataId())) {
-      // Api key is already encrypted using KMS
-      log.info("ApiKeyLocalToKMSMigration: Skipping migration for Api key with id: {} in account: {}", uuid, accountId);
-      return null;
-    }
-
-    try {
-      ApiKeyEntry decryptedApiKeyEntry = decryptUsingAccountKey(uuid, accountId);
-      String decryptedKey = decryptedApiKeyEntry.getDecryptedKey();
-      EncryptedData encryptedData = encryptApiKey(accountId, decryptedKey);
-
-      apiKeyEntry.setEncryptedDataId(encryptedData.getUuid());
-
-      log.info("ApiKeyLocalToKMSMigration: Successfully migrated the api key: {} in account {} to KMS encryption", uuid,
-          accountId);
-      return apiKeyEntry;
-    } catch (Exception ex) {
-      log.error(
-          "ApiKeyLocalToKMSMigration: Failure occurred while migrating the api key: {} in account {} to KMS encryption",
-          uuid, accountId, ex);
-    }
-    return null;
-  }
-
   private ApiKeyEntry decryptApiKey(ApiKeyEntry apiKeyEntry) {
     if (isNull(apiKeyEntry.getEncryptedDataId())) {
       apiKeyEntry = decryptUsingAccountKey(apiKeyEntry.getUuid(), apiKeyEntry.getAccountId());

@@ -24,8 +24,13 @@ public class PluginDetailedInfoMapper {
     PluginDetailedInfo pluginDetailedInfo = new PluginDetailedInfo();
     boolean isEnabled = appConfig != null && appConfig.isEnabled();
     pluginDetailedInfo.setPluginDetails(PluginInfoMapper.toDTO(pluginInfoEntity, isEnabled));
-    String config =
-        (appConfig != null && appConfig.isEnabled()) ? appConfig.getConfigs() : pluginInfoEntity.getConfig();
+    String config;
+    if (isEnabled) {
+      config = pluginInfoEntity.getConfig();
+    } else {
+      config =
+          (appConfig != null && appConfig.getConfigs() != null) ? appConfig.getConfigs() : pluginInfoEntity.getConfig();
+    }
     Exports exports = new Exports();
     exports.setCards(getExportTypeCount(pluginInfoEntity, ExportType.CARD));
     exports.setTabContents(getExportTypeCount(pluginInfoEntity, ExportType.TAB_CONTENT));

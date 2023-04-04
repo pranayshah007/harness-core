@@ -185,3 +185,4 @@ io.harness.ssca.cd.beans.stepnode.SscaOrchestrationStepNode
 io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationStepInfo
 io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput
 io.harness.ssca.execution.orchestration.outcome.PublishedSbomArtifact
+io.harness.steps.plugin.InitContainerV2StepInfo

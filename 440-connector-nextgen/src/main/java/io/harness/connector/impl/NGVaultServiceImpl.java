@@ -686,6 +686,9 @@ public class NGVaultServiceImpl implements NGVaultService {
         .ifPresent(secretKey -> azureVaultConfig.setSecretKey(String.valueOf(secretKey.getDecryptedValue())));
     Optional.ofNullable(specDTO.getAzureEnvironmentType()).ifPresent(azureVaultConfig::setAzureEnvironmentType);
     Optional.ofNullable(specDTO.getDelegateSelectors()).ifPresent(azureVaultConfig::setDelegateSelectors);
+    Optional.ofNullable(specDTO.getUseManagedIdentity()).ifPresent(azureVaultConfig::setUseManagedIdentity);
+    Optional.ofNullable(specDTO.getManagedClientId()).ifPresent(azureVaultConfig::setManagedClientId);
+    Optional.ofNullable(specDTO.getAzureManagedIdentityType()).ifPresent(azureVaultConfig::setAzureManagedIdentityType);
     List<String> vaultNames;
     try {
       vaultNames = listVaultsInternal(accountIdentifier, azureVaultConfig);
@@ -714,10 +717,15 @@ public class NGVaultServiceImpl implements NGVaultService {
         AzureKeyVaultConnectorDTO.builder()
             .tenantId(azureVaultConfig.getTenantId())
             .clientId(azureVaultConfig.getClientId())
-            .secretKey(SecretRefData.builder().decryptedValue(azureVaultConfig.getSecretKey().toCharArray()).build())
+            .secretKey(azureVaultConfig.getSecretKey() != null
+                    ? SecretRefData.builder().decryptedValue(azureVaultConfig.getSecretKey().toCharArray()).build()
+                    : null)
             .subscription(azureVaultConfig.getSubscription())
             .delegateSelectors(azureVaultConfig.getDelegateSelectors())
             .azureEnvironmentType(azureVaultConfig.getAzureEnvironmentType())
+            .useManagedIdentity(azureVaultConfig.getUseManagedIdentity())
+            .azureManagedIdentityType(azureVaultConfig.getAzureManagedIdentityType())
+            .managedClientId(azureVaultConfig.getManagedClientId())
             .build();
     int failedAttempts = 0;
     while (true) {
@@ -827,7 +835,9 @@ public class NGVaultServiceImpl implements NGVaultService {
       }
     } else { // Azure Key Vault
       secretRefData = ((AzureKeyVaultMetadataRequestSpecDTO) requestDTO.getSpec()).getSecretKey();
-      secretRefDataList.add(secretRefData);
+      if (secretRefData != null) {
+        secretRefDataList.add(secretRefData);
+      }
     }
     return secretRefDataList;
   }

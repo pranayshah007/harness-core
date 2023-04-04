@@ -96,7 +96,7 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
   }
 
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
-      String locationParentPath, String remoteFolder, List<String> filesToPush) {
+      String locationParentPath, List<String> filesToPush) {
     Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> connectorSecretsInfo = getConnectorAndSecretsInfo(
         accountIdentifier, null, null, catalogConnectorInfo.getInfraConnector().getIdentifier());
     BackstageEnvSecretVariable envSecretVariable =
@@ -109,7 +109,7 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
         (GithubHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
     GithubUsernameTokenDTO spec = (GithubUsernameTokenDTO) outcome.getSpec();
 
-    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, remoteFolder, filesToPush,
+    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
         spec.getUsername(), githubConnectorSecret);
   }
 }

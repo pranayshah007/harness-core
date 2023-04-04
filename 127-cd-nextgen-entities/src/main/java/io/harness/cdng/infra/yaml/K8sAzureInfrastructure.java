@@ -33,15 +33,19 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 @Value
-@Builder
+@SuperBuilder
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @JsonTypeName(InfrastructureKind.KUBERNETES_AZURE)
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("k8sAzureInfrastructure")
@@ -142,6 +146,10 @@ public class K8sAzureInfrastructure
     if (!ParameterField.isNull(config.getUseClusterAdminCredentials())) {
       resultantInfra = resultantInfra.withUseClusterAdminCredentials(config.getUseClusterAdminCredentials());
     }
+    if (!ParameterField.isNull(config.getProvisioner())) {
+      resultantInfra.setProvisioner(config.getProvisioner());
+    }
+
     return resultantInfra;
   }
 

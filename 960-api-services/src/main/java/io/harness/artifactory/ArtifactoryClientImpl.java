@@ -69,7 +69,7 @@ import org.jfrog.artifactory.client.Artifactory;
 import org.jfrog.artifactory.client.ArtifactoryClientBuilder;
 import org.jfrog.artifactory.client.ArtifactoryRequest;
 import org.jfrog.artifactory.client.ArtifactoryResponse;
-import org.jfrog.artifactory.client.ProxyConfig;
+import org.jfrog.artifactory.client.httpClient.http.ProxyConfig;
 import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl;
 import org.jfrog.artifactory.client.model.RepoPath;
 import org.jfrog.artifactory.client.model.Repository;
@@ -236,8 +236,12 @@ public class ArtifactoryClientImpl {
 
       HttpHost httpProxyHost = Http.getHttpProxyHost(artifactoryConfig.getArtifactoryUrl());
       if (httpProxyHost != null) {
-        builder.setProxy(new ProxyConfig(httpProxyHost.getHostName(), httpProxyHost.getPort(), Http.getProxyScheme(),
-            Http.getProxyUserName(), Http.getProxyPassword()));
+        ProxyConfig proxy = new ProxyConfig();
+        proxy.setHost(httpProxyHost.getHostName());
+        proxy.setPort(httpProxyHost.getPort());
+        proxy.setUsername(Http.getProxyUserName());
+        proxy.setPassword(Http.getProxyPassword());
+        builder.setProxy(proxy);
       }
       builder.setSocketTimeout(30000);
       builder.setConnectionTimeout(30000);
@@ -250,41 +254,6 @@ public class ArtifactoryClientImpl {
   public static String getBaseUrl(ArtifactoryConfigRequest artifactoryConfig) {
     return artifactoryConfig.getArtifactoryUrl().endsWith("/") ? artifactoryConfig.getArtifactoryUrl()
                                                                : artifactoryConfig.getArtifactoryUrl() + "/";
-  }
-
-  public Map<String, String> getRepositoriesByRepoType(
-      ArtifactoryConfigRequest artifactoryConfig, PackageTypeImpl packageType) {
-    log.info("Retrieving repositories for package {}", packageType);
-    Map<String, String> repositories = new HashMap<>();
-    Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
-    ArtifactoryRequest repositoryRequest = new ArtifactoryRequestImpl()
-                                               .apiUrl(format("api/repositories?packageType=%s", packageType))
-                                               .method(GET)
-                                               .responseType(JSON);
-
-    try {
-      ArtifactoryResponse response = artifactory.restCall(repositoryRequest);
-      handleErrorResponse(response);
-      List<Map<Object, Object>> responseList = response.parseBody(List.class);
-
-      for (Map<Object, Object> repository : responseList) {
-        repositories.put(repository.get(KEY).toString(), repository.get(KEY).toString());
-      }
-      if (EmptyPredicate.isEmpty(repositories)) {
-        log.warn("Repositories are not available of package type {} or User not authorized to access artifactory",
-            packageType);
-      } else {
-        log.info("Retrieving repositories for package {} success", packageType);
-      }
-
-    } catch (SocketTimeoutException e) {
-      log.error(ERROR_OCCURRED_WHILE_RETRIEVING_REPOSITORIES, e);
-      return repositories;
-    } catch (Exception e) {
-      log.error(ERROR_OCCURRED_WHILE_RETRIEVING_REPOSITORIES, e);
-      handleAndRethrow(e, USER);
-    }
-    return repositories;
   }
 
   public Map<String, String> getRepositories(

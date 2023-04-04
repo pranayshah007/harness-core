@@ -9,6 +9,7 @@ package io.harness.artifacts.gar.service;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.category.element.UnitTests;
@@ -24,5 +25,21 @@ public class GARUtilsTest {
   @Category(UnitTests.class)
   public void checkIfResponseNullTest() {
     assertThatThrownBy(() -> { GARUtils.checkIfResponseNull(null); }).isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void isSHATest_Version() {
+    boolean isSHA = GARUtils.isSHA("version");
+    assertThat(isSHA).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void isSHATest_SHA() {
+    boolean isSHA = GARUtils.isSHA("sha256:5322342");
+    assertThat(isSHA).isEqualTo(true);
   }
 }

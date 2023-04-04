@@ -44,6 +44,9 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
   // these nodes should be actually executed again rather than them being replicated from a previous execution
   List<String> preservedNodesInRollbackMode;
 
+  // Dependencies uuids to serviceAffinity map
+  Map<String, String> serviceAffinityMap;
+
   public Dependencies getDependencies() {
     return dependencies;
   }
@@ -179,14 +182,16 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     }
     dependencies = dependencies.toBuilder().putDependencies(nodeId, yamlPath).build();
   }
-  public void addAffinityToDependencyMetadata(String dependencyKey, String serviceAffinity) {
-    if (!dependencies.getDependencyMetadataMap().containsKey(dependencyKey)) {
-      Dependency dependency = Dependency.newBuilder().setServiceAffinity(serviceAffinity).build();
-      dependencies = dependencies.toBuilder().putDependencyMetadata(dependencyKey, dependency).build();
-    } else {
-      Dependency dependency = dependencies.getDependencyMetadataMap().get(dependencyKey);
-      Dependency dependencyWithAffinity = dependency.toBuilder().setServiceAffinity(serviceAffinity).build();
-      dependencies = dependencies.toBuilder().putDependencyMetadata(dependencyKey, dependencyWithAffinity).build();
+
+  @Override
+  public void addServiceAffinityToResponse(String dependencyKey, String serviceAffinity) {
+    if (serviceAffinityMap == null) {
+      serviceAffinityMap = new HashMap<>();
+    } else if (!(serviceAffinityMap instanceof HashMap)) {
+      serviceAffinityMap = new HashMap<>(serviceAffinityMap);
+    }
+    if (EmptyPredicate.isNotEmpty(serviceAffinity)) {
+      serviceAffinityMap.put(dependencyKey, serviceAffinity);
     }
   }
 

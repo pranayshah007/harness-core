@@ -34,12 +34,15 @@ import org.redisson.codec.KryoCodec;
 @OwnedBy(PL)
 public class RedissonKryoCodec extends KryoCodec {
   private final Set<Class<? extends KryoRegistrar>> kryoRegistrars;
+  private final Kryo kryo;
+
   public RedissonKryoCodec() {
     kryoRegistrars = HarnessReflections.get().getSubTypesOf(KryoRegistrar.class);
+    kryo = kryo();
   }
   @Override
   protected Kryo createInstance(List<Class<?>> classes, ClassLoader classLoader) {
-    return kryo();
+    return kryo;
   }
 
   private Kryo kryo() {

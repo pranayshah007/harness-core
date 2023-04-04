@@ -92,14 +92,14 @@ public class PipelineGovernanceServiceImplTest extends CategoryTest {
         .shouldEvaluatePolicy(accountIdentifier, orgIdentifier, projectIdentifier,
             OpaConstants.OPA_EVALUATION_TYPE_PIPELINE, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
     pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(accountIdentifier, orgIdentifier, projectIdentifier,
-        dummyYaml, false, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
+        dummyYaml, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
     verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
     verify(expansionRequestsExtractor, times(1)).fetchExpansionRequests(dummyYaml);
     verify(jsonExpander, times(1)).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
 
     doReturn(false).when(pmsFeatureFlagService).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
     String noExp = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(accountIdentifier, orgIdentifier,
-        projectIdentifier, dummyYaml, false, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
+        projectIdentifier, dummyYaml, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
     assertNull(noExp);
     verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
     verify(expansionRequestsExtractor, times(1)).fetchExpansionRequests(dummyYaml);
@@ -112,7 +112,7 @@ public class PipelineGovernanceServiceImplTest extends CategoryTest {
   public void testFetchExpandedPipelineJSONForV1Yaml() {
     String dummyYaml = "\"version: 1\"";
     String noExp = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(accountIdentifier, orgIdentifier,
-        projectIdentifier, dummyYaml, false, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
+        projectIdentifier, dummyYaml, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
     assertNull(noExp);
   }
 
@@ -180,7 +180,7 @@ public class PipelineGovernanceServiceImplTest extends CategoryTest {
         .shouldEvaluatePolicy(accountIdentifier, orgIdentifier, projectIdentifier,
             OpaConstants.OPA_EVALUATION_TYPE_PIPELINE, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
     String noExp = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
-        pipelineEntity, pipelineYaml, true, "branch", OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
+        pipelineEntity, pipelineYaml, "branch", OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
     assertThat(noExp).isEqualTo(
         "{\"pipeline\":{\"identifier\":\"cipipeline2GDdkmQLfb\",\"name\":\"run pipeline with output variable success\",\"stages\":[{\"stage\":{\"identifier\":\"outputvar\",\"name\":\"output variable\",\"type\":\"CI\",\"spec\":{\"execution\":{\"steps\":[{\"step\":{\"identifier\":\"two\",\"name\":\"two\",\"type\":\"Run\",\"spec\":{\"command\":\"<+input>\",\"shell\":\"Powershell\"}}}]},\"infrastructure\":{\"type\":\"VM\",\"spec\":{\"type\":\"Pool\",\"spec\":{\"identifier\":\"windows\"}}},\"cloneCodebase\":false}}}],\"projectIdentifier\":\"Plain_Old_Project\",\"orgIdentifier\":\"default\",\"gitConfig\":{\"branch\":\"branch\",\"repoName\":\"repo\",\"filePath\":\"filePath\"}}}");
     verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();

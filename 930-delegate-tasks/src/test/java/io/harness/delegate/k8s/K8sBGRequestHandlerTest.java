@@ -153,7 +153,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
 
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(any(K8sInfraDelegateConfig.class), eq(logCallback));
+        .createKubernetesConfig(any(K8sInfraDelegateConfig.class), anyString(), eq(logCallback));
 
     on(k8sBGRequestHandler).set("useDeclarativeRollback", true);
     doReturn(releaseHandler).when(k8sTaskHelperBase).getReleaseHandler(anyBoolean());
@@ -512,7 +512,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
 
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, logCallback);
+        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
     doReturn(renderedFiles)
         .when(k8sTaskHelperBase)
         .renderTemplate(eq(k8sDelegateTaskParams), eq(k8sManifestDelegateConfig), any(), eq(valuesYamlFiles), any(),
@@ -531,7 +531,8 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
       k8sBGRequestHandler.init(k8sBGDeployRequest, k8sDelegateTaskParams, logCallback);
     }
 
-    verify(containerDeploymentDelegateBaseHelper).createKubernetesConfig(k8sInfraDelegateConfig, logCallback);
+    verify(containerDeploymentDelegateBaseHelper)
+        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
     verify(releaseHandler).getReleaseHistory(any(), eq("releaseName"));
 
     if (!throwException) {

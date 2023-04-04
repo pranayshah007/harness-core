@@ -429,7 +429,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
     doCallRealMethod()
         .when(pipelineGovernanceService)
         .fetchExpandedPipelineJSONFromYaml(pipelineEntityV1.getAccountId(), pipelineEntityV1.getOrgIdentifier(),
-            pipelineEntityV1.getProjectIdentifier(), pipelineEntityV1.getYaml(), true,
+            pipelineEntityV1.getProjectIdentifier(), pipelineEntityV1.getYaml(),
             OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
     triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
         triggerDetails, payloadBuilder.build(), triggerWebhookEvent, null, null);

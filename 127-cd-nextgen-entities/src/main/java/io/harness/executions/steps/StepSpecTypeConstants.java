@@ -92,6 +92,8 @@ public interface StepSpecTypeConstants {
   String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "DeployCloudFunctionWithNoTraffic";
   String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "CloudFunctionTrafficShift";
   String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY = "DeployCloudFunctionGenOne";
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK = "RollbackCloudFunctionGenOne";
 
   String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
   String AWS_LAMBDA = "AwsLambda";

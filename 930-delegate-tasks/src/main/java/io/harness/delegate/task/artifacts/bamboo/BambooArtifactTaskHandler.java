@@ -7,16 +7,21 @@
 
 package io.harness.delegate.task.artifacts.bamboo;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofSeconds;
+import static java.util.stream.Collectors.toList;
 
+import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.beans.ExecutionStatus;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.mappers.BambooRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.bamboo.BambooBuildTaskNGResponse;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -35,6 +40,8 @@ import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,12 +80,38 @@ public class BambooArtifactTaskHandler extends DelegateArtifactTaskHandler<Bambo
                                                             .artifactPaths(attributesRequest.getArtifactPaths())
                                                             .artifactStreamType(ArtifactStreamType.BAMBOO.name())
                                                             .build();
-    BuildDetails buildDetails = bambooBuildService.getLastSuccessfulBuild(null, artifactStreamAttributes,
-        BambooRequestResponseMapper.toBambooConfig(attributesRequest), attributesRequest.getEncryptedDataDetails());
-    BambooArtifactDelegateResponse bambooArtifactDelegateResponse =
-        BambooRequestResponseMapper.toBambooArtifactDelegateResponse(buildDetails, attributesRequest);
-    return getSuccessTaskExecutionResponse(
-        Collections.singletonList(bambooArtifactDelegateResponse), Collections.singletonList(buildDetails));
+
+    try {
+      Pattern pattern = Pattern.compile(attributesRequest.getBuildNumber());
+      List<BuildDetails> buildDetails = bambooBuildService.getBuilds(null, artifactStreamAttributes,
+          BambooRequestResponseMapper.toBambooConfig(attributesRequest), attributesRequest.getEncryptedDataDetails());
+      if (isNotEmpty(buildDetails)) {
+        buildDetails = buildDetails.stream()
+                           .filter(buildDetail -> pattern.matcher(buildDetail.getNumber()).find())
+                           .sorted(new BuildDetailsComparatorDescending())
+                           .collect(toList());
+        BambooArtifactDelegateResponse bambooArtifactDelegateResponse =
+            BambooRequestResponseMapper.toBambooArtifactDelegateResponse(buildDetails.get(0), attributesRequest);
+        return getSuccessTaskExecutionResponse(
+            Collections.singletonList(bambooArtifactDelegateResponse), Collections.singletonList(buildDetails.get(0)));
+      } else {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Check if the version exist & check if the right connector chosen for fetching the build.",
+            "Version not found ", new InvalidRequestException("Version not found"));
+      }
+    } catch (PatternSyntaxException e) {
+      BuildDetails buildDetails = bambooBuildService.getLastSuccessfulBuild(null, artifactStreamAttributes,
+          BambooRequestResponseMapper.toBambooConfig(attributesRequest), attributesRequest.getEncryptedDataDetails());
+      if (buildDetails != null && !buildDetails.getNumber().equals(attributesRequest.getBuildNumber())) {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Check if the version exist & check if the right connector chosen for fetching the build.",
+            "Version didn't matched ", new InvalidRequestException("Version didn't matched"));
+      }
+      BambooArtifactDelegateResponse bambooArtifactDelegateResponse =
+          BambooRequestResponseMapper.toBambooArtifactDelegateResponse(buildDetails, attributesRequest);
+      return getSuccessTaskExecutionResponse(
+          Collections.singletonList(bambooArtifactDelegateResponse), Collections.singletonList(buildDetails));
+    }
   }
 
   public ArtifactTaskExecutionResponse getPlans(BambooArtifactDelegateRequest attributesRequest) {

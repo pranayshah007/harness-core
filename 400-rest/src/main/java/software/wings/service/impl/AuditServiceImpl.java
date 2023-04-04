@@ -39,7 +39,6 @@ import io.harness.exception.WingsException.ExecutionContext;
 import io.harness.ff.FeatureFlagService;
 import io.harness.globalcontex.AuditGlobalContextData;
 import io.harness.manage.GlobalContextManager;
-import io.harness.persistence.HIterator;
 import io.harness.persistence.NameAccess;
 import io.harness.persistence.UuidAccess;
 import io.harness.stream.BoundedInputStream;
@@ -194,20 +193,15 @@ public class AuditServiceImpl implements AuditService {
   }
 
   @Override
-  public List<AuditRecord> fetchEntityAuditRecordsOlderThanGivenTime(String auditHeaderId, long timestamp) {
-    List<AuditRecord> auditRecords = new ArrayList<>();
-    try (HIterator<AuditRecord> iterator =
-             new HIterator<>(wingsPersistence.createQuery(AuditRecord.class, excludeAuthority)
-                                 .filter(AuditRecordKeys.auditHeaderId, auditHeaderId)
-                                 .field(AuditRecordKeys.createdAt)
-                                 .lessThanOrEq(timestamp)
-                                 .order(Sort.ascending(AuditHeaderKeys.createdAt))
-                                 .fetch())) {
-      while (iterator.hasNext()) {
-        auditRecords.add(iterator.next());
-      }
-    }
-    return auditRecords;
+  public List<AuditRecord> fetchLimitedEntityAuditRecordsOlderThanGivenTime(
+      String auditHeaderId, long timestamp, int limit) {
+    return wingsPersistence.createQuery(AuditRecord.class, excludeAuthority)
+        .filter(AuditRecordKeys.auditHeaderId, auditHeaderId)
+        .field(AuditRecordKeys.createdAt)
+        .lessThanOrEq(timestamp)
+        .order(Sort.ascending(AuditHeaderKeys.createdAt))
+        .limit(limit)
+        .asList();
   }
 
   @Override

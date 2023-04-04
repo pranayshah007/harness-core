@@ -28,16 +28,20 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CDP)
 @Value
-@Builder
+@SuperBuilder
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @JsonTypeName(InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS)
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("googleFunctionsInfrastructure")
@@ -109,6 +113,10 @@ public class GoogleFunctionsInfrastructure
     if (!ParameterField.isNull(config.getProject())) {
       resultantInfra = resultantInfra.withProject(config.getProject());
     }
+    if (!ParameterField.isNull(config.getProvisioner())) {
+      resultantInfra.setProvisioner(config.getProvisioner());
+    }
+
     return resultantInfra;
   }
 }

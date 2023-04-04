@@ -152,6 +152,19 @@ public class ConnectorResourceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.BHAVYA)
+  @Category(UnitTests.class)
+  public void testGet_throwingException() {
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.empty());
+    try {
+      connectorResource.get("accountIdentifier", "orgIdentifier", null, "connectorIdentifier", null).getData();
+    } catch (Exception ex) {
+      assertThat(ex.getMessage())
+          .isEqualTo("Connector with identifier [connectorIdentifier] not found in org [orgIdentifier].");
+    }
+  }
+
+  @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void list() {

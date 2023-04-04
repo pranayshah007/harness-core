@@ -87,8 +87,10 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
   final String canaryReleaseHistory = "canary-release-history";
   final String canaryFailedReleaseHistory = "canary-failed-release-history";
   final String canaryExceptionReleaseHistory = "canary-exception-release-history";
+  final String workingDirectory = "./repository/k8s";
   final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
-  final K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
+  final K8sDelegateTaskParams delegateTaskParams =
+      K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
   final CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
   @Before
@@ -99,7 +101,7 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
     doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, logCallback);
+        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
 
     ApiException apiException = new ApiException("Failed to get release history secret");
     InvalidRequestException exception =

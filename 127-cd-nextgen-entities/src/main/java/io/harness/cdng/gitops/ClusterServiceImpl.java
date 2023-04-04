@@ -98,8 +98,6 @@ public class ClusterServiceImpl implements ClusterService {
   public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier,
       String clusterRef, ScopeLevel scopeLevel) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
-    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
-    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
     checkArgument(isNotEmpty(clusterRef), "cluster identifier must be present");
 
     Criteria criteria = getClusterEqualityCriteria(

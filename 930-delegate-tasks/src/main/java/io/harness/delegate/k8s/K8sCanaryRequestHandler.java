@@ -202,8 +202,8 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
       throws Exception {
     logCallback.saveExecutionLog("Initializing..\n");
     logCallback.saveExecutionLog(color(String.format("Release Name: [%s]", request.getReleaseName()), Yellow, Bold));
-    k8sCanaryHandlerConfig.setKubernetesConfig(
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(request.getK8sInfraDelegateConfig(), logCallback));
+    k8sCanaryHandlerConfig.setKubernetesConfig(containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+        request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), logCallback));
     k8sCanaryHandlerConfig.setClient(
         Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
 

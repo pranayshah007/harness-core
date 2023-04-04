@@ -25,5 +25,7 @@ public interface NamespaceRepository extends CrudRepository<NamespaceEntity, Str
 
   List<NamespaceEntity> findAllByIsDeleted(boolean deleted);
 
+  Optional<NamespaceEntity> findByAccountIdentifierAndIsDeleted(String accountIdentifier, boolean deleted);
+
   NamespaceEntity save(NamespaceEntity namespaceEntity);
 }

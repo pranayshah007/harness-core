@@ -280,7 +280,7 @@ public class DockerRegistryUtils {
     return response;
   }
 
-  private ArtifactMetaInfo parseArtifactMetaInfoResponse(
+  public ArtifactMetaInfo parseArtifactMetaInfoResponse(
       Response<DockerImageManifestResponse> response, String imageName) {
     if (!isSuccessful(response)) {
       throw NestedExceptionUtils.hintWithExplanationException(
