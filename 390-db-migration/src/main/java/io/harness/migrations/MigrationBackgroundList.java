@@ -65,7 +65,6 @@ import io.harness.migrations.all.AddValidUntilToSecretUsageLogs;
 import io.harness.migrations.all.AddValidUntilToWorkflowExecution;
 import io.harness.migrations.all.AlertCheckJobPollIntervalMigration;
 import io.harness.migrations.all.AmendCorruptedEncryptedServiceVariable;
-import io.harness.migrations.all.ApiKeyLocalToKMSMigration;
 import io.harness.migrations.all.ApiKeysSetNameMigration;
 import io.harness.migrations.all.ArtifactSourceCollectionEnabledMigration;
 import io.harness.migrations.all.BackFillingKeywordsOnWorkflowExecutionCollection;
@@ -420,7 +419,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(240, ArtifactSourceCollectionEnabledMigration.class))
         .add(Pair.of(241, CleanupInfraMappingsForDeletedServices.class))
         .add(Pair.of(242, AddIsCrossGenerationAccessEnabledToAccountMigration.class))
-        .add(Pair.of(243, ApiKeyLocalToKMSMigration.class))
+        .add(Pair.of(243, NoOpMigration.class))
         .add(Pair.of(244, ForAllAccountsAddIsCrossGenerationAccessEnabledMigration.class))
         .add(Pair.of(245, EncryptDelegateTokenMigration.class))
         .add(Pair.of(246, UpdateIsCrossGenerationAccessEnabledForAllAccountsMigration.class))
