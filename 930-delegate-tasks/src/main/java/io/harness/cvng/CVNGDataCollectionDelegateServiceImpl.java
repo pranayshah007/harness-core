@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import javax.net.ssl.KeyManager;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @OwnedBy(CV)
@@ -80,10 +81,14 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
       try {
         String dsl = dataCollectionRequest.getDSL();
         Instant now = clock.instant();
-        KeyManager keyManager = new X509KeyManagerBuilder()
-                                    .withClientCertificateFromFile(this.configuration.getClientCertificateFilePath(),
-                                        this.configuration.getClientCertificateKeyFilePath())
-                                    .build();
+        KeyManager keyManager = null;
+        if (StringUtils.isNotEmpty(this.configuration.getClientCertificateFilePath())
+            && StringUtils.isNotEmpty(this.configuration.getClientCertificateKeyFilePath())) {
+          keyManager = new X509KeyManagerBuilder()
+                           .withClientCertificateFromFile(this.configuration.getClientCertificateFilePath(),
+                               this.configuration.getClientCertificateKeyFilePath())
+                           .build();
+        }
         final RuntimeParameters runtimeParameters = RuntimeParameters.builder()
                                                         .baseUrl(dataCollectionRequest.getBaseUrl())
                                                         .commonHeaders(dataCollectionRequest.collectionHeaders())

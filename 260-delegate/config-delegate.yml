@@ -17,6 +17,8 @@ logStreamingServiceBaseUrl: http://localhost:8079
 clientToolsDownloadDisabled: false
 installClientToolsInBackground: true
 isLocalNgDelegate: false
+clientCertificateFilePath: /Users/naveenshukla/Workspace/repositories/harness-core/260-delegate/client.pem
+clientCertificateKeyFilePath: /Users/naveenshukla/Workspace/repositories/harness-core/260-delegate/pkcs8.key
 
 # Required for local development as manger uses self-signed cert
 trustAllCertificates: true

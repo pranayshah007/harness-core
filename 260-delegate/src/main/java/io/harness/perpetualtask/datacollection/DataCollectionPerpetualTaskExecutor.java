@@ -64,6 +64,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.net.ssl.KeyManager;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 @Slf4j
@@ -169,10 +170,14 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
       DataCollectionInfo dataCollectionInfo = dataCollectionTask.getDataCollectionInfo();
       log.info("collecting data for {}", dataCollectionTask.getVerificationTaskId());
       List<ExecutionLog> executionLogs = new ArrayList<>();
-      KeyManager keyManager = new X509KeyManagerBuilder()
-                                  .withClientCertificateFromFile(this.configuration.getClientCertificateFilePath(),
-                                      this.configuration.getClientCertificateKeyFilePath())
-                                  .build();
+      KeyManager keyManager = null;
+      if (StringUtils.isNotEmpty(this.configuration.getClientCertificateFilePath())
+          && StringUtils.isNotEmpty(this.configuration.getClientCertificateKeyFilePath())) {
+        keyManager = new X509KeyManagerBuilder()
+                         .withClientCertificateFromFile(this.configuration.getClientCertificateFilePath(),
+                             this.configuration.getClientCertificateKeyFilePath())
+                         .build();
+      }
       final RuntimeParameters runtimeParameters =
           RuntimeParameters.builder()
               .baseUrl(dataCollectionTask.getDataCollectionInfo().getBaseUrl(connectorConfigDTO))

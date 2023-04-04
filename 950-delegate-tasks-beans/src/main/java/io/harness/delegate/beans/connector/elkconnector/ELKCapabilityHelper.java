@@ -22,10 +22,10 @@ public class ELKCapabilityHelper extends ConnectorCapabilityBaseHelper {
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(
       ConnectorConfigDTO connectorConfigDTO, ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
-    ELKConnectorDTO elkConnectorDTO = (ELKConnectorDTO) connectorConfigDTO;
-    capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-        elkConnectorDTO.getUrl(), maskingEvaluator));
-    populateDelegateSelectorCapability(capabilityList, elkConnectorDTO.getDelegateSelectors());
+    //    ELKConnectorDTO elkConnectorDTO = (ELKConnectorDTO) connectorConfigDTO;
+    //    capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+    //        elkConnectorDTO.getUrl(), maskingEvaluator));
+    //    populateDelegateSelectorCapability(capabilityList, elkConnectorDTO.getDelegateSelectors());
     return capabilityList;
   }
 }

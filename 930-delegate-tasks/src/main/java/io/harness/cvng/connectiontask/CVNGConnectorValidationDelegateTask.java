@@ -22,9 +22,12 @@ import io.harness.delegate.beans.connector.cvconnector.CVConnectorTaskParams;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorTaskResponse;
 import io.harness.delegate.beans.cvng.ConnectorValidationInfo;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.errorhandling.NGErrorHelper;
+import io.harness.exception.KeyManagerBuilderException;
+import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
@@ -35,7 +38,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import javax.net.ssl.KeyManager;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
@@ -44,6 +49,7 @@ public class CVNGConnectorValidationDelegateTask extends AbstractDelegateRunnabl
   @Inject private SecretDecryptionService secretDecryptionService;
   @Inject private Clock clock;
   @Inject private NGErrorHelper ngErrorHelper;
+  @Inject private DelegateConfiguration configuration;
 
   public CVNGConnectorValidationDelegateTask(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
@@ -62,7 +68,7 @@ public class CVNGConnectorValidationDelegateTask extends AbstractDelegateRunnabl
   }
 
   @Override
-  public DelegateResponseData run(TaskParameters parameters) {
+  public DelegateResponseData run(TaskParameters parameters) throws KeyManagerBuilderException {
     CVConnectorTaskParams taskParameters = (CVConnectorTaskParams) parameters;
     if (taskParameters.getConnectorConfigDTO() instanceof DecryptableEntity) {
       List<DecryptableEntity> decryptableEntities = taskParameters.getConnectorConfigDTO().getDecryptableEntities();
@@ -89,6 +95,14 @@ public class CVNGConnectorValidationDelegateTask extends AbstractDelegateRunnabl
         ConnectorValidationInfo.getConnectorValidationInfo(taskParameters.getConnectorConfigDTO());
     String dsl = connectorValidationInfo.getConnectionValidationDSL();
     Instant now = clock.instant();
+    KeyManager keyManager = null;
+    if (StringUtils.isNotEmpty(this.configuration.getClientCertificateFilePath())
+        && StringUtils.isNotEmpty(this.configuration.getClientCertificateKeyFilePath())) {
+      keyManager = new X509KeyManagerBuilder()
+                       .withClientCertificateFromFile(this.configuration.getClientCertificateFilePath(),
+                           this.configuration.getClientCertificateKeyFilePath())
+                       .build();
+    }
     final RuntimeParameters runtimeParameters = RuntimeParameters.builder()
                                                     .baseUrl(connectorValidationInfo.getBaseUrl())
                                                     .commonHeaders(connectorValidationInfo.collectionHeaders())
@@ -96,6 +110,7 @@ public class CVNGConnectorValidationDelegateTask extends AbstractDelegateRunnabl
                                                     .otherEnvVariables(connectorValidationInfo.getDslEnvVariables())
                                                     .endTime(connectorValidationInfo.getEndTime(now))
                                                     .startTime(connectorValidationInfo.getStartTime(now))
+                                                    .keyManager(keyManager)
                                                     .build();
     validCredentials = ((String) dataCollectionDSLService.execute(dsl, runtimeParameters)).equalsIgnoreCase("true");
     log.info("connectorValidationInfo {}", connectorValidationInfo);

@@ -29,7 +29,7 @@ public class DatadogCapabilityHelper {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     DatadogConnectorDTO connectorDTO = (DatadogConnectorDTO) datadogConnectorDTO;
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-        connectorDTO.getUrl(), maskingEvaluator));
+        "https://www.elastic.co/", maskingEvaluator));
     populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors());
     return capabilityList;
   }

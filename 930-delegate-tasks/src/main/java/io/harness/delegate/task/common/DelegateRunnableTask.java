@@ -9,11 +9,12 @@ package io.harness.delegate.task.common;
 
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.exception.KeyManagerBuilderException;
 
 import java.io.IOException;
 import org.jose4j.lang.JoseException;
 
 public interface DelegateRunnableTask extends Runnable {
   @Deprecated DelegateResponseData run(Object[] parameters);
-  DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException;
+  DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException, KeyManagerBuilderException;
 }
