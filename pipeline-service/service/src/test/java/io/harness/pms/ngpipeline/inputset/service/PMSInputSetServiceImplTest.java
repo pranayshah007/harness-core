@@ -26,7 +26,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -225,6 +224,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                          .build();
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     on(pmsInputSetService).set("inputSetsApiUtils", inputSetsApiUtils);
+    on(pmsInputSetService).set("gitExperienceSettingsHelper", gitExperienceSettingsHelper);
   }
 
   @Test
@@ -312,7 +312,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   public void testList() {
     MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
     when(inputSetsApiUtils.isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(false);
-    doNothing().when(spy(new GitExperienceSettingsHelper())).enforceGitExperienceIfApplicable(any(), any(), any());
+    doNothing().when(gitExperienceSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
     pmsInputSetService.create(inputSetEntity, false);
     pmsInputSetService.create(overlayInputSetEntity, false);
 
