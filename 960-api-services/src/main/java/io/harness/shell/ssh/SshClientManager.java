@@ -16,22 +16,23 @@ import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.client.SshClient;
 import io.harness.shell.ssh.connection.ExecRequest;
 import io.harness.shell.ssh.connection.ExecResponse;
+import io.harness.shell.ssh.exception.SshClientException;
 import io.harness.shell.ssh.sftp.SftpRequest;
 import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.shell.ssh.xfer.ScpRequest;
 import io.harness.shell.ssh.xfer.ScpResponse;
 
-import com.google.inject.Singleton;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(CDP)
-@Singleton
+@UtilityClass
 public class SshClientManager {
-  private static ConcurrentMap<String, SshClient> clientCache = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, SshClient> clientCache = new ConcurrentHashMap<>();
 
   private static SshClient updateCache(SshSessionConfig sshSessionConfig, LogCallback logCallback) {
     Optional<String> cacheKey = getCacheKey(sshSessionConfig);
@@ -46,29 +47,37 @@ public class SshClientManager {
     }
   }
 
-  public ExecResponse exec(ExecRequest execRequest, SshSessionConfig sshSessionConfig, LogCallback logCallback) throws Exception {
+  public ExecResponse exec(ExecRequest execRequest, SshSessionConfig sshSessionConfig, LogCallback logCallback)
+      throws SshClientException {
     SshClient sshClient = updateCache(sshSessionConfig, logCallback);
     try {
-      ExecResponse response = sshClient.exec(execRequest);
-      return response;
+      return sshClient.exec(execRequest);
     } finally {
-      if(getCacheKey(sshSessionConfig).isEmpty()){
-        sshClient.close();
-      }
+      cleanUp(sshSessionConfig, sshClient);
     }
   }
 
-  public SftpResponse sftpUpload(SftpRequest sftpRequest, SshSessionConfig sshSessionConfig, LogCallback logCallback) {
+  public SftpResponse sftpUpload(SftpRequest sftpRequest, SshSessionConfig sshSessionConfig, LogCallback logCallback)
+      throws SshClientException {
     SshClient sshClient = updateCache(sshSessionConfig, logCallback);
-    return sshClient.sftpUpload(sftpRequest);
+    try {
+      return sshClient.sftpDownload(sftpRequest);
+    } finally {
+      cleanUp(sshSessionConfig, sshClient);
+    }
   }
 
-  public ScpResponse scpUpload(ScpRequest scpRequest, SshSessionConfig sshSessionConfig, LogCallback logCallback) {
+  public ScpResponse scpUpload(ScpRequest scpRequest, SshSessionConfig sshSessionConfig, LogCallback logCallback)
+      throws SshClientException {
     SshClient sshClient = updateCache(sshSessionConfig, logCallback);
-    return sshClient.scpUpload(scpRequest);
+    try {
+      return sshClient.scpUpload(scpRequest);
+    } finally {
+      cleanUp(sshSessionConfig, sshClient);
+    }
   }
 
-  public void evictCache(SshSessionConfig config) throws Exception {
+  public void evictCache(SshSessionConfig config) throws SshClientException {
     Optional<String> cacheKey = getCacheKey(config);
     if (cacheKey.isPresent()) {
       SshClient sshClient = clientCache.get(cacheKey.get());
@@ -76,6 +85,12 @@ public class SshClientManager {
         sshClient.close();
       }
       clientCache.remove(cacheKey.get());
+    }
+  }
+
+  private static void cleanUp(SshSessionConfig sshSessionConfig, SshClient sshClient) throws SshClientException {
+    if (getCacheKey(sshSessionConfig).isEmpty()) {
+      sshClient.close();
     }
   }
 }

@@ -53,9 +53,9 @@ public abstract class SshClient implements AutoCloseable {
     return scpUploadInternal(commandData, sshConnection);
   }
 
-  public SftpResponse sftpUpload(SftpRequest commandData) throws SshClientException {
+  public SftpResponse sftpDownload(SftpRequest commandData) throws SshClientException {
     SshConnection sshConnection = getCachedConnection();
-    return sftpUploadInternal(commandData, sshConnection);
+    return sftpDownloadInternal(commandData, sshConnection);
   }
 
   private synchronized SshConnection getCachedConnection() {
@@ -81,7 +81,7 @@ public abstract class SshClient implements AutoCloseable {
   protected abstract ScpResponse scpUploadInternal(ScpRequest commandData, SshConnection connection)
       throws SshClientException;
 
-  protected abstract SftpResponse sftpUploadInternal(SftpRequest commandData, SshConnection connection)
+  protected abstract SftpResponse sftpDownloadInternal(SftpRequest commandData, SshConnection connection)
       throws SshClientException;
   protected abstract ExecResponse execInternal(ExecRequest commandData, SshConnection sshConnection)
       throws SshClientException;
@@ -108,13 +108,13 @@ public abstract class SshClient implements AutoCloseable {
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() {
     if (isNotEmpty(connectionCache)) {
       for (SshConnection connection : connectionCache) {
         try {
           connection.close();
-        } catch (Exception e) {
-          log.error("Failed to close connection object for key {}", getCacheKey(getSshSessionConfig()));
+        } catch (Exception ex) {
+          log.error("Failed to close connection object for key {}", getCacheKey(getSshSessionConfig()), ex);
         }
       }
     }

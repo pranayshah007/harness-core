@@ -7,9 +7,11 @@
 
 package io.harness.shell.ssh.sftp;
 
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
+@Builder
 public class SftpRequest {
   private String directory;
   private String fileName;

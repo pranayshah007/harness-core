@@ -669,7 +669,9 @@ public enum ErrorCode {
   SCM_FORBIDDEN,
   AWS_EKS_ERROR,
   OPA_POLICY_EVALUATION_ERROR,
-  USER_MARKED_FAILURE;
+
+  USER_MARKED_FAILURE,
+  SSH_RETRY("Ssh retryable error");
 
   private Status status = BAD_REQUEST;
   private String description;

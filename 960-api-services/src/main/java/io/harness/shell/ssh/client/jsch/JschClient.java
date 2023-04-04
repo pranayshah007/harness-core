@@ -62,6 +62,7 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.ProxyHTTP;
 import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -86,7 +87,7 @@ public class JschClient extends SshClient {
 
   @Override
   protected ExecResponse execInternal(ExecRequest commandData, SshConnection sshConnection) {
-    StringBuffer output = new StringBuffer();
+    StringBuilder output = new StringBuilder();
     CommandExecutionStatus commandExecutionStatus = FAILURE;
 
     try (JschExecSession session = getExecSession(sshConnection)) {
@@ -148,11 +149,10 @@ public class JschClient extends SshClient {
           sleep(Duration.ofSeconds(1));
         }
       }
-
     } catch (JSchException jsch) {
       // check retry
       if (CHANNEL_IS_NOT_OPENED.equals(jsch.getMessage())) {
-        throw new SshRetryableException(jsch);
+        throw new JschClientException(ErrorCode.SSH_RETRY, jsch);
       } else {
         handleException(jsch);
         log.error("Command execution failed with error", jsch);
@@ -166,16 +166,20 @@ public class JschClient extends SshClient {
   }
 
   @Override
-  protected SftpResponse sftpUploadInternal(SftpRequest commandData, SshConnection sshConnection) {
+  protected SftpResponse sftpDownloadInternal(SftpRequest sftpRequest, SshConnection sshConnection) {
     try (JschSftpSession session = getSftpSession(sshConnection)) {
       ChannelSftp channel = session.getChannel();
-      channel.cd(commandData.getDirectory());
-      InputStream inputStream = channel.get(commandData.getFileName(), CHUNK_SIZE);
+      channel.cd(sftpRequest.getDirectory());
+      InputStream inputStream = channel.get(sftpRequest.getFileName(), CHUNK_SIZE);
       BoundedInputStream stream = new BoundedInputStream(inputStream);
       BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(stream, Charsets.UTF_8));
       String content = getContent(bufferedReader);
-      if (commandData.isCleanup()) {
-        channel.rm(commandData.getDirectory() + commandData.getFileName());
+      if (sftpRequest.isCleanup()) {
+        try {
+          channel.rm(sftpRequest.getDirectory() + sftpRequest.getFileName());
+        } catch (SftpException e) {
+          log.error("Failed to delete file {}", sftpRequest.getFileName(), e);
+        }
       }
       return SftpResponse.builder()
           .content(content)
@@ -184,7 +188,18 @@ public class JschClient extends SshClient {
           .success(true)
           .build();
 
+    } catch (SshClientException sshClientException) {
+      throw sshClientException;
+    } catch (SftpException e) {
+      log.error(
+          "[ScriptSshExecutor]: Exception occurred during reading file from SFTP server due to " + e.getMessage(), e);
+      // No such file found error
+      if (e.id == 2) {
+        saveExecutionLogError(
+            "Error while reading variables to process Script Output. Avoid exiting from script early: " + e);
+      }
     } catch (Exception ex) {
+      log.error("Exception occurred during reading file from SFTP server due to " + ex.getMessage(), ex);
       return SftpResponse.builder().exitCode(1).status(FAILURE).success(false).build();
     }
   }
@@ -192,10 +207,13 @@ public class JschClient extends SshClient {
   @Override
   public void testConnection() {
     try (JschConnection ignored = getConnection()) {
-    } catch (JSchException ex) {
+    } catch (JschClientException ex) {
       log.error("Failed to connect Host. ", ex);
-      ErrorCode errorCode = normalizeError(ex);
-      throw new JschClientException(errorCode, errorCode.getDescription(), ex);
+      if (ex.getCode() != null) {
+        throw new JschClientException(ex.getCode(), ex.getCode().getDescription(), ex);
+      } else {
+        throw new JschClientException(ex.getMessage(), ex);
+      }
     } catch (Exception exception) {
       log.error("Failed to connect Host. ", exception);
       throw new JschClientException(exception.getMessage(), exception);
@@ -219,7 +237,7 @@ public class JschClient extends SshClient {
     }
   }
 
-  private String getContent(BufferedReader br) {
+  private String getContent(BufferedReader br) throws IOException {
     StringBuilder sb = new StringBuilder();
 
     try {
@@ -229,13 +247,11 @@ public class JschClient extends SshClient {
         sb.append('\n');
       }
       return sb.toString();
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
     } finally {
       try {
         br.close();
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        log.error("Failed to close buffer reader", e);
       }
     }
   }
