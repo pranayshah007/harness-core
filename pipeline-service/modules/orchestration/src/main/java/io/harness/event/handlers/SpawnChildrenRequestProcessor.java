@@ -17,6 +17,7 @@ import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.concurrency.MaxConcurrentChildCallback;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.execution.InitiateNodeHelper;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
@@ -53,6 +54,7 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   @Inject private PmsGraphStepDetailsService nodeExecutionInfoService;
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private PipelineSettingsService pipelineSettingsService;
+  @Inject private PlanService planService;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) private String publisherName;
 
   @Override
@@ -88,16 +90,27 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
           nodeExecutionId);
 
       for (Child child : request.getChildren().getChildrenList()) {
+        Ambiance ambianceForChild = ambiance;
         String uuid = callbackIds.get(currentChild);
         StrategyMetadata strategyMetadata = child.hasStrategyMetadata() ? child.getStrategyMetadata() : null;
+
+        String postExecutionRollbackStageId = ambiance.getMetadata().getPostExecutionRollbackStageId();
+        if (postExecutionRollbackStageId.equals(child.getChildNodeId())
+            && ambiance.getMetadata().getRollbackStageStrategyMetadata().equals(child.getStrategyMetadata())) {
+          ambianceForChild =
+              AmbianceUtils.cloneBuilder(ambiance, ambiance.getLevelsCount())
+                  .setMetadata(ambiance.getMetadata().toBuilder().setPostExecutionRollbackUnderStrategy(true))
+                  .build();
+        }
+
         // If the current child count is less than maxConcurrency then create and start the nodeExecution
         if (shouldCreateAndStart(maxConcurrency, currentChild)) {
           initiateNodeHelper.publishEvent(
-              ambiance, child.getChildNodeId(), uuid, strategyMetadata, InitiateMode.CREATE_AND_START);
+              ambianceForChild, child.getChildNodeId(), uuid, strategyMetadata, InitiateMode.CREATE_AND_START);
         } else {
           // IF the current child count is greater than maxConcurrency then only create the nodeExecution
           orchestrationEngine.initiateNode(
-              ambiance, child.getChildNodeId(), uuid, null, strategyMetadata, InitiateMode.CREATE);
+              ambianceForChild, child.getChildNodeId(), uuid, null, strategyMetadata, InitiateMode.CREATE);
         }
         MaxConcurrentChildCallback maxConcurrentChildCallback =
             MaxConcurrentChildCallback.builder()

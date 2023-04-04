@@ -163,7 +163,7 @@ public class IdentityStrategyInternalStep
 
   private ChildExecutableResponse getChildFromNodeExecutions(
       NodeExecution childNodeExecution, NodeExecution originalNodeExecution, String planId) {
-    Node node = childNodeExecution.getNode();
+    Node node = planService.fetchNode(childNodeExecution.getPlanId(), childNodeExecution.getNode().getUuid());
     if (node instanceof PlanNode) {
       IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), node,
           childNodeExecution.getIdentifier(), childNodeExecution.getName(), node.getStepType(),

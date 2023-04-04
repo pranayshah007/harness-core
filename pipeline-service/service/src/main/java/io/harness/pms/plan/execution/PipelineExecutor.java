@@ -154,26 +154,26 @@ public class PipelineExecutor {
   }
 
   // todo: check if we need to take notifyOnlyUser and isDebug
-  public PlanExecution startPostExecutionRollback(
-      String accountId, String orgIdentifier, String projectIdentifier, String originalExecutionId) {
-    return startRollbackModeExecution(
-        accountId, orgIdentifier, projectIdentifier, originalExecutionId, ExecutionMode.POST_EXECUTION_ROLLBACK);
+  public PlanExecution startPostExecutionRollback(String accountId, String orgIdentifier, String projectIdentifier,
+      String originalExecutionId, String stageNodeExecutionId) {
+    return startRollbackModeExecution(accountId, orgIdentifier, projectIdentifier, originalExecutionId,
+        stageNodeExecutionId, ExecutionMode.POST_EXECUTION_ROLLBACK);
   }
 
   public PlanExecution startPipelineRollback(
       String accountId, String orgIdentifier, String projectIdentifier, String originalExecutionId) {
     return startRollbackModeExecution(
-        accountId, orgIdentifier, projectIdentifier, originalExecutionId, ExecutionMode.PIPELINE_ROLLBACK);
+        accountId, orgIdentifier, projectIdentifier, originalExecutionId, null, ExecutionMode.PIPELINE_ROLLBACK);
   }
 
   PlanExecution startRollbackModeExecution(String accountId, String orgIdentifier, String projectIdentifier,
-      String originalExecutionId, ExecutionMode executionMode) {
+      String originalExecutionId, String stageNodeExecutionId, ExecutionMode executionMode) {
     String executionId = generateUuid();
     ExecutionTriggerInfo triggerInfo = executionHelper.buildTriggerInfo(null);
     ExecutionMetadata originalExecutionMetadata = planExecutionService.get(originalExecutionId).getMetadata();
     ExecutionMetadata executionMetadata =
         rollbackModeExecutionHelper.transformExecutionMetadata(originalExecutionMetadata, executionId, triggerInfo,
-            accountId, orgIdentifier, projectIdentifier, executionMode);
+            accountId, orgIdentifier, projectIdentifier, stageNodeExecutionId, executionMode);
 
     Optional<PlanExecutionMetadata> optPlanExecutionMetadata =
         planExecutionMetadataService.findByPlanExecutionId(originalExecutionId);
@@ -182,7 +182,7 @@ public class PipelineExecutor {
     }
     PlanExecutionMetadata originalPlanExecutionMetadata = optPlanExecutionMetadata.get();
     PlanExecutionMetadata planExecutionMetadata = rollbackModeExecutionHelper.transformPlanExecutionMetadata(
-        originalPlanExecutionMetadata, executionId, executionMode);
+        originalPlanExecutionMetadata, executionId, stageNodeExecutionId, executionMode);
     return executionHelper.startExecution(accountId, orgIdentifier, projectIdentifier, executionMetadata,
         planExecutionMetadata, false, null, originalExecutionId, null);
   }

@@ -16,7 +16,9 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.StagesExecutionMetadata;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.Plan;
@@ -26,6 +28,7 @@ import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.helpers.PrincipalInfoHelper;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
@@ -39,9 +42,11 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -61,7 +66,9 @@ public class RollbackModeExecutionHelper {
 
   public ExecutionMetadata transformExecutionMetadata(ExecutionMetadata executionMetadata, String planExecutionID,
       ExecutionTriggerInfo triggerInfo, String accountId, String orgIdentifier, String projectIdentifier,
-      ExecutionMode executionMode) {
+      String stageUuid, ExecutionMode executionMode) {
+    NodeExecution rollbackStageNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        stageUuid, Set.of(NodeExecutionKeys.planNode, NodeExecutionKeys.ambiance));
     return executionMetadata.toBuilder()
         .setExecutionUuid(planExecutionID)
         .setTriggerInfo(triggerInfo)
@@ -69,18 +76,29 @@ public class RollbackModeExecutionHelper {
             accountId, orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
         .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
         .setExecutionMode(executionMode)
+        .setPostExecutionRollbackStageId(rollbackStageNodeExecution.getNodeId())
+        .setRollbackStageStrategyMetadata(
+            AmbianceUtils.obtainCurrentLevel(rollbackStageNodeExecution.getAmbiance()).getStrategyMetadata())
         .build();
   }
 
-  public PlanExecutionMetadata transformPlanExecutionMetadata(
-      PlanExecutionMetadata planExecutionMetadata, String planExecutionID, ExecutionMode executionMode) {
+  public PlanExecutionMetadata transformPlanExecutionMetadata(PlanExecutionMetadata planExecutionMetadata,
+      String planExecutionID, String stageId, ExecutionMode executionMode) {
     String originalPlanExecutionId = planExecutionMetadata.getPlanExecutionId();
-    return planExecutionMetadata.withPlanExecutionId(planExecutionID)
-        .withProcessedYaml(
-            transformProcessedYaml(planExecutionMetadata.getProcessedYaml(), executionMode, originalPlanExecutionId))
-        .withUuid(null); // this uuid is the mongo uuid. It is being set as null so that when this Plan Execution
-                         // Metadata is saved later on in the execution, a new object is stored rather than replacing
-                         // the Metadata for the original execution
+    PlanExecutionMetadata metadata =
+        planExecutionMetadata.withPlanExecutionId(planExecutionID)
+            .withProcessedYaml(transformProcessedYaml(
+                planExecutionMetadata.getProcessedYaml(), executionMode, originalPlanExecutionId))
+            .withUuid(null); // this uuid is the mongo uuid. It is being set as null so that when this Plan Execution
+                             // Metadata is saved later on in the execution, a new object is stored rather than
+                             // replacing the Metadata for the original execution
+    String rollbackStageFQN =
+        nodeExecutionService.getWithFieldsIncluded(stageId, Set.of(NodeExecutionKeys.planNode)).getStageFqn();
+    metadata.setStagesExecutionMetadata(StagesExecutionMetadata.builder()
+                                            .fullPipelineYaml(planExecutionMetadata.getYaml())
+                                            .stageIdentifiers(Collections.singletonList(rollbackStageFQN))
+                                            .build());
+    return metadata;
   }
 
   String transformProcessedYaml(String processedYaml, ExecutionMode executionMode, String originalPlanExecutionId) {
@@ -195,14 +213,14 @@ public class RollbackModeExecutionHelper {
    * Step6: For all IDs in `nodeIDsToPreserve`, remove the Identity Plan Nodes in the map, and put the
    * Plan nodes from `createdPlan`
    */
-  public Plan transformPlanForRollbackMode(
-      Plan createdPlan, String previousExecutionId, List<String> nodeIDsToPreserve, ExecutionMode executionMode) {
+  public Plan transformPlanForRollbackMode(Plan createdPlan, String previousExecutionId, List<String> nodeIDsToPreserve,
+      List<String> rollbackStageIds, ExecutionMode executionMode) {
     // steps 1, 2, and 3
     Map<String, Node> planNodeIDToUpdatedPlanNodes =
         buildIdentityNodes(previousExecutionId, createdPlan.getPlanNodes());
 
     // step 4
-    addAdvisorsToIdentityNodes(createdPlan, planNodeIDToUpdatedPlanNodes, executionMode);
+    addAdvisorsToIdentityNodes(createdPlan, planNodeIDToUpdatedPlanNodes, executionMode, rollbackStageIds);
 
     // steps 5 and 6
     addPreservedPlanNodes(createdPlan, nodeIDsToPreserve, planNodeIDToUpdatedPlanNodes);
@@ -248,17 +266,23 @@ public class RollbackModeExecutionHelper {
         previousExecutionId, stageFQNs, NodeProjectionUtils.fieldsForIdentityNodeCreation);
   }
 
-  void addAdvisorsToIdentityNodes(
-      Plan createdPlan, Map<String, Node> planNodeIDToUpdatedPlanNodes, ExecutionMode executionMode) {
+  void addAdvisorsToIdentityNodes(Plan createdPlan, Map<String, Node> planNodeIDToUpdatedPlanNodes,
+      ExecutionMode executionMode, List<String> stageFQNsToRollback) {
     for (Node planNode : createdPlan.getPlanNodes()) {
-      if (EmptyPredicate.isEmpty(planNode.getAdvisorObtainmentsForExecutionMode())) {
+      if (EmptyPredicate.isEmpty(planNode.getAdvisorObtainmentsForExecutionMode())
+          || executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK
+              && !stageFQNsToRollback.contains(planNode.getStageFqn())) {
         continue;
       }
+
+      // add adviser only when the stageFqn matched with the stage to be rolledBack.
       List<AdviserObtainment> adviserObtainments = planNode.getAdvisorObtainmentsForExecutionMode().get(executionMode);
       if (EmptyPredicate.isNotEmpty(adviserObtainments)) {
         IdentityPlanNode updatedNode = (IdentityPlanNode) planNodeIDToUpdatedPlanNodes.get(planNode.getUuid());
-        planNodeIDToUpdatedPlanNodes.put(
-            planNode.getUuid(), updatedNode.withAdviserObtainments(adviserObtainments).withUseAdviserObtainments(true));
+        planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(),
+            updatedNode.withAdviserObtainments(adviserObtainments)
+                .withUseAdviserObtainments(true)
+                .withExecutionMode(executionMode));
       }
     }
   }

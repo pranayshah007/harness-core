@@ -486,21 +486,22 @@ public class ExecutionHelper {
       long endTs = System.currentTimeMillis();
       log.info("[PMS_PLAN] Time taken to complete plan: {}ms ", endTs - startTs);
       ExecutionMode executionMode = executionMetadata.getExecutionMode();
-      plan = transformPlan(
-          resp, plan, isRetry, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier, executionMode);
+      plan = transformPlan(resp, plan, isRetry, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier,
+          planExecutionMetadata.getStagesExecutionMetadata().getStageIdentifiers(), executionMode);
       return orchestrationService.startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
     }
   }
 
   Plan transformPlan(PlanCreationBlobResponse resp, Plan plan, boolean isRetry, List<String> identifierOfSkipStages,
-      String previousExecutionId, List<String> retryStagesIdentifier, ExecutionMode executionMode) {
+      String previousExecutionId, List<String> retryStagesIdentifier, List<String> rollbackStageIds,
+      ExecutionMode executionMode) {
     if (isRetry) {
       return retryExecutionHelper.transformPlan(
           plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
     }
     if (isRollbackMode(executionMode)) {
       return rollbackModeExecutionHelper.transformPlanForRollbackMode(
-          plan, previousExecutionId, resp.getPreservedNodesInRollbackModeList(), executionMode);
+          plan, previousExecutionId, resp.getPreservedNodesInRollbackModeList(), rollbackStageIds, executionMode);
     }
     return plan;
   }

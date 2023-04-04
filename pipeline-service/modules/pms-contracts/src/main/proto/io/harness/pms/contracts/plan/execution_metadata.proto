@@ -11,6 +11,7 @@ option java_multiple_files = true;
 
 import "io/harness/pms/contracts/plan/trigger_info.proto";
 import "io/harness/pms/contracts/plan/principal_info.proto";
+import "io/harness/pms/contracts/execution/executable_response.proto";
 
 // next ID: 18
 message ExecutionMetadata {
@@ -29,6 +30,9 @@ message ExecutionMetadata {
   string harnessVersion = 17;
   bool isDebug = 18;
   ExecutionMode executionMode = 19;
+  string postExecutionRollbackStageId = 20;
+  bool postExecutionRollbackUnderStrategy = 21;
+  io.harness.pms.contracts.execution.StrategyMetadata rollbackStageStrategyMetadata = 22;
 }
 
 message RetryExecutionInfo {
