@@ -116,6 +116,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
 
     // we should validate from cache first and change this debug log to warn, when watcher 754xx is deployed.
     if (isEmpty(delegateTokenName)) {
+      log.info("Delegate token name is empty.");
       log.debug("Delegate token name is empty.");
     } else if (validateDelegateJWTFromCache(accountId, tokenHash, shouldSetTokenNameInGlobalContext)) {
       return;
