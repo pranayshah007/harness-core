@@ -14,8 +14,7 @@
 #     .
 
 FROM us.gcr.io/platform-205701/ubi/ubi-base:curl_removal
-
-COPY --from=adoptopenjdk/openjdk11:jdk-11.0.15_10 /opt/harness/OpenJDK11/ /opt/harness/OpenJDK11/jdk-11.0.15+10/
+COPY --from=adoptopenjdk/openjdk11:jdk-11.0.15_10 /opt/java/openjdk/ /opt/harness/OpenJDK11/jdk-11.0.15+10/
 
 ENV JAVA_HOME=/opt/harness/OpenJDK11/jdk-11.0.15+10
 ENV PATH=$JAVA_HOME/bin:$PATH
