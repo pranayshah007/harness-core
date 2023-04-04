@@ -67,7 +67,7 @@ public class SshHostConnectionCapabilityCheck implements CapabilityCheck {
       // connect with Kerberos to ensure it is configured correctly on delegate
       KerberosConfigDTO kerberosConfigDTO = (KerberosConfigDTO) authDTO.getSpec();
       SshSessionConfig config = generateSshSessionConfigForKerberos(
-          host, kerberosConfigDTO, sshInfraDelegateConfig.getEncryptionDataDetails(), port);
+          authDTO, host, kerberosConfigDTO, sshInfraDelegateConfig.getEncryptionDataDetails(), port);
       log.info("Validating ssh Session to Host: {}, Port: {}", config.getHost(), config.getPort());
 
       try {
@@ -91,12 +91,12 @@ public class SshHostConnectionCapabilityCheck implements CapabilityCheck {
     return session;
   }
 
-  private SshSessionConfig generateSshSessionConfigForKerberos(
-      String host, KerberosConfigDTO kerberosConfigDTO, List<EncryptedDataDetail> encryptionDetails, int port) {
+  private SshSessionConfig generateSshSessionConfigForKerberos(SSHAuthDTO authDTO, String host,
+      KerberosConfigDTO kerberosConfigDTO, List<EncryptedDataDetail> encryptionDetails, int port) {
     SshSessionConfig.Builder builder =
         aSshSessionConfig().withHost(host).withPort(port).withSshConnectionTimeout(30000);
     SshSessionConfigHelper.generateKerberosBuilder(
-        kerberosConfigDTO, builder, encryptionDetails, secretDecryptionService);
+        authDTO, kerberosConfigDTO, builder, encryptionDetails, secretDecryptionService);
     return builder.build();
   }
 }

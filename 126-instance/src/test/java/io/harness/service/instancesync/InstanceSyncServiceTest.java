@@ -148,7 +148,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     openMocks = MockitoAnnotations.openMocks(this);
 
     InstanceSyncHelper instanceSyncHelper = new InstanceSyncHelper(instanceSyncPerpetualTaskInfoService,
-        instanceSyncPerpetualTaskService, serviceEntityService, environmentService);
+        instanceSyncPerpetualTaskService, serviceEntityService, environmentService, accountClient);
     instanceSyncService = new InstanceSyncServiceImpl(persistentLocker, instanceSyncPerpetualTaskService,
         instanceSyncPerpetualTaskInfoService, instanceSyncPerpetualTaskMappingService,
         instanceSyncHandlerFactoryService, infrastructureMappingService, instanceService, deploymentSummaryService,
