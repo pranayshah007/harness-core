@@ -28,28 +28,54 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.AcrArtifactOutcome")
 public class AcrArtifactOutcome implements ArtifactOutcome {
-  /** ACR registry connector. */
+  /**
+   * ACR registry connector.
+   */
   String connectorRef;
-  /** subscription to which ACR registry belongs to. */
+  /**
+   * subscription to which ACR registry belongs to.
+   */
   String subscription;
-  /** registry name withing ACR. */
+  /**
+   * registry name withing ACR.
+   */
   String registry;
-  /** repository path. */
+  /**
+   * repository path.
+   */
   String repository;
-  /** Tag refers to exact tag number. */
+  /**
+   * Tag refers to exact tag number.
+   */
   String tag;
-  /** Tag regex is used to get latest build from builds matching regex. */
+  /**
+   * Tag regex is used to get latest build from builds matching regex.
+   */
   String tagRegex;
-  /** Identifier for artifact. */
+  /**
+   * Identifier for artifact.
+   */
   String identifier;
-  /** Artifact type. */
+  /**
+   * Artifact type.
+   */
   String type;
-  /** Whether this config corresponds to primary artifact.*/
+  /**
+   * Whether this config corresponds to primary artifact.
+   */
   boolean primaryArtifact;
-  /** registryHostName/imagePath:tag */
+  /**
+   * registryHostName/imagePath:tag
+   */
   String image;
-  /** imagePullSecret for Gcr credentials base encoded.*/
+  /**
+   * imagePullSecret for Gcr credentials base encoded.
+   */
   String imagePullSecret;
+  /**
+   * dockerConfigJson for docker credentials base encoded.
+   */
+  String dockerConfigJsonSecret;
 
   @Override
   public ArtifactSummary getArtifactSummary() {
