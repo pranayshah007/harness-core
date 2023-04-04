@@ -26,6 +26,7 @@ import io.harness.delegate.events.DelegateNgTokenCreateEvent;
 import io.harness.delegate.events.DelegateNgTokenRevokeEvent;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
+import io.harness.delegate.utils.DelegateTokenCacheHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
@@ -61,13 +62,15 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   private final HPersistence persistence;
   private final OutboxService outboxService;
   private final DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt;
+  private final DelegateTokenCacheHelper delegateTokenCacheHelper;
 
   @Inject
-  public DelegateNgTokenServiceImpl(
-      HPersistence persistence, OutboxService outboxService, DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt) {
+  public DelegateNgTokenServiceImpl(HPersistence persistence, OutboxService outboxService,
+      DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt, DelegateTokenCacheHelper delegateTokenCacheHelper) {
     this.persistence = persistence;
     this.outboxService = outboxService;
     this.delegateTokenEncryptDecrypt = delegateTokenEncryptDecrypt;
+    this.delegateTokenCacheHelper = delegateTokenCacheHelper;
   }
 
   @Override
@@ -125,7 +128,9 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
     publishRevokeTokenAuditEvent(updatedDelegateToken);
 
-    return getDelegateTokenDetails(updatedDelegateToken, false);
+    DelegateTokenDetails delegateTokenDetails = getDelegateTokenDetails(updatedDelegateToken, false);
+    delegateTokenCacheHelper.invalidateDelegateTokenCache(updatedDelegateToken);
+    return delegateTokenDetails;
   }
 
   @Override
