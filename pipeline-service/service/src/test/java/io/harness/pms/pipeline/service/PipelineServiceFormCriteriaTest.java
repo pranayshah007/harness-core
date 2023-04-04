@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -33,6 +34,7 @@ import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.pipeline.gitsync.PipelineEntityGitSyncHelper;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
@@ -68,6 +70,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
   @Inject private PipelineMetadataService pipelineMetadataService;
 
   @Mock private PipelineSettingsService pipelineSettingsService;
+  @Mock PipelineEntityGitSyncHelper pipelineEntityGitSyncHelper;
   @InjectMocks private PMSPipelineServiceImpl pmsPipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
 
@@ -129,6 +132,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(TemplateMergeResponseDTO.builder().build())
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(any(), anyBoolean(), anyBoolean());
+    doNothing().when(pipelineEntityGitSyncHelper).enforceGitExperienceIfApplicable(any(), any(), any(), any());
     MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
     aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))

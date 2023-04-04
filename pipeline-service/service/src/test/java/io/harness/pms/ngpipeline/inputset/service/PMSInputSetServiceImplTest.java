@@ -66,6 +66,7 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.pipeline.MoveConfigOperationType;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.gitsync.PipelineEntityGitSyncHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.inputset.PMSInputSetRepository;
@@ -109,6 +110,8 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   @Mock private GitAwareEntityHelper gitAwareEntityHelper;
   @Mock private PMSPipelineService pipelineService;
   @Mock private InputSetsApiUtils inputSetsApiUtils;
+  @Inject
+  PipelineEntityGitSyncHelper pipelineEntityGitSyncHelper;
 
   String ACCOUNT_ID = "account_id";
   String ORG_IDENTIFIER = "orgId";
