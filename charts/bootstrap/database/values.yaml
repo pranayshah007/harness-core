@@ -54,6 +54,7 @@ postgresql:
     # Additional init can be added using a configmap
     # primary.initdb.scriptsConfigMap
     database: overops
+    existingSecret: "postgres"
   commonLabels:
     app: postgres
   primary:
