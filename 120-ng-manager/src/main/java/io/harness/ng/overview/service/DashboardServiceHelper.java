@@ -696,7 +696,7 @@ public class DashboardServiceHelper {
         if (artifactDeploymentDetail == null) {
           continue;
         }
-        if(!environmentFilterPropertiesDTO.getEnvironmentTypes().contains(envType)) {
+        if(environmentFilterPropertiesDTO != null && !environmentFilterPropertiesDTO.getEnvironmentTypes().contains(envType)) {
           continue;
         }
         environmentGroupInstanceDetailList.add(EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
