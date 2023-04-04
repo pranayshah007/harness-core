@@ -47,6 +47,7 @@ public class ContainerExecutionConstants {
 
   public static final Integer LITE_ENGINE_CONTAINER_MEM = 100;
   public static final Integer DEFAULT_CONTAINER_MEM_POV = 3000;
+  public static final Integer DEFAULT_CONTAINER_CPU_POV = 1000;
   public static final Integer LITE_ENGINE_CONTAINER_CPU = 100;
   public static final String DELEGATE_SERVICE_ENDPOINT_VARIABLE = "DELEGATE_SERVICE_ENDPOINT";
   public static final String DELEGATE_SERVICE_ID_VARIABLE = "DELEGATE_SERVICE_ID";
@@ -89,4 +90,7 @@ public class ContainerExecutionConstants {
   public static final String GOLANG_CACHE_DIR = "/harness/.go/";
   public static final String GRADLE_CACHE_ENV_NAME = "GRADLE_USER_HOME";
   public static final String GRADLE_CACHE_DIR = "/harness/.gradle/";
+
+  public static final String MEMORY = "MEMORY";
+  public static final String CPU = "CPU";
 }
