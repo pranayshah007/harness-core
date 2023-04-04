@@ -193,11 +193,12 @@ public abstract class WorkflowHandler {
     return JsonPipelineUtils.asTree(whenCondition);
   }
 
-  public List<NGVariable> getVariables(Workflow workflow) {
+  public List<NGVariable> getVariables(MigrationContext context, Workflow workflow) {
     List<Variable> variables = workflow.getOrchestrationWorkflow().getUserVariables();
     if (EmptyPredicate.isEmpty(variables)) {
       return new ArrayList<>();
     }
+    MigratorExpressionUtils.render(context, workflow, new HashMap<>());
     return variables.stream()
         .filter(variable -> variable.getType() != VariableType.ENTITY)
         .map(variable
@@ -660,7 +661,7 @@ public abstract class WorkflowHandler {
                                            .put("type", "Deployment")
                                            .put("spec", getDeploymentStageConfig(context, steps, rollbackSteps))
                                            .put("failureStrategies", getDefaultFailureStrategy(context))
-                                           .put("variables", getVariables(context.getWorkflow()))
+                                           .put("variables", getVariables(migrationContext, context.getWorkflow()))
                                            .put("when", getSkipCondition())
                                            .build();
     return JsonPipelineUtils.asTree(templateSpec);
@@ -706,7 +707,7 @@ public abstract class WorkflowHandler {
                                            .put("type", "Custom")
                                            .put("spec", customStageConfig)
                                            .put("failureStrategies", getDefaultFailureStrategy(context))
-                                           .put("variables", getVariables(workflow))
+                                           .put("variables", getVariables(migrationContext, workflow))
                                            .put("when", getSkipCondition())
                                            .build();
     return JsonPipelineUtils.asTree(templateSpec);
@@ -828,7 +829,7 @@ public abstract class WorkflowHandler {
             .put("type", "Deployment")
             .put("spec", getDeploymentStageConfig(context, stepGroupWrappers, rollbackStepGroupWrappers))
             .put("failureStrategies", getDefaultFailureStrategy(context))
-            .put("variables", getVariables(context.getWorkflow()))
+            .put("variables", getVariables(migrationContext, context.getWorkflow()))
             .put("when", getSkipCondition())
             .build();
     return JsonPipelineUtils.asTree(templateSpec);
@@ -902,8 +903,10 @@ public abstract class WorkflowHandler {
 
   JsonNode buildMultiStagePipelineTemplate(MigrationContext migrationContext, WorkflowMigrationContext context) {
     List<StageElementWrapperConfig> stages = getStagesForMultiServiceWorkflow(migrationContext, context);
-    PipelineInfoConfig pipelineInfoConfig =
-        PipelineInfoConfig.builder().stages(stages).variables(getVariables(context.getWorkflow())).build();
+    PipelineInfoConfig pipelineInfoConfig = PipelineInfoConfig.builder()
+                                                .stages(stages)
+                                                .variables(getVariables(migrationContext, context.getWorkflow()))
+                                                .build();
     return JsonPipelineUtils.asTree(pipelineInfoConfig);
   }
 }
