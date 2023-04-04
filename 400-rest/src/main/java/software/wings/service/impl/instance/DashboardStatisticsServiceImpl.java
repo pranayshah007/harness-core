@@ -10,7 +10,6 @@ package software.wings.service.impl.instance;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
-import static io.harness.beans.FeatureName.SPG_DASHBOARD_PROJECTION;
 import static io.harness.beans.FeatureName.SPG_SERVICES_OVERVIEW_RBAC;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
@@ -1171,12 +1170,10 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       finalPageRequest = pageRequest;
     }
 
-    if (featureFlagService.isEnabled(SPG_DASHBOARD_PROJECTION, accountId)) {
-      List<String> fieldsExcluded = Arrays.asList(WorkflowExecutionKeys.breakdown, WorkflowExecutionKeys.stateMachine,
-          WorkflowExecutionKeys.rejectedByFreezeWindowIds, WorkflowExecutionKeys.rejectedByFreezeWindowNames,
-          WorkflowExecutionKeys.statusInstanceBreakdownMap, WorkflowExecutionKeys.tags);
-      finalPageRequest.setFieldsExcluded(fieldsExcluded);
-    }
+    List<String> fieldsExcluded = Arrays.asList(WorkflowExecutionKeys.breakdown, WorkflowExecutionKeys.stateMachine,
+        WorkflowExecutionKeys.rejectedByFreezeWindowIds, WorkflowExecutionKeys.rejectedByFreezeWindowNames,
+        WorkflowExecutionKeys.statusInstanceBreakdownMap, WorkflowExecutionKeys.tags);
+    finalPageRequest.setFieldsExcluded(fieldsExcluded);
     finalPageRequest.setOptions(Collections.singletonList(PageRequest.Option.SKIPCOUNT));
 
     Optional<Integer> retentionPeriodInDays =

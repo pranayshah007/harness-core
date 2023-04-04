@@ -40,7 +40,6 @@ import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUT
 import static io.harness.beans.FeatureName.SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE;
 import static io.harness.beans.FeatureName.SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS;
 import static io.harness.beans.FeatureName.SPG_SAVE_REJECTED_BY_FREEZE_WINDOWS;
-import static io.harness.beans.FeatureName.SPG_WFE_OPTIMIZE_UPDATE_PIPELINE_ESTIMATES;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.FeatureName.WORKFLOW_EXECUTION_REFRESH_STATUS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -1222,9 +1221,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                                   .withLimit("5")
                                   .build();
 
-    if (featureFlagService.isEnabled(SPG_WFE_OPTIMIZE_UPDATE_PIPELINE_ESTIMATES, workflowExecution.getAccountId())) {
-      pageRequest.addFieldsIncluded(WorkflowExecutionKeys.pipelineExecution);
-    }
+    pageRequest.addFieldsIncluded(WorkflowExecutionKeys.pipelineExecution);
 
     List<WorkflowExecution> workflowExecutions = wingsPersistence.queryAnalytics(WorkflowExecution.class, pageRequest);
     // Adding check for pse.getStateUuid() == null for backward compatibility. Can be removed later

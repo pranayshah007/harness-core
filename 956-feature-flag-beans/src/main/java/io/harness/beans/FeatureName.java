@@ -515,13 +515,11 @@ public enum FeatureName {
   CIE_HOSTED_VMS_MAC("FF for enabling hosted builds for mac os", HarnessTeam.CI),
   SPG_DELETE_ENVIRONMENTS_ON_SERVICE_RENAME_GIT_SYNC(
       "On service rename delete stale folders inside environments folders.", HarnessTeam.SPG),
-  SPG_DASHBOARD_PROJECTION("Enables projection on CG Dashboard", HarnessTeam.SPG),
   PL_HIDE_LAUNCH_NEXTGEN("FF to hide Launch NextGen button", HarnessTeam.PL),
   PL_LDAP_PARALLEL_GROUP_SYNC(
       "Enables User Group sync operation to fetch data from Ldap Server in Parallel. Enable only if Ldap Server can take the load",
       HarnessTeam.PL),
   CDS_TAS_NG("FF for enabling TAS deployment in NG", HarnessTeam.CDP),
-  SPG_WFE_OPTIMIZE_UPDATE_PIPELINE_ESTIMATES("Optimization for updatePipelineEstimates method", HarnessTeam.SPG),
   CDS_OrgAccountLevelServiceEnvEnvGroup(
       "Support Creation and Use of Org and Account level Services and Environments", HarnessTeam.CDC),
   CE_NET_AMORTISED_COST_ENABLED("Enable cost calculation through Net Amortised cost", HarnessTeam.CE),
