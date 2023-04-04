@@ -75,7 +75,11 @@ public class FreezeTimeUtils {
       if (freezeWindow.getRecurrence().getSpec() == null) {
         until = getLocalDateTime(RecurrenceType.YEARLY, firstWindowEndTime, 5);
       } else {
-        until = LocalDateTime.parse(freezeWindow.getRecurrence().getSpec().getUntil(), dtf);
+        if (freezeWindow.getRecurrence().getSpec().getUntil() == null) {
+          until = getLocalDateTime(RecurrenceType.YEARLY, firstWindowEndTime, 5);
+        } else {
+          until = LocalDateTime.parse(freezeWindow.getRecurrence().getSpec().getUntil(), dtf);
+        }
       }
       Long lastWindowEndTimeEpoch = getEpochValueFromDateString(until, timeZone);
       if (getCurrentTime() > lastWindowEndTimeEpoch) {
@@ -148,7 +152,11 @@ public class FreezeTimeUtils {
     if (freezeWindow.getRecurrence().getSpec() == null) {
       until = getLocalDateTime(RecurrenceType.YEARLY, firstWindowEndTime, 5);
     } else {
-      until = LocalDateTime.parse(freezeWindow.getRecurrence().getSpec().getUntil(), dtf);
+      if (freezeWindow.getRecurrence().getSpec().getUntil() == null) {
+        until = getLocalDateTime(RecurrenceType.YEARLY, firstWindowEndTime, 5);
+      } else {
+        until = LocalDateTime.parse(freezeWindow.getRecurrence().getSpec().getUntil(), dtf);
+      }
     }
     Long lastWindowEndTimeEpoch = getEpochValueFromDateString(until, timeZone);
     if (getCurrentTime() > lastWindowEndTimeEpoch) {
