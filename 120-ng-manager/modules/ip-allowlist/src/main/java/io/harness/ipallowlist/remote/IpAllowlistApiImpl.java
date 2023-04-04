@@ -7,6 +7,10 @@
 
 package io.harness.ipallowlist.remote;
 
+import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.ipallowlist.IPAllowlistResourceUtil;
+import io.harness.ipallowlist.entity.IPAllowlistEntity;
+import io.harness.ipallowlist.service.IPAllowlistService;
 import io.harness.spec.server.ng.v1.IpAllowlistApi;
 import io.harness.spec.server.ng.v1.model.IPAllowlistConfigRequest;
 
@@ -22,9 +26,21 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class IpAllowlistApiImpl implements IpAllowlistApi {
+  @Inject private final IPAllowlistService ipAllowlistService;
+  @Inject private final IPAllowlistResourceUtil ipAllowlistResourceUtil;
+  @Inject private final AccessControlClient accessControlClient;
+
+  //  @NGAccessControlCheck(resourceType = ORGANIZATION, permission = CREATE_ORGANIZATION_PERMISSION)
   @Override
-  public Response createIpAllowlistConfig(@Valid IPAllowlistConfigRequest body, String harnessAccount) {
-    return null;
+  public Response createIpAllowlistConfig(
+      @Valid IPAllowlistConfigRequest ipAllowlistConfigRequest, String accountIdentifier) {
+    IPAllowlistEntity ipAllowlistEntity =
+        ipAllowlistResourceUtil.toIPAllowlistEntity(ipAllowlistConfigRequest.getIpAllowlistConfig(), accountIdentifier);
+    IPAllowlistEntity createdIpAllowlistEntity = ipAllowlistService.create(ipAllowlistEntity);
+
+    return Response.status(Response.Status.CREATED)
+        .entity(ipAllowlistResourceUtil.toIPAllowlistConfigResponse(createdIpAllowlistEntity))
+        .build();
   }
 
   @Override
