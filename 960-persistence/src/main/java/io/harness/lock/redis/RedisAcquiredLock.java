@@ -28,9 +28,9 @@ public class RedisAcquiredLock implements AcquiredLock<RLock> {
   @Override
   public void release() {
     log.info("Releasing lock");
-    if (lock != null && (lock.isLocked() || isLeaseInfinite)) {
+    if (lock != null) {
       log.info("Releasing lock - Check for lock.isLocked() passed");
-      lock.unlock();
+      lock.unlockAsync();
     }
     log.info("Released Lock");
   }
