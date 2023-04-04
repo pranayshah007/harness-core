@@ -13,6 +13,8 @@ import lombok.Value;
 @Value
 @Builder
 public class ArtifactDeploymentDetail {
+  String envName;
+  String envId;
   String artifact;
   long lastDeployedAt;
 }

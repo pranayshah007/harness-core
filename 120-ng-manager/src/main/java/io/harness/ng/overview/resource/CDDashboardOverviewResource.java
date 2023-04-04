@@ -31,6 +31,7 @@ import io.harness.ng.core.dashboard.DeploymentsInfo;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummary;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummaryV2;
@@ -40,6 +41,7 @@ import io.harness.ng.overview.dto.DashboardWorkloadDeploymentV2;
 import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
 import io.harness.ng.overview.dto.EnvIdCountPair;
 import io.harness.ng.overview.dto.EnvironmentDeploymentInfo;
+import io.harness.ng.overview.dto.EnvironmentGroupInstanceDetails;
 import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
 import io.harness.ng.overview.dto.HealthDeploymentDashboard;
@@ -75,6 +77,10 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -543,13 +549,16 @@ public class CDDashboardOverviewResource {
       value = "Get instance count and last artifact deployment detail in each environment for a particular service",
       nickname = "getEnvironmentInstanceDetails")
   @Hidden
-  public ResponseDTO<EnvironmentInstanceDetails>
+  public ResponseDTO<EnvironmentGroupInstanceDetails>
   getEnvironmentInstanceDetails(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId
+          , @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier,
+                                @RequestBody(description = "This is the body for the filter properties for listing environments.")
+                                        EnvironmentFilterPropertiesDTO filterProperties) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getEnvironmentInstanceDetails(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, filterIdentifier, filterProperties));
   }
 
   @GET

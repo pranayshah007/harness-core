@@ -21,6 +21,7 @@ import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.BuildsByEnvironment;
 import io.harness.models.EnvBuildInstanceCount;
+import io.harness.models.EnvironmentInstanceCountAndEnvironmentGroupModel;
 import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.models.InstanceDTOsByBuildId;
 import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
@@ -212,6 +213,18 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
     List<EnvironmentInstanceCountModel> environmentInstanceCounts = new ArrayList<>();
     environmentInstanceCountAggregationResults.forEach(
         environmentInstanceCount -> { environmentInstanceCounts.add(environmentInstanceCount); });
+    return environmentInstanceCounts;
+  }
+
+  @Override
+  public List<EnvironmentInstanceCountAndEnvironmentGroupModel> getInstanceCountAndEnvironmentGroupForEnvironmentFilteredByService(String accountIdentifier,
+                                                                                                                                   String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isGitOps) {
+    AggregationResults<EnvironmentInstanceCountAndEnvironmentGroupModel> environmentInstanceCountAndEnvironmentGroupModels =
+            instanceService.getInstanceCountAndEnvironmentGroupForEnvironmentFilteredByService(
+                    accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isGitOps);
+    List<EnvironmentInstanceCountAndEnvironmentGroupModel> environmentInstanceCounts = new ArrayList<>();
+    environmentInstanceCountAndEnvironmentGroupModels.forEach(
+            environmentInstanceCount -> { environmentInstanceCounts.add(environmentInstanceCount); });
     return environmentInstanceCounts;
   }
 

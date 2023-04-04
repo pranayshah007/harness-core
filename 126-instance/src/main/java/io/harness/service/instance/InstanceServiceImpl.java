@@ -24,6 +24,7 @@ import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
+import io.harness.models.EnvironmentInstanceCountAndEnvironmentGroupModel;
 import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.models.InstanceGroupedByPipelineExecution;
 import io.harness.models.InstancesByBuildId;
@@ -248,6 +249,13 @@ public class InstanceServiceImpl implements InstanceService {
       boolean isGitOps) {
     return instanceRepository.getInstanceCountForEnvironmentFilteredByService(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isGitOps);
+  }
+
+  public AggregationResults<EnvironmentInstanceCountAndEnvironmentGroupModel> getInstanceCountAndEnvironmentGroupForEnvironmentFilteredByService(
+          String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+          boolean isGitOps) {
+    return instanceRepository.getInstanceCountAndEnvironmentGroupForEnvironmentFilteredByService(
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isGitOps);
   }
 
   /*

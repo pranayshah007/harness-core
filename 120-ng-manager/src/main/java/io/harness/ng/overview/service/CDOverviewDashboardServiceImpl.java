@@ -15,6 +15,7 @@ import static io.harness.NGDateUtils.getStartTimeOfTheDayAsEpoch;
 import static io.harness.event.timeseries.processor.utils.DateUtils.getCurrentTime;
 import static io.harness.ng.core.activityhistory.dto.TimeGroupType.DAY;
 import static io.harness.ng.core.activityhistory.dto.TimeGroupType.HOUR;
+import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import io.harness.NGDateUtils;
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,6 +23,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cd.CDDashboardServiceHelper;
 import io.harness.cd.NGPipelineSummaryCDConstants;
 import io.harness.cd.NGServiceConstants;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.services.EnvironmentGroupServiceImpl;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.event.timeseries.processor.utils.DateUtils;
 import io.harness.exception.InvalidRequestException;
@@ -30,6 +33,7 @@ import io.harness.models.ActiveServiceInstanceInfoV2;
 import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.EnvBuildInstanceCount;
+import io.harness.models.EnvironmentInstanceCountAndEnvironmentGroupModel;
 import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsByBuildId;
@@ -46,6 +50,7 @@ import io.harness.ng.core.dashboard.GitInfo;
 import io.harness.ng.core.dashboard.InfrastructureInfo;
 import io.harness.ng.core.dashboard.ServiceDeploymentInfo;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
 import io.harness.ng.core.mapper.TagMapper;
@@ -73,8 +78,8 @@ import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfo;
 import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
 import io.harness.ng.overview.dto.EnvIdCountPair;
 import io.harness.ng.overview.dto.EnvironmentDeploymentInfo;
+import io.harness.ng.overview.dto.EnvironmentGroupInstanceDetails;
 import io.harness.ng.overview.dto.EnvironmentInfoByServiceId;
-import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.ExecutionDeployment;
 import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
 import io.harness.ng.overview.dto.HealthDeploymentDashboard;
@@ -145,6 +150,9 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
@@ -155,6 +163,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Inject InstanceDashboardService instanceDashboardService;
   @Inject ServiceEntityService serviceEntityServiceImpl;
   @Inject EnvironmentServiceImpl environmentService;
+  @Inject EnvironmentGroupServiceImpl environmentGroupService;
 
   private String tableNameCD = "pipeline_execution_summary_cd";
   private String tableNameServiceAndInfra = "service_infra_info";
@@ -2851,11 +2860,11 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   }
 
   @Override
-  public EnvironmentInstanceDetails getEnvironmentInstanceDetails(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+  public EnvironmentGroupInstanceDetails getEnvironmentInstanceDetails(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier, String filterIdentifier, EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO) {
     Boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
-    List<EnvironmentInstanceCountModel> environmentInstanceCounts =
-        instanceDashboardService.getInstanceCountForEnvironmentFilteredByService(
+    List<EnvironmentInstanceCountAndEnvironmentGroupModel> environmentInstanceCounts =
+        instanceDashboardService.getInstanceCountAndEnvironmentGroupForEnvironmentFilteredByService(
             accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isGitOps);
 
     List<String> envIds = new ArrayList<>();
@@ -2867,16 +2876,40 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         accountIdentifier, orgIdentifier, projectIdentifier, envIds);
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, EnvironmentType> envIdToEnvTypeMap = new HashMap<>();
-
+    List<EnvironmentGroupEntity> environmentGroupEntities = null;
     DashboardServiceHelper.constructEnvironmentNameAndTypeMap(environments, envIdToEnvNameMap, envIdToEnvTypeMap);
 
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetails = instanceDashboardService.getLastDeployedInstance(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, true, isGitOps);
     Map<String, ArtifactDeploymentDetail> artifactDeploymentDetailsMap =
-        DashboardServiceHelper.constructEnvironmentToArtifactDeploymentMap(artifactDeploymentDetails);
+        DashboardServiceHelper.constructEnvironmentToArtifactDeploymentMap(artifactDeploymentDetails, envIdToEnvNameMap);
+
+    Criteria criteria = environmentGroupService.formCriteria(accountIdentifier, orgIdentifier, projectIdentifier, false,
+            "", "", null,
+            true);
+
+    Page<EnvironmentGroupEntity> environmentGroupEntitiesPage =
+            environmentGroupService.list(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier);
+    if (environmentGroupEntitiesPage != null) {
+      environmentGroupEntities = environmentGroupEntitiesPage.getContent();
+    }
+
+    Map<String, Set<String>> environmentGroupIdToEnvNamesMap = new HashMap<>();
+    Set<String> environmentsNotLinkedToAnyEnvironmentGroup = new HashSet<>();
+    for(EnvironmentInstanceCountAndEnvironmentGroupModel environmentInstanceCountAndEnvironmentGroupModel: environmentInstanceCounts) {
+      if(EmptyPredicate.isNotEmpty(environmentInstanceCountAndEnvironmentGroupModel.getEnvGroupRef())) {
+        if(environmentGroupIdToEnvNamesMap.containsKey(environmentInstanceCountAndEnvironmentGroupModel.getEnvGroupRef())) {
+          environmentGroupIdToEnvNamesMap.get(environmentInstanceCountAndEnvironmentGroupModel.getEnvGroupRef()).add(environmentInstanceCountAndEnvironmentGroupModel.getEnvIdentifier());
+        } else {
+          environmentGroupIdToEnvNamesMap.put(environmentInstanceCountAndEnvironmentGroupModel.getEnvGroupRef(), new ArrayList<>(Arrays.asList(environmentInstanceCountAndEnvironmentGroupModel.getEnvIdentifier())));
+        }
+      } else {
+        environmentsNotLinkedToAnyEnvironmentGroup.add(environmentInstanceCountAndEnvironmentGroupModel.getEnvIdentifier());
+      }
+    }
 
     return DashboardServiceHelper.getEnvironmentInstanceDetailsFromMap(
-        artifactDeploymentDetailsMap, envToCountMap, envIdToEnvNameMap, envIdToEnvTypeMap);
+        artifactDeploymentDetailsMap, envToCountMap, envIdToEnvNameMap, envIdToEnvTypeMap, environmentGroupEntities, environmentFilterPropertiesDTO);
   }
 
   @Override
