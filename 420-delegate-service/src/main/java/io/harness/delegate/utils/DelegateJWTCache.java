@@ -48,4 +48,10 @@ public class DelegateJWTCache {
       readWriteLock.readLock().unlock();
     }
   }
+
+  public void inValidateDelegateTokenJWTCache(String cacheKey) {
+    if (delegateJWTCache.getIfPresent(cacheKey) != null) {
+      delegateJWTCache.invalidate(cacheKey);
+    }
+  }
 }

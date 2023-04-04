@@ -20,6 +20,7 @@ import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenDetails.DelegateTokenDetailsBuilder;
 import io.harness.delegate.beans.DelegateTokenStatus;
+import io.harness.delegate.utils.DelegateJWTCache;
 import io.harness.delegate.utils.DelegateTokenCacheHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
@@ -41,6 +42,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.DEL)
@@ -50,6 +52,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
   @Inject private AuditServiceHelper auditServiceHelper;
   @Inject private DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt;
   @Inject private DelegateTokenCacheHelper delegateTokenCacheHelper;
+  @Inject private DelegateJWTCache delegateJWTCache;
 
   private static final String DEFAULT_TOKEN_NAME = "default";
 
@@ -118,6 +121,8 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
     auditServiceHelper.reportForAuditingUsingAccountId(
         accountId, originalDelegateToken, updatedDelegateToken, Event.Type.UPDATE);
     delegateTokenCacheHelper.invalidateDelegateTokenCache(updatedDelegateToken);
+    final String tokenHash = DigestUtils.md5Hex(delegateTokenEncryptDecrypt.decrypt(updatedDelegateToken));
+    delegateJWTCache.inValidateDelegateTokenJWTCache(tokenHash);
   }
 
   @Override
