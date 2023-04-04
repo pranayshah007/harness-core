@@ -9,7 +9,6 @@ package io.harness.delegate.task.artifacts.s3;
 
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.aws.beans.AwsInternalConfig;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
@@ -54,24 +53,14 @@ public class S3ArtifactTaskHandler extends DelegateArtifactTaskHandler<S3Artifac
 
     AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
 
-    BuildDetails buildDetails = new BuildDetails();
+    BuildDetails buildDetails;
 
-    if (EmptyPredicate.isNotEmpty(filePath)) {
-      List<BuildDetails> builds = awsApiHelperService.listBuilds(
-          awsInternalConfig, s3ArtifactDelegateRequest.getRegion(), s3ArtifactDelegateRequest.getBucketName(), "*");
-
-      for (BuildDetails b : builds) {
-        if (b.getArtifactPath().equals(filePath)) {
-          buildDetails = b;
-
-          break;
-        }
-      }
-
-      if (!filePath.equals(buildDetails.getArtifactPath())) {
+    if (StringUtils.isNotBlank(filePath)) {
+      buildDetails = awsApiHelperService.getBuild(awsInternalConfig, s3ArtifactDelegateRequest.getRegion(),
+          s3ArtifactDelegateRequest.getBucketName(), filePath);
+      if (buildDetails == null || !filePath.equals(buildDetails.getArtifactPath())) {
         throw new InvalidRequestException("No build exist for the given file path.");
       }
-
     } else {
       List<BuildDetails> builds =
           awsApiHelperService.listBuilds(awsInternalConfig, s3ArtifactDelegateRequest.getRegion(),

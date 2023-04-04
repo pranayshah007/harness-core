@@ -113,8 +113,6 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class AwsApiHelperService {
-  private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
-
   @Inject private AwsCallTracker tracker;
   @Inject private KryoSerializer kryoSerializer;
 
@@ -125,11 +123,13 @@ public class AwsApiHelperService {
     attachCredentialsAndBackoffPolicy(builder, awsConfig);
     return (AmazonECRClient) builder.build();
   }
+
   public AmazonEC2Client getAmazonEc2Client(AwsInternalConfig awsConfig) {
     AmazonEC2ClientBuilder builder = AmazonEC2ClientBuilder.standard().withRegion(getRegion(awsConfig));
     attachCredentialsAndBackoffPolicy(builder, awsConfig);
     return (AmazonEC2Client) builder.build();
   }
+
   public AmazonS3Client getAmazonS3Client(AwsInternalConfig awsConfig, String region) {
     AmazonS3ClientBuilder builder =
         AmazonS3ClientBuilder.standard().withRegion(region).withForceGlobalBucketAccessEnabled(Boolean.TRUE);
@@ -164,6 +164,7 @@ public class AwsApiHelperService {
     }
     return emptyList();
   }
+
   public ListImagesResult listEcrImages(
       AwsInternalConfig awsConfig, String region, ListImagesRequest listImagesRequest) {
     return getAmazonEcrClient(awsConfig, region).listImages(listImagesRequest);
@@ -380,12 +381,12 @@ public class AwsApiHelperService {
   private BuildDetails getArtifactBuildDetails(AwsInternalConfig awsInternalConfig, String bucketName, String key,
       boolean versioningEnabledForBucket, long artifactFileSize, String region) {
     String versionId = null;
-
+    ObjectMetadata objectMetadata = getObjectMetadataFromS3(awsInternalConfig, bucketName, key, region);
+    if (objectMetadata == null) {
+      throw new InvalidRequestException("The provided key does not exist");
+    }
     if (versioningEnabledForBucket) {
-      ObjectMetadata objectMetadata = getObjectMetadataFromS3(awsInternalConfig, bucketName, key, region);
-      if (objectMetadata != null) {
-        versionId = key + ":" + objectMetadata.getVersionId();
-      }
+      versionId = key + ":" + objectMetadata.getVersionId();
     }
 
     if (versionId == null) {
@@ -663,13 +664,5 @@ public class AwsApiHelperService {
     }
 
     objectSummaryList.sort((o1, o2) -> o2.getLastModified().compareTo(o1.getLastModified()));
-  }
-
-  private static void sortAscending(List<S3ObjectSummary> objectSummaryList) {
-    if (EmptyPredicate.isEmpty(objectSummaryList)) {
-      return;
-    }
-
-    objectSummaryList.sort((o1, o2) -> o1.getLastModified().compareTo(o2.getLastModified()));
   }
 }
