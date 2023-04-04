@@ -124,8 +124,11 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
     logCallback.saveExecutionLog(
         color(String.format("Release Name: [%s]", rollbackRequest.getReleaseName()), Yellow, Bold));
 
-    rollbackHandlerConfig.setKubernetesConfig(containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        rollbackRequest.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), logCallback));
+    rollbackHandlerConfig.setKubernetesConfig(
+        containerDeploymentDelegateBaseHelper.createKubernetesConfig(rollbackRequest.getK8sInfraDelegateConfig(),
+            getEnvironmentVariablesForKubeconfigExecFormat(
+                k8sDelegateTaskParams.getGcpKeyFilePath(), k8sDelegateTaskParams.getWorkingDirectory()),
+            logCallback));
     rollbackHandlerConfig.setClient(
         Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
     rollbackHandlerConfig.setUseDeclarativeRollback(rollbackRequest.isUseDeclarativeRollback());

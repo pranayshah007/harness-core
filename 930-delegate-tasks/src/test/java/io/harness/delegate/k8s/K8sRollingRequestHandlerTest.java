@@ -111,7 +111,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
 
     doReturn(KubernetesConfig.builder().namespace("default").build())
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(any(K8sInfraDelegateConfig.class), anyString(), any(LogCallback.class));
+        .createKubernetesConfig(any(K8sInfraDelegateConfig.class), any(), any(LogCallback.class));
 
     doReturn(releaseHandler).when(taskHelperBase).getReleaseHandler(anyBoolean());
     doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());

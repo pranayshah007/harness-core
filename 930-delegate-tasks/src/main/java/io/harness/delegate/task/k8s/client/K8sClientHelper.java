@@ -17,6 +17,7 @@ import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.steadystate.model.K8sEventWatchDTO;
 import io.harness.k8s.steadystate.model.K8sStatusWatchDTO;
 import io.harness.logging.LogCallback;
@@ -85,9 +86,9 @@ public class K8sClientHelper {
   }
 
   ApiClient createKubernetesApiClient(
-      K8sInfraDelegateConfig k8sInfraDelegateConfig, String workingDirectory, LogCallback logCallback) {
+      K8sInfraDelegateConfig k8sInfraDelegateConfig, List<EnvVariable> envVariableList, LogCallback logCallback) {
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        k8sInfraDelegateConfig, workingDirectory, logCallback);
+        k8sInfraDelegateConfig, envVariableList, logCallback);
     return kubernetesHelperService.getApiClient(kubernetesConfig);
   }
 

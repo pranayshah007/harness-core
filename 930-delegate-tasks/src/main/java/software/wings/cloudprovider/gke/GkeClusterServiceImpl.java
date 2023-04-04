@@ -12,6 +12,7 @@ import static io.harness.eraro.ErrorCode.INVALID_ARGUMENT;
 import io.harness.delegate.task.gcp.helpers.GkeClusterHelper;
 import io.harness.exception.WingsException;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.GcpConfig;
@@ -20,6 +21,7 @@ import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -55,17 +57,25 @@ public class GkeClusterServiceImpl implements GkeClusterService {
   public KubernetesConfig getCluster(SettingAttribute computeProviderSetting,
       List<EncryptedDataDetail> encryptedDataDetails, String locationClusterName, String namespace,
       boolean isInstanceSync) {
+    return getCluster(computeProviderSetting, encryptedDataDetails, locationClusterName, namespace, isInstanceSync,
+        new ArrayList<>());
+  }
+
+  @Override
+  public KubernetesConfig getCluster(SettingAttribute computeProviderSetting,
+      List<EncryptedDataDetail> encryptedDataDetails, String locationClusterName, String namespace,
+      boolean isInstanceSync, List<EnvVariable> envVariableList) {
     GcpConfig gcpConfig = validateAndGetCredentials(computeProviderSetting);
-    return getCluster(gcpConfig, encryptedDataDetails, locationClusterName, namespace, isInstanceSync);
+    return getCluster(gcpConfig, encryptedDataDetails, locationClusterName, namespace, isInstanceSync, envVariableList);
   }
 
   @Override
   public KubernetesConfig getCluster(GcpConfig gcpConfig, List<EncryptedDataDetail> encryptedDataDetails,
-      String locationClusterName, String namespace, boolean isInstanceSync) {
+      String locationClusterName, String namespace, boolean isInstanceSync, List<EnvVariable> envVariableList) {
     // Decrypt gcpConfig
     encryptionService.decrypt(gcpConfig, encryptedDataDetails, isInstanceSync);
     return gkeClusterHelper.getCluster(gcpConfig.getServiceAccountKeyFileContent(), gcpConfig.isUseDelegateSelectors(),
-        locationClusterName, namespace);
+        locationClusterName, namespace, envVariableList);
   }
 
   @Override

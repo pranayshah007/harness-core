@@ -49,7 +49,7 @@ public class HelmCommandCapabilityCheckTest extends WingsBaseTest {
   public void performCapabilityCheck() {
     HelmCommandRequest commandRequest = HelmInstallCommandRequest.builder().helmVersion(HelmVersion.V3).build();
     HelmCommandResponse helmCommandResponse = new HelmCommandResponse(CommandExecutionStatus.SUCCESS, "");
-    when(containerDeploymentDelegateHelper.createAndGetKubeConfigLocation(any())).thenReturn("kubeConfig");
+    when(containerDeploymentDelegateHelper.createAndGetKubeConfigLocation(any(), any())).thenReturn("kubeConfig");
     when(helmDeployService.ensureHelmInstalled(commandRequest)).thenReturn(helmCommandResponse);
     CapabilityResponse response = helmCommandCapabilityCheck.performCapabilityCheck(
         HelmCommandCapability.builder().commandRequest(commandRequest).build());

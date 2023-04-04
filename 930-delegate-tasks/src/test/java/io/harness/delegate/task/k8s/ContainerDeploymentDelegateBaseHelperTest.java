@@ -57,6 +57,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -73,6 +74,8 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.extensions.DaemonSet;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +104,9 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
 
   @Spy @InjectMocks ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
   private static final String WORK_DIR = "./repository/k8s";
+  private static final String GOOGLE_APPLICATION_CREDENTIALS = "manifest";
+  private final List<EnvVariable> envVariableList =
+      Collections.singletonList(EnvVariable.builder().name("GOOGLE_APPLICATION_CREDENTIALS").value("manifest").build());
 
   @Before
   public void setup() {
@@ -165,7 +171,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
         .createKubernetesConfigFromClusterConfig(eq(clusterConfigDTO), eq("default"));
 
     KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(config, WORK_DIR, null);
+        containerDeploymentDelegateBaseHelper.createKubernetesConfig(config, new ArrayList<>(), null);
     assertThat(kubernetesConfig).isEqualTo(expectedKubernetesConfig);
 
     verify(k8sYamlToDelegateDTOMapper, times(1))
@@ -197,15 +203,15 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
     KubernetesConfig expectedKubernetesConfig = KubernetesConfig.builder().password(secret).build();
     doReturn(expectedKubernetesConfig)
         .when(gkeClusterHelper)
-        .getCluster(eq(secret), eq(false), eq("cluster1"), eq("default"), any(LogCallback.class));
+        .getCluster(eq(secret), eq(false), eq("cluster1"), eq("default"), any(LogCallback.class), eq(envVariableList));
 
     KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(config, WORK_DIR, logCallback);
+        containerDeploymentDelegateBaseHelper.createKubernetesConfig(config, envVariableList, logCallback);
     kubeConfigAuthPluginHelper.close();
     assertThat(kubernetesConfig).isEqualTo(expectedKubernetesConfig);
 
     verify(gkeClusterHelper, times(1))
-        .getCluster(eq(secret), eq(false), eq("cluster1"), eq("default"), any(LogCallback.class));
+        .getCluster(eq(secret), eq(false), eq("cluster1"), eq("default"), any(LogCallback.class), eq(envVariableList));
   }
 
   @Test
@@ -229,15 +235,15 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
     KubernetesConfig expectedKubernetesConfig = KubernetesConfig.builder().username("test".toCharArray()).build();
     doReturn(expectedKubernetesConfig)
         .when(gkeClusterHelper)
-        .getCluster(eq(null), eq(true), eq("cluster1"), eq("default"), any(LogCallback.class));
+        .getCluster(eq(null), eq(true), eq("cluster1"), eq("default"), any(LogCallback.class), eq(envVariableList));
 
     KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(config, WORK_DIR, logCallback);
+        containerDeploymentDelegateBaseHelper.createKubernetesConfig(config, envVariableList, logCallback);
     kubeConfigAuthPluginHelper.close();
     assertThat(kubernetesConfig).isEqualTo(expectedKubernetesConfig);
 
     verify(gkeClusterHelper, times(1))
-        .getCluster(eq(null), eq(true), eq("cluster1"), eq("default"), any(LogCallback.class));
+        .getCluster(eq(null), eq(true), eq("cluster1"), eq("default"), any(LogCallback.class), eq(envVariableList));
   }
 
   @Test
@@ -246,8 +252,9 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
   public void testCreateKubernetesConfigUnknownType() {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = mock(K8sInfraDelegateConfig.class);
 
-    assertThatThrownBy(
-        () -> containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sInfraDelegateConfig, WORK_DIR, null))
+    assertThatThrownBy(()
+                           -> containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+                               k8sInfraDelegateConfig, new ArrayList<>(), null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Unhandled K8sInfraDelegateConfig ");
   }
@@ -338,7 +345,8 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
         .when(k8sYamlToDelegateDTOMapper)
         .createKubernetesConfigFromClusterConfig(kubernetesClusterConfig, "default");
 
-    containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(k8sInfraDelegateConfig, WORK_DIR);
+    containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(
+        k8sInfraDelegateConfig, WORK_DIR, GOOGLE_APPLICATION_CREDENTIALS);
     verify(kubernetesContainerService).getConfigFileContent(kubernetesConfig);
     verify(secretDecryptionService).decrypt(credentials, encryptionDataDetails);
   }
@@ -370,11 +378,13 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
     Mockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
     doReturn(kubernetesConfig)
         .when(gkeClusterHelper)
-        .getCluster(serviceAccountKeyFileContent, false, "cluster", "default", null);
+        .getCluster(serviceAccountKeyFileContent, false, "cluster", "default", null, envVariableList);
 
-    containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(gcpK8sInfraDelegateConfig, WORK_DIR);
+    containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(
+        gcpK8sInfraDelegateConfig, WORK_DIR, GOOGLE_APPLICATION_CREDENTIALS);
     kubeConfigAuthPluginHelper.close();
-    verify(gkeClusterHelper).getCluster(serviceAccountKeyFileContent, false, "cluster", "default", null);
+    verify(gkeClusterHelper)
+        .getCluster(serviceAccountKeyFileContent, false, "cluster", "default", null, envVariableList);
     verify(secretDecryptionService).decrypt(credentials, encryptionDataDetails);
   }
 
@@ -395,10 +405,11 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
                                                                         .build();
     final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
 
-    when(azureAsyncTaskHelper.getClusterConfig(any(AzureConfigContext.class), anyString(), any()))
+    when(azureAsyncTaskHelper.getClusterConfig(any(AzureConfigContext.class), any(), any()))
         .thenReturn(kubernetesConfig);
 
-    containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(azureK8sInfraDelegateConfig, WORK_DIR);
+    containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(
+        azureK8sInfraDelegateConfig, WORK_DIR, GOOGLE_APPLICATION_CREDENTIALS);
     verify(kubernetesContainerService).getConfigFileContent(kubernetesConfig);
   }
 
@@ -419,10 +430,11 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
                                                                         .build();
     final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
 
-    when(azureAsyncTaskHelper.getClusterConfig(any(AzureConfigContext.class), anyString(), any()))
+    when(azureAsyncTaskHelper.getClusterConfig(any(AzureConfigContext.class), any(), any()))
         .thenReturn(kubernetesConfig);
 
-    containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(azureK8sInfraDelegateConfig, WORK_DIR);
+    containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(
+        azureK8sInfraDelegateConfig, WORK_DIR, GOOGLE_APPLICATION_CREDENTIALS);
     verify(kubernetesContainerService).getConfigFileContent(kubernetesConfig);
   }
 
@@ -440,7 +452,8 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
                                                                     .encryptionDataDetails(encryptionDataDetails)
                                                                     .build();
 
-    containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(eksK8sInfraDelegateConfig, WORK_DIR);
+    containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(
+        eksK8sInfraDelegateConfig, WORK_DIR, GOOGLE_APPLICATION_CREDENTIALS);
     verify(awsEKSDelegateTaskHelper, times(1)).getKubeConfig(eq(awsConnectorDTO), eq("eks"), eq("default"), eq(null));
     verify(kubernetesContainerService).getConfigFileContent(any());
   }

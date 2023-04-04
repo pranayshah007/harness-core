@@ -401,8 +401,8 @@ public class AzureAsyncTaskHelper {
         .build();
   }
 
-  public KubernetesConfig getClusterConfig(
-      AzureConfigContext azureConfigContext, String workingDirectory, LogCallback logCallback) throws IOException {
+  public KubernetesConfig getClusterConfig(AzureConfigContext azureConfigContext, List<EnvVariable> envVariableList,
+      LogCallback logCallback) throws IOException {
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
         azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
         azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
@@ -411,7 +411,7 @@ public class AzureAsyncTaskHelper {
 
     return getKubernetesConfigK8sCluster(azureConfig, azureConfigContext.getSubscriptionId(),
         azureConfigContext.getResourceGroup(), azureConfigContext.getCluster(), azureConfigContext.getNamespace(),
-        azureConfigContext.isUseClusterAdminCredentials(), workingDirectory, logCallback);
+        azureConfigContext.isUseClusterAdminCredentials(), envVariableList, logCallback);
   }
 
   public AzureRepositoriesResponse listRepositories(AzureConfigContext azureConfigContext) throws IOException {
@@ -554,7 +554,7 @@ public class AzureAsyncTaskHelper {
 
   private KubernetesConfig getKubernetesConfigK8sCluster(AzureConfig azureConfig, String subscriptionId,
       String resourceGroup, String cluster, String namespace, boolean shouldGetAdminCredentials,
-      String workingDirectory, LogCallback logCallback) {
+      List<EnvVariable> envVariableList, LogCallback logCallback) {
     try {
       log.info(format(
           "Getting AKS kube config [subscription: %s] [resourceGroup: %s] [cluster: %s] [namespace: %s] [credentials: %s]",
@@ -575,11 +575,10 @@ public class AzureAsyncTaskHelper {
       } else if (userConfig.getExec() != null) {
         String apiServerId = Exec.getValueFromArgsList(userConfig.getExec().getArgs(), KUBECFG_ARGS_SERVER_ID);
         azureKubeConfig.setAadToken(fetchAksAADToken(azureConfig, apiServerId));
-        Map<String, String> env = new HashMap<>();
         if (AzureAuthenticationType.SERVICE_PRINCIPAL_CERT == azureConfig.getAzureAuthenticationType()) {
-          AzureCliClient.loginToAksCluster(azureConfig, env, workingDirectory, logCallback);
+          AzureCliClient.loginToAksCluster(azureConfig, envVariableList, logCallback);
         }
-        userConfig.setExec(updateAzureKubeconfig(userConfig.getExec(), azureConfig, apiServerId, env));
+        userConfig.setExec(updateAzureKubeconfig(userConfig.getExec(), azureConfig, apiServerId, envVariableList));
       }
 
       return getKubernetesConfig(azureKubeConfig, namespace);
@@ -830,12 +829,15 @@ public class AzureAsyncTaskHelper {
     return azureLocationsResponse;
   }
 
-  private Exec updateAzureKubeconfig(Exec exec, AzureConfig azureConfig, String serverId, Map<String, String> env) {
+  private Exec updateAzureKubeconfig(
+      Exec exec, AzureConfig azureConfig, String serverId, List<EnvVariable> envVariableList) {
     return Exec.builder()
         .apiVersion(exec.getApiVersion())
         .args(getArgsForAzureKubeconfig(azureConfig, serverId))
         .command(AZURE_AUTH_PLUGIN_BINARY)
-        .env(getEnvForAzureKubeconfig(env))
+        .env(envVariableList.stream()
+                 .filter(envVariable -> (envVariable != null && envVariable.getValue() != null))
+                 .collect(Collectors.toUnmodifiableList()))
         .installHint(AZURE_AUTH_PLUGIN_INSTALL_HINT)
         .interactiveMode(InteractiveMode.NEVER)
         .provideClusterInfo(false)
@@ -879,14 +881,6 @@ public class AzureAsyncTaskHelper {
                 azureConfig.getAzureAuthenticationType()));
     }
     return args;
-  }
-
-  private List<EnvVariable> getEnvForAzureKubeconfig(Map<String, String> env) {
-    List<EnvVariable> envVariablesList = new ArrayList<>();
-    for (Map.Entry<String, String> entry : env.entrySet()) {
-      envVariablesList.add(EnvVariable.builder().name(entry.getKey()).value(entry.getValue()).build());
-    }
-    return envVariablesList;
   }
 
   private List<String> prepareArgsForSpnAuth(AzureConfig azureConfig) {

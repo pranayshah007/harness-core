@@ -7,7 +7,10 @@
 
 package io.harness.azure.model;
 
+import com.google.common.collect.ImmutableSet;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -424,4 +427,5 @@ public interface AzureConstants {
       + "\n"
       + "// Verify the binary\n"
       + "kubelogin --version";
+  Set<String> AZURE_ENV_VARIABLE_LIST = ImmutableSet.of(AZURE_CONFIG_DIR);
 }

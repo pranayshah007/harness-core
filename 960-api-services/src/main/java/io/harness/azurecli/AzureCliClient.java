@@ -8,18 +8,18 @@
 package io.harness.azurecli;
 
 import static io.harness.azure.model.AzureConstants.AZURE_CLI_CMD;
-import static io.harness.azure.model.AzureConstants.AZURE_CONFIG_DIR;
-import static io.harness.azure.model.AzureConstants.AZURE_LOGIN_CONFIG_DIR_PATH;
 import static io.harness.k8s.kubectl.Utils.encloseWithQuotesIfNeeded;
 
 import io.harness.azure.model.AzureAuthenticationType;
 import io.harness.azure.model.AzureConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper;
 import io.harness.logging.LogCallback;
 
-import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
@@ -61,12 +61,11 @@ public class AzureCliClient {
   }
 
   public static void loginToAksCluster(
-      AzureConfig azureConfig, Map<String, String> env, String workingDirectory, LogCallback logCallback) {
+      AzureConfig azureConfig, List<EnvVariable> envVariableList, LogCallback logCallback) {
     String azureCliClientVersionCommand = AzureCliClient.client(AZURE_CLI_CMD).version().command();
-    if (KubeConfigAuthPluginHelper.runCommand(azureCliClientVersionCommand, logCallback, env)
-        && StringUtils.isNotEmpty(workingDirectory)) {
-      env.put(AZURE_CONFIG_DIR,
-          Paths.get(workingDirectory, AZURE_LOGIN_CONFIG_DIR_PATH).normalize().toAbsolutePath().toString());
+    Map<String, String> env = new HashMap<>();
+    envVariableList.forEach(envVariable -> env.put(envVariable.getName(), envVariable.getValue()));
+    if (KubeConfigAuthPluginHelper.runCommand(azureCliClientVersionCommand, logCallback, env)) {
       boolean isAzureCliInstalled =
           KubeConfigAuthPluginHelper.runCommand(getAuthCommand(azureConfig), logCallback, env);
       if (!isAzureCliInstalled) {

@@ -8,6 +8,9 @@
 package io.harness.delegate.task.k8s.client;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.AZURE_CONFIG_DIR;
+import static io.harness.azure.model.AzureConstants.AZURE_LOGIN_CONFIG_DIR_PATH;
+import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
@@ -16,8 +19,10 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.steadystate.model.K8sEventWatchDTO;
 import io.harness.k8s.steadystate.model.K8sStatusWatchDTO;
 import io.harness.k8s.steadystate.watcher.event.K8sApiEventWatcher;
@@ -28,6 +33,7 @@ import io.harness.logging.LogCallback;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.kubernetes.client.openapi.ApiClient;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -50,9 +56,12 @@ public class K8sApiClient implements K8sClient {
     }
 
     LogCallback executionLogCallback = steadyStateDTO.getExecutionLogCallback();
+    K8sDelegateTaskParams k8sDelegateTaskParams = steadyStateDTO.getK8sDelegateTaskParams();
     ApiClient apiClient =
         k8sClientHelper.createKubernetesApiClient(steadyStateDTO.getRequest().getK8sInfraDelegateConfig(),
-            steadyStateDTO.getK8sDelegateTaskParams().getWorkingDirectory(), executionLogCallback);
+            getEnvironmentVariablesForKubeconfigExecFormat(
+                k8sDelegateTaskParams.getGcpKeyFilePath(), k8sDelegateTaskParams.getWorkingDirectory()),
+            executionLogCallback);
     Set<String> namespaces = k8sClientHelper.getNamespacesToMonitor(workloads, steadyStateDTO.getNamespace());
 
     log.info("Executing API based steady state check for workloads.");
@@ -99,5 +108,14 @@ public class K8sApiClient implements K8sClient {
             FAILURE);
       }
     }
+  }
+
+  private List<EnvVariable> getEnvironmentVariablesForKubeconfigExecFormat(String gcpKeyPath, String workingDir) {
+    List<EnvVariable> envVariableList = new ArrayList<>();
+    envVariableList.add(new EnvVariable(
+        AZURE_CONFIG_DIR, Paths.get(workingDir, AZURE_LOGIN_CONFIG_DIR_PATH).normalize().toAbsolutePath().toString()));
+    envVariableList.add(
+        new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS, Paths.get(gcpKeyPath).normalize().toAbsolutePath().toString()));
+    return envVariableList;
   }
 }

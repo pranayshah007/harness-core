@@ -8,6 +8,7 @@
 package software.wings.helpers.ext.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.clienttools.ClientTool.OC;
@@ -67,6 +68,7 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.releasehistory.IK8sRelease;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
 import io.harness.k8s.releasehistory.ReleaseHistory;
@@ -119,6 +121,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -215,9 +218,9 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       executionLogCallback.saveExecutionLog(commandResponse.getOutput());
       commandResponse.setHelmChartInfo(helmChartInfo);
 
-      boolean useK8sSteadyStateCheck =
-          containerDeploymentDelegateHelper.useK8sSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(),
-              commandRequest.getContainerServiceParams(), commandRequest.getExecutionLogCallback());
+      boolean useK8sSteadyStateCheck = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
+          commandRequest.isK8SteadyStateCheckEnabled(), commandRequest.getContainerServiceParams(),
+          commandRequest.getExecutionLogCallback(), commandRequest.getGcpKeyPath());
       List<KubernetesResourceId> k8sWorkloads = Collections.emptyList();
       if (useK8sSteadyStateCheck) {
         k8sWorkloads = readKubernetesResourcesIds(commandRequest, commandRequest.getVariableOverridesYamlFiles(),
@@ -318,8 +321,10 @@ public class HelmDeployServiceImpl implements HelmDeployService {
                 (ExecutionLogCallback) executionLogCallback, commandRequest.getGcpKeyPath());
         executionLogCallback.saveExecutionLog(
             format("Status check done with success [%s] for resources in namespace: [%s]", success, namespace));
-        KubernetesConfig kubernetesConfig =
-            containerDeploymentDelegateHelper.getKubernetesConfig(commandRequest.getContainerServiceParams());
+        List<EnvVariable> envVariableList = Collections.singletonList(
+            EnvVariable.builder().name(GOOGLE_APPLICATION_CREDENTIALS).value(commandRequest.getGcpKeyPath()).build());
+        KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(
+            commandRequest.getContainerServiceParams(), envVariableList);
         String releaseName = commandRequest.getReleaseName();
         List<ContainerInfo> containerInfos =
             k8sTaskHelperBase.getContainerInfos(kubernetesConfig, releaseName, namespace, timeoutInMillis);
@@ -383,9 +388,9 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         commandRequest.getExecutionLogCallback().saveExecutionLog(msg);
         throw new InvalidRequestException(msg, USER);
       }
-      boolean useK8sSteadyStateCheck =
-          containerDeploymentDelegateHelper.useK8sSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(),
-              commandRequest.getContainerServiceParams(), commandRequest.getExecutionLogCallback());
+      boolean useK8sSteadyStateCheck = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
+          commandRequest.isK8SteadyStateCheckEnabled(), commandRequest.getContainerServiceParams(),
+          commandRequest.getExecutionLogCallback(), commandRequest.getGcpKeyPath());
       if (useK8sSteadyStateCheck) {
         fetchInlineChartUrl(commandRequest, timeoutInMillis);
       }
@@ -587,8 +592,10 @@ public class HelmDeployServiceImpl implements HelmDeployService {
   private List<ContainerInfo> fetchContainerInfo(
       HelmCommandRequest commandRequest, LogCallback executionLogCallback, List<Pod> existingPods) {
     ContainerServiceParams containerServiceParams = commandRequest.getContainerServiceParams();
-
-    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(containerServiceParams);
+    List<EnvVariable> envVariableList = Collections.singletonList(
+        EnvVariable.builder().name(GOOGLE_APPLICATION_CREDENTIALS).value(commandRequest.getGcpKeyPath()).build());
+    KubernetesConfig kubernetesConfig =
+        containerDeploymentDelegateHelper.getKubernetesConfig(containerServiceParams, envVariableList);
 
     return containerDeploymentDelegateBaseHelper.getContainerInfosWhenReadyByLabels(kubernetesConfig,
         executionLogCallback, ImmutableMap.of("release", commandRequest.getReleaseName()), existingPods);
@@ -605,8 +612,10 @@ public class HelmDeployServiceImpl implements HelmDeployService {
 
   private ReleaseHistory createK8sNewRelease(
       HelmCommandRequest request, List<KubernetesResourceId> resourceList, Integer releaseVersion) throws IOException {
+    List<EnvVariable> envVariableList = Collections.singletonList(
+        EnvVariable.builder().name(GOOGLE_APPLICATION_CREDENTIALS).value(request.getGcpKeyPath()).build());
     KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateHelper.getKubernetesConfig(request.getContainerServiceParams());
+        containerDeploymentDelegateHelper.getKubernetesConfig(request.getContainerServiceParams(), envVariableList);
     ReleaseHistory releaseHistory = fetchK8sReleaseHistory(request, kubernetesConfig);
     // Need to keep only latest successful releases, older releases can be removed
     releaseHistory.cleanup();
@@ -620,8 +629,10 @@ public class HelmDeployServiceImpl implements HelmDeployService {
 
   private void saveK8sReleaseHistory(
       HelmCommandRequest request, HelmCommandResponse response, ReleaseHistory releaseHistory) throws IOException {
+    List<EnvVariable> envVariableList = Collections.singletonList(
+        EnvVariable.builder().name(GOOGLE_APPLICATION_CREDENTIALS).value(request.getGcpKeyPath()).build());
     KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateHelper.getKubernetesConfig(request.getContainerServiceParams());
+        containerDeploymentDelegateHelper.getKubernetesConfig(request.getContainerServiceParams(), envVariableList);
     releaseHistory.setReleaseStatus(CommandExecutionStatus.SUCCESS == response.getCommandExecutionStatus()
             ? IK8sRelease.Status.Succeeded
             : IK8sRelease.Status.Failed);
@@ -644,7 +655,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       List<KubernetesResourceId> k8sRollbackWorkloads = Collections.emptyList();
       boolean useK8sSteadyStateCheck =
           containerDeploymentDelegateHelper.useK8sSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(),
-              commandRequest.getContainerServiceParams(), executionLogCallback);
+              commandRequest.getContainerServiceParams(), executionLogCallback, commandRequest.getGcpKeyPath());
 
       if (useK8sSteadyStateCheck) {
         prepareWorkingDirectoryForK8sRollout(commandRequest);
@@ -700,8 +711,10 @@ public class HelmDeployServiceImpl implements HelmDeployService {
 
   private List<KubernetesResourceId> getKubernetesResourcesIdsForRollback(HelmRollbackCommandRequest request)
       throws IOException {
+    List<EnvVariable> envVariableList = Collections.singletonList(new EnvVariable(
+        GOOGLE_APPLICATION_CREDENTIALS, Paths.get(request.getGcpKeyPath()).normalize().toAbsolutePath().toString()));
     KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateHelper.getKubernetesConfig(request.getContainerServiceParams());
+        containerDeploymentDelegateHelper.getKubernetesConfig(request.getContainerServiceParams(), envVariableList);
     ReleaseHistory releaseHistory = fetchK8sReleaseHistory(request, kubernetesConfig);
     K8sLegacyRelease rollbackRelease = releaseHistory.getRelease(request.getPrevReleaseVersion());
     notNullCheck("Unable to find release " + request.getPrevReleaseVersion(), rollbackRelease);

@@ -36,6 +36,7 @@ import io.harness.k8s.model.GcpAccessTokenSupplier;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesConfig.KubernetesConfigBuilder;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.model.kubeconfig.Exec;
 import io.harness.k8s.model.kubeconfig.InteractiveMode;
 import io.harness.logging.LogCallback;
@@ -63,11 +64,13 @@ import com.google.inject.Singleton;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -95,7 +98,7 @@ public class GkeClusterHelper {
                             .execute();
       log.info("Cluster already exists");
       log.debug("Cluster {}, location {}, project {}", clusterName, location, projectId);
-      return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate);
+      return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate, new ArrayList<>());
     } catch (IOException e) {
       logNotFoundOrError(e, projectId, location, clusterName, "getting");
     }
@@ -125,7 +128,7 @@ public class GkeClusterHelper {
                               .execute();
         log.info("Cluster status: {}", cluster.getStatus());
         log.debug("Master endpoint: {}", cluster.getEndpoint());
-        return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate);
+        return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate, new ArrayList<>());
       }
     } catch (IOException e) {
       logNotFoundOrError(e, projectId, location, clusterName, "creating");
@@ -133,13 +136,13 @@ public class GkeClusterHelper {
     return null;
   }
 
-  public KubernetesConfig getCluster(
-      char[] serviceAccountKeyFileContent, boolean useDelegate, String locationClusterName, String namespace) {
-    return getCluster(serviceAccountKeyFileContent, useDelegate, locationClusterName, namespace, null);
+  public KubernetesConfig getCluster(char[] serviceAccountKeyFileContent, boolean useDelegate,
+      String locationClusterName, String namespace, List<EnvVariable> envVariableList) {
+    return getCluster(serviceAccountKeyFileContent, useDelegate, locationClusterName, namespace, null, envVariableList);
   }
 
   public KubernetesConfig getCluster(char[] serviceAccountKeyFileContent, boolean useDelegate,
-      String locationClusterName, String namespace, LogCallback logCallback) {
+      String locationClusterName, String namespace, LogCallback logCallback, List<EnvVariable> envVariableList) {
     Container gkeContainerService = gcpHelperService.getGkeContainerService(serviceAccountKeyFileContent, useDelegate);
     String projectId = getProjectIdFromCredentials(serviceAccountKeyFileContent, useDelegate);
     if (EmptyPredicate.isEmpty(locationClusterName)) {
@@ -163,7 +166,8 @@ public class GkeClusterHelper {
       log.info("Cluster status: {}", cluster.getStatus());
       log.debug("Master endpoint: {}", cluster.getEndpoint());
 
-      return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate, logCallback);
+      return configFromCluster(
+          cluster, namespace, serviceAccountKeyFileContent, useDelegate, logCallback, envVariableList);
     } catch (IOException e) {
       // PL-1118: In case the cluster is being destroyed/torn down. Return null will immediately reclaim the service
       // instances
@@ -212,13 +216,13 @@ public class GkeClusterHelper {
     }
   }
 
-  private KubernetesConfig configFromCluster(
-      Cluster cluster, String namespace, char[] serviceAccountKeyFileContent, boolean useDelegate) {
-    return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate, null);
+  private KubernetesConfig configFromCluster(Cluster cluster, String namespace, char[] serviceAccountKeyFileContent,
+      boolean useDelegate, List<EnvVariable> envVariableList) {
+    return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate, null, envVariableList);
   }
 
   private KubernetesConfig configFromCluster(Cluster cluster, String namespace, char[] serviceAccountKeyFileContent,
-      boolean useDelegate, LogCallback logCallback) {
+      boolean useDelegate, LogCallback logCallback, List<EnvVariable> envVariableList) {
     MasterAuth masterAuth = cluster.getMasterAuth();
     KubernetesConfigBuilder kubernetesConfigBuilder = KubernetesConfig.builder()
                                                           .masterUrl("https://" + cluster.getEndpoint() + "/")
@@ -250,7 +254,7 @@ public class GkeClusterHelper {
     }
     if (isExecAuthPluginBinaryAvailable(GCP_AUTH_PLUGIN_BINARY, logCallback)) {
       kubernetesConfigBuilder.authType(KubernetesClusterAuthType.EXEC_OAUTH);
-      kubernetesConfigBuilder.exec(getGkeUserExecConfig());
+      kubernetesConfigBuilder.exec(getGkeUserExecConfig(envVariableList));
     }
     return kubernetesConfigBuilder.build();
   }
@@ -327,10 +331,13 @@ public class GkeClusterHelper {
     }
   }
 
-  private Exec getGkeUserExecConfig() {
+  private Exec getGkeUserExecConfig(List<EnvVariable> envVariableList) {
     return Exec.builder()
         .apiVersion(API_VERSION)
         .command(GCP_AUTH_PLUGIN_BINARY)
+        .env(envVariableList.stream()
+                 .filter(envVariable -> (envVariable != null && envVariable.getValue() != null))
+                 .collect(Collectors.toUnmodifiableList()))
         .interactiveMode(InteractiveMode.NEVER)
         .provideClusterInfo(true)
         .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)

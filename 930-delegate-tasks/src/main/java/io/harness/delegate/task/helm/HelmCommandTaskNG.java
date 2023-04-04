@@ -7,6 +7,9 @@
 
 package io.harness.delegate.task.helm;
 
+import static io.harness.azure.model.AzureConstants.AZURE_CONFIG_DIR;
+import static io.harness.azure.model.AzureConstants.AZURE_LOGIN_CONFIG_DIR_PATH;
+import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonicalForm;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
@@ -42,6 +45,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.helm.HelmConstants;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.config.K8sGlobalConfigService;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -51,7 +55,9 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -185,9 +191,11 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
   private void init(HelmCommandRequestNG commandRequestNG, LogCallback logCallback) throws IOException {
     commandRequestNG.setLogCallback(logCallback);
     logCallback.saveExecutionLog("Creating KubeConfig", LogLevel.INFO, CommandExecutionStatus.RUNNING);
+    List<EnvVariable> envVariableList = getEnvironmentVariablesForKubeconfigExecFormat(
+        commandRequestNG.getGcpKeyPath(), commandRequestNG.getWorkingDir());
     String configLocation = containerDeploymentDelegateBaseHelper.createKubeConfig(
         containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-            commandRequestNG.getK8sInfraDelegateConfig(), commandRequestNG.getWorkingDir(), logCallback));
+            commandRequestNG.getK8sInfraDelegateConfig(), envVariableList, logCallback));
     commandRequestNG.setKubeConfigLocation(configLocation);
     logCallback.saveExecutionLog(
         "Setting KubeConfig\nKUBECONFIG_PATH=" + configLocation, LogLevel.INFO, CommandExecutionStatus.RUNNING);
@@ -277,5 +285,14 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
     }
 
     return getFirstNonHintOrExplanationThrowable(throwable.getCause());
+  }
+
+  private List<EnvVariable> getEnvironmentVariablesForKubeconfigExecFormat(String gcpKeyPath, String workingDir) {
+    List<EnvVariable> envVariableList = new ArrayList<>();
+    envVariableList.add(new EnvVariable(
+        AZURE_CONFIG_DIR, Paths.get(workingDir, AZURE_LOGIN_CONFIG_DIR_PATH).normalize().toAbsolutePath().toString()));
+    envVariableList.add(
+        new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS, Paths.get(gcpKeyPath).normalize().toAbsolutePath().toString()));
+    return envVariableList;
   }
 }

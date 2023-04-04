@@ -7,6 +7,9 @@
 
 package io.harness.delegate.task.helm;
 
+import static io.harness.azure.model.AzureConstants.AZURE_CONFIG_DIR;
+import static io.harness.azure.model.AzureConstants.AZURE_LOGIN_CONFIG_DIR_PATH;
+import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.CUSTOM_REMOTE;
@@ -97,6 +100,7 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.releasehistory.IK8sRelease;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
 import io.harness.k8s.releasehistory.ReleaseHistory;
@@ -204,8 +208,11 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       prevVersion = getPrevReleaseVersion(helmCliResponse);
 
+      List<EnvVariable> envVariableList = getEnvironmentVariablesForKubeconfigExecFormat(
+          commandRequest.getGcpKeyPath(), commandRequest.getWorkingDir());
+
       kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-          commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
+          commandRequest.getK8sInfraDelegateConfig(), envVariableList, logCallback);
 
       prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis(), logCallback);
 
@@ -522,7 +529,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   public HelmCommandResponseNG rollback(HelmRollbackCommandRequestNG commandRequest) throws Exception {
     LogCallback logCallback = commandRequest.getLogCallback();
     kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
+        commandRequest.getK8sInfraDelegateConfig(),
+        getEnvironmentVariablesForKubeconfigExecFormat(commandRequest.getGcpKeyPath(), commandRequest.getWorkingDir()),
+        logCallback);
     try {
       logCallback = markDoneAndStartNew(commandRequest, logCallback, Rollback);
       HelmInstallCmdResponseNG commandResponse = HelmCommandResponseMapper.getHelmInstCmdRespNG(
@@ -1185,5 +1194,14 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
     }
     return Optional.empty();
+  }
+
+  private List<EnvVariable> getEnvironmentVariablesForKubeconfigExecFormat(String gcpKeyPath, String workingDir) {
+    List<EnvVariable> envVariableList = new ArrayList<>();
+    envVariableList.add(new EnvVariable(
+        AZURE_CONFIG_DIR, Paths.get(workingDir, AZURE_LOGIN_CONFIG_DIR_PATH).normalize().toAbsolutePath().toString()));
+    envVariableList.add(
+        new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS, Paths.get(gcpKeyPath).normalize().toAbsolutePath().toString()));
+    return envVariableList;
   }
 }

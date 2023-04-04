@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
 import static io.harness.filesystem.FileIo.writeUtf8StringToFile;
@@ -31,6 +32,7 @@ import io.harness.helm.HelmConstants;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -51,6 +53,9 @@ import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
 import com.google.inject.Inject;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -143,8 +148,10 @@ public class HelmCommandTask extends AbstractDelegateRunnableTask {
   private void init(HelmCommandRequest helmCommandRequest, LogCallback executionLogCallback) throws Exception {
     helmCommandRequest.setExecutionLogCallback(executionLogCallback);
     executionLogCallback.saveExecutionLog("Creating KubeConfig", LogLevel.INFO, CommandExecutionStatus.RUNNING);
-    KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateHelper.getKubernetesConfig(helmCommandRequest.getContainerServiceParams());
+    List<EnvVariable> envVariableList = Collections.singletonList(new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS,
+        Paths.get(helmCommandRequest.getGcpKeyPath()).normalize().toAbsolutePath().toString()));
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(
+        helmCommandRequest.getContainerServiceParams(), envVariableList);
     String configLocation = containerDeploymentDelegateHelper.createKubeConfig(kubernetesConfig);
     helmCommandRequest.setKubeConfigLocation(configLocation);
     executionLogCallback.saveExecutionLog(

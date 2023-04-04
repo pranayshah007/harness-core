@@ -8,6 +8,7 @@
 package software.wings.cloudprovider.gke;
 
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.GcpConfig;
@@ -33,8 +34,11 @@ public interface GkeClusterService {
   KubernetesConfig getCluster(SettingAttribute computeProviderSetting, List<EncryptedDataDetail> encryptedDataDetails,
       String zoneClusterName, String namespace, boolean isInstanceSync);
 
+  KubernetesConfig getCluster(SettingAttribute computeProviderSetting, List<EncryptedDataDetail> encryptedDataDetails,
+      String locationClusterName, String namespace, boolean isInstanceSync, List<EnvVariable> envVariableList);
+
   KubernetesConfig getCluster(GcpConfig gcpConfig, List<EncryptedDataDetail> encryptedDataDetails,
-      String locationClusterName, String namespace, boolean isInstanceSync);
+      String locationClusterName, String namespace, boolean isInstanceSync, List<EnvVariable> envVariableList);
 
   /**
    * Lists the available clusters

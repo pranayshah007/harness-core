@@ -81,7 +81,7 @@ public class K8sApiClientTest extends CategoryTest {
     boolean result = k8sApiClient.performSteadyStateCheck(k8sSteadyStateDTO);
     assertThat(result).isTrue();
     verify(k8sClientHelper, times(0))
-        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), anyString(), any(LogCallback.class));
+        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(), any(LogCallback.class));
   }
 
   @Test
@@ -96,7 +96,7 @@ public class K8sApiClientTest extends CategoryTest {
     doReturn(namespaces).when(k8sClientHelper).getNamespacesToMonitor(anyList(), anyString());
     doReturn(apiClient)
         .when(k8sClientHelper)
-        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), anyString(), any(LogCallback.class));
+        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(), any(LogCallback.class));
     doReturn(k8sEventWatchDTO)
         .when(k8sClientHelper)
         .createEventWatchDTO(any(K8sSteadyStateDTO.class), any(ApiClient.class));
@@ -138,7 +138,7 @@ public class K8sApiClientTest extends CategoryTest {
     doReturn(namespaces).when(k8sClientHelper).getNamespacesToMonitor(anyList(), anyString());
     doReturn(apiClient)
         .when(k8sClientHelper)
-        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), anyString(), any(LogCallback.class));
+        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(), any(LogCallback.class));
     doReturn(k8sEventWatchDTO)
         .when(k8sClientHelper)
         .createEventWatchDTO(any(K8sSteadyStateDTO.class), any(ApiClient.class));
@@ -181,7 +181,7 @@ public class K8sApiClientTest extends CategoryTest {
     doReturn(namespaces).when(k8sClientHelper).getNamespacesToMonitor(anyList(), anyString());
     doReturn(apiClient)
         .when(k8sClientHelper)
-        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), anyString(), any(LogCallback.class));
+        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(), any(LogCallback.class));
     doReturn(k8sEventWatchDTO)
         .when(k8sClientHelper)
         .createEventWatchDTO(any(K8sSteadyStateDTO.class), any(ApiClient.class));

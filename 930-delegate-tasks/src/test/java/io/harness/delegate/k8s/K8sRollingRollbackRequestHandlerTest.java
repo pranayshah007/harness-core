@@ -46,6 +46,7 @@ import io.harness.exception.KubernetesTaskException;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
@@ -72,6 +73,7 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
   @Mock private K8sInfraDelegateConfig k8sInfraDelegateConfig;
   @Mock private LogCallback logCallback;
   @Mock private KubernetesConfig kubernetesConfig;
+  @Mock List<EnvVariable> envVariableList;
 
   private K8sRollingRollbackHandlerConfig rollbackHandlerConfig;
   private K8sRollingRollbackDeployRequest k8sRollingRollbackDeployRequest;
@@ -90,7 +92,7 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
         .getLogCallback(eq(logStreamingTaskClient), anyString(), anyBoolean(), any());
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
+        .createKubernetesConfig(k8sInfraDelegateConfig, envVariableList, logCallback);
 
     rollbackHandlerConfig = k8sRollingRollbackRequestHandler.getRollbackHandlerConfig();
     k8sRollingRollbackDeployRequest = K8sRollingRollbackDeployRequest.builder()

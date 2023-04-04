@@ -49,6 +49,7 @@ import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.releasehistory.IK8sRelease;
 import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
@@ -81,6 +82,7 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
   @Mock LogCallback logCallback;
   @Mock K8sReleaseHandler releaseHandler;
   @Mock IK8sReleaseHistory releaseHistory;
+  @Mock List<EnvVariable> envVariableList;
   final String noReleaseHistory = "no-release-history";
   final String emptyReleasesHistory = "empty-releases-history";
   final String noInProgressReleaseHistory = "no-inprogress-history";
@@ -101,7 +103,7 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
     doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
+        .createKubernetesConfig(k8sInfraDelegateConfig, envVariableList, logCallback);
 
     ApiException apiException = new ApiException("Failed to get release history secret");
     InvalidRequestException exception =

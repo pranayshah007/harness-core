@@ -46,6 +46,7 @@ import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
@@ -70,6 +71,7 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
   @Mock ILogStreamingTaskClient iLogStreamingTaskClient;
   @Mock private LogCallback logCallback;
   @Mock private K8sInfraDelegateConfig k8sInfraDelegateConfig;
+  @Mock List<EnvVariable> envVariableList;
   private final String namespace = "default";
   private final String releaseName = "test-release";
   private final String workingDirectory = "manifest";
@@ -85,7 +87,7 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
+        .createKubernetesConfig(k8sInfraDelegateConfig, envVariableList, logCallback);
     doReturn(logCallback)
         .when(k8sTaskHelperBase)
         .getLogCallback(eq(iLogStreamingTaskClient), anyString(), anyBoolean(), any());

@@ -89,6 +89,7 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.filesystem.FileIo;
 import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.model.kubeconfig.Exec;
 import io.harness.k8s.model.kubeconfig.InteractiveMode;
 import io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper;
@@ -883,9 +884,11 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     doReturn("registry").when(azureConfigContextMock).getContainerRegistry();
 
     mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+    List<EnvVariable> envVariableList =
+        Arrays.asList(EnvVariable.builder().name("AZURE_CONFIG_DIR").value("manifest").build());
 
     KubernetesConfig clusterConfig =
-        azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, WORKING_DIR, logCallback);
+        azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, envVariableList, logCallback);
 
     assertThat(clusterConfig.getMasterUrl())
         .isEqualTo("https://cdp-test-a-cdp-test-rg-20d6a9-19a8a771.hcp.eastus.azmk8s.io:443");
@@ -950,9 +953,11 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     MockedStatic mockedStaticKubernetesAuthPlugin = mockStatic(KubeConfigAuthPluginHelper.class);
     when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(false);
     mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+    List<EnvVariable> envVariableList =
+        Arrays.asList(EnvVariable.builder().name("AZURE_CONFIG_DIR").value("manifest").build());
 
     KubernetesConfig clusterConfig =
-        azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, WORKING_DIR, logCallback);
+        azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, envVariableList, logCallback);
     mockedStaticKubernetesAuthPlugin.close();
 
     assertThat(clusterConfig.getMasterUrl())
@@ -974,12 +979,12 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
 
     if (AzureAuthenticationType.SERVICE_PRINCIPAL_CERT.equals(azureConfig.getAzureAuthenticationType())) {
       MockedStatic azureCliClientMockedStatic = mockStatic(AzureCliClient.class);
-      azureCliClientMockedStatic.when(() -> AzureCliClient.loginToAksCluster(any(), any(), any(), any()))
+      azureCliClientMockedStatic.when(() -> AzureCliClient.loginToAksCluster(any(), any(), any()))
           .thenAnswer((Answer<Void>) invocation -> null);
-      clusterConfig = azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, WORKING_DIR, logCallback);
+      clusterConfig = azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, envVariableList, logCallback);
       azureCliClientMockedStatic.close();
     } else {
-      clusterConfig = azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, WORKING_DIR, logCallback);
+      clusterConfig = azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock, envVariableList, logCallback);
     }
     mockedStaticKubernetesAuthPlugin.close();
 
@@ -999,7 +1004,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
                        .installHint(AZURE_AUTH_PLUGIN_INSTALL_HINT)
                        .provideClusterInfo(false)
                        .interactiveMode(InteractiveMode.NEVER)
-                       .env(Collections.emptyList())
+                       .env(envVariableList)
                        .args(getArgsForKubeconfig(azureConfig.getAzureAuthenticationType()))
                        .build());
   }

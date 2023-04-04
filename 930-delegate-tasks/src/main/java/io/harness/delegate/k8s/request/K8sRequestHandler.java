@@ -8,6 +8,9 @@
 package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.AZURE_CONFIG_DIR;
+import static io.harness.azure.model.AzureConstants.AZURE_LOGIN_CONFIG_DIR_PATH;
+import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.k8s.ManifestType.KUSTOMIZE;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
@@ -27,11 +30,14 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.WingsException;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
 import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -182,5 +188,14 @@ public abstract class K8sRequestHandler {
     }
 
     return getFirstNonHintOrExplanationThrowable(throwable.getCause());
+  }
+
+  protected List<EnvVariable> getEnvironmentVariablesForKubeconfigExecFormat(String gcpKeyPath, String workingDir) {
+    List<EnvVariable> envVariableList = new ArrayList<>();
+    envVariableList.add(new EnvVariable(
+        AZURE_CONFIG_DIR, Paths.get(workingDir, AZURE_LOGIN_CONFIG_DIR_PATH).normalize().toAbsolutePath().toString()));
+    envVariableList.add(
+        new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS, Paths.get(gcpKeyPath).normalize().toAbsolutePath().toString()));
+    return envVariableList;
   }
 }

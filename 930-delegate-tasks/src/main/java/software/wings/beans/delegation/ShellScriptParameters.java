@@ -177,10 +177,10 @@ public class ShellScriptParameters implements TaskParameters, ActivityAccess, Ex
         .build();
   }
 
-  public ShellExecutorConfig processExecutorConfig(
-      ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper, EncryptionService encryptionService) {
+  public ShellExecutorConfig processExecutorConfig(ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper,
+      EncryptionService encryptionService, String keyPath) {
     String kubeConfigContent = (containerServiceParams != null) && containerServiceParams.isKubernetesClusterConfig()
-        ? containerDeploymentDelegateHelper.getKubeConfigFileContent(containerServiceParams)
+        ? containerDeploymentDelegateHelper.getKubeConfigFileContent(containerServiceParams, keyPath)
         : "";
     char[] serviceAccountKeyFileContent = null;
     if (isGcpDeployment(containerServiceParams)) {

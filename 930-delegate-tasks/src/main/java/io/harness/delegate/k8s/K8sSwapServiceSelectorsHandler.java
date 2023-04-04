@@ -47,7 +47,9 @@ public class K8sSwapServiceSelectorsHandler extends K8sRequestHandler {
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, SwapServiceSelectors, true, commandUnitsProgress);
 
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        k8sSwapServiceSelectorsRequest.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(),
+        k8sSwapServiceSelectorsRequest.getK8sInfraDelegateConfig(),
+        getEnvironmentVariablesForKubeconfigExecFormat(
+            k8sDelegateTaskParams.getGcpKeyFilePath(), k8sDelegateTaskParams.getWorkingDirectory()),
         logCallback);
 
     k8sSwapServiceSelectorsBaseHandler.swapServiceSelectors(kubernetesConfig,

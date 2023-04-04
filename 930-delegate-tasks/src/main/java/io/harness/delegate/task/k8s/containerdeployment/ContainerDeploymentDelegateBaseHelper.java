@@ -9,7 +9,11 @@ package io.harness.delegate.task.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.azure.model.AzureConstants.AZURE_AUTH_CERT_DIR_PATH;
+import static io.harness.azure.model.AzureConstants.AZURE_CONFIG_DIR;
+import static io.harness.azure.model.AzureConstants.AZURE_ENV_VARIABLE_LIST;
+import static io.harness.azure.model.AzureConstants.AZURE_LOGIN_CONFIG_DIR_PATH;
 import static io.harness.azure.model.AzureConstants.REPOSITORY_DIR_PATH;
+import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
@@ -42,6 +46,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -58,6 +63,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -127,11 +134,11 @@ public class ContainerDeploymentDelegateBaseHelper {
   }
 
   public KubernetesConfig createKubernetesConfig(K8sInfraDelegateConfig clusterConfigDTO, LogCallback logCallback) {
-    return createKubernetesConfig(clusterConfigDTO, null, logCallback);
+    return createKubernetesConfig(clusterConfigDTO, new ArrayList<>(), logCallback);
   }
 
   public KubernetesConfig createKubernetesConfig(
-      K8sInfraDelegateConfig clusterConfigDTO, String workingKubeconfigDirectory, LogCallback logCallback) {
+      K8sInfraDelegateConfig clusterConfigDTO, List<EnvVariable> envVariableList, LogCallback logCallback) {
     if (clusterConfigDTO instanceof DirectK8sInfraDelegateConfig) {
       return k8sYamlToDelegateDTOMapper.createKubernetesConfigFromClusterConfig(
           ((DirectK8sInfraDelegateConfig) clusterConfigDTO).getKubernetesClusterConfigDTO(),
@@ -141,11 +148,15 @@ public class ContainerDeploymentDelegateBaseHelper {
       GcpConnectorCredentialDTO gcpCredentials = gcpK8sInfraDelegateConfig.getGcpConnectorDTO().getCredential();
       return gkeClusterHelper.getCluster(getGcpServiceAccountKeyFileContent(gcpCredentials),
           gcpCredentials.getGcpCredentialType() == INHERIT_FROM_DELEGATE, gcpK8sInfraDelegateConfig.getCluster(),
-          gcpK8sInfraDelegateConfig.getNamespace(), logCallback);
+          gcpK8sInfraDelegateConfig.getNamespace(), logCallback, envVariableList);
     } else if (clusterConfigDTO instanceof AzureK8sInfraDelegateConfig) {
       try (LazyAutoCloseableWorkingDirectory workingDirectory =
                new LazyAutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_AUTH_CERT_DIR_PATH)) {
         AzureK8sInfraDelegateConfig azureK8sInfraDelegateConfig = (AzureK8sInfraDelegateConfig) clusterConfigDTO;
+        List<EnvVariable> azureEnvVariableList =
+            envVariableList.stream()
+                .filter(envVariable -> AZURE_ENV_VARIABLE_LIST.contains(envVariable.getName()))
+                .collect(Collectors.toList());
         AzureConfigContext azureConfigContext =
             AzureConfigContext.builder()
                 .azureConnector(azureK8sInfraDelegateConfig.getAzureConnectorDTO())
@@ -157,7 +168,7 @@ public class ContainerDeploymentDelegateBaseHelper {
                 .useClusterAdminCredentials(azureK8sInfraDelegateConfig.isUseClusterAdminCredentials())
                 .certificateWorkingDirectory(workingDirectory)
                 .build();
-        return azureAsyncTaskHelper.getClusterConfig(azureConfigContext, workingKubeconfigDirectory, logCallback);
+        return azureAsyncTaskHelper.getClusterConfig(azureConfigContext, azureEnvVariableList, logCallback);
       } catch (IOException ioe) {
         throw NestedExceptionUtils.hintWithExplanationException("Failed to authenticate with Azure",
             "Please check you Azure connector configuration or delegate filesystem permissions.",
@@ -181,10 +192,11 @@ public class ContainerDeploymentDelegateBaseHelper {
     return null;
   }
 
-  public String getKubeconfigFileContent(K8sInfraDelegateConfig k8sInfraDelegateConfig, String workingDirectory) {
+  public String getKubeconfigFileContent(
+      K8sInfraDelegateConfig k8sInfraDelegateConfig, String workingDirectory, String gcpKeyPath) {
     decryptK8sInfraDelegateConfig(k8sInfraDelegateConfig);
-    return kubernetesContainerService.getConfigFileContent(
-        createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, null));
+    return kubernetesContainerService.getConfigFileContent(createKubernetesConfig(
+        k8sInfraDelegateConfig, getEnvironmentVariablesForKubeconfigExecFormat(gcpKeyPath, workingDirectory), null));
   }
 
   public void persistKubernetesConfig(KubernetesConfig kubernetesConfig, String directory) throws IOException {
@@ -194,7 +206,8 @@ public class ContainerDeploymentDelegateBaseHelper {
   public KubernetesConfig decryptAndGetKubernetesConfig(
       K8sInfraDelegateConfig k8sInfraDelegateConfig, String workingDirectory) {
     decryptK8sInfraDelegateConfig(k8sInfraDelegateConfig);
-    return createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, null);
+    return createKubernetesConfig(
+        k8sInfraDelegateConfig, getEnvironmentVariablesForKubeconfigExecFormat(null, workingDirectory), null);
   }
 
   public void decryptK8sInfraDelegateConfig(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
@@ -259,5 +272,14 @@ public class ContainerDeploymentDelegateBaseHelper {
     } catch (Exception e) {
       throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
     }
+  }
+
+  private List<EnvVariable> getEnvironmentVariablesForKubeconfigExecFormat(String gcpKeyPath, String workingDir) {
+    List<EnvVariable> envVariableList = new ArrayList<>();
+    envVariableList.add(new EnvVariable(
+        AZURE_CONFIG_DIR, Paths.get(workingDir, AZURE_LOGIN_CONFIG_DIR_PATH).normalize().toAbsolutePath().toString()));
+    envVariableList.add(
+        new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS, Paths.get(gcpKeyPath).normalize().toAbsolutePath().toString()));
+    return envVariableList;
   }
 }

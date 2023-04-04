@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.validation.capabilitycheck;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,6 +17,7 @@ import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.executioncapability.CapabilityCheck;
 import io.harness.delegate.task.helm.HelmCommandResponse;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.logging.CommandExecutionStatus;
 
 import software.wings.delegatetasks.validation.capabilities.HelmCommandCapability;
@@ -24,6 +26,9 @@ import software.wings.helpers.ext.helm.HelmDeployService;
 import software.wings.helpers.ext.helm.request.HelmCommandRequest;
 
 import com.google.inject.Inject;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
@@ -37,8 +42,10 @@ public class HelmCommandCapabilityCheck implements CapabilityCheck {
     HelmCommandRequest commandRequest = capability.getCommandRequest();
 
     if (commandRequest.getContainerServiceParams() != null) {
-      String configLocation =
-          containerDeploymentDelegateHelper.createAndGetKubeConfigLocation(commandRequest.getContainerServiceParams());
+      List<EnvVariable> envVariableList = Collections.singletonList(new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS,
+          Paths.get(commandRequest.getGcpKeyPath()).normalize().toAbsolutePath().toString()));
+      String configLocation = containerDeploymentDelegateHelper.createAndGetKubeConfigLocation(
+          commandRequest.getContainerServiceParams(), envVariableList);
       commandRequest.setKubeConfigLocation(configLocation);
     }
 

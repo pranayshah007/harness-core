@@ -35,6 +35,7 @@ import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
 import io.kubernetes.client.openapi.ApiClient;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.junit.Before;
@@ -55,8 +56,6 @@ public class K8sClientHelperTest extends CategoryTest {
   private K8sSteadyStateDTO k8sSteadyStateDTO;
   private ApiClient apiClient;
   private Kubectl client;
-
-  private static final String WORK_DIR = "./repository/k8s";
 
   @Before
   public void setup() {
@@ -112,13 +111,13 @@ public class K8sClientHelperTest extends CategoryTest {
     ApiClient apiCLient = new ApiClient();
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(any(K8sInfraDelegateConfig.class), any(), any(LogCallback.class));
+        .createKubernetesConfig(any(K8sInfraDelegateConfig.class), eq(new ArrayList<>()), any(LogCallback.class));
     doReturn(apiCLient).when(kubernetesHelperService).getApiClient(eq(kubernetesConfig));
 
     LogCallback logCallback = mock(LogCallback.class);
     K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
     ApiClient generatedClient =
-        k8sClientHelper.createKubernetesApiClient(k8sInfraDelegateConfig, WORK_DIR, logCallback);
+        k8sClientHelper.createKubernetesApiClient(k8sInfraDelegateConfig, new ArrayList<>(), logCallback);
     assertThat(generatedClient).isEqualTo(apiCLient);
   }
 

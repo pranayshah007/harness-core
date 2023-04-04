@@ -7,6 +7,7 @@
 
 package software.wings.helpers.ext.container;
 
+import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.k8s.model.KubernetesClusterAuthType.OIDC;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ADWAIT;
@@ -32,6 +33,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.OidcGrantType;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.oidc.OidcTokenRetriever;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -129,11 +131,17 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
             .build();
     String version = "1.16";
 
-    doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(containerServiceParams);
+    List<EnvVariable> envVariableList = Collections.singletonList(EnvVariable.builder()
+                                                                      .name(GOOGLE_APPLICATION_CREDENTIALS)
+                                                                      .value("google-application-credentials.json")
+                                                                      .build());
+    doReturn(kubernetesConfig)
+        .when(containerDeploymentDelegateHelper)
+        .getKubernetesConfig(containerServiceParams, envVariableList);
     doReturn(version).when(kubernetesContainerService).getVersionAsString(kubernetesConfig);
 
     boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-        true, containerServiceParams, new ExecutionLogCallback());
+        true, containerServiceParams, new ExecutionLogCallback(), "google-application-credentials.json");
     assertThat(result).isTrue();
   }
 
@@ -152,11 +160,17 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
             .build();
     String version = "1.16+144";
 
-    doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(containerServiceParams);
+    List<EnvVariable> envVariableList = Collections.singletonList(EnvVariable.builder()
+                                                                      .name(GOOGLE_APPLICATION_CREDENTIALS)
+                                                                      .value("google-application-credentials.json")
+                                                                      .build());
+    doReturn(kubernetesConfig)
+        .when(containerDeploymentDelegateHelper)
+        .getKubernetesConfig(containerServiceParams, envVariableList);
     doReturn(version).when(kubernetesContainerService).getVersionAsString(kubernetesConfig);
 
     boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-        true, containerServiceParams, new ExecutionLogCallback());
+        true, containerServiceParams, new ExecutionLogCallback(), "google-application-credentials.json");
     assertThat(result).isTrue();
   }
 
@@ -175,11 +189,17 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
             .build();
     String version = "1.15";
 
-    doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(containerServiceParams);
+    List<EnvVariable> envVariableList = Collections.singletonList(EnvVariable.builder()
+                                                                      .name(GOOGLE_APPLICATION_CREDENTIALS)
+                                                                      .value("google-application-credentials.json")
+                                                                      .build());
+    doReturn(kubernetesConfig)
+        .when(containerDeploymentDelegateHelper)
+        .getKubernetesConfig(containerServiceParams, envVariableList);
     doReturn(version).when(kubernetesContainerService).getVersionAsString(kubernetesConfig);
 
     boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-        true, containerServiceParams, new ExecutionLogCallback());
+        true, containerServiceParams, new ExecutionLogCallback(), "google-application-credentials.json");
     assertThat(result).isFalse();
   }
 
@@ -187,8 +207,8 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void testIsK8sVersion116OrAboveWithFeatureFlagDisabled() {
-    boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-        false, ContainerServiceParams.builder().build(), new ExecutionLogCallback());
+    boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(false,
+        ContainerServiceParams.builder().build(), new ExecutionLogCallback(), "google-application-credentials.json");
     assertThat(result).isFalse();
   }
 
@@ -260,7 +280,11 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
     doThrow(new RuntimeException("some exception message"))
         .when(rancherTaskHelper)
         .createKubeconfig(any(RancherConfig.class), nullable(List.class), anyString(), anyString());
-    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(params);
+    List<EnvVariable> envVariableList = Collections.singletonList(EnvVariable.builder()
+                                                                      .name(GOOGLE_APPLICATION_CREDENTIALS)
+                                                                      .value("google-application-credentials.json")
+                                                                      .build());
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(params, envVariableList);
   }
 
   @Test
@@ -279,7 +303,11 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
     doReturn(mock(KubernetesConfig.class))
         .when(rancherTaskHelper)
         .createKubeconfig(any(RancherConfig.class), anyList(), anyString(), anyString());
-    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(params);
+    List<EnvVariable> envVariableList = Collections.singletonList(EnvVariable.builder()
+                                                                      .name(GOOGLE_APPLICATION_CREDENTIALS)
+                                                                      .value("google-application-credentials.json")
+                                                                      .build());
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(params, envVariableList);
     verify(rancherTaskHelper, times(1)).createKubeconfig(rancherConfig, null, "sampleCluster", "sampleNamespace");
   }
 }

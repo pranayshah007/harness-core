@@ -7,6 +7,7 @@
 
 package software.wings.cloudprovider.gke;
 
+import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.rule.OwnerRule.BRETT;
 
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
@@ -23,6 +24,7 @@ import io.harness.delegate.task.gcp.helpers.GkeClusterHelper;
 import io.harness.exception.WingsException;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesConfig.KubernetesConfigBuilder;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -61,6 +63,9 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
                                                                                 .put("masterUser", "master")
                                                                                 .put("masterPwd", "password")
                                                                                 .build();
+  private final List<EnvVariable> envVariableList = Collections.singletonList(
+      EnvVariable.builder().name(GOOGLE_APPLICATION_CREDENTIALS).value("google-application-credentials.json").build());
+
   @Test
   @Owner(developers = BRETT)
   @Category(UnitTests.class)
@@ -106,12 +111,14 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
                                                           .username("master1".toCharArray())
                                                           .password("password1".toCharArray());
     KubernetesConfig config = kubernetesConfigBuilder.build();
-    when(gkeClusterHelper.getCluster(serviceAccountKey, false, ZONE_CLUSTER, "default")).thenReturn(config);
+    when(gkeClusterHelper.getCluster(serviceAccountKey, false, ZONE_CLUSTER, "default", envVariableList))
+        .thenReturn(config);
 
     KubernetesConfig result = gkeClusterService.getCluster(
-        COMPUTE_PROVIDER_SETTING.toDTO(), Collections.emptyList(), ZONE_CLUSTER, "default", false);
+        COMPUTE_PROVIDER_SETTING.toDTO(), Collections.emptyList(), ZONE_CLUSTER, "default", false, envVariableList);
 
-    verify(gkeClusterHelper, times(1)).getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"));
+    verify(gkeClusterHelper, times(1))
+        .getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"), envVariableList);
     assertThat(result).isEqualTo(config);
   }
 
@@ -119,18 +126,19 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
   @Owner(developers = BRETT)
   @Category(UnitTests.class)
   public void shouldNotGetClusterIfError() {
-    when(gkeClusterHelper.getCluster(serviceAccountKey, false, ZONE_CLUSTER, "default"))
+    when(gkeClusterHelper.getCluster(serviceAccountKey, false, ZONE_CLUSTER, "default", envVariableList))
         .thenThrow(WingsException.class);
 
     try {
       gkeClusterService.getCluster(
-          COMPUTE_PROVIDER_SETTING.toDTO(), Collections.emptyList(), ZONE_CLUSTER, "default", false);
+          COMPUTE_PROVIDER_SETTING.toDTO(), Collections.emptyList(), ZONE_CLUSTER, "default", false, envVariableList);
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (WingsException e) {
       // Expected
     }
 
-    verify(gkeClusterHelper, times(1)).getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"));
+    verify(gkeClusterHelper, times(1))
+        .getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"), envVariableList);
   }
 
   @Test

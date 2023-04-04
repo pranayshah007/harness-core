@@ -130,7 +130,7 @@ public class K8sTaskNGTest extends CategoryTest {
     doReturn(rollingRequestHandler).when(k8sTaskTypeToRequestHandler).get(K8sTaskType.DEPLOYMENT_ROLLING.name());
     doReturn(mockKubeConfigFileContent)
         .when(containerDeploymentDelegateBaseHelper)
-        .getKubeconfigFileContent(any(K8sInfraDelegateConfig.class), anyString());
+        .getKubeconfigFileContent(any(K8sInfraDelegateConfig.class), anyString(), anyString());
     doReturn(mockKubeConfig)
         .when(containerDeploymentDelegateBaseHelper)
         .decryptAndGetKubernetesConfig(any(K8sInfraDelegateConfig.class), anyString());

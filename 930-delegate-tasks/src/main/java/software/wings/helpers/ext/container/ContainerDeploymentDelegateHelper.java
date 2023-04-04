@@ -7,6 +7,8 @@
 
 package software.wings.helpers.ext.container;
 
+import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
+
 import static com.google.common.base.Charsets.UTF_8;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -20,6 +22,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -43,6 +46,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -70,8 +75,9 @@ public class ContainerDeploymentDelegateHelper {
   public static final LoadingCache<String, Object> lockObjects =
       CacheBuilder.newBuilder().expireAfterAccess(30, TimeUnit.MINUTES).build(CacheLoader.from(Object::new));
 
-  public String createAndGetKubeConfigLocation(ContainerServiceParams containerServiceParam) {
-    return createKubeConfig(getKubernetesConfig(containerServiceParam));
+  public String createAndGetKubeConfigLocation(
+      ContainerServiceParams containerServiceParam, List<EnvVariable> envVariableList) {
+    return createKubeConfig(getKubernetesConfig(containerServiceParam, envVariableList));
   }
 
   public void persistKubernetesConfig(K8sClusterConfig k8sClusterConfig, String workingDir) throws IOException {
@@ -99,9 +105,11 @@ public class ContainerDeploymentDelegateHelper {
     }
   }
 
-  public String getKubeConfigFileContent(ContainerServiceParams containerServiceParam) {
+  public String getKubeConfigFileContent(ContainerServiceParams containerServiceParam, String keyPath) {
     try {
-      KubernetesConfig kubernetesConfig = getKubernetesConfig(containerServiceParam);
+      List<EnvVariable> envVariableList =
+          Collections.singletonList(EnvVariable.builder().name(GOOGLE_APPLICATION_CREDENTIALS).value(keyPath).build());
+      KubernetesConfig kubernetesConfig = getKubernetesConfig(containerServiceParam, envVariableList);
       return kubernetesContainerService.getConfigFileContent(kubernetesConfig);
     } catch (Exception e) {
       throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
@@ -109,6 +117,11 @@ public class ContainerDeploymentDelegateHelper {
   }
 
   public KubernetesConfig getKubernetesConfig(ContainerServiceParams containerServiceParam) {
+    return getKubernetesConfig(containerServiceParam, new ArrayList<>());
+  }
+
+  public KubernetesConfig getKubernetesConfig(
+      ContainerServiceParams containerServiceParam, List<EnvVariable> envVariableList) {
     SettingAttribute settingAttribute = containerServiceParam.getSettingAttribute();
     List<EncryptedDataDetail> encryptedDataDetails = containerServiceParam.getEncryptionDetails();
     String clusterName = containerServiceParam.getClusterName();
@@ -132,8 +145,8 @@ public class ContainerDeploymentDelegateHelper {
 
       kubernetesConfig = kubernetesClusterConfig.createKubernetesConfig(namespace);
     } else if (settingAttribute.getValue() instanceof GcpConfig) {
-      kubernetesConfig =
-          gkeClusterService.getCluster(settingAttribute, encryptedDataDetails, clusterName, namespace, false);
+      kubernetesConfig = gkeClusterService.getCluster(
+          settingAttribute, encryptedDataDetails, clusterName, namespace, false, envVariableList);
     } else if (settingAttribute.getValue() instanceof AzureConfig) {
       AzureConfig azureConfig = (AzureConfig) settingAttribute.getValue();
       kubernetesConfig = azureDelegateHelperService.getKubernetesClusterConfig(azureConfig, encryptedDataDetails,
@@ -149,6 +162,11 @@ public class ContainerDeploymentDelegateHelper {
   }
 
   public KubernetesConfig getKubernetesConfig(K8sClusterConfig k8sClusterConfig, boolean isInstanceSync) {
+    return getKubernetesConfig(k8sClusterConfig, new ArrayList<>(), isInstanceSync);
+  }
+
+  public KubernetesConfig getKubernetesConfig(
+      K8sClusterConfig k8sClusterConfig, List<EnvVariable> envVariableList, boolean isInstanceSync) {
     SettingValue cloudProvider = k8sClusterConfig.getCloudProvider();
     List<EncryptedDataDetail> encryptedDataDetails = k8sClusterConfig.getCloudProviderEncryptionDetails();
     String namespace = k8sClusterConfig.getNamespace();
@@ -169,7 +187,7 @@ public class ContainerDeploymentDelegateHelper {
       kubernetesConfig = kubernetesClusterConfig.createKubernetesConfig(namespace);
     } else if (cloudProvider instanceof GcpConfig) {
       kubernetesConfig = gkeClusterService.getCluster((GcpConfig) cloudProvider, encryptedDataDetails,
-          k8sClusterConfig.getGcpKubernetesCluster().getClusterName(), namespace, isInstanceSync);
+          k8sClusterConfig.getGcpKubernetesCluster().getClusterName(), namespace, isInstanceSync, envVariableList);
     } else if (cloudProvider instanceof AzureConfig) {
       AzureConfig azureConfig = (AzureConfig) cloudProvider;
       kubernetesConfig = azureDelegateHelperService.getKubernetesClusterConfig(
@@ -182,13 +200,15 @@ public class ContainerDeploymentDelegateHelper {
     return kubernetesConfig;
   }
 
-  public boolean useK8sSteadyStateCheck(
-      boolean isK8sSteadyStateCheckEnabled, ContainerServiceParams containerServiceParams, LogCallback logCallback) {
+  public boolean useK8sSteadyStateCheck(boolean isK8sSteadyStateCheckEnabled,
+      ContainerServiceParams containerServiceParams, LogCallback logCallback, String gcpKeyPath) {
     if (!isK8sSteadyStateCheckEnabled) {
       return false;
     }
 
-    KubernetesConfig kubernetesConfig = getKubernetesConfig(containerServiceParams);
+    List<EnvVariable> envVariableList =
+        Collections.singletonList(EnvVariable.builder().name(GOOGLE_APPLICATION_CREDENTIALS).value(gcpKeyPath).build());
+    KubernetesConfig kubernetesConfig = getKubernetesConfig(containerServiceParams, envVariableList);
     String versionAsString = kubernetesContainerService.getVersionAsString(kubernetesConfig);
 
     logCallback.saveExecutionLog(format("Kubernetes version [%s]", versionAsString));

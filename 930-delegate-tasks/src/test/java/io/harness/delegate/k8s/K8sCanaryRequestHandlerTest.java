@@ -67,6 +67,7 @@ import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.releasehistory.IK8sRelease;
 import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.k8s.releasehistory.K8sRelease;
@@ -104,6 +105,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
   @Mock private K8sInfraDelegateConfig k8sInfraDelegateConfig;
   @Mock private ManifestDelegateConfig manifestDelegateConfig;
   @Mock private IK8sRelease release;
+  @Mock private List<EnvVariable> envVariableList;
 
   private final Integer timeoutIntervalInMin = 10;
   private final long timeoutIntervalInMillis = 60 * timeoutIntervalInMin * 1000;
@@ -122,7 +124,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
+        .createKubernetesConfig(k8sInfraDelegateConfig, envVariableList, logCallback);
     doReturn(logCallback)
         .when(k8sTaskHelperBase)
         .getLogCallback(eq(iLogStreamingTaskClient), anyString(), anyBoolean(), any());

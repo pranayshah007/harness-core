@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.shell;
 
+import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
@@ -76,8 +77,9 @@ public class CustomArtifactScriptExecutionOnDelegateNG {
   private ShellExecutorConfig getShellExecutorConfig(ShellScriptTaskParametersNG taskParameters) {
     String kubeConfigFileContent = taskParameters.getScript().contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH)
             && taskParameters.getK8sInfraDelegateConfig() != null
-        ? containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(
-            taskParameters.getK8sInfraDelegateConfig(), taskParameters.getWorkingDirectory())
+        ? containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(taskParameters.getK8sInfraDelegateConfig(),
+            taskParameters.getWorkingDirectory(),
+            taskParameters.getEnvironmentVariables().get(GOOGLE_APPLICATION_CREDENTIALS))
         : "";
 
     return ShellExecutorConfig.builder()

@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.gcp.helpers;
 
+import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.delegate.task.gcp.helpers.GcpHelperService.LOCATION_DELIMITER;
 import static io.harness.k8s.K8sConstants.API_VERSION;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
@@ -40,6 +41,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.k8s.model.GcpAccessTokenSupplier;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.model.kubeconfig.Exec;
 import io.harness.k8s.model.kubeconfig.InteractiveMode;
 import io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper;
@@ -74,6 +76,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -115,6 +118,8 @@ public class GkeClusterHelperTest extends CategoryTest {
                                                                                 .put("masterUser", "master")
                                                                                 .put("masterPwd", "password")
                                                                                 .build();
+  private final List<EnvVariable> envVariableList = Collections.singletonList(
+      EnvVariable.builder().name(GOOGLE_APPLICATION_CREDENTIALS).value("google-application-credentials.json").build());
 
   private static final String DUMMY_GCP_KEY = "{\n"
       + "      \"type\": \"service_account\",\n"
@@ -269,7 +274,8 @@ public class GkeClusterHelperTest extends CategoryTest {
   public void shouldGetCluster() throws Exception {
     when(clustersGet.execute()).thenReturn(CLUSTER_1);
 
-    KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default");
+    KubernetesConfig config =
+        gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default", envVariableList);
 
     verify(clusters).get(anyString());
     assertThat(config.getMasterUrl()).isEqualTo("https://1.1.1.1/");
@@ -302,7 +308,8 @@ public class GkeClusterHelperTest extends CategoryTest {
     when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(false);
 
     // when
-    KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default");
+    KubernetesConfig config =
+        gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default", envVariableList);
     mockedStaticAuthPlugin.close();
 
     // then
@@ -324,7 +331,8 @@ public class GkeClusterHelperTest extends CategoryTest {
       when(clustersGet.execute()).thenReturn(CLUSTER_1_19);
 
       // when
-      KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), true, ZONE_CLUSTER, "default");
+      KubernetesConfig config =
+          gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), true, ZONE_CLUSTER, "default", envVariableList);
 
       // then
       verify(clusters).get(anyString());
@@ -341,7 +349,8 @@ public class GkeClusterHelperTest extends CategoryTest {
     when(clustersGet.execute()).thenReturn(CLUSTER_1_8);
 
     // when
-    KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default");
+    KubernetesConfig config =
+        gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default", envVariableList);
 
     // then
     verify(clusters).get(anyString());
@@ -354,7 +363,8 @@ public class GkeClusterHelperTest extends CategoryTest {
   public void shouldGetClusterWithInheritedCredentials() throws Exception {
     when(clustersGet.execute()).thenReturn(CLUSTER_1);
 
-    KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY_CHARS, true, ZONE_CLUSTER, "default");
+    KubernetesConfig config =
+        gkeClusterHelper.getCluster(DUMMY_GCP_KEY_CHARS, true, ZONE_CLUSTER, "default", envVariableList);
 
     verify(clusters).get(anyString());
     assertThat(config.getMasterUrl()).isEqualTo("https://1.1.1.1/");
@@ -367,9 +377,9 @@ public class GkeClusterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldThrowExceptionForInvalidClusterName() throws Exception {
     when(clustersGet.execute()).thenReturn(CLUSTER_1);
-    assertThatThrownBy(() -> gkeClusterHelper.getCluster(null, true, null, "default"))
+    assertThatThrownBy(() -> gkeClusterHelper.getCluster(null, true, null, "default", envVariableList))
         .isInstanceOf(InvalidRequestException.class);
-    assertThatThrownBy(() -> gkeClusterHelper.getCluster(null, true, "foo", "default"))
+    assertThatThrownBy(() -> gkeClusterHelper.getCluster(null, true, "foo", "default", envVariableList))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -380,7 +390,7 @@ public class GkeClusterHelperTest extends CategoryTest {
     when(clustersGet.execute()).thenThrow(notFoundException);
 
     try {
-      gkeClusterHelper.getCluster(DUMMY_GCP_KEY_CHARS, false, ZONE_CLUSTER, "default");
+      gkeClusterHelper.getCluster(DUMMY_GCP_KEY_CHARS, false, ZONE_CLUSTER, "default", envVariableList);
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (WingsException e) {
       // Expected
@@ -396,7 +406,7 @@ public class GkeClusterHelperTest extends CategoryTest {
     when(clustersGet.execute()).thenThrow(new IOException());
 
     try {
-      gkeClusterHelper.getCluster(DUMMY_GCP_KEY_CHARS, false, ZONE_CLUSTER, "default");
+      gkeClusterHelper.getCluster(DUMMY_GCP_KEY_CHARS, false, ZONE_CLUSTER, "default", envVariableList);
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (WingsException e) {
       // Expected
@@ -417,7 +427,7 @@ public class GkeClusterHelperTest extends CategoryTest {
             googleJsonError));
 
     try {
-      gkeClusterHelper.getCluster(DUMMY_GCP_KEY_CHARS, false, ZONE_CLUSTER, "default");
+      gkeClusterHelper.getCluster(DUMMY_GCP_KEY_CHARS, false, ZONE_CLUSTER, "default", envVariableList);
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (WingsException e) {
       // Expected
@@ -480,7 +490,8 @@ public class GkeClusterHelperTest extends CategoryTest {
     when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
 
     // when
-    KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default");
+    KubernetesConfig config =
+        gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default", envVariableList);
     mockedStaticAuthPlugin.close();
 
     // then
@@ -520,7 +531,8 @@ public class GkeClusterHelperTest extends CategoryTest {
     when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
 
     // when
-    KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default");
+    KubernetesConfig config =
+        gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default", envVariableList);
     mockedStaticAuthPlugin.close();
 
     // then

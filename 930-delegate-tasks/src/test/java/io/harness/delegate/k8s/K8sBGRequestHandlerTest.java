@@ -80,6 +80,7 @@ import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.k8s.releasehistory.K8SLegacyReleaseHistory;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
@@ -116,6 +117,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   @Mock K8sReleaseHandler releaseHandler;
   @Mock IK8sReleaseHistory releaseHistory;
   @Mock K8sRelease release;
+  @Mock List<EnvVariable> envVariableList;
 
   @Spy @InjectMocks K8sBGBaseHandler k8sBGBaseHandler;
   @Spy @InjectMocks K8sBGRequestHandler k8sBGRequestHandler;
@@ -153,7 +155,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
 
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(any(K8sInfraDelegateConfig.class), anyString(), eq(logCallback));
+        .createKubernetesConfig(any(K8sInfraDelegateConfig.class), eq(envVariableList), eq(logCallback));
 
     on(k8sBGRequestHandler).set("useDeclarativeRollback", true);
     doReturn(releaseHandler).when(k8sTaskHelperBase).getReleaseHandler(anyBoolean());
@@ -512,7 +514,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
 
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
+        .createKubernetesConfig(k8sInfraDelegateConfig, envVariableList, logCallback);
     doReturn(renderedFiles)
         .when(k8sTaskHelperBase)
         .renderTemplate(eq(k8sDelegateTaskParams), eq(k8sManifestDelegateConfig), any(), eq(valuesYamlFiles), any(),
@@ -532,7 +534,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     }
 
     verify(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
+        .createKubernetesConfig(k8sInfraDelegateConfig, envVariableList, logCallback);
     verify(releaseHandler).getReleaseHistory(any(), eq("releaseName"));
 
     if (!throwException) {
