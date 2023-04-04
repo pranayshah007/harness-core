@@ -150,14 +150,20 @@ public class AMIArtifactResource {
         region = (String) amiArtifactConfig.getRegion().fetchFinalValue();
       }
 
-      if (amiArtifactConfig.getTags() != null && amiArtifactConfig.getTags().isExpression()
-          && NGExpressionUtils.isRuntimeField(amiArtifactConfig.getTags().getExpressionValue())) {
+      if (NGExpressionUtils.isRuntimeField(amiArtifactConfig.getTags().getExpressionValue())) {
         amiTags = amiRequestBody.getTags();
+      } else {
+        if (amiArtifactConfig.getTags() != null) {
+          amiTags = amiArtifactConfig.getTags().getValue();
+        }
       }
 
-      if (amiArtifactConfig.getFilters() != null && amiArtifactConfig.getFilters().isExpression()
-          && NGExpressionUtils.isRuntimeField(amiArtifactConfig.getFilters().getExpressionValue())) {
+      if (NGExpressionUtils.isRuntimeField(amiArtifactConfig.getFilters().getExpressionValue())) {
         amiFilters = amiRequestBody.getFilters();
+      } else {
+        if (amiArtifactConfig.getFilters() != null) {
+          amiFilters = amiArtifactConfig.getFilters().getValue();
+        }
       }
 
       // Getting the resolved connectorRef  in case of expressions
