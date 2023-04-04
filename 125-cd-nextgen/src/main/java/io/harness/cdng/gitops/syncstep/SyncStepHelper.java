@@ -68,6 +68,9 @@ public class SyncStepHelper {
       return (boolean) value;
     } else if (value instanceof String) {
       return Boolean.parseBoolean((String) value);
+    } else if (value == null) {
+      // do not make this return false
+      throw new IllegalArgumentException("Cannot convert null to boolean");
     } else {
       throw new IllegalArgumentException("Cannot convert " + value.getClass().getName() + " to boolean");
     }
@@ -78,6 +81,10 @@ public class SyncStepHelper {
       return (int) obj;
     } else if (obj instanceof Double) {
       return ((Double) obj).intValue();
+    } else if (obj instanceof String) {
+      return Integer.parseInt(obj.toString());
+    } else if (obj == null) {
+      throw new IllegalArgumentException("Cannot convert null to integer");
     } else {
       throw new IllegalArgumentException("Cannot convert " + obj.getClass().getName() + " to integer");
     }
