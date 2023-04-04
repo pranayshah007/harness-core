@@ -93,7 +93,8 @@ public interface ProjectClient {
 
   @GET(PROJECTS_API + "/all-projects")
   Call<ResponseDTO<List<ProjectDTO>>> getProjectList(
-      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(value = NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm);
 
   @GET(PROJECTS_API + "/projects-count")
   Call<ResponseDTO<ActiveProjectsCountDTO>> getAccessibleProjectsCount(
