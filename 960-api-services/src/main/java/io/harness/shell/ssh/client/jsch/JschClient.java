@@ -19,6 +19,12 @@ import static io.harness.shell.AccessType.USER_PASSWORD;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshHelperUtils.normalizeError;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
+import static io.harness.shell.ssh.Constants.CHANNEL_IS_NOT_OPENED;
+import static io.harness.shell.ssh.Constants.CHUNK_SIZE;
+import static io.harness.shell.ssh.Constants.MAX_BYTES_READ_PER_CHANNEL;
+import static io.harness.shell.ssh.Constants.SSH_NETWORK_PROXY;
+import static io.harness.shell.ssh.Constants.lineBreakPattern;
+import static io.harness.shell.ssh.Constants.sudoPasswordPromptPattern;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
@@ -79,72 +85,70 @@ public class JschClient extends SshClient {
   }
 
   @Override
-  public ExecResponse exec(ExecRequest commandData) {
+  protected ExecResponse execInternal(ExecRequest commandData, SshConnection sshConnection) {
     StringBuffer output = new StringBuffer();
     CommandExecutionStatus commandExecutionStatus = FAILURE;
 
-    try (SshConnection client = getConnection()) {
-      try (JschExecSession session = getExecSession(client)) {
-        ChannelExec channel = session.getChannel();
-        // Allocate a Pseudo-Terminal.
-        channel.setPty(true);
-        // InputStream: stdout/stderr of the command. All data arriving in SSH_MSG_CHANNEL_DATA messages from the remote
-        // side can be read from this stream.
-        // OutputStream: input. All data written to this stream will be sent in SSH_MSG_CHANNEL_DATA messages to the
-        // remote side.
-        // Both should be called before connect()
-        try (OutputStream outputStream = channel.getOutputStream();
-             InputStream inputStream = channel.getInputStream()) {
-          channel.setCommand(commandData.getCommand());
-          saveExecutionLog(format("Connecting to %s ....", getSshSessionConfig().getHost()));
-          // This will connect + send data to remote
-          channel.connect(getSshSessionConfig().getSocketConnectTimeout());
-          saveExecutionLog(format("Connection to %s established", getSshSessionConfig().getHost()));
-          if (commandData.isDisplayCommand()) {
-            saveExecutionLog(format("Executing command %s ...", commandData.getCommand()));
-          } else {
-            saveExecutionLog("Executing command ...");
+    try (JschExecSession session = getExecSession(sshConnection)) {
+      ChannelExec channel = session.getChannel();
+      // Allocate a Pseudo-Terminal.
+      channel.setPty(true);
+      // InputStream: stdout/stderr of the command. All data arriving in SSH_MSG_CHANNEL_DATA messages from the remote
+      // side can be read from this stream.
+      // OutputStream: input. All data written to this stream will be sent in SSH_MSG_CHANNEL_DATA messages to the
+      // remote side.
+      // Both should be called before connect()
+      try (OutputStream outputStream = channel.getOutputStream(); InputStream inputStream = channel.getInputStream()) {
+        channel.setCommand(commandData.getCommand());
+        saveExecutionLog(format("Connecting to %s ....", getSshSessionConfig().getHost()));
+        // This will connect + send data to remote
+        channel.connect(getSshSessionConfig().getSocketConnectTimeout());
+        saveExecutionLog(format("Connection to %s established", getSshSessionConfig().getHost()));
+        if (commandData.isDisplayCommand()) {
+          saveExecutionLog(format("Executing command %s ...", commandData.getCommand()));
+        } else {
+          saveExecutionLog("Executing command ...");
+        }
+
+        int totalBytesRead = 0;
+        byte[] byteBuffer = new byte[1024];
+        String text = "";
+
+        while (true) {
+          while (inputStream.available() > 0) {
+            int numOfBytesRead = inputStream.read(byteBuffer, 0, 1024);
+            if (numOfBytesRead < 0) {
+              break;
+            }
+            totalBytesRead += numOfBytesRead;
+            if (totalBytesRead >= MAX_BYTES_READ_PER_CHANNEL) {
+              // TODO: better error reporting
+              throw new JschClientException(UNKNOWN_ERROR);
+            }
+            String dataReadFromTheStream = new String(byteBuffer, 0, numOfBytesRead, UTF_8);
+            output.append(dataReadFromTheStream);
+
+            text += dataReadFromTheStream;
+            text = processStreamData(text, false, outputStream);
           }
 
-          int totalBytesRead = 0;
-          byte[] byteBuffer = new byte[1024];
-          String text = "";
-
-          while (true) {
-            while (inputStream.available() > 0) {
-              int numOfBytesRead = inputStream.read(byteBuffer, 0, 1024);
-              if (numOfBytesRead < 0) {
-                break;
-              }
-              totalBytesRead += numOfBytesRead;
-              if (totalBytesRead >= MAX_BYTES_READ_PER_CHANNEL) {
-                // TODO: better error reporting
-                throw new JschClientException(UNKNOWN_ERROR);
-              }
-              String dataReadFromTheStream = new String(byteBuffer, 0, numOfBytesRead, UTF_8);
-              output.append(dataReadFromTheStream);
-
-              text += dataReadFromTheStream;
-              text = processStreamData(text, false, outputStream);
-            }
-
-            if (text.length() > 0) {
-              text = processStreamData(text, true, outputStream); // finished reading. update logs
-            }
-
-            if (channel.isClosed()) {
-              commandExecutionStatus = channel.getExitStatus() == 0 ? SUCCESS : FAILURE;
-              saveExecutionLog("Command finished with status " + commandExecutionStatus, commandExecutionStatus);
-              return ExecResponse.builder()
-                  .output(output.toString())
-                  .exitCode(channel.getExitStatus())
-                  .status(commandExecutionStatus)
-                  .build();
-            }
-            sleep(Duration.ofSeconds(1));
+          if (text.length() > 0) {
+            text = processStreamData(text, true, outputStream); // finished reading. update logs
           }
+
+          if (channel.isClosed()) {
+            commandExecutionStatus = channel.getExitStatus() == 0 ? SUCCESS : FAILURE;
+            saveExecutionLog("Command finished with status " + commandExecutionStatus, commandExecutionStatus);
+            return ExecResponse.builder()
+                .output(output.toString())
+                .exitCode(channel.getExitStatus())
+                .status(commandExecutionStatus)
+                .build();
+          }
+          sleep(Duration.ofSeconds(1));
         }
       }
+
     } catch (JSchException jsch) {
       // check retry
       if (CHANNEL_IS_NOT_OPENED.equals(jsch.getMessage())) {
@@ -162,25 +166,24 @@ public class JschClient extends SshClient {
   }
 
   @Override
-  public SftpResponse sftpUpload(SftpRequest commandData) {
-    try (JschConnection client = getConnection()) {
-      try (JschSftpSession session = getSftpSession(client)) {
-        ChannelSftp channel = session.getChannel();
-        channel.cd(commandData.getDirectory());
-        InputStream inputStream = channel.get(commandData.getFileName(), CHUNK_SIZE);
-        BoundedInputStream stream = new BoundedInputStream(inputStream);
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(stream, Charsets.UTF_8));
-        String content = getContent(bufferedReader);
-        if (commandData.isCleanup()) {
-          channel.rm(commandData.getDirectory() + commandData.getFileName());
-        }
-        return SftpResponse.builder()
-            .content(content)
-            .exitCode(channel.getExitStatus())
-            .status(SUCCESS)
-            .success(true)
-            .build();
+  protected SftpResponse sftpUploadInternal(SftpRequest commandData, SshConnection sshConnection) {
+    try (JschSftpSession session = getSftpSession(sshConnection)) {
+      ChannelSftp channel = session.getChannel();
+      channel.cd(commandData.getDirectory());
+      InputStream inputStream = channel.get(commandData.getFileName(), CHUNK_SIZE);
+      BoundedInputStream stream = new BoundedInputStream(inputStream);
+      BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(stream, Charsets.UTF_8));
+      String content = getContent(bufferedReader);
+      if (commandData.isCleanup()) {
+        channel.rm(commandData.getDirectory() + commandData.getFileName());
       }
+      return SftpResponse.builder()
+          .content(content)
+          .exitCode(channel.getExitStatus())
+          .status(SUCCESS)
+          .success(true)
+          .build();
+
     } catch (Exception ex) {
       return SftpResponse.builder().exitCode(1).status(FAILURE).success(false).build();
     }
@@ -200,10 +203,12 @@ public class JschClient extends SshClient {
   }
 
   @Override
-  public void testSession() {
-    try (JschConnection client = getConnection()) {
-      try (JschExecSession ignored = getExecSession(client)) {
-      }
+  public void testSession(SshConnection sshConnection) {
+    try (JschExecSession session = getExecSession(sshConnection)) {
+      ChannelExec testChannel = session.getChannel();
+      testChannel.setCommand("true");
+      testChannel.connect(getSshSessionConfig().getSocketConnectTimeout());
+      log.info("Session connection test successful");
     } catch (JSchException ex) {
       log.error("Failed to validate Host: ", ex);
       ErrorCode errorCode = normalizeError(ex);
@@ -236,7 +241,7 @@ public class JschClient extends SshClient {
   }
 
   @Override
-  public ScpResponse scpUpload(ScpRequest commandData) {
+  protected ScpResponse scpUploadInternal(ScpRequest commandData, SshConnection sshConnection) {
     CommandExecutionStatus commandExecutionStatus = FAILURE;
 
     try {
@@ -244,47 +249,46 @@ public class JschClient extends SshClient {
       String command = format(
           "mkdir -p \"%s\" && scp -r -d -t '%s'", commandData.getRemoteFilePath(), commandData.getRemoteFilePath());
 
-      try (JschConnection client = getConnection()) {
-        try (JschExecSession session = getExecSession(client)) {
-          ChannelExec channel = session.getChannel();
-          channel.setCommand(command);
+      try (JschExecSession session = getExecSession(sshConnection)) {
+        ChannelExec channel = session.getChannel();
+        channel.setCommand(command);
 
-          try (OutputStream out = channel.getOutputStream(); InputStream in = channel.getInputStream()) {
-            saveExecutionLog(format("Connecting to %s ....", getSshSessionConfig().getHost()));
-            channel.connect(getSshSessionConfig().getSocketConnectTimeout());
+        try (OutputStream out = channel.getOutputStream(); InputStream in = channel.getInputStream()) {
+          saveExecutionLog(format("Connecting to %s ....", getSshSessionConfig().getHost()));
+          channel.connect(getSshSessionConfig().getSocketConnectTimeout());
 
-            if (checkAck(in) != 0) {
-              saveExecutionLogError("SCP connection initiation failed");
-              return ScpResponse.builder().success(false).exitCode(1).status(FAILURE).build();
-            } else {
-              saveExecutionLog(format("Connection to %s established", getSshSessionConfig().getHost()));
-            }
-
-            // send "C0644 filesize filename", where filename should not include '/'
-            command = "C0644 " + fileInfo.getValue() + " " + fileInfo.getKey() + "\n";
-
-            out.write(command.getBytes(UTF_8));
-            out.flush();
-            if (checkAck(in) != 0) {
-              saveExecutionLogError("SCP connection initiation failed");
-              return ScpResponse.builder().success(false).exitCode(1).status(FAILURE).build();
-            }
-            saveExecutionLog("Begin file transfer " + fileInfo.getKey() + " to " + getSshSessionConfig().getHost() + ":"
-                + commandData.getRemoteFilePath());
-            logFileSize(fileInfo.getKey(), fileInfo.getValue());
-            commandData.getFileProvider().downloadToStream(out);
-            out.write(new byte[1], 0, 1);
-            out.flush();
-
-            if (checkAck(in) != 0) {
-              saveExecutionLogError("File transfer to " + getSshSessionConfig().getHost() + ":"
-                  + commandData.getRemoteFilePath() + " failed");
-              return ScpResponse.builder().success(false).exitCode(1).status(FAILURE).build();
-            }
-            commandExecutionStatus = SUCCESS;
-            saveExecutionLog("File successfully transferred to " + getSshSessionConfig().getHost() + ":"
-                + commandData.getRemoteFilePath());
+          if (checkAck(in) != 0) {
+            saveExecutionLogError("SCP connection initiation failed");
+            return ScpResponse.builder().success(false).exitCode(1).status(FAILURE).build();
+          } else {
+            saveExecutionLog(format("Connection to %s established", getSshSessionConfig().getHost()));
           }
+
+          // send "C0644 filesize filename", where filename should not include '/'
+          command = "C0644 " + fileInfo.getValue() + " " + fileInfo.getKey() + "\n";
+
+          out.write(command.getBytes(UTF_8));
+          out.flush();
+          if (checkAck(in) != 0) {
+            saveExecutionLogError("SCP connection initiation failed");
+            return ScpResponse.builder().success(false).exitCode(1).status(FAILURE).build();
+          }
+          saveExecutionLog("Begin file transfer " + fileInfo.getKey() + " to " + getSshSessionConfig().getHost() + ":"
+              + commandData.getRemoteFilePath());
+          logFileSize(fileInfo.getKey(), fileInfo.getValue());
+          commandData.getFileProvider().downloadToStream(out);
+          out.write(new byte[1], 0, 1);
+          out.flush();
+
+          if (checkAck(in) != 0) {
+            saveExecutionLogError("File transfer to " + getSshSessionConfig().getHost() + ":"
+                + commandData.getRemoteFilePath() + " failed");
+            return ScpResponse.builder().success(false).exitCode(1).status(FAILURE).build();
+          }
+          commandExecutionStatus = SUCCESS;
+          saveExecutionLog("File successfully transferred to " + getSshSessionConfig().getHost() + ":"
+              + commandData.getRemoteFilePath());
+
         } catch (IOException | ExecutionException | JSchException ex) {
           if (ex instanceof FileNotFoundException) {
             saveExecutionLogError("File not found");
