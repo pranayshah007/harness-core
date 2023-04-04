@@ -128,6 +128,7 @@ public class GraphDataServiceImpl implements GraphDataService {
               .isRecalculatingSLI(false)
               .isCalculatingSLI(isCalculatingSLI)
               .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
+              .totalErrorBudgetFromGraph(totalErrorBudgetMinutes)
               .build();
         }
         sloValue = SLOValue.builder().goodCount(goodCountFromStart).badCount(badCountFromStart).build();
@@ -169,6 +170,7 @@ public class GraphDataServiceImpl implements GraphDataService {
         .isRecalculatingSLI(false)
         .isCalculatingSLI(isCalculatingSLI)
         .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
+        .totalErrorBudgetFromGraph(totalErrorBudgetMinutes)
         .build();
   }
 
