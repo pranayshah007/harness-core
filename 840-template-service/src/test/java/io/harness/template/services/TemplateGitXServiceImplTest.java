@@ -29,6 +29,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.rule.Owner;
 import io.harness.template.beans.TemplateImportRequestDTO;
@@ -53,6 +54,8 @@ public class TemplateGitXServiceImplTest {
   @Mock NGTemplateRepository templateRepository;
 
   @Mock GitAwareEntityHelper gitAwareEntityHelper;
+
+  @Mock NGSettingsClient ngSettingsClient;
 
   private static final String BranchName = "branch";
   private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
@@ -91,8 +94,8 @@ public class TemplateGitXServiceImplTest {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    templateGitXService =
-        new TemplateGitXServiceImpl(scmGitSyncHelper, gitSyncSdkService, templateRepository, gitAwareEntityHelper);
+    templateGitXService = new TemplateGitXServiceImpl(
+        scmGitSyncHelper, gitSyncSdkService, templateRepository, gitAwareEntityHelper, ngSettingsClient);
   }
 
   @Test
