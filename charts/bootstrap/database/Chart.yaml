@@ -42,7 +42,7 @@ dependencies:
     repository: "file://./redis"
   - name: postgresql
     version: 11.6.16
-    condition: global.database.postgres.installed
+    condition: global.database.postgresql.installed
     repository: https://charts.bitnami.com/bitnami
 
 
