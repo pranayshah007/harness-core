@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -23,6 +24,8 @@ public interface SecretManagerClientService {
   List<EncryptedDataDetail> getEncryptionDetails(NGAccess ngAccess, DecryptableEntity consumer);
   SecretManagerConfigDTO getSecretManager(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, boolean maskSecrets);
+  SecretResponseWrapper getSecret(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
   DecryptedSecretValue getDecryptedSecretValue(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 }
