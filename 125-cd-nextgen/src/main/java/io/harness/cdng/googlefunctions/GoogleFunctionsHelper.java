@@ -21,6 +21,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.googlefunctions.beans.GoogleFunctionGenOnePrepareRollbackOutcome;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionPrepareRollbackOutcome;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionStepOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -53,9 +54,12 @@ import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionInfraConfig;
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionCommandRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOnePrepareRollbackRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionGenOnePrepareRollbackRequest.GoogleFunctionGenOnePrepareRollbackRequestBuilder;
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionPrepareRollbackRequest;
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionPrepareRollbackRequest.GoogleFunctionPrepareRollbackRequestBuilder;
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionCommandResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionGenOnePrepareRollbackResponse;
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionPrepareRollbackResponse;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.ExceptionUtils;
@@ -162,7 +166,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
               .manifestOutcome(googleFunctionsManifestOutcome)
               .manifestContent(manifestContent)
               .infrastructureOutcome(infrastructureOutcome)
-               .environmentType(environmentType)
+              .environmentType(environmentType)
               .build();
       UnitProgressData unitProgressData = getCommandUnitProgressData(
           GoogleFunctionsCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
@@ -206,6 +210,37 @@ public class GoogleFunctionsHelper extends CDStepHelper {
         googleFunctionPrepareRollbackResponse.getUnitProgressData());
   }
 
+  private TaskChainResponse handlePrepareRollbackDataResponseGenOne(
+          GoogleFunctionGenOnePrepareRollbackResponse googleFunctionGenOnePrepareRollbackResponse,
+          GoogleFunctionsStepExecutor googleFunctionsStepExecutor, Ambiance ambiance,
+          StepElementParameters stepElementParameters,
+          GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData) {
+    if (googleFunctionGenOnePrepareRollbackResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      GoogleFunctionsStepExceptionPassThroughData googleFunctionsStepExceptionPassThroughData =
+              GoogleFunctionsStepExceptionPassThroughData.builder()
+                      .errorMsg(googleFunctionGenOnePrepareRollbackResponse.getErrorMessage())
+                      .unitProgressData(googleFunctionGenOnePrepareRollbackResponse.getUnitProgressData())
+                      .build();
+      return TaskChainResponse.builder()
+              .passThroughData(googleFunctionsStepExceptionPassThroughData)
+              .chainEnd(true)
+              .build();
+    }
+
+    GoogleFunctionGenOnePrepareRollbackOutcome googleFunctionGenOnePrepareRollbackOutcome =
+            GoogleFunctionGenOnePrepareRollbackOutcome.builder()
+                    .createFunctionRequestAsString(googleFunctionGenOnePrepareRollbackResponse.getCreateFunctionRequestAsString())
+                    .isFirstDeployment(googleFunctionGenOnePrepareRollbackResponse.isFirstDeployment())
+                    .manifestContent(googleFunctionsStepPassThroughData.getManifestContent())
+                    .build();
+    executionSweepingOutputService.consume(ambiance,
+            OutcomeExpressionConstants.GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK_OUTCOME,
+            googleFunctionGenOnePrepareRollbackOutcome, StepOutcomeGroup.STEP.name());
+
+    return googleFunctionsStepExecutor.executeTask(ambiance, stepElementParameters, googleFunctionsStepPassThroughData,
+            googleFunctionGenOnePrepareRollbackResponse.getUnitProgressData());
+  }
+
   public TaskChainResponse executePrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
       GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData, UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructureOutcome = googleFunctionsStepPassThroughData.getInfrastructureOutcome();
@@ -221,16 +256,16 @@ public class GoogleFunctionsHelper extends CDStepHelper {
       return queueTask(stepParameters, googleFunctionPrepareRollbackRequestBuilder.build(), ambiance,
               googleFunctionsStepPassThroughData, false, TaskType.GOOGLE_FUNCTION_PREPARE_ROLLBACK_TASK);
     }
-    GoogleFunctionPrepareRollbackRequestBuilder googleFunctionPrepareRollbackRequestBuilder =
-            GoogleFunctionPrepareRollbackRequest.builder()
-                    .googleFunctionCommandType(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_PREPARE_ROLLBACK)
+    GoogleFunctionGenOnePrepareRollbackRequestBuilder googleFunctionGenOnePrepareRollbackRequestBuilder =
+            GoogleFunctionGenOnePrepareRollbackRequest.builder()
+                    .googleFunctionCommandType(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK)
                     .commandName(GOOGLE_FUNCTION_PREPARE_ROLLBACK_COMMAND_NAME)
                     .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
                     .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
                     .googleFunctionInfraConfig(getInfraConfig(infrastructureOutcome, ambiance))
                     .googleFunctionDeployManifestContent(googleFunctionsStepPassThroughData.getManifestContent());
-    return queueTask(stepParameters, googleFunctionPrepareRollbackRequestBuilder.build(), ambiance,
-            googleFunctionsStepPassThroughData, false, TaskType.GOOGLE_FUNCTION_PREPARE_ROLLBACK_TASK);
+    return queueTask(stepParameters, googleFunctionGenOnePrepareRollbackRequestBuilder.build(), ambiance,
+            googleFunctionsStepPassThroughData, false, TaskType.GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK_TASK);
   }
 
   public TaskChainResponse executeNextLink(GoogleFunctionsStepExecutor googleFunctionsStepExecutor, Ambiance ambiance,
@@ -251,6 +286,11 @@ public class GoogleFunctionsHelper extends CDStepHelper {
             (GoogleFunctionPrepareRollbackResponse) responseData;
         taskChainResponse = handlePrepareRollbackDataResponse(googleFunctionPrepareRollbackResponse,
             googleFunctionsStepExecutor, ambiance, stepElementParameters, googleFunctionsStepPassThroughData);
+      } else if (responseData instanceof GoogleFunctionGenOnePrepareRollbackResponse) {
+        GoogleFunctionGenOnePrepareRollbackResponse googleFunctionGenOnePrepareRollbackResponse =
+                (GoogleFunctionGenOnePrepareRollbackResponse) responseData;
+        taskChainResponse = handlePrepareRollbackDataResponseGenOne(googleFunctionGenOnePrepareRollbackResponse,
+                googleFunctionsStepExecutor, ambiance, stepElementParameters, googleFunctionsStepPassThroughData);
       }
     } catch (Exception e) {
       return TaskChainResponse.builder()

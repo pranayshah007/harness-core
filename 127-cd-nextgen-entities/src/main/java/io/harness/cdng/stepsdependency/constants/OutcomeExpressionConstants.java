@@ -71,6 +71,7 @@ public class OutcomeExpressionConstants {
   public final String TAS_SWAP_ROUTES_OUTCOME = "TasSwapRoutesOutcome";
   public final String TAS_INBUILT_VARIABLES_OUTCOME = "pcf";
   public final String GOOGLE_FUNCTION_PREPARE_ROLLBACK_OUTCOME = "googleFunctionPrepareRollbackOutcome";
+  public final String GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK_OUTCOME = "googleFunctionGenOnePrepareRollbackOutcome";
   public final String GOOGLE_FUNCTION_DEPLOY_OUTCOME = "googleFunctionDeployOutcome";
   public final String GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_OUTCOME = "googleFunctionDeployWithoutTrafficOutcome";
   public final String TAS_ROLLING_DEPLOY_OUTCOME = "TasRollingDeployOutcome";
