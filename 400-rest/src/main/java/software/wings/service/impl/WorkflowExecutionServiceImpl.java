@@ -278,7 +278,6 @@ import software.wings.beans.execution.RollbackType;
 import software.wings.beans.execution.RollbackWorkflowExecutionInfo;
 import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.beans.execution.WorkflowExecutionInfo.WorkflowExecutionInfoBuilder;
-import software.wings.beans.infrastructure.Host;
 import software.wings.beans.trigger.Trigger;
 import software.wings.beans.trigger.TriggerConditionType;
 import software.wings.dl.WingsPersistence;
@@ -4937,7 +4936,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
           workflowExecution.getWorkflowId());
       total = workflowExecution.getTotal();
       if (total == 0) {
-        total = refreshTotal(workflowExecution);
+        total = (int) refreshTotal(workflowExecution);
       }
       breakdown = getBreakdownFromPhases(workflowExecution);
       breakdown.setQueued(total - (breakdown.getFailed() + breakdown.getSuccess() + breakdown.getInprogress()));
@@ -5047,7 +5046,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     return breakdown;
   }
 
-  private int refreshTotal(WorkflowExecution workflowExecution) {
+  private long refreshTotal(WorkflowExecution workflowExecution) {
     Workflow workflow = workflowService.readWorkflow(workflowExecution.getAppId(), workflowExecution.getWorkflowId());
     if (workflow == null || workflow.getOrchestrationWorkflow() == null) {
       log.info("Workflow was deleted. Skipping the refresh total");
@@ -5060,8 +5059,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       return 0;
     }
     try {
-      List<Host> hosts = hostService.getHostsByInfraMappingIds(workflow.getAppId(), resolvedInfraMappingIds);
-      return hosts == null ? 0 : hosts.size();
+      return hostService.getHostsCountByInfraMappingIds(workflow.getAppId(), resolvedInfraMappingIds);
     } catch (Exception e) {
       log.error(
           "Error occurred while calculating Refresh total for workflow execution {}", workflowExecution.getUuid(), e);

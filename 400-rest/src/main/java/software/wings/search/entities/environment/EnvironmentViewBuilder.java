@@ -9,6 +9,7 @@ package software.wings.search.entities.environment;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.SPG_OPTIMIZE_ENVIRONMENT_VIEW_BUILDER;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 
 import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_ENVIDS;
 
@@ -106,6 +107,7 @@ class EnvironmentViewBuilder {
                                                                .field(EnvironmentKeys.createdAt)
                                                                .greaterThanOrEq(startTimestamp)
                                                                .order(Sort.descending(AuditHeaderKeys.createdAt))
+                                                               .limit(NO_LIMIT)
                                                                .fetch())) {
       while (iterator.hasNext()) {
         final AuditHeader auditHeader = iterator.next();
