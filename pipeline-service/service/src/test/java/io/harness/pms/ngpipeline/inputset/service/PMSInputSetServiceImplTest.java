@@ -224,7 +224,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                          .build();
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     on(pmsInputSetService).set("inputSetsApiUtils", inputSetsApiUtils);
-    on(pmsInputSetService).set("gitExperienceSettingsHelper", gitExperienceSettingsHandler);
+    on(pmsInputSetService).set("gitExperienceSettingsHandler", gitExperienceSettingsHandler);
   }
 
   @Test
