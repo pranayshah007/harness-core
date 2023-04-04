@@ -69,7 +69,7 @@ import io.harness.pms.pipeline.StepPalleteFilterWrapper;
 import io.harness.pms.pipeline.StepPalleteInfo;
 import io.harness.pms.pipeline.StepPalleteModuleInfo;
 import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
-import io.harness.pms.pipeline.gitsync.GitExperienceSettingsHelper;
+import io.harness.pms.pipeline.gitsync.GitExperienceSettingsHandler;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.validation.async.beans.Action;
@@ -139,8 +139,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PipelineValidationService pipelineValidationService;
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
-  @Inject
-  GitExperienceSettingsHelper gitExperienceSettingsHelper;
+  @Inject GitExperienceSettingsHandler gitExperienceSettingsHandler;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -164,7 +163,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
         pipelineEntity.getIdentifier());
 
-    gitExperienceSettingsHelper.enforceGitExperienceIfApplicable(pipelineEntity.getAccountIdentifier(),
+    gitExperienceSettingsHandler.enforceGitExperienceIfApplicable(pipelineEntity.getAccountIdentifier(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
 
     checkProjectExists(

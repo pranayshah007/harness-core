@@ -56,7 +56,7 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.pipeline.PMSInputSetListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.gitsync.GitExperienceSettingsHelper;
+import io.harness.pms.pipeline.gitsync.GitExperienceSettingsHandler;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.yaml.PipelineVersion;
@@ -97,7 +97,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Inject private PMSPipelineService pipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
   @Inject private InputSetsApiUtils inputSetsApiUtils;
-  @Inject GitExperienceSettingsHelper gitExperienceSettingsHelper;
+  @Inject GitExperienceSettingsHandler gitExperienceSettingsHandler;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
@@ -113,8 +113,8 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
         inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
     InputSetValidationHelper.validateInputSet(this, inputSetEntity, hasNewYamlStructure);
     if (!isOldGitSync) {
-      gitExperienceSettingsHelper.enforceGitExperienceIfApplicable(inputSetEntity.getAccountId(),
-          inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
+      gitExperienceSettingsHandler.enforceGitExperienceIfApplicable(
+          inputSetEntity.getAccountId(), inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
 
       PipelineEntity pipelineEntityMetadata =
           pipelineService.getPipelineMetadata(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),

@@ -8,7 +8,6 @@
 package io.harness.pms.pipeline.gitsync;
 
 import io.harness.exception.InvalidRequestException;
-import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -18,7 +17,7 @@ import io.harness.remote.client.NGRestUtils;
 
 import com.google.inject.Inject;
 
-public class GitExperienceSettingsHelper {
+public class GitExperienceSettingsHandler {
   @Inject private NGSettingsClient ngSettingsClient;
   public boolean isGitExperienceEnforcedInSettings(String accountId, String orgIdentifier, String projIdentifier) {
     String isGitExperienceEnforced =
@@ -30,16 +29,14 @@ public class GitExperienceSettingsHelper {
   }
 
   public void enforceGitExperienceIfApplicable(
-          String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    GitAwareContextHelper.initDefaultScmGitMetaData();
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
 
-    if (isGitExperienceEnforcedInSettings(
-            accountIdentifier, orgIdentifier, projectIdentifier)
-            && StoreType.INLINE.equals(gitEntityInfo.getStoreType())) {
+    if (isGitExperienceEnforcedInSettings(accountIdentifier, orgIdentifier, projectIdentifier)
+        && StoreType.INLINE.equals(gitEntityInfo.getStoreType())) {
       throw new InvalidRequestException(String.format(
-              "Git Experience is enforced for the current scope with accountId: %s, orgIdentifier: %s and projIdentifier: %s",
-              accountIdentifier, orgIdentifier, projectIdentifier));
+          "Git Experience is enforced for the current scope with accountId: %s, orgIdentifier: %s and projIdentifier: %s",
+          accountIdentifier, orgIdentifier, projectIdentifier));
     }
   }
 }

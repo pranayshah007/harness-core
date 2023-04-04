@@ -65,7 +65,7 @@ import io.harness.pms.pipeline.SourceIdentifierConfig;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepData;
 import io.harness.pms.pipeline.StepPalleteInfo;
-import io.harness.pms.pipeline.gitsync.GitExperienceSettingsHelper;
+import io.harness.pms.pipeline.gitsync.GitExperienceSettingsHandler;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.PipelineVersion;
@@ -118,7 +118,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private PipelineAsyncValidationService pipelineAsyncValidationService;
   @Mock private ProjectClient projectClient;
-  @Mock GitExperienceSettingsHelper gitExperienceSettingsHelper;
+  @Mock GitExperienceSettingsHandler gitExperienceSettingsHandler;
 
   StepCategory library;
   StepCategory cv;
@@ -609,7 +609,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pmsPipelineServiceHelper)
         .resolveTemplatesAndValidatePipeline(any(), anyBoolean());
-    doNothing().when(gitExperienceSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
+    doNothing().when(gitExperienceSettingsHandler).enforceGitExperienceIfApplicable(any(), any(), any());
     pmsPipelineRepository.save(pipelineEntity);
     MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);

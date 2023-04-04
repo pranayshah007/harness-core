@@ -44,7 +44,7 @@ import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.gitsync.GitExperienceSettingsHelper;
+import io.harness.pms.pipeline.gitsync.GitExperienceSettingsHandler;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
@@ -82,7 +82,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private PipelineValidationService pipelineValidationService;
   @Mock private ProjectClient projectClient;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
-  @Mock private GitExperienceSettingsHelper gitExperienceSettingsHelper;
+  @Mock private GitExperienceSettingsHandler gitExperienceSettingsHandler;
 
   String accountIdentifier = "acc";
   String orgIdentifier = "org";
@@ -96,7 +96,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     pipelineService = new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper,
         pmsPipelineTemplateHelper, null, null, gitSyncSdkService, null, null, null,
         new NoopPipelineSettingServiceImpl(), entitySetupUsageClient, pipelineAsyncValidationService,
-        pipelineValidationService, projectClient, pmsFeatureFlagService, gitExperienceSettingsHelper);
+        pipelineValidationService, projectClient, pmsFeatureFlagService, gitExperienceSettingsHandler);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)

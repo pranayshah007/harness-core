@@ -66,7 +66,7 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.pipeline.MoveConfigOperationType;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.gitsync.GitExperienceSettingsHelper;
+import io.harness.pms.pipeline.gitsync.GitExperienceSettingsHandler;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.inputset.PMSInputSetRepository;
@@ -103,7 +103,7 @@ import org.springframework.data.mongodb.core.query.Query;
 @PrepareForTest({InputSetValidationHelper.class})
 @OwnedBy(PIPELINE)
 public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
-  @Mock GitExperienceSettingsHelper gitExperienceSettingsHelper;
+  @Mock GitExperienceSettingsHandler gitExperienceSettingsHandler;
   @Inject PMSInputSetServiceImpl pmsInputSetService;
   @Spy @InjectMocks PMSInputSetServiceImpl pmsInputSetServiceMock;
   @Mock private PMSInputSetRepository inputSetRepository;
@@ -224,7 +224,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                          .build();
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     on(pmsInputSetService).set("inputSetsApiUtils", inputSetsApiUtils);
-    on(pmsInputSetService).set("gitExperienceSettingsHelper", gitExperienceSettingsHelper);
+    on(pmsInputSetService).set("gitExperienceSettingsHelper", gitExperienceSettingsHandler);
   }
 
   @Test
@@ -233,7 +233,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   public void testServiceLayer() {
     MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
     List<InputSetEntity> inputSets = ImmutableList.of(inputSetEntity, overlayInputSetEntity);
-    doNothing().when(gitExperienceSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
+    doNothing().when(gitExperienceSettingsHandler).enforceGitExperienceIfApplicable(any(), any(), any());
     for (InputSetEntity entity : inputSets) {
       InputSetEntity createdInputSet = pmsInputSetService.create(entity, false);
       assertThat(createdInputSet).isNotNull();
@@ -312,7 +312,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   public void testList() {
     MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
     when(inputSetsApiUtils.isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(false);
-    doNothing().when(gitExperienceSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
+    doNothing().when(gitExperienceSettingsHandler).enforceGitExperienceIfApplicable(any(), any(), any());
     pmsInputSetService.create(inputSetEntity, false);
     pmsInputSetService.create(overlayInputSetEntity, false);
 

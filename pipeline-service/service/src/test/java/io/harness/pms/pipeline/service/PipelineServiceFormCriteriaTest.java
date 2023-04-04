@@ -34,7 +34,7 @@ import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
-import io.harness.pms.pipeline.gitsync.GitExperienceSettingsHelper;
+import io.harness.pms.pipeline.gitsync.GitExperienceSettingsHandler;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
@@ -70,7 +70,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
   @Inject private PipelineMetadataService pipelineMetadataService;
 
   @Mock private PipelineSettingsService pipelineSettingsService;
-  @Mock GitExperienceSettingsHelper gitExperienceSettingsHelper;
+  @Mock GitExperienceSettingsHandler gitExperienceSettingsHandler;
   @InjectMocks private PMSPipelineServiceImpl pmsPipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
 
@@ -132,7 +132,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(TemplateMergeResponseDTO.builder().build())
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(any(), anyBoolean(), anyBoolean());
-    doNothing().when(gitExperienceSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
+    doNothing().when(gitExperienceSettingsHandler).enforceGitExperienceIfApplicable(any(), any(), any());
     MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
     aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
