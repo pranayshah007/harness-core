@@ -37,7 +37,7 @@ import org.hibernate.validator.constraints.NotBlank;
 public interface SSOService {
   SSOConfig uploadSamlConfiguration(String accountId, InputStream inputStream, String displayName,
       String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, char[] clientSecret, String friendlySamlAppName, boolean isNGSSO);
+      String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName, boolean isNGSSO);
 
   SSOConfig uploadOauthConfiguration(String accountId, String filter, Set<OauthProviderType> allowedProviders);
 

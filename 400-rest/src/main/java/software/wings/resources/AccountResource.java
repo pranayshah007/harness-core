@@ -25,6 +25,7 @@ import static org.apache.commons.lang3.StringUtils.substringAfter;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.AuthenticationInfo;
+import io.harness.authenticationservice.beans.AuthenticationInfoV2;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.cvng.beans.ServiceGuardLimitDTO;
@@ -600,6 +601,13 @@ public class AccountResource {
   @Path("/authentication-info")
   public RestResponse<AuthenticationInfo> getAuthenticationInfo(@QueryParam("accountId") String accountId) {
     return new RestResponse<>(accountService.getAuthenticationInfo(accountId));
+  }
+
+  @GET
+  @PublicApi
+  @Path("v2/authentication-info")
+  public RestResponse<AuthenticationInfoV2> getAuthenticationInfoV2(@QueryParam("accountId") String accountId) {
+    return new RestResponse<>(accountService.getAuthenticationInfoV2(accountId));
   }
 
   // TODO: EndPoint to be deleted once UI is created for AccessRequest

@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
+import static io.harness.beans.FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
@@ -83,9 +84,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -125,12 +123,12 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public SSOConfig uploadSamlConfiguration(String accountId, InputStream inputStream, String displayName,
       String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, char[] clientSecret, String friendlySamlAppName, boolean isNGSSO) {
+      String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName, boolean isNGSSO) {
     try {
       String fileAsString = IOUtils.toString(inputStream, Charset.defaultCharset());
       groupMembershipAttr = authorizationEnabled ? groupMembershipAttr : null;
       buildAndUploadSamlSettings(accountId, fileAsString, displayName, groupMembershipAttr, logoutUrl, entityIdentifier,
-          samlProviderType, clientId, clientSecret, friendlySamlAppName, isNGSSO, false);
+          samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO, false);
       return getAccountAccessManagementSettings(accountId);
     } catch (SamlException | IOException | URISyntaxException e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION, e);
@@ -151,7 +149,9 @@ public class SSOServiceImpl implements SSOService {
       String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
       String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO) {
     try {
-      SamlSettings settings = ssoSettingService.getSamlSettingsByAccountId(accountId);
+      SamlSettings settings = featureFlagService.isEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)
+          ? ssoSettingService.getSamlSettingsByAccountIdNotConfiguredFromNG(accountId)
+          : ssoSettingService.getSamlSettingsByAccountId(accountId);
       return updateAndGetSamlSsoConfigInternal(groupMembershipAttr, authorizationEnabled, inputStream, settings,
           displayName, clientId, clientSecret, accountId, logoutUrl, entityIdentifier, samlProviderType, null, isNGSSO);
     } catch (SamlException | IOException | URISyntaxException e) {
@@ -180,7 +180,7 @@ public class SSOServiceImpl implements SSOService {
     SamlSettings samlSettings = ssoSettingService.getSamlSettingsByAccountId(accountId);
     if (samlSettings != null) {
       samlSettings.setLogoutUrl(logoutUrl);
-      ssoSettingService.saveSamlSettings(samlSettings, false);
+      ssoSettingService.saveSamlSettings(samlSettings, false, false);
     } else {
       throw new InvalidRequestException("Cannot update Logout URL as no SAML Config exists for your account");
     }
@@ -328,9 +328,9 @@ public class SSOServiceImpl implements SSOService {
 
   private List<SSOSettings> getSSOSettings(Account account) {
     List<SSOSettings> settings = new ArrayList<>();
-    SamlSettings samlSettings = ssoSettingService.getSamlSettingsByAccountId(account.getUuid());
-    if (samlSettings != null) {
-      settings.add(samlSettings.getPublicSSOSettings());
+    List<SamlSettings> samlSettings = ssoSettingService.getSamlSettingsListByAccountId(account.getUuid());
+    if (isNotEmpty(samlSettings)) {
+      samlSettings.stream().filter(setting -> !setting.isConfiguredFromNG()).findFirst().ifPresent(settings::add);
     }
     LdapSettings ldapSettings = ssoSettingService.getLdapSettingsByAccountId(account.getUuid());
     if (ldapSettings != null) {
@@ -362,7 +362,7 @@ public class SSOServiceImpl implements SSOService {
 
   private SamlSettings buildAndUploadSamlSettings(String accountId, String fileAsString, String displayName,
       String groupMembershipAttr, String logoutUrl, String entityIdentifier, String samlProviderType, String clientId,
-      char[] clientSecret, String friendlySamlAppName, boolean isNGSSOSetting, boolean isUpdateCase)
+      char[] clientSecret, String friendlySamlName, boolean isNGSSOSetting, boolean isUpdateCase)
       throws SamlException, URISyntaxException {
     SamlClient samlClient = samlClientService.getSamlClient(entityIdentifier, fileAsString);
 
@@ -374,18 +374,11 @@ public class SSOServiceImpl implements SSOService {
                                     .origin(new URI(samlClient.getIdentityProviderUrl()).getHost())
                                     .groupMembershipAttr(groupMembershipAttr)
                                     .entityIdentifier(entityIdentifier)
+                                    .friendlySamlName(friendlySamlName)
                                     .build();
 
-    if (isNotEmpty(friendlySamlAppName)) {
-      samlSettings.setFriendlySamlAppName(friendlySamlAppName);
-    } else {
-      // creating a unique app name based on time-stamp
-      Instant instant = Instant.ofEpochMilli(System.currentTimeMillis());
-      LocalDateTime currentLocalDateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
-      samlSettings.setFriendlySamlAppName(SAML_APP_FRIENDLY_NAME_PREFIX + currentLocalDateTime.toString());
-    }
-
     samlSettings.setSamlProviderType(getSAMLProviderType(samlProviderType));
+    samlSettings.setConfiguredFromNG(isNGSSOSetting);
     if (isNotEmpty(clientId) && isNotEmpty(clientSecret)) {
       samlSettings.setClientId(clientId);
       samlSettings.setEncryptedClientSecret(String.valueOf(clientSecret));
@@ -398,9 +391,9 @@ public class SSOServiceImpl implements SSOService {
       samlSettings.setLogoutUrl(logoutUrl);
     }
     if (isNGSSOSetting) {
-      return ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(samlSettings, isUpdateCase);
+      return ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(samlSettings, isUpdateCase, isNGSSOSetting);
     } else {
-      return ssoSettingService.saveSamlSettings(samlSettings, isUpdateCase);
+      return ssoSettingService.saveSamlSettings(samlSettings, isUpdateCase, isNGSSOSetting);
     }
   }
 

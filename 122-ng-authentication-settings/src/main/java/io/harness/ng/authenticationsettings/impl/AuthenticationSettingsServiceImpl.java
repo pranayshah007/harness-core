@@ -69,20 +69,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     Set<String> whitelistedDomains = getResponse(managerClient.getWhitelistedDomains(accountIdentifier));
     log.info("Whitelisted domains for accountId {}: {}", accountIdentifier, whitelistedDomains);
     SSOConfig ssoConfig = getResponse(managerClient.getAccountAccessManagementSettings(accountIdentifier));
-
-    List<NGAuthSettings> settingsList = buildAuthSettingsList(ssoConfig, accountIdentifier);
-    log.info("NGAuthSettings list for accountId {}: {}", accountIdentifier, settingsList);
-
-    boolean twoFactorEnabled = getResponse(managerClient.twoFactorEnabled(accountIdentifier));
-    Integer sessionTimeoutInMinutes = getResponse(managerClient.getSessionTimeoutAtAccountLevel(accountIdentifier));
-
-    return AuthenticationSettingsResponse.builder()
-        .whitelistedDomains(whitelistedDomains)
-        .ngAuthSettings(settingsList)
-        .authenticationMechanism(ssoConfig.getAuthenticationMechanism())
-        .twoFactorEnabled(twoFactorEnabled)
-        .sessionTimeoutInMinutes(sessionTimeoutInMinutes)
-        .build();
+    return buildAndReturnAuthenticationSettingsResponse(ssoConfig, accountIdentifier, whitelistedDomains);
   }
 
   @Override
@@ -90,20 +77,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     Set<String> whitelistedDomains = getResponse(managerClient.getWhitelistedDomains(accountIdentifier));
     log.info("Whitelisted domains for accountId {}: {}", accountIdentifier, whitelistedDomains);
     SSOConfig ssoConfig = getResponse(managerClient.getAccountAccessManagementSettingsV2(accountIdentifier));
-
-    List<NGAuthSettings> settingsList = buildAuthSettingsList(ssoConfig, accountIdentifier);
-    log.info("NGAuthSettings list for accountId {}: {}", accountIdentifier, settingsList);
-
-    boolean twoFactorEnabled = getResponse(managerClient.twoFactorEnabled(accountIdentifier));
-    Integer sessionTimeoutInMinutes = getResponse(managerClient.getSessionTimeoutAtAccountLevel(accountIdentifier));
-
-    return AuthenticationSettingsResponse.builder()
-        .whitelistedDomains(whitelistedDomains)
-        .ngAuthSettings(settingsList)
-        .authenticationMechanism(ssoConfig.getAuthenticationMechanism())
-        .twoFactorEnabled(twoFactorEnabled)
-        .sessionTimeoutInMinutes(sessionTimeoutInMinutes)
-        .build();
+    return buildAndReturnAuthenticationSettingsResponse(ssoConfig, accountIdentifier, whitelistedDomains);
   }
 
   @Override
@@ -183,7 +157,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
                                              .displayName(samlSettings.getDisplayName())
                                              .authorizationEnabled(samlSettings.isAuthorizationEnabled())
                                              .entityIdentifier(samlSettings.getEntityIdentifier())
-                                             .friendlySamlAppName(samlSettings.getFriendlySamlAppName())
+                                             .friendlySamlName(samlSettings.getFriendlySamlName())
                                              .build();
 
         if (null != samlSettings.getSamlProviderType()) {
@@ -236,7 +210,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   public SSOConfig uploadSAMLMetadata(@NotNull @AccountIdentifier String accountId,
       @NotNull MultipartBody.Part inputStream, @NotNull String displayName, String groupMembershipAttr,
       @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier, String samlProviderType,
-      String clientId, String clientSecret, String friendlySamlAppName) {
+      String clientId, String clientSecret, String friendlySamlName) {
     RequestBody displayNamePart = createPartFromString(displayName);
     RequestBody groupMembershipAttrPart = createPartFromString(groupMembershipAttr);
     RequestBody authorizationEnabledPart = createPartFromString(String.valueOf(authorizationEnabled));
@@ -245,10 +219,10 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     RequestBody samlProviderTypePart = createPartFromString(samlProviderType);
     RequestBody clientIdPart = createPartFromString(clientId);
     RequestBody clientSecretPart = createPartFromString(clientSecret);
-    RequestBody friendlySamlAppNamePart = createPartFromString(friendlySamlAppName);
+    RequestBody friendlySamlNamePart = createPartFromString(friendlySamlName);
     return getResponse(managerClient.uploadSAMLMetadata(accountId, inputStream, displayNamePart,
         groupMembershipAttrPart, authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart,
-        clientIdPart, clientSecretPart, friendlySamlAppNamePart));
+        clientIdPart, clientSecretPart, friendlySamlNamePart));
   }
 
   @Override
@@ -310,7 +284,8 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
 
   @Override
   @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
-  public LoginTypeResponse getSAMLLoginTestV2(@NotNull @AccountIdentifier String accountIdentifier, @NotNull String samlSSOId) {
+  public LoginTypeResponse getSAMLLoginTestV2(
+      @NotNull @AccountIdentifier String accountIdentifier, @NotNull String samlSSOId) {
     return getResponse(managerClient.getSAMLLoginTestV2(accountIdentifier, samlSSOId));
   }
 
@@ -397,5 +372,22 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     toLdapSettings.setCronExpression(ldapSettings.getCronExpression());
     toLdapSettings.setDisabled(ldapSettings.isDisabled());
     return toLdapSettings;
+  }
+
+  private AuthenticationSettingsResponse buildAndReturnAuthenticationSettingsResponse(
+      SSOConfig ssoConfig, String accountIdentifier, Set<String> whitelistedDomains) {
+    List<NGAuthSettings> settingsList = buildAuthSettingsList(ssoConfig, accountIdentifier);
+    log.info("NGAuthSettings list for accountId {}: {}", accountIdentifier, settingsList);
+
+    boolean twoFactorEnabled = getResponse(managerClient.twoFactorEnabled(accountIdentifier));
+    Integer sessionTimeoutInMinutes = getResponse(managerClient.getSessionTimeoutAtAccountLevel(accountIdentifier));
+
+    return AuthenticationSettingsResponse.builder()
+        .whitelistedDomains(whitelistedDomains)
+        .ngAuthSettings(settingsList)
+        .authenticationMechanism(ssoConfig.getAuthenticationMechanism())
+        .twoFactorEnabled(twoFactorEnabled)
+        .sessionTimeoutInMinutes(sessionTimeoutInMinutes)
+        .build();
   }
 }

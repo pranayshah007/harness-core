@@ -23,6 +23,7 @@ import io.harness.ng.core.account.AuthenticationMechanism;
 
 import software.wings.beans.Account;
 import software.wings.beans.User;
+import software.wings.beans.sso.SSORequest;
 import software.wings.beans.sso.SamlSettings;
 import software.wings.security.authentication.AuthenticationUtils;
 import software.wings.service.impl.AccountServiceImpl;
@@ -87,7 +88,7 @@ public class SamlClientService {
       samlSettings.forEach(setting -> {
         try {
           samlClientMap.put(
-              setting.getUuid(), new SamlClientFriendlyName(getSamlClient(setting), setting.getFriendlySamlAppName()));
+              setting.getUuid(), new SamlClientFriendlyName(getSamlClient(setting), setting.getFriendlySamlName()));
         } catch (SamlException se) {
           log.warn("Error generating saml client for saml setting id {} in account {}", setting.getUuid(),
               setting.getAccountId());

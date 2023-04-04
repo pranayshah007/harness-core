@@ -55,6 +55,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.AuthenticationInfo;
 import io.harness.authenticationservice.beans.AuthenticationInfo.AuthenticationInfoBuilder;
+import io.harness.authenticationservice.beans.AuthenticationInfoV2;
 import io.harness.beans.FeatureFlag;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
@@ -144,6 +145,7 @@ import software.wings.beans.loginSettings.events.WhitelistedDomainsYamlDTO;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapSettings.LdapSettingsKeys;
 import software.wings.beans.sso.OauthSettings;
+import software.wings.beans.sso.SSORequest;
 import software.wings.beans.sso.SSOType;
 import software.wings.beans.trigger.Trigger;
 import software.wings.beans.trigger.TriggerConditionType;
@@ -167,7 +169,6 @@ import software.wings.security.AppPermissionSummary.EnvInfo;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.UserThreadLocal;
 import software.wings.security.authentication.AccountSettingsResponse;
-import software.wings.security.saml.SSORequest;
 import software.wings.security.saml.SamlClientService;
 import software.wings.service.impl.analysis.CVEnabledService;
 import software.wings.service.impl.event.AccountEntityEvent;
@@ -2222,6 +2223,36 @@ public class AccountServiceImpl implements AccountService {
       case SAML:
         SSORequest ssoRequest = samlClientService.generateSamlRequestFromAccount(account, false);
         builder.samlRedirectUrl(ssoRequest.getIdpRedirectUrl());
+        break;
+      case USER_PASSWORD:
+      case OAUTH:
+        builder.oauthEnabled(account.isOauthEnabled());
+        if (account.isOauthEnabled()) {
+          OauthSettings oauthSettings = ssoSettingService.getOauthSettingsByAccountId(accountId);
+          builder.oauthProviders(new ArrayList<>(oauthSettings.getAllowedProviders()));
+        }
+        break;
+      case LDAP: // No need to build anything extra for the response.
+      default:
+        // Nothing to do by default
+    }
+    return builder.build();
+  }
+
+  @Override
+  public AuthenticationInfoV2 getAuthenticationInfoV2(String accountId) {
+    Account account = get(accountId);
+    if (account == null) {
+      throw new InvalidRequestException("Account not found with given id " + accountId);
+    }
+
+    AuthenticationMechanism authenticationMechanism = account.getAuthenticationMechanism();
+    AuthenticationInfoV2.AuthenticationInfoV2Builder builder =
+        AuthenticationInfoV2.builder().authenticationMechanism(authenticationMechanism).accountId(accountId);
+    builder.oauthEnabled(account.isOauthEnabled());
+    switch (authenticationMechanism) {
+      case SAML:
+        builder.ssoRequests(samlClientService.generateSamlRequestListFromAccount(account, false));
         break;
       case USER_PASSWORD:
       case OAUTH:

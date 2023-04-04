@@ -138,7 +138,7 @@ public class SSOServiceTest extends WingsBaseTest {
         "https://dev-274703.oktapreview.com/app/harnessiodev274703_testapp_1/exkefa5xlgHhrU1Mc0h7/sso/saml");
     mockSamlSettings.setMetaDataFile(xml);
     mockSamlSettings.setDisplayName("Okta");
-    mockSamlSettings.setFriendlySamlAppName(friendlyName);
+    mockSamlSettings.setFriendlySamlName(friendlyName);
     when(SSO_SETTING_SERVICE.getSamlSettingsByAccountId(anyString())).thenReturn(mockSamlSettings);
 
     SSOConfig settings = ssoService.uploadSamlConfiguration(account.getUuid(),
@@ -148,7 +148,7 @@ public class SSOServiceTest extends WingsBaseTest {
     assertThat(idpRedirectUrl)
         .isEqualTo("https://dev-274703.oktapreview.com/app/harnessiodev274703_testapp_1/exkefa5xlgHhrU1Mc0h7/sso/saml");
     assertThat(settings.getSsoSettings().get(0).getDisplayName()).isEqualTo("Okta");
-    assertThat(((SamlSettings) settings.getSsoSettings().get(0)).getFriendlySamlAppName()).isEqualTo(friendlyName);
+    assertThat(((SamlSettings) settings.getSsoSettings().get(0)).getFriendlySamlName()).isEqualTo(friendlyName);
 
     try {
       ssoService.uploadSamlConfiguration(account.getUuid(), getClass().getResourceAsStream("/SamlResponse.txt"), "Okta",
@@ -325,7 +325,7 @@ public class SSOServiceTest extends WingsBaseTest {
         "https://dev-274703.oktapreview.com/app/harnessiodev274703_testapp_1/exkefa5xlgHhrU1Mc0h7/sso/saml");
     mockSamlSettings.setMetaDataFile(xml);
     mockSamlSettings.setDisplayName("Okta");
-    mockSamlSettings.setFriendlySamlAppName(friendlyName);
+    mockSamlSettings.setFriendlySamlName(friendlyName);
     when(SSO_SETTING_SERVICE.getSamlSettingsByAccountId(anyString())).thenReturn(mockSamlSettings);
 
     SSOConfig settings = ssoService.updateSamlConfiguration(account.getUuid(),
@@ -335,6 +335,6 @@ public class SSOServiceTest extends WingsBaseTest {
     assertThat(idpRedirectUrl)
         .isEqualTo("https://dev-274703.oktapreview.com/app/harnessiodev274703_testapp_1/exkefa5xlgHhrU1Mc0h7/sso/saml");
     assertThat(settings.getSsoSettings().get(0).getDisplayName()).isEqualTo("Okta");
-    assertThat(((SamlSettings) settings.getSsoSettings().get(0)).getFriendlySamlAppName()).isEqualTo(friendlyName);
+    assertThat(((SamlSettings) settings.getSsoSettings().get(0)).getFriendlySamlName()).isEqualTo(friendlyName);
   }
 }

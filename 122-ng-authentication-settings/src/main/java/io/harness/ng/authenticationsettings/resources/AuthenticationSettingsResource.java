@@ -122,10 +122,10 @@ public class AuthenticationSettingsResource {
 
   @GET
   @Path("/v2")
-  @ApiOperation(value = "Get authentication settings for an account", nickname = "getAuthenticationSettings")
-  @Operation(operationId = "getAuthenticationSettings",
-      summary = "Gets authentication settings for the given Account ID",
-      description = "Gets authentication settings for the given Account ID.",
+  @ApiOperation(value = "Get authentication settings version 2 for an account", nickname = "getAuthenticationSettingsV2")
+  @Operation(operationId = "getAuthenticationSettingsV2",
+      summary = "Gets authentication settings version 2 for the given Account ID",
+      description = "Gets authentication settings version 2 for the given Account ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -297,7 +297,7 @@ public class AuthenticationSettingsResource {
       @Parameter(description = "Optional SAML clientSecret reference string for Azure SSO") @FormDataParam(
           "clientSecret") String clientSecret,
       @Parameter(description = "Friendly name of the app on SAML SSO provider end in Harness") @FormDataParam(
-          "friendlySamlAppName") String friendlySamlAppName) {
+          "friendlySamlName") String friendlySamlName) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     try {
@@ -307,7 +307,7 @@ public class AuthenticationSettingsResource {
           MultipartBody.Part.createFormData("file", null, RequestBody.create(MultipartBody.FORM, bytes));
       SSOConfig response = authenticationSettingsService.uploadSAMLMetadata(accountId, formData, displayName,
           groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-          clientSecret, friendlySamlAppName);
+          clientSecret, friendlySamlName);
       return new RestResponse<>(response);
     } catch (Exception e) {
       throw new GeneralException("Error while creating new SAML Config", e);
@@ -340,9 +340,7 @@ public class AuthenticationSettingsResource {
       @Parameter(description = "SAML provider type") @FormDataParam("samlProviderType") String samlProviderType,
       @Parameter(description = "Optional SAML clientId for Azure SSO") @FormDataParam("clientId") String clientId,
       @Parameter(description = "Optional SAML clientSecret reference string for Azure SSO") @FormDataParam(
-          "clientSecret") String clientSecret,
-      @Parameter(description = "Friendly name of the app on SAML SSO provider end in Harness") @FormDataParam(
-          "friendlySamlAppName") String friendlySamlAppName) {
+          "clientSecret") String clientSecret) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     try {
@@ -365,16 +363,16 @@ public class AuthenticationSettingsResource {
   @PUT
   @Path("/saml-metadata-upload/{samlSSOId}")
   @Consumes("multipart/form-data")
-  @ApiOperation(value = "Edit SAML Config", nickname = "updateSamlMetaData")
-  @Operation(operationId = "updateSamlMetaData", summary = "Update SAML metadata",
-      description = "Updates SAML metadata of the SAML configuration configured for an account",
+  @ApiOperation(value = "Edit SAML Config for given SAML SSO Id", nickname = "updateSamlMetaDataForSamlSSOId")
+  @Operation(operationId = "updateSamlMetaDataForSamlSSOId", summary = "Update SAML metadata for a given SAML SSO Id",
+      description = "Updates SAML metadata of the SAML configuration with given SSO Id, configured for an account",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "Successfully updated SAML metadata of SAML setting configured for an account")
       })
   public RestResponse<SSOConfig>
-  updateSamlMetaData(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam("accountId") @NotNull String accountId,
+  updateSamlMetaDataForSamlSSOId(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountId,
       @Parameter(description = "Saml Settings Identifier") @PathParam("samlSSOId") String samlSSOId,
       @Parameter(description = "SAML Metadata input file") @FormDataParam("file") InputStream uploadedInputStream,
       @Parameter(description = "Input file metadata") @FormDataParam(
@@ -390,7 +388,7 @@ public class AuthenticationSettingsResource {
       @Parameter(description = "Optional SAML clientSecret reference string for Azure SSO") @FormDataParam(
           "clientSecret") String clientSecret,
       @Parameter(description = "Friendly name of the app on SAML SSO provider end in Harness") @FormDataParam(
-          "friendlySamlAppName") String friendlySamlAppName) {
+          "friendlySamlName") String friendlySamlName) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     try {
@@ -402,7 +400,7 @@ public class AuthenticationSettingsResource {
       }
       SSOConfig response = authenticationSettingsService.updateSAMLMetadata(accountId, samlSSOId, formData, displayName,
           groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-          clientSecret, friendlySamlAppName);
+          clientSecret, friendlySamlName);
       return new RestResponse<>(response);
     } catch (Exception e) {
       throw new GeneralException("Error while editing saml-config", e);
@@ -448,8 +446,8 @@ public class AuthenticationSettingsResource {
 
   @GET
   @Path("v2/saml-login-test")
-  @ApiOperation(value = "Get SAML Login Test", nickname = "getSamlLoginTest")
-  @Operation(operationId = "getSamlLoginTest", summary = "Test SAML connectivity",
+  @ApiOperation(value = "Get SAML Login Test", nickname = "getSamlLoginTestV2")
+  @Operation(operationId = "getSamlLoginTestV2", summary = "Test SAML connectivity",
       description = "Tests SAML connectivity for the given Account ID.",
       responses =
       {
@@ -457,7 +455,7 @@ public class AuthenticationSettingsResource {
         ApiResponse(responseCode = "default", description = "Returns connectivity status")
       })
   public RestResponse<LoginTypeResponse>
-  getSamlLoginTest(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam("accountId") @NotNull String accountId,
+  getSamlLoginTestV2(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountId,
       @Parameter(description = "Saml setting id") @QueryParam("samlSSOId") @NotNull String samlSSOId) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), VIEW_AUTHSETTING_PERMISSION);

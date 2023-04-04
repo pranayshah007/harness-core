@@ -18,8 +18,8 @@ import io.harness.exception.WingsException;
 import io.harness.ng.core.account.OauthProviderType;
 
 import software.wings.beans.sso.OauthSettings;
+import software.wings.beans.sso.SSORequest;
 import software.wings.security.authentication.AuthenticationUtils;
-import software.wings.security.saml.SSORequest;
 import software.wings.service.impl.SSOSettingServiceImpl;
 
 import com.google.common.collect.Lists;
@@ -76,6 +76,10 @@ public class OauthOptions {
     OauthProviderType defaultOAuthProviderType = oauthProviderTypes.get(0);
     log.info("Default OAuth provider: {}", defaultOAuthProviderType);
 
-    return SSORequest.builder().oauthProviderType(defaultOAuthProviderType).idpRedirectUrl(getRedirectURI(defaultOAuthProviderType)).oauthProviderTypes(oauthProviderTypes).build();
+    return SSORequest.builder()
+        .oauthProviderType(defaultOAuthProviderType)
+        .idpRedirectUrl(getRedirectURI(defaultOAuthProviderType))
+        .oauthProviderTypes(oauthProviderTypes)
+        .build();
   }
 }

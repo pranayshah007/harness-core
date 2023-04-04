@@ -44,10 +44,10 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 import software.wings.beans.Account.AccountKeys;
 import software.wings.beans.sso.OauthSettings;
+import software.wings.beans.sso.SSORequest;
 import software.wings.dl.GenericDbCache;
 import software.wings.dl.WingsPersistence;
 import software.wings.licensing.LicenseService;
-import software.wings.security.saml.SSORequest;
 import software.wings.security.saml.SamlClientService;
 import software.wings.service.intfc.AuthService;
 

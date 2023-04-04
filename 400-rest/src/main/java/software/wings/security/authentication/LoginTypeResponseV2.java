@@ -8,7 +8,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 
-import software.wings.security.saml.SSORequest;
+import software.wings.beans.sso.SSORequest;
 
 import java.util.List;
 import lombok.Builder;

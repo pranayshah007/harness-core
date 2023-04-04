@@ -152,12 +152,11 @@ public class SSOResourceNG {
       @FormDataParam("authorizationEnabled") Boolean authorizationEnabled, @FormDataParam("logoutUrl") String logoutUrl,
       @FormDataParam("entityIdentifier") String entityIdentifier,
       @FormDataParam("samlProviderType") String samlProviderType, @FormDataParam("clientId") String clientId,
-      @FormDataParam("clientSecret") String clientSecret,
-      @FormDataParam("friendlySamlAppName") String friendlySamlAppName) {
+      @FormDataParam("clientSecret") String clientSecret, @FormDataParam("friendlySamlName") String friendlySamlName) {
     final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, true, clientId, clientSecret);
     return new RestResponse<>(ssoService.uploadSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), friendlySamlAppName, true));
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), friendlySamlName, true));
   }
 
   @PUT
@@ -192,7 +191,7 @@ public class SSOResourceNG {
       @FormDataParam("entityIdentifier") String entityIdentifier,
       @FormDataParam("samlProviderType") String samlProviderType, @FormDataParam("clientId") String clientId,
       @FormDataParam("clientSecret") String clientSecret,
-      @FormDataParam("friendlySamlAppName") String friendlySamlAppName) {
+      @FormDataParam("friendlySamlName") String friendlySamlAppName) {
     final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, false, clientId, clientSecret);
     return new RestResponse<>(ssoService.updateSamlConfiguration(accountId, samlSSOId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
@@ -222,7 +221,8 @@ public class SSOResourceNG {
 
   @GET
   @Path("v2/saml-login-test")
-  public RestResponse<LoginTypeResponse> getSamlLoginTest(@QueryParam("accountId") @NotBlank String accountId, @QueryParam("samlSSOId") @NotNull String samlSSOId) {
+  public RestResponse<LoginTypeResponse> getSamlLoginTest(
+      @QueryParam("accountId") @NotBlank String accountId, @QueryParam("samlSSOId") @NotNull String samlSSOId) {
     LoginTypeResponseBuilder builder = LoginTypeResponse.builder();
     try {
       builder.SSORequest(samlClientService.generateTestSamlRequest(accountId, samlSSOId));

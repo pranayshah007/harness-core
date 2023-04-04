@@ -35,8 +35,8 @@ public class SAMLSettings extends NGAuthSettings {
   private String entityIdentifier;
   private String samlProviderType;
   private String clientId;
-  private String friendlySamlAppName;
   private String clientSecret;
+  private String friendlySamlName;
 
   public SAMLSettings(@JsonProperty("origin") String origin, @JsonProperty("identifier") String identifier,
       @JsonProperty("logoutUrl") String logoutUrl, @JsonProperty("groupMembershipAttr") String groupMembershipAttr,
@@ -44,8 +44,7 @@ public class SAMLSettings extends NGAuthSettings {
       @JsonProperty("authorizationEnabled") Boolean authorizationEnabled,
       @JsonProperty("entityIdentifier") String entityIdentifier,
       @JsonProperty("samlProviderType") String samlProviderType, @JsonProperty("clientId") String clientId,
-      @JsonProperty("clientSecret") String clientSecret,
-      @JsonProperty("friendlySamlAppName") String friendlySamlAppName) {
+      @JsonProperty("clientSecret") String clientSecret, @JsonProperty("friendlySamlName") String friendlySamlName) {
     super(AuthenticationMechanism.SAML);
     this.identifier = identifier;
     this.displayName = displayName;
@@ -57,7 +56,7 @@ public class SAMLSettings extends NGAuthSettings {
     this.samlProviderType = samlProviderType;
     this.clientId = clientId;
     this.clientSecret = clientSecret;
-    this.friendlySamlAppName = friendlySamlAppName;
+    this.friendlySamlName = friendlySamlName;
   }
 
   @Override

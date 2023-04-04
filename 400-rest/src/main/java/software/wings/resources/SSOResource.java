@@ -97,11 +97,10 @@ public class SSOResource {
       @FormDataParam("authorizationEnabled") Boolean authorizationEnabled, @FormDataParam("logoutUrl") String logoutUrl,
       @FormDataParam("entityIdentifier") String entityIdentifier,
       @FormDataParam("samlProviderType") String samlProviderType, @FormDataParam("clientId") String clientId,
-      @FormDataParam("clientSecret") String clientSecret,
-      @FormDataParam("friendlySamlAppName") String friendlySamlAppName) {
+      @FormDataParam("clientSecret") String clientSecret) {
     return new RestResponse<>(ssoService.uploadSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecret) ? null : clientSecret.toCharArray(), friendlySamlAppName, false));
+        isEmpty(clientSecret) ? null : clientSecret.toCharArray(), null, false));
   }
 
   @POST

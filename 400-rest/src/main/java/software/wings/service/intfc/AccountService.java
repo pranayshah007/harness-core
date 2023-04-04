@@ -13,6 +13,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.AuthenticationInfo;
+import io.harness.authenticationservice.beans.AuthenticationInfoV2;
 import io.harness.beans.FeatureFlag;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -288,4 +289,6 @@ public interface AccountService {
 
   Account updateCrossGenerationAccessEnabled(
       String accountIdentifier, boolean isCrossGenerationAccessEnabled, boolean isNextGen);
+
+  AuthenticationInfoV2 getAuthenticationInfoV2(String accountId);
 }

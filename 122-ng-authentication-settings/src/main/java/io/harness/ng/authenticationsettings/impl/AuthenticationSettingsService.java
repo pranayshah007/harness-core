@@ -37,8 +37,7 @@ public interface AuthenticationSettingsService {
   void updateWhitelistedDomains(String accountIdentifier, Set<String> whitelistedDomains);
   SSOConfig uploadSAMLMetadata(@NotNull String accountId, @NotNull MultipartBody.Part inputStream,
       @NotNull String displayName, String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl,
-      String entityIdentifier, String samlProviderType, String clientId, String clientSecret,
-      String friendlySamlAppName);
+      String entityIdentifier, String samlProviderType, String clientId, String clientSecret, String friendlySamlName);
   SSOConfig updateSAMLMetadata(@NotNull String accountId, MultipartBody.Part inputStream, String displayName,
       String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
       String samlProviderType, String clientId, String clientSecret);

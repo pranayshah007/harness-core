@@ -94,7 +94,7 @@ public interface AuthSettingsManagerClient {
       @Part("authorizationEnabled") RequestBody authorizationEnabled, @Part("logoutUrl") RequestBody logoutUrl,
       @Part("entityIdentifier") RequestBody entityIdentifier, @Part("samlProviderType") RequestBody samlProviderType,
       @Part("clientId") RequestBody clientId, @Part("clientSecret") RequestBody clientSecret,
-      @Part("friendlySamlAppName") RequestBody friendlySamlAppName);
+      @Part("friendlySamlName") RequestBody friendlySamlName);
 
   @Multipart
   @PUT(API_PREFIX + "sso/saml-idp-metadata-upload")
@@ -113,7 +113,7 @@ public interface AuthSettingsManagerClient {
       @Part("authorizationEnabled") RequestBody authorizationEnabled, @Part("logoutUrl") RequestBody logoutUrl,
       @Part("entityIdentifier") RequestBody entityIdentifier, @Part("samlProviderType") RequestBody samlProviderType,
       @Part("clientId") RequestBody clientId, @Part("clientSecret") RequestBody clientSecret,
-      @Part("friendlySamlAppName") RequestBody friendlySamlAppName);
+      @Part("friendlySamlName") RequestBody friendlySamlAppName);
 
   @DELETE(API_PREFIX + "sso/delete-saml-idp-metadata")
   Call<RestResponse<SSOConfig>> deleteSAMLMetadata(@Query("accountId") String accountIdentifier);
@@ -125,7 +125,8 @@ public interface AuthSettingsManagerClient {
   Call<RestResponse<LoginTypeResponse>> getSAMLLoginTest(@Query("accountId") @NotEmpty String accountIdentifier);
 
   @GET(API_PREFIX + "sso/v2/saml-login-test")
-  Call<RestResponse<LoginTypeResponse>> getSAMLLoginTestV2(@Query("accountId") @NotEmpty String accountIdentifier, @Query("samlSSOId") @NotEmpty String samlSSOId);
+  Call<RestResponse<LoginTypeResponse>> getSAMLLoginTestV2(
+      @Query("accountId") @NotEmpty String accountIdentifier, @Query("samlSSOId") @NotEmpty String samlSSOId);
 
   @PUT(API_PREFIX + "user/two-factor-admin-override-settings")
   Call<RestResponse<Boolean>> setTwoFactorAuthAtAccountLevel(@Query("accountId") @NotEmpty String accountId,
