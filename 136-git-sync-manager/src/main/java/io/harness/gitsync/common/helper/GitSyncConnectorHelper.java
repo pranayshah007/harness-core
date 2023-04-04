@@ -357,28 +357,33 @@ public class GitSyncConnectorHelper {
   public void setUserGitCredsInConnector(String accountIdentifier, ScmConnector connectorDTO) {
     Optional<String> userIdentifier = GitSyncUtils.getUserIdentifier();
     if (userIdentifier.isPresent()) {
-      UserSourceCodeManagerDTO userSourceCodeManagerDTO = userSourceCodeManagerService.getByType(
-          accountIdentifier, userIdentifier.get(), SCMType.valueOf(connectorDTO.getConnectorType().toString()));
-      if (userSourceCodeManagerDTO != null) {
-        switch (connectorDTO.getConnectorType()) {
-          case GITHUB:
-            GithubSCMDTO githubSCMDTO = (GithubSCMDTO) userSourceCodeManagerDTO;
-            GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO;
-            githubConnectorDTO.setApiAccess(githubSCMDTO.getApiAccess());
-            break;
-          case GITLAB:
-            GitlabSCMDTO gitlabSCMDTO = (GitlabSCMDTO) userSourceCodeManagerDTO;
-            GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) connectorDTO;
-            gitlabConnectorDTO.setApiAccess(gitlabSCMDTO.getApiAccess());
-            break;
-          case AZURE_REPO:
-            AzureRepoSCMDTO azureRepoSCMDTO = (AzureRepoSCMDTO) userSourceCodeManagerDTO;
-            AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) connectorDTO;
-            azureRepoConnectorDTO.setApiAccess(azureRepoSCMDTO.getApiAccess());
-            break;
-          default:
-            log.info("OAUTH not supported for connector type: {}", connectorDTO.getConnectorType());
+      try {
+        SCMType scmType = SCMType.valueOf(connectorDTO.getConnectorType().name());
+        UserSourceCodeManagerDTO userSourceCodeManagerDTO =
+            userSourceCodeManagerService.getByType(accountIdentifier, userIdentifier.get(), scmType);
+        if (userSourceCodeManagerDTO != null) {
+          switch (connectorDTO.getConnectorType()) {
+            case GITHUB:
+              GithubSCMDTO githubSCMDTO = (GithubSCMDTO) userSourceCodeManagerDTO;
+              GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO;
+              githubConnectorDTO.setApiAccess(githubSCMDTO.getApiAccess());
+              break;
+            case GITLAB:
+              GitlabSCMDTO gitlabSCMDTO = (GitlabSCMDTO) userSourceCodeManagerDTO;
+              GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) connectorDTO;
+              gitlabConnectorDTO.setApiAccess(gitlabSCMDTO.getApiAccess());
+              break;
+            case AZURE_REPO:
+              AzureRepoSCMDTO azureRepoSCMDTO = (AzureRepoSCMDTO) userSourceCodeManagerDTO;
+              AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) connectorDTO;
+              azureRepoConnectorDTO.setApiAccess(azureRepoSCMDTO.getApiAccess());
+              break;
+            default:
+              log.info("OAUTH not supported for connector type: {}", connectorDTO.getConnectorType());
+          }
         }
+      } catch (Exception ex) {
+        log.error("Invalid type of connector: {}", connectorDTO.getConnectorType(), ex);
       }
     }
   }
