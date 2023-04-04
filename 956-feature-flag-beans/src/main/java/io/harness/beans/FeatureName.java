@@ -700,7 +700,9 @@ public enum FeatureName {
   CDS_REMOVE_COMMENTS_FROM_VALUES_YAML("Remove comments from values.yaml files", HarnessTeam.CDP),
   BAMBOO_BUILD("Bamboo Build Step", HarnessTeam.CDC),
   CDS_AWS_BACKOFF_STRATEGY("Enable AWS SDK Client Backoff Strategy", HarnessTeam.CDP),
-  PIE_GITX_OAUTH("Use users' oauth creds to fetch and commit in git", HarnessTeam.PIPELINE);
+  PIE_GITX_OAUTH("Use users' oauth creds to fetch and commit in git", HarnessTeam.PIPELINE),
+  CDS_NG_CONFIG_FILE_EXPRESSION(
+      "Enable Harness variable rendering in Hanress config files (SSH/WinRM)", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
