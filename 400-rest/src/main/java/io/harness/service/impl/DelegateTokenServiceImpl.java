@@ -20,6 +20,7 @@ import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenDetails.DelegateTokenDetailsBuilder;
 import io.harness.delegate.beans.DelegateTokenStatus;
+import io.harness.delegate.utils.DelegateTokenCacheHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateTokenService;
@@ -48,6 +49,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
   @Inject private HPersistence persistence;
   @Inject private AuditServiceHelper auditServiceHelper;
   @Inject private DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt;
+  @Inject private DelegateTokenCacheHelper delegateTokenCacheHelper;
 
   private static final String DEFAULT_TOKEN_NAME = "default";
 
@@ -115,6 +117,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
         persistence.findAndModify(filterQuery, updateOperations, new FindAndModifyOptions());
     auditServiceHelper.reportForAuditingUsingAccountId(
         accountId, originalDelegateToken, updatedDelegateToken, Event.Type.UPDATE);
+    delegateTokenCacheHelper.invalidateDelegateTokenCache(updatedDelegateToken);
   }
 
   @Override
