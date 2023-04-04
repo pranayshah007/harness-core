@@ -8,6 +8,7 @@
 package io.harness.delegate.task.shell.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.VITALIE;
 
@@ -17,6 +18,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -52,6 +55,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -97,6 +101,26 @@ public class WinRmCopyCommandHandlerTest {
                                             CommandUnitsProgress.builder().build(), taskContext)
                                         .getStatus();
     assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testShouldRecalculateSizeAndCopyConfigWithWinRmExecutor() {
+    List<String> outputVariables = Collections.singletonList("variable");
+    WinrmTaskParameters winrmTaskParameters =
+        getWinRmTaskParameters(copyConfigCommandUnit, outputVariables, getFileDelegateConfig(false));
+    when(fileBasedWinRmExecutorNG.copyConfigFiles(any(ConfigFileParameters.class)))
+        .thenReturn(CommandExecutionStatus.SUCCESS);
+    CommandExecutionStatus result = winRmCopyCommandHandler
+                                        .handle(winrmTaskParameters, copyConfigCommandUnit, iLogStreamingTaskClient,
+                                            CommandUnitsProgress.builder().build(), taskContext)
+                                        .getStatus();
+    assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
+    ArgumentCaptor<ConfigFileParameters> contextArgumentCaptor = ArgumentCaptor.forClass(ConfigFileParameters.class);
+
+    verify(fileBasedWinRmExecutorNG, times(2)).copyConfigFiles(contextArgumentCaptor.capture());
+    assertConfigFile(contextArgumentCaptor.getValue());
   }
 
   @Test
@@ -147,26 +171,55 @@ public class WinRmCopyCommandHandlerTest {
         .executeOnDelegate(true)
         .disableWinRMCommandEncodingFFSet(true)
         .outputVariables(outputVariables)
-        .fileDelegateConfig(
-            FileDelegateConfig.builder()
-                .stores(singletonList(
-                    HarnessStoreDelegateConfig.builder()
-                        .configFiles(Arrays.asList(ConfigFileParameters.builder()
-                                                       .fileContent("hello world")
-                                                       .fileName("test.txt")
-                                                       .fileSize(11L)
-                                                       .build(),
-                            ConfigFileParameters.builder()
-                                .fileName("secret-ref")
-                                .isEncrypted(true)
-                                .encryptionDataDetails(singletonList(encryptedDataDetail))
-                                .secretConfigFile(
-                                    SecretConfigFile.builder()
-                                        .encryptedConfigFile(SecretRefData.builder().identifier("secret-ref").build())
-                                        .build())
-                                .build()))
-                        .build()))
-                .build())
+        .fileDelegateConfig(getFileDelegateConfig(true))
         .build();
+  }
+
+  private WinrmTaskParameters getWinRmTaskParameters(
+      CopyCommandUnit copyConfigCommandUnit, List<String> outputVariables, FileDelegateConfig fileDelegateConfig) {
+    WinRmInfraDelegateConfig winRmInfraDelegateConfig = mock(WinRmInfraDelegateConfig.class);
+    return WinrmTaskParameters.builder()
+        .commandUnits(Collections.singletonList(copyConfigCommandUnit))
+        .winRmInfraDelegateConfig(winRmInfraDelegateConfig)
+        .executeOnDelegate(true)
+        .disableWinRMCommandEncodingFFSet(true)
+        .outputVariables(outputVariables)
+        .fileDelegateConfig(fileDelegateConfig)
+        .build();
+  }
+
+  private FileDelegateConfig getFileDelegateConfig(boolean withSize) {
+    return FileDelegateConfig.builder()
+        .stores(singletonList(
+            HarnessStoreDelegateConfig.builder()
+                .configFiles(Arrays.asList(ConfigFileParameters.builder()
+                                               .fileContent("hello world")
+                                               .fileName("test.txt")
+                                               .fileSize(withSize ? 11L : 0L)
+                                               .build(),
+                    ConfigFileParameters.builder()
+                        .fileName("secret-ref")
+                        .isEncrypted(true)
+                        .encryptionDataDetails(singletonList(encryptedDataDetail))
+                        .secretConfigFile(
+                            SecretConfigFile.builder()
+                                .encryptedConfigFile(SecretRefData.builder().identifier("secret-ref").build())
+                                .build())
+                        .build()))
+                .build()))
+        .build();
+  }
+
+  private void assertConfigFile(ConfigFileParameters configFile) {
+    assertThat(configFile).isNotNull();
+    if (configFile.isEncrypted()) {
+      assertThat(configFile.getFileContent()).isEqualTo("ab");
+      assertThat(configFile.getFileName()).isEqualTo("secret-ref");
+      assertThat(configFile.getFileSize()).isEqualTo(2L);
+    } else {
+      assertThat(configFile.getFileContent()).isEqualTo("hello world");
+      assertThat(configFile.getFileName()).isEqualTo("test.txt");
+      assertThat(configFile.getFileSize()).isEqualTo(11L);
+    }
   }
 }

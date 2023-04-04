@@ -7,9 +7,13 @@
 
 package io.harness.delegate.task.ssh.config;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
+import io.harness.expression.Expression;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import java.util.List;
 import lombok.Builder;
@@ -18,6 +22,6 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class FileDelegateConfig {
-  List<StoreDelegateConfig> stores;
+public class FileDelegateConfig implements NestedAnnotationResolver {
+  @Expression(ALLOW_SECRETS) List<StoreDelegateConfig> stores;
 }
