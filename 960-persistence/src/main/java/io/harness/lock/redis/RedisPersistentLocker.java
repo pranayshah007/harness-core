@@ -65,8 +65,8 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
       boolean locked = false;
       RLock lock = null;
       if (client.getConfig().isSentinelConfig()) {
-        log.info("Acquiring RedissonSpinLock in Async mode for sentinel mode");
-        lock = client.getSpinLock(name);
+        log.info("Acquiring RedissonLock in Async mode for sentinel mode");
+        lock = client.getLock(name);
         locked = lock.tryLockAsync(0, timeout.toMillis(), TimeUnit.MILLISECONDS).get(timeout.toMillis(),TimeUnit.MILLISECONDS);
       } else {
         lock = client.getLock(name);
