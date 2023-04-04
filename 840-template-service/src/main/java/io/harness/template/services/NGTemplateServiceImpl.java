@@ -164,6 +164,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         templateEntity.getAccountId(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());
     assureThatTheProjectAndOrgExists(
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
+    templateGitXService.enforceGitExperienceIfApplicable(
+        templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
 
     if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
       TemplateUtils.setupGitParentEntityDetails(templateEntity.getAccountIdentifier(),
