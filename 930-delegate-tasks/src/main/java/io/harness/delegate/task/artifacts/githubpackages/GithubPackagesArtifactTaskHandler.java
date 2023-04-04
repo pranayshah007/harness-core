@@ -7,8 +7,6 @@
 
 package io.harness.delegate.task.artifacts.githubpackages;
 
-import static io.harness.delegate.task.artifacts.ArtifactServiceConstant.ACCEPT_ALL_REGEX;
-
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
 import io.harness.data.structure.EmptyPredicate;
@@ -55,12 +53,10 @@ public class GithubPackagesArtifactTaskHandler
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(GithubPackagesArtifactDelegateRequest attributesRequest) {
     BuildDetails lastSuccessfulBuild;
 
-    if (isRegex(attributesRequest) || attributesRequest.getVersion().equals(ACCEPT_ALL_REGEX)) {
-      String versionRegex =
-          isRegex(attributesRequest) ? attributesRequest.getVersionRegex() : attributesRequest.getVersion();
+    if (isRegex(attributesRequest)) {
       lastSuccessfulBuild = githubPackagesRegistryService.getLastSuccessfulBuildFromRegex(
           GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributesRequest),
-          attributesRequest.getPackageName(), attributesRequest.getPackageType(), versionRegex,
+          attributesRequest.getPackageName(), attributesRequest.getPackageType(), attributesRequest.getVersionRegex(),
           attributesRequest.getOrg());
 
     } else {

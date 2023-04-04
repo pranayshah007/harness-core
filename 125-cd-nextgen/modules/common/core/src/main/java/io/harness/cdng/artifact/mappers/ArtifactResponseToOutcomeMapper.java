@@ -566,11 +566,16 @@ public class ArtifactResponseToOutcomeMapper {
 
   private CustomArtifactOutcome getCustomArtifactOutcome(CustomArtifactConfig artifactConfig,
       CustomArtifactDelegateResponse customArtifactDelegateResponse, boolean useDelegateResponse) {
+    String version = artifactConfig.getVersion().getValue();
+    if (useDelegateResponse) {
+      version = customArtifactDelegateResponse.getVersion() != null ? customArtifactDelegateResponse.getVersion()
+                                                                    : artifactConfig.getVersion().getValue();
+    }
     return CustomArtifactOutcome.builder()
         .identifier(artifactConfig.getIdentifier())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
-        .version(artifactConfig.getVersion().getValue())
-        .image(artifactConfig.getVersion().getValue())
+        .version(version)
+        .image(version)
         .displayName(useDelegateResponse ? customArtifactDelegateResponse.getBuildDetails().getUiDisplayName() : null)
         .metadata(useDelegateResponse ? customArtifactDelegateResponse.getMetadata() : null)
         .build();
