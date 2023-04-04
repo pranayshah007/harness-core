@@ -35,11 +35,17 @@ import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.gitsync.beans.GitRepositoryDTO;
+import io.harness.gitsync.common.dtos.AzureRepoSCMDTO;
+import io.harness.gitsync.common.dtos.GithubSCMDTO;
+import io.harness.gitsync.common.dtos.GitlabSCMDTO;
+import io.harness.gitsync.common.dtos.UserSourceCodeManagerDTO;
+import io.harness.gitsync.common.service.UserSourceCodeManagerService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
+import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.security.PrincipalContextData;
 import io.harness.tasks.DecryptGitApiAccessHelper;
 import io.harness.utils.IdentifierRefHelper;
@@ -59,13 +65,16 @@ public class GitSyncConnectorHelper {
   ConnectorService connectorService;
   DecryptGitApiAccessHelper decryptGitApiAccessHelper;
   YamlGitConfigService yamlGitConfigService;
+  UserSourceCodeManagerService userSourceCodeManagerService;
 
   @Inject
   public GitSyncConnectorHelper(@Named("connectorDecoratorService") ConnectorService connectorService,
-      DecryptGitApiAccessHelper decryptGitApiAccessHelper, YamlGitConfigService yamlGitConfigService) {
+      DecryptGitApiAccessHelper decryptGitApiAccessHelper, YamlGitConfigService yamlGitConfigService,
+      UserSourceCodeManagerService userSourceCodeManagerService) {
     this.connectorService = connectorService;
     this.decryptGitApiAccessHelper = decryptGitApiAccessHelper;
     this.yamlGitConfigService = yamlGitConfigService;
+    this.userSourceCodeManagerService = userSourceCodeManagerService;
   }
 
   public ScmConnector getDecryptedConnector(
@@ -117,6 +126,7 @@ public class GitSyncConnectorHelper {
   public ScmConnector getDecryptedConnectorForNewGitX(
       String accountId, String orgIdentifier, String projectIdentifier, ScmConnector connectorDTO) {
     PrincipalContextData currentPrincipal = GlobalContextManager.get(PrincipalContextData.PRINCIPAL_CONTEXT);
+    setUserGitCredsInConnector(accountId, connectorDTO);
     // setting service principal for connector decryption in case of Git Connector
     GitSyncUtils.setGitSyncServicePrincipal();
     ScmConnector scmConnector =
@@ -342,5 +352,34 @@ public class GitSyncConnectorHelper {
             ex);
       }
     });
+  }
+
+  public void setUserGitCredsInConnector(String accountIdentifier, ScmConnector connectorDTO) {
+    Optional<String> userIdentifier = GitSyncUtils.getUserIdentifier();
+    if (userIdentifier.isPresent()) {
+      UserSourceCodeManagerDTO userSourceCodeManagerDTO = userSourceCodeManagerService.getByType(
+          accountIdentifier, userIdentifier.get(), SCMType.valueOf(connectorDTO.getConnectorType().toString()));
+      if (userSourceCodeManagerDTO != null) {
+        switch (connectorDTO.getConnectorType()) {
+          case GITHUB:
+            GithubSCMDTO githubSCMDTO = (GithubSCMDTO) userSourceCodeManagerDTO;
+            GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO;
+            githubConnectorDTO.setApiAccess(githubSCMDTO.getApiAccess());
+            break;
+          case GITLAB:
+            GitlabSCMDTO gitlabSCMDTO = (GitlabSCMDTO) userSourceCodeManagerDTO;
+            GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) connectorDTO;
+            gitlabConnectorDTO.setApiAccess(gitlabSCMDTO.getApiAccess());
+            break;
+          case AZURE_REPO:
+            AzureRepoSCMDTO azureRepoSCMDTO = (AzureRepoSCMDTO) userSourceCodeManagerDTO;
+            AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) connectorDTO;
+            azureRepoConnectorDTO.setApiAccess(azureRepoSCMDTO.getApiAccess());
+            break;
+          default:
+            log.info("OAUTH not supported for connector type: {}", connectorDTO.getConnectorType());
+        }
+      }
+    }
   }
 }
