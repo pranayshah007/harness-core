@@ -17,7 +17,7 @@ FROM us.gcr.io/platform-205701/ubi/ubi-java:curl_removal
 
 USER root
 
-RUN microdnf install yum
+RUN microdnf install yum tar gzip
 
 RUN mkdir -p /deployments
 
