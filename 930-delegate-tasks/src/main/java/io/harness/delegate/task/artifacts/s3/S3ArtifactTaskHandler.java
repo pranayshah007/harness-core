@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.artifacts.s3;
 
+import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -75,6 +76,7 @@ public class S3ArtifactTaskHandler extends DelegateArtifactTaskHandler<S3Artifac
       List<BuildDetails> builds =
           awsApiHelperService.listBuilds(awsInternalConfig, s3ArtifactDelegateRequest.getRegion(),
               s3ArtifactDelegateRequest.getBucketName(), s3ArtifactDelegateRequest.getFilePathRegex());
+      builds = builds.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList());
 
       if (builds.isEmpty()) {
         throw new InvalidRequestException("No last successful build");

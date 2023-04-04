@@ -473,7 +473,7 @@ public class AwsApiHelperService {
       // You can query the bucket location using any region, it returns the result. So, using the default
       String bucketRegion = closeableAmazonS3Client.getClient().getBucketLocation(bucketName);
       // Aws returns US if the bucket was created in the default region. Not sure why it doesn't return just the region
-      // name in all cases. Also, their documentation says it would return empty string if its in the default region.
+      // name in all cases. Also, their documentation says it would return empty string if it's in the default region.
       // http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGETlocation.html But it returns US. Added additional
       // checks based on other stuff
       if (bucketRegion == null || bucketRegion.equals("US")) {

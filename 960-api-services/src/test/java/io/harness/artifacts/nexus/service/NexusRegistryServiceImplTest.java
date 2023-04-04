@@ -293,9 +293,9 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
         nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, "test2", null, "extra/megaapp",
             RepositoryFormat.docker.name(), "\\\\*", null, null, null, null, null, null, Integer.MAX_VALUE);
     assertThat(response).isNotNull();
-    assertThat(response.getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("a4");
+    assertThat(response.getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("latest");
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.IMAGE))
-        .isEqualTo("nexus.harness.io:8002/extra/megaapp:a4");
+        .isEqualTo("nexus.harness.io:8002/extra/megaapp:latest");
   }
 
   @Test

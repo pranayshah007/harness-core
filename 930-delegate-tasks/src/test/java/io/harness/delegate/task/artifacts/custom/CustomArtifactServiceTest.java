@@ -210,6 +210,7 @@ public class CustomArtifactServiceTest extends CategoryTest {
                                                                       .versionPath("version")
                                                                       .script("echo script")
                                                                       .workingDirectory("/tmp")
+                                                                      .version("version2")
                                                                       .build();
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
     doReturn(ShellScriptTaskResponseNG.builder().status(CommandExecutionStatus.SUCCESS).build())
