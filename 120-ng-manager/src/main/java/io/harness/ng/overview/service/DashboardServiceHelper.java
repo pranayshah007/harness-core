@@ -403,7 +403,7 @@ public class DashboardServiceHelper {
     return instanceGroupedByArtifactList;
   }
 
-  public ArtifactInstanceDetails getArtifactInstanceDetailsFromMap(
+  public ArtifactInstanceDetails  getArtifactInstanceDetailsFromMap(
       Map<String, Map<String, ArtifactDeploymentDetail>> artifactDeploymentDetailsMap,
       Map<String, String> envIdToEnvNameMap, Map<String, EnvironmentType> envIdToEnvTypeMap) {
     List<ArtifactInstanceDetails.ArtifactInstanceDetail> artifactInstanceDetails = new ArrayList<>();
