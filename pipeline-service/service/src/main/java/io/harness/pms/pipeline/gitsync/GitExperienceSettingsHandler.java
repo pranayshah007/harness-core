@@ -30,13 +30,14 @@ public class GitExperienceSettingsHandler {
 
   public void enforceGitExperienceIfApplicable(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (isGitExperienceEnforcedInSettings(accountIdentifier, orgIdentifier, projectIdentifier)) {
+      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
 
-    if (isGitExperienceEnforcedInSettings(accountIdentifier, orgIdentifier, projectIdentifier)
-        && StoreType.INLINE.equals(gitEntityInfo.getStoreType())) {
-      throw new InvalidRequestException(String.format(
-          "Git Experience is enforced for the current scope with accountId: %s, orgIdentifier: %s and projIdentifier: %s",
-          accountIdentifier, orgIdentifier, projectIdentifier));
+      if (gitEntityInfo == null || StoreType.INLINE.equals(gitEntityInfo.getStoreType())) {
+        throw new InvalidRequestException(String.format(
+            "Git Experience is enforced for the current scope with accountId: %s, orgIdentifier: %s and projIdentifier: %s. Hence Inline Entities cannot be created.",
+            accountIdentifier, orgIdentifier, projectIdentifier));
+      }
     }
   }
 }
