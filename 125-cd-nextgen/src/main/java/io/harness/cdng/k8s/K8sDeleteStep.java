@@ -17,6 +17,7 @@ import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -80,7 +81,14 @@ public class K8sDeleteStep extends TaskChainExecutableWithRollbackAndRbac implem
     } else {
       InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
           ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-      return executeK8sTask(null, ambiance, stepElementParameters, Collections.emptyList(),
+      ManifestOutcome k8sManifestOutcome = null;
+      try {
+        ManifestsOutcome manifestsOutcome = k8sStepHelper.resolveManifestsOutcome(ambiance);
+        k8sManifestOutcome = k8sStepHelper.getK8sSupportedManifestOutcome(manifestsOutcome.values());
+      } catch (Exception ex) {
+        log.warn("No manifest configured in service");
+      }
+      return executeK8sTask(k8sManifestOutcome, ambiance, stepElementParameters, Collections.emptyList(),
           K8sExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), false, null);
     }
   }

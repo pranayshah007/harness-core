@@ -466,6 +466,10 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
             .project(projection(SecretChangeLogKeys.encryptedDataId, ID_KEY), projection("count"));
 
     List<SecretUsageSummary> secretUsageSummaries = new ArrayList<>();
+    int limit = wingsPersistence.getMaxDocumentLimit(SecretUsageLog.class);
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
     aggregationPipeline
         .aggregate(SecretUsageSummary.class,
             AggregationOptions.builder()
@@ -530,6 +534,10 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
             .project(projection(SecretChangeLogKeys.encryptedDataId, ID_KEY), projection("count"));
 
     List<ChangeLogSummary> changeLogSummaries = new ArrayList<>();
+    int limit = wingsPersistence.getMaxDocumentLimit(SecretChangeLog.class);
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
     aggregationPipeline
         .aggregate(ChangeLogSummary.class,
             AggregationOptions.builder()

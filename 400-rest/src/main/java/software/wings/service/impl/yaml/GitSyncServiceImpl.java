@@ -79,6 +79,7 @@ import software.wings.yaml.gitSync.beans.YamlGitConfig;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.AggregationOptions;
+import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
@@ -290,14 +291,20 @@ public class GitSyncServiceImpl implements GitSyncService {
                                        .filter(ACCOUNT_ID_KEY, accountId)
                                        .field(GitFileActivityKeys.filePath)
                                        .in(filePaths);
-    wingsPersistence.getDatastore(GitFileActivity.class)
-        .createAggregation(GitFileActivity.class)
-        .match(query)
-        .sort(Sort.descending(CREATED_AT_KEY))
-        .group(GitFileActivityKeys.filePath,
-            grouping(GitFileActivityKeys.errorMessage, first(GitFileActivityKeys.errorMessage)))
-        .project(projection(GitFileActivityKeys.filePath, ID_KEY),
-            projection(GitFileActivityKeys.errorMessage, GitFileActivityKeys.errorMessage))
+    AggregationPipeline aggregationPipeline =
+        wingsPersistence.getDatastore(GitFileActivity.class)
+            .createAggregation(GitFileActivity.class)
+            .match(query)
+            .sort(Sort.descending(CREATED_AT_KEY))
+            .group(GitFileActivityKeys.filePath,
+                grouping(GitFileActivityKeys.errorMessage, first(GitFileActivityKeys.errorMessage)))
+            .project(projection(GitFileActivityKeys.filePath, ID_KEY),
+                projection(GitFileActivityKeys.errorMessage, GitFileActivityKeys.errorMessage));
+    int limit = wingsPersistence.getMaxDocumentLimit(GitFileActivity.class);
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
         .aggregate(LatestErrorInGitFileActivity.class,
             AggregationOptions.builder()
                 .maxTime(wingsPersistence.getMaxTimeMs(GitFileActivity.class), TimeUnit.MILLISECONDS)
