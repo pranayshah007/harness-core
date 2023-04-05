@@ -102,7 +102,7 @@ public class AuthenticationManagerTest extends WingsBaseTest {
   @Mock private UserMembershipClient userMembershipClient;
   @Mock private FailedLoginAttemptCountChecker failedLoginAttemptCountChecker;
 
-  @Captor ArgumentCaptor<String> argCaptor;
+  @Captor ArgumentCaptor<String[]> argCaptor = ArgumentCaptor.forClass(String[].class);
 
   @Inject @InjectMocks private AuthenticationManager authenticationManager;
 
@@ -311,8 +311,8 @@ public class AuthenticationManagerTest extends WingsBaseTest {
 
     verify(PASSWORD_BASED_AUTH_HANDLER, times(1)).authenticate(argCaptor.capture());
 
-    assertThat(USER_NAME).isEqualTo(argCaptor.getAllValues().get(0));
-    assertThat(password).isEqualTo(argCaptor.getAllValues().get(1));
+    assertThat(USER_NAME).isEqualTo(argCaptor.getValue()[0]);
+    assertThat(password).isEqualTo(argCaptor.getValue()[1]);
   }
 
   @Test

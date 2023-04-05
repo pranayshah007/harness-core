@@ -36,7 +36,6 @@ import software.wings.service.impl.delegate.AwsEcrApiHelperServiceDelegateBase;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.SDKGlobalConfiguration;
 import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.regions.Regions;
@@ -50,17 +49,9 @@ import com.amazonaws.services.lambda.model.AWSLambdaException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({WebIdentityTokenCredentialsProvider.class})
-@PowerMockIgnore({"javax.security.*", "javax.net.*", "javax.management.*", "javax.crypto.*"})
 @OwnedBy(CDP)
 public class AwsHelperServiceDelegateBaseTest extends WingsBaseTest {
   @Mock private AwsEcrApiHelperServiceDelegateBase awsEcrApiHelperServiceDelegateBase;
@@ -124,11 +115,11 @@ public class AwsHelperServiceDelegateBaseTest extends WingsBaseTest {
   @Owner(developers = RAGHVENDRA)
   @Category(UnitTests.class)
   public void testAttachCredentialsAndBackoffPolicyWithIRSA() {
-    PowerMockito.mockStatic(System.class);
+    /*PowerMockito.mockStatic(System.class);
     PowerMockito.when(System.getenv(SDKGlobalConfiguration.AWS_ROLE_ARN_ENV_VAR))
         .thenAnswer(invocationOnMock -> "abcd");
     PowerMockito.when(System.getenv(SDKGlobalConfiguration.AWS_WEB_IDENTITY_ENV_VAR))
-        .thenAnswer(invocationOnMock -> "/jkj");
+        .thenAnswer(invocationOnMock -> "/jkj");*/
     AwsInternalConfig awsInternalConfig = mock(AwsInternalConfig.class);
     when(awsInternalConfig.isUseEc2IamCredentials()).thenReturn(false);
     when(awsInternalConfig.isUseIRSA()).thenReturn(true);

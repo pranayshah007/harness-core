@@ -56,13 +56,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 import retrofit2.Response;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Response.class, JsonNode.class})
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.CDP)
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class ServicenowTaskTest extends CategoryTest {
