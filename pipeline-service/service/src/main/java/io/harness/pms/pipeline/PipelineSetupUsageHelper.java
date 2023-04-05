@@ -132,14 +132,11 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
   }
 
   public void publishSetupUsageEvent(
-      PipelineEntity pipelineEntity, List<EntityDetailProtoDTO> referredEntities, String branch) {
+      PipelineEntity pipelineEntity, List<EntityDetailProtoDTO> referredEntities, Map<String, String> metadata) {
     if (EmptyPredicate.isEmpty(referredEntities)) {
       deleteSetupUsagesForGivenPipeline(pipelineEntity);
       return;
     }
-
-    Map<String, String> metadata = new HashMap<>();
-    metadata.put("branch", branch);
 
     EntityDetailProtoDTO pipelineDetails =
         EntityDetailProtoDTO.newBuilder()

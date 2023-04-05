@@ -383,7 +383,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
             .setDeleteOldReferredByRecords(true)
             .build();
 
-    pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, referredEntities, null);
+    pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, referredEntities, new HashMap<>());
 
     verify(eventProducer)
         .send(Message.newBuilder()

@@ -96,10 +96,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import javax.ws.rs.InternalServerErrorException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -199,8 +196,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
       // PUBLISHING SETUP USAGES
       if (doPublishSetupUsages(createdEntity)) {
+        Map<String, String> metadata = new HashMap<>();
+        if (branch != null) {
+          metadata.put("branch", branch);
+        }
+
         pipelineSetupUsageHelper.publishSetupUsageEvent(
-            pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
+            pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), metadata);
       }
 
       try {
@@ -378,8 +380,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
         // POPULATE GIT INFO FOR REFERRED ENTITIES.
         if (doPublishSetupUsages(pipelineEntity)) {
+          Map<String, String> metadata = new HashMap<>();
+          if (branch != null) {
+            metadata.put("branch", branch);
+          }
+
           pipelineSetupUsageHelper.publishSetupUsageEvent(
-              pipelineEntity, pipelineEntityWithReferences.getReferredEntities(), branch);
+              pipelineEntity, pipelineEntityWithReferences.getReferredEntities(), metadata);
         }
 
       } catch (IOException e) {
@@ -640,8 +647,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
       // POPULATE GIT INFO FOR REFERRED ENTITIES.
       if (doPublishSetupUsages(pipelineEntity) && entityWithUpdatedInfoWithReferences != null) {
+        Map<String, String> metadata = new HashMap<>();
+        if (branch != null) {
+          metadata.put("branch", branch);
+        }
+
         pipelineSetupUsageHelper.publishSetupUsageEvent(
-            pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
+            pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), metadata);
       }
 
       if (updatedResult == null) {
