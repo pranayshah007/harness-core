@@ -97,7 +97,7 @@ public class BudgetServiceImpl implements BudgetService {
   }
 
   @Override
-  public void update(String budgetId, Budget budget) {
+  public void update(String budgetId, Budget budget, Budget oldBudget) {
     if (budget.getAccountId() == null) {
       Budget existingBudget = budgetDao.get(budgetId);
       budget.setAccountId(existingBudget.getAccountId());
@@ -109,6 +109,7 @@ public class BudgetServiceImpl implements BudgetService {
     removeEmailDuplicates(budget);
     validatePerspective(budget);
     updateBudgetParent(budget);
+    updateBudgetDetails(budget, oldBudget);
     updateBudgetEndTime(budget);
     updateBudgetCosts(budget);
     budgetDao.update(budgetId, budget);
@@ -202,6 +203,18 @@ public class BudgetServiceImpl implements BudgetService {
       if (parentBudgetGroup == null) {
         budget.setParentBudgetGroupId(null);
       }
+    }
+  }
+
+  private void updateBudgetDetails(Budget budget, Budget oldBudget) {
+    // We do not allow updates to period or startTime of a budget
+    budget.setPeriod(oldBudget.getPeriod());
+    budget.setStartTime(oldBudget.getStartTime());
+
+    // In case this budget is part of budget group
+    // We do not allow updates to breakdown as well
+    if (budget.getParentBudgetGroupId() != null) {
+      budget.getBudgetMonthlyBreakdown().setBudgetBreakdown(oldBudget.getBudgetMonthlyBreakdown().getBudgetBreakdown());
     }
   }
 
