@@ -13,6 +13,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import io.harness.ApiServiceTestBase;
 import io.harness.category.element.UnitTests;
@@ -45,10 +46,10 @@ public class SshHelperUtilsTest extends ApiServiceTestBase {
 
     SshHelperUtils.executeLocalCommand("echo test", logCallback, writer, true, Collections.emptyMap());
     verify(writer, times(1)).write("test");
-    verifyNoInteractions(logCallback);
+    verifyNoMoreInteractions(logCallback);
 
     SshHelperUtils.executeLocalCommand("echo test >&2", logCallback, writer, false, Collections.emptyMap());
     verify(logCallback, times(1)).saveExecutionLog("test", LogLevel.ERROR);
-    verifyNoInteractions(writer);
+    verifyNoMoreInteractions(writer);
   }
 }

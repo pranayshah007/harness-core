@@ -12,10 +12,10 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -26,6 +26,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.logging.LogLevel;
+import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.dto.OrganizationDTO;
@@ -216,6 +217,8 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
+    when(logStreamingStepClientFactory.getLogStreamingStepClient(ambiance))
+        .thenReturn(Mockito.mock(ILogStreamingStepClient.class));
 
     approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
     ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor =

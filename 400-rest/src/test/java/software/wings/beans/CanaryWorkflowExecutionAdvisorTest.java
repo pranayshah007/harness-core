@@ -75,10 +75,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(CDC)
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class CanaryWorkflowExecutionAdvisorTest extends CategoryTest {
   private static final long VALID_TIMEOUT = 60000L;

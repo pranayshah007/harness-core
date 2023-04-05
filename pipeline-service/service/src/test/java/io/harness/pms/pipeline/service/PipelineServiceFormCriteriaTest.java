@@ -11,8 +11,9 @@ import static io.harness.rule.OwnerRule.SAMARTH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -131,7 +132,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
         .resolveTemplateRefsInPipeline(any(), anyBoolean(), anyBoolean());
     MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
-    aStatic.when(() -> NGRestUtils.getResponse(projectClient.getProject(any(), any(), any()), any()))
+    aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenReturn(projDTOCall);
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
 

@@ -512,7 +512,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
 
     verify(cfDeploymentManager, times(1)).upsizeApplicationWithSteadyStateCheck(any(), any());
 
-    ArgumentCaptor<ArrayList> routesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> routesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> cfRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
 
     verify(cfDeploymentManager, times(1))
@@ -524,7 +524,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
 
     verify(cfDeploymentManager, times(1)).resizeApplication(any());
 
-    ArgumentCaptor<ArrayList> unMapRoutesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> unMapRoutesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> unMapRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
     verify(cfDeploymentManager, times(1))
         .unmapRouteMapForApplication(unMapRequestCaptor.capture(), unMapRoutesCaptor.capture(), any());
@@ -617,7 +617,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
 
     verify(cfDeploymentManager, times(1)).upsizeApplicationWithSteadyStateCheck(any(), any());
 
-    ArgumentCaptor<ArrayList> routesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> routesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> cfRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
 
     verify(cfDeploymentManager, times(1))
@@ -629,7 +629,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
 
     verify(cfDeploymentManager, times(1)).resizeApplication(any());
 
-    ArgumentCaptor<ArrayList> unMapRoutesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> unMapRoutesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> unMapRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
     verify(cfDeploymentManager, times(1))
         .unmapRouteMapForApplication(unMapRequestCaptor.capture(), unMapRoutesCaptor.capture(), any());
@@ -741,7 +741,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
 
     verify(cfDeploymentManager, times(1)).upsizeApplicationWithSteadyStateCheck(any(), any());
 
-    ArgumentCaptor<ArrayList> routesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> routesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> cfRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
 
     verify(cfDeploymentManager, times(1))
@@ -753,7 +753,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
 
     verify(cfDeploymentManager, times(1)).resizeApplication(any());
 
-    ArgumentCaptor<ArrayList> unMapRoutesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> unMapRoutesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> unMapRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
     verify(cfDeploymentManager, times(1))
         .unmapRouteMapForApplication(unMapRequestCaptor.capture(), unMapRoutesCaptor.capture(), any());
@@ -861,7 +861,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
 
     verify(cfDeploymentManager, times(1)).upsizeApplicationWithSteadyStateCheck(any(), any());
 
-    ArgumentCaptor<ArrayList> routesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> routesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> cfRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
 
     verify(cfDeploymentManager, times(1))
@@ -873,7 +873,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
 
     verify(cfDeploymentManager, times(1)).resizeApplication(any());
 
-    ArgumentCaptor<ArrayList> unMapRoutesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> unMapRoutesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> unMapRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
     verify(cfDeploymentManager, times(1))
         .unmapRouteMapForApplication(unMapRequestCaptor.capture(), unMapRoutesCaptor.capture(), any());
