@@ -8,9 +8,12 @@
 package io.harness.delegate.beans.storeconfig;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
+import io.harness.expression.Expression;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import java.util.List;
 import lombok.EqualsAndHashCode;
@@ -21,8 +24,8 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder(toBuilder = true)
 @EqualsAndHashCode()
 @OwnedBy(CDP)
-public class HarnessStoreDelegateConfig implements StoreDelegateConfig {
-  List<ConfigFileParameters> configFiles;
+public class HarnessStoreDelegateConfig implements StoreDelegateConfig, NestedAnnotationResolver {
+  @Expression(ALLOW_SECRETS) List<ConfigFileParameters> configFiles;
 
   @Override
   public StoreDelegateConfigType getType() {

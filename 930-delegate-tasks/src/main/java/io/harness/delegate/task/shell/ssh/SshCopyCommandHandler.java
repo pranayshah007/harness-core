@@ -50,7 +50,6 @@ import io.harness.ssh.FileSourceType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -154,8 +153,14 @@ public class SshCopyCommandHandler implements CommandHandler {
           }
           String fileData = new String(secretConfigFile.getEncryptedConfigFile().getDecryptedValue());
           configFile.setFileContent(fileData);
-          configFile.setFileSize(fileData.getBytes(StandardCharsets.UTF_8).length);
         }
+
+        // Since file content might change after secret manager functor will be applied,
+        // there is no way to handle this on manager side and we need to recalculate file
+        // size before sending over the wire.
+        // This is applicable mostly in use cases when config file has a reference to secret variable in its content.
+        configFile.calculateFileSize();
+
         result = executor.copyConfigFiles(context.getEvaluatedDestinationPath(), configFile);
         if (result == CommandExecutionStatus.FAILURE) {
           log.error("Failed to copy config file: " + configFile.getFileName());

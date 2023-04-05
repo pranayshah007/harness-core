@@ -670,7 +670,9 @@ public enum FeatureName {
       "Applies RBAC on services overview page, only displays services which the user has access to read",
       HarnessTeam.SPG),
   CDS_SERVICENOW_TICKET_TYPE_V2("FF to use servicenow ticketTypesV2 endpoint", HarnessTeam.CDC),
-  FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE);
+  FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE),
+  CDS_NG_CONFIG_FILE_EXPRESSION(
+      "Enable Harness variable rendering in Hanress config files (SSH/WinRM)", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
