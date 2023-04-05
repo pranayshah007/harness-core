@@ -26,6 +26,9 @@ public class DelegateJWTCache {
   private final Cache<String, DelegateJWTCacheValue> delegateJWTCache =
       Caffeine.newBuilder().maximumSize(100000).expireAfterWrite(25, TimeUnit.MINUTES).build();
 
+  private final Cache<String, String> revokedTokenCache =
+      Caffeine.newBuilder().maximumSize(100000).expireAfterWrite(23, TimeUnit.MINUTES).build();
+
   // if delegateTokenName is null that means delegate is not reusing the jwt.
   public void setDelegateJWTCache(
       String tokenHash, String delegateTokenName, DelegateJWTCacheValue delegateJWTCacheValue) {
@@ -43,15 +46,21 @@ public class DelegateJWTCache {
   public DelegateJWTCacheValue getDelegateJWTCache(String cacheKey) {
     try {
       readWriteLock.readLock().lock();
-      return delegateJWTCache.getIfPresent(cacheKey);
+      DelegateJWTCacheValue delegateJWTCacheValue = delegateJWTCache.getIfPresent(cacheKey);
+      if (delegateJWTCacheValue != null
+          && revokedTokenCache.getIfPresent(delegateJWTCacheValue.getDelegateTokenName()) != null) {
+        delegateJWTCache.invalidate(cacheKey);
+        return new DelegateJWTCacheValue(false, 0L, delegateJWTCacheValue.getDelegateTokenName());
+      }
+      return delegateJWTCacheValue;
     } finally {
       readWriteLock.readLock().unlock();
     }
   }
 
-  public void inValidateDelegateTokenJWTCache(String cacheKey) {
-    if (delegateJWTCache.getIfPresent(cacheKey) != null) {
-      delegateJWTCache.invalidate(cacheKey);
+  public void setRevokedTokenCache(String delegateTokenName, String delegateTokenId) {
+    if (delegateTokenName != null) {
+      revokedTokenCache.put(delegateTokenName, delegateTokenId);
     }
   }
 }

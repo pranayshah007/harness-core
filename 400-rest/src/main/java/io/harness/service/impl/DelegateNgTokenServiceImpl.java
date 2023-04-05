@@ -26,6 +26,7 @@ import io.harness.delegate.events.DelegateNgTokenCreateEvent;
 import io.harness.delegate.events.DelegateNgTokenRevokeEvent;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
+import io.harness.delegate.utils.DelegateJWTCache;
 import io.harness.delegate.utils.DelegateTokenCacheHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.outbox.api.OutboxService;
@@ -62,15 +63,16 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   private final HPersistence persistence;
   private final OutboxService outboxService;
   private final DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt;
-  private final DelegateTokenCacheHelper delegateTokenCacheHelper;
+  private final DelegateJWTCache delegateJWTCache;
 
   @Inject
   public DelegateNgTokenServiceImpl(HPersistence persistence, OutboxService outboxService,
-      DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt, DelegateTokenCacheHelper delegateTokenCacheHelper) {
+      DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt, DelegateTokenCacheHelper delegateTokenCacheHelper,
+      DelegateJWTCache delegateJWTCache) {
     this.persistence = persistence;
     this.outboxService = outboxService;
     this.delegateTokenEncryptDecrypt = delegateTokenEncryptDecrypt;
-    this.delegateTokenCacheHelper = delegateTokenCacheHelper;
+    this.delegateJWTCache = delegateJWTCache;
   }
 
   @Override
@@ -127,10 +129,8 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     // mins.
 
     publishRevokeTokenAuditEvent(updatedDelegateToken);
-
-    DelegateTokenDetails delegateTokenDetails = getDelegateTokenDetails(updatedDelegateToken, false);
-    delegateTokenCacheHelper.invalidateDelegateTokenCache(updatedDelegateToken);
-    return delegateTokenDetails;
+    delegateJWTCache.setRevokedTokenCache(updatedDelegateToken.getName(), updatedDelegateToken.getUuid());
+    return getDelegateTokenDetails(updatedDelegateToken, false);
   }
 
   @Override

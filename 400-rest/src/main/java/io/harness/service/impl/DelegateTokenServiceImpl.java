@@ -42,7 +42,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.DEL)
@@ -120,9 +119,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
         persistence.findAndModify(filterQuery, updateOperations, new FindAndModifyOptions());
     auditServiceHelper.reportForAuditingUsingAccountId(
         accountId, originalDelegateToken, updatedDelegateToken, Event.Type.UPDATE);
-    delegateTokenCacheHelper.invalidateDelegateTokenCache(updatedDelegateToken);
-    final String tokenHash = DigestUtils.md5Hex(delegateTokenEncryptDecrypt.decrypt(updatedDelegateToken));
-    delegateJWTCache.inValidateDelegateTokenJWTCache(tokenHash);
+    delegateJWTCache.setRevokedTokenCache(updatedDelegateToken.getName(), updatedDelegateToken.getUuid());
   }
 
   @Override
