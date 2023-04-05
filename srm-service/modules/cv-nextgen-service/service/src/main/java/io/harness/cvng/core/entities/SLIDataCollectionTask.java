@@ -50,7 +50,7 @@ public class SLIDataCollectionTask extends DataCollectionTask {
 
   @Override
   public boolean eligibleForRetry(Instant currentTime) {
-    return getStartTime().isAfter(getDataCollectionPastTimeCutoff(currentTime)) && getRetryCount() <= MAX_RETRY_COUNT;
+    return getStartTime().isAfter(getDataCollectionPastTimeCutoff(currentTime)) && getRetryCount() < MAX_RETRY_COUNT;
   }
 
   @Override
