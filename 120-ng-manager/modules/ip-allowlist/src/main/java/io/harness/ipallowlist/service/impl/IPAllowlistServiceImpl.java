@@ -11,11 +11,16 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ipallowlist.entity.IPAllowlistEntity;
 import io.harness.ipallowlist.service.IPAllowlistService;
+import io.harness.repositories.ipallowlist.spring.IPAllowlistRepository;
+
+import com.google.inject.Inject;
 
 @OwnedBy(HarnessTeam.PL)
 public class IPAllowlistServiceImpl implements IPAllowlistService {
+  @Inject IPAllowlistRepository ipAllowlistRepository;
   @Override
   public IPAllowlistEntity create(IPAllowlistEntity ipAllowlistEntity) {
-    return null;
+    ipAllowlistRepository.save(ipAllowlistEntity);
+    return ipAllowlistEntity;
   }
 }
