@@ -27,8 +27,7 @@ public class TokenGenerationUtil {
     MessageDigest digest = MessageDigest.getInstance("SHA-256");
     String text = userEmail + assessmentId + INVITE_SALT_STRING;
     byte[] hash = digest.digest(text.getBytes(StandardCharsets.UTF_8));
-    encoded = Base64.getEncoder().encodeToString(hash);
-    //        return URLEncoder.encode(encoded, StandardCharsets.UTF_8);
+    encoded = Base64.getUrlEncoder().encodeToString(hash);
     return encoded;
   }
 
@@ -38,8 +37,7 @@ public class TokenGenerationUtil {
     MessageDigest digest = MessageDigest.getInstance("SHA-256");
     String text = userId + assessmentResponseId + RESULT_SALT_STRING;
     byte[] hash = digest.digest(text.getBytes(StandardCharsets.UTF_8));
-    encoded = Base64.getEncoder().encodeToString(hash);
-    //        return URLEncoder.encode(encoded, StandardCharsets.UTF_8);
+    encoded = Base64.getUrlEncoder().encodeToString(hash);
     return encoded;
   }
 }

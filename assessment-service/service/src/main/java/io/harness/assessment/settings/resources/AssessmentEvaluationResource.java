@@ -54,7 +54,7 @@ public class AssessmentEvaluationResource {
       response = AssessmentResultsResponse.class)
   public Response
   submitAssessmentResponse(@PathParam("assessmentId") String assessmentId, @Valid UserResponsesRequest body,
-      @HeaderParam("Auth") String auth) {
+      @HeaderParam("Authorization") String auth) {
     try {
       return Response.status(Response.Status.OK)
           .entity(assessmentEvaluationService.submitAssessmentResponse(body, auth))

@@ -15,6 +15,6 @@ import lombok.Data;
 @Data
 public class UploadedOption {
   @NotNull String optionId;
-  String optionText;
-  @Min(0) @Max(10) Long optionPoints;
+  @NotNull String optionText;
+  @NotNull @Min(0) @Max(10) Long optionPoints;
 }

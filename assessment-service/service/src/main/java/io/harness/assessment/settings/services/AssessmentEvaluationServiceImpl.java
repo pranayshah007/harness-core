@@ -85,7 +85,17 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
     Map<String, List<String>> userResponseQuestionMap = userResponses.stream().collect(
         Collectors.toMap(UserResponseRequestItem::getQuestionId, UserResponseRequestItem::getResponseIds));
     // compare the two sets
-    validateQuestions(assessment, userResponses, userResponseQuestionMap);
+    validateQuestionResponses(assessment, userResponses, userResponseQuestionMap);
+    Optional<AssessmentResponse> previouslySubmittedResponse =
+        assessmentResponseRepository.findOneByAssessmentIdAndUserIdAndVersion(
+            assessment.getAssessmentId(), user.getUserId(), assessment.getVersion());
+    String id = null;
+    if (previouslySubmittedResponse.isPresent()) {
+      id = previouslySubmittedResponse.get().getId();
+      if (previouslySubmittedResponse.get().getStatus() == AssessmentResponseStatus.COMPLETED) {
+        throw new RuntimeException("Assessment is already completed for this version");
+      }
+    }
     // only done for same version now
     /*    List<UserResponse> userResponseEntity = userResponses.stream()
                 .map(userResponseRequestItem
@@ -99,6 +109,7 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
     // This fixes the correct ordering also.
     List<UserResponse> userResponseEntity = getUserResponses(assessment, userResponseQuestionMap, userScores);
     AssessmentResponse assessmentResponse = AssessmentResponse.builder()
+                                                .id(id)
                                                 .assessmentId(assessment.getAssessmentId())
                                                 .version(assessment.getVersion())
                                                 .userId(user.getUserId())
@@ -160,7 +171,7 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
         .collect(Collectors.toList());
   }
 
-  private static void validateQuestions(Assessment assessment, List<UserResponseRequestItem> userResponses,
+  private static void validateQuestionResponses(Assessment assessment, List<UserResponseRequestItem> userResponses,
       Map<String, List<String>> userResponseQuestionMap) {
     Set<String> setOfQuestionInDb =
         assessment.getQuestions().stream().map(Question::getQuestionId).collect(Collectors.toSet());
@@ -278,6 +289,13 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
     }
     Assessment assessment = assessmentOptional.get();
     User user = userOptional.get();
+    Optional<AssessmentResponse> previouslySubmittedResponse =
+        assessmentResponseRepository.findOneByAssessmentIdAndUserIdAndVersion(
+            assessment.getAssessmentId(), user.getUserId(), assessment.getVersion());
+    if (previouslySubmittedResponse.isPresent()
+        && previouslySubmittedResponse.get().getStatus() == AssessmentResponseStatus.COMPLETED) {
+      throw new RuntimeException("Assessment is already completed for this version");
+    }
     // TODO fix below code.
     List<UserResponse> userResponseEntity =
         userResponsesRequest.getResponses()
@@ -285,8 +303,7 @@ public class AssessmentEvaluationServiceImpl implements AssessmentEvaluationServ
             .map(userResponseRequestItem
                 -> UserResponse.builder()
                        .questionId(userResponseRequestItem.getQuestionId())
-                       //                                                                                  .responses(userResponseRequestItem.getResponseIds())
-                       .userScore(0d)
+                       //                                                           .responses()
                        .build())
             .collect(Collectors.toList());
     AssessmentResponse assessmentResponse = AssessmentResponse.builder()
