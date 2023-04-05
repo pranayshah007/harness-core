@@ -15,8 +15,6 @@ import static io.harness.delegate.task.k8s.ManifestType.KUSTOMIZE;
 import static io.harness.k8s.K8sConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
@@ -194,11 +192,11 @@ public abstract class K8sRequestHandler {
 
   protected List<EnvVariable> getEnvironmentVariablesForKubeconfigExecFormat(String gcpKeyPath, String workingDir) {
     List<EnvVariable> envVariableList = new ArrayList<>();
-    if (isNotEmpty(workingDir)) {
+    if (EmptyPredicate.isNotEmpty(workingDir)) {
       envVariableList.add(new EnvVariable(AZURE_CONFIG_DIR,
           Paths.get(workingDir, AZURE_LOGIN_CONFIG_DIR_PATH).normalize().toAbsolutePath().toString()));
     }
-    if (isNotEmpty(gcpKeyPath)) {
+    if (EmptyPredicate.isNotEmpty(gcpKeyPath)) {
       envVariableList.add(new EnvVariable(
           GOOGLE_APPLICATION_CREDENTIALS, Paths.get(gcpKeyPath).normalize().toAbsolutePath().toString()));
     }
