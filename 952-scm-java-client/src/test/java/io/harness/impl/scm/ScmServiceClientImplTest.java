@@ -13,6 +13,7 @@ import static io.harness.constants.Constants.SCM_INTERNAL_SERVER_ERROR_CODE;
 import static io.harness.constants.Constants.SCM_INTERNAL_SERVER_ERROR_MESSAGE;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.MEET;
@@ -54,6 +55,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.product.ci.scm.proto.Commit;
@@ -210,6 +212,23 @@ public class ScmServiceClientImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testEmptyCommitIdButFetchedFromGetLatestCommitIDWhenUpdateFile() {
+    String newCommitId = "NEW_COMMIT_ID";
+    when(scmGitProviderMapper.mapToSCMGitProvider(any(), eq(true))).thenReturn(Provider.newBuilder().build());
+    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
+    when(scmBlockingStub.updateFile(any()))
+        .thenReturn(UpdateFileResponse.newBuilder().setStatus(200).setCommitId("").build());
+    when(scmBlockingStub.getLatestCommitOnFile(any()))
+        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setCommitId(newCommitId).build());
+    UpdateFileResponse updateFileResponse =
+        scmServiceClient.updateFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub, false);
+    assertThat(updateFileResponse).isNotNull();
+    assertThat(newCommitId.equals(updateFileResponse.getCommitId())).isTrue();
+  }
+
+  @Test
   @Owner(developers = OwnerRule.MOHIT_GARG)
   @Category(UnitTests.class)
   public void testUpdateFileOpsPreChecksBitbucket() {
@@ -246,8 +265,47 @@ public class ScmServiceClientImplTest extends CategoryTest {
     when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
     when(scmBlockingStub.createFile(any()))
         .thenReturn(CreateFileResponse.newBuilder().setStatus(200).setCommitId("").build());
+    when(scmBlockingStub.getLatestCommitOnFile(any()))
+        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setError("error").build());
     CreateFileResponse createFileResponse =
         scmServiceClient.createFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub, false);
+    assertThat(createFileResponse).isNotNull();
+    assertThat(createFileResponse.getStatus() == SCM_INTERNAL_SERVER_ERROR_CODE).isTrue();
+    assertThat(createFileResponse.getError().equals(SCM_INTERNAL_SERVER_ERROR_MESSAGE)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testCommitIdIsFetchedWhenCreateFile() {
+    String newCommitId = "NEW_COMMIT_ID";
+    when(scmGitProviderMapper.mapToSCMGitProvider(any(), eq(true))).thenReturn(Provider.newBuilder().build());
+    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
+    when(scmBlockingStub.createFile(any()))
+        .thenReturn(CreateFileResponse.newBuilder().setStatus(201).setCommitId("").build());
+    GitlabConnectorDTO gitlabConnectorDTO = GitlabConnectorDTO.builder().build();
+    when(scmBlockingStub.getLatestCommitOnFile(any()))
+        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setCommitId(newCommitId).build());
+    CreateFileResponse createFileResponse =
+        scmServiceClient.createFile(gitlabConnectorDTO, getGitFileDetailsDefault(), scmBlockingStub, false);
+    assertThat(createFileResponse).isNotNull();
+    assertThat(newCommitId.equals(createFileResponse.getCommitId())).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testCommitIdIsNotFetchedWhenCreateFile() {
+    when(scmGitProviderMapper.mapToSCMGitProvider(any(), eq(true))).thenReturn(Provider.newBuilder().build());
+    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
+    when(scmBlockingStub.createFile(any()))
+        .thenReturn(CreateFileResponse.newBuilder().setStatus(201).setCommitId("").build());
+    GitlabConnectorDTO gitlabConnectorDTO = GitlabConnectorDTO.builder().build();
+    when(scmBlockingStub.getLatestCommitOnFile(any()))
+        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setError("error").build());
+    CreateFileResponse createFileResponse =
+        scmServiceClient.createFile(gitlabConnectorDTO, getGitFileDetailsDefault(), scmBlockingStub, false);
+    assertThat(createFileResponse).isNotNull();
     assertThat(createFileResponse).isNotNull();
     assertThat(createFileResponse.getStatus() == SCM_INTERNAL_SERVER_ERROR_CODE).isTrue();
     assertThat(createFileResponse.getError().equals(SCM_INTERNAL_SERVER_ERROR_MESSAGE)).isTrue();
@@ -257,15 +315,18 @@ public class ScmServiceClientImplTest extends CategoryTest {
   @Owner(developers = OwnerRule.MOHIT_GARG)
   @Category(UnitTests.class)
   public void testEmptyCommitIdWhenUpdateFile() {
+    String errorMessage = "CommitID Not found";
     when(scmGitProviderMapper.mapToSCMGitProvider(any(), eq(true))).thenReturn(Provider.newBuilder().build());
     when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
     when(scmBlockingStub.updateFile(any()))
         .thenReturn(UpdateFileResponse.newBuilder().setStatus(200).setCommitId("").build());
+    when(scmBlockingStub.getLatestCommitOnFile(any()))
+        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setError(errorMessage).build());
     UpdateFileResponse updateFileResponse =
         scmServiceClient.updateFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub, false);
     assertThat(updateFileResponse).isNotNull();
-    assertThat(updateFileResponse.getStatus() == SCM_INTERNAL_SERVER_ERROR_CODE).isTrue();
-    assertThat(updateFileResponse.getError().equals(SCM_INTERNAL_SERVER_ERROR_MESSAGE)).isTrue();
+    assertThat(updateFileResponse.getStatus() == Constants.SCM_BAD_RESPONSE_ERROR_CODE).isTrue();
+    assertThat(updateFileResponse.getError().equals(errorMessage)).isTrue();
   }
 
   @Test

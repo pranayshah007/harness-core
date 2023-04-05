@@ -144,16 +144,21 @@ public class ScmServiceClientImpl implements ScmServiceClient {
         getFileModifyRequest(scmConnector, gitFileDetails).setUseGitClient(useGitClient).build();
     CreateFileResponse createFileResponse =
         ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::createFile, fileModifyRequest);
-    if (ScmResponseStatusUtils.isSuccessResponse(createFileResponse.getStatus())
+    if (ScmResponseStatusUtils.isSuccessfulCreateResponse(createFileResponse.getStatus())
         && isEmpty(createFileResponse.getCommitId())) {
-      if (isBitbucketOnPrem(scmConnector)) {
-        return createFileResponse;
+      GetLatestCommitOnFileResponse getLatestCommitOnFileResponse = getLatestCommitOnFile(
+          scmConnector, scmBlockingStub, gitFileDetails.getBranch(), gitFileDetails.getFilePath());
+      if (isEmpty(getLatestCommitOnFileResponse.getError())) {
+        return CreateFileResponse.newBuilder(createFileResponse)
+            .setCommitId(getLatestCommitOnFileResponse.getCommitId())
+            .build();
+      } else {
+        // In case commit id is empty for any reason, we treat this as an error case even if file got created on git
+        return CreateFileResponse.newBuilder()
+            .setStatus(Constants.SCM_INTERNAL_SERVER_ERROR_CODE)
+            .setError(Constants.SCM_INTERNAL_SERVER_ERROR_MESSAGE)
+            .build();
       }
-      // In case commit id is empty for any reason, we treat this as an error case even if file got created on git
-      return CreateFileResponse.newBuilder()
-          .setStatus(Constants.SCM_INTERNAL_SERVER_ERROR_CODE)
-          .setError(Constants.SCM_INTERNAL_SERVER_ERROR_MESSAGE)
-          .build();
     }
     return createFileResponse;
   }
@@ -195,10 +200,16 @@ public class ScmServiceClientImpl implements ScmServiceClient {
 
     if (ScmResponseStatusUtils.isSuccessResponse(updateFileResponse.getStatus())
         && isEmpty(updateFileResponse.getCommitId())) {
-      // In case commit id is empty for any reason, we treat this as an error case even if file got updated on git
-      return UpdateFileResponse.newBuilder()
-          .setStatus(Constants.SCM_INTERNAL_SERVER_ERROR_CODE)
-          .setError(Constants.SCM_INTERNAL_SERVER_ERROR_MESSAGE)
+      GetLatestCommitOnFileResponse getLatestCommitOnFileResponse = getLatestCommitOnFile(
+          scmConnector, scmBlockingStub, gitFileDetails.getBranch(), gitFileDetails.getFilePath());
+      if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
+        return UpdateFileResponse.newBuilder()
+            .setStatus(Constants.SCM_BAD_RESPONSE_ERROR_CODE)
+            .setError(getLatestCommitOnFileResponse.getError())
+            .build();
+      }
+      return UpdateFileResponse.newBuilder(updateFileResponse)
+          .setCommitId(getLatestCommitOnFileResponse.getCommitId())
           .build();
     }
     return updateFileResponse;
