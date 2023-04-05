@@ -62,10 +62,10 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(HarnessTeam.PL)
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class HarnessToGitHelperServiceImplTest extends CategoryTest {
   @InjectMocks HarnessToGitHelperServiceImpl harnessToGitHelperService;
   @Mock GitEntityService gitEntityService;
