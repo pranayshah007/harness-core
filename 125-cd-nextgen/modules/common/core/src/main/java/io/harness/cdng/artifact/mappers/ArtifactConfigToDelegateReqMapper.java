@@ -139,11 +139,6 @@ public class ArtifactConfigToDelegateReqMapper {
     String filePath = artifactConfig.getFilePath().getValue();
     String filePathRegex = artifactConfig.getFilePathRegex().getValue();
 
-    if (isRegex(filePath)) {
-      filePathRegex = filePath.equals(ACCEPT_ALL_REGEX) ? "*" : filePath;
-      filePath = "";
-    }
-
     if (StringUtils.isBlank(bucket)) {
       throw new InvalidRequestException("Please input bucketName.");
     }
@@ -159,7 +154,6 @@ public class ArtifactConfigToDelegateReqMapper {
     if (StringUtils.isBlank(filePathRegex)) {
       filePathRegex = "";
     }
-
     return ArtifactDelegateRequestUtils.getAmazonS3DelegateRequest(artifactConfig.getBucketName().getValue(), filePath,
         filePathRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.AMAZONS3,
         artifactConfig.getRegion() != null ? artifactConfig.getRegion().getValue() : "us-east-1");
