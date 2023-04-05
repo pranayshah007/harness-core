@@ -7,7 +7,7 @@
 
 package software.wings.cloudprovider.gke;
 
-import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
+import static io.harness.k8s.K8sConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.rule.OwnerRule.BRETT;
 
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
@@ -118,7 +118,7 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
         COMPUTE_PROVIDER_SETTING.toDTO(), Collections.emptyList(), ZONE_CLUSTER, "default", false, envVariableList);
 
     verify(gkeClusterHelper, times(1))
-        .getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"), envVariableList);
+        .getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"), eq(envVariableList));
     assertThat(result).isEqualTo(config);
   }
 
@@ -138,7 +138,7 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
     }
 
     verify(gkeClusterHelper, times(1))
-        .getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"), envVariableList);
+        .getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"), eq(envVariableList));
   }
 
   @Test

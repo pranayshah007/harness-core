@@ -8,7 +8,6 @@
 package software.wings.helpers.ext.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.clienttools.ClientTool.OC;
@@ -23,6 +22,7 @@ import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfPr
 import static io.harness.helm.HelmCommandType.LIST_RELEASE;
 import static io.harness.helm.HelmCommandType.RELEASE_HISTORY;
 import static io.harness.helm.HelmConstants.DEFAULT_TILLER_CONNECTION_TIMEOUT_MILLIS;
+import static io.harness.k8s.K8sConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.validation.Validator.notNullCheck;
 
@@ -320,8 +320,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
                 (ExecutionLogCallback) executionLogCallback, commandRequest.getGcpKeyPath());
         executionLogCallback.saveExecutionLog(
             format("Status check done with success [%s] for resources in namespace: [%s]", success, namespace));
-        List<EnvVariable> envVariableList = Collections.singletonList(
-            EnvVariable.builder().name(GOOGLE_APPLICATION_CREDENTIALS).value(commandRequest.getGcpKeyPath()).build());
+        List<EnvVariable> envVariableList = Collections.singletonList(new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS,
+            Paths.get(commandRequest.getGcpKeyPath()).normalize().toAbsolutePath().toString()));
         KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(
             commandRequest.getContainerServiceParams(), envVariableList);
         String releaseName = commandRequest.getReleaseName();

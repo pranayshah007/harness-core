@@ -9,7 +9,6 @@ package io.harness.delegate.task.helm;
 
 import static io.harness.azure.model.AzureConstants.AZURE_CONFIG_DIR;
 import static io.harness.azure.model.AzureConstants.AZURE_LOGIN_CONFIG_DIR_PATH;
-import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.CUSTOM_REMOTE;
@@ -32,6 +31,7 @@ import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfPr
 import static io.harness.helm.HelmCommandType.RELEASE_HISTORY;
 import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
 import static io.harness.helm.HelmConstants.DEFAULT_TILLER_CONNECTION_TIMEOUT_MILLIS;
+import static io.harness.k8s.K8sConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
 import static io.harness.logging.LogLevel.ERROR;
@@ -1198,10 +1198,14 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
   private List<EnvVariable> getEnvironmentVariablesForKubeconfigExecFormat(String gcpKeyPath, String workingDir) {
     List<EnvVariable> envVariableList = new ArrayList<>();
-    envVariableList.add(new EnvVariable(
-        AZURE_CONFIG_DIR, Paths.get(workingDir, AZURE_LOGIN_CONFIG_DIR_PATH).normalize().toAbsolutePath().toString()));
-    envVariableList.add(
-        new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS, Paths.get(gcpKeyPath).normalize().toAbsolutePath().toString()));
+    if (StringUtils.isNotEmpty(workingDir)) {
+      envVariableList.add(new EnvVariable(AZURE_CONFIG_DIR,
+          Paths.get(workingDir, AZURE_LOGIN_CONFIG_DIR_PATH).normalize().toAbsolutePath().toString()));
+    }
+    if (StringUtils.isNotEmpty(gcpKeyPath)) {
+      envVariableList.add(new EnvVariable(
+          GOOGLE_APPLICATION_CREDENTIALS, Paths.get(gcpKeyPath).normalize().toAbsolutePath().toString()));
+    }
     return envVariableList;
   }
 }

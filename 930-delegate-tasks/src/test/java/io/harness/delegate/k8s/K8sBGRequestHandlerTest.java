@@ -90,6 +90,7 @@ import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
 import io.kubernetes.client.openapi.models.V1Secret;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -117,7 +118,6 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   @Mock K8sReleaseHandler releaseHandler;
   @Mock IK8sReleaseHistory releaseHistory;
   @Mock K8sRelease release;
-  @Mock List<EnvVariable> envVariableList;
 
   @Spy @InjectMocks K8sBGBaseHandler k8sBGBaseHandler;
   @Spy @InjectMocks K8sBGRequestHandler k8sBGRequestHandler;
@@ -125,10 +125,13 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   K8sDelegateTaskParams k8sDelegateTaskParams;
   CommandUnitsProgress commandUnitsProgress;
   final String workingDirectory = "/tmp";
+  List<EnvVariable> envVariableList;
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
+    envVariableList = Collections.singletonList(new EnvVariable(
+        "AZURE_CONFIG_DIR", Paths.get(workingDirectory, ".azure").normalize().toAbsolutePath().toString()));
 
     k8sDelegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
     commandUnitsProgress = CommandUnitsProgress.builder().build();

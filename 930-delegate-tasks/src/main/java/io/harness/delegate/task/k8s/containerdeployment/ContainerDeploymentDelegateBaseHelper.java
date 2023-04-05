@@ -13,11 +13,12 @@ import static io.harness.azure.model.AzureConstants.AZURE_CONFIG_DIR;
 import static io.harness.azure.model.AzureConstants.AZURE_ENV_VARIABLE_LIST;
 import static io.harness.azure.model.AzureConstants.AZURE_LOGIN_CONFIG_DIR_PATH;
 import static io.harness.azure.model.AzureConstants.REPOSITORY_DIR_PATH;
-import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.MANUAL_CREDENTIALS;
+import static io.harness.k8s.K8sConstants.GCP_ENV_VARIABLE_LIST;
+import static io.harness.k8s.K8sConstants.GOOGLE_APPLICATION_CREDENTIALS;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static java.lang.String.format;
@@ -73,6 +74,7 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @Slf4j
@@ -146,9 +148,13 @@ public class ContainerDeploymentDelegateBaseHelper {
     } else if (clusterConfigDTO instanceof GcpK8sInfraDelegateConfig) {
       GcpK8sInfraDelegateConfig gcpK8sInfraDelegateConfig = (GcpK8sInfraDelegateConfig) clusterConfigDTO;
       GcpConnectorCredentialDTO gcpCredentials = gcpK8sInfraDelegateConfig.getGcpConnectorDTO().getCredential();
+      List<EnvVariable> gcpEnvVariableList =
+          envVariableList.stream()
+              .filter(envVariable -> GCP_ENV_VARIABLE_LIST.contains(envVariable.getName()))
+              .collect(Collectors.toList());
       return gkeClusterHelper.getCluster(getGcpServiceAccountKeyFileContent(gcpCredentials),
           gcpCredentials.getGcpCredentialType() == INHERIT_FROM_DELEGATE, gcpK8sInfraDelegateConfig.getCluster(),
-          gcpK8sInfraDelegateConfig.getNamespace(), logCallback, envVariableList);
+          gcpK8sInfraDelegateConfig.getNamespace(), logCallback, gcpEnvVariableList);
     } else if (clusterConfigDTO instanceof AzureK8sInfraDelegateConfig) {
       try (LazyAutoCloseableWorkingDirectory workingDirectory =
                new LazyAutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_AUTH_CERT_DIR_PATH)) {
@@ -276,10 +282,14 @@ public class ContainerDeploymentDelegateBaseHelper {
 
   private List<EnvVariable> getEnvironmentVariablesForKubeconfigExecFormat(String gcpKeyPath, String workingDir) {
     List<EnvVariable> envVariableList = new ArrayList<>();
-    envVariableList.add(new EnvVariable(
-        AZURE_CONFIG_DIR, Paths.get(workingDir, AZURE_LOGIN_CONFIG_DIR_PATH).normalize().toAbsolutePath().toString()));
-    envVariableList.add(
-        new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS, Paths.get(gcpKeyPath).normalize().toAbsolutePath().toString()));
+    if (StringUtils.isNotEmpty(workingDir)) {
+      envVariableList.add(new EnvVariable(AZURE_CONFIG_DIR,
+          Paths.get(workingDir, AZURE_LOGIN_CONFIG_DIR_PATH).normalize().toAbsolutePath().toString()));
+    }
+    if (StringUtils.isNotEmpty(gcpKeyPath)) {
+      envVariableList.add(new EnvVariable(
+          GOOGLE_APPLICATION_CREDENTIALS, Paths.get(gcpKeyPath).normalize().toAbsolutePath().toString()));
+    }
     return envVariableList;
   }
 }

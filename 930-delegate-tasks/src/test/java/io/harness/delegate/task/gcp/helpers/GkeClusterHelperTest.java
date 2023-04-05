@@ -7,11 +7,11 @@
 
 package io.harness.delegate.task.gcp.helpers;
 
-import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.delegate.task.gcp.helpers.GcpHelperService.LOCATION_DELIMITER;
 import static io.harness.k8s.K8sConstants.API_VERSION;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_INSTALL_HINT;
+import static io.harness.k8s.K8sConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.BOGDAN;
@@ -76,7 +76,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -118,8 +117,8 @@ public class GkeClusterHelperTest extends CategoryTest {
                                                                                 .put("masterUser", "master")
                                                                                 .put("masterPwd", "password")
                                                                                 .build();
-  private final List<EnvVariable> envVariableList = Collections.singletonList(
-      EnvVariable.builder().name(GOOGLE_APPLICATION_CREDENTIALS).value("google-application-credentials.json").build());
+  private final List<EnvVariable> envVariableList =
+      new ArrayList<>(List.of(new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS, "google-application-credentials.json")));
 
   private static final String DUMMY_GCP_KEY = "{\n"
       + "      \"type\": \"service_account\",\n"
@@ -502,6 +501,7 @@ public class GkeClusterHelperTest extends CategoryTest {
                        .command(GCP_AUTH_PLUGIN_BINARY)
                        .apiVersion(API_VERSION)
                        .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
+                       .env(envVariableList)
                        .provideClusterInfo(true)
                        .interactiveMode(InteractiveMode.NEVER)
                        .build());
@@ -546,6 +546,7 @@ public class GkeClusterHelperTest extends CategoryTest {
                        .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
                        .provideClusterInfo(true)
                        .interactiveMode(InteractiveMode.NEVER)
+                       .env(envVariableList)
                        .build());
   }
 }

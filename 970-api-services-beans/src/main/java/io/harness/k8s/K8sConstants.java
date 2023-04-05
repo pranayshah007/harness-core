@@ -11,6 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import com.google.common.collect.ImmutableSet;
+import java.util.Set;
+
 @OwnedBy(CDP)
 public interface K8sConstants {
   String OIDC_CLIENT_ID = "${CLIENT_ID_DATA}";
@@ -195,6 +198,9 @@ public interface K8sConstants {
   String KUBECFG_VALUE = "value";
 
   String AZURE_AUTH_PLUGIN_BINARY = "kubelogin";
+  String USE_GKE_GCLOUD_AUTH_PLUGIN = "USE_GKE_GCLOUD_AUTH_PLUGIN";
+  String GOOGLE_APPLICATION_CREDENTIALS = "GOOGLE_APPLICATION_CREDENTIALS";
+  Set<String> GCP_ENV_VARIABLE_LIST = ImmutableSet.of(USE_GKE_GCLOUD_AUTH_PLUGIN, GOOGLE_APPLICATION_CREDENTIALS);
   String GCP_AUTH_PLUGIN_BINARY = "gke-gcloud-auth-plugin";
   String GCP_AUTH_PLUGIN_INSTALL_HINT = "gke-gcloud-auth-plugin is required to authenticate to the current cluster.\n"
       + "It can be installed on the delegate using following command from:\n"

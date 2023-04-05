@@ -57,6 +57,8 @@ import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
 import io.kubernetes.client.openapi.ApiException;
+import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -82,7 +84,6 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
   @Mock LogCallback logCallback;
   @Mock K8sReleaseHandler releaseHandler;
   @Mock IK8sReleaseHistory releaseHistory;
-  @Mock List<EnvVariable> envVariableList;
   final String noReleaseHistory = "no-release-history";
   final String emptyReleasesHistory = "empty-releases-history";
   final String noInProgressReleaseHistory = "no-inprogress-history";
@@ -98,7 +99,8 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
-
+    List<EnvVariable> envVariableList = Collections.singletonList(new EnvVariable(
+        "AZURE_CONFIG_DIR", Paths.get(workingDirectory, ".azure").normalize().toAbsolutePath().toString()));
     doReturn(releaseHandler).when(k8sTaskHelperBase).getReleaseHandler(anyBoolean());
     doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
     doReturn(kubernetesConfig)

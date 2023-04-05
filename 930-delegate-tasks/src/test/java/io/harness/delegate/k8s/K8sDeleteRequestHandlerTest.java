@@ -69,7 +69,6 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
   @Mock private LogCallback logCallback;
   @Mock private K8sInfraDelegateConfig k8sInfraDelegateConfig;
   @Mock private ManifestDelegateConfig manifestDelegateConfig;
-  @Mock List<EnvVariable> envVariableList;
 
   private final Integer timeoutIntervalInMin = 10;
   private final long timeoutIntervalInMillis = 60 * timeoutIntervalInMin * 1000;
@@ -83,10 +82,13 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
   private final String invalidManifestFileDirectory = Paths.get(invalidWorkingDirectory, MANIFEST_FILES_DIR).toString();
   private final String kubectlPath = "clientPath";
   private final String kubeconfigPath = "configPath";
+  private List<EnvVariable> envVariableList;
 
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
+    envVariableList = Collections.singletonList(new EnvVariable(
+        "AZURE_CONFIG_DIR", Paths.get(workingDirectory, ".azure").normalize().toAbsolutePath().toString()));
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
         .createKubernetesConfig(k8sInfraDelegateConfig, envVariableList, logCallback);

@@ -15,6 +15,7 @@ import static io.harness.eraro.ErrorCode.CLUSTER_NOT_FOUND;
 import static io.harness.k8s.K8sConstants.API_VERSION;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_INSTALL_HINT;
+import static io.harness.k8s.K8sConstants.USE_GKE_GCLOUD_AUTH_PLUGIN;
 import static io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable;
 import static io.harness.threading.Morpheus.sleep;
 
@@ -335,12 +336,18 @@ public class GkeClusterHelper {
     return Exec.builder()
         .apiVersion(API_VERSION)
         .command(GCP_AUTH_PLUGIN_BINARY)
-        .env(envVariableList.stream()
-                 .filter(envVariable -> envVariable != null && envVariable.getValue() != null)
-                 .collect(Collectors.toUnmodifiableList()))
+        .env(getEnvVariablesForGKEKubeconfig(envVariableList))
         .interactiveMode(InteractiveMode.NEVER)
         .provideClusterInfo(true)
         .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
         .build();
+  }
+
+  private List<EnvVariable> getEnvVariablesForGKEKubeconfig(List<EnvVariable> envVariableList) {
+    envVariableList.add(new EnvVariable(USE_GKE_GCLOUD_AUTH_PLUGIN, "true"));
+    envVariableList = envVariableList.stream()
+                          .filter(envVariable -> envVariable != null && envVariable.getValue() != null)
+                          .collect(Collectors.toUnmodifiableList());
+    return envVariableList;
   }
 }

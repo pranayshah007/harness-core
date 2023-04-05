@@ -7,7 +7,7 @@
 
 package software.wings.helpers.ext.container;
 
-import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
+import static io.harness.k8s.K8sConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.k8s.model.KubernetesClusterAuthType.OIDC;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ADWAIT;

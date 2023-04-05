@@ -7,7 +7,7 @@
 
 package software.wings.helpers.ext.container;
 
-import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
+import static io.harness.k8s.K8sConstants.GOOGLE_APPLICATION_CREDENTIALS;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static java.lang.String.format;
@@ -46,6 +46,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -107,8 +108,8 @@ public class ContainerDeploymentDelegateHelper {
 
   public String getKubeConfigFileContent(ContainerServiceParams containerServiceParam, String keyPath) {
     try {
-      List<EnvVariable> envVariableList =
-          Collections.singletonList(EnvVariable.builder().name(GOOGLE_APPLICATION_CREDENTIALS).value(keyPath).build());
+      List<EnvVariable> envVariableList = Collections.singletonList(
+          new EnvVariable(GOOGLE_APPLICATION_CREDENTIALS, Paths.get(keyPath).normalize().toAbsolutePath().toString()));
       KubernetesConfig kubernetesConfig = getKubernetesConfig(containerServiceParam, envVariableList);
       return kubernetesContainerService.getConfigFileContent(kubernetesConfig);
     } catch (Exception e) {

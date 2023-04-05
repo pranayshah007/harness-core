@@ -74,8 +74,8 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.extensions.DaemonSet;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,8 +105,10 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
   @Spy @InjectMocks ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
   private static final String WORK_DIR = "./repository/k8s";
   private static final String GOOGLE_APPLICATION_CREDENTIALS = "manifest";
-  private final List<EnvVariable> envVariableList =
-      Collections.singletonList(EnvVariable.builder().name("GOOGLE_APPLICATION_CREDENTIALS").value("manifest").build());
+  private final List<EnvVariable> envVariableList = new ArrayList<>(List.of(
+      new EnvVariable("AZURE_CONFIG_DIR", Paths.get(WORK_DIR, ".azure").normalize().toAbsolutePath().toString()),
+      new EnvVariable("GOOGLE_APPLICATION_CREDENTIALS",
+          Paths.get(GOOGLE_APPLICATION_CREDENTIALS).normalize().toAbsolutePath().toString())));
 
   @Before
   public void setup() {

@@ -105,7 +105,6 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
   @Mock private K8sInfraDelegateConfig k8sInfraDelegateConfig;
   @Mock private ManifestDelegateConfig manifestDelegateConfig;
   @Mock private IK8sRelease release;
-  @Mock private List<EnvVariable> envVariableList;
 
   private final Integer timeoutIntervalInMin = 10;
   private final long timeoutIntervalInMillis = 60 * timeoutIntervalInMin * 1000;
@@ -122,6 +121,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
+    List<EnvVariable> envVariableList = Collections.singletonList(new EnvVariable(
+        "AZURE_CONFIG_DIR", Paths.get(workingDirectory, ".azure").normalize().toAbsolutePath().toString()));
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
         .createKubernetesConfig(k8sInfraDelegateConfig, envVariableList, logCallback);
