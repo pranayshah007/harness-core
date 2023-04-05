@@ -54,6 +54,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.mongodb.AggregationOptions;
+import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.annotations.Id;
 import dev.morphia.query.Criteria;
 import dev.morphia.query.Query;
@@ -252,22 +253,25 @@ public class ChangeEventServiceImpl implements ChangeEventService {
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime, Integer pointCount,
       boolean isMonitoredServiceIdentifierScoped) {
     Duration timeRangeDuration = Duration.between(startTime, endTime).dividedBy(pointCount);
-    return hPersistence.getDatastore(Activity.class)
-        .createAggregation(Activity.class)
-        .match(createQuery(startTime, endTime, projectParams, monitoredServiceIdentifiers, searchText, changeCategories,
-            changeSourceTypes, isMonitoredServiceIdentifierScoped))
-        .group(id(grouping("type", "type"),
-                   grouping("index",
-                       accumulator("$floor",
-                           accumulator("$divide",
-                               Arrays.asList(accumulator("$subtract",
-                                                 Arrays.asList("$eventTime", new Date(startTime.toEpochMilli()))),
-                                   timeRangeDuration.toMillis()))))),
-            grouping("count", accumulator("$sum", 1)))
-        .aggregate(TimelineObject.class,
-            AggregationOptions.builder()
-                .maxTime(hPersistence.getMaxTimeMs(Activity.class), TimeUnit.MILLISECONDS)
-                .build());
+    AggregationPipeline aggregationPipeline =
+        hPersistence.getDatastore(Activity.class)
+            .createAggregation(Activity.class)
+            .match(createQuery(startTime, endTime, projectParams, monitoredServiceIdentifiers, searchText,
+                changeCategories, changeSourceTypes, isMonitoredServiceIdentifierScoped))
+            .group(id(grouping("type", "type"),
+                       grouping("index",
+                           accumulator("$floor",
+                               accumulator("$divide",
+                                   Arrays.asList(accumulator("$subtract",
+                                                     Arrays.asList("$eventTime", new Date(startTime.toEpochMilli()))),
+                                       timeRangeDuration.toMillis()))))),
+                grouping("count", accumulator("$sum", 1)));
+    int limit = hPersistence.getMaxDocumentLimit(Activity.class);
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    return aggregationPipeline.aggregate(TimelineObject.class,
+        AggregationOptions.builder().maxTime(hPersistence.getMaxTimeMs(Activity.class), TimeUnit.MILLISECONDS).build());
   }
   @VisibleForTesting
   Iterator<TimelineObject> getTimelineObject(ProjectParams projectParams, List<String> serviceIdentifiers,
