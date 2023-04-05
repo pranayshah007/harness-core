@@ -59,6 +59,9 @@ public class SshDelegateHelperUtils {
     builder.withExecutorType(executorType);
     HostConnectionAttributes hostConnectionAttributes = (HostConnectionAttributes) hostConnectionSetting.getValue();
 
+    builder.withUseSshj(hostConnectionAttributes.isUseSshj());
+    builder.withUseSshClient(hostConnectionAttributes.isUseSshClient());
+
     if (executorType == KEY_AUTH) {
       if (isNotEmpty(hostConnectionAttributes.getKey())) {
         builder.withKey(new String(hostConnectionAttributes.getKey()).toCharArray());

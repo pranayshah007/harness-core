@@ -36,8 +36,11 @@ import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.execution.PlanExecution;
+import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
+import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.WebhookSecretData;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -66,10 +69,12 @@ import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.contracts.triggers.TriggerPayload.Builder;
 import io.harness.pms.contracts.triggers.Type;
 import io.harness.pms.triggers.TriggerExecutionHelper;
+import io.harness.pms.utils.CompletableFutures;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.NGTriggerRepository;
+import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;
@@ -88,7 +93,11 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -106,6 +115,7 @@ public class TriggerEventExecutionHelper {
   private final PmsFeatureFlagService pmsFeatureFlagService;
   private final TriggerExecutionHelper triggerExecutionHelper;
   private final WebhookEventMapperHelper webhookEventMapperHelper;
+  @Inject @Named("TriggerAuthenticationExecutorService") ExecutorService triggerAuthenticationExecutor;
 
   public WebhookEventProcessingResult handleTriggerWebhookEvent(TriggerMappingRequestData mappingRequestData) {
     WebhookEventMappingResponse webhookEventMappingResponse =
@@ -115,7 +125,12 @@ public class TriggerEventExecutionHelper {
     WebhookEventProcessingResultBuilder resultBuilder = WebhookEventProcessingResult.builder();
     List<TriggerEventResponse> eventResponses = new ArrayList<>();
     if (!webhookEventMappingResponse.isFailedToFindTrigger()) {
-      authenticateTriggers(triggerWebhookEvent, webhookEventMappingResponse);
+      if (pmsFeatureFlagService.isEnabled(
+              triggerWebhookEvent.getAccountId(), FeatureName.CDS_NG_TRIGGER_AUTHENTICATION_WITH_DELEGATE_SELECTOR)) {
+        authenticateTriggersWithDelegateSelectors(triggerWebhookEvent, webhookEventMappingResponse);
+      } else {
+        authenticateTriggers(triggerWebhookEvent, webhookEventMappingResponse);
+      }
       log.info("Preparing for pipeline execution request");
       resultBuilder.mappedToTriggers(true);
       if (isNotEmpty(webhookEventMappingResponse.getTriggers())) {
@@ -382,7 +397,89 @@ public class TriggerEventExecutionHelper {
     }
   }
 
-  private List<TriggerDetails> getTriggersToAuthenticate(
+  public void authenticateTriggersWithDelegateSelectors(
+      TriggerWebhookEvent triggerWebhookEvent, WebhookEventMappingResponse webhookEventMappingResponse) {
+    List<TriggerDetails> triggersToAuthenticate =
+        getTriggersToAuthenticate(triggerWebhookEvent, webhookEventMappingResponse);
+    if (isEmpty(triggersToAuthenticate)) {
+      return;
+    }
+    String hashedPayload = getHashedPayload(triggerWebhookEvent);
+    if (hashedPayload == null) {
+      for (TriggerDetails triggerDetails : triggersToAuthenticate) {
+        triggerDetails.setAuthenticated(false);
+      }
+      return;
+    }
+    CompletableFutures<ResponseData> completableFutures = new CompletableFutures<>(triggerAuthenticationExecutor);
+    for (TriggerDetails triggerDetails : triggersToAuthenticate) {
+      NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
+      NGAccess basicNGAccessObject = BaseNGAccess.builder()
+                                         .accountIdentifier(triggerWebhookEvent.getAccountId())
+                                         .orgIdentifier(ngTriggerConfigV2.getOrgIdentifier())
+                                         .projectIdentifier(ngTriggerConfigV2.getProjectIdentifier())
+                                         .build();
+      SecretRefData secretRefData =
+          SecretRefHelper.createSecretRef(ngTriggerConfigV2.getEncryptedWebhookSecretIdentifier());
+      WebhookEncryptedSecretDTO webhookEncryptedSecretDTO =
+          WebhookEncryptedSecretDTO.builder().secretRef(secretRefData).build();
+      List<EncryptedDataDetail> encryptedDataDetail =
+          ngSecretService.getEncryptionDetails(basicNGAccessObject, webhookEncryptedSecretDTO);
+      List<WebhookSecretData> webhookSecretData =
+          Collections.singletonList(WebhookSecretData.builder()
+                                        .webhookEncryptedSecretDTO(webhookEncryptedSecretDTO)
+                                        .encryptedDataDetails(encryptedDataDetail)
+                                        .build());
+      Set<String> taskSelectors = getAuthenticationTaskSelectors(triggerWebhookEvent, ngTriggerConfigV2);
+      log.info("Authenticating trigger [" + ngTriggerConfigV2.getIdentifier()
+          + "] with delegate selectors: " + taskSelectors);
+      completableFutures.supplyAsync(()
+                                         -> taskExecutionUtils.executeSyncTask(
+                                             DelegateTaskRequest.builder()
+                                                 .accountId(triggerWebhookEvent.getAccountId())
+                                                 .executionTimeout(Duration.ofSeconds(
+                                                     60)) // todo: Gather suggestions regarding this timeout value.
+                                                 .taskType(TaskType.TRIGGER_AUTHENTICATION_TASK.toString())
+                                                 .taskSelectors(taskSelectors)
+                                                 .taskParameters(TriggerAuthenticationTaskParams.builder()
+                                                                     .eventPayload(triggerWebhookEvent.getPayload())
+                                                                     .gitRepoType(GitRepoType.GITHUB)
+                                                                     .hashedPayload(hashedPayload)
+                                                                     .webhookSecretData(webhookSecretData)
+                                                                     .build())
+                                                 .build()));
+    }
+    try {
+      List<ResponseData> authenticationTaskResponses = completableFutures.allOf().get(2, TimeUnit.MINUTES);
+      int index = 0;
+      for (ResponseData responseData : authenticationTaskResponses) {
+        TriggerDetails triggerDetails = triggersToAuthenticate.get(index);
+        if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
+          BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
+          Object object = binaryResponseData.isUsingKryoWithoutReference()
+              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+              : kryoSerializer.asInflatedObject(binaryResponseData.getData());
+          if (object instanceof TriggerAuthenticationTaskResponse) {
+            triggerDetails.setAuthenticated(
+                ((TriggerAuthenticationTaskResponse) object).getTriggersAuthenticationStatus().get(0));
+          } else if (object instanceof ErrorResponseData) {
+            ErrorResponseData errorResponseData = (ErrorResponseData) object;
+            log.error("Failed to authenticate trigger {}. Reason: {}",
+                triggerDetails.getNgTriggerEntity().getIdentifier(), errorResponseData.getErrorMessage());
+            triggerDetails.setAuthenticated(false);
+          }
+        }
+        index++;
+      }
+    } catch (Exception e) {
+      log.error("Exception while authenticating triggers: ", e);
+      for (TriggerDetails triggerDetails : triggersToAuthenticate) {
+        triggerDetails.setAuthenticated(false);
+      }
+    }
+  }
+
+  public List<TriggerDetails> getTriggersToAuthenticate(
       TriggerWebhookEvent triggerWebhookEvent, WebhookEventMappingResponse webhookEventMappingResponse) {
     // Only GitHub events authentication is supported for now
     List<TriggerDetails> triggersToAuthenticate = new ArrayList<>();
@@ -427,5 +524,22 @@ public class TriggerEventExecutionHelper {
       }
     }
     return isNotEmpty(ngTriggerConfigV2.getEncryptedWebhookSecretIdentifier());
+  }
+
+  public Set<String> getAuthenticationTaskSelectors(
+      TriggerWebhookEvent triggerWebhookEvent, NGTriggerConfigV2 ngTriggerConfigV2) {
+    SecretResponseWrapper secret =
+        ngSecretService.getSecret(triggerWebhookEvent.getAccountId(), ngTriggerConfigV2.getOrgIdentifier(),
+            ngTriggerConfigV2.getProjectIdentifier(), ngTriggerConfigV2.getEncryptedWebhookSecretIdentifier());
+    if (secret == null || secret.getSecret() == null || !(secret.getSecret().getSpec() instanceof SecretTextSpecDTO)) {
+      log.warn("Secret with identifier [" + ngTriggerConfigV2.getEncryptedWebhookSecretIdentifier()
+          + "] either does not exist or is not of Text type. Attempting to authenticate trigger ["
+          + ngTriggerConfigV2.getIdentifier() + "] with no delegate selectors.");
+      return Collections.emptySet();
+    }
+    String secretManagerIdentifier = ((SecretTextSpecDTO) secret.getSecret().getSpec()).getSecretManagerIdentifier();
+    SecretManagerConfigDTO secretManagerDTO = ngSecretService.getSecretManager(triggerWebhookEvent.getAccountId(),
+        ngTriggerConfigV2.getOrgIdentifier(), ngTriggerConfigV2.getProjectIdentifier(), secretManagerIdentifier, false);
+    return SecretManagerConfigMapper.getDelegateSelectors(secretManagerDTO);
   }
 }

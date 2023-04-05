@@ -124,7 +124,7 @@ public class EcrArtifactTaskHelperTest extends CategoryTest {
     BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().build();
 
     List<EcrArtifactDelegateResponse> artifactDelegateResponse =
-        Collections.singletonList(EcrRequestResponseMapper.toEcrResponse(buildDetailsInternal, attributes, null));
+        Collections.singletonList(EcrRequestResponseMapper.toEcrResponse(buildDetailsInternal, attributes));
 
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(artifactDelegateResponse).build();
@@ -179,7 +179,7 @@ public class EcrArtifactTaskHelperTest extends CategoryTest {
     BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().build();
 
     List<EcrArtifactDelegateResponse> artifactDelegateResponse =
-        Collections.singletonList(EcrRequestResponseMapper.toEcrResponse(buildDetailsInternal, attributes, null));
+        Collections.singletonList(EcrRequestResponseMapper.toEcrResponse(buildDetailsInternal, attributes));
 
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(artifactDelegateResponse).build();

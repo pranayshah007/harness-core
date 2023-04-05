@@ -10,4 +10,10 @@ package io.harness.steps.plugin;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(HarnessTeam.SSCA) public enum ContainerStepType { UNKNOWN, RUN_CONTAINER, CD_SSCA_ORCHESTRATION }
+@OwnedBy(HarnessTeam.SSCA)
+public enum ContainerStepType {
+  UNKNOWN,
+  RUN_CONTAINER,
+  CD_SSCA_ORCHESTRATION,
+  INIT_CONTAINER_V2
+}

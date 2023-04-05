@@ -10,6 +10,7 @@ package io.harness.cdng.provision.azure;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import java.util.HashMap;
@@ -17,7 +18,7 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.provision.azure.AzureCreateARMResourceOutcome")
-public class AzureCreateARMResourceOutcome extends HashMap<String, Object> implements Outcome {
+public class AzureCreateARMResourceOutcome extends HashMap<String, Object> implements Outcome, ExecutionSweepingOutput {
   public AzureCreateARMResourceOutcome(Map<String, ?> m) {
     super(m);
   }

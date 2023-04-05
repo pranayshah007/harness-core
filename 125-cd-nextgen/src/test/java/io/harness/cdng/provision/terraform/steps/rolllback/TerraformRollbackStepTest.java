@@ -304,9 +304,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     doReturn(null).when(executionSweepingOutputService).consume(any(), any(), any(), any());
     doReturn("fileId").when(terraformStepHelper).getLatestFileId("fullId");
     ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig = ArtifactoryStoreDelegateConfig.builder().build();
-    doReturn(artifactoryStoreDelegateConfig)
-        .when(terraformStepHelper)
-        .getFileStoreFetchFilesConfig(any(), any(), any());
+    doReturn(artifactoryStoreDelegateConfig).when(terraformStepHelper).prepareTerraformConfigFileInfo(any(), any());
     doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))

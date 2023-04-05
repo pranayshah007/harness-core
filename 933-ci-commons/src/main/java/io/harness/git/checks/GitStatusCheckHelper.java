@@ -25,6 +25,7 @@ import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
@@ -153,6 +154,20 @@ public class GitStatusCheckHelper {
     BitbucketConnectorDTO gitConfigDTO =
         (BitbucketConnectorDTO) gitStatusCheckParams.getConnectorDetails().getConnectorConfig();
 
+    String username;
+    if (gitConfigDTO != null && gitConfigDTO.getApiAccess() != null) {
+      BitbucketUsernameTokenApiAccessDTO bitbucketUsernameTokenApiAccessDTO =
+          (BitbucketUsernameTokenApiAccessDTO) gitConfigDTO.getApiAccess().getSpec();
+      if (bitbucketUsernameTokenApiAccessDTO.getUsernameRef() != null) {
+        username = gitTokenRetriever.retrieveBitbucketUsernameFromAPIAccess(
+            bitbucketUsernameTokenApiAccessDTO, gitStatusCheckParams.getConnectorDetails().getEncryptedDataDetails());
+      } else {
+        username = gitStatusCheckParams.getUserName();
+      }
+    } else {
+      username = gitStatusCheckParams.getUserName();
+    }
+
     if (isNotEmpty(token)) {
       RetryPolicy<Object> retryPolicy =
           getRetryPolicy(format("[Retrying failed call to send status for bitbucket check: [%s], attempt: {}",
@@ -164,8 +179,8 @@ public class GitStatusCheckHelper {
           .get(()
                    -> bitbucketService.sendStatus(
                        BitbucketConfig.builder().bitbucketUrl(getBitBucketApiURL(gitConfigDTO.getUrl())).build(),
-                       gitStatusCheckParams.getUserName(), token, null, gitStatusCheckParams.getSha(),
-                       gitStatusCheckParams.getOwner(), gitStatusCheckParams.getRepo(), bodyObjectMap));
+                       username, token, null, gitStatusCheckParams.getSha(), gitStatusCheckParams.getOwner(),
+                       gitStatusCheckParams.getRepo(), bodyObjectMap));
     } else {
       log.error("Not sending status because token is empty sha {}", gitStatusCheckParams.getSha());
       return false;

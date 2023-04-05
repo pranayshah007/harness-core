@@ -8,26 +8,47 @@
 package io.harness.delegate.task.aws.lambda;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.lambda.AwsLambdaClient;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.helper.DecryptionHelper;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
+import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
+import io.harness.delegate.beans.connector.nexusconnector.NexusAuthType;
+import io.harness.delegate.beans.connector.nexusconnector.NexusAuthenticationDTO;
+import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.exception.AwsLambdaException;
+import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
+import io.harness.delegate.task.nexus.NexusMapper;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
+
+import software.wings.helpers.ext.jenkins.JenkinsImpl;
+import software.wings.helpers.ext.nexus.NexusService;
+import software.wings.service.impl.jenkins.JenkinsUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -38,17 +59,29 @@ import com.google.common.base.Charsets;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import software.amazon.awssdk.core.SdkBytes;
@@ -60,6 +93,7 @@ import software.amazon.awssdk.services.lambda.model.DeleteFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.FunctionCodeLocation;
 import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
 import software.amazon.awssdk.services.lambda.model.GetFunctionResponse;
+import software.amazon.awssdk.services.lambda.model.ListAliasesRequest;
 import software.amazon.awssdk.services.lambda.model.ListAliasesResponse;
 import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.PublishVersionResponse;
@@ -70,13 +104,21 @@ import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
 @PrepareForTest(AwsLambdaTaskHelper.class)
 @OwnedBy(CDP)
 public class AwsLambdaTaskHelperTest extends CategoryTest {
+  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   public static final String FUNCTION_NAME = "functionName";
+
   @InjectMocks AwsLambdaTaskHelper awsLambdaTaskHelper;
   @Mock AwsLambdaClient awsLambdaClient;
   @Mock private AwsNgConfigMapper awsNgConfigMapper;
-
+  @Spy private NexusMapper nexusMapper;
   @Mock private AwsLambdaTaskHelperBase awsLambdaTaskHelperBase;
   @Mock private LogCallback logCallback;
+  @Mock private NexusService nexusService;
+  @Mock private DecryptionHelper decryptionHelper;
+  @Mock private JenkinsUtils jenkinsUtil;
+  @Mock private ArtifactoryNgService artifactoryNgService;
+  @Spy private ArtifactoryRequestMapper artifactoryRequestMapper;
+  @Mock JenkinsImpl jenkins;
 
   @Test
   @Owner(developers = ROHITKARELIA)
@@ -280,7 +322,8 @@ public class AwsLambdaTaskHelperTest extends CategoryTest {
 
     awsLambdaTaskHelper.createOrUpdateAlias(
         listOfaliasManifest, FUNCTION_NAME, "v1", AwsLambdaFunctionsInfraConfig.builder().build(), logCallback);
-    verify(logCallback, times(4));
+    ListAliasesRequest listAliasesRequest = ListAliasesRequest.builder().functionName(FUNCTION_NAME).build();
+    verify(awsLambdaClient).listAliases(any(), eq(listAliasesRequest));
   }
 
   @Test
@@ -307,7 +350,76 @@ public class AwsLambdaTaskHelperTest extends CategoryTest {
 
     awsLambdaTaskHelper.createOrUpdateAlias(
         listOfaliasManifest, FUNCTION_NAME, "v1", AwsLambdaFunctionsInfraConfig.builder().build(), logCallback);
-    verify(logCallback, times(4));
+    ListAliasesRequest listAliasesRequest = ListAliasesRequest.builder().functionName(FUNCTION_NAME).build();
+    verify(awsLambdaClient).listAliases(any(), eq(listAliasesRequest));
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void testPrepareFunctionCodeForNexusArtifact() throws IOException {
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("url", "https://nexus2.dev.harness.io/service/local/artifact/maven/todolist-1.0-javadoc.war");
+    NexusAuthenticationDTO auth = NexusAuthenticationDTO.builder().authType(NexusAuthType.ANONYMOUS).build();
+    NexusConnectorDTO nexusConnectorDTO =
+        NexusConnectorDTO.builder().auth(auth).nexusServerUrl("url").version("2.x").build();
+    AwsLambdaNexusArtifactConfig awsLambdaArtifactConfig =
+        AwsLambdaNexusArtifactConfig.builder().metadata(metadata).connectorConfig(nexusConnectorDTO).build();
+    InputStream inputStream = IOUtils.toInputStream("code", StandardCharsets.UTF_8);
+    Pair<String, InputStream> stream = ImmutablePair.of("todolist-1.0-javadoc.war", inputStream);
+    doReturn(stream).when(nexusService).downloadArtifactByUrl(any(), any(), any());
+    awsLambdaTaskHelper.prepareFunctionCode(awsLambdaArtifactConfig, logCallback);
+    verify(nexusService).downloadArtifactByUrl(any(), eq("todolist-1.0-javadoc.war"), any());
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void testPrepareFunctionCodeForJenkinsArtifact() throws IOException, URISyntaxException {
+    SecretRefData secretRefData = SecretRefData.builder().build();
+    JenkinsBearerTokenDTO credentialsDTO = JenkinsBearerTokenDTO.builder().tokenRef(secretRefData).build();
+    JenkinsAuthenticationDTO auth =
+        JenkinsAuthenticationDTO.builder().credentials(credentialsDTO).authType(JenkinsAuthType.BEARER_TOKEN).build();
+    JenkinsConnectorDTO jenkinsConnectorDTO = JenkinsConnectorDTO.builder().auth(auth).build();
+    AwsLambdaJenkinsArtifactConfig awsLambdaArtifactConfig = AwsLambdaJenkinsArtifactConfig.builder()
+                                                                 .connectorConfig(jenkinsConnectorDTO)
+                                                                 .jobName("testJobName")
+                                                                 .build("testBuild-123")
+                                                                 .artifactPath("testArtifactPath.war")
+                                                                 .identifier("PACKAGE")
+                                                                 .build();
+    InputStream inputStream = IOUtils.toInputStream("code", StandardCharsets.UTF_8);
+    Pair<String, InputStream> stream = ImmutablePair.of("todolist-1.0-javadoc.war", inputStream);
+
+    doReturn(jenkins).when(jenkinsUtil).getJenkins(any());
+    doReturn(stream).when(jenkins).downloadArtifact(any(), any(), any());
+    awsLambdaTaskHelper.prepareFunctionCode(awsLambdaArtifactConfig, logCallback);
+    verify(jenkins).downloadArtifact(awsLambdaArtifactConfig.getJobName(), awsLambdaArtifactConfig.getBuild(),
+        awsLambdaArtifactConfig.getArtifactPath());
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void testPrepareFunctionCodeForArtifactoryArtifact() throws IOException, URISyntaxException {
+    SecretRefData secretRefData = SecretRefData.builder().build();
+    ArtifactoryUsernamePasswordAuthDTO credentialsDTO =
+        ArtifactoryUsernamePasswordAuthDTO.builder().passwordRef(secretRefData).build();
+    ArtifactoryAuthenticationDTO auth = ArtifactoryAuthenticationDTO.builder()
+                                            .credentials(credentialsDTO)
+                                            .authType(ArtifactoryAuthType.ANONYMOUS)
+                                            .build();
+    ArtifactoryConnectorDTO artifactoryConnectorDTO = ArtifactoryConnectorDTO.builder().auth(auth).build();
+    AwsLambdaArtifactoryArtifactConfig awsLambdaArtifactConfig = AwsLambdaArtifactoryArtifactConfig.builder()
+                                                                     .connectorConfig(artifactoryConnectorDTO)
+                                                                     .artifactPaths(Arrays.asList("path"))
+                                                                     .identifier("PACKAGE")
+                                                                     .build();
+    InputStream inputStream = IOUtils.toInputStream("code", StandardCharsets.UTF_8);
+    doReturn(inputStream).when(artifactoryNgService).downloadArtifacts(any(), any(), any(), any(), any());
+    awsLambdaTaskHelper.prepareFunctionCode(awsLambdaArtifactConfig, logCallback);
+    verify(artifactoryRequestMapper)
+        .toArtifactoryRequest((ArtifactoryConnectorDTO) awsLambdaArtifactConfig.getConnectorConfig());
   }
 
   private static GetFunctionResponse getFunctionResponse() {

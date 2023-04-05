@@ -554,4 +554,13 @@ public interface HPersistence extends HealthMonitor {
     }
     return 0;
   }
+
+  default int getMaxDocumentLimit(Class cls) {
+    AdvancedDatastore datastore = getDatastore(cls);
+    if (datastore.getQueryFactory() instanceof QueryFactory) {
+      QueryFactory queryFactory = (QueryFactory) datastore.getQueryFactory();
+      return queryFactory.getMaxDocumentsToBeFetched();
+    }
+    return 0;
+  }
 }

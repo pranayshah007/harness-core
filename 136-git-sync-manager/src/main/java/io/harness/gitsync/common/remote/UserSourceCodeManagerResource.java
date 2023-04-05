@@ -41,6 +41,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -99,9 +100,19 @@ public class UserSourceCodeManagerResource {
   get(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
           "accountIdentifier") @NotNull String accountIdentifier,
       @Parameter(description = "userIdentifier") @QueryParam("userIdentifier") @NotNull String userIdentifier,
-      @Parameter(description = "Type of Git Provider") @QueryParam("type") String type) {
-    List<UserSourceCodeManagerDTO> userSourceCodeManagerDTOs =
-        userSourceCodeManagerService.getByType(accountIdentifier, userIdentifier, type);
+      @Parameter(description = "Type of Git Provider") @QueryParam("type") SCMType type) {
+    List<UserSourceCodeManagerDTO> userSourceCodeManagerDTOs;
+    if (type == null) {
+      userSourceCodeManagerDTOs = userSourceCodeManagerService.get(accountIdentifier, userIdentifier);
+    } else {
+      UserSourceCodeManagerDTO userSourceCodeManagerDTO =
+          userSourceCodeManagerService.getByType(accountIdentifier, userIdentifier, type);
+      if (userSourceCodeManagerDTO == null) {
+        userSourceCodeManagerDTOs = Collections.EMPTY_LIST;
+      } else {
+        userSourceCodeManagerDTOs = List.of(userSourceCodeManagerDTO);
+      }
+    }
     List<UserSourceCodeManagerResponseDTO> userSourceCodeManagerResponseDTOs =
         userSourceCodeManagerDTOs.stream()
             .map(scm -> scmMapBinder.get(scm.getType()).toResponseDTO(scm))

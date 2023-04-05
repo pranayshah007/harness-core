@@ -109,7 +109,12 @@ public class GARApiServiceImpl implements GarApiService {
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
       GarInternalConfig garinternalConfig, String versionRegex) {
     List<BuildDetailsInternal> builds = getBuilds(garinternalConfig, versionRegex, garinternalConfig.getMaxBuilds());
-    if (builds.isEmpty()) {
+    if (EmptyPredicate.isNotEmpty(builds)) {
+      builds = builds.stream()
+                   .filter(build -> new RegexFunctor().match(versionRegex, build.getNumber()))
+                   .collect(Collectors.toList());
+    }
+    if (EmptyPredicate.isEmpty(builds)) {
       throw NestedExceptionUtils.hintWithExplanationException("Could not fetch versions for the package",
           "Please check versionRegex Provided",
           new InvalidArtifactServerException("No versions found with versionRegex provided for the given package"));
@@ -210,7 +215,10 @@ public class GARApiServiceImpl implements GarApiService {
       nextPage = StringUtils.isBlank(page.getNextPageToken()) ? null : page.getNextPageToken();
     } while (StringUtils.isNotBlank(nextPage));
 
-    return details.stream().limit(maxNumberOfBuilds).collect(Collectors.toList());
+    return details.stream()
+        .limit(maxNumberOfBuilds)
+        .sorted(new BuildDetailsInternalComparatorDescending())
+        .collect(Collectors.toList());
   }
 
   private boolean isSuccessful(int code, String errormessage) {

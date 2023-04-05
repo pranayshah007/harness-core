@@ -40,8 +40,10 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -297,7 +299,7 @@ public class AwsLambdaPrepareRollbackTaskHandlerTest extends CategoryTest {
   @Test()
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
-  public void testGetLatestFunctionConfiguration() {
+  public void testGetLatestFunctionConfigurationReturnsEmpty() {
     ListVersionsByFunctionResponse listVersionsByFunctionResponse =
         ListVersionsByFunctionResponse.builder()
             .versions(Arrays.asList(FunctionConfiguration.builder().version("$LATEST").build()))
@@ -316,5 +318,33 @@ public class AwsLambdaPrepareRollbackTaskHandlerTest extends CategoryTest {
             "functionName", AwsLambdaFunctionsInfraConfig.builder().build(), executionLogCallback);
 
     assertThat(functionConfiguration.isPresent()).isFalse();
+  }
+
+  @Test()
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testGetLatestFunctionConfiguration() {
+    List<FunctionConfiguration> functionConfigurationList = new ArrayList<>();
+
+    functionConfigurationList.add(FunctionConfiguration.builder().version("$LATEST").build());
+    functionConfigurationList.add(FunctionConfiguration.builder().version("1").build());
+    functionConfigurationList.add(FunctionConfiguration.builder().version("2").build());
+
+    ListVersionsByFunctionResponse listVersionsByFunctionResponse =
+        ListVersionsByFunctionResponse.builder().versions(functionConfigurationList).build();
+
+    doReturn(listVersionsByFunctionResponse).when(awsLambdaClient).listVersionsByFunction(any(), any());
+
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    doReturn(executionLogCallback)
+        .when(awsLambdaTaskHelper)
+        .getLogCallback(logStreamingTaskClient, AwsLambdaCommandUnitConstants.prepareRollbackData.toString(), true,
+            commandUnitsProgress);
+
+    Optional<FunctionConfiguration> functionConfiguration =
+        awsLambdaPrepareRollbackTaskHandler.getLatestFunctionConfiguration(
+            "functionName", AwsLambdaFunctionsInfraConfig.builder().build(), executionLogCallback);
+
+    assertThat(functionConfiguration.isPresent()).isTrue();
   }
 }

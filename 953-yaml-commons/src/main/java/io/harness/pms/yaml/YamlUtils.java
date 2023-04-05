@@ -454,6 +454,16 @@ public class YamlUtils {
     return qualifiedNames.get(0) + "." + qualifiedNames.get(1) + "." + qualifiedNames.get(2);
   }
 
+  public boolean isStageNode(YamlNode node) {
+    if (node == null) {
+      return false;
+    }
+    if (node.getFieldName() != null && node.getFieldName().equals(YAMLFieldNameConstants.STAGE)) {
+      return true;
+    }
+    return YamlUtils.findParentNode(node, YAMLFieldNameConstants.STAGES) != null;
+  }
+
   private String getQNForNode(YamlNode yamlNode, YamlNode parentNode, boolean shouldAppendStrategyExpression) {
     if (parentNode == null) {
       return "";

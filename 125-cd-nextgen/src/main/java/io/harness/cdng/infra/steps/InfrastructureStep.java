@@ -167,7 +167,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     infrastructureValidator.validate(infrastructure);
 
     final InfrastructureOutcome infrastructureOutcome =
-        infrastructureOutcomeProvider.getOutcome(infrastructure, environmentOutcome, serviceOutcome,
+        infrastructureOutcomeProvider.getOutcome(ambiance, infrastructure, environmentOutcome, serviceOutcome,
             ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     if (environmentOutcome != null) {

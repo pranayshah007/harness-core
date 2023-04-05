@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfo;
 
 import com.mongodb.client.result.DeleteResult;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
@@ -19,5 +20,7 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.DX)
 public interface InstanceSyncPerpetualTaskInfoRepositoryCustom {
   InstanceSyncPerpetualTaskInfo update(Criteria criteria, Update update);
+
+  List<InstanceSyncPerpetualTaskInfo> findAll(Criteria criteria);
   DeleteResult delete(@NotNull Criteria criteria);
 }

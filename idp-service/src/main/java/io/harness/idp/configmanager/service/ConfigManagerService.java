@@ -23,7 +23,10 @@ public interface ConfigManagerService {
 
   AppConfig saveConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType) throws Exception;
 
-  AppConfig updateConfigForAccount(AppConfigRequest appConfigRequest, String accountIdentifier, ConfigType configType)
+  AppConfig saveOrUpdateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
+      throws Exception;
+
+  AppConfig updateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
       throws Exception;
 
   AppConfig toggleConfigForAccount(String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType);

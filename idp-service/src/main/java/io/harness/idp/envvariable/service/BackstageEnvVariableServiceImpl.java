@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.envvariable.beans.entity.BackstageEnvSecretVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.BackstageEnvVariableMapper;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableType;
@@ -40,6 +41,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -142,6 +144,12 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   }
 
   @Override
+  public void deleteMultiUsingEnvNames(List<String> envNames, String accountIdentifier) {
+    k8sClient.removeSecretData(getNamespaceForAccount(accountIdentifier), BACKSTAGE_SECRET, envNames);
+    backstageEnvVariableRepository.deleteAllByEnvName(envNames);
+  }
+
+  @Override
   public void processSecretUpdate(EntityChangeDTO entityChangeDTO) {
     String secretIdentifier = entityChangeDTO.getIdentifier().getValue();
     String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
@@ -178,6 +186,22 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     String namespace = getNamespaceForAccount(accountIdentifier);
     k8sClient.updateSecretData(namespace, BACKSTAGE_SECRET, secretData, false);
     log.info("Successfully updated secret {} in the namespace {}", BACKSTAGE_SECRET, namespace);
+  }
+
+  @Override
+  public List<BackstageEnvSecretVariable> getAllSecretIdentifierForMultipleEnvVariablesInAccount(
+      String accountIdentifier, List<String> envVariableNames) {
+    List<BackstageEnvSecretVariable> resultList = new ArrayList<>();
+    List<BackstageEnvVariableEntity> listEnvVariablesAndSecretId =
+        backstageEnvVariableRepository.findAllByAccountIdentifierAndMultipleEnvNames(
+            accountIdentifier, envVariableNames);
+    BackstageEnvVariableMapper envVariableMapper = getEnvVariableMapper((BackstageEnvVariableType.SECRET));
+    List<BackstageEnvSecretVariable> backstageEnvSecretVariableList = new ArrayList<>();
+
+    for (BackstageEnvVariableEntity backstageEnvVariableEntity : listEnvVariablesAndSecretId) {
+      resultList.add((BackstageEnvSecretVariable) envVariableMapper.toDto(backstageEnvVariableEntity));
+    }
+    return resultList;
   }
 
   private String getNamespaceForAccount(String accountIdentifier) {

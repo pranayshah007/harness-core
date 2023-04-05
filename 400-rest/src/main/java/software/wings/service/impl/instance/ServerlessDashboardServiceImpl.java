@@ -202,22 +202,29 @@ public class ServerlessDashboardServiceImpl implements ServerlessDashboardServic
 
     List<ServiceAggregationInfo> serviceAggregationInfoList = new ArrayList<>();
 
-    wingsPersistence.getDatastore(query.getEntityClass())
-        .createAggregation(ServerlessInstance.class)
-        .match(query)
-        .group(Group.id(grouping("envId"), grouping("lastArtifactId")), grouping(COUNT, accumulator("$sum", 1)),
-            grouping("appInfo", grouping($_FIRST, projection("id", APP_ID), projection("name", "appName"))),
-            grouping("envInfo",
+    AggregationPipeline aggregationPipeline =
+        wingsPersistence.getDatastore(query.getEntityClass())
+            .createAggregation(ServerlessInstance.class)
+            .match(query)
+            .group(Group.id(grouping("envId"), grouping("lastArtifactId")), grouping(COUNT, accumulator("$sum", 1)),
+                grouping("appInfo", grouping($_FIRST, projection("id", APP_ID), projection("name", "appName"))),
+                grouping("envInfo",
+                    grouping($_FIRST, projection("id", "envId"), projection("name", "envName"),
+                        projection("type", "envType"))),
+                grouping("artifactInfo",
+                    grouping($_FIRST, projection("id", "lastArtifactId"), projection("name", "lastArtifactName"),
+                        projection("buildNo", "lastArtifactBuildNum"), projection("streamId", "lastArtifactStreamId"),
+                        projection("deployedAt", "lastDeployedAt"),
+                        projection("sourceName", "lastArtifactSourceName"))),
                 grouping(
-                    $_FIRST, projection("id", "envId"), projection("name", "envName"), projection("type", "envType"))),
-            grouping("artifactInfo",
-                grouping($_FIRST, projection("id", "lastArtifactId"), projection("name", "lastArtifactName"),
-                    projection("buildNo", "lastArtifactBuildNum"), projection("streamId", "lastArtifactStreamId"),
-                    projection("deployedAt", "lastDeployedAt"), projection("sourceName", "lastArtifactSourceName"))),
-            grouping(
-                "instanceInfoList", grouping("$addToSet", projection("id", "_id"), projection("name", "hostName"))),
-            grouping("invocationCount", accumulator("$sum", invocationCountFieldPath)))
-        .sort(ascending("_id.envId"), descending(COUNT))
+                    "instanceInfoList", grouping("$addToSet", projection("id", "_id"), projection("name", "hostName"))),
+                grouping("invocationCount", accumulator("$sum", invocationCountFieldPath)))
+            .sort(ascending("_id.envId"), descending(COUNT));
+    int limit = wingsPersistence.getMaxDocumentLimit(query.getEntityClass());
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
         .aggregate(ServiceAggregationInfo.class,
             AggregationOptions.builder()
                 .maxTime(wingsPersistence.getMaxTimeMs(ServerlessInstance.class), TimeUnit.MILLISECONDS)
@@ -403,14 +410,20 @@ public class ServerlessDashboardServiceImpl implements ServerlessDashboardServic
   List<EntitySummaryStats> getEntitySummaryStats(String entityIdColumn, String entityNameColumn,
       String groupByEntityType, Query<ServerlessInstance> query, Object accumulatorObject) {
     List<EntitySummaryStats> entitySummaryStatsList = new ArrayList<>();
-    wingsPersistence.getDatastore(query.getEntityClass())
-        .createAggregation(ServerlessInstance.class)
-        .match(query)
-        .group(Group.id(grouping(entityIdColumn)), grouping(COUNT, accumulator("$sum", accumulatorObject)),
-            grouping(entityNameColumn, grouping($_FIRST, entityNameColumn)))
-        .project(projection("_id").suppress(), projection("entityId", "_id." + entityIdColumn),
-            projection("entityName", entityNameColumn), projection(COUNT))
-        .sort(descending(COUNT))
+    AggregationPipeline aggregationPipeline =
+        wingsPersistence.getDatastore(query.getEntityClass())
+            .createAggregation(ServerlessInstance.class)
+            .match(query)
+            .group(Group.id(grouping(entityIdColumn)), grouping(COUNT, accumulator("$sum", accumulatorObject)),
+                grouping(entityNameColumn, grouping($_FIRST, entityNameColumn)))
+            .project(projection("_id").suppress(), projection("entityId", "_id." + entityIdColumn),
+                projection("entityName", entityNameColumn), projection(COUNT))
+            .sort(descending(COUNT));
+    int limit = wingsPersistence.getMaxDocumentLimit(query.getEntityClass());
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
         .aggregate(FlatEntitySummaryStats.class,
             AggregationOptions.builder()
                 .maxTime(wingsPersistence.getMaxTimeMs(ServerlessInstance.class), TimeUnit.MILLISECONDS)
@@ -437,10 +450,15 @@ public class ServerlessDashboardServiceImpl implements ServerlessDashboardServic
   @VisibleForTesting
   long getServerlessInstanceCount(Query<ServerlessInstance> query) {
     AtomicLong totalCount = new AtomicLong();
-    wingsPersistence.getDatastore(query.getEntityClass())
-        .createAggregation(ServerlessInstance.class)
-        .match(query)
-        .group("_id", grouping(COUNT, accumulator("$sum", 1)))
+    AggregationPipeline aggregationPipeline = wingsPersistence.getDatastore(query.getEntityClass())
+                                                  .createAggregation(ServerlessInstance.class)
+                                                  .match(query)
+                                                  .group("_id", grouping(COUNT, accumulator("$sum", 1)));
+    int limit = wingsPersistence.getMaxDocumentLimit(query.getEntityClass());
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
         .aggregate(InstanceCount.class,
             AggregationOptions.builder()
                 .maxTime(wingsPersistence.getMaxTimeMs(ServerlessInstance.class), TimeUnit.MILLISECONDS)

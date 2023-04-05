@@ -258,6 +258,9 @@ public class WingsMongoPersistence extends MongoPersistence implements WingsPers
         deleteEncryptionReferenceIfNecessary(records.next());
       }
     }
+    if (query.getLimit() > 0) {
+      query.limit(0);
+    }
     return super.delete(query);
   }
 

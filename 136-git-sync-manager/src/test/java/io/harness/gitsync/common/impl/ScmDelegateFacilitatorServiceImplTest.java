@@ -15,7 +15,9 @@ import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -132,6 +134,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
     doReturn((ScmConnector) connectorInfo.getConnectorConfig())
         .when(gitSyncConnectorHelper)
         .getScmConnector(any(), any(), any(), any());
+    doNothing().when(gitSyncConnectorHelper).setUserGitCredsInConnector(anyString(), any());
     when(yamlGitConfigService.get(any(), any(), any(), any()))
         .thenReturn(YamlGitConfigDTO.builder()
                         .accountIdentifier(accountIdentifier)

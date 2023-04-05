@@ -11,7 +11,6 @@ import static io.harness.NGConstants.HARNESS_BLUE;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.data.structure.HarnessStringUtils.join;
 import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.checkDuplicateConfigFilesIdentifiersWithIn;
 import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.checkDuplicateManifestIdentifiersWithIn;
 import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
@@ -30,19 +29,15 @@ import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.YamlPipelineUtils;
+import io.harness.validation.JavaxValidator;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
-import javax.validation.ConstraintViolation;
 import javax.validation.Valid;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.util.Pair;
@@ -50,9 +45,6 @@ import org.apache.commons.math3.util.Pair;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class EnvironmentMapper {
-  ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-  Validator validator = factory.getValidator();
-
   private static final String TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE =
       "You cannot configure multiple Helm Repo Overrides at the Environment Level. Overrides provided: [%s]";
 
@@ -93,12 +85,7 @@ public class EnvironmentMapper {
   }
 
   private void validateOrThrow(NGEnvironmentConfig ngEnvironmentConfig) {
-    Set<ConstraintViolation<NGEnvironmentConfig>> violations = validator.validate(ngEnvironmentConfig);
-    if (isEmpty(violations)) {
-      return;
-    }
-    final List<String> messages = violations.stream().map(ConstraintViolation::getMessage).collect(Collectors.toList());
-    throw new InvalidRequestException(join(",", messages));
+    JavaxValidator.validateOrThrow(ngEnvironmentConfig);
   }
 
   public Environment toNGEnvironmentEntity(String accountId, EnvironmentRequestDTO dto) {
@@ -170,7 +157,7 @@ public class EnvironmentMapper {
   }
 
   public static List<EnvironmentResponse> toResponseWrapper(List<Environment> envList) {
-    return envList.stream().map(env -> toResponseWrapper(env)).collect(Collectors.toList());
+    return envList.stream().map(EnvironmentMapper::toResponseWrapper).collect(Collectors.toList());
   }
 
   public static NGEnvironmentConfig toNGEnvironmentConfig(Environment environmentEntity) {

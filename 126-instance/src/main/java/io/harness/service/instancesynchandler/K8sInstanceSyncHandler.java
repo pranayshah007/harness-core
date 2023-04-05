@@ -9,6 +9,8 @@ package io.harness.service.instancesynchandler;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static java.util.stream.Collectors.toList;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -20,22 +22,29 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
+import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.perpetualtask.PerpetualTaskType;
+import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesync.K8sDeploymentReleaseDetails;
 
 import com.google.inject.Singleton;
+import com.google.protobuf.Any;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
+@Slf4j
 public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
   @Override
   public String getPerpetualTaskType() {
@@ -66,6 +75,30 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
     return K8sInfrastructureDetails.builder()
         .namespace(k8sInstanceInfoDTO.getNamespace())
         .releaseName(k8sInstanceInfoDTO.getReleaseName())
+        .build();
+  }
+
+  @Override
+  public DeploymentReleaseDetails getDeploymentReleaseDetails(
+      List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList) {
+    List<K8sDeploymentReleaseDetails> k8sDeploymentReleaseDetailsList = new ArrayList<>();
+
+    for (DeploymentInfoDetailsDTO deploymentInfoDetailsDTO : deploymentInfoDetailsDTOList) {
+      DeploymentInfoDTO deploymentInfoDTO = deploymentInfoDetailsDTO.getDeploymentInfoDTO();
+
+      if (!(deploymentInfoDTO instanceof K8sDeploymentInfoDTO)) {
+        log.warn("Unexpected type of deploymentInfoDto, expected K8sDeploymentInfoDTO found {}",
+            deploymentInfoDTO != null ? deploymentInfoDTO.getClass().getSimpleName() : null);
+      } else {
+        K8sDeploymentInfoDTO k8sDeploymentInfoDTO = (K8sDeploymentInfoDTO) deploymentInfoDTO;
+        k8sDeploymentReleaseDetailsList.add(K8sDeploymentReleaseDetails.newBuilder()
+                                                .setReleaseName(k8sDeploymentInfoDTO.getReleaseName())
+                                                .addAllNamespaces(k8sDeploymentInfoDTO.getNamespaces())
+                                                .build());
+      }
+    }
+    return DeploymentReleaseDetails.newBuilder()
+        .addAllDeploymentDetails(k8sDeploymentReleaseDetailsList.stream().map(Any::pack).collect(toList()))
         .build();
   }
 

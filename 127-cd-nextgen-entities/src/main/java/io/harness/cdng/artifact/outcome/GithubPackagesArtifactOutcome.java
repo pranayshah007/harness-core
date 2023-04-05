@@ -70,12 +70,14 @@ public class GithubPackagesArtifactOutcome implements ArtifactOutcome {
 
   /**
    * imagePullSecret for Github Package credentials base encoded.
-   * */
+   */
   String imagePullSecret;
-
+  /**
+   * dockerConfigJson for docker credentials base encoded.
+   */
+  String dockerConfigJsonSecret;
   /**
    * package type for Github Package such as npm, maven, rubygems, nuget, container
-   *
    */
   String packageType;
 

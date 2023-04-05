@@ -19,14 +19,16 @@ import io.harness.idp.configmanager.mappers.MergedAppConfigMapper;
 import io.harness.idp.configmanager.repositories.AppConfigRepository;
 import io.harness.idp.configmanager.repositories.MergedAppConfigRepository;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
+import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.spec.server.idp.v1.model.AppConfig;
-import io.harness.spec.server.idp.v1.model.AppConfigRequest;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -36,6 +38,7 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
@@ -45,6 +48,10 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   private MergedAppConfigRepository mergedAppConfigRepository;
   private K8sClient k8sClient;
   private NamespaceService namespaceService;
+  private ConfigEnvVariablesService configEnvVariablesService;
+
+  private BackstageEnvVariableService backstageEnvVariableService;
+
   private static final String PLUGIN_CONFIG_NOT_FOUND =
       "Plugin configs for plugin - %s is not present for account - %s";
   private static final String PLUGIN_SAVE_UNSUCCESSFUL =
@@ -89,29 +96,74 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
     appConfigEntity.setEnabledDisabledAt(System.currentTimeMillis());
+    List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
+        configEnvVariablesService.insertConfigEnvVariables(appConfig, accountIdentifier);
     AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
-    return AppConfigMapper.toDTO(insertedData);
+    AppConfig returnedConfig = AppConfigMapper.toDTO(insertedData);
+    returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
+    return returnedConfig;
   }
 
   @Override
-  public AppConfig updateConfigForAccount(
-      AppConfigRequest appConfigRequest, String accountIdentifier, ConfigType configType) throws Exception {
-    AppConfig appConfig = appConfigRequest.getAppConfig();
+  public AppConfig updateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
+      throws Exception {
     validateSchemaForPlugin(appConfig.getConfigs(), appConfig.getConfigId());
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
+    List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
+        configEnvVariablesService.updateConfigEnvVariables(appConfig, accountIdentifier);
     AppConfigEntity updatedData = appConfigRepository.updateConfig(appConfigEntity, configType);
     if (updatedData == null) {
       throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, appConfig.getConfigId(), accountIdentifier));
     }
-    return AppConfigMapper.toDTO(updatedData);
+    AppConfig returnedConfig = AppConfigMapper.toDTO(updatedData);
+    returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
+    return returnedConfig;
+  }
+
+  @Override
+  public AppConfig saveOrUpdateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
+      throws Exception {
+    if (appConfigRepository.findByAccountIdentifierAndConfigId(accountIdentifier, appConfig.getConfigId()) == null) {
+      return saveConfigForAccount(appConfig, accountIdentifier, configType);
+    }
+    return updateConfigForAccount(appConfig, accountIdentifier, configType);
   }
 
   @Override
   public AppConfig toggleConfigForAccount(
       String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType) {
-    AppConfigEntity updatedData =
-        appConfigRepository.updateConfigEnablement(accountIdentifier, configId, isEnabled, configType);
+    AppConfigEntity updatedData = null;
+    Boolean createdNewConfig = false;
+
+    if (isEnabled == true) {
+      AppConfigEntity appConfigEntity =
+          appConfigRepository.findByAccountIdentifierAndConfigId(accountIdentifier, configId);
+
+      if (appConfigEntity == null) {
+        long currentTime = System.currentTimeMillis();
+        AppConfigEntity pluginWithNoConfig = AppConfigEntity.builder()
+                                                 .accountIdentifier(accountIdentifier)
+                                                 .configType(configType)
+                                                 .configId(configId)
+                                                 .enabled(isEnabled)
+                                                 .createdAt(currentTime)
+                                                 .lastModifiedAt(currentTime)
+                                                 .enabledDisabledAt(currentTime)
+                                                 .build();
+        updatedData = appConfigRepository.save(pluginWithNoConfig);
+        createdNewConfig = true;
+      }
+    }
+
+    if (!createdNewConfig) {
+      updatedData = appConfigRepository.updateConfigEnablement(accountIdentifier, configId, isEnabled, configType);
+    }
+
+    if (isEnabled == false) {
+      configEnvVariablesService.deleteConfigEnvVariables(accountIdentifier, configId);
+    }
+
     if (updatedData == null) {
       throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, configId, accountIdentifier));
     }
@@ -140,12 +192,24 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     JsonNode mergedPluginConfig = ConfigManagerUtils.asJsonNode(config);
     while (itr.hasNext()) {
       config = itr.next();
-      JsonNode pluginConfig = ConfigManagerUtils.asJsonNode(config);
-      JsonNodeUtils.merge(mergedPluginConfig, pluginConfig);
-      itr.remove();
+      if (config != null) {
+        JsonNode pluginConfig = ConfigManagerUtils.asJsonNode(config);
+        JsonNodeUtils.merge(mergedPluginConfig, pluginConfig);
+        itr.remove();
+      }
     }
     MergedPluginConfigs mergedPluginConfigs = new MergedPluginConfigs();
-    return mergedPluginConfigs.config(ConfigManagerUtils.asYaml(mergedPluginConfig.toString()));
+
+    // fetching the env variables and corresponding secret identifier used while enabling the plugin
+    List<String> enabledPluginIdsForAccount = getAllEnabledPluginIds(accountIdentifier);
+    List<String> envVariablesForEnabledPlugins =
+        getAllEnvVariablesForMultiplePluginIds(accountIdentifier, enabledPluginIdsForAccount);
+    List<BackstageEnvSecretVariable> envVariableAndSecretList =
+        backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(
+            accountIdentifier, envVariablesForEnabledPlugins);
+
+    return mergedPluginConfigs.config(ConfigManagerUtils.asYaml(mergedPluginConfig.toString()))
+        .envVariables(envVariableAndSecretList);
   }
 
   private String mergeAppConfigs(List<String> configs) throws Exception {
@@ -154,9 +218,11 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     Iterator<String> itr = configs.iterator();
     while (itr.hasNext()) {
       String config = itr.next();
-      JsonNode pluginConfig = ConfigManagerUtils.asJsonNode(config);
-      JsonNodeUtils.merge(baseConfig, pluginConfig);
-      itr.remove();
+      if (config != null) {
+        JsonNode pluginConfig = ConfigManagerUtils.asJsonNode(config);
+        JsonNodeUtils.merge(baseConfig, pluginConfig);
+        itr.remove();
+      }
     }
     return ConfigManagerUtils.asYaml(baseConfig.toString());
   }
@@ -194,13 +260,32 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     }
   }
 
-  private List<String> getAllEnabledPluginConfigs(String accountIdentifier) {
+  private List<AppConfigEntity> getAllEnabledPlugins(String accountIdentifier) {
     List<AppConfigEntity> allEnabledPluginConfigEntity =
         appConfigRepository.findAllByAccountIdentifierAndConfigTypeAndEnabled(
             accountIdentifier, ConfigType.PLUGIN, true);
     if (allEnabledPluginConfigEntity.isEmpty()) {
       throw new InvalidRequestException(format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
     }
-    return allEnabledPluginConfigEntity.stream().map(entity -> entity.getConfigs()).collect(Collectors.toList());
+    return allEnabledPluginConfigEntity;
+  }
+
+  private List<String> getAllEnabledPluginConfigs(String accountIdentifier) {
+    return getAllEnabledPlugins(accountIdentifier)
+        .stream()
+        .map(entity -> entity.getConfigs())
+        .collect(Collectors.toList());
+  }
+
+  private List<String> getAllEnabledPluginIds(String accountIdentifier) {
+    return getAllEnabledPlugins(accountIdentifier)
+        .stream()
+        .map(entity -> entity.getConfigId())
+        .collect(Collectors.toList());
+  }
+
+  private List<String> getAllEnvVariablesForMultiplePluginIds(String accountIdentifier, List<String> pluginIds) {
+    return configEnvVariablesService.getAllEnvVariablesForAccountIdentifierAndMultiplePluginIds(
+        accountIdentifier, pluginIds);
   }
 }

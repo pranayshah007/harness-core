@@ -21,6 +21,7 @@ import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponsePublisher;
+import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.rest.RestResponse;
@@ -56,6 +57,23 @@ public class InstanceSyncResource {
   @Inject private InstanceHelper instanceHelper;
   @Inject private InstanceSyncResponsePublisher instanceSyncResponsePublisher;
   @Inject private CgInstanceSyncServiceV2 instanceSyncServiceV2;
+
+  @DelegateAuth
+  @GET
+  @Path("instance-sync-ng-v2/task/{perpetualTaskId}/details")
+  @Produces(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
+  public Response fetchInstanceSyncV2TaskDetails(
+      @PathParam("perpetualTaskId") String perpetualTaskId, @QueryParam("accountId") String accountId) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
+      InstanceSyncTaskDetails details =
+          instanceSyncResponsePublisher.fetchTaskDetails(perpetualTaskId.replaceAll("[\r\n]", ""), accountId);
+      return Response.ok(details).build();
+    } catch (Exception e) {
+      log.error("Failed to process results for perpetual task: [{}]", perpetualTaskId.replaceAll("[\r\n]", ""), e);
+    }
+    return Response.status(Response.Status.EXPECTATION_FAILED).build();
+  }
 
   @DelegateAuth
   @POST

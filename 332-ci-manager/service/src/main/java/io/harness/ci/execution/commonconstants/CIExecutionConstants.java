@@ -41,7 +41,6 @@ public class CIExecutionConstants extends ContainerExecutionConstants {
   // Constant for
 
   public static final String LOCALHOST_IP = "127.0.0.1";
-  public static final Integer DEFAULT_CONTAINER_CPU_POV = 1000;
   public static final Integer MAXIMUM_EXPANSION_LIMIT = 5000;
   public static final Integer MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT = 5;
 
@@ -87,8 +86,6 @@ public class CIExecutionConstants extends ContainerExecutionConstants {
   public static final Double MACOS_BUILD_MULTIPLIER = 10.0;
   public static final Double WINDOWS_BUILD_MULTIPLIER = 2.0;
   public static final Double DEFAULT_BUILD_MULTIPLIER = 1.0;
-  public static final String MEMORY = "MEMORY";
-  public static final String CPU = "CPU";
 
   public static final String NULL_STR = "null";
 

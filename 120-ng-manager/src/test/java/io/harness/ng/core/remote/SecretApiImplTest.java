@@ -15,6 +15,7 @@ import static java.util.Optional.of;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -23,8 +24,10 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SortOrder;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.api.impl.NGEncryptedDataServiceImpl;
@@ -54,6 +57,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(PL)
 public class SecretApiImplTest extends CategoryTest {
@@ -77,11 +81,18 @@ public class SecretApiImplTest extends CategoryTest {
   private Validator validator;
   private SecretApiUtils secretApiUtils;
 
+  private PageRequest pageRequest;
+
   @Before
   public void setup() {
     ngSecretService = mock(SecretCrudServiceImpl.class);
     ngEncryptedDataService = mock(NGEncryptedDataServiceImpl.class);
-
+    pageRequest = PageRequest.builder()
+                      .pageIndex(page)
+                      .pageSize(limit)
+                      .sortOrders(List.of(
+                          SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build()))
+                      .build();
     doNothing().when(mock(SecretPermissionValidator.class)).checkForAccessOrThrow(any(), any(), any(), any());
     ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     validator = factory.getValidator();
@@ -285,10 +296,11 @@ public class SecretApiImplTest extends CategoryTest {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(Collections.singletonList("SSHKeyPath"));
     List<String> types = Collections.singletonList("SSHKeyPath");
 
-    when(ngSecretService.list(account, null, null, identifiers, secretTypes, false, null, page, limit, null, false))
+    when(ngSecretService.list(anyString(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any()))
         .thenReturn(pages);
 
-    Response response = accountSecretApi.getAccountScopedSecrets(identifiers, types, false, null, page, limit, account);
+    Response response = accountSecretApi.getAccountScopedSecrets(
+        identifiers, types, false, null, page, limit, account, "modified", Sort.Direction.DESC.toString());
 
     List<SecretResponse> secretResponse = (List<SecretResponse>) response.getEntity();
     assertThat(secretResponse.size()).isEqualTo(1);
@@ -314,10 +326,12 @@ public class SecretApiImplTest extends CategoryTest {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(Collections.singletonList("SSHKeyPath"));
     List<String> types = Collections.singletonList("SSHKeyPath");
 
-    when(ngSecretService.list(account, org, null, identifiers, secretTypes, false, null, page, limit, null, false))
+    when(ngSecretService.list(
+             anyString(), anyString(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any()))
         .thenReturn(pages);
 
-    Response response = orgSecretApi.getOrgScopedSecrets(org, identifiers, types, false, null, page, limit, account);
+    Response response = orgSecretApi.getOrgScopedSecrets(
+        org, identifiers, types, false, null, page, limit, account, "modified", Sort.Direction.DESC.toString());
 
     List<SecretResponse> secretResponse = (List<SecretResponse>) response.getEntity();
     assertThat(secretResponse.size()).isEqualTo(1);
@@ -343,11 +357,12 @@ public class SecretApiImplTest extends CategoryTest {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(Collections.singletonList("SSHKeyPath"));
     List<String> types = Collections.singletonList("SSHKeyPath");
 
-    when(ngSecretService.list(account, org, project, identifiers, secretTypes, false, null, page, limit, null, false))
+    when(ngSecretService.list(
+             anyString(), anyString(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any()))
         .thenReturn(pages);
 
-    Response response =
-        projectSecretApi.getProjectScopedSecrets(org, project, identifiers, types, false, null, page, limit, account);
+    Response response = projectSecretApi.getProjectScopedSecrets(org, project, identifiers, types, false, null, page,
+        limit, account, "modified", Sort.Direction.DESC.toString());
 
     List<SecretResponse> secretResponse = (List<SecretResponse>) response.getEntity();
     assertThat(secretResponse.size()).isEqualTo(1);

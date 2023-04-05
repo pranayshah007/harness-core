@@ -11,14 +11,16 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.common.dtos.UserSourceCodeManagerDTO;
+import io.harness.ng.userprofile.commons.SCMType;
 
 import java.util.List;
 
 @OwnedBy(PIPELINE)
 public interface UserSourceCodeManagerService {
-  List<UserSourceCodeManagerDTO> getByType(String accountIdentifier, String userIdentifier, String type);
+  UserSourceCodeManagerDTO getByType(String accountIdentifier, String userIdentifier, SCMType type);
+  List<UserSourceCodeManagerDTO> get(String accountIdentifier, String userIdentifier);
 
   UserSourceCodeManagerDTO save(UserSourceCodeManagerDTO userSourceCodeManager);
 
-  long delete(String accountIdentifier, String userIdentifier, String type);
+  long delete(String accountIdentifier, String userIdentifier, SCMType type);
 }

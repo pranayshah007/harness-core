@@ -36,6 +36,7 @@ public class K8sRecommendationFilterDTO {
   Double minSaving;
   Double minCost;
 
+  Long daysBack;
   Long offset;
   Long limit;
 }

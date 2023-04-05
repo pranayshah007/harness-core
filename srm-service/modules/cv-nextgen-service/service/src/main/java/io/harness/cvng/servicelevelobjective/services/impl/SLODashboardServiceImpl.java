@@ -361,8 +361,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
               .build();
       List<MonitoredServiceDetail> monitoredServiceDetails = Collections.singletonList(monitoredServiceDetail);
 
-      return getSloDashboardWidgetBuilder(slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes,
-          currentLocalDate, monitoredServiceDetails)
+      return getSloDashboardWidgetBuilder(
+          slo, timePeriod, sloGraphData, serviceLevelObjective, currentLocalDate, monitoredServiceDetails)
           .monitoredServiceIdentifier(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
           .monitoredServiceName(monitoredService.getName())
           .environmentIdentifier(monitoredService.getEnvironmentRef())
@@ -418,16 +418,15 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                          .build())
               .collect(Collectors.toList());
 
-      return getSloDashboardWidgetBuilder(slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes,
-          currentLocalDate, monitoredServiceDetails)
+      return getSloDashboardWidgetBuilder(
+          slo, timePeriod, sloGraphData, serviceLevelObjective, currentLocalDate, monitoredServiceDetails)
           .build();
     }
   }
 
   private SLODashboardWidgetBuilder getSloDashboardWidgetBuilder(ServiceLevelObjectiveV2DTO slo, TimePeriod timePeriod,
       SLODashboardWidget.SLOGraphData sloGraphData, AbstractServiceLevelObjective serviceLevelObjective,
-      int totalErrorBudgetMinutes, LocalDateTime currentLocalDate,
-      List<MonitoredServiceDetail> monitoredServiceDetails) {
+      LocalDateTime currentLocalDate, List<MonitoredServiceDetail> monitoredServiceDetails) {
     return SLODashboardWidget.withGraphData(sloGraphData)
         .sloIdentifier(slo.getIdentifier())
         .title(slo.getName())

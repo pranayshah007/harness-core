@@ -2323,7 +2323,8 @@
               "PolicyEvaluationFailure",
               "InputTimeoutError",
               "ApprovalRejection",
-              "DelegateRestart"
+              "DelegateRestart",
+              "UserMarkedFailure"
             ]
           }
         }

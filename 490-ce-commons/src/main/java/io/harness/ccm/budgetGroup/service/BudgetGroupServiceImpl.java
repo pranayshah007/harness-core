@@ -11,6 +11,9 @@ import static io.harness.ccm.budget.BudgetBreakdown.MONTHLY;
 import static io.harness.ccm.budget.BudgetPeriod.YEARLY;
 import static io.harness.ccm.budget.utils.BudgetUtils.MONTHS;
 import static io.harness.ccm.budgetGroup.CascadeType.NO_CASCADE;
+import static io.harness.ccm.budgetGroup.CascadeType.PROPORTIONAL;
+import static io.harness.ccm.budgetGroup.utils.BudgetGroupUtils.INVALID_INDIVIDUAL_PROPORTION;
+import static io.harness.ccm.budgetGroup.utils.BudgetGroupUtils.INVALID_TOTAL_PROPORTION;
 
 import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetMonthlyBreakdown;
@@ -64,6 +67,7 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
         budgetGroup.getChildEntities().stream().map(BudgetGroupChildEntityDTO::getId).collect(Collectors.toList());
     validateChildEntities(budgetGroup, areChildEntitiesBudgetGroups, childEntityIds);
     validateParentOfChildEntities(budgetGroup, areChildEntitiesBudgetGroups, childEntityIds);
+    validateProportion(budgetGroup);
 
     // Saving budget group
     budgetGroup.setParentBudgetGroupId(null);
@@ -105,6 +109,9 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
         oldBudgetGroup.getChildEntities().stream().map(BudgetGroupChildEntityDTO::getId).collect(Collectors.toList());
 
     validateChildEntities(budgetGroup, areChildEntitiesBudgetGroups, childEntityIds);
+    validateProportion(budgetGroup);
+    updateBudgetGroupParent(budgetGroup);
+    validateBudgetGroupDetails(budgetGroup, oldBudgetGroup);
 
     // Saving budget group
     updateBudgetGroupBreakdown(budgetGroup);
@@ -112,7 +119,6 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     updateBudgetGroupCosts(budgetGroup);
     updateBudgetGroupEndTime(budgetGroup);
     updateBudgetGroupHistory(budgetGroup, budgetGroup.getAccountId());
-    updateBudgetGroupParent(budgetGroup);
     budgetGroupDao.update(uuid, accountId, budgetGroup);
     cascadeBudgetGroupAmount(budgetGroup);
 
@@ -469,6 +475,17 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     }
   }
 
+  private void validateBudgetGroupDetails(BudgetGroup budgetGroup, BudgetGroup oldBudgetGroup) {
+    // We should throw Exception in case there is a parent for budget group
+    // And startTime, period is modified
+    if (budgetGroup.getParentBudgetGroupId() != null) {
+      if (budgetGroup.getStartTime() != oldBudgetGroup.getStartTime()
+          || budgetGroup.getPeriod() != oldBudgetGroup.getPeriod()) {
+        throw new InvalidRequestException(BudgetGroupUtils.INVALID_BUDGET_DETAILS_EXCEPTION);
+      }
+    }
+  }
+
   public void validateParentOfChildEntities(
       BudgetGroup budgetGroup, boolean areChildEntitiesBudgetGroups, List<String> childEntityIds) {
     if (areChildEntitiesBudgetGroups) {
@@ -477,6 +494,25 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     } else {
       BudgetGroupUtils.validateNoParentPresentForChildBudgets(
           budgetDao.list(budgetGroup.getAccountId(), childEntityIds));
+    }
+  }
+
+  public void validateProportion(BudgetGroup budgetGroup) {
+    if (budgetGroup.getCascadeType() == PROPORTIONAL) {
+      List<Double> childProportions = budgetGroup.getChildEntities()
+                                          .stream()
+                                          .map(budgetGroupChildEntityDTO -> budgetGroupChildEntityDTO.getProportion())
+                                          .collect(Collectors.toList());
+      Double totalProportion = 0.0;
+      for (int child = 0; child < childProportions.size(); child++) {
+        if (childProportions.get(child) < 0 || childProportions.get(child) > 100) {
+          throw new InvalidRequestException(INVALID_INDIVIDUAL_PROPORTION);
+        }
+        totalProportion += totalProportion + childProportions.get(child);
+      }
+      if (totalProportion != 100) {
+        throw new InvalidRequestException(INVALID_TOTAL_PROPORTION);
+      }
     }
   }
 

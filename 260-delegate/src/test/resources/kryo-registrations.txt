@@ -2755,3 +2755,4 @@
 10000521:io.harness.delegate.task.pcf.response.CfRouteMappingResponseNG
 10000522:io.harness.delegate.task.pcf.artifact.BambooTasArtifactRequestDetails
 10000523:io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails
+10000524:io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig

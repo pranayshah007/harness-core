@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.SecretCrudService;
@@ -61,8 +62,11 @@ public class NGSecretResourceV2Test extends CategoryTest {
   private NGSecretResourceV2 ngSecretResourceV2;
   private NGEncryptorService ngEncryptorService;
 
+  PageRequest pageRequest;
+
   @Before
   public void setup() {
+    pageRequest = PageRequest.builder().pageSize(10).pageIndex(1).build();
     ngSecretService = mock(SecretCrudServiceImpl.class);
     secretPermissionValidator = mock(SecretPermissionValidator.class);
     encryptedDataService = mock(NGEncryptedDataService.class);
@@ -82,9 +86,9 @@ public class NGSecretResourceV2Test extends CategoryTest {
     doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
     doReturn(page)
         .when(ngSecretService)
-        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, null, false, pageRequest);
     ResponseDTO<PageResponse<SecretResponseWrapper>> list = ngSecretResourceV2.listSecrets(
-        "Test", "TestOrg", "TestProj", SecretResourceFilterDTO.builder().identifiers(null).build(), 1, 10);
+        "Test", "TestOrg", "TestProj", SecretResourceFilterDTO.builder().identifiers(null).build(), pageRequest);
     assertThat(list.getData().getContent().size()).isEqualTo(1);
   }
 
@@ -97,11 +101,12 @@ public class NGSecretResourceV2Test extends CategoryTest {
     doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
     doReturn(page)
         .when(ngSecretService)
-        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, true);
-    ResponseDTO<PageResponse<SecretResponseWrapper>> list = ngSecretResourceV2.listSecrets("Test", "TestOrg",
-        "TestProj",
-        SecretResourceFilterDTO.builder().identifiers(null).includeAllSecretsAccessibleAtScope(true).build(), 1, 10);
-    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, true);
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, null, true, pageRequest);
+    ResponseDTO<PageResponse<SecretResponseWrapper>> list =
+        ngSecretResourceV2.listSecrets("Test", "TestOrg", "TestProj",
+            SecretResourceFilterDTO.builder().identifiers(null).includeAllSecretsAccessibleAtScope(true).build(),
+            pageRequest);
+    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, null, true, pageRequest);
   }
   @Test
   @Owner(developers = MEENAKSHI)
@@ -112,10 +117,10 @@ public class NGSecretResourceV2Test extends CategoryTest {
     doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
     doReturn(page)
         .when(ngSecretService)
-        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, null, false, pageRequest);
     ResponseDTO<PageResponse<SecretResponseWrapper>> list = ngSecretResourceV2.listSecrets(
-        "Test", "TestOrg", "TestProj", SecretResourceFilterDTO.builder().identifiers(null).build(), 1, 10);
-    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
+        "Test", "TestOrg", "TestProj", SecretResourceFilterDTO.builder().identifiers(null).build(), pageRequest);
+    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, null, false, pageRequest);
   }
   @Test
   @Owner(developers = MEENAKSHI)
@@ -126,10 +131,10 @@ public class NGSecretResourceV2Test extends CategoryTest {
     doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
     doReturn(page)
         .when(ngSecretService)
-        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, true);
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, null, true, pageRequest);
     ResponseDTO<PageResponse<SecretResponseWrapper>> list =
-        ngSecretResourceV2.list("Test", "TestOrg", "TestProj", null, null, null, null, null, false, true, 1, 10);
-    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, true);
+        ngSecretResourceV2.list("Test", "TestOrg", "TestProj", null, null, null, null, null, false, true, pageRequest);
+    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, null, true, pageRequest);
   }
 
   @Test
@@ -141,10 +146,10 @@ public class NGSecretResourceV2Test extends CategoryTest {
     doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
     doReturn(page)
         .when(ngSecretService)
-        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, null, false, pageRequest);
     ResponseDTO<PageResponse<SecretResponseWrapper>> list =
-        ngSecretResourceV2.list("Test", "TestOrg", "TestProj", null, null, null, null, null, false, false, 1, 10);
-    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
+        ngSecretResourceV2.list("Test", "TestOrg", "TestProj", null, null, null, null, null, false, false, pageRequest);
+    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, null, false, pageRequest);
   }
 
   @NotNull
