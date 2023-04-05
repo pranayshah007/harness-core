@@ -54,6 +54,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.mongodb.AggregationOptions;
+import com.mongodb.ReadPreference;
 import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.annotations.Id;
 import dev.morphia.query.Criteria;
@@ -416,6 +417,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
         query, projectParams, monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped);
     query.and(criteria.toArray(new Criteria[criteria.size()]));
     query.and(criteriasForAppAndInfraEvents);
+    query.useReadPreference(ReadPreference.secondaryPreferred());
     return query;
   }
 
