@@ -31,6 +31,7 @@ WORKDIR /opt/harness-delegate
 
 COPY --from=adoptopenjdk/openjdk11:jre-11.0.14_9-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
 
+ENV LANG=en_US.UTF-8
 ENV HOME=/opt/harness-delegate
 ENV CLIENT_TOOLS_DOWNLOAD_DISABLED=true
 ENV INSTALL_CLIENT_TOOLS_IN_BACKGROUND=true
