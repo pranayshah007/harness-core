@@ -19,6 +19,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.github.outcome.GithubHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.common.Constants;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
@@ -59,21 +60,20 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
 
       if (apiAccessSpec.getApplicationIdRef() == null) {
         BackstageEnvConfigVariable appIDEnvironmentSecret = new BackstageEnvConfigVariable();
-        appIDEnvironmentSecret.setEnvName(GitIntegrationConstants.GITHUB_APP_ID);
+        appIDEnvironmentSecret.setEnvName(Constants.GITHUB_APP_ID);
         appIDEnvironmentSecret.setType(BackstageEnvVariable.TypeEnum.CONFIG);
         appIDEnvironmentSecret.value(apiAccessSpec.getApplicationId());
-        secrets.put(GitIntegrationConstants.GITHUB_APP_ID, appIDEnvironmentSecret);
+        secrets.put(Constants.GITHUB_APP_ID, appIDEnvironmentSecret);
       } else {
         String applicationIdSecretRefId = apiAccessSpec.getApplicationIdRef().getIdentifier();
-        secrets.put(GitIntegrationConstants.GITHUB_APP_ID,
-            GitIntegrationUtils.getBackstageEnvSecretVariable(
-                applicationIdSecretRefId, GitIntegrationConstants.GITHUB_APP_ID));
+        secrets.put(Constants.GITHUB_APP_ID,
+            GitIntegrationUtils.getBackstageEnvSecretVariable(applicationIdSecretRefId, Constants.GITHUB_APP_ID));
       }
 
       String privateRefKeySecretIdentifier = apiAccessSpec.getPrivateKeyRef().getIdentifier();
-      secrets.put(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF,
+      secrets.put(Constants.GITHUB_APP_PRIVATE_KEY_REF,
           GitIntegrationUtils.getBackstageEnvSecretVariable(
-              privateRefKeySecretIdentifier, GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF));
+              privateRefKeySecretIdentifier, Constants.GITHUB_APP_PRIVATE_KEY_REF));
     }
 
     GithubHttpCredentialsOutcomeDTO outcome =
@@ -90,8 +90,8 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
           String.format("Secret identifier not found for connector: [%s] ", connectorIdentifier));
     }
 
-    secrets.put(GitIntegrationConstants.GITHUB_TOKEN,
-        GitIntegrationUtils.getBackstageEnvSecretVariable(tokenSecretIdentifier, GitIntegrationConstants.GITHUB_TOKEN));
+    secrets.put(Constants.GITHUB_TOKEN,
+        GitIntegrationUtils.getBackstageEnvSecretVariable(tokenSecretIdentifier, Constants.GITHUB_TOKEN));
     return new Pair<>(connectorInfoDTO, secrets);
   }
 
@@ -100,7 +100,7 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> connectorSecretsInfo = getConnectorAndSecretsInfo(
         accountIdentifier, null, null, catalogConnectorInfo.getInfraConnector().getIdentifier());
     BackstageEnvSecretVariable envSecretVariable =
-        (BackstageEnvSecretVariable) connectorSecretsInfo.getSecond().get(GitIntegrationConstants.GITHUB_TOKEN);
+        (BackstageEnvSecretVariable) connectorSecretsInfo.getSecond().get(Constants.GITHUB_TOKEN);
     String githubConnectorSecret = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
         envSecretVariable.getHarnessSecretIdentifier(), catalogConnectorInfo.getSourceConnector().getIdentifier());
 

@@ -17,6 +17,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.outcome.BitbucketHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.common.Constants;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
@@ -66,9 +67,8 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
 
     Map<String, BackstageEnvVariable> secrets = new HashMap<>();
 
-    secrets.put(GitIntegrationConstants.BITBUCKET_TOKEN,
-        GitIntegrationUtils.getBackstageEnvSecretVariable(
-            pwdSecretIdentifier, GitIntegrationConstants.BITBUCKET_TOKEN));
+    secrets.put(Constants.BITBUCKET_TOKEN,
+        GitIntegrationUtils.getBackstageEnvSecretVariable(pwdSecretIdentifier, Constants.BITBUCKET_TOKEN));
     return new Pair<>(connectorInfoDTO, secrets);
   }
 
@@ -78,7 +78,7 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
     Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> connectorSecretsInfo = getConnectorAndSecretsInfo(
         accountIdentifier, null, null, catalogConnectorInfo.getInfraConnector().getIdentifier());
     BackstageEnvSecretVariable envSecretVariable =
-        (BackstageEnvSecretVariable) connectorSecretsInfo.getSecond().get(GitIntegrationConstants.BITBUCKET_TOKEN);
+        (BackstageEnvSecretVariable) connectorSecretsInfo.getSecond().get(Constants.BITBUCKET_TOKEN);
     String bitbucketConnectorSecret = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
         envSecretVariable.getHarnessSecretIdentifier(), catalogConnectorInfo.getSourceConnector().getIdentifier());
 

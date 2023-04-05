@@ -522,9 +522,9 @@ paths:
       x-internal: true
   /v1/app-config:
     post:
-      summary: Insert Plugin Config
-      operationId: insert-plugin-app-config
-      description: Insert Plugin Config
+      summary: Save Or Update Plugin Config
+      operationId: save-or-update-plugin-app-config
+      description: Save or Update Plugin Config
       responses:
         '200':
           $ref: '#/components/responses/AppConfigResponse'
@@ -532,22 +532,6 @@ paths:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      requestBody:
-        $ref: '#/components/requestBodies/AppConfigRequest'
-      x-internal: true
-      tags:
-        - AppConfig
-    put:
-      summary: Update Plugin Config
-      operationId: update-plugin-configs
-      description: Update plugin configs
-      responses:
-        '200':
-          $ref: '#/components/responses/AppConfigResponse'
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-      security:
-        - x-api-key: []
       requestBody:
         $ref: '#/components/requestBodies/AppConfigRequest'
       x-internal: true
@@ -1166,10 +1150,23 @@ components:
           x-stoplight:
             id: gjoqaxs5xj4g5
           format: int64
+        env_variables:
+          type: array
+          x-stoplight:
+            id: rbsynehqc2icl
+          items:
+            $ref: '#/components/schemas/BackstageEnvSecretVariable'
+            x-stoplight:
+              id: h8yoj2ikr9k75
+        config_name:
+          type: string
+          x-stoplight:
+            id: jqz82xb7khx5d
       required:
         - config_id
         - configs
-        - enabled
+        - env_variables
+        - config_name
     AppConfigRequest:
       title: AppConfigRequest
       x-stoplight:
@@ -1247,8 +1244,17 @@ components:
           type: string
           x-stoplight:
             id: 9tuk5lnb9qem9
+        env_variables:
+          type: array
+          x-stoplight:
+            id: rvzbk4sw9nxvp
+          items:
+            $ref: '#/components/schemas/BackstageEnvSecretVariable'
+            x-stoplight:
+              id: lv3438bpnl1d1
       required:
         - config
+        - env_variables
     MergedPluginConfigResponse:
       title: MergedPluginConfigResponse
       x-stoplight:

@@ -9,8 +9,8 @@ package io.harness.idp.configmanager.beans.entity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
@@ -30,31 +30,29 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
-@FieldNameConstants(innerTypeName = "AppConfigEntityKeys")
+@FieldNameConstants(innerTypeName = "PluginsConfigEnvVariablesEntityKeys")
 @StoreIn(DbAliases.IDP)
-@Entity(value = "appConfigs", noClassnameStored = true)
-@Document("appConfigs")
+@Entity(value = "pluginsConfigEnvVariables", noClassnameStored = true)
+@Document("pluginsConfigEnvVariables")
 @Persistent
 @OwnedBy(HarnessTeam.IDP)
-public class AppConfigEntity implements PersistentEntity {
+public class PluginConfigEnvVariablesEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("unique_account_config_id")
+                 .name("unique_account_env_name")
                  .unique(true)
-                 .field(AppConfigEntityKeys.accountIdentifier)
-                 .field(AppConfigEntityKeys.configId)
+                 .field(PluginsConfigEnvVariablesEntityKeys.accountIdentifier)
+                 .field(PluginsConfigEnvVariablesEntityKeys.envName)
                  .build())
         .build();
   }
 
   @Id @org.mongodb.morphia.annotations.Id private String id;
-  @NotNull private String accountIdentifier;
-  @NotNull private ConfigType configType;
-  @NotNull private String configId;
-  @NotNull private String configName;
-  private String configs;
-  @NotNull private Boolean enabled;
+  private String accountIdentifier;
+  @NotNull String pluginId;
+  @NotNull String pluginName;
+  @NotNull String envName;
   @CreatedDate Long createdAt;
   @LastModifiedDate Long lastModifiedAt;
   @NotNull Long enabledDisabledAt;
