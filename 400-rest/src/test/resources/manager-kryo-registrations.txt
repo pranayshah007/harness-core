@@ -2213,6 +2213,7 @@
 73993:io.harness.delegate.task.helm.HelmFetchChartVersionRequestNG
 73994:io.harness.delegate.beans.helm.HelmChartVersionDetails
 73995:io.harness.delegate.task.helm.HelmFetchChartVersionResponse
+74001:io.harness.delegate.beans.TaskGroup
 80302:software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds
 80303:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile
 80304:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo
