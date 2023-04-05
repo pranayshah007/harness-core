@@ -49,7 +49,7 @@ public class AssessmentServiceConfiguration extends Configuration {
 
   public AssessmentServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();
-    defaultServerFactory.setJerseyRootPath("/api");
+    defaultServerFactory.setJerseyRootPath("/assessments/api/");
     defaultServerFactory.setRegisterDefaultExceptionMappers(Boolean.FALSE);
     defaultServerFactory.setAdminContextPath("/admin");
     defaultServerFactory.setAdminConnectors(singletonList(getDefaultAdminConnectorFactory()));
