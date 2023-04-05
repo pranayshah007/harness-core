@@ -1696,6 +1696,12 @@
             "assertion": {
               "type": "string"
             },
+            "certificate": {
+              "type": "string"
+            },
+            "certificateKey": {
+              "type": "string"
+            },
             "delegateSelectors": {
               "oneOf": [
                 {

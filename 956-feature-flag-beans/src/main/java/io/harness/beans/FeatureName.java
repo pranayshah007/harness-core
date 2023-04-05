@@ -705,7 +705,8 @@ public enum FeatureName {
   PIE_GITX_OAUTH("Use users' oauth creds to fetch and commit in git", HarnessTeam.PIPELINE),
   CDS_NG_CONFIG_FILE_EXPRESSION(
       "Enable Harness variable rendering in Hanress config files (SSH/WinRM)", HarnessTeam.CDP),
-  CDS_TERRAFORM_S3_NG("Enables storing Terraform config, backend and var files in S3", HarnessTeam.CDP);
+  CDS_TERRAFORM_S3_NG("Enables storing Terraform config, backend and var files in S3", HarnessTeam.CDP),
+  CDS_HTTP_STEP_NG_CERTIFICATE("Allow enforce SSL/TLS certificate in NG HTTP step", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

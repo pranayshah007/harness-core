@@ -35,15 +35,20 @@ import org.springframework.data.annotation.TypeAlias;
 public class HttpStepParameters extends HttpBaseStepInfo implements SpecParameters {
   @SkipAutoEvaluation ParameterField<Map<String, Object>> outputVariables;
   Map<String, String> headers;
+  ParameterField<String> certificate;
+  ParameterField<String> certificateKey;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Builder(builderMethodName = "infoBuilder")
   public HttpStepParameters(ParameterField<String> url, ParameterField<String> method,
       ParameterField<String> requestBody, ParameterField<String> assertion, Map<String, Object> outputVariables,
-      Map<String, String> headers, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+      Map<String, String> headers, ParameterField<String> certificate, ParameterField<String> certificateKey,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(url, method, requestBody, assertion);
     this.outputVariables = ParameterField.createValueField(outputVariables);
     this.headers = headers;
+    this.certificate = certificate;
+    this.certificateKey = certificateKey;
     this.delegateSelectors = delegateSelectors;
   }
 }
