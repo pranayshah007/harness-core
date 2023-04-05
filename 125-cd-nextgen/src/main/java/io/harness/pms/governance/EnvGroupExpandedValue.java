@@ -7,8 +7,8 @@
 
 package io.harness.pms.governance;
 
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity.EnvironmentGroupKeys;
 import io.harness.governance.ExpansionKeysConstants;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.sdk.core.governance.ExpandedValue;
@@ -19,33 +19,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
+import lombok.Data;
 import lombok.SneakyThrows;
 
-@OwnedBy(HarnessTeam.CDC)
+@Data
 @Builder
-public class MultiEnvExpandedValue implements ExpandedValue {
-  private static final String SPEC = "spec";
-  private static final String VALUES = "values";
-  private List<SingleEnvironmentExpandedValue> environments;
+public class EnvGroupExpandedValue implements ExpandedValue {
+  private static final String ENVIRONMENTS = "environments";
 
-  private Map<String, Object> metadata;
+  private EnvironmentGroupEntity environmentGroup;
+  private List<SingleEnvironmentExpandedValue> environments;
   @Override
   public String getKey() {
-    return ExpansionKeysConstants.MULTI_ENV_EXPANSION_KEY;
+    return ExpansionKeysConstants.ENV_GROUP_EXPANSION_KEY;
   }
 
-  @SneakyThrows
   @Override
+  @SneakyThrows
   public String toJson() {
     Map<String, Object> map = new HashMap<>();
-    if (metadata != null) {
-      map.put(VALUES, environments);
-      map.put("metadata", metadata);
-    }
+    map.put(EnvironmentGroupKeys.name, environmentGroup.getName());
+    map.put(EnvironmentGroupKeys.identifier, environmentGroup.getIdentifier());
+    map.put(ENVIRONMENTS, environments);
     String json = JsonPipelineUtils.writeJsonString(map);
     YamlConfig yamlConfig = new YamlConfig(json);
     JsonNode parentNode = yamlConfig.getYamlMap();
-    JsonNode node = parentNode.get(VALUES);
+    JsonNode node = parentNode.get(ENVIRONMENTS);
     if (node.isArray() && node.size() > 0) {
       node.forEach(EnvironmentExpansionUtils::processSingleEnvNode);
       return parentNode.toPrettyString();
