@@ -586,6 +586,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
       tags:
         - Account Secret
       security:
@@ -670,6 +672,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
       tags:
         - Org Secret
       security:
@@ -760,6 +764,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
       tags:
         - Project Secret
       security:
