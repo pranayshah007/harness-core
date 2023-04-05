@@ -92,7 +92,7 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
                                           .filter(DataCollectionTaskKeys.dataCollectionWorkerId, dataCollectionWorkerId)
                                           .field(DataCollectionTaskKeys.validAfter)
                                           .lessThanOrEq(clock.instant())
-                                          .order(Sort.ascending(VerificationTaskBaseKeys.lastUpdatedAt));
+                                          .order(Sort.ascending(DataCollectionTaskKeys.validAfter));
     query.or(query.criteria(DataCollectionTaskKeys.status).equal(DataCollectionExecutionStatus.QUEUED),
         query.and(query.criteria(DataCollectionTaskKeys.status).equal(DataCollectionExecutionStatus.RUNNING),
             query.criteria(VerificationTaskBaseKeys.lastUpdatedAt)
