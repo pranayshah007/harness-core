@@ -915,6 +915,19 @@ public class DelegateModule extends AbstractModule {
         20, new ThreadFactoryBuilder().setNameFormat("healthMonitor-%d").setPriority(Thread.MAX_PRIORITY).build());
   }
 
+  @Provides
+  public DataCollectionDSLService dataCollectionDSLService() throws KeyManagerBuilderException {
+    if (StringUtils.isNotEmpty(configuration.getClientCertificateFilePath())
+        && StringUtils.isNotEmpty(configuration.getClientCertificateKeyFilePath())) {
+      KeyManager keyManager = new X509KeyManagerBuilder()
+                                  .withClientCertificateFromFile(this.configuration.getClientCertificateFilePath(),
+                                      this.configuration.getClientCertificateKeyFilePath())
+                                  .build();
+      return new DataCollectionServiceImpl(keyManager);
+    }
+    return new DataCollectionServiceImpl();
+  }
+
   /*
    * Creates and return ScheduledExecutorService object, which can be used for monitoring watcher.
    * Note that, this will only be used for monitoring, any action taken will be than executed by some
@@ -1347,7 +1360,6 @@ public class DelegateModule extends AbstractModule {
 
     bind(TerraformConfigInspectClient.class).toInstance(new TerraformConfigInspectClientImpl());
     bind(TerraformConfigInspectService.class).toInstance(new TerraformConfigInspectServiceImpl());
-    bind(DataCollectionDSLService.class).to(DataCollectionServiceImpl.class);
     bind(AzureComputeClient.class).to(AzureComputeClientImpl.class);
     bind(AzureAutoScaleSettingsClient.class).to(AzureAutoScaleSettingsClientImpl.class);
     bind(AzureNetworkClient.class).to(AzureNetworkClientImpl.class);
