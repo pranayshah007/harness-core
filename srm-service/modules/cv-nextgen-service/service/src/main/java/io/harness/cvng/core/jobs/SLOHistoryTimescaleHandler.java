@@ -34,14 +34,14 @@ public class SLOHistoryTimescaleHandler implements MongoPersistenceIterator.Hand
         PersistenceIteratorFactory.PumpExecutorOptions.builder()
             .name("SLOHistoryTimescaleHandler")
             .poolSize(3)
-            .interval(Duration.ofSeconds(10))
+            .interval(Duration.ofMinutes(10))
             .build(),
         AbstractServiceLevelObjective.class,
         MongoPersistenceIterator
             .<AbstractServiceLevelObjective, MorphiaFilterExpander<AbstractServiceLevelObjective>>builder()
             .clazz(AbstractServiceLevelObjective.class)
             .fieldName(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.sloHistoryTimescaleIteration)
-            .targetInterval(ofMinutes(1))
+            .targetInterval(ofMinutes(60))
             .acceptableNoAlertDelay(ofMinutes(1))
             .handler(this)
             .schedulingType(REGULAR)

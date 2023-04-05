@@ -32,13 +32,13 @@ public class SLOHealthIndicatorTimescaleHandler implements MongoPersistenceItera
         PersistenceIteratorFactory.PumpExecutorOptions.builder()
             .name("SLOHealthIndicatorTimescaleHandler")
             .poolSize(3)
-            .interval(Duration.ofSeconds(10))
+            .interval(Duration.ofMinutes(10))
             .build(),
         SLOHealthIndicator.class,
         MongoPersistenceIterator.<SLOHealthIndicator, MorphiaFilterExpander<SLOHealthIndicator>>builder()
             .clazz(SLOHealthIndicator.class)
             .fieldName(SLOHealthIndicatorKeys.timescaleIteration)
-            .targetInterval(ofMinutes(1))
+            .targetInterval(ofMinutes(60))
             .acceptableNoAlertDelay(ofMinutes(1))
             .handler(this)
             .schedulingType(REGULAR)
