@@ -55,7 +55,7 @@ public class BatchJobRunner {
   @Autowired private BatchMainConfig batchMainConfig;
 
   private Cache<CacheKey, Boolean> logErrorCache = Caffeine.newBuilder().expireAfterWrite(24, TimeUnit.HOURS).build();
-  public static final int TOTAL_INSTANCE_BILLING_HOURLY_JOBS_PER_MINUTE = 5;
+  public static final int TOTAL_INSTANCE_BILLING_HOURLY_JOBS_PER_MINUTE = 10;
   @Value
   private static class CacheKey {
     private String accountId;
@@ -108,6 +108,12 @@ public class BatchJobRunner {
 
     int clusterDataHourlyCounter = 0;
     Instant clusterDataHourlyLastRunTime = Instant.now();
+
+    if (batchJobType == BatchJobType.INSTANCE_BILLING_HOURLY || batchJobType == BatchJobType.INSTANCE_BILLING) {
+      log.info(
+          "IBilling:: accountId: {}, batchJobType: {}, clusterDataHourlyCounter: {}, startAt: {}, endAt: {}, currentTime: {}",
+          accountId, batchJobType.name(), clusterDataHourlyCounter, startInstant, endAt, clusterDataHourlyLastRunTime);
+    }
 
     while (batchJobScheduleTimeProvider.hasNext()) {
       Instant endInstant = batchJobScheduleTimeProvider.next();
