@@ -37,6 +37,7 @@ import io.harness.cvng.migration.list.DeleteInvalidOrchestratorsMigration;
 import io.harness.cvng.migration.list.DeleteOldAnalysisOrchestratorMigration;
 import io.harness.cvng.migration.list.DeleteOrchestratorWithInvalidVerificationTaskId;
 import io.harness.cvng.migration.list.DeleteSLISLOMigration;
+import io.harness.cvng.migration.list.ELKMigrationCreateVerificationTaskLiveMonitoring;
 import io.harness.cvng.migration.list.EnableExistingCVConfigs;
 import io.harness.cvng.migration.list.FixOrchestratorStatusMigration;
 import io.harness.cvng.migration.list.FixRuntimeParamInCanaryBlueGreenVerificationJob;
@@ -130,6 +131,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(57, UpdateTagsInServiceLevelObjectiveV2.class))
         .add(Pair.of(58, UpdateELKCVConfigToNextGenCVConfig.class))
         .add(Pair.of(59, MigrateSLOTargetInSLOV2.class))
+        .add(Pair.of(60, ELKMigrationCreateVerificationTaskLiveMonitoring.class))
         .build();
   }
 }
