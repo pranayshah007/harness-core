@@ -91,8 +91,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
@@ -110,6 +108,7 @@ public class ArtifactConfigToDelegateReqMapper {
     if (isRegex(tag)) {
       tagRegex = getTagRegex(tag);
     }
+
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
@@ -121,10 +120,9 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public boolean isRegex(String tag) {
-    try {
-      Pattern.compile(tag);
+    if (tag.equals(ACCEPT_ALL_REGEX)) {
       return true;
-    } catch (PatternSyntaxException e) {
+    } else {
       return false;
     }
   }
