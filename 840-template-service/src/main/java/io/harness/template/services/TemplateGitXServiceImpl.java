@@ -167,25 +167,25 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
     return totalInstancesOfYAML > 0;
   }
 
-  private boolean isGitExperienceEnforcedInSettings(String accountId, String orgIdentifier, String projIdentifier) {
-    String isGitExperienceEnforced =
-            NGRestUtils
-                    .getResponse(ngSettingsClient.getSetting(
-                            GitSyncConstants.ENFORCE_GIT_EXPERIENCE, accountId, orgIdentifier, projIdentifier))
-                    .getValue();
-    return GitSyncConstants.TRUE_VALUE.equals(isGitExperienceEnforced);
-  }
-
   public void enforceGitExperienceIfApplicable(
-          String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     if (isGitExperienceEnforcedInSettings(accountIdentifier, orgIdentifier, projectIdentifier)) {
       GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
 
       if (gitEntityInfo == null || StoreType.INLINE.equals(gitEntityInfo.getStoreType())) {
         throw new InvalidRequestException(String.format(
-                "Git Experience is enforced for the current scope with accountId: %s, orgIdentifier: %s and projIdentifier: %s. Hence Inline Entities cannot be created.",
-                accountIdentifier, orgIdentifier, projectIdentifier));
+            "Git Experience is enforced for the current scope with accountId: %s, orgIdentifier: %s and projIdentifier: %s. Hence Inline Entities cannot be created.",
+            accountIdentifier, orgIdentifier, projectIdentifier));
       }
     }
+  }
+
+  private boolean isGitExperienceEnforcedInSettings(String accountId, String orgIdentifier, String projIdentifier) {
+    String isGitExperienceEnforced =
+        NGRestUtils
+            .getResponse(ngSettingsClient.getSetting(
+                GitSyncConstants.ENFORCE_GIT_EXPERIENCE, accountId, orgIdentifier, projIdentifier))
+            .getValue();
+    return GitSyncConstants.TRUE_VALUE.equals(isGitExperienceEnforced);
   }
 }
