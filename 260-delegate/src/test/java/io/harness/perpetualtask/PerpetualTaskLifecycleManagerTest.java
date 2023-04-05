@@ -34,11 +34,9 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(PerpetualTaskLifecycleManager.class)
+@RunWith(MockitoJUnitRunner.class)
 public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
   private PerpetualTaskLifecycleManager perpetualTaskLifecycleManager;
   private final Map<String, PerpetualTaskExecutor> factoryMap = new HashMap<>();
