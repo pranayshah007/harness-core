@@ -430,7 +430,8 @@ public class TriggerEventExecutionHelper {
                                         .webhookEncryptedSecretDTO(webhookEncryptedSecretDTO)
                                         .encryptedDataDetails(encryptedDataDetail)
                                         .build());
-      Set<String> taskSelectors = getAuthenticationTaskSelectors(triggerWebhookEvent, ngTriggerConfigV2);
+      Set<String> taskSelectors =
+          getAuthenticationTaskSelectors(basicNGAccessObject, secretRefData, ngTriggerConfigV2.getIdentifier());
       log.info("Authenticating trigger [" + ngTriggerConfigV2.getIdentifier()
           + "] with delegate selectors: " + taskSelectors);
       completableFutures.supplyAsync(()
@@ -527,19 +528,20 @@ public class TriggerEventExecutionHelper {
   }
 
   public Set<String> getAuthenticationTaskSelectors(
-      TriggerWebhookEvent triggerWebhookEvent, NGTriggerConfigV2 ngTriggerConfigV2) {
-    SecretResponseWrapper secret =
-        ngSecretService.getSecret(triggerWebhookEvent.getAccountId(), ngTriggerConfigV2.getOrgIdentifier(),
-            ngTriggerConfigV2.getProjectIdentifier(), ngTriggerConfigV2.getEncryptedWebhookSecretIdentifier());
+      NGAccess ngAccess, SecretRefData secretRefData, String triggerIdentifier) {
+    NGAccess secretNGAccess = SecretRefHelper.getScopeIdentifierForSecretRef(
+        secretRefData, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    SecretResponseWrapper secret = ngSecretService.getSecret(secretNGAccess.getAccountIdentifier(),
+        secretNGAccess.getOrgIdentifier(), secretNGAccess.getProjectIdentifier(), secretNGAccess.getIdentifier());
     if (secret == null || secret.getSecret() == null || !(secret.getSecret().getSpec() instanceof SecretTextSpecDTO)) {
-      log.warn("Secret with identifier [" + ngTriggerConfigV2.getEncryptedWebhookSecretIdentifier()
-          + "] either does not exist or is not of Text type. Attempting to authenticate trigger ["
-          + ngTriggerConfigV2.getIdentifier() + "] with no delegate selectors.");
+      log.warn("Secret with identifier [" + secretRefData.getIdentifier()
+          + "] either does not exist or is not of Text type. Attempting to authenticate trigger [" + triggerIdentifier
+          + "] with no delegate selectors.");
       return Collections.emptySet();
     }
     String secretManagerIdentifier = ((SecretTextSpecDTO) secret.getSecret().getSpec()).getSecretManagerIdentifier();
-    SecretManagerConfigDTO secretManagerDTO = ngSecretService.getSecretManager(triggerWebhookEvent.getAccountId(),
-        ngTriggerConfigV2.getOrgIdentifier(), ngTriggerConfigV2.getProjectIdentifier(), secretManagerIdentifier, false);
+    SecretManagerConfigDTO secretManagerDTO = ngSecretService.getSecretManager(secretNGAccess.getAccountIdentifier(),
+        secretNGAccess.getOrgIdentifier(), secretNGAccess.getProjectIdentifier(), secretManagerIdentifier, false);
     return SecretManagerConfigMapper.getDelegateSelectors(secretManagerDTO);
   }
 }
