@@ -5567,6 +5567,9 @@ maven_install(
         "com.graphql-java:graphql-java:16.2",
         "org.antlr:antlr4-runtime:4.8",
     ],
+    override_targets = {
+        "com.fasterxml.jackson.core:jackson-databind": "@maven//:com_fasterxml_jackson_core_jackson_databind",
+    },
     repositories = [
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
