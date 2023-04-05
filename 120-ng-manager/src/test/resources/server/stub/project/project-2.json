@@ -2,7 +2,7 @@
   "identifier" : "example_project_identifier",
   "name" : "example-project-name",
   "color" : "#0063F7",
-  "modules" : [ "CD" ],
+  "modules" : [ "CD", "CI", "CV", "CF", "CE", "STO", "CHAOS", "SRM", "IACM", "CODE", "CORE", "PMS", "TEMPLATESERVICE" ],
   "description" : "This is a example project",
   "tags" : {
     "property1" : "value1",

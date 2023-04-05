@@ -35,6 +35,8 @@ import software.wings.beans.GcpSecretsManagerConfig;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.VaultConfig;
 
+import java.util.Collections;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -86,6 +88,30 @@ public class SecretManagerConfigMapper {
             (GcpSecretsManagerConfig) secretManagerConfig, (GcpSecretManagerConfigUpdateDTO) dto);
       default:
         throw new UnsupportedOperationException("Secret Manager not supported");
+    }
+  }
+
+  public static Set<String> getDelegateSelectors(SecretManagerConfigDTO dto) {
+    if (null == dto) {
+      return Collections.emptySet();
+    }
+    switch (dto.getEncryptionType()) {
+      case VAULT:
+        return ((VaultConfigDTO) dto).getDelegateSelectors();
+      case AZURE_VAULT:
+        return ((AzureKeyVaultConfigDTO) dto).getDelegateSelectors();
+      case GCP_KMS:
+        return ((GcpKmsConfigDTO) dto).getDelegateSelectors();
+      case KMS:
+        return ((AwsKmsConfigDTO) dto).getBaseAwsKmsConfigDTO().getDelegateSelectors();
+      case AWS_SECRETS_MANAGER:
+        return ((AwsSMConfigDTO) dto).getBaseAwsSMConfigDTO().getDelegateSelectors();
+      case CUSTOM_NG:
+        return ((CustomSecretManagerConfigDTO) dto).getDelegateSelectors();
+      case GCP_SECRETS_MANAGER:
+        return ((GcpSecretManagerConfigDTO) dto).getDelegateSelectors();
+      default:
+        return Collections.emptySet();
     }
   }
 }

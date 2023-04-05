@@ -52,7 +52,8 @@ public class AppConfigEntity implements PersistentEntity {
   @NotNull private String accountIdentifier;
   @NotNull private ConfigType configType;
   @NotNull private String configId;
-  @NotNull private String configs;
+  @NotNull private String configName;
+  private String configs;
   @NotNull private Boolean enabled;
   @CreatedDate Long createdAt;
   @LastModifiedDate Long lastModifiedAt;

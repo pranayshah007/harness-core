@@ -49,7 +49,6 @@ public class ProjectApiUtils {
                                 .identifier(createProjectRequest.getProject().getIdentifier())
                                 .orgIdentifier(createProjectRequest.getProject().getOrg())
                                 .color(createProjectRequest.getProject().getColor())
-                                .modules(toModules(createProjectRequest.getProject().getModules()))
                                 .description(createProjectRequest.getProject().getDescription())
                                 .tags(createProjectRequest.getProject().getTags())
                                 .build();
@@ -71,7 +70,6 @@ public class ProjectApiUtils {
                                 .identifier(updateProjectRequest.getProject().getIdentifier())
                                 .orgIdentifier(updateProjectRequest.getProject().getOrg())
                                 .color(updateProjectRequest.getProject().getColor())
-                                .modules(toModules(updateProjectRequest.getProject().getModules()))
                                 .description(updateProjectRequest.getProject().getDescription())
                                 .tags(updateProjectRequest.getProject().getTags())
                                 .build();

@@ -16,7 +16,7 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
 import io.harness.remote.client.ServiceHttpClientConfig;
-import io.harness.security.PmsAuthInterceptor;
+import io.harness.security.ServiceTokenGenerator;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
@@ -31,7 +31,12 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.*;
+import okhttp3.HttpUrl;
+import okhttp3.Interceptor;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import okio.BufferedSink;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,12 +48,13 @@ import org.jetbrains.annotations.Nullable;
 public class NgManagerProxyApiImpl implements NgManagerProxyApi {
   private static final String PROXY_PATH = "v1/idp-proxy/ng-manager";
   private static final String PATH_DELIMITER = "/";
+  private static final String SPACE = " ";
   private static final String QUERY_PARAMS_DELIMITER = "\\?";
   private static final String CONTENT_TYPE_HEADER = "Content-Type";
   private static final String FORWARDING_MESSAGE = "Forwarding request to [{}]";
   @Inject @Named("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
   @Inject @Named("ngManagerServiceSecret") private String ngManagerServiceSecret;
-
+  @Inject private ServiceTokenGenerator tokenGenerator;
   private static final List<String> allowList = Arrays.asList(USERS, USER_GROUPS);
 
   @IdpServiceAuthIfHasApiKey
@@ -90,8 +96,9 @@ public class NgManagerProxyApiImpl implements NgManagerProxyApi {
 
     okhttp3.Response response;
     try {
+      Request request = requestBuilder.build();
       log.info(FORWARDING_MESSAGE, urlBuilder);
-      response = client.newCall(requestBuilder.build()).execute();
+      response = client.newCall(request).execute();
       return buildResponseObject(response);
     } catch (Exception e) {
       log.error("Could not forward request GET to ng manager", e);
@@ -111,19 +118,18 @@ public class NgManagerProxyApiImpl implements NgManagerProxyApi {
     filterAndCopyPath(uriInfo, urlBuilder);
     copyQueryParams(uriInfo, urlBuilder);
 
-    Request.Builder requestBuilder =
-        new Request.Builder().url(urlBuilder.build().toString()).get().post(new RequestBody() {
-          @Nullable
-          @Override
-          public MediaType contentType() {
-            return MediaType.parse(headers.getMediaType().toString());
-          }
+    Request.Builder requestBuilder = new Request.Builder().url(urlBuilder.build().toString()).post(new RequestBody() {
+      @Nullable
+      @Override
+      public MediaType contentType() {
+        return MediaType.parse(headers.getMediaType().toString());
+      }
 
-          @Override
-          public void writeTo(@NotNull BufferedSink bufferedSink) throws IOException {
-            bufferedSink.write(body.getBytes());
-          }
-        });
+      @Override
+      public void writeTo(@NotNull BufferedSink bufferedSink) throws IOException {
+        bufferedSink.write(body.getBytes());
+      }
+    });
     copyHeaders(headers, requestBuilder);
 
     okhttp3.Response response;
@@ -149,19 +155,18 @@ public class NgManagerProxyApiImpl implements NgManagerProxyApi {
     filterAndCopyPath(uriInfo, urlBuilder);
     copyQueryParams(uriInfo, urlBuilder);
 
-    Request.Builder requestBuilder =
-        new Request.Builder().url(urlBuilder.build().toString()).get().put(new RequestBody() {
-          @Nullable
-          @Override
-          public MediaType contentType() {
-            return MediaType.parse(headers.getMediaType().toString());
-          }
+    Request.Builder requestBuilder = new Request.Builder().url(urlBuilder.build().toString()).put(new RequestBody() {
+      @Nullable
+      @Override
+      public MediaType contentType() {
+        return MediaType.parse(headers.getMediaType().toString());
+      }
 
-          @Override
-          public void writeTo(@NotNull BufferedSink bufferedSink) throws IOException {
-            bufferedSink.write(body.getBytes());
-          }
-        });
+      @Override
+      public void writeTo(@NotNull BufferedSink bufferedSink) throws IOException {
+        bufferedSink.write(body.getBytes());
+      }
+    });
     copyHeaders(headers, requestBuilder);
 
     okhttp3.Response response;
@@ -195,8 +200,13 @@ public class NgManagerProxyApiImpl implements NgManagerProxyApi {
         .readTimeout(ngManagerServiceHttpClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
         .writeTimeout(ngManagerServiceHttpClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
         .retryOnConnectionFailure(false)
-        .addInterceptor(new PmsAuthInterceptor(ngManagerServiceSecret))
+        .addInterceptor(new IdpAuthInterceptor(tokenGenerator, ngManagerServiceSecret))
+        .addInterceptor(getEncodingInterceptor())
         .build();
+  }
+
+  private static Interceptor getEncodingInterceptor() {
+    return chain -> chain.proceed(chain.request().newBuilder().header("Accept-Encoding", "identity").build());
   }
 
   private void filterAndCopyPath(UriInfo uriInfo, HttpUrl.Builder urlBuilder) {
@@ -232,7 +242,7 @@ public class NgManagerProxyApiImpl implements NgManagerProxyApi {
 
   private void copyHeaders(HttpHeaders headers, Request.Builder requestBuilder) {
     headers.getRequestHeaders().forEach((key, values) -> {
-      if (!key.equals("Authorization")) {
+      if (!key.equals(IdpAuthInterceptor.AUTHORIZATION)) {
         values.forEach(value -> requestBuilder.header(key, value));
       }
     });

@@ -117,10 +117,16 @@ public abstract class AbstractScmClientFacilitatorServiceImpl implements ScmClie
     }
   }
 
-  GitFilePathDetails getGitFilePathDetails(String filePath, String branch, String commitId) {
+  GitFilePathDetails getGitFilePathDetails(
+      String filePath, String branch, String commitId, boolean getOnlyFileContent) {
     // If commit id is present, branch is ignored
     branch = isEmpty(commitId) ? branch : null;
-    return GitFilePathDetails.builder().filePath(filePath).branch(branch).ref(commitId).build();
+    return GitFilePathDetails.builder()
+        .filePath(filePath)
+        .branch(branch)
+        .ref(commitId)
+        .getOnlyFileContent(getOnlyFileContent)
+        .build();
   }
 
   GitFileContent validateAndGetGitFileContent(FileContent fileContent) {

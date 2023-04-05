@@ -347,7 +347,7 @@ public class TriggerExecutionHelper {
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
 
         String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
-            pipelineEntity, pipelineYamlWithTemplateRef, true, branch, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
+            pipelineEntity, pipelineYamlWithTemplateRef, branch, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
 
         planExecutionMetadataBuilder.yaml(pipelineYaml);
         planExecutionMetadataBuilder.processedYaml(processedYaml);

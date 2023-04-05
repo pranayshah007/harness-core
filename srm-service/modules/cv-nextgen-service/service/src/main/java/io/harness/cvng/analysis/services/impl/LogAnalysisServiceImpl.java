@@ -72,6 +72,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Sort;
 import java.net.URISyntaxException;
@@ -419,7 +420,9 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
         .project(LogAnalysisClusterKeys.text, true)
         .project(LogAnalysisClusterKeys.frequencyTrend, true)
         .project(LogAnalysisClusterKeys.firstSeenTime, true)
-        .asList(new FindOptions().maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS));
+        .asList(new FindOptions()
+                    .maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS)
+                    .readPreference(ReadPreference.secondaryPreferred()));
   }
 
   @Override
@@ -430,7 +433,7 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
                                             .field(DeploymentLogAnalysisKeys.startTime)
                                             .lessThan(analysisStartTime)
                                             .order(Sort.descending(DeploymentLogAnalysisKeys.startTime))
-                                            .get();
+                                            .get(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
 
     if (logAnalysis == null) {
       return null;
@@ -598,7 +601,9 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
         .filter(LogAnalysisClusterKeys.verificationTaskId, verificationTaskId)
         .field(LogAnalysisClusterKeys.label)
         .in(labels)
-        .asList(new FindOptions().maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS));
+        .asList(new FindOptions()
+                    .maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS)
+                    .readPreference(ReadPreference.secondaryPreferred()));
   }
 
   @Override
@@ -612,7 +617,9 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
         .lessThanOrEq(endTime)
         .field(LogAnalysisResultKeys.logAnalysisResults + "." + AnalysisResultKeys.tag)
         .in(tags)
-        .asList(new FindOptions().maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS));
+        .asList(new FindOptions()
+                    .maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS)
+                    .readPreference(ReadPreference.secondaryPreferred()));
   }
 
   @Override
@@ -623,6 +630,8 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
         .greaterThanOrEq(startTime)
         .field(LogAnalysisResultKeys.analysisEndTime)
         .lessThanOrEq(endTime)
-        .asList(new FindOptions().maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS));
+        .asList(new FindOptions()
+                    .maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS)
+                    .readPreference(ReadPreference.secondaryPreferred()));
   }
 }

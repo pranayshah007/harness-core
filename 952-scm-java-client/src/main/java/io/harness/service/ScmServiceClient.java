@@ -161,7 +161,8 @@ public interface ScmServiceClient {
   RefreshTokenResponse refreshToken(ScmConnector scmConnector, String clientId, String clientSecret, String endpoint,
       String refreshToken, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
-  GenerateYamlResponse autogenerateStageYamlForCI(String cloneUrl, SCMGrpc.SCMBlockingStub scmBlockingStub);
+  GenerateYamlResponse autogenerateStageYamlForCI(
+      String cloneUrl, String yamlVersion, SCMGrpc.SCMBlockingStub scmBlockingStub);
   GetLatestCommitOnFileResponse getLatestCommitOnFile(
       ScmConnector scmConnector, String branchName, String filepath, SCMGrpc.SCMBlockingStub scmBlockingStub);
 

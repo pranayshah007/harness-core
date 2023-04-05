@@ -10,6 +10,7 @@ package io.harness.idp.plugin.resources;
 import static io.harness.idp.common.Constants.IDP_PERMISSION;
 import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
 
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,6 +20,7 @@ import io.harness.idp.plugin.services.PluginInfoService;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.PluginInfoApi;
 import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
+import io.harness.spec.server.idp.v1.model.PluginDetailedInfoResponse;
 import io.harness.spec.server.idp.v1.model.PluginInfo;
 
 import com.google.inject.Inject;
@@ -36,17 +38,19 @@ public class PluginInfoApiImpl implements PluginInfoApi {
   private PluginInfoService pluginInfoService;
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response getPlugins(String harnessAccount) {
+  public Response getPlugins(@AccountIdentifier String harnessAccount) {
     List<PluginInfo> plugins = pluginInfoService.getAllPluginsInfo(harnessAccount);
     return Response.status(Response.Status.OK).entity(PluginInfoMapper.toResponseList(plugins)).build();
   }
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response getPluginsInfoPluginId(String pluginId, String harnessAccount) {
+  public Response getPluginsInfoPluginId(String pluginId, @AccountIdentifier String harnessAccount) {
     try {
       PluginDetailedInfo pluginDetailedInfo = pluginInfoService.getPluginDetailedInfo(pluginId, harnessAccount);
-      return Response.status(Response.Status.OK).entity(pluginDetailedInfo).build();
+      PluginDetailedInfoResponse response = new PluginDetailedInfoResponse();
+      response.setPlugin(pluginDetailedInfo);
+      return Response.status(Response.Status.OK).entity(response).build();
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())

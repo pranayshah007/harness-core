@@ -61,13 +61,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
-import org.cloudfoundry.operations.applications.ApplicationSummary;
 
 @NoArgsConstructor
 @Singleton
@@ -117,6 +115,61 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .cfCliVersion(cfSwapRoutesRequestNG.getCfCliVersion())
               .useCFCLI(true)
               .build();
+
+      if (cfSwapRoutesRequestNG.getActiveApplicationDetails() != null) {
+        List<String> existingApps = cfCommandTaskHelperNG.getAppNameBasedOnGuidForBlueGreenDeployment(cfRequestConfig,
+            cfSwapRoutesRequestNG.getReleaseNamePrefix(),
+            cfSwapRoutesRequestNG.getActiveApplicationDetails().getApplicationGuid());
+        String existingAppName = isEmpty(existingApps)
+            ? cfSwapRoutesRequestNG.getActiveApplicationDetails().getApplicationName()
+            : existingApps.get(0);
+        cfRequestConfig.setApplicationName(existingAppName);
+        ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
+        TasApplicationInfo activeApplicationInfo =
+            TasApplicationInfo.builder()
+                .applicationGuid(applicationDetail.getId())
+                .applicationName(applicationDetail.getName())
+                .oldName(cfSwapRoutesRequestNG.getActiveApplicationDetails().getOldName())
+                .attachedRoutes(new ArrayList<>(applicationDetail.getUrls()))
+                .runningCount(applicationDetail.getRunningInstances())
+                .build();
+
+        cfSwapRoutesRequestNG.setActiveApplicationDetails(activeApplicationInfo);
+        cfSwapRoutesRequestNG.setExistingApplicationNames(Collections.singletonList(existingAppName));
+
+        CfAppAutoscalarRequestData appAutoscalarRequestData = null;
+        appAutoscalarRequestData =
+            CfAppAutoscalarRequestData.builder()
+                .applicationGuid(cfSwapRoutesRequestNG.getActiveApplicationDetails().getApplicationGuid())
+                .applicationName(cfSwapRoutesRequestNG.getActiveApplicationDetails().getApplicationName())
+                .cfRequestConfig(cfRequestConfig)
+                .configPathVar(workingDirectory.getAbsolutePath())
+                .timeoutInMins(cfSwapRoutesRequestNG.getTimeoutIntervalInMin())
+                .build();
+        boolean isAutoScalarEnabled =
+            cfDeploymentManager.checkIfAppHasAutoscalarEnabled(appAutoscalarRequestData, executionLogCallback);
+        cfSwapRoutesRequestNG.setUseAppAutoScalar(isAutoScalarEnabled);
+      }
+
+      if (cfSwapRoutesRequestNG.getNewApplicationDetails() != null) {
+        List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuidForBlueGreenDeployment(cfRequestConfig,
+            cfSwapRoutesRequestNG.getReleaseNamePrefix(),
+            cfSwapRoutesRequestNG.getNewApplicationDetails().getApplicationGuid());
+        String newAppName = isEmpty(newApps) ? cfSwapRoutesRequestNG.getNewApplicationName() : newApps.get(0);
+        cfRequestConfig.setApplicationName(newAppName);
+        ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
+        TasApplicationInfo newApplicationInfo =
+            TasApplicationInfo.builder()
+                .applicationGuid(applicationDetail.getId())
+                .applicationName(applicationDetail.getName())
+                .oldName(cfSwapRoutesRequestNG.getNewApplicationDetails().getOldName())
+                .attachedRoutes(new ArrayList<>(applicationDetail.getUrls()))
+                .runningCount(applicationDetail.getRunningInstances())
+                .build();
+
+        cfSwapRoutesRequestNG.setNewApplicationDetails(newApplicationInfo);
+        cfSwapRoutesRequestNG.setNewApplicationName(newAppName);
+      }
 
       TasApplicationInfo activeApplicationDetails = cfSwapRoutesRequestNG.getActiveApplicationDetails();
       CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData =
@@ -218,7 +271,6 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         iLogStreamingTaskClient, CfCommandUnitConstants.Rename, true, commandUnitsProgress);
     CfInBuiltVariablesUpdateValues cfInBuiltVariablesUpdateValues =
         renameApps(pcfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
-
     executionLogCallback.saveExecutionLog("Renaming of Apps Completed", INFO, CommandExecutionStatus.SUCCESS);
     return cfInBuiltVariablesUpdateValues;
   }
@@ -236,27 +288,6 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     boolean nonVersioning = cfRouteUpdateConfigData.isNonVersioning();
     NamingTransition transition = nonVersioning ? NON_VERSION_TO_NON_VERSION : NON_VERSION_TO_VERSION;
     return performAppRenaming(transition, cfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
-  }
-
-  private String getAppNameBasedOnGuid(CfAppSetupTimeDetails existingInActiveApplicationDetails, String cfAppNamePrefix,
-      CfRequestConfig cfRequestConfig) throws PivotalClientApiException {
-    if (existingInActiveApplicationDetails == null) {
-      return "";
-    }
-    if (isEmpty(existingInActiveApplicationDetails.getApplicationGuid())) {
-      return existingInActiveApplicationDetails.getApplicationName();
-    }
-    String applicationGuid = existingInActiveApplicationDetails.getApplicationGuid();
-    List<ApplicationSummary> previousReleases =
-        cfDeploymentManager.getPreviousReleases(cfRequestConfig, cfAppNamePrefix);
-    List<String> appNames = previousReleases.stream()
-                                .filter(app -> app.getId().equalsIgnoreCase(applicationGuid))
-                                .map(ApplicationSummary::getName)
-                                .collect(Collectors.toList());
-    if (appNames.size() == 1) {
-      return appNames.get(0);
-    }
-    return existingInActiveApplicationDetails.getApplicationName();
   }
 
   @VisibleForTesting
@@ -342,38 +373,6 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     executionLogCallback = tasTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, CfCommandUnitConstants.SwapRoutesForExistingApplication, true, commandUnitsProgress);
     updateRoutesForExistingApplication(cfRequestConfig, executionLogCallback, data);
-  }
-
-  private void updateRoutesForInActiveApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
-      CfRouteUpdateRequestConfigData data) throws PivotalClientApiException {
-    CfAppSetupTimeDetails inActiveApplicationDetails = data.getExistingInActiveApplicationDetails();
-    if (inActiveApplicationDetails == null || isEmpty(inActiveApplicationDetails.getApplicationGuid())) {
-      executionLogCallback.saveExecutionLog(
-          color("No in-active application found for updating routes. Hence skipping\n", White, Bold));
-      return;
-    }
-    String inActiveAppName =
-        getAppNameBasedOnGuid(inActiveApplicationDetails, data.getCfAppNamePrefix(), cfRequestConfig);
-    if (isEmpty(inActiveAppName)) {
-      executionLogCallback.saveExecutionLog(
-          color("Could not find in active application. Hence skipping update route for In Active Application\n", White,
-              Bold));
-      return;
-    }
-
-    if (isNotEmpty(inActiveApplicationDetails.getUrls())) {
-      executionLogCallback.saveExecutionLog(
-          String.format("%nUpdating routes for In Active application - [%s]", encodeColor(inActiveAppName)));
-      List<String> inActiveApplicationUrls = inActiveApplicationDetails.getUrls();
-      cfCommandTaskHelperNG.mapRouteMaps(
-          inActiveAppName, inActiveApplicationUrls, cfRequestConfig, executionLogCallback);
-    } else {
-      executionLogCallback.saveExecutionLog(
-          color(String.format("No previous route defined for in active application - [%s]. Hence skipping",
-                    encodeColor(inActiveAppName)),
-              White, Bold));
-    }
-    updateEnvVariableForApplication(cfRequestConfig, executionLogCallback, inActiveAppName, false);
   }
 
   private void updateRoutesForExistingApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,

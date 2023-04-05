@@ -74,7 +74,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
   @Inject private TimeSeriesDataStoreService timeSeriesDataStoreService;
   @Inject private LogRecordDataStoreService logRecordDataStoreService;
   @Inject private HostRecordDataStoreService hostRecordDataStoreService;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private KryoSerializer kryoSerializer;
 
   @Inject private DataCollectionDSLService dataCollectionDSLService;
   @Inject private CVNGRequestExecutor cvngRequestExecutor;
@@ -88,7 +88,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
         AnyUtils.unpack(params.getCustomizedParams(), DataCollectionPerpetualTaskParams.class);
     log.info("Executing for !! dataCollectionWorkerId: {}", taskParams.getDataCollectionWorkerId());
     CVDataCollectionInfo dataCollectionInfo =
-        (CVDataCollectionInfo) referenceFalseKryoSerializer.asObject(taskParams.getDataCollectionInfo().toByteArray());
+        (CVDataCollectionInfo) kryoSerializer.asObject(taskParams.getDataCollectionInfo().toByteArray());
     log.info("DataCollectionInfo {} ", dataCollectionInfo);
     try (DataCollectionLogContext ignored = new DataCollectionLogContext(
              taskParams.getDataCollectionWorkerId(), dataCollectionInfo.getDataCollectionType(), OVERRIDE_ERROR)) {

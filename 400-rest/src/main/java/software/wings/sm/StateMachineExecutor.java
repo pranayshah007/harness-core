@@ -1754,15 +1754,8 @@ public class StateMachineExecutor implements StateInspectionListener {
           ? context.getStateExecutionData().getErrorMsg()
           : errorMsgBuilder.toString();
 
-      // NOT CHANGED TO REDUCE THE BLAST RATIO.
-      // WHEN MAPPING FAIL HERE IT HANGS THE ABORT OPERATION, ALREADY SILENCED BECAUSE THAT.
-      try {
-        if (stateExecutionInstance.getStateParams() != null) {
-          MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
-        }
-      } catch (org.modelmapper.MappingException e) {
-        log.error("Got model mapping exception during mapping the stateParams {}",
-            stateExecutionInstance.getStateParams(), e);
+      if (stateExecutionInstance.getStateParams() != null) {
+        mapObject(stateExecutionInstance.getStateParams(), currentState, context.getAccountId());
       }
 
       currentState.handleAbortEvent(context);

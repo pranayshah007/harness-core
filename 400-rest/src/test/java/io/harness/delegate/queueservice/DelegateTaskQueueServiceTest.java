@@ -20,8 +20,11 @@ import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.DelegateCapacity;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.TaskData;
-import io.harness.hsqs.client.HsqsClient;
+import io.harness.delegate.beans.TaskDataV2;
+import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.AckResponse;
+import io.harness.hsqs.client.model.DequeueResponse;
+import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.persistence.HPersistence;
 import io.harness.queueservice.DelegateTaskDequeue;
 import io.harness.queueservice.ResourceBasedDelegateSelectionCheckForTask;
@@ -29,6 +32,7 @@ import io.harness.queueservice.impl.FilterByDelegateCapacity;
 import io.harness.queueservice.impl.OrderByTotalNumberOfTaskAssignedCriteria;
 import io.harness.queueservice.infc.DelegateCapacityManagementService;
 import io.harness.rule.Owner;
+import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCache;
 
 import software.wings.WingsBaseTest;
@@ -37,19 +41,18 @@ import software.wings.service.impl.DelegateTaskServiceClassicImpl;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import okhttp3.Request;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class DelegateTaskQueueServiceTest extends WingsBaseTest {
   @Inject @InjectMocks private DelegateTaskQueueService delegateTaskQueueService;
@@ -59,8 +62,9 @@ public class DelegateTaskQueueServiceTest extends WingsBaseTest {
   @Inject @InjectMocks private FilterByDelegateCapacity filterByDelegateCapacity;
   @Inject private DelegateCapacityManagementService delegateCapacityManagementService;
   @Mock private DelegateCache delegateCache;
-  @Mock private HsqsClient hsqsServiceClient;
+  @Mock private HsqsClientService hsqsClientService;
   @Inject private HPersistence persistence;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Test
   @Owner(developers = JENNY)
@@ -68,14 +72,16 @@ public class DelegateTaskQueueServiceTest extends WingsBaseTest {
   public void testIsResourceAvailableToAssignTask() {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId, 2);
-    DelegateTask delegateTask = DelegateTask.builder()
-                                    .accountId(accountId)
-                                    .status(DelegateTask.Status.STARTED)
-                                    .stageId(generateUuid())
-                                    .delegateId(delegate.getUuid())
-                                    .data(TaskData.builder().taskType(TaskType.INITIALIZATION_PHASE.name()).build())
-                                    .eligibleToExecuteDelegateIds(new LinkedList<>(List.of(delegate.getUuid())))
-                                    .build();
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .accountId(accountId)
+            .status(DelegateTask.Status.STARTED)
+            .stageId(generateUuid())
+            .delegateId(delegate.getUuid())
+            .taskDataV2(TaskDataV2.builder().taskType(TaskType.INITIALIZATION_PHASE.name()).build())
+            .data(TaskData.builder().taskType(TaskType.INITIALIZATION_PHASE.name()).build())
+            .eligibleToExecuteDelegateIds(new LinkedList<>(List.of(delegate.getUuid())))
+            .build();
     persistence.save(delegateTask);
     when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
     assertThat(delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)).isTrue();
@@ -94,30 +100,38 @@ public class DelegateTaskQueueServiceTest extends WingsBaseTest {
                                     .data(TaskData.builder().taskType(TaskType.INITIALIZATION_PHASE.name()).build())
                                     .eligibleToExecuteDelegateIds(new LinkedList<>(List.of(delegate.getUuid())))
                                     .build();
+    when(hsqsClientService.ack(any())).thenReturn(AckResponse.builder().itemId("itemid").build());
     delegateTaskQueueService.acknowledgeAndProcessDelegateTask(
-        DelegateTaskDequeue.builder().delegateTask(delegateTask).build());
+        DelegateTaskDequeue.builder().delegateTask(delegateTask).itemId("itemid").build());
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
   }
-
   @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
-  public void testAcknowledgeAndProcessDelegateTaskV2() throws IOException {
+  public void testAbortQueuedDelegateTask() throws IOException {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId, 1);
     DelegateTask delegateTask = DelegateTask.builder()
+                                    .uuid(generateUuid())
                                     .accountId(accountId)
                                     .stageId(generateUuid())
                                     .delegateId(delegate.getUuid())
                                     .data(TaskData.builder().taskType(TaskType.INITIALIZATION_PHASE.name()).build())
                                     .eligibleToExecuteDelegateIds(new LinkedList<>(List.of(delegate.getUuid())))
                                     .build();
-    delegateTaskQueueService.acknowledgeAndProcessDelegateTaskV2(
-        DelegateTaskDequeue.builder().delegateTask(delegateTask).build());
-    DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
-    assertThat(task).isNotNull();
+    when(hsqsClientService.enqueue(any())).thenReturn(EnqueueResponse.builder().itemId("itemid").build());
+    when(delegateCache.getAbortedTaskList(accountId))
+        .thenReturn(new HashSet<String>(Collections.singleton(delegateTask.getUuid())));
+    delegateTaskQueueService.enqueue(delegateTask);
+    String task = referenceFalseKryoSerializer.asString(delegateTask);
+    when(hsqsClientService.dequeue(any()))
+        .thenReturn(List.of(DequeueResponse.builder().itemId("itemid").payload(task).build()));
+    delegateTaskQueueService.dequeue();
+    DelegateTask delegateTaskSaved = persistence.get(DelegateTask.class, delegateTask.getUuid());
+    assertThat(delegateTaskSaved).isNull();
   }
+
   private Delegate createDelegate(String accountId, int maxBuild) {
     Delegate delegate = createDelegateBuilder(accountId, maxBuild).build();
     persistence.save(delegate);
@@ -135,38 +149,5 @@ public class DelegateTaskQueueServiceTest extends WingsBaseTest {
         .lastHeartBeat(System.currentTimeMillis());
   }
   @Before
-  public void setUp() throws IllegalAccessException, ExecutionException {
-    when(hsqsServiceClient.ack(any())).thenReturn(new Call<>() {
-      @Override
-      public Response<AckResponse> execute() throws IOException {
-        return Response.success(AckResponse.builder().itemId("itemId").build());
-      }
-
-      @Override
-      public void enqueue(Callback<AckResponse> callback) {}
-
-      @Override
-      public boolean isExecuted() {
-        return false;
-      }
-
-      @Override
-      public void cancel() {}
-
-      @Override
-      public boolean isCanceled() {
-        return false;
-      }
-
-      @Override
-      public Call<AckResponse> clone() {
-        return null;
-      }
-
-      @Override
-      public Request request() {
-        return null;
-      }
-    });
-  }
+  public void setUp() throws IllegalAccessException, ExecutionException {}
 }

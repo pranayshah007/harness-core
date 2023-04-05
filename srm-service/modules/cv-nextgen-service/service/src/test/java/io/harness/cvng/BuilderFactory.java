@@ -1500,6 +1500,7 @@ public class BuilderFactory {
 
   public RatioServiceLevelIndicatorBuilder ratioServiceLevelIndicatorBuilder() {
     return RatioServiceLevelIndicator.builder()
+        .uuid("ratio_sli")
         .sliMissingDataType(SLIMissingDataType.GOOD)
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
@@ -1507,7 +1508,8 @@ public class BuilderFactory {
         .metric1("metric1")
         .metric2("metric2")
         .healthSourceIdentifier("healthSourceIdentifier")
-        .monitoredServiceIdentifier("monitoredServiceIdentifier");
+        .monitoredServiceIdentifier("monitoredServiceIdentifier")
+        .version(0);
   }
 
   public RequestServiceLevelIndicatorBuilder requestServiceLevelIndicatorBuilder() {

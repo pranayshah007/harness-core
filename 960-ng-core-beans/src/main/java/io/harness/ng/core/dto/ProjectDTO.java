@@ -33,6 +33,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.jetbrains.annotations.Nullable;
 
 @OwnedBy(PL)
 @Data
@@ -53,22 +54,25 @@ public class ProjectDTO {
   String identifier;
   @ApiModelProperty(required = true) @Schema(description = "Project Name for the entity") @NGEntityName String name;
   @Schema(description = "Color") @VariableExpression(skipVariableExpression = true) String color;
+
   @Size(max = 1024)
   @Schema(description = "List of modules")
   @VariableExpression(skipVariableExpression = true)
+  @Nullable
+  @Deprecated
   List<ModuleType> modules;
   @Size(max = 1024) @Schema(description = "Description") String description;
   @Size(max = 128) @Schema(description = "Tags") Map<String, String> tags;
   @JsonIgnore Long version;
 
   @Builder
-  public ProjectDTO(String orgIdentifier, String identifier, String name, String color, List<ModuleType> modules,
-      String description, Map<String, String> tags) {
+  public ProjectDTO(String orgIdentifier, String identifier, String name, String color, String description,
+      Map<String, String> tags) {
     this.orgIdentifier = orgIdentifier;
     this.identifier = identifier;
     this.name = name;
+    this.modules = ModuleType.getModules();
     this.color = color;
-    this.modules = modules;
     this.description = description;
     this.tags = tags;
   }

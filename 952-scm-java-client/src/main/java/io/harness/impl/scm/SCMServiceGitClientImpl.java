@@ -237,8 +237,8 @@ public class SCMServiceGitClientImpl implements ScmClient {
   }
 
   @Override
-  public GenerateYamlResponse autogenerateStageYamlForCI(String cloneUrl) {
-    return scmServiceClient.autogenerateStageYamlForCI(cloneUrl, scmBlockingStub);
+  public GenerateYamlResponse autogenerateStageYamlForCI(String cloneUrl, String yamlVersion) {
+    return scmServiceClient.autogenerateStageYamlForCI(cloneUrl, yamlVersion, scmBlockingStub);
   }
   @Override
   public GetLatestCommitOnFileResponse getLatestCommitOnFile(

@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.plan.Dependencies;
-import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.VariablesCreationBlobResponse;
 import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
@@ -38,6 +37,9 @@ public class VariableCreationResponse implements CreatorResponse {
   @Builder.Default Dependencies dependencies = Dependencies.newBuilder().build();
   @Builder.Default Dependencies resolvedDependencies = Dependencies.newBuilder().build();
   YamlUpdates yamlUpdates;
+
+  // Dependencies uuids to serviceAffinity map
+  Map<String, String> serviceAffinityMap;
 
   public Dependencies getDependencies() {
     return dependencies;
@@ -78,14 +80,14 @@ public class VariableCreationResponse implements CreatorResponse {
   }
 
   @Override
-  public void addAffinityToDependencyMetadata(String dependencyKey, String serviceAffinity) {
-    if (!dependencies.getDependencyMetadataMap().containsKey(dependencyKey)) {
-      Dependency dependency = Dependency.newBuilder().setServiceAffinity(serviceAffinity).build();
-      dependencies = dependencies.toBuilder().putDependencyMetadata(dependencyKey, dependency).build();
-    } else {
-      Dependency dependency = dependencies.getDependencyMetadataMap().get(dependencyKey);
-      Dependency dependencyWithAffinity = dependency.toBuilder().setServiceAffinity(serviceAffinity).build();
-      dependencies = dependencies.toBuilder().putDependencyMetadata(dependencyKey, dependencyWithAffinity).build();
+  public void addServiceAffinityToResponse(String dependencyKey, String serviceAffinity) {
+    if (serviceAffinityMap == null) {
+      serviceAffinityMap = new HashMap<>();
+    } else if (!(serviceAffinityMap instanceof HashMap)) {
+      serviceAffinityMap = new HashMap<>(serviceAffinityMap);
+    }
+    if (EmptyPredicate.isNotEmpty(serviceAffinity)) {
+      serviceAffinityMap.put(dependencyKey, serviceAffinity);
     }
   }
 

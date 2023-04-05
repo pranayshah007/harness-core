@@ -7,6 +7,7 @@
 
 package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.k8s;
 
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AWS;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
@@ -18,6 +19,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -146,6 +148,12 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
             .connectorRef(connectorRef)
             .namespace(DEFAULT_NAMESPACE)
             .build();
+      case KUBERNETES_AWS:
+        return K8sAwsInfrastructureOutcome.builder()
+            .releaseName(releaseName)
+            .connectorRef(connectorRef)
+            .namespace(DEFAULT_NAMESPACE)
+            .build();
       default:
         throw new UnsupportedOperationException(
             format("Unsupported outcome for infrastructure kind: [%s]", infrastructureKind));
@@ -167,7 +175,7 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
         .setAccountId(infrastructureMappingDTO.getAccountIdentifier())
         .setOrgId(connectorInfoDTO.getOrgIdentifier())
         .setProjectId(connectorInfoDTO.getProjectIdentifier())
-        .setConnectorInfoDto(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(connectorInfoDTO)))
+        .setConnectorInfoDto(ByteString.copyFrom(kryoSerializer.asBytes(connectorInfoDTO)))
         .build();
   }
 
@@ -187,8 +195,7 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
     return K8sDeploymentRelease.newBuilder()
         .setReleaseName(releaseData.getReleaseName())
         .addAllNamespaces(releaseData.getNamespaces())
-        .setK8SInfraDelegateConfig(
-            ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(releaseData.getK8sInfraDelegateConfig())))
+        .setK8SInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getK8sInfraDelegateConfig())))
         .build();
   }
 

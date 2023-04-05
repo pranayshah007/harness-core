@@ -25,6 +25,7 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
+import io.harness.ng.core.dto.secrets.SSHAuthDTO;
 import io.harness.ng.core.dto.secrets.SSHConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHCredentialType;
 import io.harness.ng.core.dto.secrets.SSHKeyReferenceCredentialDTO;
@@ -58,9 +59,10 @@ public class SshSessionConfigHelperTest extends CategoryTest {
         .thenReturn(SSHPasswordCredentialDTO.builder().password(secretRefData).build());
 
     SSHConfigDTO sshConfigDTO = SSHConfigDTO.builder().credentialType(SSHCredentialType.Password).build();
-    assertThatThrownBy(()
-                           -> generateSSHBuilder(sshConfigDTO, SshSessionConfig.Builder.aSshSessionConfig(),
-                               Lists.newArrayList(), secretDecryptionService))
+    assertThatThrownBy(
+        ()
+            -> generateSSHBuilder(SSHAuthDTO.builder().build(), sshConfigDTO,
+                SshSessionConfig.Builder.aSshSessionConfig(), Lists.newArrayList(), secretDecryptionService))
         .isInstanceOf(HintException.class)
         .hasMessage("Please ensure secret with identifier secretIdentifier exist.")
         .getCause()
@@ -82,9 +84,10 @@ public class SshSessionConfigHelperTest extends CategoryTest {
         .thenReturn(SSHKeyReferenceCredentialDTO.builder().key(secretRefData).build());
 
     SSHConfigDTO sshConfigDTO = SSHConfigDTO.builder().credentialType(SSHCredentialType.KeyReference).build();
-    assertThatThrownBy(()
-                           -> generateSSHBuilder(sshConfigDTO, SshSessionConfig.Builder.aSshSessionConfig(),
-                               Lists.newArrayList(), secretDecryptionService))
+    assertThatThrownBy(
+        ()
+            -> generateSSHBuilder(SSHAuthDTO.builder().build(), sshConfigDTO,
+                SshSessionConfig.Builder.aSshSessionConfig(), Lists.newArrayList(), secretDecryptionService))
         .isInstanceOf(HintException.class)
         .hasMessage("Please ensure secret with identifier secretIdentifier exist.")
         .getCause()
@@ -107,9 +110,10 @@ public class SshSessionConfigHelperTest extends CategoryTest {
 
     KerberosConfigDTO kerberosConfigDTO =
         KerberosConfigDTO.builder().tgtGenerationMethod(TGTGenerationMethod.Password).build();
-    assertThatThrownBy(()
-                           -> generateKerberosBuilder(kerberosConfigDTO, SshSessionConfig.Builder.aSshSessionConfig(),
-                               Lists.newArrayList(), secretDecryptionService))
+    assertThatThrownBy(
+        ()
+            -> generateKerberosBuilder(SSHAuthDTO.builder().build(), kerberosConfigDTO,
+                SshSessionConfig.Builder.aSshSessionConfig(), Lists.newArrayList(), secretDecryptionService))
         .isInstanceOf(HintException.class)
         .hasMessage("Please ensure secret with identifier secretIdentifier exist.")
         .getCause()

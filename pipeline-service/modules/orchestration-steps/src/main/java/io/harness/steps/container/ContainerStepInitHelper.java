@@ -244,13 +244,14 @@ public class ContainerStepInitHelper {
     Map<String, List<ConnectorConversionInfo>> stepConnectorMap = new HashMap<>();
     if (containerStepInfo instanceof PluginStep) {
       PluginStep pluginStep = (PluginStep) containerStepInfo;
-      stepConnectorMap.put(containerStepInfo.getIdentifier(), new ArrayList<>());
+      String identifier = getKubernetesStandardPodName(containerStepInfo.getIdentifier());
+      stepConnectorMap.put(identifier, new ArrayList<>());
       String connectorRef = PluginUtils.getConnectorRef(pluginStep);
       if (EmptyPredicate.isEmpty(connectorRef)) {
         return stepConnectorMap;
       }
       Map<EnvVariableEnum, String> envToSecretMap = PluginUtils.getConnectorSecretEnvMap(pluginStep.getType());
-      stepConnectorMap.get(containerStepInfo.getIdentifier())
+      stepConnectorMap.get(identifier)
           .add(ConnectorConversionInfo.builder().connectorRef(connectorRef).envToSecretsMap(envToSecretMap).build());
     }
     return stepConnectorMap;

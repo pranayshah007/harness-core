@@ -40,11 +40,15 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.validation.JavaxValidator;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import javax.validation.Valid;
+import lombok.Builder;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -60,7 +64,6 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private ServiceStepsHelper serviceStepsHelper;
-
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
     return EmptyStepParameters.class;
@@ -83,6 +86,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
     }
     cdExpressionResolver.updateExpressions(ambiance, configFiles);
 
+    JavaxValidator.validateOrThrow(new ConfigFileValidatorDTO(configFiles));
     checkForAccessOrThrow(ambiance, configFiles);
 
     final ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
@@ -126,5 +130,11 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
       }
     }
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
+  }
+
+  @Data
+  @Builder
+  private static class ConfigFileValidatorDTO {
+    @Valid List<ConfigFileWrapper> configFiles;
   }
 }

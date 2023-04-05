@@ -202,9 +202,6 @@ public class PipelinesApiImpl implements PipelinesApi {
   public Response getPipelineValidateResult(
       @OrgIdentifier String org, @ProjectIdentifier String project, String uuid, @AccountIdentifier String account) {
     Optional<PipelineValidationEvent> eventByUuid = pipelineAsyncValidationService.getEventByUuid(uuid);
-    if (eventByUuid.isEmpty()) {
-      throw new EntityNotFoundException("No Pipeline Validation Event found for uuid " + uuid);
-    }
     PipelineValidationEvent pipelineValidationEvent = eventByUuid.get();
     PipelineValidationResponseBody pipelineValidationResponseBody =
         PipelinesApiUtils.buildPipelineValidationResponseBody(pipelineValidationEvent);

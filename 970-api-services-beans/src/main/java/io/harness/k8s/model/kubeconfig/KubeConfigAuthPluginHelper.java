@@ -16,6 +16,8 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +31,7 @@ public class KubeConfigAuthPluginHelper {
 
   public static boolean isExecAuthPluginBinaryAvailable(String binaryName, LogCallback logCallback) {
     String commandToRun = getCommandToRun(binaryName);
-    boolean shouldUseExecFormat = runCommand(binaryName + commandToRun, logCallback);
+    boolean shouldUseExecFormat = runCommand(binaryName + commandToRun, logCallback, new HashMap<>());
 
     if (shouldUseExecFormat) {
       saveLogs(
@@ -41,9 +43,12 @@ public class KubeConfigAuthPluginHelper {
     return shouldUseExecFormat;
   }
 
-  private static boolean runCommand(final String command, LogCallback logCallback) {
+  public static boolean runCommand(final String command, LogCallback logCallback, Map<String, String> environment) {
     try {
-      return executeShellCommand(command, logCallback);
+      return executeShellCommand(command, logCallback, environment);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return false;
     } catch (Exception e) {
       if (logCallback != null) {
         saveLogs(String.format(
@@ -54,12 +59,13 @@ public class KubeConfigAuthPluginHelper {
     }
   }
 
-  private static boolean executeShellCommand(String command, LogCallback logCallback)
+  private static boolean executeShellCommand(String command, LogCallback logCallback, Map<String, String> environment)
       throws IOException, InterruptedException, TimeoutException {
     final ProcessExecutor processExecutor = new ProcessExecutor()
                                                 .timeout(TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
                                                 .directory(null)
                                                 .command("/bin/bash", "-c", command)
+                                                .environment(environment)
                                                 .readOutput(true);
 
     final ProcessResult result = processExecutor.execute();
@@ -71,7 +77,7 @@ public class KubeConfigAuthPluginHelper {
     return true;
   }
 
-  private static void saveLogs(String errorMsg, LogCallback logCallback, LogLevel logLevel) {
+  public static void saveLogs(String errorMsg, LogCallback logCallback, LogLevel logLevel) {
     if (logCallback != null) {
       logCallback.saveExecutionLog(errorMsg, logLevel);
     } else {

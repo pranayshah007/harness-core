@@ -234,8 +234,8 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
   }
 
   @Override
-  public GenerateYamlResponse autogenerateStageYamlForCI(String cloneUrl) {
-    return scmServiceGitClient.autogenerateStageYamlForCI(cloneUrl);
+  public GenerateYamlResponse autogenerateStageYamlForCI(String cloneUrl, String yamlVersion) {
+    return scmServiceGitClient.autogenerateStageYamlForCI(cloneUrl, yamlVersion);
   }
 
   @Override

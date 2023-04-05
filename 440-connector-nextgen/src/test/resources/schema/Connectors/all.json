@@ -1282,10 +1282,7 @@
         {
           "type": "object",
           "required": [
-            "clientId",
-            "secretKey",
             "subscription",
-            "tenantId",
             "vaultName"
           ],
           "properties": {
@@ -1294,6 +1291,13 @@
               "enum": [
                 "AZURE",
                 "AZURE_US_GOVERNMENT"
+              ]
+            },
+            "azureManagedIdentityType": {
+              "type": "string",
+              "enum": [
+                "SystemAssignedManagedIdentity",
+                "UserAssignedManagedIdentity"
               ]
             },
             "clientId": {
@@ -1309,6 +1313,9 @@
                 "type": "string"
               }
             },
+            "managedClientId": {
+              "type": "string"
+            },
             "secretKey": {
               "type": "string"
             },
@@ -1317,6 +1324,9 @@
             },
             "tenantId": {
               "type": "string"
+            },
+            "useManagedIdentity": {
+              "type": "boolean"
             },
             "vaultName": {
               "type": "string"

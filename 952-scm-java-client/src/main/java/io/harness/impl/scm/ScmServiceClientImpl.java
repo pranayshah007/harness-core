@@ -146,16 +146,21 @@ public class ScmServiceClientImpl implements ScmServiceClient {
         getFileModifyRequest(scmConnector, gitFileDetails).setUseGitClient(useGitClient).build();
     CreateFileResponse createFileResponse =
         ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::createFile, fileModifyRequest);
-    if (ScmResponseStatusUtils.isSuccessResponse(createFileResponse.getStatus())
+    if (ScmResponseStatusUtils.isSuccessfulCreateResponse(createFileResponse.getStatus())
         && isEmpty(createFileResponse.getCommitId())) {
-      if (isBitbucketOnPrem(scmConnector)) {
-        return createFileResponse;
+      GetLatestCommitOnFileResponse getLatestCommitOnFileResponse = getLatestCommitOnFile(
+          scmConnector, scmBlockingStub, gitFileDetails.getBranch(), gitFileDetails.getFilePath());
+      if (isEmpty(getLatestCommitOnFileResponse.getError())) {
+        return CreateFileResponse.newBuilder(createFileResponse)
+            .setCommitId(getLatestCommitOnFileResponse.getCommitId())
+            .build();
+      } else {
+        // In case commit id is empty for any reason, we treat this as an error case even if file got created on git
+        return CreateFileResponse.newBuilder()
+            .setStatus(Constants.SCM_INTERNAL_SERVER_ERROR_CODE)
+            .setError(Constants.SCM_INTERNAL_SERVER_ERROR_MESSAGE)
+            .build();
       }
-      // In case commit id is empty for any reason, we treat this as an error case even if file got created on git
-      return CreateFileResponse.newBuilder()
-          .setStatus(Constants.SCM_INTERNAL_SERVER_ERROR_CODE)
-          .setError(Constants.SCM_INTERNAL_SERVER_ERROR_MESSAGE)
-          .build();
     }
     return createFileResponse;
   }
@@ -202,7 +207,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
           scmConnector, scmBlockingStub, gitFileDetails.getBranch(), gitFileDetails.getFilePath());
       if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
         return UpdateFileResponse.newBuilder()
-            .setStatus(Constants.HTTP_BAD_REQUEST_STATUS_CODE)
+            .setStatus(Constants.SCM_BAD_RESPONSE_ERROR_CODE)
             .setError(getLatestCommitOnFileResponse.getError())
             .build();
       }
@@ -1013,8 +1018,10 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
-  public GenerateYamlResponse autogenerateStageYamlForCI(String cloneUrl, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    return scmBlockingStub.generateStageYamlForCI(GenerateYamlRequest.newBuilder().setUrl(cloneUrl).build());
+  public GenerateYamlResponse autogenerateStageYamlForCI(
+      String cloneUrl, String yamlVersion, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    return scmBlockingStub.generateStageYamlForCI(
+        GenerateYamlRequest.newBuilder().setUrl(cloneUrl).setYamlVersion(yamlVersion).build());
   }
 
   public GetLatestCommitOnFileResponse getLatestCommitOnFile(
@@ -1026,6 +1033,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   @Override
   public GitFileResponse getFile(
       ScmConnector scmConnector, GitFileRequest gitFileRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    log.info("getOnlyFileContent :: {}", gitFileRequest.isGetOnlyFileContent());
     String commitId = gitFileRequest.getCommitId();
     String branch = gitFileRequest.getBranch();
     try (ResponseTimeRecorder ignore1 = new ResponseTimeRecorder("getFile")) {

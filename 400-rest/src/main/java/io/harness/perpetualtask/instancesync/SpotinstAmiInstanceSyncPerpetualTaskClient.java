@@ -21,10 +21,10 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.spotinst.request.SpotInstListElastigroupInstancesParameters;
-import io.harness.perpetualtask.PerpetualTaskClientBase;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsAmiInfrastructureMapping;
 import software.wings.beans.AwsConfig;
@@ -50,25 +50,23 @@ import lombok.experimental.FieldDefaults;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(CDP)
-public class SpotinstAmiInstanceSyncPerpetualTaskClient
-    extends PerpetualTaskClientBase implements PerpetualTaskServiceClient {
+public class SpotinstAmiInstanceSyncPerpetualTaskClient implements PerpetualTaskServiceClient {
   public static final String ELASTIGROUP_ID = "elastigroupId";
   @Inject InfrastructureMappingService infraMappingService;
   @Inject SettingsService settingsService;
   @Inject SecretManager secretManager;
+  @Inject private KryoSerializer kryoSerializer;
 
   @Override
-  public Message getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
+  public Message getTaskParams(PerpetualTaskClientContext clientContext) {
     final PerpetualTaskData delegateTaskData = getPerpetualTaskData(clientContext);
 
-    ByteString awsConfigBytes =
-        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(delegateTaskData.getAwsConfig()));
-    ByteString spotinstConfigBytes =
-        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(delegateTaskData.getSpotinstConfig()));
+    ByteString awsConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(delegateTaskData.getAwsConfig()));
+    ByteString spotinstConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(delegateTaskData.getSpotinstConfig()));
     ByteString awsEncryptedDataBytes =
-        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(delegateTaskData.getAwsEncryptedDataData()));
+        ByteString.copyFrom(kryoSerializer.asBytes(delegateTaskData.getAwsEncryptedDataData()));
     ByteString spotinstEncryptedDataBytes =
-        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(delegateTaskData.getSpotinstEncryptedData()));
+        ByteString.copyFrom(kryoSerializer.asBytes(delegateTaskData.getSpotinstEncryptedData()));
 
     return SpotinstAmiInstanceSyncPerpetualTaskParams.newBuilder()
         .setRegion(delegateTaskData.getRegion())

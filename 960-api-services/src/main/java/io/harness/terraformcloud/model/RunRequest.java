@@ -15,8 +15,8 @@ import lombok.Builder;
 import lombok.Data;
 
 @OwnedBy(CDP)
-@Builder
 @Data
+@Builder
 public class RunRequest {
   private CreateRunData data;
 }

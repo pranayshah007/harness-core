@@ -77,7 +77,7 @@ public class PlanNode implements Node {
 
   @Builder.Default ExpressionMode expressionMode = ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
 
-  @With @Builder.Default boolean preserveInRollbackMode = false;
+  @With @Builder.Default Boolean preserveInRollbackMode = false;
 
   public static PlanNode fromPlanNodeProto(PlanNodeProto planNodeProto) {
     if (planNodeProto == null) {
@@ -128,5 +128,12 @@ public class PlanNode implements Node {
   @Override
   public String getStageFqn() {
     return this.stageFqn;
+  }
+
+  public boolean isPreserveInRollbackMode() {
+    if (preserveInRollbackMode == null) {
+      return false;
+    }
+    return preserveInRollbackMode;
   }
 }

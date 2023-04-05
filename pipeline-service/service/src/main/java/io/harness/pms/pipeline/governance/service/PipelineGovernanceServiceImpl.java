@@ -61,7 +61,7 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
   public GovernanceMetadata validateGovernanceRules(
       String accountId, String orgIdentifier, String projectIdentifier, String yamlWithResolvedTemplates) {
     String expandedPipelineJSON = fetchExpandedPipelineJSONFromYaml(accountId, orgIdentifier, projectIdentifier,
-        yamlWithResolvedTemplates, false, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
+        yamlWithResolvedTemplates, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
     return governanceService.evaluateGovernancePolicies(expandedPipelineJSON, accountId, orgIdentifier,
         projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE, "", PipelineVersion.V0);
   }
@@ -85,22 +85,21 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
   }
 
   @Override
-  public String fetchExpandedPipelineJSONFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineYaml, boolean isExecution, String action) {
+  public String fetchExpandedPipelineJSONFromYaml(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineYaml, String action) {
     return getExpandedPipelineJSONFromYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineYaml, isExecution, null, null, action);
+        accountId, orgIdentifier, projectIdentifier, pipelineYaml, null, null, action);
   }
 
   @Override
   public String fetchExpandedPipelineJSONFromYaml(
-      PipelineEntity pipelineEntity, String pipelineYaml, boolean isExecution, String branch, String action) {
+      PipelineEntity pipelineEntity, String pipelineYaml, String branch, String action) {
     return getExpandedPipelineJSONFromYaml(pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
-        pipelineEntity.getProjectIdentifier(), pipelineYaml, isExecution, branch, pipelineEntity, action);
+        pipelineEntity.getProjectIdentifier(), pipelineYaml, branch, pipelineEntity, action);
   }
 
   private String getExpandedPipelineJSONFromYaml(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String pipelineYaml, boolean isExecution, String branch, PipelineEntity pipelineEntity,
-      String action) {
+      String projectIdentifier, String pipelineYaml, String branch, PipelineEntity pipelineEntity, String action) {
     if (!pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
       return null;
     }
@@ -115,13 +114,12 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
       return null;
     }
     return getExpandedPipelineJSONFromYaml(
-        accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml, isExecution, branch, pipelineEntity);
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml, branch, pipelineEntity);
   }
 
   @Override
   public String getExpandedPipelineJSONFromYaml(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String pipelineYaml, boolean isExecution, String branch,
-      PipelineEntity pipelineEntity) {
+      String projectIdentifier, String pipelineYaml, String branch, PipelineEntity pipelineEntity) {
     long start = System.currentTimeMillis();
     ExpansionRequestMetadata expansionRequestMetadata =
         getRequestMetadata(accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml);
@@ -130,9 +128,9 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
     Set<ExpansionResponseBatch> expansionResponseBatches =
         jsonExpander.fetchExpansionResponses(expansionRequests, expansionRequestMetadata);
 
-    if (isExecution && null != pipelineEntity) {
+    if (null != pipelineEntity) {
       addGitDetailsToExpandedYaml(expansionResponseBatches, pipelineEntity, branch);
-    } else if (isExecution) {
+    } else {
       addGitDetailsToExpandedYaml(expansionResponseBatches);
     }
 

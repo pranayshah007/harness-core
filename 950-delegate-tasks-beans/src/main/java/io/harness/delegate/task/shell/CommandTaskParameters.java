@@ -53,7 +53,7 @@ public abstract class CommandTaskParameters implements TaskParameters, Execution
   boolean executeOnDelegate;
   @Expression(ALLOW_SECRETS) List<NgCommandUnit> commandUnits;
   SshWinRmArtifactDelegateConfig artifactDelegateConfig;
-  FileDelegateConfig fileDelegateConfig;
+  @Expression(ALLOW_SECRETS) FileDelegateConfig fileDelegateConfig;
   @Expression(ALLOW_SECRETS) List<String> outputVariables;
 
   @Override

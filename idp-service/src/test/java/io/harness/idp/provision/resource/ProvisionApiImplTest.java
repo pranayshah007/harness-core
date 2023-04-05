@@ -7,6 +7,8 @@
 
 package io.harness.idp.provision.resource;
 
+import static io.harness.rule.OwnerRule.VIGNESWARA;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -19,6 +21,7 @@ import io.harness.idp.namespace.beans.entity.NamespaceEntity;
 import io.harness.idp.namespace.mappers.NamespaceMapper;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.provision.service.ProvisionService;
+import io.harness.rule.Owner;
 
 import javax.ws.rs.core.Response;
 import org.junit.Before;
@@ -43,6 +46,7 @@ public class ProvisionApiImplTest {
   }
 
   @Test
+  @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testProvisionIdp() {
     doNothing().when(provisionService).checkUserAuthorization();
@@ -54,6 +58,7 @@ public class ProvisionApiImplTest {
   }
 
   @Test
+  @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testProvisionIdpWithNamespaceExists() {
     doNothing().when(provisionService).checkUserAuthorization();
@@ -67,6 +72,7 @@ public class ProvisionApiImplTest {
   }
 
   @Test
+  @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testProvisionIdpThrowsException() {
     doNothing().when(provisionService).checkUserAuthorization();

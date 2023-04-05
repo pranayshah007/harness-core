@@ -17,7 +17,6 @@ import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -111,25 +110,25 @@ public class PlanCreatorServiceHelper {
    * children dependency.
    *
    * @param creatorResponse
-   * @param currentNodeDependency
-   * @param currentServiceName
+   * @param sdkServiceName
    * @param currentField
+   * @param currentNodeServiceAffinity
    */
-  public void decorateCreationResponseWithServiceAffinity(CreatorResponse creatorResponse,
-      Dependency currentNodeDependency, String currentServiceName, YamlField currentField) {
+  public void decorateCreationResponseWithServiceAffinity(CreatorResponse creatorResponse, String sdkServiceName,
+      YamlField currentField, String currentNodeServiceAffinity) {
     String serviceAffinity = "";
-    if (currentNodeDependency != null) {
-      serviceAffinity = currentNodeDependency.getServiceAffinity();
+    if (EmptyPredicate.isNotEmpty(currentNodeServiceAffinity)) {
+      serviceAffinity = currentNodeServiceAffinity;
     }
     // Attach ServiceAffinity of current service only if current node is stage
-    if (EmptyPredicate.isEmpty(serviceAffinity) && currentField.getName().equals(YAMLFieldNameConstants.STAGE)) {
-      serviceAffinity = currentServiceName;
+    if (EmptyPredicate.isEmpty(serviceAffinity) && YamlUtils.isStageNode(currentField.getNode())) {
+      serviceAffinity = sdkServiceName;
     }
 
     Dependencies childDependencies = creatorResponse.getDependencies();
     if (childDependencies != null) {
       for (String dependencyKey : childDependencies.getDependenciesMap().keySet()) {
-        creatorResponse.addAffinityToDependencyMetadata(dependencyKey, serviceAffinity);
+        creatorResponse.addServiceAffinityToResponse(dependencyKey, serviceAffinity);
       }
     }
   }

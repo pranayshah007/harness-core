@@ -56,6 +56,8 @@ public class K8sClientHelperTest extends CategoryTest {
   private ApiClient apiClient;
   private Kubectl client;
 
+  private static final String WORK_DIR = "./repository/k8s";
+
   @Before
   public void setup() {
     MockitoAnnotations.openMocks(this);
@@ -110,12 +112,13 @@ public class K8sClientHelperTest extends CategoryTest {
     ApiClient apiCLient = new ApiClient();
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(any(K8sInfraDelegateConfig.class), any(LogCallback.class));
+        .createKubernetesConfig(any(K8sInfraDelegateConfig.class), any(), any(LogCallback.class));
     doReturn(apiCLient).when(kubernetesHelperService).getApiClient(eq(kubernetesConfig));
 
     LogCallback logCallback = mock(LogCallback.class);
     K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
-    ApiClient generatedClient = k8sClientHelper.createKubernetesApiClient(k8sInfraDelegateConfig, logCallback);
+    ApiClient generatedClient =
+        k8sClientHelper.createKubernetesApiClient(k8sInfraDelegateConfig, WORK_DIR, logCallback);
     assertThat(generatedClient).isEqualTo(apiCLient);
   }
 

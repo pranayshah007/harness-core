@@ -10,6 +10,7 @@ import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.GitLabStore;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GithubStore;
+import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
@@ -19,6 +20,10 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthT
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.encryption.SecretRefData;
@@ -255,6 +260,28 @@ public class TerraformStepDataGenerator {
     return connectorInfoDTO;
   }
 
+  public static ConnectorInfoDTO getAWSConnectorInfoDTO() {
+    char[] password = {'r', 's', 't', 'u', 'v'};
+    // Create DTO connector
+    AwsConnectorDTO awsConnectorDTO =
+        AwsConnectorDTO.builder()
+            .credential(AwsCredentialDTO.builder()
+                            .awsCredentialType(AwsCredentialType.MANUAL_CREDENTIALS)
+                            .config(AwsManualConfigSpecDTO.builder()
+                                        .accessKey("ACCESS_KEY")
+                                        .secretKeyRef(SecretRefData.builder().decryptedValue(password).build())
+                                        .build())
+                            .build())
+            .delegateSelectors(Collections.singleton("delegateSelector"))
+            .build();
+    return ConnectorInfoDTO.builder()
+        .connectorType(ConnectorType.AWS)
+        .identifier("connectorRef")
+        .name("connectorName")
+        .connectorConfig(awsConnectorDTO)
+        .build();
+  }
+
   public static TerraformPlanStepParameters generateStepPlanWithVarFiles(StoreConfigType storeTypeForConfig,
       StoreConfigType storeTypeForVar, Object storeConfigFilesParam, Object varStoreConfigFilesParam,
       boolean generateInlineVarFiles) {
@@ -487,6 +514,10 @@ public class TerraformStepDataGenerator {
                             .build();
         storeConfigWrapper = StoreConfigWrapper.builder().spec(storeVarFiles).type(storeType).build();
         break;
+      case S3:
+        S3StoreConfig s3StoreConfig = (S3StoreConfig) varStoreConfigFilesParam;
+        storeConfigWrapper = StoreConfigWrapper.builder().spec(s3StoreConfig).type(storeType).build();
+        break;
       default:
         return null;
     }
@@ -543,6 +574,10 @@ public class TerraformStepDataGenerator {
                 .artifactPaths(ParameterField.createValueField(artifactoryStoreConfigFiles.artifacts))
                 .build();
         configFilesWrapper.setStore(StoreConfigWrapper.builder().spec(storeConfigFiles).type(storeType).build());
+        break;
+      case S3:
+        S3StoreConfig s3StoreTFDelegateConfig = (S3StoreConfig) storeConfigFilesParam;
+        configFilesWrapper.setStore(StoreConfigWrapper.builder().spec(s3StoreTFDelegateConfig).type(storeType).build());
         break;
       default:
         break;

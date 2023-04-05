@@ -15,7 +15,4 @@ import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
 public interface AsyncCreatorResponse extends CreatorResponse {
   @Override
   default void addResolvedDependency(String yaml, String nodeId, String yamlPath) {}
-
-  @Override
-  default void addAffinityToDependencyMetadata(String dependencyKey, String serviceAffinity) {}
 }

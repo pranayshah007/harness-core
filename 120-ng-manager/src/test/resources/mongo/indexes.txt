@@ -183,6 +183,7 @@ userSourceCodeManagers {"name": "accountIdentifier_1", "background": true} {"acc
 userSourceCodeManagers {"name": "unique_accountIdentifier_userIdentifier_type_idx", "unique": true} {"accountIdentifier": 1, "userIdentifier": 1, "type": 1}
 variables {"name": "accountId_orgId_projectId_createdAt_decreasing_sort_Index", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "createdAt": -1}
 variables {"name": "accountId_orgId_projectId_identifier_unique_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
+variables {"name": "accountId_orgId_projectId_lastModifiedAt_decreasing_sort_Index", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "lastModifiedAt": -1}
 waitInstances {"name": "correlationIds_1", "background": true} {"correlationIds": 1}
 waitInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 waitInstances {"name": "waitingOnCorrelationIds_1", "background": true} {"waitingOnCorrelationIds": 1}

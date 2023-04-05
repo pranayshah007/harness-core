@@ -28,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.BulkOperationException;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -43,6 +44,7 @@ public class UserMetadataRepositoryCustomImpl implements UserMetadataRepositoryC
   @Override
   public Page<UserMetadata> findAll(Criteria criteria, Pageable pageable) {
     Query query = new Query(criteria).with(pageable);
+    query.collation(Collation.of("en").strength(Collation.ComparisonLevel.secondary()));
     List<UserMetadata> users = mongoTemplate.find(query, UserMetadata.class);
     return PageableExecutionUtils.getPage(
         users, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), UserMetadata.class));

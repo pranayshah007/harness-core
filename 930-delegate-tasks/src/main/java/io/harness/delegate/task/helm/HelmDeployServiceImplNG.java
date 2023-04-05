@@ -205,7 +205,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       prevVersion = getPrevReleaseVersion(helmCliResponse);
 
       kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-          commandRequest.getK8sInfraDelegateConfig(), logCallback);
+          commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
 
       prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis(), logCallback);
 
@@ -522,7 +522,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   public HelmCommandResponseNG rollback(HelmRollbackCommandRequestNG commandRequest) throws Exception {
     LogCallback logCallback = commandRequest.getLogCallback();
     kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        commandRequest.getK8sInfraDelegateConfig(), logCallback);
+        commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
     try {
       logCallback = markDoneAndStartNew(commandRequest, logCallback, Rollback);
       HelmInstallCmdResponseNG commandResponse = HelmCommandResponseMapper.getHelmInstCmdRespNG(
@@ -865,8 +865,6 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       HelmChartManifestDelegateConfig helmChartManifestConfig =
           (HelmChartManifestDelegateConfig) manifestDelegateConfig;
       logCallback.saveExecutionLog(color(format("%nFetching files from helm chart repo"), White, Bold));
-      helmTaskHelperBase.printHelmChartInfoInExecutionLogs(helmChartManifestConfig, logCallback);
-
       helmTaskHelperBase.initHelm(destinationDirectory, helmChartManifestConfig.getHelmVersion(), timeoutInMillis);
 
       if (HTTP_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
@@ -880,6 +878,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
             helmChartManifestConfig, destinationDirectory, timeoutInMillis);
       }
 
+      helmTaskHelperBase.printHelmChartInfoWithVersionInExecutionLogs(
+          destinationDirectory, helmChartManifestConfig, logCallback);
       logCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
       logCallback.saveExecutionLog(getManifestFileNamesInLogFormat(destinationDirectory));
     } catch (HelmClientException e) {

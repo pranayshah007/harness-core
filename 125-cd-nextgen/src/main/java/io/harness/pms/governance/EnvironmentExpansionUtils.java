@@ -26,18 +26,24 @@ import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
@@ -61,6 +67,41 @@ public class EnvironmentExpansionUtils {
         .infrastructureConnectorNode(
             connectorDTO != null ? objectMapper.convertValue(connectorDTO.getConnector(), ObjectNode.class) : null)
         .build();
+  }
+
+  static void processSingleEnvNode(JsonNode value) {
+    if (value.isObject() && value.get(SingleEnvironmentExpandedValue.keys.infrastructures) != null) {
+      JsonNode infrastructuresNode = value.get(SingleEnvironmentExpandedValue.keys.infrastructures);
+      if (infrastructuresNode.isArray() && infrastructuresNode.size() > 0) {
+        final List<JsonNode> nodes = new ArrayList<>();
+        for (JsonNode jsonNode : infrastructuresNode) {
+          nodes.add(processInfrastructureNode(jsonNode));
+        }
+        ArrayNode finalNode = new ArrayNode(JsonNodeFactory.instance, nodes);
+        ((ObjectNode) value).remove(SingleEnvironmentExpandedValue.keys.infrastructures);
+        ((ObjectNode) value).set(SingleEnvironmentExpandedValue.keys.infrastructures, finalNode);
+      }
+    }
+  }
+
+  // replace connectorRef by connector spec and also move out infrastructure type and spec to upper level to keep the
+  // paths less verbose
+  static JsonNode processInfrastructureNode(JsonNode node) {
+    if (!node.isObject()) {
+      return NullNode.instance;
+    }
+    ObjectNode infraNode = (ObjectNode) node.get(InfrastructureExpandedValue.keys.infrastructureDefinition);
+    ObjectNode connectorNode = (ObjectNode) node.get(InfrastructureExpandedValue.keys.infrastructureConnectorNode);
+    ObjectNode spec = (ObjectNode) infraNode.get(YAMLFieldNameConstants.SPEC);
+    if (spec.get(YamlTypes.CONNECTOR_REF) != null && connectorNode != null) {
+      spec.set(ExpansionConstants.CONNECTOR_PROP_NAME, connectorNode);
+      spec.remove(YamlTypes.CONNECTOR_REF);
+    }
+    ObjectNode finalNode = new ObjectNode(JsonNodeFactory.instance);
+    finalNode.set(YAMLFieldNameConstants.TYPE, infraNode.get(YAMLFieldNameConstants.TYPE));
+    finalNode.set(YAMLFieldNameConstants.SPEC, infraNode.get(YAMLFieldNameConstants.SPEC));
+
+    return finalNode;
   }
 
   @Data
@@ -98,6 +139,36 @@ public class EnvironmentExpansionUtils {
       }
     }
 
+    return Optional.empty();
+  }
+
+  static List<InfrastructureDataBag> getInfraRefAndInputs(JsonNode fieldValue) {
+    final List<InfrastructureDataBag> dataBag = new ArrayList<>();
+
+    // handle infra definitions
+    final JsonNode infraDefinitionsNode = fieldValue.get(YamlTypes.INFRASTRUCTURE_DEFS);
+    if (infraDefinitionsNode != null && infraDefinitionsNode.isArray()) {
+      for (JsonNode jsonNode : infraDefinitionsNode) {
+        getInfraDataBag(jsonNode).ifPresent(dataBag::add);
+      }
+    }
+
+    final JsonNode infraDefinitionNode = fieldValue.get(YamlTypes.INFRASTRUCTURE_DEF);
+    getInfraDataBag(infraDefinitionNode).ifPresent(dataBag::add);
+
+    return dataBag;
+  }
+
+  private static Optional<InfrastructureDataBag> getInfraDataBag(JsonNode infraNode) {
+    if (infraNode != null && infraNode.isObject()
+        && (infraNode.get(YamlTypes.IDENTIFIER) != null && infraNode.get(YamlTypes.IDENTIFIER).isTextual())) {
+      String identifier = infraNode.get(YamlTypes.IDENTIFIER).asText();
+      if (infraNode.get(YamlTypes.INPUTS) != null) {
+        return Optional.of(new InfrastructureDataBag(identifier, infraNode.get(YamlTypes.INPUTS)));
+      } else {
+        return Optional.of(new InfrastructureDataBag(identifier, null));
+      }
+    }
     return Optional.empty();
   }
 

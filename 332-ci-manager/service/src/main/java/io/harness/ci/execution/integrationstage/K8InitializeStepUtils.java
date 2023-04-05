@@ -78,6 +78,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.NGAccess;
+import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
@@ -1089,8 +1090,8 @@ public class K8InitializeStepUtils {
   }
 
   public Map<String, List<ConnectorConversionInfo>> getStepConnectorRefs(
-      IntegrationStageConfig integrationStageConfig, Ambiance ambiance) {
-    List<ExecutionWrapperConfig> executionWrappers = integrationStageConfig.getExecution().getSteps();
+      ExecutionElementConfig executionElementConfig, Ambiance ambiance) {
+    List<ExecutionWrapperConfig> executionWrappers = executionElementConfig.getSteps();
     if (isEmpty(executionWrappers)) {
       return Collections.emptyMap();
     }

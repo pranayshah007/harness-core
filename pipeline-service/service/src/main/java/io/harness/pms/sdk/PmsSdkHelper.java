@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.Dependencies;
-import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.PlanCreationServiceGrpc;
 import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -27,6 +26,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -100,11 +100,11 @@ public class PmsSdkHelper {
   }
 
   public static String getServiceAffinityForGivenDependency(
-      Dependencies dependencies, Map.Entry<String, String> dependencyEntry) {
+      Map<String, String> serviceAffinityMap, Map.Entry<String, String> dependencyEntry) {
     String affinityService = null;
-    Dependency dependency = dependencies.getDependencyMetadataMap().get(dependencyEntry.getKey());
-    if (dependency != null) {
-      affinityService = dependency.getServiceAffinity();
+    String serviceAffinity = serviceAffinityMap.get(dependencyEntry.getKey());
+    if (EmptyPredicate.isNotEmpty(serviceAffinityMap)) {
+      affinityService = serviceAffinity;
     }
     return affinityService;
   }
@@ -124,6 +124,14 @@ public class PmsSdkHelper {
         .putAllDependencyMetadata(dependencies.getDependencyMetadataMap())
         .setYaml(dependencies.getYaml())
         .build();
+  }
+
+  public static Map<String, String> createBatchServiceAffinityMap(
+      Set<String> dependencyKeys, Map<String, String> allServiceAffinityMap) {
+    return allServiceAffinityMap.entrySet()
+        .stream()
+        .filter(e -> dependencyKeys.contains(e.getKey()))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   public static boolean isPipelineService(Map.Entry<String, PlanCreatorServiceInfo> serviceInfo) {

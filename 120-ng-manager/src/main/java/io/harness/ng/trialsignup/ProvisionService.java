@@ -406,7 +406,7 @@ public class ProvisionService {
   // for account type connectors expecting repo to come like : harness-core or harness/harness-core
   // for repo type connectors expecting repo to be empty.
   public String generateYaml(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorIdentifier, String repo) {
+      String connectorIdentifier, String repo, String version) {
     BaseNGAccess build = BaseNGAccess.builder()
                              .accountIdentifier(accountIdentifier)
                              .orgIdentifier(orgIdentifier)
@@ -432,7 +432,7 @@ public class ProvisionService {
       builder = AutogenInput.builder();
     }
     AutogenInput autogenInput = builder.build();
-    return scmClient.autogenerateStageYamlForCI(updateUrl(autogenInput, repo)).getYaml();
+    return scmClient.autogenerateStageYamlForCI(updateUrl(autogenInput, repo), version).getYaml();
   }
 
   @NotNull

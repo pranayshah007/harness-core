@@ -48,10 +48,12 @@ import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
@@ -71,6 +73,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -377,6 +380,38 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testCreateThreshold_backwardCompatible_sliMissingType() {
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = createThresholdServiceLevelIndicator_oldDTO();
+    ProjectParams projectParams = builderFactory.getProjectParams();
+    List<String> serviceLevelIndicatorIdentifiers =
+        serviceLevelIndicatorService.create(projectParams, Collections.singletonList(serviceLevelIndicatorDTO),
+            generateUuid(), monitoredServiceIdentifier, generateUuid());
+    List<ServiceLevelIndicatorDTO> serviceLevelIndicatorDTOList =
+        serviceLevelIndicatorService.get(projectParams, serviceLevelIndicatorIdentifiers);
+    ServiceLevelIndicator serviceLevelIndicator =
+        serviceLevelIndicatorService.getServiceLevelIndicator(projectParams, serviceLevelIndicatorDTO.getIdentifier());
+    assertThat(serviceLevelIndicator.getSliMissingDataType()).isEqualTo(SLIMissingDataType.GOOD);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testCreateRatio_backwardCompatible_sliMissingType() {
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = createRatioServiceLevelIndicator_oldDTO();
+    ProjectParams projectParams = builderFactory.getProjectParams();
+    List<String> serviceLevelIndicatorIdentifiers =
+        serviceLevelIndicatorService.create(projectParams, Collections.singletonList(serviceLevelIndicatorDTO),
+            generateUuid(), monitoredServiceIdentifier, generateUuid());
+    List<ServiceLevelIndicatorDTO> serviceLevelIndicatorDTOList =
+        serviceLevelIndicatorService.get(projectParams, serviceLevelIndicatorIdentifiers);
+    ServiceLevelIndicator serviceLevelIndicator =
+        serviceLevelIndicatorService.getServiceLevelIndicator(projectParams, serviceLevelIndicatorDTO.getIdentifier());
+    assertThat(serviceLevelIndicator.getSliMissingDataType()).isEqualTo(SLIMissingDataType.GOOD);
+  }
+
+  @Test
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
   public void testCreateRatio_success() {
@@ -403,6 +438,38 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     List<ServiceLevelIndicatorDTO> serviceLevelIndicatorDTOList =
         serviceLevelIndicatorService.get(projectParams, serviceLevelIndicatorIdentifiers);
     assertThat(Collections.singletonList(serviceLevelIndicatorDTO)).isEqualTo(serviceLevelIndicatorDTOList);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testUpdateRequest_success() {
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
+        builderFactory.getRequestServiceLevelIndicatorDTOBuilder().build();
+    ProjectParams projectParams = builderFactory.getProjectParams();
+    List<String> serviceLevelIndicatorIdentifiers = serviceLevelIndicatorService.create(projectParams,
+        Collections.singletonList(serviceLevelIndicatorDTO), "sloId", monitoredServiceIdentifier, "healthSourceId");
+    ServiceLevelIndicatorSpec serviceLevelIndicatorSpec = RequestBasedServiceLevelIndicatorSpec.builder()
+                                                              .metric1("new_metric1")
+                                                              .metric2("new_metric2")
+                                                              .eventType(RatioSLIMetricEventType.BAD)
+                                                              .build();
+    serviceLevelIndicatorDTO.setSpec(serviceLevelIndicatorSpec);
+    List<ServiceLevelIndicatorDTO> serviceLevelIndicatorDTOList = Collections.singletonList(serviceLevelIndicatorDTO);
+    LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
+    serviceLevelIndicatorService.update(projectParams, serviceLevelIndicatorDTOList, "sloId",
+        Collections.singletonList(serviceLevelIndicatorDTO.getIdentifier()), monitoredServiceIdentifier,
+        "healthSourceId",
+        TimePeriod.builder().startDate(currentLocalDate.toLocalDate()).endDate(currentLocalDate.toLocalDate()).build(),
+        TimePeriod.builder().startDate(currentLocalDate.toLocalDate()).endDate(currentLocalDate.toLocalDate()).build());
+    serviceLevelIndicatorDTOList = serviceLevelIndicatorService.get(projectParams, serviceLevelIndicatorIdentifiers);
+    assertThat(Collections.singletonList(serviceLevelIndicatorDTO)).isEqualTo(serviceLevelIndicatorDTOList);
+    assertThat(((RequestBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTOList.get(0).getSpec()).getMetric1())
+        .isEqualTo("new_metric1");
+    assertThat(((RequestBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTOList.get(0).getSpec()).getMetric2())
+        .isEqualTo("new_metric2");
+    assertThat(((RequestBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTOList.get(0).getSpec()).getEventType())
+        .isEqualTo(RatioSLIMetricEventType.BAD);
   }
 
   @Test
@@ -492,6 +559,42 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
         .type(SLIEvaluationType.WINDOW)
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .sliMissingDataType(SLIMissingDataType.GOOD)
+                  .type(SLIMetricType.THRESHOLD)
+                  .spec(ThresholdSLIMetricSpec.builder()
+                            .metric1("metric1")
+                            .thresholdValue(50.0)
+                            .thresholdType(ThresholdType.GREATER_THAN)
+                            .build())
+                  .build())
+        .build();
+  }
+
+  private ServiceLevelIndicatorDTO createRatioServiceLevelIndicator_oldDTO() {
+    return ServiceLevelIndicatorDTO.builder()
+        .identifier("sliIndicator")
+        .name("sliName")
+        .type(SLIEvaluationType.WINDOW)
+        .sliMissingDataType(SLIMissingDataType.GOOD)
+        .spec(WindowBasedServiceLevelIndicatorSpec.builder()
+                  .type(SLIMetricType.RATIO)
+                  .spec(RatioSLIMetricSpec.builder()
+                            .eventType(RatioSLIMetricEventType.GOOD)
+                            .thresholdValue(50.0)
+                            .thresholdType(ThresholdType.GREATER_THAN)
+                            .metric1("metric1")
+                            .metric2("metric2")
+                            .build())
+                  .build())
+        .build();
+  }
+
+  private ServiceLevelIndicatorDTO createThresholdServiceLevelIndicator_oldDTO() {
+    return ServiceLevelIndicatorDTO.builder()
+        .identifier("sliIndicator")
+        .name("sliName")
+        .type(SLIEvaluationType.WINDOW)
+        .sliMissingDataType(SLIMissingDataType.GOOD)
+        .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.THRESHOLD)
                   .spec(ThresholdSLIMetricSpec.builder()
                             .metric1("metric1")

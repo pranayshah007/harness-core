@@ -42,9 +42,15 @@ public class GarArtifactOutcome implements ArtifactOutcome {
   String image;
   String registryHostname;
   String imagePullSecret;
+  /**
+   * dockerConfigJson for docker credentials base encoded.
+   */
+  String dockerConfigJsonSecret;
   String repositoryType;
   Map<String, String> metadata;
+  Map<String, String> label;
   boolean primaryArtifact;
+
   @Override
   public ArtifactSummary getArtifactSummary() {
     return GarArtifactSummary.builder()
@@ -55,6 +61,7 @@ public class GarArtifactOutcome implements ArtifactOutcome {
         .version(version)
         .build();
   }
+
   @Override
   public String getArtifactType() {
     return type;

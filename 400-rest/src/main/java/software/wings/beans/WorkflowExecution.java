@@ -43,6 +43,7 @@ import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.UuidAware;
 import io.harness.validation.Update;
 
+import software.wings.beans.Activity.ActivityKeys;
 import software.wings.beans.ExecutionArgs.ExecutionArgsKeys;
 import software.wings.beans.NameValuePair.NameValuePairKeys;
 import software.wings.beans.PipelineExecution.PipelineExecutionKeys;
@@ -95,6 +96,7 @@ import lombok.experimental.UtilityClass;
 public class WorkflowExecution implements PersistentRegularIterable, AccountDataRetentionEntity, UuidAware,
                                           CreatedAtAware, CreatedByAware, KeywordsAware, AccountAccess {
   public static String SEARCH2 = "search2";
+  public static String ACCOUNT_ID_VALID_UNTIL = "accountId_validUntil";
   public static String APP_PIP_EXECUTIONID_CREATEDAT = "app_pipExecutionId_createdAt";
   public static String SERVICE_GUARD = "service_guard";
   public static String LAST_INFRAMAPPING_SEARCH_2 = "lastInfraMappingSearch2";
@@ -276,6 +278,11 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .rangeField(WorkflowExecutionKeys.envIds)
                  .rangeField(WorkflowExecutionKeys.cdPageCandidate)
                  .rangeField(WorkflowExecutionKeys.status)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name(ACCOUNT_ID_VALID_UNTIL)
+                 .field(ActivityKeys.accountId)
+                 .field(ActivityKeys.validUntil)
                  .build())
         .build();
   }

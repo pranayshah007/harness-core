@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -86,6 +87,8 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(CDC)
 public class ArtifactResponseToOutcomeMapper {
   private final String IMAGE_PULL_SECRET_START = "<+imagePullSecret.";
+  private final String DOCKER_CONFIG_JSON_START = "<+dockerConfigJsonSecret.";
+
   private final String IMAGE_PULL_SECRET_END = ">";
 
   public ArtifactOutcome toArtifactOutcome(
@@ -258,6 +261,8 @@ public class ArtifactResponseToOutcomeMapper {
     return GithubPackagesArtifactOutcome.builder()
         .image(useDelegateResponse ? githubPackagesArtifactDelegateResponse.getPackageUrl() : "")
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(githubPackagesArtifactConfig)))
+        .dockerConfigJsonSecret(
+            createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(githubPackagesArtifactConfig)))
         .packageName(githubPackagesArtifactConfig.getPackageName().getValue())
         .version(useDelegateResponse ? githubPackagesArtifactDelegateResponse.getVersion() : "")
         .connectorRef(githubPackagesArtifactConfig.getConnectorRef().getValue())
@@ -336,6 +341,7 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(dockerConfig.isPrimaryArtifact())
         .displayName(displayName)
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(dockerConfig)))
+        .dockerConfigJsonSecret(createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(dockerConfig)))
         .label(getLabels(dockerDelegateResponse))
         .digest(dockerConfig.getDigest() != null ? dockerConfig.getDigest().getValue() : null)
         .metadata(metadata)
@@ -356,8 +362,12 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.GCR.getDisplayName())
         .primaryArtifact(gcrArtifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(gcrArtifactConfig)))
+        .metadata(useDelegateResponse ? getMetadata(gcrArtifactDelegateResponse) : null)
+        .label(getLabels(gcrArtifactDelegateResponse))
+        .dockerConfigJsonSecret(createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(gcrArtifactConfig)))
         .build();
   }
+
   private static GarArtifactOutcome getGarArtifactOutcome(GoogleArtifactRegistryConfig googleArtifactRegistryConfig,
       GarDelegateResponse garDelegateResponse, boolean useDelegateResponse) {
     return GarArtifactOutcome.builder()
@@ -380,6 +390,9 @@ public class ArtifactResponseToOutcomeMapper {
         .image(getImageValue(garDelegateResponse))
         .metadata(useDelegateResponse ? getMetadata(garDelegateResponse) : null)
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(googleArtifactRegistryConfig)))
+        .label(getLabels(garDelegateResponse))
+        .dockerConfigJsonSecret(
+            createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(googleArtifactRegistryConfig)))
         .repositoryType(googleArtifactRegistryConfig.getGoogleArtifactRegistryType().getValue())
         .build();
   }
@@ -398,7 +411,9 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.ECR.getDisplayName())
         .primaryArtifact(ecrArtifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(ecrArtifactConfig)))
+        .dockerConfigJsonSecret(createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(ecrArtifactConfig)))
         .label(getEcrLabels(ecrArtifactDelegateResponse))
+        .metadata(getMetadata(ecrArtifactDelegateResponse))
         .build();
   }
 
@@ -502,6 +517,7 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
+        .dockerConfigJsonSecret(createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
         .label(getArtifactoryLabels(artifactDelegateResponse))
         .build();
@@ -515,6 +531,7 @@ public class ArtifactResponseToOutcomeMapper {
 
     return artifactDelegateResponse.getLabel();
   }
+
   private ArtifactoryGenericArtifactOutcome getArtifactoryGenericArtifactOutcome(
       ArtifactoryRegistryArtifactConfig artifactConfig,
       ArtifactoryGenericArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
@@ -561,11 +578,16 @@ public class ArtifactResponseToOutcomeMapper {
 
   private CustomArtifactOutcome getCustomArtifactOutcome(CustomArtifactConfig artifactConfig,
       CustomArtifactDelegateResponse customArtifactDelegateResponse, boolean useDelegateResponse) {
+    String version = artifactConfig.getVersion().getValue();
+    if (useDelegateResponse) {
+      version = customArtifactDelegateResponse.getVersion() != null ? customArtifactDelegateResponse.getVersion()
+                                                                    : artifactConfig.getVersion().getValue();
+    }
     return CustomArtifactOutcome.builder()
         .identifier(artifactConfig.getIdentifier())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
-        .version(artifactConfig.getVersion().getValue())
-        .image(artifactConfig.getVersion().getValue())
+        .version(version)
+        .image(version)
         .displayName(useDelegateResponse ? customArtifactDelegateResponse.getBuildDetails().getUiDisplayName() : null)
         .metadata(useDelegateResponse ? customArtifactDelegateResponse.getMetadata() : null)
         .build();
@@ -585,6 +607,7 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.ACR.getDisplayName())
         .primaryArtifact(acrArtifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(acrArtifactConfig)))
+        .dockerConfigJsonSecret(createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(acrArtifactConfig)))
         .build();
   }
 
@@ -662,11 +685,25 @@ public class ArtifactResponseToOutcomeMapper {
   }
 
   private Map<String, String> getLabels(DockerArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || EmptyPredicate.isEmpty(artifactDelegateResponse.getLabel())) {
+      return Collections.emptyMap();
+    }
+    return artifactDelegateResponse.getLabel();
+  }
+
+  private Map<String, String> getLabels(GarDelegateResponse artifactDelegateResponse) {
     if (artifactDelegateResponse == null || artifactDelegateResponse.getLabel() == null) {
       return Collections.emptyMap();
     }
     return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getLabel()) ? artifactDelegateResponse.getLabel()
                                                                           : Collections.emptyMap();
+  }
+
+  private Map<String, String> getLabels(GcrArtifactDelegateResponse gcrArtifactDelegateResponse) {
+    if (gcrArtifactDelegateResponse == null || isEmpty(gcrArtifactDelegateResponse.getLabel())) {
+      return Collections.emptyMap();
+    }
+    return gcrArtifactDelegateResponse.getLabel();
   }
 
   private String getRegistryHostnameValue(ArtifactDelegateResponse artifactDelegateResponse) {
@@ -689,5 +726,9 @@ public class ArtifactResponseToOutcomeMapper {
 
   private String createImagePullSecret(String artifactKey) {
     return String.format("%s%s%s", IMAGE_PULL_SECRET_START, artifactKey, IMAGE_PULL_SECRET_END);
+  }
+
+  private String createDockerConfigJsonSecret(String artifactKey) {
+    return String.format("%s%s%s", DOCKER_CONFIG_JSON_START, artifactKey, IMAGE_PULL_SECRET_END);
   }
 }

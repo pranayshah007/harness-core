@@ -24,6 +24,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.PcfInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.service.InstanceSyncConstants;
 
@@ -39,9 +40,10 @@ import org.eclipse.jetty.server.Response;
 @Singleton
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(HarnessTeam.CDP)
-public class PcfInstanceSyncDelegateExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
+public class PcfInstanceSyncDelegateExecutor implements PerpetualTaskExecutor {
   @Inject PcfDelegateTaskHelper pcfDelegateTaskHelper;
   @Inject DelegateAgentManagerClient delegateAgentManagerClient;
+  @Inject private KryoSerializer kryoSerializer;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -55,14 +57,13 @@ public class PcfInstanceSyncDelegateExecutor extends PerpetualTaskExecutorBase i
     String orgName = instanceSyncParams.getOrgName();
     String space = instanceSyncParams.getSpace();
 
-    CfInternalConfig cfInternalConfig = (CfInternalConfig) getKryoSerializer(params.getReferenceFalseKryoSerializer())
-                                            .asObject(instanceSyncParams.getPcfConfig().toByteArray());
+    CfInternalConfig cfInternalConfig =
+        (CfInternalConfig) kryoSerializer.asObject(instanceSyncParams.getPcfConfig().toByteArray());
 
     ByteString encryptedData = instanceSyncParams.getEncryptedData();
 
     List<EncryptedDataDetail> encryptedDataDetailList =
-        (List<EncryptedDataDetail>) getKryoSerializer(params.getReferenceFalseKryoSerializer())
-            .asObject(encryptedData.toByteArray());
+        (List<EncryptedDataDetail>) kryoSerializer.asObject(encryptedData.toByteArray());
 
     CfInstanceSyncRequest cfInstanceSyncRequest = CfInstanceSyncRequest.builder()
                                                       .pcfConfig(cfInternalConfig)
@@ -93,7 +94,7 @@ public class PcfInstanceSyncDelegateExecutor extends PerpetualTaskExecutorBase i
             : cfInstanceSyncResponse.getInstanceIndices().size();
         log.info("Found {} number of instances pcf deployment", instanceSize);
       }
-      execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
+      execute(delegateAgentManagerClient.publishInstanceSyncResult(
           taskId.getId(), cfInternalConfig.getAccountId(), cfCommandExecutionResponse));
     } catch (Exception ex) {
       log.error(

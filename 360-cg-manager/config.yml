@@ -321,6 +321,7 @@ mongo:
     mongoTagValue: none
   aliasDBName: harness
   maxOperationTimeInMillis: 300000
+  maxDocumentsToBeFetched: 2147483647
 
 events-mongo:
   uri: mongodb://localhost:27017/events
@@ -694,12 +695,15 @@ eventListenersCountConfig:
   generalConsumerCount: ${GENERAL_CONSUMER_COUNT:-2}
 
 delegateQueueServiceConfig:
-    queueServiceConfig:
-      baseUrl: http://localhost:9091/
-      connectTimeOutSeconds: 15
-      readTimeOutSeconds: 15
     topic: "delegate-service"
     enableQueueAndDequeue: false
+    queueServiceClientConfig:
+      httpClientConfig:
+        baseUrl: http://localhost:9091/
+        connectTimeOutSeconds: 15
+        readTimeOutSeconds: 15
+      queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+      envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
 
 iteratorsConfig:
   resourceConstraintBackupIteratorConfig:

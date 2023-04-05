@@ -34,7 +34,6 @@ public class PdcInfraMapping implements InfraMapping {
   private List<String> hosts;
   private String connectorRef;
   private HostFilter hostFilter;
-  private Boolean dynamicallyProvisioned;
   private String hostObjectArray;
   private Map<String, String> hostAttributes;
 }

@@ -123,7 +123,6 @@ import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
 import io.harness.ng.core.handler.NGVaultUnsetRenewalHandler;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
-import io.harness.ng.core.migration.NgLocalToGlobalSecretsMigrationJob;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
 import io.harness.ng.core.remote.UserGroupRestrictionUsageImpl;
@@ -158,11 +157,13 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.expressions.functors.ConfigFileFunctor;
+import io.harness.pms.expressions.functors.DockerConfigJsonFunctor;
 import io.harness.pms.expressions.functors.FileStoreFunctor;
 import io.harness.pms.expressions.functors.ImagePullSecretFunctor;
 import io.harness.pms.expressions.functors.InstanceFunctor;
 import io.harness.pms.governance.EnvironmentExpansionHandler;
 import io.harness.pms.governance.EnvironmentRefExpansionHandler;
+import io.harness.pms.governance.MultiEnvironmentExpansionHandler;
 import io.harness.pms.governance.ServiceRefExpansionHandler;
 import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
 import io.harness.pms.redisConsumer.PipelineExecutionSummaryCDRedisEventConsumer;
@@ -544,16 +545,27 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .microservice(Microservice.CORE)
         .migrationProviderList(new ArrayList<Class<? extends MigrationProvider>>() {
           { add(NGCoreMigrationProvider.class); } // Add all migration provider classes here
+
           { add(ProjectMigrationProvider.class); }
+
           { add(UserMembershipMigrationProvider.class); }
+
           { add(NGBeanMigrationProvider.class); }
+
           { add(InstanceMigrationProvider.class); }
+
           { add(UserMetadataMigrationProvider.class); }
+
           { add(LicenseManagerMigrationProvider.class); }
+
           { add(SourceCodeManagerMigrationProvider.class); }
+
           { add(GitSyncMigrationProvider.class); }
+
           { add(DelegateMigrationProvider.class); }
+
           { add(UserGroupMigrationProvider.class); }
+
           { add(CDMigrationProvider.class); }
         })
         .build();
@@ -730,6 +742,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private Map<String, Class<? extends SdkFunctor>> getSdkFunctors() {
     Map<String, Class<? extends SdkFunctor>> sdkFunctorMap = new HashMap<>();
     sdkFunctorMap.put(ImagePullSecretFunctor.IMAGE_PULL_SECRET, ImagePullSecretFunctor.class);
+    sdkFunctorMap.put(DockerConfigJsonFunctor.DOCKER_CONFIG_JSON, DockerConfigJsonFunctor.class);
     sdkFunctorMap.put(VariableFunctor.VARIABLE, VariableFunctor.class);
     sdkFunctorMap.put(TerraformPlanJsonFunctor.TERRAFORM_PLAN_JSON, TerraformPlanJsonFunctor.class);
     sdkFunctorMap.put(
@@ -780,10 +793,22 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                                                   .expansionHandler(EnvironmentExpansionHandler.class)
                                                   .build();
 
+    JsonExpansionInfo multiEnvironmentInfo =
+        JsonExpansionInfo.newBuilder()
+            .setKey("stage/spec/environments")
+            .setExpansionType(ExpansionRequestType.LOCAL_FQN)
+            .setStageType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("Deployment").build())
+            .build();
+    JsonExpansionHandlerInfo multiEnvironmentHandlerInfo = JsonExpansionHandlerInfo.builder()
+                                                               .jsonExpansionInfo(multiEnvironmentInfo)
+                                                               .expansionHandler(MultiEnvironmentExpansionHandler.class)
+                                                               .build();
+
     jsonExpansionHandlers.add(connRefHandlerInfo);
     jsonExpansionHandlers.add(serviceRefHandlerInfo);
     jsonExpansionHandlers.add(envRefHandlerInfo);
     jsonExpansionHandlers.add(envHandlerInfo);
+    jsonExpansionHandlers.add(multiEnvironmentHandlerInfo);
     return jsonExpansionHandlers;
   }
 
@@ -821,7 +846,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
-    environment.lifecycle().manage(injector.getInstance(NgLocalToGlobalSecretsMigrationJob.class));
     createConsumerThreadsToListenToEvents(environment, injector);
   }
 

@@ -40,7 +40,7 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
       secretResponse.setEnvVariable(envVariable);
       return Response.status(Response.Status.CREATED).entity(secretResponse).build();
     } catch (Exception e) {
-      log.error("Could not create environment secret", e);
+      log.error("Could not create environment variable", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
@@ -56,7 +56,7 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
     try {
       responseSecrets = backstageEnvVariableService.createMulti(requestSecrets, harnessAccount);
     } catch (Exception e) {
-      log.error("Could not create all environment secrets", e);
+      log.error("Could not create all environment variables", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
@@ -153,7 +153,7 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
           .entity(BackstageEnvVariableMapper.toResponseList(responseVariables))
           .build();
     } catch (Exception e) {
-      log.error("Could not update all environment secrets", e);
+      log.error("Could not update all environment variables", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();

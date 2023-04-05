@@ -17,12 +17,11 @@ require (
 	github.com/harness/harness-core v0.0.0-20230207125731-25cf0db6b130 // indirect
 	github.com/harness/harness-core/commons/go/lib v0.0.0-20220222141117-7659b7eca599
 	github.com/mattn/go-zglob v0.0.4 // indirect
-	github.com/stretchr/testify v1.7.0
-	github.com/wings-software/autogen-go v0.0.0-20230214055012-97895b93475b // indirect
+	github.com/stretchr/testify v1.8.1
+	github.com/wings-software/autogen-go v1.0.0 // indirect
 	go.uber.org/zap v1.15.0
-	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d
+	golang.org/x/net v0.5.0
 	google.golang.org/grpc v1.53.0
-	google.golang.org/protobuf v1.27.1
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	google.golang.org/protobuf v1.28.1
 	mvdan.cc/sh/v3 v3.2.4 // indirect
 )

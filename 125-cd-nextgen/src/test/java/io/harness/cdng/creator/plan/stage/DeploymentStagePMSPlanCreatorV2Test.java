@@ -191,7 +191,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Lists.newArrayList(createGlobalFreezeResponse());
     doReturn(freezeSummaryResponseDTOList)
         .when(freezeEvaluateService)
-        .getActiveFreezeEntities(anyString(), anyString(), anyString());
+        .getActiveFreezeEntities(anyString(), anyString(), anyString(), anyString());
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .globalContext(Map.of("metadata",
                                       PlanCreationContextValue.newBuilder()
@@ -210,7 +210,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
         .isInstanceOf(NGFreezeException.class)
         .matches(ex -> ex.getMessage().equals("Execution can't be performed because project is frozen"));
 
-    verify(freezeEvaluateService, times(1)).getActiveFreezeEntities(anyString(), anyString(), anyString());
+    verify(freezeEvaluateService, times(1)).getActiveFreezeEntities(anyString(), anyString(), anyString(), anyString());
   }
 
   @Test
@@ -221,7 +221,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Lists.newArrayList(createGlobalFreezeResponse());
     doReturn(freezeSummaryResponseDTOList)
         .when(freezeEvaluateService)
-        .getActiveFreezeEntities(anyString(), anyString(), anyString());
+        .getActiveFreezeEntities(anyString(), anyString(), anyString(), anyString());
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .globalContext(Map.of("metadata",
                                       PlanCreationContextValue.newBuilder()
@@ -240,7 +240,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
         .thenReturn(true);
     deploymentStagePMSPlanCreator.failIfProjectIsFrozen(ctx);
 
-    verify(freezeEvaluateService, times(0)).getActiveFreezeEntities(anyString(), anyString(), anyString());
+    verify(freezeEvaluateService, times(0)).getActiveFreezeEntities(anyString(), anyString(), anyString(), anyString());
   }
 
   private FreezeSummaryResponseDTO createGlobalFreezeResponse() {

@@ -56,6 +56,6 @@ public class EntityAuditRecordHandlerTest extends WingsBaseTest {
     when(auditService.fetchMostRecentAuditRecord(anyString())).thenReturn(null);
     entityAuditRecordHandler.handle(entity);
     verify(auditService, atMost(1))
-        .fetchEntityAuditRecordsOlderThanGivenTime(entity.getAuditHeaderId(), entity.getCreatedAt());
+        .fetchLimitedEntityAuditRecordsOlderThanGivenTime(entity.getAuditHeaderId(), entity.getCreatedAt(), 1);
   }
 }

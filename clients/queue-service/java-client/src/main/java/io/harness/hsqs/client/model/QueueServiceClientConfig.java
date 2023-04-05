@@ -21,4 +21,5 @@ public class QueueServiceClientConfig {
   ServiceHttpClientConfig httpClientConfig;
   String queueServiceSecret;
   @Builder.Default String envNamespace = "localhost";
+  String topic;
 }

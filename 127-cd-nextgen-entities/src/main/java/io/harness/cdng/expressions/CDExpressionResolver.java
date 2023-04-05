@@ -48,4 +48,8 @@ public class CDExpressionResolver {
   public String renderExpression(Ambiance ambiance, String expression) {
     return engineExpressionService.renderExpression(ambiance, expression);
   }
+
+  public String renderExpression(Ambiance ambiance, String expression, boolean skipUnresolvedExpressionCheck) {
+    return engineExpressionService.renderExpression(ambiance, expression, skipUnresolvedExpressionCheck);
+  }
 }

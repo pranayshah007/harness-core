@@ -28,6 +28,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityBulkOrExecutionCapability;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.PdcDeploymentInfoDTO;
+import io.harness.helper.InstanceSyncHelper;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -64,6 +65,7 @@ public class PdcInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
 
   @Mock KryoSerializer kryoSerializer;
   @Mock NGSecretServiceV2 ngSecretServiceV2;
+  @Mock InstanceSyncHelper instanceSyncHelper;
   @InjectMocks PdcInstanceSyncPerpetualTaskHandler pdcInstanceSyncPerpetualTaskHandler;
 
   @Test

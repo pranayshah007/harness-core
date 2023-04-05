@@ -21,9 +21,12 @@ import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
 import dev.morphia.mapping.Mapper;
 import dev.morphia.query.Query;
-import dev.morphia.query.Sort;
 import java.util.Date;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PL)
@@ -35,53 +38,57 @@ public class AccountDataRetentionService {
 
   @Inject private HPersistence persistence;
 
-  public <T extends AccountDataRetentionEntity> int corectValidUntilAccount(
+  public <T extends AccountDataRetentionEntity> int correctValidUntilAccount(
       Class<? extends AccountDataRetentionEntity> clz, Map<String, Long> accounts, long now, long assureTo) {
     log.info("Account data Retention for {} from {} assuredTo {}", clz.getName(), now, assureTo);
-    Query<T> query = persistence.createQuery((Class<T>) clz, excludeAuthority);
-
-    query.or(query.criteria(AccountDataRetentionEntity.VALID_UNTIL_KEY).equal(null),
-        query.criteria(AccountDataRetentionEntity.VALID_UNTIL_KEY).lessThan(new Date(assureTo)));
-    query.order(Sort.ascending(AccountDataRetentionEntity.VALID_UNTIL_KEY));
-
-    query.project(AccountDataRetentionEntity.ACCOUNT_ID_KEY, true);
-    query.project(AccountDataRetentionEntity.VALID_UNTIL_KEY, true);
-    query.project(AccountDataRetentionEntity.CREATED_AT_KEY, true);
+    Set<String> accountsWithDataRetention = accounts.entrySet()
+                                                .stream()
+                                                .filter(e -> Objects.nonNull(e.getValue()))
+                                                .map(Entry::getKey)
+                                                .collect(Collectors.toSet());
 
     final DBCollection collection = persistence.getCollection(clz);
     BulkWriteOperation bulkWriteOperation = collection.initializeUnorderedBulkOperation();
 
     int i = 0;
-    try (HIterator<T> entities = new HIterator<>(query.fetch())) {
-      for (T entity : entities) {
-        Long accountDataRetention = accounts.get(entity.getAccountId());
-        // We do not have data retention specified for this account
-        if (accountDataRetention == null) {
-          continue;
-        }
+    for (String accountId : accountsWithDataRetention) {
+      Query<T> query = persistence.createQuery((Class<T>) clz, excludeAuthority);
 
-        long validUntil = (entity.getCreatedAt() == 0 ? now : entity.getCreatedAt()) + accountDataRetention;
-        // The valid until value
-        if (entity.getValidUntil() != null) {
-          // If too far in the future, lets leave for later
-          if (entity.getValidUntil().getTime() > assureTo) {
-            break;
+      query.or(query.criteria(AccountDataRetentionEntity.VALID_UNTIL_KEY).equal(null),
+          query.criteria(AccountDataRetentionEntity.VALID_UNTIL_KEY).lessThan(new Date(assureTo)));
+      query.filter(AccountDataRetentionEntity.ACCOUNT_ID_KEY, accountId);
+
+      query.project(AccountDataRetentionEntity.ACCOUNT_ID_KEY, true);
+      query.project(AccountDataRetentionEntity.VALID_UNTIL_KEY, true);
+      query.project(AccountDataRetentionEntity.CREATED_AT_KEY, true);
+
+      try (HIterator<T> entities = new HIterator<>(query.fetch())) {
+        for (T entity : entities) {
+          Long accountDataRetention = accounts.get(entity.getAccountId());
+
+          long validUntil = (entity.getCreatedAt() == 0 ? now : entity.getCreatedAt()) + accountDataRetention;
+          // The valid until value
+          if (entity.getValidUntil() != null) {
+            // If too far in the future, lets leave for later
+            if (entity.getValidUntil().getTime() > assureTo) {
+              break;
+            }
+            // If the calculated valid until and the set valid until have an acceptable difference it is fine. Already
+            // correct, don't bother.
+            if (Math.abs(entity.getValidUntil().getTime() - validUntil) <= ACCEPTABLE_DIFFERENCE_IN_TIMESTAMP) {
+              continue;
+            }
           }
-          // If the calculated valid until and the set valid until have an acceptable difference it is fine. Already
-          // correct, don't bother.
-          if (Math.abs(entity.getValidUntil().getTime() - validUntil) <= ACCEPTABLE_DIFFERENCE_IN_TIMESTAMP) {
-            continue;
+
+          BasicDBObject set = new BasicDBObject(
+              "$set", new BasicDBObject(AccountDataRetentionEntity.VALID_UNTIL_KEY, new Date(validUntil)));
+          bulkWriteOperation.find(new BasicDBObject(Mapper.ID_KEY, entity.getUuid())).updateOne(set);
+
+          if (++i % BATCH == 0) {
+            bulkWriteOperation.execute();
+            bulkWriteOperation = collection.initializeUnorderedBulkOperation();
+            log.info("{}: {} updated", clz.getName(), i);
           }
-        }
-
-        BasicDBObject set = new BasicDBObject(
-            "$set", new BasicDBObject(AccountDataRetentionEntity.VALID_UNTIL_KEY, new Date(validUntil)));
-        bulkWriteOperation.find(new BasicDBObject(Mapper.ID_KEY, entity.getUuid())).updateOne(set);
-
-        if (++i % BATCH == 0) {
-          bulkWriteOperation.execute();
-          bulkWriteOperation = collection.initializeUnorderedBulkOperation();
-          log.info("{}: {} updated", clz.getName(), i);
         }
       }
     }

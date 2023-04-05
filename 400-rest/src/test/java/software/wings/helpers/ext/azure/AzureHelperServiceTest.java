@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
+import static io.harness.rule.OwnerRule.RICHA;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
@@ -42,6 +43,7 @@ import io.harness.azure.model.tag.TagDetails;
 import io.harness.azure.model.tag.TagValue;
 import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.network.Http;
@@ -410,6 +412,95 @@ public class AzureHelperServiceTest extends WingsBaseTest {
 
       AzureVaultConfig azureVaultConfig =
           AzureVaultConfig.builder().clientId("clientId").tenantId("tenantId").secretKey("key").build();
+
+      azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
+      ArgumentCaptor<HttpPipeline> captor = ArgumentCaptor.forClass(HttpPipeline.class);
+      ArgumentCaptor<AzureProfile> captor2 = ArgumentCaptor.forClass(AzureProfile.class);
+      azureMockedStatic.verify(times(1), () -> AzureResourceManager.authenticate(captor.capture(), captor2.capture()));
+      assertThat(captor2.getValue().getEnvironment().getManagementEndpoint())
+          .isEqualTo("https://management.core.windows.net/");
+
+      azureVaultConfig.setAzureEnvironmentType(AZURE_US_GOVERNMENT);
+      azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
+      azureMockedStatic.verify(times(2), () -> AzureResourceManager.authenticate(captor.capture(), captor2.capture()));
+      assertThat(captor2.getValue().getEnvironment().getManagementEndpoint())
+          .isEqualTo("https://management.core.usgovcloudapi.net/");
+
+      azureVaultConfig.setAzureEnvironmentType(AZURE);
+      azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
+      azureMockedStatic.verify(times(3), () -> AzureResourceManager.authenticate(captor.capture(), captor2.capture()));
+      assertThat(captor2.getValue().getEnvironment().getManagementEndpoint())
+          .isEqualTo("https://management.core.windows.net/");
+    }
+  }
+
+  @Test()
+  @Owner(developers = RICHA)
+  @Category(UnitTests.class)
+  public void testListVaultsForSystemManagedIdentity() throws Exception {
+    try (MockedStatic<AzureResourceManager> azureMockedStatic = Mockito.mockStatic(AzureResourceManager.class)) {
+      when(AzureResourceManager.configure()).thenReturn(configurable);
+      azureMockedStatic.when(() -> AzureResourceManager.authenticate(any(HttpPipeline.class), any(AzureProfile.class)))
+          .thenReturn(authenticated);
+      when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+      when(configurable.withRetryPolicy(any(RetryPolicy.class))).thenReturn(configurable);
+      when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class))).thenReturn(authenticated);
+      when(authenticated.withSubscription(any())).thenReturn(azure);
+
+      when(azure.resourceGroups())
+          .thenReturn(getResourceGroups(getResourceGroup("resourceGroupId", "Test ResourceGroup")));
+      when(azure.vaults()).thenReturn(getVaults(getVault("vaultId", "some vault name")));
+
+      AzureVaultConfig azureVaultConfig =
+          AzureVaultConfig.builder()
+              .useManagedIdentity(true)
+              .azureManagedIdentityType(AzureManagedIdentityType.SYSTEM_ASSIGNED_MANAGED_IDENTITY)
+              .build();
+
+      azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
+      ArgumentCaptor<HttpPipeline> captor = ArgumentCaptor.forClass(HttpPipeline.class);
+      ArgumentCaptor<AzureProfile> captor2 = ArgumentCaptor.forClass(AzureProfile.class);
+      azureMockedStatic.verify(times(1), () -> AzureResourceManager.authenticate(captor.capture(), captor2.capture()));
+      assertThat(captor2.getValue().getEnvironment().getManagementEndpoint())
+          .isEqualTo("https://management.core.windows.net/");
+
+      azureVaultConfig.setAzureEnvironmentType(AZURE_US_GOVERNMENT);
+      azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
+      azureMockedStatic.verify(times(2), () -> AzureResourceManager.authenticate(captor.capture(), captor2.capture()));
+      assertThat(captor2.getValue().getEnvironment().getManagementEndpoint())
+          .isEqualTo("https://management.core.usgovcloudapi.net/");
+
+      azureVaultConfig.setAzureEnvironmentType(AZURE);
+      azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
+      azureMockedStatic.verify(times(3), () -> AzureResourceManager.authenticate(captor.capture(), captor2.capture()));
+      assertThat(captor2.getValue().getEnvironment().getManagementEndpoint())
+          .isEqualTo("https://management.core.windows.net/");
+    }
+  }
+
+  @Test()
+  @Owner(developers = RICHA)
+  @Category(UnitTests.class)
+  public void testListVaultsForUserManagedIdentity() throws Exception {
+    try (MockedStatic<AzureResourceManager> azureMockedStatic = Mockito.mockStatic(AzureResourceManager.class)) {
+      when(AzureResourceManager.configure()).thenReturn(configurable);
+      azureMockedStatic.when(() -> AzureResourceManager.authenticate(any(HttpPipeline.class), any(AzureProfile.class)))
+          .thenReturn(authenticated);
+      when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+      when(configurable.withRetryPolicy(any(RetryPolicy.class))).thenReturn(configurable);
+      when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class))).thenReturn(authenticated);
+      when(authenticated.withSubscription(any())).thenReturn(azure);
+
+      when(azure.resourceGroups())
+          .thenReturn(getResourceGroups(getResourceGroup("resourceGroupId", "Test ResourceGroup")));
+      when(azure.vaults()).thenReturn(getVaults(getVault("vaultId", "some vault name")));
+
+      AzureVaultConfig azureVaultConfig =
+          AzureVaultConfig.builder()
+              .useManagedIdentity(true)
+              .azureManagedIdentityType(AzureManagedIdentityType.USER_ASSIGNED_MANAGED_IDENTITY)
+              .managedClientId("managedClientId")
+              .build();
 
       azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
       ArgumentCaptor<HttpPipeline> captor = ArgumentCaptor.forClass(HttpPipeline.class);

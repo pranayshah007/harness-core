@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//960-api-services/src/main/java/io/harness/artifacts/beans:module",
         "//960-api-services/src/main/java/io/harness/artifacts/comparator:module",
+        "//960-api-services/src/main/java/io/harness/artifacts/gar/service:module",
         "//960-api-services/src/main/java/io/harness/aws/beans:module",
         "//960-api-services/src/main/java/software/wings/service/impl:module",
         "//980-commons/src/main/java/io/harness/context:module",

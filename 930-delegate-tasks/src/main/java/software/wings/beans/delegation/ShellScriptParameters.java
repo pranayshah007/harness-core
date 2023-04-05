@@ -147,7 +147,9 @@ public class ShellScriptParameters implements TaskParameters, ActivityAccess, Ex
         .withPassword(hostConnectionAttributes.getKerberosPassword())
         .withVaultSSH(isVaultSSH)
         .withSignedPublicKey(hostConnectionAttributes.getSignedPublicKey())
-        .withPublicKey(hostConnectionAttributes.getPublicKey());
+        .withPublicKey(hostConnectionAttributes.getPublicKey())
+        .withUseSshj(hostConnectionAttributes.isUseSshj())
+        .withUseSshClient(hostConnectionAttributes.isUseSshClient());
     return sshSessionConfigBuilder.build();
   }
 
