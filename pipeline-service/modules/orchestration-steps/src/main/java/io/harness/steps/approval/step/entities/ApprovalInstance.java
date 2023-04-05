@@ -87,7 +87,14 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
   @Id @dev.morphia.annotations.Id String id;
 
   @NotNull Ambiance ambiance;
+
+  // preferably use these ambiance fields saved at first-level
   @FdIndex @NotNull String nodeExecutionId;
+  @NotNull String planExecutionId;
+  @NotNull String accountId;
+  @NotNull String orgIdentifier;
+  @NotNull String projectIdentifier;
+  @NotNull String pipelineIdentifier;
 
   @NotNull ApprovalType type;
   @NotNull ApprovalStatus status;
@@ -124,7 +131,15 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
 
     setId(generateUuid());
     setAmbiance(ambiance);
+
+    // set these ambiance fields as first level fields
     setNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+    setAccountId(AmbianceUtils.getAccountId(ambiance));
+    setOrgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance));
+    setProjectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance));
+    setPipelineIdentifier(AmbianceUtils.getPipelineIdentifier(ambiance));
+    setPlanExecutionId(ambiance.getPlanExecutionId());
+
     setType(ApprovalType.fromName(stepParameters.getType()));
     setStatus(ApprovalStatus.WAITING);
     setDeadline(calculateDeadline(stepParameters.getTimeout()));
