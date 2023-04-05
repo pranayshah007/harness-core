@@ -9,18 +9,23 @@ package io.harness.steps.plugin.infrastructure;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.steps.StepGroupInfra;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.steps.common.steps.stepgroup.StepGroupInfra;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @JsonTypeName("KubernetesDirect")
 @OwnedBy(HarnessTeam.PIPELINE)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class K8sDirectInfra implements StepGroupInfra {
   @Builder.Default @NotNull @Getter private Type type = Type.KUBERNETES_DIRECT;
   @NotNull private ContainerInfraYamlSpec spec;

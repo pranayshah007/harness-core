@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.steps.common.steps.stepgroup;
+package io.harness.plancreator.steps;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,12 +18,13 @@ import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true,
-    include = JsonTypeInfo.As.EXISTING_PROPERTY, defaultImpl = DelegateInfra.class)
+    include = JsonTypeInfo.As.EXISTING_PROPERTY, defaultImpl = NoopStepGroupInfra.class)
 public interface StepGroupInfra {
   @TypeAlias("infrastructure_type")
   enum Type {
     @JsonProperty("KubernetesDirect") KUBERNETES_DIRECT("KubernetesDirect"),
-    @JsonProperty("Delegate") DELEGATE("Delegate");
+    @JsonProperty("Delegate") DELEGATE("Delegate"),
+    @JsonProperty("Noop") NO_OP("Noop");
     private final String yamlName;
 
     Type(String yamlName) {
@@ -36,5 +37,5 @@ public interface StepGroupInfra {
     }
   }
 
-  @ApiModelProperty(allowableValues = "KubernetesDirect, Delegate") Type getType();
+  @ApiModelProperty(allowableValues = "KubernetesDirect, Delegate, Noop") Type getType();
 }

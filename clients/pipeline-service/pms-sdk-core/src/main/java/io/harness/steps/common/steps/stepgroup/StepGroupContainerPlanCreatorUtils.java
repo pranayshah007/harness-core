@@ -7,11 +7,4 @@
 
 package io.harness.steps.common.steps.stepgroup;
 
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.steps.StepGroupElementConfig;
-
-@OwnedBy(HarnessTeam.PIPELINE)
-public class StepGroupElementConfigV2 extends StepGroupElementConfig {
-  StepGroupInfra stepGroupInfra;
-}
+public class StepGroupContainerPlanCreatorUtils {}
