@@ -51,13 +51,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({DelegateServiceGrpc.DelegateServiceBlockingStub.class})
+@RunWith(MockitoJUnitRunner.class)
 @PowerMockIgnore({"javax.security.*", "javax.net.*"})
 public class NgDelegate2TaskExecutorTest extends CategoryTest {
   @Mock private DelegateServiceGrpc.DelegateServiceBlockingStub delegateServiceBlockingStub;
