@@ -32,6 +32,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.*;
 import io.harness.encryption.SecretRefData;
+import io.harness.idp.common.Constants;
 import io.harness.idp.gitintegration.processor.impl.AzureRepoConnectorProcessor;
 import io.harness.idp.gitintegration.processor.impl.BitbucketConnectorProcessor;
 import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
@@ -132,10 +133,8 @@ public class GitIntegrationServiceImplTest {
         githubConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
 
     assertEquals(TOKEN_SECRET_IDENTIFIER,
-        ((BackstageEnvSecretVariable) response.getSecond().get(GitIntegrationConstants.GITHUB_TOKEN))
-            .getHarnessSecretIdentifier());
-    assertEquals(GitIntegrationConstants.GITHUB_TOKEN,
-        response.getSecond().get(GitIntegrationConstants.GITHUB_TOKEN).getEnvName());
+        ((BackstageEnvSecretVariable) response.getSecond().get(Constants.GITHUB_TOKEN)).getHarnessSecretIdentifier());
+    assertEquals(Constants.GITHUB_TOKEN, response.getSecond().get(Constants.GITHUB_TOKEN).getEnvName());
     mockRestStatic.close();
   }
 
@@ -185,10 +184,8 @@ public class GitIntegrationServiceImplTest {
         gitlabConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
 
     assertEquals(TOKEN_SECRET_IDENTIFIER,
-        ((BackstageEnvSecretVariable) response.getSecond().get(GitIntegrationConstants.GITLAB_TOKEN))
-            .getHarnessSecretIdentifier());
-    assertEquals(GitIntegrationConstants.GITLAB_TOKEN,
-        response.getSecond().get(GitIntegrationConstants.GITLAB_TOKEN).getEnvName());
+        ((BackstageEnvSecretVariable) response.getSecond().get(Constants.GITLAB_TOKEN)).getHarnessSecretIdentifier());
+    assertEquals(Constants.GITLAB_TOKEN, response.getSecond().get(Constants.GITLAB_TOKEN).getEnvName());
     mockRestStatic.close();
   }
 
@@ -241,10 +238,9 @@ public class GitIntegrationServiceImplTest {
         bitbucketConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
 
     assertEquals(PWD_SECRET_IDENTIFIER,
-        ((BackstageEnvSecretVariable) response.getSecond().get(GitIntegrationConstants.BITBUCKET_TOKEN))
+        ((BackstageEnvSecretVariable) response.getSecond().get(Constants.BITBUCKET_TOKEN))
             .getHarnessSecretIdentifier());
-    assertEquals(GitIntegrationConstants.BITBUCKET_TOKEN,
-        response.getSecond().get(GitIntegrationConstants.BITBUCKET_TOKEN).getEnvName());
+    assertEquals(Constants.BITBUCKET_TOKEN, response.getSecond().get(Constants.BITBUCKET_TOKEN).getEnvName());
     mockRestStatic.close();
   }
 
@@ -297,10 +293,9 @@ public class GitIntegrationServiceImplTest {
         azureRepoConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
 
     assertEquals(TOKEN_SECRET_IDENTIFIER,
-        ((BackstageEnvSecretVariable) response.getSecond().get(GitIntegrationConstants.AZURE_REPO_TOKEN))
+        ((BackstageEnvSecretVariable) response.getSecond().get(Constants.AZURE_REPO_TOKEN))
             .getHarnessSecretIdentifier());
-    assertEquals(GitIntegrationConstants.AZURE_REPO_TOKEN,
-        response.getSecond().get(GitIntegrationConstants.AZURE_REPO_TOKEN).getEnvName());
+    assertEquals(Constants.AZURE_REPO_TOKEN, response.getSecond().get(Constants.AZURE_REPO_TOKEN).getEnvName());
     mockRestStatic.close();
   }
 
@@ -367,19 +362,16 @@ public class GitIntegrationServiceImplTest {
         githubConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
 
     assertEquals(GITHUB_APP_APPLICATION_ID,
-        ((BackstageEnvConfigVariable) response.getSecond().get(GitIntegrationConstants.GITHUB_APP_ID)).getValue());
-    assertEquals(GitIntegrationConstants.GITHUB_APP_ID,
-        response.getSecond().get(GitIntegrationConstants.GITHUB_APP_ID).getEnvName());
+        ((BackstageEnvConfigVariable) response.getSecond().get(Constants.GITHUB_APP_ID)).getValue());
+    assertEquals(Constants.GITHUB_APP_ID, response.getSecond().get(Constants.GITHUB_APP_ID).getEnvName());
     assertEquals(GITHUB_APP_PRIVATE_KEY_SECRET_IDENTIFIER,
-        ((BackstageEnvSecretVariable) response.getSecond().get(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF))
+        ((BackstageEnvSecretVariable) response.getSecond().get(Constants.GITHUB_APP_PRIVATE_KEY_REF))
             .getHarnessSecretIdentifier());
-    assertEquals(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF,
-        response.getSecond().get(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF).getEnvName());
+    assertEquals(Constants.GITHUB_APP_PRIVATE_KEY_REF,
+        response.getSecond().get(Constants.GITHUB_APP_PRIVATE_KEY_REF).getEnvName());
     assertEquals(TOKEN_SECRET_IDENTIFIER,
-        ((BackstageEnvSecretVariable) response.getSecond().get(GitIntegrationConstants.GITHUB_TOKEN))
-            .getHarnessSecretIdentifier());
-    assertEquals(GitIntegrationConstants.GITHUB_TOKEN,
-        response.getSecond().get(GitIntegrationConstants.GITHUB_TOKEN).getEnvName());
+        ((BackstageEnvSecretVariable) response.getSecond().get(Constants.GITHUB_TOKEN)).getHarnessSecretIdentifier());
+    assertEquals(Constants.GITHUB_TOKEN, response.getSecond().get(Constants.GITHUB_TOKEN).getEnvName());
     mockRestStatic.close();
   }
 }

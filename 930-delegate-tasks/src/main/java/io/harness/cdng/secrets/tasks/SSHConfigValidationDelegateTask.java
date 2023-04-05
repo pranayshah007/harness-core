@@ -55,12 +55,13 @@ public class SSHConfigValidationDelegateTask extends AbstractDelegateRunnableTas
     switch (authDTO.getAuthScheme()) {
       case SSH:
         SSHConfigDTO sshConfigDTO = (SSHConfigDTO) authDTO.getSpec();
-        SshSessionConfigHelper.generateSSHBuilder(sshConfigDTO, builder, encryptionDetails, secretDecryptionService);
+        SshSessionConfigHelper.generateSSHBuilder(
+            authDTO, sshConfigDTO, builder, encryptionDetails, secretDecryptionService);
         break;
       case Kerberos:
         KerberosConfigDTO kerberosConfigDTO = (KerberosConfigDTO) authDTO.getSpec();
         SshSessionConfigHelper.generateKerberosBuilder(
-            kerberosConfigDTO, builder, encryptionDetails, secretDecryptionService);
+            authDTO, kerberosConfigDTO, builder, encryptionDetails, secretDecryptionService);
         break;
       default:
         break;

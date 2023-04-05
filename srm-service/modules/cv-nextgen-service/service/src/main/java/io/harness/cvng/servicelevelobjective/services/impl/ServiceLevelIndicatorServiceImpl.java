@@ -604,6 +604,13 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                                       .startTime(startTime.getEpochSecond())
                                       .endTime(endTime.getEpochSecond())
                                       .build()));
-    orchestrationService.queueAnalysis(verificationTaskId, startTime, endTime);
+    for (Instant intervalStartTime = startTime; intervalStartTime.isBefore(endTime);) {
+      Instant intervalEndTime = intervalStartTime.plus(INTERVAL_HOURS, ChronoUnit.HOURS);
+      if (intervalEndTime.isAfter(endTime)) {
+        intervalEndTime = endTime;
+      }
+      orchestrationService.queueAnalysis(verificationTaskId, intervalStartTime, intervalEndTime);
+      intervalStartTime = intervalEndTime;
+    }
   }
 }

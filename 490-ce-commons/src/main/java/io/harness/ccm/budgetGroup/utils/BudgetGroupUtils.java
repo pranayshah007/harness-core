@@ -91,6 +91,8 @@ public class BudgetGroupUtils {
       "Error in performing operation. Individual Proportion for budget group children should be in valid range";
   public static final String INVALID_TOTAL_PROPORTION =
       "Error in performing operation. Total Proportion for budget group children should be 100";
+  public static final String INVALID_BUDGET_DETAILS_EXCEPTION =
+      "Error in updating budget group. The budget group period/ start period should be same as it's parent budget group";
 
   public static void validateBudgetGroup(BudgetGroup budgetGroup, List<BudgetGroup> existingBudgetGroups) {
     populateDefaultBudgetGroupBreakdown(budgetGroup);

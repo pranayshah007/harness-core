@@ -38,6 +38,7 @@ import io.harness.ng.core.dashboard.AuthorInfo;
 import io.harness.ng.core.dashboard.GitInfo;
 import io.harness.ng.core.dashboard.ServiceDeploymentInfo;
 import io.harness.ng.core.dto.ProjectDTO;
+import io.harness.pms.dashboards.GroupBy;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
@@ -159,8 +160,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     return null;
   }
 
-  public StatusAndTime queryCalculatorForStatusAndTime(
-      String accountId, List<OrgProjectIdentifier> orgProjectIdentifiers, long startInterval, long endInterval) {
+  public StatusAndTime queryCalculatorForStatusAndTime(String accountId,
+      List<OrgProjectIdentifier> orgProjectIdentifiers, GroupBy groupBy, long startInterval, long endInterval) {
     if (isEmpty(accountId)) {
       throw new InvalidRequestException("Account ID cannot be empty");
     }
@@ -172,8 +173,12 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     if (startInterval <= 0 && endInterval <= 0) {
       throw new InvalidRequestException("Timestamp must be a positive long");
     }
+    String startTsQuery = "startts";
+    if (groupBy != null) {
+      startTsQuery = "time_bucket_gapfill(" + groupBy.getNoOfMilliseconds() + ", startts) as startts";
+    }
 
-    String selectStatusQuery = "select status, startts from " + tableName + " where accountid=?";
+    String selectStatusQuery = "select status, " + startTsQuery + " from " + tableName + " where accountid=?";
     String orgIds = orgProjectIdentifiers.stream()
                         .map(OrgProjectIdentifier::getOrgIdentifier)
                         .distinct()
@@ -282,7 +287,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         OrgProjectIdentifier.builder().orgIdentifier(orgId).projectIdentifier(projectId).build();
 
     StatusAndTime statusAndTime = queryCalculatorForStatusAndTime(
-        accountId, Collections.singletonList(orgProjectIdentifier), previousStartInterval, endInterval);
+        accountId, Collections.singletonList(orgProjectIdentifier), null, previousStartInterval, endInterval);
     List<String> status = statusAndTime.getStatus();
     List<Long> time = statusAndTime.getTime();
 
@@ -321,21 +326,26 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
   @Override
   public DashboardBuildExecutionInfo getBuildExecutionBetweenIntervals(
-      String accountId, String orgId, String projectId, long startInterval, long endInterval) {
+      String accountId, String orgId, String projectId, GroupBy groupBy, long startInterval, long endInterval) {
     List<ProjectDTO> accessibleProjectList = NGRestUtils.getResponse(projectClient.getProjectList(accountId, null));
     List<OrgProjectIdentifier> orgProjectIdentifierList = getOrgProjectIdentifier(accessibleProjectList);
     List<OrgProjectIdentifier> orgProjectIdentifiers =
         getOrgProjectIdentifierList(orgProjectIdentifierList, orgId, projectId);
 
-    startInterval = getStartingDateEpochValue(startInterval);
-    endInterval = getStartingDateEpochValue(endInterval);
+    Long intervalInMs = DAY_IN_MS;
+    if (groupBy != null) {
+      intervalInMs = groupBy.getNoOfMilliseconds();
+    }
 
-    endInterval = endInterval + DAY_IN_MS;
+    startInterval = getStartingDateEpochValue(startInterval, intervalInMs);
+    endInterval = getStartingDateEpochValue(endInterval, intervalInMs);
+
+    endInterval = endInterval + intervalInMs;
 
     List<BuildExecutionInfo> buildExecutionInfoList = new ArrayList<>();
 
     StatusAndTime statusAndTime =
-        queryCalculatorForStatusAndTime(accountId, orgProjectIdentifiers, startInterval, endInterval);
+        queryCalculatorForStatusAndTime(accountId, orgProjectIdentifiers, groupBy, startInterval, endInterval);
     List<String> status = statusAndTime.getStatus();
     List<Long> time = statusAndTime.getTime();
 
@@ -344,7 +354,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     while (startDateCopy < endDateCopy) {
       long total = 0, success = 0, failed = 0, expired = 0, aborted = 0;
       for (int i = 0; i < time.size(); i++) {
-        if (startDateCopy == getStartingDateEpochValue(time.get(i))) {
+        if (startDateCopy == getStartingDateEpochValue(time.get(i), intervalInMs)) {
           total++;
           if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
             success++;
@@ -360,7 +370,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       BuildCount buildCount =
           BuildCount.builder().total(total).success(success).expired(expired).aborted(aborted).failed(failed).build();
       buildExecutionInfoList.add(BuildExecutionInfo.builder().time(startDateCopy).builds(buildCount).build());
-      startDateCopy = startDateCopy + DAY_IN_MS;
+      startDateCopy = startDateCopy + intervalInMs;
     }
 
     return DashboardBuildExecutionInfo.builder().buildExecutionInfoList(buildExecutionInfoList).build();
@@ -820,6 +830,10 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
   public long getStartingDateEpochValue(long epochValue) {
     return epochValue - epochValue % DAY_IN_MS;
+  }
+
+  public long getStartingDateEpochValue(long epochValue, long interval) {
+    return epochValue - epochValue % interval;
   }
 
   private void setPrepareStatement(

@@ -231,8 +231,10 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
             .configFile(helper.getGitFetchFilesConfig(
                 inheritOutput.getConfigFiles(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
             .tfModuleSourceInheritSSH(inheritOutput.isUseConnectorCredentials())
-            .fileStoreConfigFiles(helper.getFileStoreFetchFilesConfig(
-                inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
+            .fileStoreConfigFiles(inheritOutput.getFileStorageConfigDTO() != null
+                    ? helper.prepareTerraformConfigFileInfo(inheritOutput.getFileStorageConfigDTO(), ambiance)
+                    : helper.getFileStoreFetchFilesConfig(
+                        inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
             .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance))
             .backendConfig(inheritOutput.getBackendConfig())
             .backendConfigFileInfo(helper.prepareTerraformBackendConfigFileInfo(
@@ -302,8 +304,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     }
     if (terraformConfig.getFileStoreConfig() != null) {
       builder.fileStoreConfigFiles(
-          helper.getFileStoreFetchFilesConfig(terraformConfig.getFileStoreConfig().toFileStorageStoreConfig(), ambiance,
-              TerraformStepHelper.TF_CONFIG_FILES));
+          helper.prepareTerraformConfigFileInfo(terraformConfig.getFileStoreConfig(), ambiance));
     }
 
     ParameterField<Boolean> skipTerraformRefreshCommand = parameters.getConfiguration().getIsSkipTerraformRefresh();

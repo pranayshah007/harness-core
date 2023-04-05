@@ -309,7 +309,7 @@ public class ScmServiceClientImplTest extends CategoryTest {
     UpdateFileResponse updateFileResponse =
         scmServiceClient.updateFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub, false);
     assertThat(updateFileResponse).isNotNull();
-    assertThat(updateFileResponse.getStatus() == Constants.HTTP_BAD_REQUEST_STATUS_CODE).isTrue();
+    assertThat(updateFileResponse.getStatus() == Constants.SCM_BAD_RESPONSE_ERROR_CODE).isTrue();
     assertThat(updateFileResponse.getError().equals(errorMessage)).isTrue();
   }
   @Test

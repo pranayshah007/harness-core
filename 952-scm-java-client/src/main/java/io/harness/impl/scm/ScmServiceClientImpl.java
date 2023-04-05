@@ -207,7 +207,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
           scmConnector, scmBlockingStub, gitFileDetails.getBranch(), gitFileDetails.getFilePath());
       if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
         return UpdateFileResponse.newBuilder()
-            .setStatus(Constants.HTTP_BAD_REQUEST_STATUS_CODE)
+            .setStatus(Constants.SCM_BAD_RESPONSE_ERROR_CODE)
             .setError(getLatestCommitOnFileResponse.getError())
             .build();
       }

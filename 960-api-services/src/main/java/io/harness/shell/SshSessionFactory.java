@@ -62,6 +62,8 @@ public class SshSessionFactory {
                                      .withKey(config.getKey())
                                      .withHost("127.0.0.1")
                                      .withPort(forwardingPort)
+                                     .withUseSshClient(config.isUseSshClient())
+                                     .withUseSshj(config.isUseSshj())
                                      .build();
     return getSSHSession(newConfig);
   }

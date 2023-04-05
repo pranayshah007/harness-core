@@ -49,7 +49,8 @@ public class SscaBeansRegistrar {
           .add(StepInfo.newBuilder()
                    .setName(SscaConstants.SSCA_ORCHESTRATION_STEP)
                    .setType(SscaConstants.SSCA_ORCHESTRATION_STEP)
-                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("SSCA").build())
+                   .setStepMetaData(
+                       StepMetaData.newBuilder().addFolderPaths(SscaConstants.SSCA_STEPS_FOLDER_NAME).build())
                    .setFeatureFlag(FeatureName.SSCA_ENABLED.name())
                    .build())
           .build();

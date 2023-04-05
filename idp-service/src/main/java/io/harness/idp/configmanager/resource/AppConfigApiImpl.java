@@ -30,33 +30,11 @@ import org.springframework.dao.DuplicateKeyException;
 public class AppConfigApiImpl implements AppConfigApi {
   private ConfigManagerService configManagerService;
 
-  private static final String PLUGIN_CONFIG_ALREADY_PRESENT =
-      "Plugin config for plugin - %s is already present for account - %s";
-
   @Override
-  public Response insertPluginAppConfig(@Valid AppConfigRequest body, String harnessAccount) {
+  public Response saveOrUpdatePluginAppConfig(@Valid AppConfigRequest body, String harnessAccount) {
     try {
-      AppConfig insertedAppConfig =
-          configManagerService.saveConfigForAccount(body.getAppConfig(), harnessAccount, ConfigType.PLUGIN);
-      configManagerService.mergeAndSaveAppConfig(harnessAccount);
-      return Response.status(Response.Status.OK).entity(insertedAppConfig).build();
-    } catch (DuplicateKeyException e) {
-      String logMessage = format(PLUGIN_CONFIG_ALREADY_PRESENT, body.getAppConfig().getConfigId(), harnessAccount);
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(ResponseMessage.builder().message(logMessage).build())
-          .build();
-    } catch (Exception e) {
-      log.error(e.getMessage());
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(ResponseMessage.builder().message(e.getMessage()).build())
-          .build();
-    }
-  }
-
-  @Override
-  public Response updatePluginConfigs(@Valid AppConfigRequest body, String harnessAccount) {
-    try {
-      AppConfig updatedAppConfig = configManagerService.updateConfigForAccount(body, harnessAccount, ConfigType.PLUGIN);
+      AppConfig updatedAppConfig =
+          configManagerService.saveOrUpdateConfigForAccount(body.getAppConfig(), harnessAccount, ConfigType.PLUGIN);
       configManagerService.mergeAndSaveAppConfig(harnessAccount);
       return Response.status(Response.Status.OK).entity(updatedAppConfig).build();
     } catch (Exception e) {

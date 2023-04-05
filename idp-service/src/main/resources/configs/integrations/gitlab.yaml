@@ -1,4 +1,4 @@
 integrations:
   gitlab:
     - host: gitlab.com
-      token: ${GITLAB_TOKEN}
+      token: ${HARNESS_GITLAB_TOKEN}

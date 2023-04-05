@@ -16,7 +16,6 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.CLOUD_SERVICE_
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLUSTER_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.INSTANCE_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.commons.utils.TimeUtils.offsetDateTimeNow;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
@@ -152,7 +151,7 @@ public class RecommendationsOverviewQueryV2 {
 
   @GraphQLQuery(name = "recommendationsV2", description = "The list of all types of recommendations for overview page")
   public RecommendationsDTO recommendations(
-      @GraphQLArgument(name = "filter", defaultValue = "{\"offset\":0,\"limit\":10, \"minSaving\":0}")
+      @GraphQLArgument(name = "filter", defaultValue = "{\"offset\":0,\"limit\":10, \"minSaving\":0, \"daysBack\": 4}")
       K8sRecommendationFilterDTO filter, @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
     final HashMap<String, CEViewShortHand> allowedRecommendationsIdAndPerspectives;
@@ -348,6 +347,10 @@ public class RecommendationsOverviewQueryV2 {
       condition = condition.and(constructInCondition(CE_RECOMMENDATIONS.NAME, filter.getNames()));
       condition = condition.and(constructGreaterOrEqualFilter(CE_RECOMMENDATIONS.MONTHLYSAVING, filter.getMinSaving()));
       condition = condition.and(constructGreaterOrEqualFilter(CE_RECOMMENDATIONS.MONTHLYCOST, filter.getMinCost()));
+      if (filter.getDaysBack() != null) {
+        condition = condition.and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
+            offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(filter.getDaysBack())));
+      }
     }
 
     final Condition perspectiveCondition =
@@ -377,6 +380,10 @@ public class RecommendationsOverviewQueryV2 {
     condition = condition.and(constructInCondition(CE_RECOMMENDATIONS.NAME, filter.getNames()));
     condition = condition.and(constructGreaterOrEqualFilter(CE_RECOMMENDATIONS.MONTHLYSAVING, filter.getMinSaving()));
     condition = condition.and(constructGreaterOrEqualFilter(CE_RECOMMENDATIONS.MONTHLYCOST, filter.getMinCost()));
+    if (filter.getDaysBack() != null) {
+      condition = condition.and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
+          offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(filter.getDaysBack())));
+    }
 
     final Condition perspectiveCondition =
         getPerspectiveCondition(firstNonNull(filter.getPerspectiveFilters(), emptyList()), accountId);
@@ -735,8 +742,6 @@ public class RecommendationsOverviewQueryV2 {
     return CE_RECOMMENDATIONS.ISVALID
         .eq(true)
         // based on current-gen workload recommendation dataFetcher
-        .and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
-            offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION)))
         .and(nonDelegate());
   }
 
@@ -782,6 +787,7 @@ public class RecommendationsOverviewQueryV2 {
           .perspectiveFilters(recommendationFilterDTO.getPerspectiveFilters())
           .minSaving(recommendationFilterDTO.getMinSaving())
           .minCost(recommendationFilterDTO.getMinCost())
+          .daysBack(recommendationFilterDTO.getDaysBack())
           .offset(recommendationFilterDTO.getOffset())
           .limit(recommendationFilterDTO.getLimit())
           .build();
@@ -797,6 +803,7 @@ public class RecommendationsOverviewQueryV2 {
         .perspectiveFilters(recommendationFilterDTO.getPerspectiveFilters())
         .minSaving(recommendationFilterDTO.getMinSaving())
         .minCost(recommendationFilterDTO.getMinCost())
+        .daysBack(recommendationFilterDTO.getDaysBack())
         .offset(recommendationFilterDTO.getOffset())
         .limit(recommendationFilterDTO.getLimit())
         .build();

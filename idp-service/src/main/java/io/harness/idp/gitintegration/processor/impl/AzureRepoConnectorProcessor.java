@@ -17,6 +17,7 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.outcome.AzureRepoHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.common.Constants;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
@@ -66,9 +67,8 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
 
     Map<String, BackstageEnvVariable> secrets = new HashMap<>();
 
-    secrets.put(GitIntegrationConstants.AZURE_REPO_TOKEN,
-        GitIntegrationUtils.getBackstageEnvSecretVariable(
-            tokenSecretIdentifier, GitIntegrationConstants.AZURE_REPO_TOKEN));
+    secrets.put(Constants.AZURE_REPO_TOKEN,
+        GitIntegrationUtils.getBackstageEnvSecretVariable(tokenSecretIdentifier, Constants.AZURE_REPO_TOKEN));
     return new Pair<>(connectorInfoDTO, secrets);
   }
 
@@ -78,7 +78,7 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
     Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> connectorSecretsInfo = getConnectorAndSecretsInfo(
         accountIdentifier, null, null, catalogConnectorInfo.getInfraConnector().getIdentifier());
     BackstageEnvSecretVariable envSecretVariable =
-        (BackstageEnvSecretVariable) connectorSecretsInfo.getSecond().get(GitIntegrationConstants.AZURE_REPO_TOKEN);
+        (BackstageEnvSecretVariable) connectorSecretsInfo.getSecond().get(Constants.AZURE_REPO_TOKEN);
     String azureRepoConnectorSecret = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
         envSecretVariable.getHarnessSecretIdentifier(), catalogConnectorInfo.getSourceConnector().getIdentifier());
 

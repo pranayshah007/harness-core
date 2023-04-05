@@ -142,27 +142,29 @@ public class AMIArtifactResource {
 
       AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactSpecFromService;
 
-      if (StringUtils.isBlank(awsConnectorRef)) {
-        awsConnectorRef = (String) amiArtifactConfig.getConnectorRef().fetchFinalValue();
-      }
-
-      if (StringUtils.isBlank(region)) {
-        region = (String) amiArtifactConfig.getRegion().fetchFinalValue();
-      }
-
-      if (NGExpressionUtils.isRuntimeField(amiArtifactConfig.getTags().getExpressionValue())) {
-        amiTags = amiRequestBody.getTags();
-      } else {
-        if (amiArtifactConfig.getTags() != null) {
-          amiTags = amiArtifactConfig.getTags().getValue();
+      if (amiArtifactConfig != null) {
+        if (StringUtils.isBlank(awsConnectorRef)) {
+          awsConnectorRef = (String) amiArtifactConfig.getConnectorRef().fetchFinalValue();
         }
-      }
 
-      if (NGExpressionUtils.isRuntimeField(amiArtifactConfig.getFilters().getExpressionValue())) {
-        amiFilters = amiRequestBody.getFilters();
-      } else {
+        if (StringUtils.isBlank(region)) {
+          region = (String) amiArtifactConfig.getRegion().fetchFinalValue();
+        }
+
+        if (amiArtifactConfig.getTags() != null) {
+          if (NGExpressionUtils.isRuntimeField(amiArtifactConfig.getTags().getExpressionValue())) {
+            amiTags = amiRequestBody.getTags();
+          } else {
+            amiTags = amiArtifactConfig.getTags().getValue();
+          }
+        }
+
         if (amiArtifactConfig.getFilters() != null) {
-          amiFilters = amiArtifactConfig.getFilters().getValue();
+          if (NGExpressionUtils.isRuntimeField(amiArtifactConfig.getFilters().getExpressionValue())) {
+            amiFilters = amiRequestBody.getFilters();
+          } else {
+            amiFilters = amiArtifactConfig.getFilters().getValue();
+          }
         }
       }
 

@@ -10,6 +10,7 @@ package io.harness.ng.core.dto.secrets;
 import io.harness.ng.core.models.SSHAuth;
 import io.harness.secretmanagerclient.SSHAuthScheme;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,6 +34,9 @@ public class SSHAuthDTO {
   @NotNull
   @Valid
   private BaseSSHSpecDTO spec;
+
+  @JsonIgnore private boolean useSshClient;
+  @JsonIgnore private boolean useSshj;
 
   @Builder
   public SSHAuthDTO(SSHAuthScheme type, BaseSSHSpecDTO spec) {

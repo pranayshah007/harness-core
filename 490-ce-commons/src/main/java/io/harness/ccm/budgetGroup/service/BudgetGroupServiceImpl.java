@@ -110,6 +110,8 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
 
     validateChildEntities(budgetGroup, areChildEntitiesBudgetGroups, childEntityIds);
     validateProportion(budgetGroup);
+    updateBudgetGroupParent(budgetGroup);
+    validateBudgetGroupDetails(budgetGroup, oldBudgetGroup);
 
     // Saving budget group
     updateBudgetGroupBreakdown(budgetGroup);
@@ -117,7 +119,6 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     updateBudgetGroupCosts(budgetGroup);
     updateBudgetGroupEndTime(budgetGroup);
     updateBudgetGroupHistory(budgetGroup, budgetGroup.getAccountId());
-    updateBudgetGroupParent(budgetGroup);
     budgetGroupDao.update(uuid, accountId, budgetGroup);
     cascadeBudgetGroupAmount(budgetGroup);
 
@@ -471,6 +472,17 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
       BudgetGroupUtils.validateChildBudgetGroups(budgetGroupDao.list(budgetGroup.getAccountId(), childEntityIds));
     } else {
       BudgetGroupUtils.validateChildBudgets(budgetDao.list(budgetGroup.getAccountId(), childEntityIds));
+    }
+  }
+
+  private void validateBudgetGroupDetails(BudgetGroup budgetGroup, BudgetGroup oldBudgetGroup) {
+    // We should throw Exception in case there is a parent for budget group
+    // And startTime, period is modified
+    if (budgetGroup.getParentBudgetGroupId() != null) {
+      if (budgetGroup.getStartTime() != oldBudgetGroup.getStartTime()
+          || budgetGroup.getPeriod() != oldBudgetGroup.getPeriod()) {
+        throw new InvalidRequestException(BudgetGroupUtils.INVALID_BUDGET_DETAILS_EXCEPTION);
+      }
     }
   }
 
