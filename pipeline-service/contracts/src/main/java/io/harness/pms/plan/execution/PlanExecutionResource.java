@@ -148,7 +148,7 @@ public interface PlanExecutionResource {
       @NotNull String pipelineIdentifier,
       @PathParam(NGCommonEntityConstants.PLAN_KEY)
       @Parameter(description = PlanExecutionResourceConstants.PLAN_EXECUTION_ID_PARAM_MESSAGE) @ResourceIdentifier
-      @NotNull String planExecutionId, @QueryParam("stageNodeExecutionId") @NotNull String stageNodeExecutionId);
+      @NotNull String planExecutionId, @QueryParam("stageNodeExecutionIds") @NotNull String stageNodeExecutionIds);
 
   @POST
   @Path("/{identifier}/v2")

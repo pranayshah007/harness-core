@@ -23,6 +23,7 @@ import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.util.CloseableIterator;
 
@@ -84,7 +86,7 @@ public class IdentityStrategyInternalStep
       }
     }
 
-    return getChildFromNodeExecutions(childNodeExecution, originalNodeExecution, ambiance.getPlanId());
+    return getChildFromNodeExecutions(childNodeExecution, originalNodeExecution, ambiance);
   }
 
   @Override
@@ -162,13 +164,16 @@ public class IdentityStrategyInternalStep
   }
 
   private ChildExecutableResponse getChildFromNodeExecutions(
-      NodeExecution childNodeExecution, NodeExecution originalNodeExecution, String planId) {
-    Node node = planService.fetchNode(childNodeExecution.getPlanId(), childNodeExecution.getNode().getUuid());
-    if (node instanceof PlanNode) {
+      NodeExecution childNodeExecution, NodeExecution originalNodeExecution, Ambiance currentAmbiance) {
+    Node node = childNodeExecution.getNode();
+    Set<ExecutionMode> rollbackExecutionModes =
+        Set.of(ExecutionMode.POST_EXECUTION_ROLLBACK, ExecutionMode.PIPELINE_ROLLBACK);
+    if (node instanceof PlanNode
+        && !rollbackExecutionModes.contains(currentAmbiance.getMetadata().getExecutionMode())) {
       IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), node,
           childNodeExecution.getIdentifier(), childNodeExecution.getName(), node.getStepType(),
           childNodeExecution.getUuid());
-      planService.saveIdentityNodesForMatrix(Collections.singletonList(identityPlanNode), planId);
+      planService.saveIdentityNodesForMatrix(Collections.singletonList(identityPlanNode), currentAmbiance.getPlanId());
       return ChildExecutableResponse.newBuilder().setChildNodeId(identityPlanNode.getUuid()).build();
     }
     return originalNodeExecution.getExecutableResponses().get(0).getChild();

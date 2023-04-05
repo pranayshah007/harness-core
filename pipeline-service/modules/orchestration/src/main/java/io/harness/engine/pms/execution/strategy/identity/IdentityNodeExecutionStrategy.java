@@ -43,7 +43,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.start.NodeStartEvent;
-import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
 import io.harness.pms.events.base.PmsEventCategory;
@@ -248,13 +247,7 @@ public class IdentityNodeExecutionStrategy
       NodeExecution newNodeExecution = nodeExecutionService.updateStatusWithOps(
           nodeExecutionId, stepResponse.getStatus(), null, EnumSet.noneOf(Status.class));
       IdentityPlanNode idPlanNode = planService.fetchNode(ambiance.getPlanId(), newNodeExecution.getNodeId());
-      // Handle rollback if its PipelineRollback.
-      // If its PostProdRollback then either the rollback stage is not under strategy. If it is then check if the
-      // current stage combination is to be rolledBack.
-      if (idPlanNode.getUseAdviserObtainments()
-          && (idPlanNode.getExecutionMode() == ExecutionMode.PIPELINE_ROLLBACK
-              || AmbianceUtils.getStrategyLevelFromAmbiance(ambiance).isEmpty()
-              || ambiance.getMetadata().getPostExecutionRollbackUnderStrategy())) {
+      if (idPlanNode.getUseAdviserObtainments()) {
         nodeAdviseHelper.queueAdvisingEvent(newNodeExecution, idPlanNode, newNodeExecution.getStatus());
       } else {
         processAdviserResponse(ambiance, newNodeExecution.getAdviserResponse());

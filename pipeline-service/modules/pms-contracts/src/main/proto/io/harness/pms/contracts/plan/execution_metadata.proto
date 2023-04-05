@@ -30,9 +30,7 @@ message ExecutionMetadata {
   string harnessVersion = 17;
   bool isDebug = 18;
   ExecutionMode executionMode = 19;
-  string postExecutionRollbackStageId = 20;
-  bool postExecutionRollbackUnderStrategy = 21;
-  io.harness.pms.contracts.execution.StrategyMetadata rollbackStageStrategyMetadata = 22;
+  repeated PostExecutionRollbackInfo postExecutionRollbackInfo = 20;
 }
 
 message RetryExecutionInfo {
@@ -50,6 +48,11 @@ message PipelineStageInfo {
   string orgId = 6;
   int32 runSequence = 7;
   string triggerJsonPayload = 8;
+}
+
+message PostExecutionRollbackInfo{
+  string postExecutionRollbackStageId = 1;
+  io.harness.pms.contracts.execution.StrategyMetadata rollbackStageStrategyMetadata = 2;
 }
 
 enum PipelineStoreType {
