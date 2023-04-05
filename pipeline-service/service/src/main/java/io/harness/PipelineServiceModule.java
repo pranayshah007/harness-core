@@ -746,6 +746,17 @@ public class PipelineServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("TriggerAuthenticationExecutorService")
+  public ExecutorService triggerAuthenticationExecutorService() {
+    return ThreadPool.create(configuration.getTriggerAuthenticationPoolConfig().getCorePoolSize(),
+        configuration.getTriggerAuthenticationPoolConfig().getMaxPoolSize(),
+        configuration.getTriggerAuthenticationPoolConfig().getIdleTime(),
+        configuration.getTriggerAuthenticationPoolConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("TriggerAuthenticationExecutorService-%d").build());
+  }
+
+  @Provides
+  @Singleton
   @Named("TelemetrySenderExecutor")
   public Executor telemetrySenderExecutor() {
     return ThreadPool.create(

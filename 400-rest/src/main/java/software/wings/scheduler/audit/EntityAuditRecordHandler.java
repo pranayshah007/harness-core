@@ -98,19 +98,21 @@ public class EntityAuditRecordHandler extends IteratorPumpAndRedisModeHandler im
       return;
     }
 
-    List<AuditRecord> auditRecords =
-        auditService.fetchEntityAuditRecordsOlderThanGivenTime(entity.getAuditHeaderId(), entity.getCreatedAt());
+    while (true) {
+      List<AuditRecord> auditRecords = auditService.fetchLimitedEntityAuditRecordsOlderThanGivenTime(
+          entity.getAuditHeaderId(), entity.getCreatedAt(), 10000);
 
-    if (isEmpty(auditRecords)) {
-      return;
-    }
+      if (isEmpty(auditRecords)) {
+        return;
+      }
 
-    List<EntityAuditRecord> recordsToBeAdded =
-        auditRecords.stream().map(AuditRecord::getEntityAuditRecord).collect(toList());
+      List<EntityAuditRecord> recordsToBeAdded =
+          auditRecords.stream().map(AuditRecord::getEntityAuditRecord).collect(toList());
 
-    if (isNotEmpty(recordsToBeAdded)) {
-      auditService.addEntityAuditRecordsToSet(recordsToBeAdded, entity.getAccountId(), entity.getAuditHeaderId());
-      auditService.deleteTempAuditRecords(auditRecords.stream().map(AuditRecord::getUuid).collect(toList()));
+      if (isNotEmpty(recordsToBeAdded)) {
+        auditService.addEntityAuditRecordsToSet(recordsToBeAdded, entity.getAccountId(), entity.getAuditHeaderId());
+        auditService.deleteTempAuditRecords(auditRecords.stream().map(AuditRecord::getUuid).collect(toList()));
+      }
     }
   }
 }

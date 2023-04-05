@@ -12,6 +12,7 @@ import static io.harness.persistence.HQuery.excludeAuthorityCount;
 
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
@@ -232,6 +233,16 @@ public class SLIRecordServiceImpl implements SLIRecordService {
           simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
       String sliId = serviceLevelIndicator.getUuid();
       int sliVersion = serviceLevelIndicator.getVersion();
+      if (serviceLevelIndicator.getSLIEvaluationType().equals(SLIEvaluationType.WINDOW)
+          && serviceLevelIndicator.getConsiderConsecutiveMinutes() != null
+          && serviceLevelIndicator.getConsiderConsecutiveMinutes() > 1) {
+        SLIRecord lastSLIRecord = getLatestSLIRecordSLIVersion(sliId, sliVersion);
+        if (lastSLIRecord != null) {
+          Instant timeOfLastRecordWhichIsFixed = lastSLIRecord.getTimestamp().minus(
+              serviceLevelIndicator.getConsiderConsecutiveMinutes() - 2, ChronoUnit.MINUTES);
+          endTime = timeOfLastRecordWhichIsFixed.isBefore(endTime) ? timeOfLastRecordWhichIsFixed : endTime;
+        }
+      }
       List<SLIRecord> sliRecords = getSLIRecordsWithSLIVersion(sliId, startTime, endTime, sliVersion);
       if (!sliRecords.isEmpty()) {
         serviceLevelObjectivesDetailSLIRecordMap.put(objectivesDetail, sliRecords);
@@ -239,6 +250,15 @@ public class SLIRecordServiceImpl implements SLIRecordService {
       }
     }
     return Pair.of(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap);
+  }
+
+  private SLIRecord getLatestSLIRecordSLIVersion(String sliId, int sliVersion) {
+    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
+        .filter(SLIRecordKeys.sliId, sliId)
+        .field(SLIRecordKeys.sliVersion)
+        .equal(sliVersion)
+        .order(Sort.descending(SLIRecordKeys.timestamp))
+        .get();
   }
 
   @Override

@@ -328,6 +328,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getTimeRemainingDays()).isEqualTo(0);
     assertThat(sloDashboardWidget.getServiceIdentifier()).isEqualTo(monitoredServiceDTO.getServiceRef());
     assertThat(sloDashboardWidget.getEnvironmentIdentifier()).isEqualTo(monitoredServiceDTO.getEnvironmentRef());
+    assertThat(sloDashboardWidget.getTotalErrorBudget()).isEqualTo(8640);
     assertThat(sloDashboardWidget.getServiceName()).isEqualTo("Mocked service name");
     assertThat(sloDashboardWidget.getEnvironmentName()).isEqualTo("Mocked env name");
     assertThat(sloDashboardWidget.getEvaluationType()).isEqualTo(SLIEvaluationType.WINDOW);
@@ -388,6 +389,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getTimeRemainingDays()).isEqualTo(0);
     assertThat(sloDashboardWidget.getServiceIdentifier()).isEqualTo(monitoredServiceDTO.getServiceRef());
     assertThat(sloDashboardWidget.getEnvironmentIdentifier()).isEqualTo(monitoredServiceDTO.getEnvironmentRef());
+    assertThat(sloDashboardWidget.getTotalErrorBudget()).isEqualTo(100);
     assertThat(sloDashboardWidget.getServiceName()).isEqualTo("Mocked service name");
     assertThat(sloDashboardWidget.getEnvironmentName()).isEqualTo("Mocked env name");
     assertThat(sloDashboardWidget.getEvaluationType()).isEqualTo(SLIEvaluationType.REQUEST);
@@ -488,6 +490,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getErrorBudgetRemaining()).isEqualTo(8639); // 8640 - (1.25 bad mins)
     assertThat(sloDashboardWidget.getSloTargetPercentage()).isCloseTo(80, offset(.0001));
     assertThat(sloDashboardWidget.getErrorBudgetRemainingPercentage()).isCloseTo(99.9855, offset(0.001));
+    assertThat(sloDashboardWidget.getTotalErrorBudget()).isEqualTo(8640);
     assertThat(sloDashboardWidget.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
     assertThat(sloDashboardWidget.isRecalculatingSLI()).isFalse();
     assertThat(sloDashboardWidget.isCalculatingSLI()).isFalse();

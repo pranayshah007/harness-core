@@ -74,7 +74,7 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
 
   @Override
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
-      String locationParentPath, String remoteFolder, List<String> filesToPush) {
+      String locationParentPath, List<String> filesToPush) {
     Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> connectorSecretsInfo = getConnectorAndSecretsInfo(
         accountIdentifier, null, null, catalogConnectorInfo.getInfraConnector().getIdentifier());
     BackstageEnvSecretVariable envSecretVariable =
@@ -87,7 +87,7 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
         (BitbucketHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
     BitbucketUsernamePasswordDTO spec = (BitbucketUsernamePasswordDTO) outcome.getSpec();
 
-    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, remoteFolder, filesToPush,
+    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
         spec.getUsername(), bitbucketConnectorSecret);
   }
 }

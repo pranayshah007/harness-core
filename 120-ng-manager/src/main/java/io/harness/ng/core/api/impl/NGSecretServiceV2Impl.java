@@ -29,6 +29,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
@@ -69,6 +70,7 @@ import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
 import software.wings.beans.TaskType;
@@ -117,13 +119,15 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private final AccessControlClient accessControlClient;
+  private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Inject
   public NGSecretServiceV2Impl(SecretRepository secretRepository, DelegateGrpcClientWrapper delegateGrpcClientWrapper,
       SshKeySpecDTOHelper sshKeySpecDTOHelper, NGSecretActivityService ngSecretActivityService,
       OutboxService outboxService, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
       TaskSetupAbstractionHelper taskSetupAbstractionHelper,
-      WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper, AccessControlClient accessControlClient) {
+      WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper, AccessControlClient accessControlClient,
+      NGFeatureFlagHelperService ngFeatureFlagHelperService) {
     this.secretRepository = secretRepository;
     this.outboxService = outboxService;
     this.delegateGrpcClientWrapper = delegateGrpcClientWrapper;
@@ -133,6 +137,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
     this.taskSetupAbstractionHelper = taskSetupAbstractionHelper;
     this.winRmCredentialsSpecDTOHelper = winRmCredentialsSpecDTOHelper;
     this.accessControlClient = accessControlClient;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
   }
 
   @Override
@@ -287,6 +292,12 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
       String projectIdentifier, SecretValidationMetaData metadata, Secret secret) {
     SSHKeyValidationMetadata sshKeyValidationMetadata = (SSHKeyValidationMetadata) metadata;
     SSHKeySpecDTO secretSpecDTO = (SSHKeySpecDTO) secret.getSecretSpec().toDTO();
+    if (null != secretSpecDTO.getAuth()) {
+      secretSpecDTO.getAuth().setUseSshClient(
+          ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_SSH_CLIENT));
+      secretSpecDTO.getAuth().setUseSshj(
+          ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_SSH_SSHJ));
+    }
     BaseNGAccess baseNGAccess = BaseNGAccess.builder()
                                     .accountIdentifier(accountIdentifier)
                                     .orgIdentifier(orgIdentifier)

@@ -112,9 +112,6 @@ public abstract class ServiceLevelIndicator
       if (this.shouldReAnalysis(serviceLevelIndicator)) {
         return true;
       }
-      if (serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW) {
-        Preconditions.checkArgument(this.getSliMissingDataType().equals(serviceLevelIndicator.getSliMissingDataType()));
-      }
       return false;
     } catch (IllegalArgumentException ex) {
       return true;

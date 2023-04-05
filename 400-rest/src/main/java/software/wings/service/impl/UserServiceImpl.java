@@ -16,6 +16,7 @@ import static io.harness.beans.SearchFilter.Operator.IN;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.ng.core.account.AuthenticationMechanism.USER_PASSWORD;
 import static io.harness.ng.core.common.beans.Generation.NG;
@@ -120,6 +121,7 @@ import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.UserInfo;
+import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
 import io.harness.remote.client.NGRestUtils;
@@ -3028,9 +3030,10 @@ public class UserServiceImpl implements UserService {
         defaultAccountId = user.getDefaultAccountCandidate();
       }
 
-      List<Role> accountRoles = roleService.getAccountRoles(accountId);
+      Query<Role> query = roleService.getAccountRolesQuery(accountId);
+      query.limit(NO_LIMIT);
       List<Role> updatedRolesForUser = new ArrayList<>(user.getRoles());
-      if (accountRoles != null) {
+      try (HIterator<Role> accountRoles = new HIterator<>(query.fetch())) {
         for (Role role : accountRoles) {
           updatedRolesForUser.remove(role);
         }

@@ -515,13 +515,11 @@ public enum FeatureName {
   CIE_HOSTED_VMS_MAC("FF for enabling hosted builds for mac os", HarnessTeam.CI),
   SPG_DELETE_ENVIRONMENTS_ON_SERVICE_RENAME_GIT_SYNC(
       "On service rename delete stale folders inside environments folders.", HarnessTeam.SPG),
-  SPG_DASHBOARD_PROJECTION("Enables projection on CG Dashboard", HarnessTeam.SPG),
   PL_HIDE_LAUNCH_NEXTGEN("FF to hide Launch NextGen button", HarnessTeam.PL),
   PL_LDAP_PARALLEL_GROUP_SYNC(
       "Enables User Group sync operation to fetch data from Ldap Server in Parallel. Enable only if Ldap Server can take the load",
       HarnessTeam.PL),
   CDS_TAS_NG("FF for enabling TAS deployment in NG", HarnessTeam.CDP),
-  SPG_WFE_OPTIMIZE_UPDATE_PIPELINE_ESTIMATES("Optimization for updatePipelineEstimates method", HarnessTeam.SPG),
   CDS_OrgAccountLevelServiceEnvEnvGroup(
       "Support Creation and Use of Org and Account level Services and Environments", HarnessTeam.CDC),
   CE_NET_AMORTISED_COST_ENABLED("Enable cost calculation through Net Amortised cost", HarnessTeam.CE),
@@ -689,6 +687,8 @@ public enum FeatureName {
   CDS_TERRAFORM_CONFIG_INSPECT_V1_2(
       "Enables usage of terraform-config-inspect v1.2 built from commit 7c9946b1df498f1b0634c7b33257790f01c819f3 of https://github.com/hashicorp/terraform-config-inspect and GO 1.19.6",
       HarnessTeam.CDP),
+  CDS_NG_TRIGGER_AUTHENTICATION_WITH_DELEGATE_SELECTOR(
+      "Make NG Trigger authentication use the same delegate selectors as the secret's manager", HarnessTeam.CDC),
   CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE(
       "With enabling this FF with serviceV2 setup, pipeline in different projects but having the same infra key can be executed parallely",
       HarnessTeam.CDC),
@@ -700,7 +700,11 @@ public enum FeatureName {
   CDS_REMOVE_COMMENTS_FROM_VALUES_YAML("Remove comments from values.yaml files", HarnessTeam.CDP),
   BAMBOO_BUILD("Bamboo Build Step", HarnessTeam.CDC),
   CDS_AWS_BACKOFF_STRATEGY("Enable AWS SDK Client Backoff Strategy", HarnessTeam.CDP),
-  PIE_GITX_OAUTH("Use users' oauth creds to fetch and commit in git", HarnessTeam.PIPELINE);
+  CDS_SSH_CLIENT("Enable SSH new implementation via SSH Client", HarnessTeam.CDP),
+  CDS_SSH_SSHJ("Enable SSH for Vault flow via SSHJ", HarnessTeam.CDP),
+  PIE_GITX_OAUTH("Use users' oauth creds to fetch and commit in git", HarnessTeam.PIPELINE),
+  CDS_NG_CONFIG_FILE_EXPRESSION(
+      "Enable Harness variable rendering in Hanress config files (SSH/WinRM)", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

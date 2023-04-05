@@ -174,6 +174,14 @@ if [[ "" != "$IDP_SERVICE_SECRET" ]]; then
   export IDP_SERVICE_SECRET; yq -i '.idpServiceSecret=env(IDP_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
+if [[ "" != "$NG_MANAGER_TARGET" ]]; then
+  export NG_MANAGER_TARGET; yq -i '.gitManagerGrpcClientConfig.target=env(NG_MANAGER_TARGET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NG_MANAGER_AUTHORITY" ]]; then
+  export NG_MANAGER_AUTHORITY; yq -i '.gitManagerGrpcClientConfig.authority=env(NG_MANAGER_AUTHORITY)' $CONFIG_FILE
+fi
+
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
 replace_key_value eventsFramework.redis.redisUrl $EVENTS_FRAMEWORK_REDIS_URL
@@ -204,4 +212,4 @@ replace_key_value accessControlClient.accessControlServiceConfig.baseUrl "$ACCES
 replace_key_value accessControlClient.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
 replace_key_value backstageHttpClientConfig.baseUrl "$BACKSTAGE_BASE_URL"
 replace_key_value backstageServiceSecret "$BACKSTAGE_SERVICE_SECRET"
-replace_key_value onboardingModuleConfig.harnessCiCdAnnotation.projectUrl "$ONBOARDING_MODULE_CONFIG_HARNESS_CI_CD_ANNOTATION_PROJECT_URL"
+replace_key_value onboardingModuleConfig.harnessCiCdAnnotations.projectUrl "$ONBOARDING_MODULE_CONFIG_HARNESS_CI_CD_ANNOTATIONS_PROJECT_URL"

@@ -187,7 +187,7 @@ public class MongoPersistence implements HPersistence {
   public void isHealthy() {
     List<AdvancedDatastore> datastores = datastoreMap.values().stream().distinct().collect(toList());
     for (AdvancedDatastore datastore : datastores) {
-      datastore.getDB().command(new BasicDBObject("dbStats", 1));
+      datastore.getDB().command(new BasicDBObject("ping", 1));
     }
   }
 

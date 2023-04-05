@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.expression.DockerConfigJsonSecretFunctor;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ImageSecretFunctor;
 import io.harness.expression.functors.ExpressionFunctor;
@@ -110,6 +111,7 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
     addFunctor(NgSecretManagerFunctorInterface.FUNCTOR_NAME, ngSecretManagerFunctor);
 
     addFunctor(ImageSecretFunctor.FUNCTOR_NAME, new ImageSecretFunctor());
+    addFunctor(DockerConfigJsonSecretFunctor.FUNCTOR_NAME, new DockerConfigJsonSecretFunctor());
 
     sweepingOutputSecretFunctor =
         SweepingOutputSecretFunctor.builder().mode(mode).simpleEncryption(new SimpleEncryption()).build();

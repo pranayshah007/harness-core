@@ -49,8 +49,8 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/helm/v3.1.2/helm https://app.harness.io/public/shared/tools/helm/release/v3.1.2/bin/linux/$TARGETARCH/helm \
   && mkdir -m 777 -p client-tools/helm/v3.8.0 \
   && curl -s -L -o client-tools/helm/v3.8.0/helm https://app.harness.io/public/shared/tools/helm/release/v3.8.0/bin/linux/$TARGETARCH/helm \
-  && mkdir -m 777 -p client-tools/go-template/v0.4.1 \
-  && curl -s -L -o client-tools/go-template/v0.4.1/go-template https://app.harness.io/public/shared/tools/go-template/release/v0.4.1/bin/linux/$TARGETARCH/go-template \
+  && mkdir -m 777 -p client-tools/go-template/v0.4.2 \
+  && curl -s -L -o client-tools/go-template/v0.4.2/go-template https://app.harness.io/public/shared/tools/go-template/release/v0.4.2/bin/linux/$TARGETARCH/go-template \
   && mkdir -m 777 -p client-tools/harness-pywinrm/v0.4-dev \
   && curl -s -L -o client-tools/harness-pywinrm/v0.4-dev/harness-pywinrm https://app.harness.io/public/shared/tools/harness-pywinrm/release/v0.4-dev/bin/linux/$TARGETARCH/harness-pywinrm \
   && mkdir -m 777 -p client-tools/chartmuseum/v0.15.0 \
@@ -68,7 +68,7 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && chown -R 1001 /opt/harness-delegate
 
 ENV PATH=/opt/harness-delegate/client-tools/kubectl/v1.24.3/:$PATH
-ENV PATH=/opt/harness-delegate/client-tools/go-template/v0.4.1/:$PATH
+ENV PATH=/opt/harness-delegate/client-tools/go-template/v0.4.2/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/chartmuseum/v0.15.0/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/tf-config-inspect/v1.2/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/kustomize/v4.5.4/:$PATH

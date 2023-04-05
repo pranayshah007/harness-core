@@ -754,7 +754,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
                                           .dataCollectionTaskId(dataCollectionTask.getUuid())
                                           .exception(exception.getMessage())
                                           .build();
-    int maxRetry = SLIDataCollectionTask.MAX_RETRY_COUNT + 1;
+    int maxRetry = SLIDataCollectionTask.MAX_RETRY_COUNT;
     IntStream.range(0, maxRetry).forEach(index -> {
       dataCollectionTaskService.updateTaskStatus(result);
       DataCollectionTask updated = dataCollectionTaskService.getDataCollectionTask(dataCollectionTask.getUuid());
@@ -767,7 +767,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     dataCollectionTaskService.updateTaskStatus(result);
     DataCollectionTask updated = dataCollectionTaskService.getDataCollectionTask(dataCollectionTask.getUuid());
     assertThat(updated.getStatus()).isEqualTo(FAILED);
-    assertThat(updated.getRetryCount()).isEqualTo(11);
+    assertThat(updated.getRetryCount()).isEqualTo(10);
     assertThat(updated.getException()).isEqualTo(exception.getMessage());
     assertThat(updated.getStacktrace()).isEqualTo(ExceptionUtils.getStackTrace(exception));
   }

@@ -8,7 +8,6 @@
 package io.harness.delegate.task.artifacts.ecr;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.delegate.task.artifacts.ArtifactServiceConstant.ACCEPT_ALL_REGEX;
 
 import static software.wings.helpers.ext.ecr.EcrService.MAX_NO_OF_TAGS_PER_IMAGE;
 
@@ -114,11 +113,9 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(attributesRequest);
     String ecrimageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(
         awsInternalConfig, attributesRequest.getRegion(), attributesRequest.getImagePath());
-    if (EmptyPredicate.isNotEmpty(attributesRequest.getTagRegex())
-        || attributesRequest.getTag().equals(ACCEPT_ALL_REGEX)) {
-      String tagRegex = isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag();
-      lastSuccessfulBuild = ecrService.getLastSuccessfulBuildFromRegex(
-          awsInternalConfig, ecrimageUrl, attributesRequest.getRegion(), attributesRequest.getImagePath(), tagRegex);
+    if (EmptyPredicate.isNotEmpty(attributesRequest.getTagRegex())) {
+      lastSuccessfulBuild = ecrService.getLastSuccessfulBuildFromRegex(awsInternalConfig, ecrimageUrl,
+          attributesRequest.getRegion(), attributesRequest.getImagePath(), attributesRequest.getTagRegex());
     } else {
       lastSuccessfulBuild = ecrService.verifyBuildNumber(awsInternalConfig, ecrimageUrl, attributesRequest.getRegion(),
           attributesRequest.getImagePath(), attributesRequest.getTag());

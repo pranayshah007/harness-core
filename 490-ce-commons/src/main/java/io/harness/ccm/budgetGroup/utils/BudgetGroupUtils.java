@@ -87,6 +87,10 @@ public class BudgetGroupUtils {
   public static final String NO_CHILD_ENTITY_PRESENT_EXCEPTION =
       "Error in performing operation. Budget group must have atleast one child budget/budget group";
   public static final String INVALID_PARENT_EXCEPTION = "Error in creating budget group. Invalid parent Id specified";
+  public static final String INVALID_INDIVIDUAL_PROPORTION =
+      "Error in performing operation. Individual Proportion for budget group children should be in valid range";
+  public static final String INVALID_TOTAL_PROPORTION =
+      "Error in performing operation. Total Proportion for budget group children should be 100";
 
   public static void validateBudgetGroup(BudgetGroup budgetGroup, List<BudgetGroup> existingBudgetGroups) {
     populateDefaultBudgetGroupBreakdown(budgetGroup);

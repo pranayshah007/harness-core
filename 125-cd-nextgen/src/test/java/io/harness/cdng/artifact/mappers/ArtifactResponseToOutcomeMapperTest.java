@@ -519,7 +519,10 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   }
 
   private void assertCustomArtifactOutcome(ArtifactConfig artifactConfig) {
-    ArtifactOutcome artifactOutcome = ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, null, false);
+    CustomArtifactDelegateResponse customArtifactDelegateResponse =
+        CustomArtifactDelegateResponse.builder().version("build-x").build();
+    ArtifactOutcome artifactOutcome =
+        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, customArtifactDelegateResponse, false);
     assertThat(artifactOutcome).isNotNull();
     assertThat(artifactOutcome).isInstanceOf(CustomArtifactOutcome.class);
     assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.CUSTOM_ARTIFACT.getDisplayName());

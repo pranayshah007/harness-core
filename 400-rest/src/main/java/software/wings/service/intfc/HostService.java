@@ -99,18 +99,8 @@ public interface HostService extends OwnedByInfrastructureMapping {
    */
   List<Host> getHostsByHostIds(@NotEmpty String appId, @NotEmpty String envId, @NotNull List<String> hostUuids);
 
-  /**
-   * Gets hosts by env.
-   *
-   * @param appId the app id
-   * @param envId the env id
-   * @return the hosts by env
-   */
-  List<Host> getHostsByEnv(@NotEmpty String appId, @NotEmpty String envId);
+  long getHostsCountByInfraMappingIds(String appId, List<String> infraMappingIds);
 
-  List<Host> getHostsByInfraMappingIds(String appId, List<String> infraMappingIds);
-
-  List<Host> getHostsByInfraDefinitionIds(String appId, List<String> infraDefinitionIds);
   /**
    * Gets host by env.
    *
