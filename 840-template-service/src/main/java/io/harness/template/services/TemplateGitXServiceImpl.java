@@ -180,11 +180,12 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
     }
   }
 
-  private boolean isGitExperienceEnforcedInSettings(String accountId, String orgIdentifier, String projIdentifier) {
+  private boolean isGitExperienceEnforcedInSettings(
+      String accountIdentifier, String orgIdentifier, String projIdentifier) {
     String isGitExperienceEnforced =
         NGRestUtils
             .getResponse(ngSettingsClient.getSetting(
-                GitSyncConstants.ENFORCE_GIT_EXPERIENCE, accountId, orgIdentifier, projIdentifier))
+                GitSyncConstants.ENFORCE_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
             .getValue();
     return GitSyncConstants.TRUE_VALUE.equals(isGitExperienceEnforced);
   }
