@@ -675,7 +675,9 @@ public enum FeatureName {
   BAMBOO_BUILD("Bamboo Build Step", HarnessTeam.CDC),
   PL_SKIP_SECRETS_USAGE_CHECK_IF_USAGE_RESTRICTIONS_ARE_NOT_UPDATED(
       "This flag helps to skip the secrets usage scope check with usage restrictions of SM when updating",
-      HarnessTeam.PL);
+      HarnessTeam.PL),
+  CDS_NG_CONFIG_FILE_EXPRESSION(
+      "Enable Harness variable rendering in Hanress config files (SSH/WinRM)", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

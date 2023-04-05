@@ -50,7 +50,6 @@ import io.harness.ssh.FileSourceType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -126,9 +125,10 @@ public class WinRmCopyCommandHandler extends WinRmDownloadArtifactCommandHandler
 
         String fileData = new String(secretConfigFile.getEncryptedConfigFile().getDecryptedValue());
         configFile.setFileContent(fileData);
-        configFile.setFileSize(fileData.getBytes(StandardCharsets.UTF_8).length);
       }
       configFile.setDestinationPath(copyCommandUnit.getDestinationPath());
+      configFile.calculateFileSize();
+
       result = executor.copyConfigFiles(configFile);
       if (CommandExecutionStatus.FAILURE.equals(result)) {
         log.info("Failed to copy config file: " + configFile.getFileName());
