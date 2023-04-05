@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -82,8 +83,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.lambda.model.AliasConfiguration;
 import software.amazon.awssdk.services.lambda.model.CreateAliasResponse;
@@ -100,8 +100,7 @@ import software.amazon.awssdk.services.lambda.model.PublishVersionResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateAliasResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(AwsLambdaTaskHelper.class)
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CDP)
 public class AwsLambdaTaskHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
