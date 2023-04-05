@@ -704,7 +704,8 @@ public enum FeatureName {
   CDS_SSH_SSHJ("Enable SSH for Vault flow via SSHJ", HarnessTeam.CDP),
   PIE_GITX_OAUTH("Use users' oauth creds to fetch and commit in git", HarnessTeam.PIPELINE),
   CDS_NG_CONFIG_FILE_EXPRESSION(
-      "Enable Harness variable rendering in Hanress config files (SSH/WinRM)", HarnessTeam.CDP);
+      "Enable Harness variable rendering in Hanress config files (SSH/WinRM)", HarnessTeam.CDP),
+  CDS_TERRAFORM_S3_NG("Enables storing Terraform config, backend and var files in S3", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

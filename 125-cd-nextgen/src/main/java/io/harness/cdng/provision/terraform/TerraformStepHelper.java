@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.terraform;
 
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG;
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_S3_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -35,14 +36,18 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.manifest.ManifestStoreType;
+import io.harness.cdng.manifest.yaml.ArtifactoryStorageConfigDTO;
 import io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
+import io.harness.cdng.manifest.yaml.FileStorageConfigDTO;
 import io.harness.cdng.manifest.yaml.FileStorageStoreConfig;
 import io.harness.cdng.manifest.yaml.GitLabStore;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfigDTO;
 import io.harness.cdng.manifest.yaml.GithubStore;
+import io.harness.cdng.manifest.yaml.S3StorageConfigDTO;
+import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
@@ -56,12 +61,12 @@ import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetai
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
 import io.harness.cdng.provision.terraform.output.TerraformHumanReadablePlanOutput;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
-import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
@@ -69,6 +74,7 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
 import io.harness.delegate.task.filestore.FileStoreFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.terraform.InlineTerraformBackendConfigFileInfo;
@@ -261,9 +267,9 @@ public class TerraformStepHelper {
     }
     List<String> paths = new ArrayList<>();
     if (TF_CONFIG_FILES.equals(identifier) || TF_BACKEND_CONFIG_FILE.equals(identifier)) {
-      paths.add(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getFolderPath()));
+      paths.add(getParameterFieldValue(gitStoreConfig.getFolderPath()));
     } else {
-      paths.addAll(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getPaths()));
+      paths.addAll(getParameterFieldValue(gitStoreConfig.getPaths()));
     }
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
                                                         .gitConfigDTO(gitConfigDTO)
@@ -301,44 +307,76 @@ public class TerraformStepHelper {
 
   public FileStoreFetchFilesConfig getFileStoreFetchFilesConfig(
       StoreConfig store, Ambiance ambiance, String identifier) {
-    if (store == null || !ManifestStoreType.ARTIFACTORY.equals(store.getKind())) {
+    if (store == null
+        || !(ManifestStoreType.ARTIFACTORY.equals(store.getKind()) || ManifestStoreType.S3.equals(store.getKind()))) {
       return null;
     }
-    ArtifactoryStoreConfig artifactoryStoreConfig = (ArtifactoryStoreConfig) store;
-    validateArtifactoryStoreConfig(artifactoryStoreConfig);
-    String connectorId = ParameterFieldHelper.getParameterFieldValue(artifactoryStoreConfig.getConnectorRef());
-    ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
-    String validationMessage = "";
-    switch (identifier) {
-      case TerraformStepHelper.TF_CONFIG_FILES:
-        if (ParameterFieldHelper.getParameterFieldValue(artifactoryStoreConfig.getArtifactPaths()).size() > 1) {
-          throw new InvalidRequestException("Config file should not contain more than one file path");
-        }
-        validationMessage = "Config Files";
+    String storeKind = store.getKind();
+    ConnectorInfoDTO connectorDTO =
+        cdStepHelper.getConnector(getParameterFieldValue(store.getConnectorReference()), ambiance);
+    validateStoreConfig(storeKind, connectorDTO, identifier);
+    NGAccess basicNGAccessObject = AmbianceUtils.getNgAccess(ambiance);
+    FileStoreFetchFilesConfig fileStoreFetchFilesConfig;
+    List<EncryptedDataDetail> encryptedDataDetails;
+    switch (storeKind) {
+      case ManifestStoreType.ARTIFACTORY:
+        fileStoreFetchFilesConfig = getArtifactoryStoreDelegateConfig((ArtifactoryStoreConfig) store, identifier);
+        encryptedDataDetails = secretManagerClientService.getEncryptionDetails(basicNGAccessObject,
+            ((ArtifactoryConnectorDTO) connectorDTO.getConnectorConfig()).getAuth().getCredentials());
         break;
-      case TerraformStepHelper.TF_BACKEND_CONFIG_FILE:
-        validationMessage = "Backend Configuration File";
+      case ManifestStoreType.S3:
+        if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_S3_NG)) {
+          throw new AccessDeniedException(
+              format(
+                  "Supporting S3 storage type in the Terraform step is not enabled for account '%s'. Please contact harness customer care to enable FF [%s].",
+                  AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_S3_NG.name()),
+              ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
+        }
+        fileStoreFetchFilesConfig = getS3StoreDelegateConfig((S3StoreConfig) store, identifier);
+        encryptedDataDetails = secretManagerClientService.getEncryptionDetails(
+            basicNGAccessObject, ((AwsConnectorDTO) connectorDTO.getConnectorConfig()).getCredential().getConfig());
         break;
       default:
-        validationMessage = format("Var Files with identifier: %s", identifier);
+        throw new InvalidRequestException(format("Unsupported config type %s", storeKind));
     }
-    cdStepHelper.validateManifest(store.getKind(), connectorDTO, validationMessage);
-    NGAccess basicNGAccessObject = AmbianceUtils.getNgAccess(ambiance);
-    List<EncryptedDataDetail> encryptedDataDetails = secretManagerClientService.getEncryptionDetails(
-        basicNGAccessObject, ((ArtifactoryConnectorDTO) connectorDTO.getConnectorConfig()).getAuth().getCredentials());
+    fileStoreFetchFilesConfig.setConnectorDTO(connectorDTO);
+    fileStoreFetchFilesConfig.setIdentifier(identifier);
+    fileStoreFetchFilesConfig.setManifestStoreType(storeKind);
+    fileStoreFetchFilesConfig.setEncryptedDataDetails(encryptedDataDetails);
+    fileStoreFetchFilesConfig.setSucceedIfFileNotFound(false);
+    return fileStoreFetchFilesConfig;
+  }
+
+  private S3StoreTFDelegateConfig getS3StoreDelegateConfig(S3StoreConfig s3StoreConfig, String identifier) {
+    String region = getParameterFieldValue(s3StoreConfig.getRegion());
+    notEmptyCheck("Region is empty", region);
+    String bucket = getParameterFieldValue(s3StoreConfig.getBucketName());
+    notEmptyCheck("Bucket name is empty", bucket);
+
+    List<String> paths = new ArrayList<>();
+    if (TF_CONFIG_FILES.equals(identifier)) {
+      paths.add(getParameterFieldValue(s3StoreConfig.getFolderPath()));
+    } else {
+      paths.addAll(getParameterFieldValue(s3StoreConfig.getPaths()));
+    }
+
+    return S3StoreTFDelegateConfig.builder().region(region).bucketName(bucket).paths(paths).build();
+  }
+
+  private ArtifactoryStoreDelegateConfig getArtifactoryStoreDelegateConfig(
+      ArtifactoryStoreConfig store, String identifier) {
+    if (TerraformStepHelper.TF_CONFIG_FILES.equals(identifier)
+        && getParameterFieldValue(store.getArtifactPaths()).size() > 1) {
+      throw new InvalidRequestException("Config file should not contain more than one file path");
+    }
     return ArtifactoryStoreDelegateConfig.builder()
-        .repositoryName(ParameterFieldHelper.getParameterFieldValue(artifactoryStoreConfig.getRepositoryName()))
-        .identifier(identifier)
-        .manifestStoreType(store.getKind())
-        .connectorDTO(connectorDTO)
-        .encryptedDataDetails(encryptedDataDetails)
-        .succeedIfFileNotFound(false)
-        .artifacts(ParameterFieldHelper.getParameterFieldValue(artifactoryStoreConfig.getArtifactPaths()))
+        .repositoryName(getParameterFieldValue(store.getRepositoryName()))
+        .artifacts(getParameterFieldValue(store.getArtifactPaths()))
         .build();
   }
 
-  private void validateArtifactoryStoreConfig(ArtifactoryStoreConfig artifactoryStoreConfig) {
-    Validator.notNullCheck("artifactoryStoreConfig is null", artifactoryStoreConfig);
+  private void validateStoreConfig(StoreConfig storeConfig) {
+    Validator.notNullCheck("StoreConfig is null", storeConfig);
   }
 
   private String getGitRepoUrl(GitConfigDTO gitConfigDTO, String repoName) {
@@ -371,8 +409,8 @@ public class TerraformStepHelper {
       TerraformTaskNGResponse terraformTaskNGResponse, Ambiance ambiance) {
     validatePlanStepConfigFiles(planStepParameters);
     TerraformPlanExecutionDataParameters configuration = planStepParameters.getConfiguration();
-    TerraformInheritOutputBuilder builder = TerraformInheritOutput.builder().workspace(
-        ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()));
+    TerraformInheritOutputBuilder builder =
+        TerraformInheritOutput.builder().workspace(getParameterFieldValue(configuration.getWorkspace()));
     StoreConfigWrapper store = configuration.getConfigFiles().getStore();
     StoreConfigType storeConfigType = store.getType();
     switch (storeConfigType) {
@@ -388,7 +426,16 @@ public class TerraformStepHelper {
 
         break;
       case ARTIFACTORY:
-        builder.fileStoreConfig((FileStorageStoreConfig) configuration.getConfigFiles().getStore().getSpec());
+        builder.fileStorageConfigDTO(
+            ((ArtifactoryStoreConfig) configuration.getConfigFiles().getStore().getSpec()).toFileStorageConfigDTO());
+        break;
+      case S3:
+        S3StorageConfigDTO s3ConfigDTO =
+            (S3StorageConfigDTO) ((S3StoreConfig) configuration.getConfigFiles().getStore().getSpec())
+                .toFileStorageConfigDTO();
+        Map<String, Map<String, String>> keyVersionMap = terraformTaskNGResponse.getKeyVersionMap();
+        s3ConfigDTO.setVersions(isNotEmpty(keyVersionMap) ? keyVersionMap.get(TF_CONFIG_FILES) : null);
+        builder.fileStorageConfigDTO(s3ConfigDTO);
         break;
       default:
         throw new InvalidRequestException(format("Unsupported store type: [%s]", storeConfigType));
@@ -399,13 +446,13 @@ public class TerraformStepHelper {
         .backendConfigurationFileConfig(
             toTerraformBackendConfigFileConfig(configuration.getBackendConfig(), terraformTaskNGResponse))
         .environmentVariables(getEnvironmentVariablesMap(configuration.getEnvironmentVariables()))
-        .targets(ParameterFieldHelper.getParameterFieldValue(configuration.getTargets()))
+        .targets(getParameterFieldValue(configuration.getTargets()))
         .encryptedTfPlan(terraformTaskNGResponse.getEncryptedTfPlan())
         .encryptionConfig(getEncryptionConfig(ambiance, planStepParameters))
         .planName(getTerraformPlanName(planStepParameters.getConfiguration().getCommand(), ambiance,
             planStepParameters.getProvisionerIdentifier().getValue()));
-    String fullEntityId = generateFullIdentifier(
-        ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance);
+    String fullEntityId =
+        generateFullIdentifier(getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance);
     String inheritOutputName =
         format(TF_INHERIT_OUTPUT_FORMAT, planStepParameters.getConfiguration().command.name(), fullEntityId);
     executionSweepingOutputService.consume(ambiance, inheritOutputName, builder.build(), StepOutcomeGroup.STAGE.name());
@@ -585,7 +632,7 @@ public class TerraformStepHelper {
 
   public EncryptionConfig getEncryptionConfig(Ambiance ambiance, TerraformPlanStepParameters planStepParameters) {
     IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
-        ParameterFieldHelper.getParameterFieldValue(planStepParameters.getConfiguration().getSecretManagerRef()),
+        getParameterFieldValue(planStepParameters.getConfiguration().getSecretManagerRef()),
         AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
         AmbianceUtils.getProjectIdentifier(ambiance));
 
@@ -649,7 +696,13 @@ public class TerraformStepHelper {
 
   public void saveRollbackDestroyConfigInherited(TerraformApplyStepParameters stepParameters, Ambiance ambiance) {
     TerraformInheritOutput inheritOutput = getSavedInheritOutput(
-        ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), APPLY.name(), ambiance);
+        getParameterFieldValue(stepParameters.getProvisionerIdentifier()), APPLY.name(), ambiance);
+
+    FileStorageConfigDTO fileStorageConfigDTO = inheritOutput.getFileStorageConfigDTO();
+
+    // this should be removed after some time
+    FileStorageConfigDTO fileStoreConfigDTO =
+        inheritOutput.getFileStoreConfig() != null ? inheritOutput.getFileStoreConfig().toFileStorageConfigDTO() : null;
 
     TerraformConfig terraformConfig =
         TerraformConfig.builder()
@@ -662,9 +715,7 @@ public class TerraformStepHelper {
             .configFiles(
                 inheritOutput.getConfigFiles() != null ? inheritOutput.getConfigFiles().toGitStoreConfigDTO() : null)
             .useConnectorCredentials(inheritOutput.isUseConnectorCredentials())
-            .fileStoreConfig(inheritOutput.getFileStoreConfig() != null
-                    ? inheritOutput.getFileStoreConfig().toFileStorageConfigDTO()
-                    : null)
+            .fileStoreConfig(fileStorageConfigDTO != null ? fileStorageConfigDTO : fileStoreConfigDTO)
             .varFileConfigs(inheritOutput.getVarFileConfigs())
             .backendConfig(inheritOutput.getBackendConfig())
             .backendConfigFileConfig(inheritOutput.getBackendConfigurationFileConfig())
@@ -725,8 +776,8 @@ public class TerraformStepHelper {
             .accountId(AmbianceUtils.getAccountId(ambiance))
             .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
             .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
-            .entityId(generateFullIdentifier(
-                ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance))
+            .entityId(
+                generateFullIdentifier(getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance))
             .pipelineExecutionId(ambiance.getPlanExecutionId());
 
     StoreConfigWrapper store = spec.getConfigFiles().getStore();
@@ -748,6 +799,13 @@ public class TerraformStepHelper {
       case ARTIFACTORY:
         builder.fileStoreConfig(((FileStorageStoreConfig) store.getSpec()).toFileStorageConfigDTO());
         break;
+      case S3:
+        S3StorageConfigDTO fileStorageConfigDTO =
+            (S3StorageConfigDTO) ((S3StoreConfig) store.getSpec()).toFileStorageConfigDTO();
+        Map<String, Map<String, String>> keyVersionMap = response.getKeyVersionMap();
+        fileStorageConfigDTO.setVersions(isNotEmpty(keyVersionMap) ? keyVersionMap.get(TF_CONFIG_FILES) : null);
+        builder.fileStoreConfig(fileStorageConfigDTO);
+        break;
       default:
         throw new InvalidRequestException(format("Unsupported store type: [%s]", storeConfigType));
     }
@@ -756,9 +814,9 @@ public class TerraformStepHelper {
         .backendConfig(getBackendConfig(spec.getBackendConfig()))
         .backendConfigFileConfig(toTerraformBackendConfigFileConfig(spec.getBackendConfig(), response))
         .environmentVariables(getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
-        .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
-        .targets(ParameterFieldHelper.getParameterFieldValue(spec.getTargets()))
-        .isTerraformCloudCli(ParameterFieldHelper.getParameterFieldValue(spec.getIsTerraformCloudCli()));
+        .workspace(getParameterFieldValue(spec.getWorkspace()))
+        .targets(getParameterFieldValue(spec.getTargets()))
+        .isTerraformCloudCli(getParameterFieldValue(spec.getIsTerraformCloudCli()));
 
     terraformConfigDAL.saveTerraformConfig(builder.build());
   }
@@ -767,16 +825,14 @@ public class TerraformStepHelper {
     if (backendConfig != null) {
       TerraformBackendConfigSpec terraformBackendConfigSpec = backendConfig.getTerraformBackendConfigSpec();
       if (terraformBackendConfigSpec instanceof InlineTerraformBackendConfigSpec) {
-        return ParameterFieldHelper.getParameterFieldValue(
-            ((InlineTerraformBackendConfigSpec) terraformBackendConfigSpec).getContent());
+        return getParameterFieldValue(((InlineTerraformBackendConfigSpec) terraformBackendConfigSpec).getContent());
       }
     }
     return null;
   }
 
   public TerraformConfig getLastSuccessfulApplyConfig(TerraformDestroyStepParameters parameters, Ambiance ambiance) {
-    String entityId = generateFullIdentifier(
-        ParameterFieldHelper.getParameterFieldValue(parameters.getProvisionerIdentifier()), ambiance);
+    String entityId = generateFullIdentifier(getParameterFieldValue(parameters.getProvisionerIdentifier()), ambiance);
     Query<TerraformConfig> query =
         persistence.createQuery(TerraformConfig.class)
             .filter(TerraformConfigKeys.accountId, AmbianceUtils.getAccountId(ambiance))
@@ -868,8 +924,7 @@ public class TerraformStepHelper {
     if (backendConfig != null) {
       TerraformBackendConfigSpec spec = backendConfig.getTerraformBackendConfigSpec();
       if (spec instanceof InlineTerraformBackendConfigSpec) {
-        String content =
-            ParameterFieldHelper.getParameterFieldValue(((InlineTerraformBackendConfigSpec) spec).getContent());
+        String content = getParameterFieldValue(((InlineTerraformBackendConfigSpec) spec).getContent());
         if (EmptyPredicate.isNotEmpty(content)) {
           fileInfo = InlineTerraformBackendConfigFileInfo.builder().backendConfigFileContent(content).build();
         }
@@ -927,8 +982,7 @@ public class TerraformStepHelper {
         if (file != null) {
           TerraformVarFileSpec spec = file.getSpec();
           if (spec instanceof InlineTerraformVarFileSpec) {
-            String content =
-                ParameterFieldHelper.getParameterFieldValue(((InlineTerraformVarFileSpec) spec).getContent());
+            String content = getParameterFieldValue(((InlineTerraformVarFileSpec) spec).getContent());
             if (EmptyPredicate.isNotEmpty(content)) {
               varFileInfo.add(InlineTerraformVarFileInfo.builder().varFileContent(content).build());
             }
@@ -962,8 +1016,7 @@ public class TerraformStepHelper {
     if (backendConfig != null) {
       TerraformBackendConfigSpec spec = backendConfig.getTerraformBackendConfigSpec();
       if (spec instanceof InlineTerraformBackendConfigSpec) {
-        String content =
-            ParameterFieldHelper.getParameterFieldValue(((InlineTerraformBackendConfigSpec) spec).getContent());
+        String content = getParameterFieldValue(((InlineTerraformBackendConfigSpec) spec).getContent());
         if (EmptyPredicate.isNotEmpty(content)) {
           fileConfig = TerraformInlineBackendConfigFileConfig.builder().backendConfigFileContent(content).build();
         }
@@ -976,6 +1029,14 @@ public class TerraformStepHelper {
             fileConfig = TerraformRemoteBackendConfigFileConfig.builder()
                              .fileStoreConfigDTO(((FileStorageStoreConfig) storeConfig).toFileStorageConfigDTO())
                              .build();
+          } else if (storeConfig.getKind().equals(ManifestStoreType.S3)) {
+            S3StoreConfig s3StoreConfig = (S3StoreConfig) storeConfig;
+            S3StorageConfigDTO fileStorageConfigDTO = (S3StorageConfigDTO) s3StoreConfig.toFileStorageConfigDTO();
+            Map<String, Map<String, String>> keyVersionMap = response.getKeyVersionMap();
+            fileStorageConfigDTO.setVersions(
+                isNotEmpty(keyVersionMap) ? keyVersionMap.get(TF_BACKEND_CONFIG_FILE) : null);
+            fileConfig =
+                TerraformRemoteBackendConfigFileConfig.builder().fileStoreConfigDTO(fileStorageConfigDTO).build();
           } else {
             GitStoreConfigDTO gitStoreConfigDTO = getStoreConfigAtCommitId(
                 storeConfig, response.getCommitIdForConfigFilesMap().get(TF_BACKEND_CONFIG_FILE))
@@ -998,8 +1059,7 @@ public class TerraformStepHelper {
         if (file != null) {
           TerraformVarFileSpec spec = file.getSpec();
           if (spec instanceof InlineTerraformVarFileSpec) {
-            String content =
-                ParameterFieldHelper.getParameterFieldValue(((InlineTerraformVarFileSpec) spec).getContent());
+            String content = getParameterFieldValue(((InlineTerraformVarFileSpec) spec).getContent());
             if (EmptyPredicate.isNotEmpty(content)) {
               varFileConfigs.add(TerraformInlineVarFileConfig.builder().varFileContent(content).build());
             }
@@ -1013,6 +1073,14 @@ public class TerraformStepHelper {
                     TerraformRemoteVarFileConfig.builder()
                         .fileStoreConfigDTO(((FileStorageStoreConfig) storeConfig).toFileStorageConfigDTO())
                         .build());
+              } else if (storeConfig.getKind().equals(ManifestStoreType.S3)) {
+                S3StoreConfig s3StoreConfig = (S3StoreConfig) storeConfig;
+                S3StorageConfigDTO fileStorageConfigDTO = (S3StorageConfigDTO) s3StoreConfig.toFileStorageConfigDTO();
+                Map<String, Map<String, String>> keyVersionMap = response.getKeyVersionMap();
+                fileStorageConfigDTO.setVersions(
+                    isNotEmpty(keyVersionMap) ? keyVersionMap.get(format(TF_VAR_FILES, i)) : null);
+                varFileConfigs.add(
+                    TerraformRemoteVarFileConfig.builder().fileStoreConfigDTO(fileStorageConfigDTO).build());
               } else {
                 GitStoreConfigDTO gitStoreConfigDTO = getStoreConfigAtCommitId(
                     storeConfig, response.getCommitIdForConfigFilesMap().get(format(TF_VAR_FILES, i)))
@@ -1050,9 +1118,8 @@ public class TerraformStepHelper {
                 getGitFetchFilesConfig(gitStoreConfig, ambiance, format(TerraformStepHelper.TF_VAR_FILES, i)));
           }
           if (terraformRemoteVarFileConfig.getFileStoreConfigDTO() != null) {
-            remoteTerraformVarFileInfoBuilder.filestoreFetchFilesConfig(getFileStoreFetchFilesConfig(
-                terraformRemoteVarFileConfig.getFileStoreConfigDTO().toFileStorageStoreConfig(), ambiance,
-                format(TerraformStepHelper.TF_VAR_FILES, i)));
+            remoteTerraformVarFileInfoBuilder.filestoreFetchFilesConfig(
+                prepareTerraformConfigFileInfo(terraformRemoteVarFileConfig.getFileStoreConfigDTO(), ambiance));
           }
           varFileInfo.add(remoteTerraformVarFileInfoBuilder.build());
         }
@@ -1087,9 +1154,8 @@ public class TerraformStepHelper {
           fileInfo = remoteTerraformBCFileInfoBuilder.build();
         }
         if (terraformRemoteBCFileConfig.getFileStoreConfigDTO() != null) {
-          remoteTerraformBCFileInfoBuilder.filestoreFetchFilesConfig(getFileStoreFetchFilesConfig(
-              terraformRemoteBCFileConfig.getFileStoreConfigDTO().toFileStorageStoreConfig(), ambiance,
-              format(TerraformStepHelper.TF_BACKEND_CONFIG_FILE)));
+          remoteTerraformBCFileInfoBuilder.filestoreFetchFilesConfig(
+              prepareTerraformConfigFileInfo(terraformRemoteBCFileConfig.getFileStoreConfigDTO(), ambiance));
           if (HARNESS_STORE_TYPE.equals(terraformRemoteBCFileConfig.getFileStoreConfigDTO().getKind())) {
             fileInfo = harnessFileStoreToInlineBackendConfig(
                 terraformRemoteBCFileConfig.getFileStoreConfigDTO().toFileStorageStoreConfig(), ambiance);
@@ -1163,5 +1229,60 @@ public class TerraformStepHelper {
     }
 
     return commandsValueMap;
+  }
+
+  public FileStoreFetchFilesConfig prepareTerraformConfigFileInfo(
+      FileStorageConfigDTO fileStorageConfigDTO, Ambiance ambiance) {
+    String kind = fileStorageConfigDTO.getKind();
+    NGAccess basicNGAccessObject = AmbianceUtils.getNgAccess(ambiance);
+    ConnectorInfoDTO connectorDTO;
+    List<EncryptedDataDetail> encryptedDataDetails;
+    FileStoreFetchFilesConfig fileStoreFetchFilesConfig;
+    if (ManifestStoreType.ARTIFACTORY.equals(kind)) {
+      ArtifactoryStorageConfigDTO artifactoryStorageConfigDTO = (ArtifactoryStorageConfigDTO) fileStorageConfigDTO;
+      connectorDTO = cdStepHelper.getConnector(artifactoryStorageConfigDTO.getConnectorRef(), ambiance);
+      encryptedDataDetails = secretManagerClientService.getEncryptionDetails(basicNGAccessObject,
+          ((ArtifactoryConnectorDTO) connectorDTO.getConnectorConfig()).getAuth().getCredentials());
+      fileStoreFetchFilesConfig = ArtifactoryStoreDelegateConfig.builder()
+                                      .repositoryName(artifactoryStorageConfigDTO.getRepositoryName())
+                                      .artifacts(artifactoryStorageConfigDTO.getArtifactPaths())
+                                      .build();
+    } else if (ManifestStoreType.S3.equals(kind)) {
+      S3StorageConfigDTO s3StorageConfigDTO = (S3StorageConfigDTO) fileStorageConfigDTO;
+      connectorDTO = cdStepHelper.getConnector(s3StorageConfigDTO.getConnectorRef(), ambiance);
+      encryptedDataDetails = secretManagerClientService.getEncryptionDetails(
+          basicNGAccessObject, ((AwsConnectorDTO) connectorDTO.getConnectorConfig()).getCredential().getConfig());
+      fileStoreFetchFilesConfig = S3StoreTFDelegateConfig.builder()
+                                      .region(s3StorageConfigDTO.getRegion())
+                                      .bucketName(s3StorageConfigDTO.getBucket())
+                                      .paths(isNotEmpty(s3StorageConfigDTO.getFolderPath())
+                                              ? Collections.singletonList(s3StorageConfigDTO.getFolderPath())
+                                              : s3StorageConfigDTO.getPaths())
+                                      .versions(s3StorageConfigDTO.getVersions())
+                                      .build();
+    } else {
+      return null;
+    }
+    fileStoreFetchFilesConfig.setIdentifier(TF_CONFIG_FILES);
+    fileStoreFetchFilesConfig.setManifestStoreType(kind);
+    fileStoreFetchFilesConfig.setConnectorDTO(connectorDTO);
+    fileStoreFetchFilesConfig.setSucceedIfFileNotFound(false);
+    fileStoreFetchFilesConfig.setEncryptedDataDetails(encryptedDataDetails);
+    return fileStoreFetchFilesConfig;
+  }
+
+  private void validateStoreConfig(String storeKind, ConnectorInfoDTO connectorDTO, String identifier) {
+    String validationMessage;
+    switch (identifier) {
+      case TerraformStepHelper.TF_CONFIG_FILES:
+        validationMessage = "Config Files";
+        break;
+      case TerraformStepHelper.TF_BACKEND_CONFIG_FILE:
+        validationMessage = "Backend Configuration File";
+        break;
+      default:
+        validationMessage = format("Var Files with identifier: %s", identifier);
+    }
+    cdStepHelper.validateManifest(storeKind, connectorDTO, validationMessage);
   }
 }
