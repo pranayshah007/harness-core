@@ -602,6 +602,8 @@ public class JschClient extends SshClient {
                                      .withKey(config.getKey())
                                      .withHost("127.0.0.1")
                                      .withPort(forwardingPort)
+                                     .withUseSshj(config.isUseSshj())
+                                     .withUseSshClient(config.isUseSshClient())
                                      .build();
     return getSSHSession(newConfig);
   }

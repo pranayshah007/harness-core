@@ -43,10 +43,12 @@ import io.harness.cdng.provision.terraform.TerraformVarFileWrapper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.expressions.step.TerraformStepFunctor;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -75,6 +77,7 @@ import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -382,8 +385,10 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
         .build();
   }
 
-  protected AbstractStepNode getStepNode(Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode, CaseFormat identifierCaseFormat) {
+  protected AbstractStepNode getStepNode(MigrationContext migrationContext, GraphNode graphNode) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
+    CaseFormat identifierCaseFormat = migrationContext.getInputDTO().getIdentifierCaseFormat();
     TerraformProvisionState state = (TerraformProvisionState) getState(graphNode);
     if (state.isRunPlanOnly()) {
       TerraformPlanExecutionData executionData = getPlanExecutionData(entities, migratedEntities, state);
@@ -408,6 +413,7 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
       TerraformApplyStepNode applyStepNode = new TerraformApplyStepNode();
       baseSetup(graphNode, applyStepNode, identifierCaseFormat);
       applyStepNode.setTerraformApplyStepInfo(stepInfo);
+      MigratorExpressionUtils.render(migrationContext, applyStepNode, new HashMap<>());
       return applyStepNode;
     }
   }

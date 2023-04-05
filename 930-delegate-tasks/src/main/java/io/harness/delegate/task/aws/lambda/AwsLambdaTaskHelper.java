@@ -185,6 +185,9 @@ public class AwsLambdaTaskHelper {
 
     CreateFunctionRequest createFunctionRequest = createFunctionRequestBuilder.build();
 
+    logCallback.saveExecutionLog(color(format("Aws Lambda Manifest Content %n"), White, Bold));
+    logCallback.saveExecutionLog(awsLambdaManifestContent);
+
     if (isEmpty(createFunctionRequest.functionName())) {
       logCallback.saveExecutionLog(
           format("%nFunction Name not found from function definition manifest."), LogLevel.ERROR);
@@ -226,6 +229,10 @@ public class AwsLambdaTaskHelper {
 
   protected void createOrUpdateAlias(List<String> awsLambdaAliasManifestContent, String functionName,
       String functionVersion, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, LogCallback logCallback) {
+    // Print the provided AWS Lambda Manifest
+    logCallback.saveExecutionLog(color(format("Aws Lambda Alias Manifest Content %n"), White, Bold));
+    awsLambdaAliasManifestContent.stream().forEach(s -> logCallback.saveExecutionLog(s));
+
     logCallback.saveExecutionLog(
         format("%nCreate or Update Aliases for function %s with version %s. %n", functionName, functionVersion),
         LogLevel.INFO);
@@ -356,7 +363,8 @@ public class AwsLambdaTaskHelper {
             updateFunctionConfigurationResponse.functionName(), updateFunctionConfigurationResponse.codeSha256());
 
     logCallback.saveExecutionLog(format("Successfully deployed lambda function: [%s]", functionName));
-    logCallback.saveExecutionLog("=================");
+    logCallback.saveExecutionLog(
+        format("%n================================================================================%n"));
 
     return CreateFunctionResponse.builder()
         .functionName(updateFunctionConfigurationResponse.functionName())
@@ -402,7 +410,8 @@ public class AwsLambdaTaskHelper {
       logCallback.saveExecutionLog(format("Updated Function ARN: [%s]", updateFunctionCodeResponse.functionArn()));
 
     } else {
-      logCallback.saveExecutionLog("Function code didn't change. Skip function code update", INFO);
+      logCallback.saveExecutionLog(
+          color(format("Function code didn't change. Skip function code update", INFO), White, Bold));
     }
   }
 

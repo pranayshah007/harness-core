@@ -69,6 +69,8 @@ public class SshSessionConfig implements EncryptableSetting, ScriptExecutionCont
 
   // environment variables for remote session
   private Map<String, String> envVariables;
+  @SchemaIgnore private boolean useSshClient;
+  @SchemaIgnore private boolean useSshj;
 
   @Override
   public SettingVariableTypes getSettingType() {
@@ -118,6 +120,8 @@ public class SshSessionConfig implements EncryptableSetting, ScriptExecutionCont
     private String publicKey;
     private String signedPublicKey;
     private Map<String, String> envVariables;
+    private boolean useSshClient;
+    private boolean useSshj;
 
     private Builder() {}
 
@@ -275,6 +279,16 @@ public class SshSessionConfig implements EncryptableSetting, ScriptExecutionCont
       return this;
     }
 
+    public Builder withUseSshClient(boolean useSshClient) {
+      this.useSshClient = useSshClient;
+      return this;
+    }
+
+    public Builder withUseSshj(boolean useSshj) {
+      this.useSshj = useSshj;
+      return this;
+    }
+
     public Builder but() {
       return aSshSessionConfig()
           .withAccountId(accountId)
@@ -306,7 +320,9 @@ public class SshSessionConfig implements EncryptableSetting, ScriptExecutionCont
           .withPublicKey(publicKey)
           .withSignedPublicKey(signedPublicKey)
           .withVaultSSH(isVaultSSH)
-          .withEnvVariables(envVariables);
+          .withEnvVariables(envVariables)
+          .withUseSshClient(useSshClient)
+          .withUseSshj(useSshj);
     }
 
     public SshSessionConfig build() {
@@ -341,6 +357,8 @@ public class SshSessionConfig implements EncryptableSetting, ScriptExecutionCont
       sshSessionConfig.setSignedPublicKey(signedPublicKey);
       sshSessionConfig.setPublicKey(publicKey);
       sshSessionConfig.setEnvVariables(envVariables);
+      sshSessionConfig.setUseSshClient(useSshClient);
+      sshSessionConfig.setUseSshj(useSshj);
       return sshSessionConfig;
     }
   }

@@ -19,6 +19,7 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.events.SdkResponseEventType;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.plan.TriggeredBy;
@@ -378,5 +379,11 @@ public class AmbianceUtils {
     }
 
     return false;
+  }
+
+  public static AutoLogContext autoLogContext(Ambiance ambiance, SdkResponseEventType sdkResponseEventType) {
+    Map<String, String> logContextMap = logContextMap(ambiance);
+    logContextMap.put("sdkEventType", sdkResponseEventType.toString());
+    return new AutoLogContext(logContextMap, OVERRIDE_NESTS);
   }
 }

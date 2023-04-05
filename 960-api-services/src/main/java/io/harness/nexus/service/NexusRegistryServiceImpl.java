@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.NexusRegistryException;
 import io.harness.expression.RegexFunctor;
@@ -92,6 +93,7 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
         groupId, artifactId, extension, classifier, packageName, group, maxBuilds);
     builds = builds.stream()
                  .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
+                 .sorted(new BuildDetailsInternalComparatorDescending())
                  .collect(Collectors.toList());
 
     if (builds.isEmpty()) {

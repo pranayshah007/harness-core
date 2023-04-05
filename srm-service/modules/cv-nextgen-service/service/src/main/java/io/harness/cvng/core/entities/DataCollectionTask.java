@@ -79,6 +79,14 @@ public abstract class DataCollectionTask
                  .field(DataCollectionTaskKeys.verificationTaskId)
                  .descSortField(DataCollectionTaskKeys.startTime)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_dataCollectionWorkerId_lastUpdatedAt_validAfter_idx")
+                 .unique(false)
+                 .field(DataCollectionTaskKeys.accountId)
+                 .field(DataCollectionTaskKeys.dataCollectionWorkerId)
+                 .field(VerificationTaskBaseKeys.lastUpdatedAt)
+                 .field(DataCollectionTaskKeys.validAfter)
+                 .build())
         .build();
   }
   @Id private String uuid;

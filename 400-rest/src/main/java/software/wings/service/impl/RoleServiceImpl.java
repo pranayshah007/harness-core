@@ -26,6 +26,7 @@ import software.wings.service.intfc.UserService;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import javax.validation.executable.ValidateOnExecution;
@@ -120,8 +121,8 @@ public class RoleServiceImpl implements RoleService {
   }
 
   @Override
-  public List<Role> getAccountRoles(String accountId) {
-    return wingsPersistence.createQuery(Role.class).filter(Role.ACCOUNT_ID_KEY2, accountId).asList();
+  public Query<Role> getAccountRolesQuery(String accountId) {
+    return wingsPersistence.createQuery(Role.class).filter(Role.ACCOUNT_ID_KEY2, accountId);
   }
 
   @Override

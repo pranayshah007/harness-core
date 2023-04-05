@@ -293,7 +293,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                             .stages(stages)
                                             .allowStageExecutions(true)
                                             .tags(MigratorUtility.getTags(workflow.getTagLinks()))
-                                            .variables(workflowHandler.getVariables(workflow))
+                                            .variables(workflowHandler.getVariables(migrationContext, workflow))
                                             .build())
                     .build();
       ngType = PIPELINE;
@@ -370,6 +370,7 @@ public class WorkflowMigrationService extends NgMigrationService {
     }
     String yaml = YamlUtils.write(yamlFile.getYaml());
     if (yamlFile.getYaml() instanceof PipelineConfig) {
+      yaml = getYamlString(yamlFile);
       Response<ResponseDTO<PipelineSaveResponse>> resp =
           pmsClient
               .createPipeline(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),

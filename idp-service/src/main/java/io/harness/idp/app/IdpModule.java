@@ -45,8 +45,8 @@ import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.namespace.service.NamespaceServiceImpl;
 import io.harness.idp.onboarding.config.OnboardingModuleConfig;
 import io.harness.idp.onboarding.resources.OnboardingResourceApiImpl;
-import io.harness.idp.onboarding.services.OnboardingService;
-import io.harness.idp.onboarding.services.impl.OnboardingServiceImpl;
+import io.harness.idp.onboarding.service.OnboardingService;
+import io.harness.idp.onboarding.service.impl.OnboardingServiceImpl;
 import io.harness.idp.plugin.resources.PluginInfoApiImpl;
 import io.harness.idp.plugin.services.PluginInfoService;
 import io.harness.idp.plugin.services.PluginInfoServiceImpl;
@@ -137,6 +137,7 @@ public class IdpModule extends AbstractModule {
     registerRequiredBindings();
     install(VersionModule.getInstance());
     install(new IdpPersistenceModule());
+    install(IdpGrpcModule.getInstance());
     install(new AbstractMongoModule() {
       @Provides
       @Singleton

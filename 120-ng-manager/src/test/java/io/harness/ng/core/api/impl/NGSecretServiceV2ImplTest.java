@@ -72,6 +72,7 @@ import io.harness.secretmanagerclient.WinRmAuthScheme;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
 import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -97,6 +98,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private TransactionTemplate transactionTemplate;
   private AccessControlClient accessControlClient;
+  private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
@@ -128,12 +130,13 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     transactionTemplate = mock(TransactionTemplate.class);
     taskSetupAbstractionHelper = new TaskSetupAbstractionHelper();
     accessControlClient = mock(AccessControlClient.class);
+    ngFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
     SshKeySpecDTOHelper sshKeySpecDTOHelper = mock(SshKeySpecDTOHelper.class);
     WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper = mock(WinRmCredentialsSpecDTOHelper.class);
 
     secretServiceV2 = new NGSecretServiceV2Impl(secretRepository, delegateGrpcClientWrapper, sshKeySpecDTOHelper,
         ngSecretActivityService, outboxService, transactionTemplate, taskSetupAbstractionHelper,
-        winRmCredentialsSpecDTOHelper, accessControlClient);
+        winRmCredentialsSpecDTOHelper, accessControlClient, ngFeatureFlagHelperService);
     secretServiceV2Spy = spy(secretServiceV2);
     secretForceDeleteEventArgumentCaptor = ArgumentCaptor.forClass(SecretForceDeleteEvent.class);
     secretDeleteEventArgumentCaptor = ArgumentCaptor.forClass(SecretDeleteEvent.class);

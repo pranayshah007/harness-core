@@ -105,16 +105,18 @@ jwtIdentityServiceSecret: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0
 onboardingModuleConfig:
   tmpPathForCatalogInfoYamlStore: /tmp
   catalogInfoLocationDefaultPath: /.harness-idp-entities
-  backstageLocationEntityAllHarnessEntitiesName: "all-harness-entities"
-  backstageLocationEntityAllHarnessEntitiesDesc: "Collection of all harness entities - organizations, projects, services and sample entities"
   sampleEntities:
     - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/one.yaml
     - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/two.yaml
     - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/three.yaml
     - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/four.yaml
     - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/five.yaml
-  harnessCiCdAnnotation:
+  harnessCiCdAnnotations:
     projectUrl: https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details
+
+gitManagerGrpcClientConfig:
+  target: localhost:13001
+  authority: localhost
 
 accessControlClient:
   enableAccessControl: false

@@ -71,6 +71,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -87,6 +88,7 @@ import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.NoFilepatternException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.util.SystemReader;
 import org.junit.AfterClass;
@@ -894,5 +896,22 @@ public class GitClientV2ImplTest extends CategoryTest {
     assertThat(git3.remoteList().call().get(0).getURIs().get(0).getPath()).isEqualTo(wrongRemoteUrl);
     git3.close();
     SystemReader.setInstance(null);
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testListRemote() {
+    addRemote(repoPath);
+    GitBaseRequest request = GitBaseRequest.builder()
+                                 .repoUrl(repoPath)
+                                 .authRequest(new UsernamePasswordAuthRequest(USERNAME, PASSWORD.toCharArray()))
+                                 .build();
+    Map<String, Ref> remoteListing = gitClient.listRemote(request);
+    assertThat(remoteListing.get("HEAD").getTarget().getName()).isEqualTo("refs/heads/master");
+    assertThat(remoteListing.get("refs/tags/base").getTarget().getName()).isEqualTo("refs/tags/base");
+    assertThat(remoteListing.get("refs/heads/master").getTarget().getName()).isEqualTo("refs/heads/master");
+    assertThat(remoteListing.get("refs/remotes/origin/master").getTarget().getName())
+        .isEqualTo("refs/remotes/origin/master");
   }
 }

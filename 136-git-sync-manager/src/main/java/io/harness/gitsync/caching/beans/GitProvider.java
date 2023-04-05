@@ -20,7 +20,8 @@ public enum GitProvider {
   GITHUB_SAAS("GITHUB_SAAS"),
   BITBUCKET_SAAS("BITBUCKET_SAAS"),
   BITBUCKET_ON_PREM("BITBUCKET_ON_PREM"),
-  AZURE_SAAS("AZURE_SAAS");
+  AZURE_SAAS("AZURE_SAAS"),
+  GITLAB_SAAS("GITLAB_SAAS");
 
   private static final Map<String, GitProvider> map = new HashMap<>(values().length, 1);
   static {

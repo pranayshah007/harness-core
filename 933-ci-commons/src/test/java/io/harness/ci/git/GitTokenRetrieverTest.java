@@ -161,6 +161,21 @@ public class GitTokenRetrieverTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testRetrieveBitbucketUsernameRef() {
+    BitbucketUsernameTokenApiAccessDTO decryptedTokenSpec =
+        BitbucketUsernameTokenApiAccessDTO.builder()
+            .usernameRef(SecretRefData.builder().decryptedValue(USERNAME.toCharArray()).build())
+            .tokenRef(SecretRefData.builder().decryptedValue(TOKEN.toCharArray()).build())
+            .build();
+
+    when(secretDecryptor.decrypt(any(), any())).thenReturn(decryptedTokenSpec);
+    String actual = gitTokenRetriever.retrieveBitbucketUsernameFromAPIAccess(any(), any());
+    assertThat(actual).isEqualTo(USERNAME);
+  }
+
+  @Test
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void testRetrieveGitlabTokenAuthToken() {

@@ -11,6 +11,7 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -30,9 +31,6 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
-import io.harness.cdng.service.beans.KubernetesServiceSpec;
-import io.harness.cdng.service.beans.ServiceDefinition;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
@@ -44,7 +42,6 @@ import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
-import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -182,6 +179,41 @@ public class ConfigFilesStepV2Test extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
+  public void executeWithInvalidConfigFiles() {
+    ConfigFileWrapper file1 =
+        ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("identifier").build()).build();
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgConfigFilesMetadataSweepingOutput.builder()
+                             .finalSvcConfigFiles(Arrays.asList(file1))
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .build())
+                 .build())
+        .when(mockSweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
+    List<EntityDetail> listEntityDetail = new ArrayList<>();
+
+    listEntityDetail.add(EntityDetail.builder().name("configSecret1").build());
+    listEntityDetail.add(EntityDetail.builder().name("configSecret2").build());
+
+    Set<EntityDetailProtoDTO> setEntityDetail = new HashSet<>();
+
+    doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
+
+    doReturn(listEntityDetail)
+        .when(entityDetailProtoToRestMapper)
+        .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null))
+        .withMessageContaining("configFiles[0].configFile.spec: must not be null");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
   public void executeSyncConnectorNotFound() {
     doReturn(Optional.empty()).when(connectorService).get(anyString(), anyString(), anyString(), anyString());
     ConfigFileWrapper file1 = sampleConfigFile("file404");
@@ -207,20 +239,6 @@ public class ConfigFilesStepV2Test extends CategoryTest {
     }
 
     fail("expected to throw exception");
-  }
-
-  private Optional<NGServiceV2InfoConfig> getServiceConfig(List<ConfigFileWrapper> configFileWrapperList) {
-    NGServiceV2InfoConfig config =
-        NGServiceV2InfoConfig.builder()
-            .identifier("service-id")
-            .name("service-name")
-            .serviceDefinition(
-                ServiceDefinition.builder()
-                    .type(ServiceDefinitionType.KUBERNETES)
-                    .serviceSpec(KubernetesServiceSpec.builder().configFiles(configFileWrapperList).build())
-                    .build())
-            .build();
-    return Optional.of(config);
   }
 
   private ConfigFileWrapper sampleConfigFile(String identifier) {
