@@ -117,7 +117,7 @@ public class TestMongoModule extends AbstractModule implements MongoRuleMixin {
   @Provides
   @Named("locksMongoClient")
   @Singleton
-  public MongoClient locksMongoClient(@Named("realLegacyMongoClient") MongoClient mongoClient) throws Exception {
+  public MongoClient locksMongoClient(@Named("fakeLegacyMongoClient") MongoClient mongoClient) throws Exception {
     return mongoClient;
   }
 
