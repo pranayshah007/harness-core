@@ -6,6 +6,14 @@ category: Monitoring
 source: https://github.com/backstage/backstage/tree/master/plugins/pagerduty
 iconUrl: https://avatars2.githubusercontent.com/u/766800?s=200&v=4
 imageUrl: ''
+config: |-
+  proxy:
+    '/pagerduty':
+      target: https://api.pagerduty.com
+      headers:
+        Authorization: Token token=${PAGERDUTY_TOKEN}
+tokens:
+  - PAGERDUTY_TOKEN
 exports:
   defaultEntityTypes:
     - component
