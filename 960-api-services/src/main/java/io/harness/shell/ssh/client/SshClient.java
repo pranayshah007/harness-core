@@ -10,7 +10,7 @@ package io.harness.shell.ssh.client;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.LogLevel.INFO;
-import static io.harness.shell.ssh.Constants.getCacheKey;
+import static io.harness.shell.ssh.SshUtils.getCacheKey;
 
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;

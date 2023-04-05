@@ -80,8 +80,8 @@ public class HostConnectionAttributes extends SettingValue implements Encryptabl
   private String sshVaultConfigId;
   private SSHVaultConfig sshVaultConfig;
 
-  @SchemaIgnore @Transient private boolean useSshClient;
-  @SchemaIgnore @Transient private boolean useSshj;
+  @SchemaIgnore private boolean useSshClient;
+  @SchemaIgnore private boolean useSshj;
 
   @Override
   public String fetchResourceCategory() {

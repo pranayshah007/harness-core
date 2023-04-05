@@ -8,7 +8,6 @@
 package io.harness.shell.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.shell.ssh.Constants.getCacheKey;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.logging.LogCallback;
@@ -34,8 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 public class SshClientManager {
   private final ConcurrentMap<String, SshClient> clientCache = new ConcurrentHashMap<>();
 
-  private static SshClient updateCache(SshSessionConfig sshSessionConfig, LogCallback logCallback) {
-    Optional<String> cacheKey = getCacheKey(sshSessionConfig);
+  private SshClient updateCache(SshSessionConfig sshSessionConfig, LogCallback logCallback) {
+    Optional<String> cacheKey = SshUtils.getCacheKey(sshSessionConfig);
     if (cacheKey.isPresent()) {
       String key = cacheKey.get();
       if (!clientCache.containsKey(key)) {
@@ -78,7 +77,7 @@ public class SshClientManager {
   }
 
   public void evictCache(SshSessionConfig config) throws SshClientException {
-    Optional<String> cacheKey = getCacheKey(config);
+    Optional<String> cacheKey = SshUtils.getCacheKey(config);
     if (cacheKey.isPresent()) {
       SshClient sshClient = clientCache.get(cacheKey.get());
       if (null != sshClient) {
@@ -88,8 +87,8 @@ public class SshClientManager {
     }
   }
 
-  private static void cleanUp(SshSessionConfig sshSessionConfig, SshClient sshClient) throws SshClientException {
-    if (getCacheKey(sshSessionConfig).isEmpty()) {
+  private void cleanUp(SshSessionConfig sshSessionConfig, SshClient sshClient) throws SshClientException {
+    if (SshUtils.getCacheKey(sshSessionConfig).isEmpty()) {
       sshClient.close();
     }
   }

@@ -19,12 +19,12 @@ import static io.harness.shell.AccessType.USER_PASSWORD;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshHelperUtils.normalizeError;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
-import static io.harness.shell.ssh.Constants.CHANNEL_IS_NOT_OPENED;
-import static io.harness.shell.ssh.Constants.CHUNK_SIZE;
-import static io.harness.shell.ssh.Constants.MAX_BYTES_READ_PER_CHANNEL;
-import static io.harness.shell.ssh.Constants.SSH_NETWORK_PROXY;
-import static io.harness.shell.ssh.Constants.lineBreakPattern;
-import static io.harness.shell.ssh.Constants.sudoPasswordPromptPattern;
+import static io.harness.shell.ssh.SshUtils.CHANNEL_IS_NOT_OPENED;
+import static io.harness.shell.ssh.SshUtils.CHUNK_SIZE;
+import static io.harness.shell.ssh.SshUtils.LINE_BREAK_PATTERN;
+import static io.harness.shell.ssh.SshUtils.MAX_BYTES_READ_PER_CHANNEL;
+import static io.harness.shell.ssh.SshUtils.SSH_NETWORK_PROXY;
+import static io.harness.shell.ssh.SshUtils.SUDO_PASSWORD_PROMPT_PATTERN;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
@@ -169,6 +169,7 @@ public class JschClient extends SshClient {
   protected SftpResponse sftpDownloadInternal(SftpRequest sftpRequest, SshConnection sshConnection) {
     try (JschSftpSession session = getSftpSession(sshConnection)) {
       ChannelSftp channel = session.getChannel();
+      channel.connect(getSshSessionConfig().getSocketConnectTimeout());
       channel.cd(sftpRequest.getDirectory());
       InputStream inputStream = channel.get(sftpRequest.getFileName(), CHUNK_SIZE);
       BoundedInputStream stream = new BoundedInputStream(inputStream);
@@ -198,6 +199,7 @@ public class JschClient extends SshClient {
         saveExecutionLogError(
             "Error while reading variables to process Script Output. Avoid exiting from script early: " + e);
       }
+      return SftpResponse.builder().exitCode(1).status(FAILURE).success(false).build();
     } catch (Exception ex) {
       log.error("Exception occurred during reading file from SFTP server due to " + ex.getMessage(), ex);
       return SftpResponse.builder().exitCode(1).status(FAILURE).success(false).build();
@@ -389,7 +391,7 @@ public class JschClient extends SshClient {
       return text;
     }
 
-    String[] lines = lineBreakPattern.split(text);
+    String[] lines = LINE_BREAK_PATTERN.split(text);
     if (lines.length == 0) {
       return "";
     }
@@ -445,7 +447,7 @@ public class JschClient extends SshClient {
   }
 
   private boolean matchesPasswordPromptPattern(String line) {
-    return sudoPasswordPromptPattern.matcher(line).find();
+    return SUDO_PASSWORD_PROMPT_PATTERN.matcher(line).find();
   }
 
   @Override
