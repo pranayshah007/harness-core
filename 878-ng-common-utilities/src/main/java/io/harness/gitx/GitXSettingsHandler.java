@@ -23,15 +23,6 @@ import com.google.inject.Inject;
 @OwnedBy(PIPELINE)
 public class GitXSettingsHandler {
   @Inject private NGSettingsClient ngSettingsClient;
-  public boolean isGitExperienceEnforcedInSettings(
-      String accountIdentifier, String orgIdentifier, String projIdentifier) {
-    String isGitExperienceEnforced =
-        NGRestUtils
-            .getResponse(ngSettingsClient.getSetting(
-                GitSyncConstants.ENFORCE_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
-            .getValue();
-    return GitSyncConstants.TRUE_VALUE.equals(isGitExperienceEnforced);
-  }
 
   public void enforceGitExperienceIfApplicable(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -44,5 +35,22 @@ public class GitXSettingsHandler {
             accountIdentifier, orgIdentifier, projectIdentifier));
       }
     }
+  }
+
+  public String getDefaultConnectorForGitX(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    return NGRestUtils
+        .getResponse(ngSettingsClient.getSetting(
+            GitSyncConstants.DEFAULT_CONNECTOR_FOR_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
+        .getValue();
+  }
+
+  private boolean isGitExperienceEnforcedInSettings(
+      String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    String isGitExperienceEnforced =
+        NGRestUtils
+            .getResponse(ngSettingsClient.getSetting(
+                GitSyncConstants.ENFORCE_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
+            .getValue();
+    return GitSyncConstants.TRUE_VALUE.equals(isGitExperienceEnforced);
   }
 }
