@@ -843,3 +843,4 @@ io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStepPara
 io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStepNode
 io.harness.cdng.googlefunctions.rollbackgenone.GoogleFunctionsGenOneRollbackStepParameters
 io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStepInfo
+io.harness.cdng.deploymentmetadata.GoogleCloudFunctionDeploymentMetaData

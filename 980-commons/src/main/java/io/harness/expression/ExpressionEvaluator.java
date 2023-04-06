@@ -86,7 +86,12 @@ public class ExpressionEvaluator {
     }
 
     JexlExpression jexlExpression = engine.createExpression(expression);
-    return jexlExpression.evaluate(context);
+    Object ret = jexlExpression.evaluate(context);
+
+    LateBindingContext lateBindingContext = (LateBindingContext) context;
+    ExpressionEvaluatorContext.set(lateBindingContext.getMap());
+
+    return ret;
   }
 
   public String normalizeExpression(String expression, Map<String, Object> context, String defaultObjectPrefix) {

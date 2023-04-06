@@ -16,6 +16,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.common.CommonUtils;
+import io.harness.idp.envvariable.beans.entity.BackstageEnvSecretVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.BackstageEnvVariableMapper;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableType;
@@ -65,6 +67,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
 
   @Override
   public BackstageEnvVariable create(BackstageEnvVariable envVariable, String accountIdentifier) {
+    envVariable = removeAccountFromIdentifierForBackstageEnvVariable(envVariable);
     sync(Collections.singletonList(envVariable), accountIdentifier);
     BackstageEnvVariableMapper envVariableMapper =
         getEnvVariableMapper(BackstageEnvVariableType.valueOf(envVariable.getType().name()));
@@ -80,6 +83,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   @Override
   public List<BackstageEnvVariable> createMulti(
       List<BackstageEnvVariable> requestEnvVariables, String accountIdentifier) {
+    requestEnvVariables = removeAccountFromIdentifierForBackstageEnvVarList(requestEnvVariables);
     sync(requestEnvVariables, accountIdentifier);
     List<BackstageEnvVariableEntity> entities = getEntitiesFromDtos(requestEnvVariables, accountIdentifier);
     List<BackstageEnvVariable> responseEnvVariables = new ArrayList<>();
@@ -95,6 +99,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
 
   @Override
   public BackstageEnvVariable update(BackstageEnvVariable envVariable, String accountIdentifier) {
+    envVariable = removeAccountFromIdentifierForBackstageEnvVariable(envVariable);
     sync(Collections.singletonList(envVariable), accountIdentifier);
     BackstageEnvVariableMapper envVariableMapper =
         getEnvVariableMapper(BackstageEnvVariableType.valueOf(envVariable.getType().name()));
@@ -113,6 +118,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   @Override
   public List<BackstageEnvVariable> updateMulti(
       List<BackstageEnvVariable> requestEnvVariables, String accountIdentifier) {
+    requestEnvVariables = removeAccountFromIdentifierForBackstageEnvVarList(requestEnvVariables);
     sync(requestEnvVariables, accountIdentifier);
     List<BackstageEnvVariableEntity> entities = getEntitiesFromDtos(requestEnvVariables, accountIdentifier);
     List<BackstageEnvVariable> responseVariables = new ArrayList<>();
@@ -183,6 +189,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   @Override
   public void processSecretUpdate(EntityChangeDTO entityChangeDTO) {
     String secretIdentifier = entityChangeDTO.getIdentifier().getValue();
+    secretIdentifier = CommonUtils.removeAccountFromIdentifier(secretIdentifier);
     String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
     Optional<BackstageEnvVariableEntity> envVariableEntityOpt =
         backstageEnvVariableRepository.findByAccountIdentifierAndHarnessSecretIdentifier(
@@ -201,6 +208,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     if (envVariables.isEmpty()) {
       return;
     }
+    envVariables = removeAccountFromIdentifierForBackstageEnvVarList(envVariables);
     Map<String, byte[]> secretData = new HashMap<>();
     for (BackstageEnvVariable envVariable : envVariables) {
       String envName = envVariable.getEnvName();
@@ -257,5 +265,24 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
           return envVariableMapper.fromDto(envVariable, accountIdentifier);
         })
         .collect(Collectors.toList());
+  }
+  private List<BackstageEnvVariable> removeAccountFromIdentifierForBackstageEnvVarList(
+      List<BackstageEnvVariable> backstageEnvVariableList) {
+    List<BackstageEnvVariable> returnList = new ArrayList<>();
+    for (BackstageEnvVariable backstageEnvVariable : backstageEnvVariableList) {
+      returnList.add(removeAccountFromIdentifierForBackstageEnvVariable(backstageEnvVariable));
+    }
+    return returnList;
+  }
+
+  private BackstageEnvVariable removeAccountFromIdentifierForBackstageEnvVariable(
+      BackstageEnvVariable backstageEnvVariable) {
+    if (backstageEnvVariable.getType().name().equals(BackstageEnvVariableType.SECRET.name())) {
+      BackstageEnvSecretVariable backstageEnvSecretVariable = (BackstageEnvSecretVariable) backstageEnvVariable;
+      backstageEnvSecretVariable.setHarnessSecretIdentifier(
+          CommonUtils.removeAccountFromIdentifier(backstageEnvSecretVariable.getHarnessSecretIdentifier()));
+      return backstageEnvSecretVariable;
+    }
+    return backstageEnvVariable;
   }
 }
