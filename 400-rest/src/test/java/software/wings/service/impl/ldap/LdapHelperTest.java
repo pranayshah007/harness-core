@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
@@ -54,15 +55,14 @@ import org.ldaptive.auth.Authenticator;
 import org.ldaptive.auth.SearchDnResolver;
 import org.mockito.ArgumentMatchers;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * @author Swapnil
  */
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @PrepareForTest({LdapSearch.class, LdapHelper.class})
 @PowerMockIgnore({"javax.security.*", "javax.net.*"})
 @OwnedBy(HarnessTeam.PL)
@@ -74,7 +74,7 @@ public class LdapHelperTest extends WingsBaseTest {
   private LdapSearch search;
 
   private void mockLdapSearchBuilder(LdapSearch.Builder searchBuilder, LdapSearch search) {
-    PowerMockito.mockStatic(LdapSearch.class);
+    mockStatic(LdapSearch.class);
     when(LdapSearch.builder()).thenReturn(searchBuilder);
     when(searchBuilder.connectionFactory(any())).thenReturn(searchBuilder);
     when(searchBuilder.baseDN(any())).thenReturn(searchBuilder);

@@ -55,13 +55,9 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({PersistenceIteratorFactory.class})
-@PowerMockIgnore({"javax.security.*", "javax.crypto.*", "javax.net.*"})
+@RunWith(MockitoJUnitRunner.class)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SettingAttributesSecretsMigrationHandlerTest extends WingsBaseTest {
   @Inject private HPersistence persistence;
