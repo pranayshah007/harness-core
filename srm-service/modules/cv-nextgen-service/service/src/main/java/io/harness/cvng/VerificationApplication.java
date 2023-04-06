@@ -309,7 +309,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   public static void configureObjectMapper(final ObjectMapper mapper) {
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
+    mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE, true);
     HObjectMapper.configureObjectMapperForNG(mapper);
   }
 
