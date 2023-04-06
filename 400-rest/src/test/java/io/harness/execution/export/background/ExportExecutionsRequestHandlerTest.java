@@ -31,13 +31,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(PersistenceIteratorFactory.class)
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class ExportExecutionsRequestHandlerTest extends WingsBaseTest {
   @Mock private PersistenceIteratorFactory mockPersistenceIteratorFactory;
   @Mock private ExportExecutionsService exportExecutionsService;
