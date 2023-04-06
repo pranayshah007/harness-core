@@ -49,7 +49,6 @@ public class DelegateTokenCacheHelper {
   public void removeDelegateToken(String delegateId) {
     if (delegateId != null && delegateTokenCache != null) {
       delegateTokenCache.invalidate(delegateId);
-      log.info("Invalidate token cache for delegate id {}", delegateId);
     } else {
       log.debug(
           "Not able to remove delegateToken from cache, either delegateId is null or delegateTokenCache is null. Value of delegateId {}",
