@@ -26,6 +26,4 @@ public interface TemplateGitXService {
 
   void performImportFlowYamlValidations(String orgIdentifier, String projectIdentifier, String templateIdentifier,
       TemplateImportRequestDTO templateImportRequest, String importedTemplate);
-
-  void enforceGitExperienceIfApplicable(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

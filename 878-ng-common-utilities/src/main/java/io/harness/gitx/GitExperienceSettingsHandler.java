@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.pipeline.gitsync;
+package io.harness.gitx;
 
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;

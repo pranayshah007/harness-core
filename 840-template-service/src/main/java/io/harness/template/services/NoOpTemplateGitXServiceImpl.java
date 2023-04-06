@@ -36,8 +36,4 @@ public class NoOpTemplateGitXServiceImpl implements TemplateGitXService {
   @Override
   public void performImportFlowYamlValidations(String orgIdentifier, String projectIdentifier,
       String templateIdentifier, TemplateImportRequestDTO templateImportRequest, String importedTemplate) {}
-
-  @Override
-  public void enforceGitExperienceIfApplicable(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {}
 }

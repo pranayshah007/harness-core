@@ -54,8 +54,6 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
 
   GitAwareEntityHelper gitAwareEntityHelper;
 
-  NGSettingsClient ngSettingsClient;
-
   public boolean isNewGitXEnabledAndIsRemoteEntity(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
     return isNewGitXEnabled(templateToSave.getAccountIdentifier(), templateToSave.getOrgIdentifier(),
                templateToSave.getProjectIdentifier())
@@ -165,28 +163,5 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
   private boolean isAlreadyImported(String accountIdentifier, String repoURL, String filePath) {
     Long totalInstancesOfYAML = templateRepository.countFileInstances(accountIdentifier, repoURL, filePath);
     return totalInstancesOfYAML > 0;
-  }
-
-  public void enforceGitExperienceIfApplicable(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    if (isGitExperienceEnforcedInSettings(accountIdentifier, orgIdentifier, projectIdentifier)) {
-      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-
-      if (gitEntityInfo == null || StoreType.INLINE.equals(gitEntityInfo.getStoreType())) {
-        throw new InvalidRequestException(String.format(
-            "Git Experience is enforced for the current scope with accountId: %s, orgIdentifier: %s and projIdentifier: %s. Hence Inline Entities cannot be created.",
-            accountIdentifier, orgIdentifier, projectIdentifier));
-      }
-    }
-  }
-
-  private boolean isGitExperienceEnforcedInSettings(
-      String accountIdentifier, String orgIdentifier, String projIdentifier) {
-    String isGitExperienceEnforced =
-        NGRestUtils
-            .getResponse(ngSettingsClient.getSetting(
-                GitSyncConstants.ENFORCE_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
-            .getValue();
-    return GitSyncConstants.TRUE_VALUE.equals(isGitExperienceEnforced);
   }
 }

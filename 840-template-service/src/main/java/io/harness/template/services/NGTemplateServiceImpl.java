@@ -60,6 +60,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
+import io.harness.gitx.GitExperienceSettingsHandler;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -147,6 +148,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject private GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
+  @Inject GitExperienceSettingsHandler gitExperienceSettingsHandler;
+
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
 
@@ -164,7 +167,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         templateEntity.getAccountId(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());
     assureThatTheProjectAndOrgExists(
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
-    templateGitXService.enforceGitExperienceIfApplicable(
+    gitExperienceSettingsHandler.enforceGitExperienceIfApplicable(
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
 
     if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
