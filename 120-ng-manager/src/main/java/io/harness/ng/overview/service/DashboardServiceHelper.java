@@ -648,12 +648,18 @@ public class DashboardServiceHelper {
 
           envIds.add(envId);
           final Integer count = envToCountMap.get(envId);
-          totalCount += count;
-          envTypes.add(envType);
-          artifactDeploymentDetailList.add(artifactDeploymentDetail);
-          artifacts.add(artifactDeploymentDetail.getArtifact());
+          if(count != null) {
+            totalCount += count;
+          }
+          if(envType != null) {
+            envTypes.add(envType);
+          }
+          if(artifactDeploymentDetail != null) {
+            artifactDeploymentDetailList.add(artifactDeploymentDetail);
+            artifacts.add(artifactDeploymentDetail.getArtifact());
+          }
         }
-        if(!envTypes.isEmpty()) {
+        if(totalCount > 0) {
           DashboardServiceHelper.sortArtifactDeploymentDetailList(artifactDeploymentDetailList);
           boolean isValid = false;
           for (EnvironmentType environmentType : envTypes) {
@@ -669,7 +675,7 @@ public class DashboardServiceHelper {
                     .artifactDeploymentDetails(artifactDeploymentDetailList)
                     .isEnvGroup(true)
                     .count(totalCount)
-                    .isDrift((artifacts.size() > 1) || (artifactDeploymentDetailList.size() != envGroupEntity.getEnvIdentifiers().size()))
+                    .isDrift((artifacts.size() > 1) || (artifacts.size() == 1 && artifactDeploymentDetailList.size() != envGroupEntity.getEnvIdentifiers().size()))
                     .build());
           }
         }
@@ -686,13 +692,13 @@ public class DashboardServiceHelper {
         if (artifactDeploymentDetail == null) {
           continue;
         }
-        if(environmentFilterPropertiesDTO != null && !environmentFilterPropertiesDTO.getEnvironmentTypes().contains(envType)) {
+        if(environmentFilterPropertiesDTO != null && envType != null && !environmentFilterPropertiesDTO.getEnvironmentTypes().contains(envType)) {
           continue;
         }
         environmentGroupInstanceDetailList.add(EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
                 .name(envName)
                 .id(envId)
-                .environmentTypes(Collections.singletonList(envType))
+                .environmentTypes(envType == null ? null : Collections.singletonList(envType))
                 .artifactDeploymentDetails(Collections.singletonList(artifactDeploymentDetail))
                 .isEnvGroup(false)
                 .count(count)
@@ -707,7 +713,7 @@ public class DashboardServiceHelper {
   }
 
   public void constructEnvironmentCountMap(List<EnvironmentInstanceCountModel> environmentInstanceCounts,
-      Map<String, Integer> envToCountMap, List<String> envIds) {
+      Map<String, Integer> envToCountMap, Set<String> envIds) {
     for (EnvironmentInstanceCountModel environmentInstanceCountModel : environmentInstanceCounts) {
       final String envId = environmentInstanceCountModel.getEnvIdentifier();
       if (envId == null) {

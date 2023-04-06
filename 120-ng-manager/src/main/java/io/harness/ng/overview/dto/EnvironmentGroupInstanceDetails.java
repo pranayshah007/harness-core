@@ -11,6 +11,7 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import lombok.Builder;
 import lombok.Value;
 
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
@@ -26,9 +27,9 @@ public class EnvironmentGroupInstanceDetails {
     @NotNull String id;
     String name;
     List<EnvironmentType> environmentTypes;
-    Boolean isEnvGroup;
-    Boolean isDrift;
-    Integer count;
+    @NotNull Boolean isEnvGroup;
+    @NotNull Boolean isDrift;
+    @Min(1) Integer count;
     List<ArtifactDeploymentDetail> artifactDeploymentDetails;
   }
 }

@@ -2867,32 +2867,36 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         instanceDashboardService.getInstanceCountForEnvironmentFilteredByService(
             accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isGitOps);
 
-    List<String> envIds = new ArrayList<>();
+    Set<String> envIds = new HashSet<>();
     Map<String, Integer> envToCountMap = new HashMap<>();
 
     DashboardServiceHelper.constructEnvironmentCountMap(environmentInstanceCounts, envToCountMap, envIds);
 
+    List<EnvironmentGroupEntity> environmentGroupEntities = null;
+    Criteria criteria = environmentGroupService.formCriteria(accountIdentifier, orgIdentifier, projectIdentifier, false,
+            "", "", null,
+            true);
+    Page<EnvironmentGroupEntity> environmentGroupEntitiesPage =
+            environmentGroupService.list(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier);
+    if (environmentGroupEntitiesPage != null) {
+      environmentGroupEntities = environmentGroupEntitiesPage.getContent();
+      for(EnvironmentGroupEntity environmentGroupEntity: environmentGroupEntities) {
+        if(EmptyPredicate.isNotEmpty(environmentGroupEntity.getEnvIdentifiers())) {
+          envIds.addAll(environmentGroupEntity.getEnvIdentifiers());
+        }
+      }
+    }
+
     List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
-        accountIdentifier, orgIdentifier, projectIdentifier, envIds);
+        accountIdentifier, orgIdentifier, projectIdentifier, new ArrayList<>(envIds));
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, EnvironmentType> envIdToEnvTypeMap = new HashMap<>();
-    List<EnvironmentGroupEntity> environmentGroupEntities = null;
     DashboardServiceHelper.constructEnvironmentNameAndTypeMap(environments, envIdToEnvNameMap, envIdToEnvTypeMap);
 
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetails = instanceDashboardService.getLastDeployedInstance(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, true, isGitOps);
     Map<String, ArtifactDeploymentDetail> artifactDeploymentDetailsMap =
         DashboardServiceHelper.constructEnvironmentToArtifactDeploymentMap(artifactDeploymentDetails, envIdToEnvNameMap);
-
-    Criteria criteria = environmentGroupService.formCriteria(accountIdentifier, orgIdentifier, projectIdentifier, false,
-            "", "", null,
-            true);
-
-    Page<EnvironmentGroupEntity> environmentGroupEntitiesPage =
-            environmentGroupService.list(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier);
-    if (environmentGroupEntitiesPage != null) {
-      environmentGroupEntities = environmentGroupEntitiesPage.getContent();
-    }
 
     return DashboardServiceHelper.getEnvironmentInstanceDetailsFromMap(
         artifactDeploymentDetailsMap, envToCountMap, envIdToEnvNameMap, envIdToEnvTypeMap, environmentGroupEntities, environmentFilterPropertiesDTO);
