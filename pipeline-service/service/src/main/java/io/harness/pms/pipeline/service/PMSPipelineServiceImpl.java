@@ -620,7 +620,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       String branch = GitAwareContextHelper.getBranchFromSCMGitMetadata();
 
       // Publish setup usages.
-      publishSetupUsages(pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
+      if (pipelineEntity.getIsDraft() == null || !pipelineEntity.getIsDraft()) {
+        publishSetupUsages(pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
+      }
 
       if (updatedResult == null) {
         throw new InvalidRequestException(format(
