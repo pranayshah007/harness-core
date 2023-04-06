@@ -326,7 +326,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
   @Override
   public DashboardBuildExecutionInfo getBuildExecutionBetweenIntervals(
-      String accountId, String orgId, String projectId, long startInterval, long endInterval) {
+      String accountId, String orgId, String projectId, GroupBy groupBy, long startInterval, long endInterval) {
     List<ProjectDTO> accessibleProjectList = NGRestUtils.getResponse(projectClient.getProjectList(accountId));
     List<OrgProjectIdentifier> orgProjectIdentifierList = getOrgProjectIdentifier(accessibleProjectList);
     List<OrgProjectIdentifier> orgProjectIdentifiers =
