@@ -28,6 +28,8 @@ public class GitProviderMapper {
         return GitProvider.BITBUCKET_ON_PREM;
       case AZURE_SAAS:
         return GitProvider.AZURE_SAAS;
+      case GITLAB_SAAS:
+        return GitProvider.GITLAB_SAAS;
       default:
         log.error("No matching git provider found for input : {}", gitProvider);
         return GitProvider.UNKNOWN;

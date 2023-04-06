@@ -1,0 +1,60 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.pms.contracts.plan;
+
+option java_multiple_files = true;
+
+import "io/harness/pms/contracts/plan/plan_creation_service.proto";
+
+service PluginInfoService {
+  rpc getPluginInfos(PluginCreationRequest) returns (PluginCreationResponse);
+}
+
+message PluginCreationRequest {
+  string type = 1;
+  string stepJsonNode = 2;
+}
+
+message PluginCreationResponse {
+  oneof response {
+    PluginDetails pluginDetails = 1;
+    io.harness.pms.contracts.plan.ErrorResponse error = 2;
+  }
+
+  // add secret details in step too.
+}
+
+message PluginDetails {
+  string stepIdentifier = 1;
+  string stepUuid = 2;
+  PluginContainerResources resource = 3;
+  ImageDetails imageDetails = 4;
+  map<string, string> envVariables = 5;
+  bool privileged = 6;
+  int32 runAsUser = 7;
+}
+
+message PluginContainerResources {
+  string cpu = 1;
+  string memory = 2;
+}
+
+message ImageDetails {
+  string imageName = 1;
+  ImagePullPolicy imagePullPolicy = 2;
+  ConnectorDetails connectorDetails = 3;
+}
+
+message ConnectorDetails {
+  string connectorRef = 1;
+}
+enum ImagePullPolicy {
+  ALWAYS = 0;
+  IF_NOT_PRESENT = 1;
+  NEVER = 2;
+}
