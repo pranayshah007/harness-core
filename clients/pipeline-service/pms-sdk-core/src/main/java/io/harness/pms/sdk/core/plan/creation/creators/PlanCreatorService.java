@@ -275,29 +275,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
           if (!EmptyPredicate.isEmpty(executionInputTemplate)) {
             planForField.setExecutionInputTemplateInPlanNode(executionInputTemplate);
           }
-          if (dependency != null
-              && PlanCreatorServiceHelper.isBehaviourToPropagate(dependency.getRollbackModeBehaviour())) {
-            List<String> newNodes = new ArrayList<>(planForField.getNodes().keySet());
-            newNodes.add(planForField.getPlanNode().getUuid());
-            planForField.mergePreservedNodesInRollbackMode(newNodes);
-            Set<String> newDependenciesUuids = planForField.getDependencies().getDependenciesMap().keySet();
-            Map<String, Dependency> dependencyMetadataMap =
-                new HashMap<>(planForField.getDependencies().getDependencyMetadataMap());
-            newDependenciesUuids.forEach(uuid -> {
-              if (dependencyMetadataMap.containsKey(uuid)) {
-                dependencyMetadataMap.put(uuid,
-                    dependencyMetadataMap.get(uuid)
-                        .toBuilder()
-                        .setRollbackModeBehaviour(dependency.getRollbackModeBehaviour())
-                        .build());
-              } else {
-                dependencyMetadataMap.put(uuid,
-                    Dependency.newBuilder().setRollbackModeBehaviour(dependency.getRollbackModeBehaviour()).build());
-              }
-            });
-            planForField.setDependencies(
-                planForField.getDependencies().toBuilder().putAllDependencyMetadata(dependencyMetadataMap).build());
-          }
+          PlanCreatorServiceHelper.decorateResponseWithRollbackModeBehaviour(dependency, planForField);
           PlanCreatorServiceHelper.decorateNodesWithStageFqn(field, planForField, ctx.getYamlVersion());
           PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(
               planForField, serviceName, field, currentNodeServiceAffinity);
