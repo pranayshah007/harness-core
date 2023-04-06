@@ -274,7 +274,7 @@ public class UserResourceTest extends WingsBaseTest {
     when(httpServletRequest.getHeader(com.google.common.net.HttpHeaders.REFERER)).thenReturn("headervalue");
     doThrow(new WingsException(DOMAIN_WHITELIST_FILTER_CHECK_FAILED, USER))
         .when(AUTHENTICATION_MANAGER)
-        .samlLogin(any());
+        .samlLogin(any(String[].class));
 
     Response responseWithAccountId = RESOURCES.client()
                                          .target("/users/saml-login")
