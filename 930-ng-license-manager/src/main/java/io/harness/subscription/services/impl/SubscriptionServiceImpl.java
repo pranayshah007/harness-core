@@ -241,8 +241,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     List<ModuleLicense> moduleLicenses =
         licenseRepository.findByAccountIdentifierAndModuleType(accountIdentifier, subscriptionRequest.getModuleType());
-    if (moduleLicenses.stream().anyMatch(
-            moduleLicense -> moduleLicense.isActive() && moduleLicense.getLicenseType().equals(LicenseType.PAID))) {
+    if (moduleLicenses.stream().anyMatch(moduleLicense
+            -> moduleLicense.isActive() && moduleLicense.getLicenseType() != null
+                && moduleLicense.getLicenseType().equals(LicenseType.PAID))) {
       throw new InvalidRequestException("Cannot create a new subscription, since there is an active one.");
     }
 
