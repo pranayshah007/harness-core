@@ -7,6 +7,7 @@
 
 package io.harness.ci.plan.creator;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.SPEC;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
@@ -71,15 +72,6 @@ import io.harness.ci.plancreator.V1.RunStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.TestStepPlanCreator;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
-import io.harness.filters.ExecutionPMSFilterJsonCreator;
-import io.harness.filters.ParallelGenericFilterJsonCreator;
-import io.harness.filters.StepGroupPmsFilterJsonCreator;
-import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
-import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
-import io.harness.plancreator.steps.NGStageStepsPlanCreator;
-import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
-import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
-import io.harness.plancreator.strategy.v1.StrategyConfigPlanCreatorV1;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
@@ -113,13 +105,11 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
   private static final String LITE_ENGINE_TASK = "liteEngineTask";
 
   @Inject InjectorUtils injectorUtils;
-
   @Override
   public List<PartialPlanCreator<?>> getPlanCreators() {
     List<PartialPlanCreator<?>> planCreators = new LinkedList<>();
     planCreators.add(new IntegrationStagePMSPlanCreatorV2());
     planCreators.add(new CIPMSStepPlanCreator());
-    planCreators.add(new StepGroupPMSPlanCreator());
     planCreators.add(new RunStepPlanCreator());
     planCreators.add(new BackgroundStepPlanCreator());
     planCreators.add(new RunTestStepPlanCreator());
@@ -136,11 +126,6 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new BuildAndPushGCRStepPlanCreator());
     planCreators.add(new SaveCacheS3StepPlanCreator());
     planCreators.add(new SecurityStepPlanCreator());
-    planCreators.add(new NGStageStepsPlanCreator());
-    planCreators.add(new ExecutionPmsPlanCreator());
-    planCreators.add(new ParallelPlanCreator());
-    planCreators.add(new StrategyConfigPlanCreator());
-    planCreators.add(new StrategyConfigPlanCreatorV1());
     planCreators.add(new GitCloneStepPlanCreator());
     planCreators.add(new InitializeStepPlanCreator());
     planCreators.add(new ActionStepPlanCreator());
@@ -169,13 +154,11 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     List<FilterJsonCreator> filterJsonCreators = new ArrayList<>();
     filterJsonCreators.add(new CIPMSStepFilterJsonCreator());
     filterJsonCreators.add(new CIStepFilterJsonCreatorV2());
-    filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
     filterJsonCreators.add(new CIStageFilterJsonCreatorV2());
     filterJsonCreators.add(new STOStepFilterJsonCreatorV2());
-    filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
-    filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
-    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Set.of(STRATEGY, STEPS)));
+    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Set.of(STRATEGY, STEPS, SPEC)));
     filterJsonCreators.add(new SscaStepsFilterJsonCreator());
+
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;
@@ -207,7 +190,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     variableCreators.add(new GitCloneStepVariableCreator());
     variableCreators.add(new ActionStepVariableCreator());
     variableCreators.add(new StrategyVariableCreator());
-    variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS)));
+    variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS, SPEC)));
     variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));
     variableCreators.add(new SscaStepVariableCreator());
     variableCreators.add(new STOCommonStepVariableCreator());

@@ -221,4 +221,14 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
         .order(Sort.ascending(CompositeSLORecordKeys.timestamp))
         .get();
   }
+
+  @Override
+  public List<CompositeSLORecord> getSLORecordsOfMinutes(String sloId, List<Instant> minutes) {
+    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
+        .filter(CompositeSLORecordKeys.sloId, sloId)
+        .field(CompositeSLORecordKeys.timestamp)
+        .in(minutes)
+        .order(Sort.ascending(CompositeSLORecordKeys.timestamp))
+        .asList();
+  }
 }

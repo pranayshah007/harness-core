@@ -510,6 +510,30 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     testGraphCalculation(sliStates, expectedSLITrend, expectedBurndown, 96);
   }
 
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetMinutes() {
+    Instant startTime = clock.instant();
+    Instant endTime = clock.instant().plus(5, ChronoUnit.MINUTES);
+    List<Instant> minutes = graphDataService.getMinutes(startTime, endTime, 0L);
+    assertThat(minutes.size()).isEqualTo(2);
+    assertThat(minutes.get(0)).isEqualTo(startTime);
+    assertThat(minutes.get(1)).isEqualTo(endTime);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetMinutesForMaxRecords() {
+    Instant startTime = clock.instant();
+    Instant endTime = clock.instant().plus(7, ChronoUnit.DAYS);
+    List<Instant> minutes = graphDataService.getMinutes(startTime, endTime, 2000);
+    assertThat(minutes.size()).isEqualTo(2017);
+    assertThat(minutes.get(0)).isEqualTo(startTime);
+    assertThat(minutes.get(2016)).isEqualTo(endTime);
+  }
+
   private void testGraphCalculation(List<SLIRecord.SLIState> sliStates, SLIMissingDataType sliMissingDataType,
       List<Double> expectedSLITrend, List<Double> expectedBurndown, int expectedErrorBudgetRemaining,
       long customMinutesStart, long customMinutesEnd) {
@@ -521,9 +545,10 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     Instant customStartTime = startTime.plus(Duration.ofMinutes(customMinutesStart));
     Instant customEndTime = startTime.plus(Duration.ofMinutes(sliStates.size() - customMinutesEnd + 1));
 
-    SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphData(serviceLevelIndicator, startTime,
-        startTime.plus(Duration.ofMinutes(sliStates.size() + 1)), 100, sliMissingDataType, 0,
-        TimeRangeParams.builder().startTime(customStartTime).endTime(customEndTime).build(), null);
+    SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphDataForSimpleSLO(serviceLevelIndicator,
+        startTime, startTime.plus(Duration.ofMinutes(sliStates.size() + 1)), 100, sliMissingDataType, 0,
+        TimeRangeParams.builder().startTime(customStartTime).endTime(customEndTime).build(), null,
+        graphDataService.MAX_NUMBER_OF_POINTS);
     Duration duration = Duration.between(customStartTime, customEndTime);
     if (customMinutesEnd == 0) {
       assertThat(sloGraphData.getSloPerformanceTrend()).hasSize((int) duration.toMinutes() - 1);
@@ -561,10 +586,10 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     Instant customStartTime = startTime.plus(Duration.ofMinutes(customMinutesStart));
     Instant customEndTime = startTime.plus(Duration.ofMinutes(sliStates.size() - customMinutesEnd + 1));
 
-    SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphData(requestServiceLevelIndicator,
-        startTime, startTime.plus(Duration.ofMinutes(sliStates.size() + 1)), 100, sliMissingDataType, 0,
-        TimeRangeParams.builder().startTime(customStartTime).endTime(customEndTime).build(),
-        simpleRequestServiceLevelObjective);
+    SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphDataForSimpleSLO(
+        requestServiceLevelIndicator, startTime, startTime.plus(Duration.ofMinutes(sliStates.size() + 1)), 100,
+        sliMissingDataType, 0, TimeRangeParams.builder().startTime(customStartTime).endTime(customEndTime).build(),
+        simpleRequestServiceLevelObjective, graphDataService.MAX_NUMBER_OF_POINTS);
     Duration duration = Duration.between(customStartTime, customEndTime);
     if (customMinutesEnd == 0) {
       assertThat(sloGraphData.getSloPerformanceTrend()).hasSize((int) duration.toMinutes() - 1);

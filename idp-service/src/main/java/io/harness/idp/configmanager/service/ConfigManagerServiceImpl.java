@@ -236,7 +236,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     List<AppConfigEntity> allEnabledConfigEntity =
         appConfigRepository.findAllByAccountIdentifierAndEnabled(accountIdentifier, true);
     if (allEnabledConfigEntity.isEmpty()) {
-      throw new InvalidRequestException(format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
+      log.info(format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
     }
     return allEnabledConfigEntity.stream().map(entity -> entity.getConfigs()).collect(Collectors.toList());
   }
@@ -265,7 +265,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
         appConfigRepository.findAllByAccountIdentifierAndConfigTypeAndEnabled(
             accountIdentifier, ConfigType.PLUGIN, true);
     if (allEnabledPluginConfigEntity.isEmpty()) {
-      throw new InvalidRequestException(format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
+      log.info(format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
     }
     return allEnabledPluginConfigEntity;
   }
