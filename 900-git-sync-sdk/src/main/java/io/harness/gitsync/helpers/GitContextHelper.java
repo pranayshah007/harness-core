@@ -8,6 +8,7 @@
 package io.harness.gitsync.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.gitsync.interceptor.GitSyncConstants.DEFAULT;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -90,5 +91,23 @@ public class GitContextHelper {
       return null;
     }
     return gitEntityInfo.getBranch();
+  }
+
+  public void setIsDefaultBranchInGitEntityInfo() {
+    GitEntityInfo gitEntityInfo = getGitEntityInfo();
+
+    if (gitEntityInfo != null) {
+      gitEntityInfo.setDefaultBranch(isEmpty(gitEntityInfo.getBranch()));
+    }
+  }
+
+  public boolean getIsDefaultBranchFromGitEntityInfo() {
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+
+    if (gitEntityInfo != null) {
+      return gitEntityInfo.isDefaultBranch();
+    }
+
+    return false;
   }
 }

@@ -50,7 +50,6 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
-import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.contracts.steps.StepInfo;
@@ -175,30 +174,20 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
 
-      // SETTING THE BOOLEAN - isDefaultBranch
-      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-      if (gitEntityInfo != null) {
-        gitEntityInfo.setDefaultBranch(isEmpty(gitEntityInfo.getBranch()));
-      }
+      // Set the boolean isDefaultBranch in GitEntityInfo.
+      GitContextHelper.setIsDefaultBranchInGitEntityInfo();
 
-      // UPDATING PIPELINE INFO.
       PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
       PipelineEntity entityWithUpdatedInfo = entityWithUpdatedInfoWithReferences.getPipelineEntity();
 
-      // PIPELINE CREATE FLOW.
       PipelineEntity createdEntity;
       PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
 
-      // GIT RESPONSE BRANCH
-      ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
-      String branch = null;
-      if (gitMetaData != null) {
-        branch = gitMetaData.getBranchName();
-      }
+      // Get branch from SCMGitMetadata.
+      String branch = GitAwareContextHelper.getBranchFromSCMGitMetadata();
 
-      // PUBLISHING SETUP USAGES
       if (doPublishSetupUsages(createdEntity)) {
         Map<String, String> metadata = new HashMap<>();
         if (branch != null) {
@@ -224,12 +213,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
   }
 
-  public boolean doPublishSetupUsages(PipelineEntity pipelineEntity) {
-    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-    boolean defaultBranchCheckForGitX = false;
-    if (gitEntityInfo != null) {
-      defaultBranchCheckForGitX = gitEntityInfo.isDefaultBranch();
-    }
+  private boolean doPublishSetupUsages(PipelineEntity pipelineEntity) {
+    boolean defaultBranchCheckForGitX = GitContextHelper.getIsDefaultBranchFromGitEntityInfo();
 
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType().equals(StoreType.INLINE)
         || (pipelineEntity.getStoreType() == StoreType.REMOTE && defaultBranchCheckForGitX)) {
@@ -369,20 +354,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       return optionalPipelineEntity;
     } else if (pipelineEntity.getStoreType() == StoreType.REMOTE) {
       try {
-        // PUBLISHING SETUP USAGES.
         PipelineEntityWithReferencesDTO pipelineEntityWithReferences =
             pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
 
         pipelineEntity = pipelineEntityWithReferences.getPipelineEntity();
 
-        // GIT RESPONSE BRANCH
-        ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
-        String branch = null;
-        if (gitMetaData != null) {
-          branch = gitMetaData.getBranchName();
-        }
+        String branch = GitAwareContextHelper.getBranchFromSCMGitMetadata();
 
-        // POPULATE GIT INFO FOR REFERRED ENTITIES.
         if (doPublishSetupUsages(pipelineEntity)) {
           Map<String, String> metadata = new HashMap<>();
           if (branch != null) {
@@ -394,6 +372,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         }
 
       } catch (IOException e) {
+        log.error("Failed to update the pipeline info for the gitX enabled pipeline while reloading from git.");
         throw new InvalidRequestException(
             "Failed to update the pipeline info for the gitX enabled pipeline while reloading from git.");
       }
@@ -494,7 +473,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
     // if the branch in the request is null, then the branch from where the remote pipeline is taken from is set
     // inside the scm git metadata. Hence, the branch from there is the actual branch we need
-    String branchFromScm = GitAwareContextHelper.getBranchInSCMGitMetadata();
+    String branchFromScm = GitAwareContextHelper.getBranchFromSCMGitMetadata();
     String validationUUID = getValidationUuid(pipelineEntity, loadFromCache, branchFromScm);
     return PipelineGetResult.builder()
         .pipelineEntity(optionalPipelineEntity)
@@ -615,7 +594,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   private PipelineEntity makePipelineUpdateCall(
       PipelineEntity pipelineEntity, PipelineEntity oldEntity, ChangeType changeType, boolean isOldFlow) {
     try {
-      // UPDATING PIPELINE INFO.
       PipelineEntity entityWithUpdatedInfo;
       PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences = null;
       if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
@@ -627,13 +605,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         entityWithUpdatedInfo = entityWithUpdatedInfoWithReferences.getPipelineEntity();
       }
 
-      // SETTING THE BOOLEAN - isDefaultBranch
-      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-      if (gitEntityInfo != null) {
-        gitEntityInfo.setDefaultBranch(isEmpty(gitEntityInfo.getBranch()));
-      }
+      // Set isDefaultBranch boolean in GitEntityInfo.
+      GitContextHelper.setIsDefaultBranchInGitEntityInfo();
 
-      // PIPELINE UPDATE FLOW.
       PipelineEntity updatedResult;
       if (isOldFlow) {
         updatedResult =
@@ -642,14 +616,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         updatedResult = pmsPipelineRepository.updatePipelineYaml(entityWithUpdatedInfo);
       }
 
-      // GIT RESPONSE BRANCH
-      ScmGitMetaData gitMetaData = GitAwareContextHelper.getScmGitMetaData();
-      String branch = null;
-      if (gitMetaData != null) {
-        branch = gitMetaData.getBranchName();
-      }
+      // Get branch from SCMGitMetadata.
+      String branch = GitAwareContextHelper.getBranchFromSCMGitMetadata();
 
-      // POPULATE GIT INFO FOR REFERRED ENTITIES.
       if (doPublishSetupUsages(pipelineEntity) && entityWithUpdatedInfoWithReferences != null) {
         Map<String, String> metadata = new HashMap<>();
         if (branch != null) {
@@ -811,13 +780,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     pipelineEntity.setRepoURL(repoUrl);
 
     try {
-      // UPDATING PIPELINE INFO.
       PipelineEntityWithReferencesDTO entityWithUpdatedInfoWithReferences =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineVersion);
 
       PipelineEntity entityWithUpdatedInfo = entityWithUpdatedInfoWithReferences.getPipelineEntity();
 
-      // PIPELINE SAVE FLOW.
       PipelineEntity savedPipelineEntity =
           pmsPipelineRepository.savePipelineEntityForImportedYAML(entityWithUpdatedInfo);
 

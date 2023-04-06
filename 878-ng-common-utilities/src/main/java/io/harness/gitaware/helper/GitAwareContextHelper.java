@@ -128,7 +128,7 @@ public class GitAwareContextHelper {
     updateGitEntityContext(gitEntityInfo);
   }
 
-  public String getBranchInSCMGitMetadata() {
+  public String getBranchFromSCMGitMetadata() {
     ScmGitMetaData scmGitMetaData = getScmGitMetaData();
     if (scmGitMetaData == null) {
       return null;
