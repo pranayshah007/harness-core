@@ -17,6 +17,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 import static io.harness.steps.StepSpecTypeConstants.FLAG_CONFIGURATION;
+import static io.harness.steps.StepSpecTypeConstants.PIPELINE_ROLLBACK_STAGE;
 import static io.harness.steps.StepSpecTypeConstants.RESOURCE_CONSTRAINT;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -37,6 +38,7 @@ import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
 import io.harness.plancreator.group.GroupPlanCreatorV1;
 import io.harness.plancreator.pipeline.NGPipelinePlanCreator;
 import io.harness.plancreator.pipeline.PipelinePlanCreatorV1;
+import io.harness.pms.pipelinerollback.PipelineRollbackStagePlanCreator;
 import io.harness.plancreator.stages.StagesPlanCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.stages.parallel.v1.ParallelPlanCreatorV1;
@@ -173,6 +175,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new SpecNodePlanCreator());
     planCreators.add(new WaitStepPlanCreator());
     planCreators.add(new PipelineStagePlanCreator());
+    planCreators.add(new PipelineRollbackStagePlanCreator());
     planCreators.add(new PipelineStagePlanCreatorV1());
     planCreators.add(new ContainerStepPlanCreator());
     planCreators.add(new GroupPlanCreatorV1());
@@ -199,6 +202,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     filterJsonCreators.add(new GroupFilterJsonCreator());
     filterJsonCreators.add(new EmptyAnyFilterJsonCreator(ImmutableSet.of(STAGES, STRATEGY, STEPS, SPEC)));
     filterJsonCreators.add(new EmptyFilterJsonCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION)));
+    filterJsonCreators.add(new EmptyFilterJsonCreator(STAGE, ImmutableSet.of(PIPELINE_ROLLBACK_STAGE)));
     filterJsonCreators.add(new HarnessApprovalStepFilterJsonCreatorV2());
     filterJsonCreators.add(new CdSscaStepFilterJsonCreator());
     injectorUtils.injectMembers(filterJsonCreators);
@@ -232,7 +236,8 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new PipelineStageVariableCreator());
     variableCreators.add(new WaitStepVariableCreator());
     variableCreators.add(new EmptyAnyVariableCreator(ImmutableSet.of(GROUP, PARALLEL, STEPS, SPEC, STAGES)));
-    variableCreators.add(new EmptyVariableCreator(STAGE, ImmutableSet.of(FEATURE_FLAG_SUPPORTED_TYPE)));
+    variableCreators.add(
+        new EmptyVariableCreator(STAGE, ImmutableSet.of(FEATURE_FLAG_SUPPORTED_TYPE, PIPELINE_ROLLBACK_STAGE)));
     variableCreators.add(new EmptyVariableCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION, RESOURCE_CONSTRAINT)));
     variableCreators.add(new ContainerStepVariableCreator());
     variableCreators.add(new BarrierStepVariableCreator());
