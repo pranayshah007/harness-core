@@ -345,6 +345,10 @@ public class DelegateCacheImpl implements DelegateCache {
   private Delegate getDelegateFromRedisCache(String delegateId, boolean forceRefresh) {
     if (delegateRedisCache.get(delegateId) == null || forceRefresh) {
       Delegate delegate = persistence.createQuery(Delegate.class).filter(DelegateKeys.uuid, delegateId).get();
+      if (delegate == null) {
+        log.warn("Unable to find delegate {} in DB.", delegateId);
+        return null;
+      }
       delegateRedisCache.put(delegateId, delegate);
     }
     return delegateRedisCache.get(delegateId);
