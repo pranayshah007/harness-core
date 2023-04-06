@@ -309,16 +309,13 @@ paths:
   /v1/onboarding/harness-entities:
     get:
       summary: Get Harness Entities
-      operationId: get-harness-entities
+      tags:
+        - OnboardingResource
       responses:
         '200':
           $ref: '#/components/responses/HarnessEntitiesResponse'
-      tags:
-        - OnboardingResource
-      x-internal: true
+      operationId: get-harness-entities
       description: Get Harness Entities
-      security:
-        - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Page'
@@ -326,25 +323,8 @@ paths:
         - $ref: '#/components/parameters/Sort'
         - $ref: '#/components/parameters/Order'
         - $ref: '#/components/parameters/SearchTerm'
-        - schema:
-            type: array
-          in: query
-          name: projects_to_filter
-          description: This would be used to filter resources having attributes matching the project filter.
-  /v1/onboarding/harness-entities-count:
-    get:
-      summary: Get Harness Entities Count
-      operationId: get-harness-entities-count
-      responses:
-        '200':
-          $ref: '#/components/responses/HarnessEntitiesCountResponse'
-      description: Get Harness Entities Count
       security:
         - x-api-key: []
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-      tags:
-        - OnboardingResource
       x-internal: true
   /v1/onboarding/import-harness-entities:
     post:
@@ -853,13 +833,13 @@ components:
         - branch
         - path
         - infra_connector
-    HarnessEntitiesCountResponse:
-      title: HarnessEntitiesCountResponse
+    HarnessEntitiesResponse:
+      title: HarnessEntitiesResponse
       x-stoplight:
-        id: ijtq5yp7m5eim
+        id: 06ugy0j5318dr
       type: object
       x-examples: {}
-      description: Response for harness entities count that can be imported to IDP
+      description: Response for harness entities mapping with backstage entities
       properties:
         org_count:
           type: integer
@@ -871,21 +851,19 @@ components:
             id: 9iy8ubk7olrqn
         service_count:
           type: integer
+          x-stoplight:
+            id: 84zw6wx50jtsi
+        harness_backstage_entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/HarnessBackstageEntities'
+            x-stoplight:
+              id: y7nbp2yxgm0dk
       required:
         - org_count
         - project_count
         - service_count
-    HarnessEntitiesResponse:
-      title: HarnessEntitiesResponse
-      x-stoplight:
-        id: 06ugy0j5318dr
-      type: array
-      x-examples: {}
-      description: Response for harness entities mapping with backstage entities
-      items:
-        $ref: '#/components/schemas/HarnessBackstageEntities'
-        x-stoplight:
-          id: xrciue3ek36e6
+        - harness_backstage_entities
     ImportEntitiesResponse:
       title: ImportEntitiesResponse
       x-stoplight:
@@ -1660,14 +1638,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/MergedPluginConfigResponse'
-    HarnessEntitiesCountResponse:
-      description: Response for harness entities count that can be imported to IDP
-      content:
-        application/json:
-          schema:
-            properties:
-              id:
-                type: string
   securitySchemes:
     x-api-key:
       name: x-api-key

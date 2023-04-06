@@ -1,13 +1,15 @@
 apiVersion: backstage.io/v1alpha1
-kind: Domain
+kind: Component
 metadata:
-  name: artists
-  description: Everything related to artists
-  links:
-    - url: http://example.com/domain/artists/
-      title: Domain Readme
-    - url: http://example.com/domains/artists/dashboard
-      title: Domain Metrics Dashboard
-      icon: dashboard
+  name: shuffle-api
+  description: Shuffle API
+  labels:
+    goVersion: go1.15.3
+    category: music
+  tags:
+    - go
 spec:
-  owner: team-a
+  type: service
+  lifecycle: production
+  owner: user:guest
+  system: audio-playback

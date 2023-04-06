@@ -30,13 +30,13 @@ public class DashboardRBACServiceImpl implements DashboardRBACService {
 
   @Override
   public List<ProjectDTO> listAccessibleProject(String accountIdentifier, String userId) {
-    return NGRestUtils.getResponse(projectClient.getProjectList(accountIdentifier, null));
+    return NGRestUtils.getResponse(projectClient.getProjectList(accountIdentifier));
   }
 
   @Override
   public PageResponse<OrganizationResponse> listAccessibleOrganizations(
       String accountIdentifier, List<String> orgIdentifiers) {
-    return NGRestUtils.getResponse(organizationClient.listAllOrganizations(accountIdentifier, orgIdentifiers, null));
+    return NGRestUtils.getResponse(organizationClient.listAllOrganizations(accountIdentifier, orgIdentifiers));
   }
 
   @Override

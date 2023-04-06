@@ -24,6 +24,8 @@ import lombok.experimental.FieldDefaults;
 public class OnboardingModuleConfig {
   String tmpPathForCatalogInfoYamlStore;
   String catalogInfoLocationDefaultPath;
+  String backstageLocationEntityAllHarnessEntitiesName;
+  String backstageLocationEntityAllHarnessEntitiesDesc;
   List<String> sampleEntities;
-  Map<String, String> harnessCiCdAnnotations;
+  Map<String, String> harnessCiCdAnnotation;
 }

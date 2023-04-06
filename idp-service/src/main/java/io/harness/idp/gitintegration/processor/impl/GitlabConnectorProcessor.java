@@ -74,7 +74,7 @@ public class GitlabConnectorProcessor extends ConnectorProcessor {
 
   @Override
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
-      String locationParentPath, List<String> filesToPush) {
+      String locationParentPath, String remoteFolder, List<String> filesToPush) {
     Pair<ConnectorInfoDTO, Map<String, BackstageEnvVariable>> connectorSecretsInfo = getConnectorAndSecretsInfo(
         accountIdentifier, null, null, catalogConnectorInfo.getInfraConnector().getIdentifier());
     BackstageEnvSecretVariable envSecretVariable =
@@ -87,7 +87,7 @@ public class GitlabConnectorProcessor extends ConnectorProcessor {
         (GitlabHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
     GitlabUsernameTokenDTO spec = (GitlabUsernameTokenDTO) outcome.getSpec();
 
-    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
+    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, remoteFolder, filesToPush,
         spec.getUsername(), gitlabConnectorSecret);
   }
 }

@@ -10,7 +10,6 @@ package io.harness.service.remote;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.NGCommonEntityConstants;
-import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.ng.beans.PageResponse;
@@ -60,8 +59,6 @@ public interface ServiceResourceClient {
   Call<ResponseDTO<PageResponse<ServiceResponse>>> getAllServicesList(
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Query(value = NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @Query("page") @DefaultValue("0") int page, @Query("size") @DefaultValue("100") int size,
-      @Query("sort") List<String> sort);
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Query("page") @DefaultValue("0") int page,
+      @Query("size") @DefaultValue("100") int size, @Query("sort") List<String> sort);
 }

@@ -14,7 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 public enum BackstageCatalogEntityTypes {
   DOMAIN("Domain"),
   SYSTEM("System"),
-  COMPONENT("Component");
+  COMPONENT("Component"),
+  LOCATION("Location");
 
   public final String kind;
 
