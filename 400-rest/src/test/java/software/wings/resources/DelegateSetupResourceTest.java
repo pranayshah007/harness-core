@@ -67,7 +67,6 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateSetupService;
-import io.harness.ng.beans.PageRequest.PageRequestBuilder;
 
 import software.wings.beans.CEDelegateStatus;
 import software.wings.beans.DelegateScalingGroup;
@@ -186,8 +185,8 @@ public class DelegateSetupResourceTest extends CategoryTest {
                 new GenericType<RestResponse<DelegateGroupListing>>() {});
 
     verify(delegateSetupService, atLeastOnce())
-        .listDelegateGroupDetailsV2(
-            ACCOUNT_ID, "orgId", "projectId", null, null, DelegateFilterPropertiesDTO.builder().build(), io.harness.ng.beans.PageRequest.builder().build());
+        .listDelegateGroupDetailsV2(ACCOUNT_ID, "orgId", "projectId", null, null,
+            DelegateFilterPropertiesDTO.builder().build(), io.harness.ng.beans.PageRequest.builder().build());
     assertThat(restResponse.getResource().getDelegateGroupDetails()).isNotEmpty();
     assertThat(restResponse.getResource().getDelegateGroupDetails().get(0).getGroupName()).isEqualTo("group name");
   }

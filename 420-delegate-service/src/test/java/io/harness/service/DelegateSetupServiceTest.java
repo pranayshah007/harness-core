@@ -270,8 +270,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   public void listV2ShouldReturnDelegateGroups() {
     prepareInitialData();
 
-    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetailsV2(
-        TEST_ACCOUNT_ID, null, null, "", "", DelegateFilterPropertiesDTO.builder().build(), PageRequest.builder().build());
+    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetailsV2(TEST_ACCOUNT_ID, null,
+        null, "", "", DelegateFilterPropertiesDTO.builder().build(), PageRequest.builder().build());
 
     assertThat(delegateGroupListing.getDelegateGroupDetails()).hasSize(3);
     assertThat(delegateGroupListing.getDelegateGroupDetails())
@@ -286,8 +286,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   @Owner(developers = BOJAN)
   @Category(UnitTests.class)
   public void listV2ShouldThrowException() {
-    delegateSetupService.listDelegateGroupDetailsV2(
-        TEST_ACCOUNT_ID, null, null, "filterId", "", DelegateFilterPropertiesDTO.builder().build(), PageRequest.builder().build());
+    delegateSetupService.listDelegateGroupDetailsV2(TEST_ACCOUNT_ID, null, null, "filterId", "",
+        DelegateFilterPropertiesDTO.builder().build(), PageRequest.builder().build());
   }
 
   @Test
@@ -298,8 +298,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
 
     DelegateFilterPropertiesDTO filterProperties =
         DelegateFilterPropertiesDTO.builder().delegateGroupIdentifier("ier1").build();
-    DelegateGroupListing delegateGroupListing =
-        delegateSetupService.listDelegateGroupDetailsV2(TEST_ACCOUNT_ID, null, null, "", "", filterProperties, PageRequest.builder().build());
+    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetailsV2(
+        TEST_ACCOUNT_ID, null, null, "", "", filterProperties, PageRequest.builder().build());
 
     assertThat(delegateGroupListing.getDelegateGroupDetails()).hasSize(1);
     assertThat(delegateGroupListing.getDelegateGroupDetails())
@@ -319,8 +319,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
     DelegateFilterPropertiesDTO filterPropertiesDisconnected =
         DelegateFilterPropertiesDTO.builder().status(DelegateInstanceConnectivityStatus.DISCONNECTED).build();
 
-    DelegateGroupListing delegateGroupListing1 =
-        delegateSetupService.listDelegateGroupDetailsV2(TEST_ACCOUNT_ID, null, null, "", "", filterPropertiesConnected, PageRequest.builder().build());
+    DelegateGroupListing delegateGroupListing1 = delegateSetupService.listDelegateGroupDetailsV2(
+        TEST_ACCOUNT_ID, null, null, "", "", filterPropertiesConnected, PageRequest.builder().build());
 
     DelegateGroupListing delegateGroupListing2 = delegateSetupService.listDelegateGroupDetailsV2(
         TEST_ACCOUNT_ID, null, null, "", "", filterPropertiesDisconnected, PageRequest.builder().build());
@@ -335,8 +335,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   public void listV2ShouldReturnDelegateGroupsFilteredBySearchTerm_Name() {
     prepareInitialData();
 
-    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetailsV2(
-        TEST_ACCOUNT_ID, null, null, "", "grp1", DelegateFilterPropertiesDTO.builder().build(), PageRequest.builder().build());
+    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetailsV2(TEST_ACCOUNT_ID, null,
+        null, "", "grp1", DelegateFilterPropertiesDTO.builder().build(), PageRequest.builder().build());
 
     assertThat(delegateGroupListing.getDelegateGroupDetails()).hasSize(1);
     assertThat(delegateGroupListing.getDelegateGroupDetails())
@@ -350,8 +350,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   public void listV2ShouldReturnDelegateGroupsFilteredBySearchTerm_Tags1() {
     prepareInitialData();
 
-    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetailsV2(
-        TEST_ACCOUNT_ID, null, null, "", "taggroup1", DelegateFilterPropertiesDTO.builder().build(), PageRequest.builder().build());
+    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetailsV2(TEST_ACCOUNT_ID, null,
+        null, "", "taggroup1", DelegateFilterPropertiesDTO.builder().build(), PageRequest.builder().build());
 
     assertThat(delegateGroupListing.getDelegateGroupDetails()).hasSize(1);
   }
@@ -362,8 +362,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   public void listV2ShouldReturnDelegateGroupsFilteredBySearchTerm_Tags3() {
     prepareInitialData();
 
-    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetailsV2(
-        TEST_ACCOUNT_ID, null, null, "", "taggroup3", DelegateFilterPropertiesDTO.builder().build(), PageRequest.builder().build());
+    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetailsV2(TEST_ACCOUNT_ID, null,
+        null, "", "taggroup3", DelegateFilterPropertiesDTO.builder().build(), PageRequest.builder().build());
 
     assertThat(delegateGroupListing.getDelegateGroupDetails()).hasSize(0);
   }
@@ -374,8 +374,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   public void listV2ShouldReturnDelegateGroupsFilteredBySearchTerm_Tags4() {
     prepareInitialData();
 
-    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetailsV2(
-        TEST_ACCOUNT_ID, null, null, "", "taggroup4", DelegateFilterPropertiesDTO.builder().build(), PageRequest.builder().build());
+    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetailsV2(TEST_ACCOUNT_ID, null,
+        null, "", "taggroup4", DelegateFilterPropertiesDTO.builder().build(), PageRequest.builder().build());
 
     assertThat(delegateGroupListing.getDelegateGroupDetails()).hasSize(1);
   }
@@ -386,8 +386,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   public void listV2ShouldReturnDelegateGroupsFilteredBySearchTerm_CommonTag() {
     prepareInitialData();
 
-    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetailsV2(
-        TEST_ACCOUNT_ID, null, null, "", "commonTag", DelegateFilterPropertiesDTO.builder().build(), PageRequest.builder().build());
+    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetailsV2(TEST_ACCOUNT_ID, null,
+        null, "", "commonTag", DelegateFilterPropertiesDTO.builder().build(), PageRequest.builder().build());
 
     assertThat(delegateGroupListing.getDelegateGroupDetails()).hasSize(1);
     assertThat(delegateGroupListing.getDelegateGroupDetails())

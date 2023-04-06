@@ -504,7 +504,8 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
 
   @Override
   public DelegateGroupListing listDelegateGroupDetailsV2(String accountId, String orgId, String projectId,
-      String filterIdentifier, String searchTerm, DelegateFilterPropertiesDTO filterProperties, PageRequest pageRequest) {
+      String filterIdentifier, String searchTerm, DelegateFilterPropertiesDTO filterProperties,
+      PageRequest pageRequest) {
     if (isNotEmpty(filterIdentifier) && filterProperties != null) {
       throw new InvalidRequestException("Can not apply both filter properties and saved filter together");
     }
@@ -552,15 +553,15 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     return DelegateGroupListing.builder().delegateGroupDetails(delegateGroupDetails).build();
   }
 
-  private List<DelegateGroupDetails> sortDelegateGroups(List<DelegateGroupDetails> delegateGroupDetails, PageRequest pageRequest){
-    if(isNotEmpty(pageRequest.getSortOrders())){
+  private List<DelegateGroupDetails> sortDelegateGroups(
+      List<DelegateGroupDetails> delegateGroupDetails, PageRequest pageRequest) {
+    if (isNotEmpty(pageRequest.getSortOrders())) {
       SortOrder sortOrder = pageRequest.getSortOrders().get(0);
-      switch (sortOrder.getFieldName()){
+      switch (sortOrder.getFieldName()) {
         case "name":
-          if(sortOrder.getOrderType().equals(SortOrder.OrderType.DESC)){
+          if (sortOrder.getOrderType().equals(SortOrder.OrderType.DESC)) {
             delegateGroupDetails.sort(Comparator.comparing(DelegateGroupDetails::getGroupName).reversed());
-          }
-          else {
+          } else {
             delegateGroupDetails.sort(Comparator.comparing(DelegateGroupDetails::getGroupName));
           }
           break;
