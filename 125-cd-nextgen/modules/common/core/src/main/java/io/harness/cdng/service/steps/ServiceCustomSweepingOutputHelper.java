@@ -47,6 +47,7 @@ public class ServiceCustomSweepingOutputHelper {
     else if (serviceDefinition.getServiceSpec() instanceof GoogleCloudFunctionsServiceSpec) {
       GoogleCloudFunctionsServiceSpec googleCloudFunctionsServiceSpec =
               (GoogleCloudFunctionsServiceSpec) serviceDefinition.getServiceSpec();
+      saveAdditionalGoogleFunctionServiceFieldsToSweepingOutput(googleCloudFunctionsServiceSpec, ambiance);
     }
   }
 

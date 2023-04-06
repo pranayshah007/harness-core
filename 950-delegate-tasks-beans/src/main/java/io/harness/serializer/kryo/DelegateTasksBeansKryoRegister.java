@@ -720,16 +720,8 @@ import io.harness.delegate.task.googlefunctionbeans.GoogleCloudSourceArtifactCon
 import io.harness.delegate.task.googlefunctionbeans.GoogleCloudStorageArtifactConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
-import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionDeployRequest;
-import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionDeployWithoutTrafficRequest;
-import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionPrepareRollbackRequest;
-import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionRollbackRequest;
-import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionTrafficShiftRequest;
-import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionDeployResponse;
-import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionDeployWithoutTrafficResponse;
-import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionPrepareRollbackResponse;
-import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionRollbackResponse;
-import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionTrafficShiftResponse;
+import io.harness.delegate.task.googlefunctionbeans.request.*;
+import io.harness.delegate.task.googlefunctionbeans.response.*;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
 import io.harness.delegate.task.helm.HelmCommandFlag;
@@ -2392,6 +2384,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GoogleFunctionException.class, 673597);
     kryo.register(GoogleCloudSourceArtifactConfig.class, 673598);
 
+
     kryo.register(K8sDryRunManifestRequest.class, 573594);
     kryo.register(K8sDryRunManifestResponse.class, 573595);
     kryo.register(ScmBatchGetFileTaskParams.class, 673568);
@@ -2466,5 +2459,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
 
     kryo.register(S3StoreTFDelegateConfig.class, 10000524);
     kryo.register(HttpCertificateNG.class, 10000526);
+
+    kryo.register(GoogleFunctionGenOneDeployRequest.class, 1800003);
+    kryo.register(GoogleFunctionGenOneDeployResponse.class, 1800004);
+    kryo.register(GoogleFunctionGenOnePrepareRollbackRequest.class, 1800005);
+    kryo.register(GoogleFunctionGenOnePrepareRollbackResponse.class, 1800006);
+    kryo.register(GoogleFunctionGenOneRollbackRequest.class, 1800007);
+    kryo.register(GoogleFunctionGenOneRollbackResponse.class, 1800008);
   }
 }

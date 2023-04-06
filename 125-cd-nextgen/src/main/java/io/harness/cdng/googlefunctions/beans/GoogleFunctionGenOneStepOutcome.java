@@ -7,13 +7,10 @@
 
 package io.harness.cdng.googlefunctions.beans;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
-import io.harness.pms.sdk.core.data.Outcome;
-
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -21,12 +18,14 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("googleFunctionPrepareRollbackOutcome")
-@JsonTypeName("googleFunctionPrepareRollbackOutcome")
-@RecasterAlias("io.harness.cdng.googlefunctions.beans.GoogleFunctionPrepareRollbackOutcome")
-public class GoogleFunctionPrepareRollbackOutcome implements Outcome, ExecutionSweepingOutput {
-  boolean isFirstDeployment;
-  String cloudRunServiceAsString;
-  String cloudFunctionAsString;
-  String manifestContent;
+@TypeAlias("googleFunctionGenOneStepOutcome")
+@JsonTypeName("googleFunctionGenOneStepOutcome")
+@RecasterAlias("io.harness.cdng.googlefunctions.GoogleFunctionGenOneStepOutcome")
+public class GoogleFunctionGenOneStepOutcome {
+    String functionName;
+    String runtime;
+    String state;
+    String environment;
+    String url;
+    String source;
 }

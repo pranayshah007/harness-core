@@ -7,6 +7,8 @@
 
 package io.harness.cdng.googlefunctions;
 
+import static io.harness.cdng.manifest.ManifestType.GOOGLE_FUNCTIONS_GEN_ONE_SUPPORTED_MANIFEST_TYPES;
+import static io.harness.cdng.manifest.ManifestType.GOOGLE_FUNCTIONS_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -17,11 +19,13 @@ import static io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
 
+import com.google.common.collect.Lists;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionGenOnePrepareRollbackOutcome;
+import io.harness.cdng.googlefunctions.beans.GoogleFunctionGenOneStepOutcome;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionPrepareRollbackOutcome;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionStepOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -99,11 +103,8 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -122,8 +123,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
   private final String INVALID_ENV_TYPE = "Environment version is invalid in Google Function Service";
 
 
-  public TaskChainResponse startChainLink(GoogleFunctionsStepExecutor googleFunctionsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters) {
+  public TaskChainResponse startChainLink(Ambiance ambiance, StepElementParameters stepElementParameters) {
     // Get ManifestsOutcome
     ManifestsOutcome manifestsOutcome = resolveGoogleFunctionsManifestsOutcome(ambiance);
 
@@ -138,24 +138,13 @@ public class GoogleFunctionsHelper extends CDStepHelper {
     // Validate ManifestsOutcome
     validateManifestsOutcome(ambiance, manifestsOutcome);
 
-    ManifestOutcome googleFunctionsManifestOutcome = getGoogleFunctionsManifestOutcome(manifestsOutcome.values());
+    // fetch environment type
+    String environmentType = fetchEnvironmentType(ambiance);
+
+    ManifestOutcome googleFunctionsManifestOutcome = getGoogleFunctionsManifestOutcome(manifestsOutcome.values(),
+            environmentType);
 
     LogCallback logCallback = getLogCallback(EcsCommandUnitConstants.fetchManifests.toString(), ambiance, true);
-
-    // fetch environment type
-    String environmentType = GOOGLE_FUNCTION_GEN_TWO_ENV_TYPE;
-    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
-            ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.GOOGLE_FUNCTION_SERVICE_SWEEPING_OUTPUT));
-    if (optionalSweepingOutput.isFound()) {
-      GoogleFunctionsServiceCustomSweepingOutput googleFunctionsServiceCustomSweepingOutput =
-              (GoogleFunctionsServiceCustomSweepingOutput) optionalSweepingOutput.getOutput();
-      if(!GOOGLE_FUNCTION_GEN_ONE_ENV_TYPE.equals(googleFunctionsServiceCustomSweepingOutput.getEnvironmentType()) &&
-              !GOOGLE_FUNCTION_GEN_TWO_ENV_TYPE.equals(googleFunctionsServiceCustomSweepingOutput.getEnvironmentType()))
-      {
-        throw new InvalidRequestException(INVALID_ENV_TYPE, USER);
-      }
-      environmentType = googleFunctionsServiceCustomSweepingOutput.getEnvironmentType();
-    }
 
     if (isHarnessStoreManifest(googleFunctionsManifestOutcome)) {
       // get Harness Store Manifests Content
@@ -176,6 +165,23 @@ public class GoogleFunctionsHelper extends CDStepHelper {
       return prepareManifestGitFetchTask(
           infrastructureOutcome, ambiance, stepElementParameters, googleFunctionsManifestOutcome, environmentType);
     }
+  }
+
+  private String fetchEnvironmentType(Ambiance ambiance) {
+    String environmentType = GOOGLE_FUNCTION_GEN_TWO_ENV_TYPE;
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
+            ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.GOOGLE_FUNCTION_SERVICE_SWEEPING_OUTPUT));
+    if (optionalSweepingOutput.isFound()) {
+      GoogleFunctionsServiceCustomSweepingOutput googleFunctionsServiceCustomSweepingOutput =
+              (GoogleFunctionsServiceCustomSweepingOutput) optionalSweepingOutput.getOutput();
+      if(!GOOGLE_FUNCTION_GEN_ONE_ENV_TYPE.equals(googleFunctionsServiceCustomSweepingOutput.getEnvironmentType()) &&
+              !GOOGLE_FUNCTION_GEN_TWO_ENV_TYPE.equals(googleFunctionsServiceCustomSweepingOutput.getEnvironmentType()))
+      {
+        throw new InvalidRequestException(INVALID_ENV_TYPE, USER);
+      }
+      environmentType = googleFunctionsServiceCustomSweepingOutput.getEnvironmentType();
+    }
+    return environmentType;
   }
 
   private TaskChainResponse handlePrepareRollbackDataResponse(
@@ -331,6 +337,17 @@ public class GoogleFunctionsHelper extends CDStepHelper {
         .url(function.getUrl())
         .source(function.getSource())
         .build();
+  }
+
+  public GoogleFunctionGenOneStepOutcome getGoogleFunctionGenOneStepOutcome(GoogleFunction function) {
+    return GoogleFunctionGenOneStepOutcome.builder()
+            .functionName(function.getFunctionName())
+            .runtime(function.getRuntime())
+            .environment(function.getEnvironment())
+            .state(function.getState())
+            .url(function.getUrl())
+            .source(function.getSource())
+            .build();
   }
 
   public StepResponse generateStepResponse(GoogleFunctionCommandResponse googleFunctionCommandResponse,
@@ -578,12 +595,16 @@ public class GoogleFunctionsHelper extends CDStepHelper {
     throw new InvalidRequestException("Google Cloud Function Artifact is mandatory.", USER);
   }
 
-  public ManifestOutcome getGoogleFunctionsManifestOutcome(@NotEmpty Collection<ManifestOutcome> manifestOutcomes) {
+  public ManifestOutcome getGoogleFunctionsManifestOutcome(@NotEmpty Collection<ManifestOutcome> manifestOutcomes,
+                                                           String environmentType) {
     // Filter only  Google Cloud Functions supported manifest types
+    Set<String> supportedManifestTypes = GOOGLE_FUNCTION_GEN_TWO_ENV_TYPE.equals(environmentType)?
+            GOOGLE_FUNCTIONS_SUPPORTED_MANIFEST_TYPES: GOOGLE_FUNCTIONS_GEN_ONE_SUPPORTED_MANIFEST_TYPES;
+
     List<ManifestOutcome> googleFunctionsManifests =
         manifestOutcomes.stream()
             .filter(manifestOutcome
-                -> ManifestType.GOOGLE_FUNCTIONS_SUPPORTED_MANIFEST_TYPES.contains(manifestOutcome.getType()))
+                -> supportedManifestTypes.contains(manifestOutcome.getType()))
             .collect(Collectors.toList());
 
     // Check if Google Cloud Functions Manifests are empty
@@ -627,6 +648,18 @@ public class GoogleFunctionsHelper extends CDStepHelper {
       serverInstanceInfoList.add(GoogleFunctionToServerInstanceInfoMapper.toServerInstanceInfo(googleFunction,
           googleFunction.getCloudRunService().getRevision(), gcpGoogleFunctionInfraConfig.getProject(),
           gcpGoogleFunctionInfraConfig.getRegion(), infrastructureKey));
+    }
+    return serverInstanceInfoList;
+  }
+
+  public List<ServerInstanceInfo> getGenOneServerInstanceInfo(GoogleFunctionCommandResponse googleFunctionCommandResponse,
+                                                        GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig, String infrastructureKey) {
+    List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+    GoogleFunction googleFunction = googleFunctionCommandResponse.getFunction();
+    if (googleFunction != null) {
+      serverInstanceInfoList.add(GoogleFunctionToServerInstanceInfoMapper.toServerInstanceInfo(googleFunction,
+              googleFunction.getCloudRunService().getRevision(), gcpGoogleFunctionInfraConfig.getProject(),
+              gcpGoogleFunctionInfraConfig.getRegion(), infrastructureKey));
     }
     return serverInstanceInfoList;
   }

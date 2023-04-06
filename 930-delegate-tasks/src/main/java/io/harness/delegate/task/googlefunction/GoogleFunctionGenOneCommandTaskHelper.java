@@ -27,12 +27,14 @@ import static software.wings.beans.LogWeight.Bold;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 
+import com.google.cloud.functions.v1.*;
+import com.google.cloud.functions.v2.RepoSource;
+import com.google.cloud.functions.v2.Source;
+import com.google.cloud.functions.v2.StorageSource;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
-import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
-import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionArtifactConfig;
+import io.harness.delegate.task.googlefunctionbeans.*;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.TimeoutException;
@@ -53,13 +55,6 @@ import com.google.api.core.ApiFuture;
 import com.google.api.gax.longrunning.OperationFuture;
 import com.google.api.gax.longrunning.OperationSnapshot;
 import com.google.api.gax.rpc.NotFoundException;
-import com.google.cloud.functions.v1.CloudFunction;
-import com.google.cloud.functions.v1.CloudFunctionStatus;
-import com.google.cloud.functions.v1.CreateFunctionRequest;
-import com.google.cloud.functions.v1.DeleteFunctionRequest;
-import com.google.cloud.functions.v1.GetFunctionRequest;
-import com.google.cloud.functions.v1.OperationMetadataV1;
-import com.google.cloud.functions.v1.UpdateFunctionRequest;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
@@ -109,6 +104,13 @@ public class GoogleFunctionGenOneCommandTaskHelper {
     createFunctionRequestBuilder.setLocation(googleFunctionCommandTaskHelper.getFunctionParent(
         googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()));
 
+    CloudFunction.Builder cloudFunctionBuilder = createFunctionRequestBuilder.getFunctionBuilder();
+    // set function name
+    cloudFunctionBuilder.setName(functionName);
+
+    // set artifact source
+    setArtifactSource(googleFunctionArtifactConfig, cloudFunctionBuilder);
+
     // check if function already exists
     Optional<CloudFunction> existingFunctionOptional =
         getFunction(functionName, googleFunctionInfraConfig, logCallback);
@@ -145,6 +147,26 @@ public class GoogleFunctionGenOneCommandTaskHelper {
                                        googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()),
           LogLevel.INFO);
       return function;
+    }
+  }
+
+  private void setArtifactSource(GoogleFunctionArtifactConfig googleFunctionArtifactConfig, CloudFunction.Builder cloudFunctionBuilder) {
+    if (googleFunctionArtifactConfig instanceof GoogleCloudStorageArtifactConfig) {
+      GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
+              (GoogleCloudStorageArtifactConfig) googleFunctionArtifactConfig;
+      cloudFunctionBuilder.setSourceArchiveUrl("gs://"+googleCloudStorageArtifactConfig.getBucket()+"/"
+      +googleCloudStorageArtifactConfig.getFilePath());
+    } else if (googleFunctionArtifactConfig instanceof GoogleCloudSourceArtifactConfig) {
+      GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
+              (GoogleCloudSourceArtifactConfig) googleFunctionArtifactConfig;
+      SourceRepository sourceRepository = SourceRepository.newBuilder()
+              .setUrl("https://source.developers.google.com/projects/"+googleCloudSourceArtifactConfig.getProject()
+                      +"/repos/"+googleCloudSourceArtifactConfig.getRepository()+"/moveable-aliases/" +
+                      "master/paths/"+googleCloudSourceArtifactConfig.getSourceDirectory()).build();
+      cloudFunctionBuilder.setSourceRepository(sourceRepository);
+    }
+    else {
+      throw new InvalidRequestException("Invalid Artifact Source.");
     }
   }
 
@@ -299,12 +321,15 @@ public class GoogleFunctionGenOneCommandTaskHelper {
           Operation operation = googleCloudFunctionGenOneClient.getOperation(operationName,
               googleFunctionCommandTaskHelper.getGcpInternalConfig(gcpGoogleFunctionInfraConfig.getGcpConnectorDTO(),
                   gcpGoogleFunctionInfraConfig.getRegion(), gcpGoogleFunctionInfraConfig.getProject()));
-          if (operation.getDone() && Operation.ResultCase.ERROR.equals(operation.getResultCase())) {
-            logCallback.saveExecutionLog(color("Function Deployment failed...", LogColor.Red));
-            logCallback.saveExecutionLog(color(operation.getError().getMessage(), LogColor.Red));
-            throw NestedExceptionUtils.hintWithExplanationException(CREATE_FUNCTION_GEN_ONE_FAILURE_HINT,
-                "Cloud Function Deployment failed.",
-                new InvalidRequestException("Function couldn't able to achieve steady state."));
+          if(operation.getDone()) {
+            if(Operation.ResultCase.ERROR.equals(operation.getResultCase())) {
+              logCallback.saveExecutionLog(color("Function Deployment failed...", LogColor.Red));
+              logCallback.saveExecutionLog(color(operation.getError().getMessage(), LogColor.Red));
+              throw NestedExceptionUtils.hintWithExplanationException(CREATE_FUNCTION_GEN_ONE_FAILURE_HINT,
+                      "Cloud Function Deployment failed.",
+                      new InvalidRequestException("Function couldn't able to achieve steady state."));
+            }
+            return false;
           }
           logCallback.saveExecutionLog(
               format("Function deployment in progress: %s", color(functionName, LogColor.Yellow)));
@@ -358,24 +383,36 @@ public class GoogleFunctionGenOneCommandTaskHelper {
   }
 
   public GoogleFunction getGoogleFunction(
-      CloudFunction function, GcpGoogleFunctionInfraConfig googleFunctionInfraConfig, LogCallback logCallback)
+      CloudFunction function, LogCallback logCallback)
       throws InvalidProtocolBufferException {
     saveLogs(logCallback, color("Updated Functions details: ", Blue, Bold), INFO);
     saveLogs(logCallback, JsonFormat.printer().print(function), INFO);
     GoogleFunction.GoogleCloudRunService googleCloudRunService = GoogleFunction.GoogleCloudRunService.builder().build();
 
+    String source = null;
+    if(EmptyPredicate.isNotEmpty(function.getSourceArchiveUrl())) {
+      source = function.getSourceArchiveUrl();
+    }
+    else {
+      source = function.getSourceRepository().getUrl();
+    }
+    String url = "";
+    if(function.hasHttpsTrigger() && function.getHttpsTrigger()!=null) {
+      url =  function.getHttpsTrigger().getUrl();
+    }
+
     return GoogleFunction.builder()
         .functionName(function.getName())
         .state(function.getStatus().toString())
         .runtime(function.getRuntime())
-        //                .source(getSourceAsString(function.getBuildConfig().getSource()))
-        //                .updatedTime(function.getUpdateTime().getSeconds() * 1000)
-        .environment("GEN_ONE")
+        .source(source)
+        .updatedTime(function.getUpdateTime().getSeconds())
+        .environment("GEN_1")
         .cloudRunService(googleCloudRunService)
         .activeCloudRunRevisions(Lists.newArrayList())
-        //                .url(function.get)
+        .url(url)
         .build();
-    // todo: add url and other fields
+    //todo: change time format
   }
 
   private void saveLogs(LogCallback executionLogCallback, String message, LogLevel logLevel) {

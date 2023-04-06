@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.googlefunctions.*;
+import io.harness.cdng.googlefunctions.beans.GoogleFunctionGenOneStepOutcome;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionStepOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -129,8 +130,8 @@ public class GoogleFunctionsGenOneDeployStep
     if (googleFunctionGenOneDeployResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       return GoogleFunctionsHelper.getFailureResponseBuilder(googleFunctionGenOneDeployResponse, stepResponseBuilder).build();
     }
-    GoogleFunctionStepOutcome googleFunctionDeployOutcome =
-            googleFunctionsHelper.getGoogleFunctionStepOutcome(googleFunctionGenOneDeployResponse.getFunction());
+    GoogleFunctionGenOneStepOutcome googleFunctionGenOneStepOutcome =
+            googleFunctionsHelper.getGoogleFunctionGenOneStepOutcome(googleFunctionGenOneDeployResponse.getFunction());
 
     InfrastructureOutcome infrastructureOutcome = googleFunctionsStepPassThroughData.getInfrastructureOutcome();
     GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig =
@@ -149,6 +150,6 @@ public class GoogleFunctionsGenOneDeployStep
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return googleFunctionsHelper.startChainLink(this, ambiance, stepParameters);
+    return googleFunctionsHelper.startChainLink( ambiance, stepParameters);
   }
 }

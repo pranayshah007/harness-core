@@ -71,7 +71,7 @@ public class GoogleFunctionGenOneDeployCommandTaskHandler extends GoogleFunction
           googleFunctionDeployRequest.getUpdateFieldMaskContent(),
           googleFunctionDeployRequest.getGoogleFunctionArtifactConfig(), timeoutInMillis, executionLogCallback);
       GoogleFunction googleFunction = googleFunctionGenOneCommandTaskHelper.getGoogleFunction(
-          function, googleFunctionInfraConfig, executionLogCallback);
+          function, executionLogCallback);
       executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
       return GoogleFunctionGenOneDeployResponse.builder()
