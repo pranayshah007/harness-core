@@ -4,7 +4,7 @@ description: View all open GitHub pull requests owned by your team in Backstage.
 createdBy: DAZN
 category: Source Control Mgmt
 source: https://github.com/backstage/backstage/tree/master/plugins/github-pull-requests-board
-iconUrl: ''
+iconUrl: https://backstage.io/img/github-pull-requests-board-logo.svg
 imageUrl: ''
 exports:
   defaultEntityTypes:
