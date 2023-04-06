@@ -148,8 +148,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject private GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
-  @Inject
-  GitXSettingsHandler gitXSettingsHandler;
+  @Inject GitXSettingsHandler gitXSettingsHandler;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
