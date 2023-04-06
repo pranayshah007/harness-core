@@ -2894,20 +2894,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       environmentGroupEntities = environmentGroupEntitiesPage.getContent();
     }
 
-//    Map<String, Set<String>> environmentGroupIdToEnvNamesMap = new HashMap<>();
-//    Set<String> environmentsNotLinkedToAnyEnvironmentGroup = new HashSet<>();
-//    for(EnvironmentInstanceCountAndEnvironmentGroupModel environmentInstanceCountAndEnvironmentGroupModel: environmentInstanceCounts) {
-//      if(EmptyPredicate.isNotEmpty(environmentInstanceCountAndEnvironmentGroupModel.getEnvGroupRef())) {
-//        if(environmentGroupIdToEnvNamesMap.containsKey(environmentInstanceCountAndEnvironmentGroupModel.getEnvGroupRef())) {
-//          environmentGroupIdToEnvNamesMap.get(environmentInstanceCountAndEnvironmentGroupModel.getEnvGroupRef()).add(environmentInstanceCountAndEnvironmentGroupModel.getEnvIdentifier());
-//        } else {
-//          environmentGroupIdToEnvNamesMap.put(environmentInstanceCountAndEnvironmentGroupModel.getEnvGroupRef(), new ArrayList<>(Arrays.asList(environmentInstanceCountAndEnvironmentGroupModel.getEnvIdentifier())));
-//        }
-//      } else {
-//        environmentsNotLinkedToAnyEnvironmentGroup.add(environmentInstanceCountAndEnvironmentGroupModel.getEnvIdentifier());
-//      }
-//    }
-
     return DashboardServiceHelper.getEnvironmentInstanceDetailsFromMap(
         artifactDeploymentDetailsMap, envToCountMap, envIdToEnvNameMap, envIdToEnvTypeMap, environmentGroupEntities, environmentFilterPropertiesDTO);
   }
