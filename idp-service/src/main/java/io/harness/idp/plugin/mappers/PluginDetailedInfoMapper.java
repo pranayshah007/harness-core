@@ -30,7 +30,7 @@ public class PluginDetailedInfoMapper {
     pluginDetailedInfo.setPluginDetails(PluginInfoMapper.toDTO(pluginInfoEntity, isEnabled));
     String config;
     if (isEnabled) {
-      config = pluginInfoEntity.getConfig();
+      config = appConfig.getConfigs();
     } else {
       config =
           (isConfigSaved && appConfig.getConfigs() != null) ? appConfig.getConfigs() : pluginInfoEntity.getConfig();
