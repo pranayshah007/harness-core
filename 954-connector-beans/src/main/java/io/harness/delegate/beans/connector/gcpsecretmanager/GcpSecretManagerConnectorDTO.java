@@ -23,7 +23,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -49,11 +48,13 @@ public class GcpSecretManagerConnectorDTO extends ConnectorConfigDTO implements 
 
   @ApiModelProperty(dataType = "string")
   @Schema(description = SecretManagerDescriptionConstants.GOOGLE_SECRET_MANAGER_CREDENTIALS)
-  @NotNull
   @SecretReference
   SecretRefData credentialsRef;
 
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) Set<String> delegateSelectors;
+
+  @Schema(description = SecretManagerDescriptionConstants.ASSUME_CREDENTIALS_ON_DELEGATE)
+  Boolean assumeCredentialsOnDelegate;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
