@@ -174,8 +174,8 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void listV2ShouldReturnDelegates() {
     DelegateGroupDetails delegateGroupDetails = DelegateGroupDetails.builder().groupName("group name").build();
-    when(delegateSetupService.listDelegateGroupDetailsV2(
-             eq(ACCOUNT_ID), eq("orgId"), eq("projectId"), any(), any(), any(DelegateFilterPropertiesDTO.class), any()))
+    when(delegateSetupService.listDelegateGroupDetailsV2(eq(ACCOUNT_ID), eq("orgId"), eq("projectId"), any(), any(),
+             any(DelegateFilterPropertiesDTO.class), any(io.harness.ng.beans.PageRequest.class)))
         .thenReturn(DelegateGroupListing.builder().delegateGroupDetails(Lists.list(delegateGroupDetails)).build());
     RestResponse<DelegateGroupListing> restResponse =
         RESOURCES.client()
