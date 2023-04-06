@@ -36,7 +36,6 @@ import io.harness.plancreator.approval.ApprovalStagePlanCreatorV2;
 import io.harness.plancreator.group.GroupPlanCreatorV1;
 import io.harness.plancreator.pipeline.NGPipelinePlanCreator;
 import io.harness.plancreator.pipeline.PipelinePlanCreatorV1;
-import io.harness.pms.pipelinerollback.PipelineRollbackStagePlanCreator;
 import io.harness.plancreator.stages.StagesPlanCreator;
 import io.harness.plancreator.stages.v1.StagesPlanCreatorV1;
 import io.harness.plancreator.steps.barrier.BarrierStepPlanCreator;
@@ -57,6 +56,7 @@ import io.harness.plancreator.steps.resourceconstraint.QueueStepPlanCreator;
 import io.harness.plancreator.steps.resourceconstraint.ResourceConstraintStepPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
+import io.harness.pms.pipelinerollback.PipelineRollbackStagePlanCreator;
 import io.harness.pms.pipelinestage.PipelineStageFilterCreator;
 import io.harness.pms.pipelinestage.plancreator.PipelineStagePlanCreator;
 import io.harness.pms.pipelinestage.v1.plancreator.PipelineStagePlanCreatorV1;
@@ -210,7 +210,6 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new CustomApprovalStepVariableCreator());
     variableCreators.add(new PipelineStageVariableCreator());
     variableCreators.add(new WaitStepVariableCreator());
-    variableCreators.add(new EmptyAnyVariableCreator(ImmutableSet.of(GROUP, PARALLEL, STEPS, SPEC, STAGES)));
     variableCreators.add(
         new EmptyVariableCreator(STAGE, ImmutableSet.of(FEATURE_FLAG_SUPPORTED_TYPE, PIPELINE_ROLLBACK_STAGE)));
     variableCreators.add(new EmptyVariableCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION, RESOURCE_CONSTRAINT)));
