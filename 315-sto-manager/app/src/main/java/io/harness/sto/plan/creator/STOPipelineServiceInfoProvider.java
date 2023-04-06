@@ -7,6 +7,7 @@
 
 package io.harness.sto.plan.creator;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.SPEC;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
@@ -26,15 +27,6 @@ import io.harness.ci.plancreator.PluginStepPlanCreator;
 import io.harness.ci.plancreator.RunStepPlanCreator;
 import io.harness.ci.plancreator.SecurityStepPlanCreator;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
-import io.harness.filters.ExecutionPMSFilterJsonCreator;
-import io.harness.filters.ParallelGenericFilterJsonCreator;
-import io.harness.filters.StepGroupPmsFilterJsonCreator;
-import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
-import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
-import io.harness.plancreator.steps.NGStageStepsPlanCreator;
-import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
-import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
-import io.harness.plancreator.strategy.v1.StrategyConfigPlanCreatorV1;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
@@ -78,13 +70,7 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     planCreators.add(new RunStepPlanCreator());
     planCreators.add(new BackgroundStepPlanCreator());
     planCreators.add(new SecurityStepPlanCreator());
-    planCreators.add(new NGStageStepsPlanCreator());
-    planCreators.add(new StepGroupPMSPlanCreator());
     planCreators.add(new PluginStepPlanCreator());
-    planCreators.add(new ParallelPlanCreator());
-    planCreators.add(new StrategyConfigPlanCreator());
-    planCreators.add(new StrategyConfigPlanCreatorV1());
-    planCreators.add(new ExecutionPmsPlanCreator());
     planCreators.add(new InitializeStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
@@ -96,10 +82,8 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     List<FilterJsonCreator> filterJsonCreators = new ArrayList<>();
     filterJsonCreators.add(new STOStageFilterJsonCreator());
     filterJsonCreators.add(new STOStepFilterJsonCreatorV2());
-    filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
-    filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
-    filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
-    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Set.of(STRATEGY, STEPS)));
+    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Set.of(STRATEGY, STEPS, SPEC)));
+
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;
@@ -118,7 +102,7 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     variableCreators.add(new SecurityStepVariableCreator());
     variableCreators.add(new PluginStepVariableCreator());
     variableCreators.add(new StrategyVariableCreator());
-    variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS)));
+    variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS, SPEC)));
     variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));
 
     return variableCreators;

@@ -56,6 +56,9 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
       throw new InvalidRequestException(new Gson().toJson(errorMessagesForEnvVariables));
     }
 
+    // Deleting older crated env secret variables
+    deleteConfigEnvVariables(accountIdentifier, appConfig.getConfigId());
+
     configEnvVariablesRepository.saveAll(configVariables);
 
     // creating secrets on the namespace of backstage and storing in DB
@@ -81,9 +84,6 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
     if (!errorMessagesForEnvVariables.isEmpty()) {
       throw new InvalidRequestException(new Gson().toJson(errorMessagesForEnvVariables));
     }
-
-    // Deleting older crated env secret variables
-    deleteConfigEnvVariables(accountIdentifier, appConfig.getConfigId());
 
     // creating new updated env variables
     return insertConfigEnvVariables(appConfig, accountIdentifier);

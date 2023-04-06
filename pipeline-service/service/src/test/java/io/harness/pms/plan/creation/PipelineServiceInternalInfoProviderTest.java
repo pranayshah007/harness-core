@@ -21,22 +21,14 @@ import io.harness.category.element.UnitTests;
 import io.harness.cf.pipeline.CfExecutionPMSPlanCreator;
 import io.harness.cf.pipeline.FeatureFlagStageFilterJsonCreator;
 import io.harness.cf.pipeline.FeatureFlagStagePlanCreator;
-import io.harness.filters.ExecutionPMSFilterJsonCreator;
 import io.harness.filters.GroupFilterJsonCreator;
 import io.harness.filters.ParallelFilterJsonCreator;
 import io.harness.filters.PipelineFilterJsonCreator;
-import io.harness.filters.StepGroupPmsFilterJsonCreator;
 import io.harness.plancreator.approval.ApprovalStageFilterJsonCreator;
 import io.harness.plancreator.approval.ApprovalStagePlanCreatorV2;
-import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
 import io.harness.plancreator.group.GroupPlanCreatorV1;
 import io.harness.plancreator.pipeline.NGPipelinePlanCreator;
 import io.harness.plancreator.stages.StagesPlanCreator;
-import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
-import io.harness.plancreator.stages.parallel.v1.ParallelPlanCreatorV1;
-import io.harness.plancreator.steps.NGStageStepsPlanCreator;
-import io.harness.plancreator.steps.SpecNodePlanCreator;
-import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
 import io.harness.plancreator.steps.barrier.BarrierStepPlanCreator;
 import io.harness.plancreator.steps.http.HTTPStepVariableCreator;
 import io.harness.plancreator.steps.internal.FlagConfigurationStepPlanCreator;
@@ -47,8 +39,6 @@ import io.harness.plancreator.steps.internal.ShellScriptStepFilterJsonCreatorV2;
 import io.harness.plancreator.steps.pluginstep.ContainerStepVariableCreator;
 import io.harness.plancreator.steps.resourceconstraint.QueueStepPlanCreator;
 import io.harness.plancreator.steps.resourceconstraint.ResourceConstraintStepPlanCreator;
-import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
-import io.harness.plancreator.strategy.v1.StrategyConfigPlanCreatorV1;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.pipelinestage.PipelineStageFilterCreator;
 import io.harness.pms.pipelinestage.plancreator.PipelineStagePlanCreator;
@@ -59,7 +49,6 @@ import io.harness.pms.sdk.core.pipeline.variables.ApprovalStageVariableCreator;
 import io.harness.pms.sdk.core.pipeline.variables.PipelineVariableCreator;
 import io.harness.pms.sdk.core.pipeline.variables.StepGroupVariableCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
-import io.harness.pms.sdk.core.variables.StrategyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
 import io.harness.rule.Owner;
@@ -96,7 +85,6 @@ import io.harness.steps.servicenow.update.ServiceNowUpdateStepPlanCreator;
 import io.harness.steps.shellscript.ShellScriptStepVariableCreator;
 import io.harness.steps.wait.WaitStepPlanCreator;
 import io.harness.steps.wait.WaitStepVariableCreator;
-import io.harness.variables.ExecutionVariableCreator;
 
 import java.util.List;
 import java.util.Set;
@@ -110,6 +98,10 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
 public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
+  public static final int PLAN_CREATOR_NUMBER = 35;
+  public static final int FILTER_JSON_CREATOR_NUMBER = 14;
+  public static final int VARIABLE_CREATOR_NUMBER = 25;
+
   @InjectMocks PipelineServiceInternalInfoProvider pipelineServiceInternalInfoProvider;
   @Mock InjectorUtils injectorUtils;
 
@@ -135,15 +127,12 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
             .stream()
             .map(e -> e.getClass())
             .collect(Collectors.toSet());
-    assertThat(planCreatorClasses).hasSize(44);
+    assertThat(planCreatorClasses).hasSize(PLAN_CREATOR_NUMBER);
     assertThat(planCreatorClasses.contains(CustomApprovalStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(NGPipelinePlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(StagesPlanCreator.class)).isTrue();
-    assertThat(planCreatorClasses.contains(ParallelPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(PMSStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(ApprovalStagePlanCreatorV2.class)).isTrue();
-    assertThat(planCreatorClasses.contains(ExecutionPmsPlanCreator.class)).isTrue();
-    assertThat(planCreatorClasses.contains(StepGroupPMSPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(ResourceConstraintStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(FeatureFlagStagePlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(CfExecutionPMSPlanCreator.class)).isTrue();
@@ -154,20 +143,15 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
     assertThat(planCreatorClasses.contains(HarnessApprovalStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(BarrierStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(FlagConfigurationStepPlanCreator.class)).isTrue();
-    assertThat(planCreatorClasses.contains(NGStageStepsPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(PolicyStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(ServiceNowCreateStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(ServiceNowUpdateStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(ServiceNowImportSetStepPlanCreator.class)).isTrue();
-    assertThat(planCreatorClasses.contains(StrategyConfigPlanCreator.class)).isTrue();
-    assertThat(planCreatorClasses.contains(StrategyConfigPlanCreatorV1.class)).isTrue();
     assertThat(planCreatorClasses.contains(CustomStagePlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(QueueStepPlanCreator.class)).isTrue();
-    assertThat(planCreatorClasses.contains(SpecNodePlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(WaitStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(PipelineStagePlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(PipelineStagePlanCreatorV1.class)).isTrue();
-    assertThat(planCreatorClasses.contains(ParallelPlanCreatorV1.class)).isTrue();
     assertThat(planCreatorClasses.contains(GroupPlanCreatorV1.class)).isTrue();
     assertThat(planCreatorClasses.contains(PMSStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(CdSscaOrchestrationStepPlanCreator.class)).isTrue();
@@ -183,14 +167,12 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
             .stream()
             .map(e -> e.getClass())
             .collect(Collectors.toSet());
-    assertThat(filterCreatorClasses).hasSize(16);
+    assertThat(filterCreatorClasses).hasSize(FILTER_JSON_CREATOR_NUMBER);
     assertThat(filterCreatorClasses.contains(ShellScriptStepFilterJsonCreatorV2.class)).isTrue();
     assertThat(filterCreatorClasses.contains(PipelineFilterJsonCreator.class)).isTrue();
     assertThat(filterCreatorClasses.contains(ParallelFilterJsonCreator.class)).isTrue();
     assertThat(filterCreatorClasses.contains(ApprovalStageFilterJsonCreator.class)).isTrue();
     assertThat(filterCreatorClasses.contains(PmsStepFilterJsonCreator.class)).isTrue();
-    assertThat(filterCreatorClasses.contains(ExecutionPMSFilterJsonCreator.class)).isTrue();
-    assertThat(filterCreatorClasses.contains(StepGroupPmsFilterJsonCreator.class)).isTrue();
     assertThat(filterCreatorClasses.contains(FeatureFlagStageFilterJsonCreator.class)).isTrue();
     assertThat(filterCreatorClasses.contains(CustomStageFilterCreator.class)).isTrue();
     assertThat(filterCreatorClasses.contains(PipelineStageFilterCreator.class)).isTrue();
@@ -209,7 +191,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
             .stream()
             .map(e -> e.getClass())
             .collect(Collectors.toSet());
-    assertThat(variableCreatorClasses).hasSize(27);
+    assertThat(variableCreatorClasses).hasSize(VARIABLE_CREATOR_NUMBER);
     assertThat(variableCreatorClasses.contains(CustomApprovalStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(PipelineVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(HTTPStepVariableCreator.class)).isTrue();
@@ -218,7 +200,6 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
     assertThat(variableCreatorClasses.contains(JiraStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(ApprovalStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(ApprovalStageVariableCreator.class)).isTrue();
-    assertThat(variableCreatorClasses.contains(ExecutionVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(ServiceNowApprovalStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(PolicyStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(JiraApprovalStepVariableCreator.class)).isTrue();
@@ -228,7 +209,6 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
     assertThat(variableCreatorClasses.contains(ServiceNowImportSetStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(CustomStageVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(QueueStepVariableCreator.class)).isTrue();
-    assertThat(variableCreatorClasses.contains(StrategyVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(PipelineStageVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(ContainerStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(WaitStepVariableCreator.class)).isTrue();

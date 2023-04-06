@@ -10,6 +10,7 @@ package io.harness.iacm.plan.creator.stage;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.EXECUTION;
 import static io.harness.yaml.extended.ci.codebase.Build.BuildBuilder;
+import static io.harness.yaml.extended.ci.codebase.Build.builder;
 import static io.harness.yaml.extended.ci.codebase.CodeBase.CodeBaseBuilder;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -69,6 +70,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.extended.ci.codebase.Build;
+import io.harness.yaml.extended.ci.codebase.Build.BuildBuilder;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.extended.ci.codebase.PRCloneStrategy;
@@ -508,24 +510,24 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
       // Now we need to build the Build type for the Codebase.
       // We support 2,
 
-      BuildBuilder build = Build.builder();
+      BuildBuilder buildObject = builder();
       if (!Objects.equals(stack.getRepository_branch(), "") && stack.getRepository_branch() != null) {
-        build.type(BuildType.BRANCH);
-        build.spec(BranchBuildSpec.builder()
-                       .branch(ParameterField.<String>builder().value(stack.getRepository_branch()).build())
-                       .build());
+        buildObject.type(BuildType.BRANCH);
+        buildObject.spec(BranchBuildSpec.builder()
+                             .branch(ParameterField.<String>builder().value(stack.getRepository_branch()).build())
+                             .build());
       } else if (!Objects.equals(stack.getRepository_commit(), "") && stack.getRepository_commit() != null) {
-        build.type(BuildType.TAG);
-        build.spec(TagBuildSpec.builder()
-                       .tag(ParameterField.<String>builder().value(stack.getRepository_commit()).build())
-                       .build());
+        buildObject.type(BuildType.TAG);
+        buildObject.spec(TagBuildSpec.builder()
+                             .tag(ParameterField.<String>builder().value(stack.getRepository_commit()).build())
+                             .build());
       } else {
         throw new IACMStageExecutionException(
             "Unexpected connector information while writing the CodeBase block. There was not repository branch nor commit id defined in the stack "
             + stackId);
       }
 
-      return iacmCodeBase.build(ParameterField.<Build>builder().value(build.build()).build()).build();
+      return iacmCodeBase.build(ParameterField.<Build>builder().value(buildObject.build()).build()).build();
 
     } catch (Exception ex) {
       // Ignore exception because code base is not mandatory in case git clone is false

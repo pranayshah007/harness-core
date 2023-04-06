@@ -16,6 +16,7 @@ import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.spec.server.idp.v1.AppConfigApi;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
+import io.harness.spec.server.idp.v1.model.AppConfigResponse;
 
 import javax.validation.Valid;
 import javax.ws.rs.core.Response;
@@ -36,7 +37,9 @@ public class AppConfigApiImpl implements AppConfigApi {
       AppConfig updatedAppConfig =
           configManagerService.saveOrUpdateConfigForAccount(body.getAppConfig(), harnessAccount, ConfigType.PLUGIN);
       configManagerService.mergeAndSaveAppConfig(harnessAccount);
-      return Response.status(Response.Status.OK).entity(updatedAppConfig).build();
+      AppConfigResponse appConfigResponse = new AppConfigResponse();
+      appConfigResponse.appConfig(updatedAppConfig);
+      return Response.status(Response.Status.OK).entity(appConfigResponse).build();
     } catch (Exception e) {
       log.error(e.getMessage());
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -51,7 +54,9 @@ public class AppConfigApiImpl implements AppConfigApi {
       AppConfig disabledPluginAppConfig =
           configManagerService.toggleConfigForAccount(harnessAccount, pluginId, isEnabled, ConfigType.PLUGIN);
       configManagerService.mergeAndSaveAppConfig(harnessAccount);
-      return Response.status(Response.Status.OK).entity(disabledPluginAppConfig).build();
+      AppConfigResponse appConfigResponse = new AppConfigResponse();
+      appConfigResponse.appConfig(disabledPluginAppConfig);
+      return Response.status(Response.Status.OK).entity(appConfigResponse).build();
     } catch (Exception e) {
       log.error(e.getMessage());
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
