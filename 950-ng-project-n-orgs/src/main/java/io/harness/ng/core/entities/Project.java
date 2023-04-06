@@ -110,7 +110,7 @@ public class Project implements PersistentEntity, NGAccountAccess {
 
   @NGEntityName String name;
   @NotEmpty String color;
-  @NotNull @Singular @Size(max = 1024) List<ModuleType> modules;
+  @NotNull @Singular @Size(max = 1024) @Deprecated List<ModuleType> modules;
   @NotNull @Size(max = 1024) String description;
   @NotNull @Singular @Size(max = 128) List<NGTag> tags;
 

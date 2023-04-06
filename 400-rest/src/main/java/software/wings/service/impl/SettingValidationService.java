@@ -296,6 +296,7 @@ public class SettingValidationService {
 
     SettingValue settingValue = settingAttribute.getValue();
     settingServiceHelper.setCertValidationRequired(settingAttribute.getAccountId(), settingValue);
+    settingServiceHelper.setFeatureFlagIfRequired(settingValue, settingAttribute.getAccountId());
     List<EncryptedDataDetail> encryptedDataDetails = fetchEncryptionDetails(settingValue);
 
     if (settingValue instanceof GcpConfig) {

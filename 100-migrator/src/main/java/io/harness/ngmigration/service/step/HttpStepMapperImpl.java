@@ -11,6 +11,7 @@ import io.harness.beans.KeyValuePair;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -35,6 +36,7 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.HttpState;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.List;
@@ -202,5 +204,13 @@ public class HttpStepMapperImpl extends StepMapper {
   @Override
   public boolean loopingSupported() {
     return true;
+  }
+
+  @Override
+  public void overrideTemplateInputs(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, GraphNode graphNode, NGYamlFile templateFile, JsonNode templateInputs) {
+    // Fix delegate selectors in the workflow
+    HttpState state = (HttpState) getState(graphNode);
+    overrideTemplateDelegateSelectorInputs(templateInputs, state.getTags());
   }
 }

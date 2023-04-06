@@ -7,20 +7,20 @@
 
 package io.harness.ccm.views.helper;
 
-import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_INSTANCE_TYPE_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_SERVICE_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_USAGE_TYPE_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.AZURE_METER_CATEGORY;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.AZURE_RESOURCE_GROUP;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.AZURE_SUBSCRIPTION_GUID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.CLUSTER_NAME_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.GCP_PRODUCT_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.GCP_PROJECT_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.GCP_SKU_DESCRIPTION_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.REGION_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AWS_ACCOUNT_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AWS_INSTANCE_TYPE_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AWS_SERVICE_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AWS_USAGE_TYPE_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AZURE_METER_CATEGORY;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AZURE_RESOURCE_GROUP;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AZURE_SUBSCRIPTION_GUID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.CLUSTER_NAME_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.GCP_PRODUCT_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.GCP_PROJECT_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.GCP_SKU_DESCRIPTION_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.NAMESPACE_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.REGION_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
 
 import io.harness.ccm.commons.entities.CCMField;
@@ -67,7 +67,7 @@ public class PerspectiveToAnomalyQueryHelper {
     List<CCMGroupBy> convertedGroupByList = new ArrayList<>();
     groupByList.forEach(groupBy -> {
       if (groupBy.getEntityGroupBy() != null) {
-        switch (groupBy.getEntityGroupBy().getFieldId()) {
+        switch (groupBy.getEntityGroupBy().getFieldId().toLowerCase()) {
           case CLUSTER_NAME_FIELD_ID:
             convertedGroupByList.add(CCMGroupBy.builder().groupByField(CCMField.CLUSTER_NAME).build());
             break;
@@ -123,7 +123,7 @@ public class PerspectiveToAnomalyQueryHelper {
 
     filters.forEach(filter -> {
       if (filter.getIdFilter() != null) {
-        switch (filter.getIdFilter().getField().getFieldId()) {
+        switch (filter.getIdFilter().getField().getFieldId().toLowerCase()) {
           case CLUSTER_NAME_FIELD_ID:
             stringFilters.add(buildStringFilter(
                 CCMField.CLUSTER_NAME, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));

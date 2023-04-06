@@ -44,12 +44,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class EnvironmentMapperTest extends CategoryTest {
-  EnvironmentRequestDTO environmentRequestDTO;
-  EnvironmentResponseDTO environmentResponseDTO;
-  Environment requestEnvironment;
-  Environment responseEnvironment;
-  List<NGTag> tags;
-  NGEnvironmentConfig ngEnvironmentConfig;
+  private EnvironmentRequestDTO environmentRequestDTO;
+  private EnvironmentResponseDTO environmentResponseDTO;
+  private Environment requestEnvironment;
+  private Environment responseEnvironment;
+  private List<NGTag> tags;
+  private NGEnvironmentConfig ngEnvironmentConfig;
 
   @Before
   public void setUp() {
@@ -323,7 +323,7 @@ public class EnvironmentMapperTest extends CategoryTest {
 
     List<EnvironmentResponse> environmentResponseList = EnvironmentMapper.toResponseWrapper(Arrays.asList(env1, env2));
     assertThat(environmentResponseList.size()).isEqualTo(2);
-    assertThat(environmentResponseList.get(0).getEnvironment().getVersion()).isEqualTo(10l);
+    assertThat(environmentResponseList.get(0).getEnvironment().getVersion()).isEqualTo(10L);
     assertThat(environmentResponseList.get(1).getEnvironment().getVersion()).isEqualTo(20L);
   }
 

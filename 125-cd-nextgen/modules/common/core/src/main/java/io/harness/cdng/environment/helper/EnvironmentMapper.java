@@ -20,7 +20,7 @@ import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.steps.environment.EnvironmentOutcome;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -101,19 +101,18 @@ public class EnvironmentMapper {
     final Map<String, Object> variables =
         overrideVariables(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables(), svcOverrideVariables);
     return EnvironmentOutcome.builder()
-        .identifier(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(environment.getAccountId(),
+        .identifier(IdentifierRefHelper.getRefFromIdentifierOrRef(environment.getAccountId(),
             environment.getOrgIdentifier(), environment.getProjectIdentifier(), environment.getIdentifier()))
         .name(StringUtils.defaultIfBlank(environment.getName(), ""))
         .description(StringUtils.defaultIfBlank(environment.getDescription(), ""))
         .tags(TagMapper.convertToMap(environment.getTags()))
         .type(environment.getType())
-        .environmentRef(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(environment.getAccountId(),
+        .environmentRef(IdentifierRefHelper.getRefFromIdentifierOrRef(environment.getAccountId(),
             environment.getOrgIdentifier(), environment.getProjectIdentifier(), environment.getIdentifier()))
         .variables(variables)
-        .envGroupRef(envGroup != null
-                ? FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(envGroup.getAccountId(),
-                    envGroup.getOrgIdentifier(), envGroup.getProjectIdentifier(), envGroup.getIdentifier())
-                : null)
+        .envGroupRef(envGroup != null ? IdentifierRefHelper.getRefFromIdentifierOrRef(envGroup.getAccountId(),
+                         envGroup.getOrgIdentifier(), envGroup.getProjectIdentifier(), envGroup.getIdentifier())
+                                      : null)
         .envGroupName(envGroup != null ? envGroup.getName() : null)
         .build();
   }

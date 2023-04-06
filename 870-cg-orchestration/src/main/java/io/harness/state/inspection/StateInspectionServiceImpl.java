@@ -54,7 +54,7 @@ public class StateInspectionServiceImpl implements StateInspectionService {
       List<ExpressionVariableUsage.Item> vars = v.getVariables();
 
       for (ExpressionVariableUsage.Item var : vars) {
-        if (var.getExpression().equals(K8S_RESOURCES_MANIFESTS)) {
+        if (K8S_RESOURCES_MANIFESTS.equals(var.getExpression())) {
           vars.remove(var);
           vars.add(ExpressionVariableUsage.Item.builder()
                        .expression(var.getExpression())
@@ -73,7 +73,9 @@ public class StateInspectionServiceImpl implements StateInspectionService {
             .filter(StateInspectionKeys.stateExecutionInstanceId, stateExecutionInstanceId)
             .get();
 
-    transformToYaml(stateInspection);
+    if (stateInspection != null) {
+      transformToYaml(stateInspection);
+    }
     return stateInspection;
   }
 

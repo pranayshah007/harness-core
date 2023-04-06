@@ -27,6 +27,7 @@ public class MigrationContext {
   private Map<CgEntityId, Set<CgEntityId>> graph;
   private MigrationInputDTO inputDTO;
   private String accountId;
+  private boolean templatizeStepParams;
 
   public static MigrationContext newInstance(String accountId, MigrationInputDTO inputDTO,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph,
@@ -37,6 +38,7 @@ public class MigrationContext {
         .entities(entities)
         .graph(graph)
         .migratedEntities(migratedEntities)
+        .templatizeStepParams(false)
         .build();
   }
 }

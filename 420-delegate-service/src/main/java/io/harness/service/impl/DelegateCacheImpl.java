@@ -9,6 +9,7 @@ package io.harness.service.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME_FIVE_MINS;
+import static io.harness.serializer.DelegateServiceCacheRegistrar.ABORTED_TASK_LIST_CACHE;
 import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATES_FROM_GROUP_CACHE;
 import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATE_CACHE;
 import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATE_GROUP_CACHE;
@@ -40,6 +41,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +69,7 @@ public class DelegateCacheImpl implements DelegateCache {
   @Inject @Named(DELEGATE_CACHE) RLocalCachedMap<String, Delegate> delegateRedisCache;
   @Inject @Named(DELEGATE_GROUP_CACHE) RLocalCachedMap<String, DelegateGroup> delegateGroupRedisCache;
   @Inject @Named(DELEGATES_FROM_GROUP_CACHE) RLocalCachedMap<String, List<Delegate>> delegatesFromGroupRedisCache;
+  @Inject @Named(ABORTED_TASK_LIST_CACHE) RLocalCachedMap<String, Set<String>> abortedTaskListCache;
 
   @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
 
@@ -269,6 +272,35 @@ public class DelegateCacheImpl implements DelegateCache {
       return importantDelegateTasksCountCache.asMap();
     }
     throw new InvalidArgumentsException("Unsupported delegate task rank " + rank);
+  }
+
+  @Override
+  public Set<String> getAbortedTaskList(String accountId) {
+    if (!enableRedisForDelegateService) {
+      log.info("enableRedisForDelegateService flag is false");
+      return Collections.emptySet();
+    }
+    return abortedTaskListCache.get(accountId) != null ? abortedTaskListCache.get(accountId) : Collections.emptySet();
+  }
+
+  @Override
+  public void addToAbortedTaskList(String accountId, Set<String> abortedTaskList) {
+    if (!enableRedisForDelegateService) {
+      log.info("enableRedisForDelegateService flag is false");
+      return;
+    }
+    abortedTaskListCache.putIfAbsent(accountId, abortedTaskList);
+  }
+
+  @Override
+  public void removeFromAbortedTaskList(String accountId, String delegateTaskId) {
+    if (!enableRedisForDelegateService) {
+      log.info("enableRedisForDelegateService flag is false");
+      return;
+    }
+    if (abortedTaskListCache.get(accountId) != null) {
+      abortedTaskListCache.get(accountId).remove(delegateTaskId);
+    }
   }
 
   private Set<String> getIntersectionOfSupportedTaskTypes(@NotNull String accountId) {

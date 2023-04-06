@@ -622,7 +622,8 @@ public class PcfInstanceHandlerTest extends WingsBaseTest {
 
     assertThatThrownBy(() -> pcfInstanceHandler.syncInstances("appId", "infraMappingId", ITERATOR))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Failed to instance sync for PCF Application Name: TestApp");
+        .hasMessage(
+            "Application not found for PCF application Name: [TestApp] with InfraMappingId: [infraMappingId], Failed to perform instance sync for this PCF Application with Exception: [PcfAppNotFoundException: App not found]");
   }
 
   @Test

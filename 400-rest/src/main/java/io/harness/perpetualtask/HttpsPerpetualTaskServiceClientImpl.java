@@ -42,7 +42,7 @@ public class HttpsPerpetualTaskServiceClientImpl implements HttpsPerpetualTaskSe
   }
 
   @Override
-  public Message getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
+  public Message getTaskParams(PerpetualTaskClientContext clientContext) {
     if (clientContext == null) {
       return null;
     }

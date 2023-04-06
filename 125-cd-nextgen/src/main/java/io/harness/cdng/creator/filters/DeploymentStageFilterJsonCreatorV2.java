@@ -9,6 +9,11 @@ package io.harness.cdng.creator.filters;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.executions.steps.StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE;
+import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK;
+import static io.harness.executions.steps.StepSpecTypeConstants.SHELL_SCRIPT_PROVISION;
+import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_APPLY;
+import static io.harness.executions.steps.StepSpecTypeConstants.TERRAGRUNT_APPLY;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -41,6 +46,9 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.plancreator.steps.ParallelStepElementConfig;
+import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.cdng.sample.cd.creator.filters.CdFilter;
 import io.harness.pms.cdng.sample.cd.creator.filters.CdFilter.CdFilterBuilder;
 import io.harness.pms.exception.runtime.InvalidYamlRuntimeException;
@@ -53,18 +61,25 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<DeploymentStageNode> {
+  private static final String STEP_TYPE_FIELD = "type";
+  private static final String STEP_IDENTIFIER_FIELD = "identifier";
+
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private EnvironmentService environmentService;
   @Inject private InfrastructureEntityService infraService;
@@ -160,6 +175,10 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       throw new InvalidYamlRuntimeException(
           format("deploymentType should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+    }
+
+    if (deploymentStageConfig.getEnvironment() != null) {
+      validateInfraProvisioners(filterCreationContext, deploymentStageConfig.getEnvironment());
     }
   }
 
@@ -497,5 +516,77 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     for (YamlField stepYamlField : stepYamlFields) {
       dependencies.put(stepYamlField.getNode().getUuid(), stepYamlField);
     }
+  }
+
+  private void validateInfraProvisioners(FilterCreationContext filterCreationContext, EnvironmentYamlV2 env) {
+    List<String> filteredProvisionerRefs = getFilteredProvisionerRefs(env);
+
+    List<String> duplicateProvisionerIdentifiers = findDuplicates(filteredProvisionerRefs);
+    if (isNotEmpty(duplicateProvisionerIdentifiers)) {
+      throw new InvalidYamlRuntimeException(
+          format("Environment contains duplicates provisioner identifiers [%s], stage [%s]",
+              String.join(" ,", duplicateProvisionerIdentifiers),
+              YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+    }
+  }
+
+  private List<String> getFilteredProvisionerRefs(EnvironmentYamlV2 env) {
+    if (env == null || env.getProvisioner() == null || isEmpty(env.getProvisioner().getSteps())) {
+      return Collections.emptyList();
+    }
+
+    List<String> provisionerRefs = new ArrayList<>();
+    List<ExecutionWrapperConfig> steps = env.getProvisioner().getSteps();
+    try {
+      populateProvisionerRefs(provisionerRefs, steps);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Unable to get stage provisioner refs", e);
+    }
+
+    return provisionerRefs;
+  }
+
+  private void populateProvisionerRefs(
+      List<String> provisionerRefs, List<ExecutionWrapperConfig> executionWrapperConfigs) throws IOException {
+    for (ExecutionWrapperConfig executionWrapperConfig : executionWrapperConfigs) {
+      if (executionWrapperConfig.getStepGroup() != null && !executionWrapperConfig.getStepGroup().isNull()) {
+        StepGroupElementConfig stepGroupElementConfig =
+            YamlUtils.read(executionWrapperConfig.getStepGroup().toString(), StepGroupElementConfig.class);
+        List<ExecutionWrapperConfig> stepGroupSteps = stepGroupElementConfig.getSteps();
+        populateProvisionerRefs(provisionerRefs, stepGroupSteps);
+      }
+
+      if (executionWrapperConfig.getParallel() != null && !executionWrapperConfig.getParallel().isNull()) {
+        ParallelStepElementConfig parallelStepElementConfig =
+            YamlUtils.read(executionWrapperConfig.getParallel().toString(), ParallelStepElementConfig.class);
+        List<ExecutionWrapperConfig> parallelStepSections = parallelStepElementConfig.getSections();
+        populateProvisionerRefs(provisionerRefs, parallelStepSections);
+      }
+
+      if (executionWrapperConfig.getStep() != null && !executionWrapperConfig.getStep().isNull()) {
+        addProvisionerStepIdentifier(provisionerRefs, executionWrapperConfig);
+      }
+    }
+  }
+
+  private void addProvisionerStepIdentifier(List<String> provisionerRefs, ExecutionWrapperConfig step) {
+    if (step.getStep().has(STEP_TYPE_FIELD) && step.getStep().has(STEP_IDENTIFIER_FIELD)) {
+      String stepType = step.getStep().get(STEP_TYPE_FIELD).asText();
+      String stepIdentifier = step.getStep().get(STEP_IDENTIFIER_FIELD).asText();
+      if (isProvisionerStepWithOutput(stepType)) {
+        provisionerRefs.add(stepIdentifier);
+      }
+    }
+  }
+
+  private boolean isProvisionerStepWithOutput(String stepType) {
+    return TERRAFORM_APPLY.equals(stepType) || TERRAGRUNT_APPLY.equals(stepType)
+        || AZURE_CREATE_ARM_RESOURCE.equals(stepType) || SHELL_SCRIPT_PROVISION.equals(stepType)
+        || CLOUDFORMATION_CREATE_STACK.equals(stepType);
+  }
+
+  private List<String> findDuplicates(List<String> items) {
+    Set<String> uniqueItems = new HashSet<>();
+    return items.stream().filter(item -> !uniqueItems.add(item)).collect(Collectors.toList());
   }
 }

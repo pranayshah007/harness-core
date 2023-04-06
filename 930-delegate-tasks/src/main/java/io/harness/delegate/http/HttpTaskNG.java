@@ -7,6 +7,8 @@
 
 package io.harness.delegate.http;
 
+import io.harness.beans.HttpCertificate;
+import io.harness.beans.HttpCertificate.HttpCertificateBuilder;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -29,6 +31,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
+import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 public class HttpTaskNG extends AbstractDelegateRunnableTask {
@@ -67,7 +70,9 @@ public class HttpTaskNG extends AbstractDelegateRunnableTask {
                                    .socketTimeoutMillis(httpTaskParametersNg.getSocketTimeoutMillis())
                                    .url(httpTaskParametersNg.getUrl())
                                    .useProxy(true)
-                                   .isCertValidationRequired(false)
+                                   .certificate(getHttpCertificate(httpTaskParametersNg))
+                                   .encryptedDataDetails(httpTaskParametersNg.getEncryptedDataDetails())
+                                   .isCertValidationRequired(httpTaskParametersNg.isCertValidationRequired())
                                    .throwErrorIfNoProxySetWithDelegateProxy(false)
                                    .build(),
             executionLogCallback);
@@ -80,6 +85,22 @@ public class HttpTaskNG extends AbstractDelegateRunnableTask {
         .httpResponseCode(httpInternalResponse.getHttpResponseCode())
         .httpResponseBody(httpInternalResponse.getHttpResponseBody())
         .build();
+  }
+
+  @NotNull
+  private static HttpCertificate getHttpCertificate(HttpTaskParametersNg httpTaskParametersNg) {
+    HttpCertificateBuilder httpCertificate = HttpCertificate.builder();
+
+    if (httpTaskParametersNg.getCertificateNG() != null) {
+      if (httpTaskParametersNg.getCertificateNG().getCertificate() != null) {
+        httpCertificate.cert(httpTaskParametersNg.getCertificateNG().getCertificate().toCharArray());
+      }
+      if (httpTaskParametersNg.getCertificateNG().getCertificateKey() != null) {
+        httpCertificate.certKey(httpTaskParametersNg.getCertificateNG().getCertificateKey().toCharArray());
+      }
+      httpCertificate.keyStoreType(httpTaskParametersNg.getCertificateNG().getKeyStoreType());
+    }
+    return httpCertificate.build();
   }
 
   @Override

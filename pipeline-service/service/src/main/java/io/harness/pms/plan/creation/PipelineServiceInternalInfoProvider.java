@@ -81,6 +81,7 @@ import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.StrategyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
+import io.harness.ssca.cd.CdSscaBeansRegistrar;
 import io.harness.ssca.cd.execution.filtercreator.CdSscaStepFilterJsonCreator;
 import io.harness.ssca.cd.execution.variablecreator.CdSscaStepVariableCreator;
 import io.harness.ssca.plancreator.CdSscaOrchestrationStepPlanCreator;
@@ -152,6 +153,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new ApprovalStagePlanCreatorV2());
     planCreators.add(new ExecutionPmsPlanCreator());
     planCreators.add(new StepGroupPMSPlanCreator());
+    //    planCreators.add(new StepGroupPMSPlanCreatorV2());
     planCreators.add(new ResourceConstraintStepPlanCreator());
     planCreators.add(new QueueStepPlanCreator());
     planCreators.add(new FeatureFlagStagePlanCreator());
@@ -193,6 +195,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     filterJsonCreators.add(new ShellScriptStepFilterJsonCreatorV2());
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
     filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
+    //    filterJsonCreators.add(new StepGroupPmsFilterJsonCreatorV2());
     filterJsonCreators.add(new FeatureFlagStageFilterJsonCreator());
     filterJsonCreators.add(new CustomStageFilterCreator());
     filterJsonCreators.add(new PipelineStageFilterCreator());
@@ -213,6 +216,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new HTTPStepVariableCreator());
     variableCreators.add(new EmailStepVariableCreator());
     variableCreators.add(new StepGroupVariableCreator());
+    //    variableCreators.add(new StepGroupVariableCreatorV2());
     variableCreators.add(new ShellScriptStepVariableCreator());
     variableCreators.add(new JiraStepVariableCreator());
     variableCreators.add(new ApprovalStepVariableCreator());
@@ -256,6 +260,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(k8sRolling);
+    stepInfos.addAll(CdSscaBeansRegistrar.sscaStepPaletteSteps);
     return stepInfos;
   }
 }

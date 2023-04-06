@@ -91,6 +91,8 @@ public class UpdateVersionInfoTask {
       return nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
     } else if (ModuleType.CE.name().equals(moduleName)) {
       return nextGenConfiguration.getCeNextGenClientConfig().getBaseUrl();
+    } else if (ModuleType.CI.name().equals(moduleName)) {
+      return nextGenConfiguration.getCiManagerClientConfig().getBaseUrl();
     } else {
       return "";
     }

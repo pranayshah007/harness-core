@@ -1455,6 +1455,7 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
     doReturn(true).when(cfDeploymentManager).changeAutoscalarState(any(), any(), anyBoolean());
     pcfInstanceElements.clear();
     cfServiceDataList.clear();
+    doReturn(true).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
     cfCommandTaskHelperNG.downsizePreviousReleases(request, cfRequestConfig, logCallback, cfServiceDataList, 1,
         pcfInstanceElements,
         CfAppAutoscalarRequestData.builder()

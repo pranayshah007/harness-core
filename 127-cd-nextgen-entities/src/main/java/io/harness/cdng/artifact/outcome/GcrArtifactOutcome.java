@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.GcrArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -28,26 +29,52 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.GcrArtifactOutcome")
 public class GcrArtifactOutcome implements ArtifactOutcome {
-  /** Docker hub registry connector. */
+  /**
+   * Docker hub registry connector.
+   */
   String connectorRef;
-  /** Images in repos need to be referenced via a path. */
+  /**
+   * Images in repos need to be referenced via a path.
+   */
   String imagePath;
-  /** Tag refers to exact tag number. */
+  /**
+   * Tag refers to exact tag number.
+   */
   String tag;
-  /** Tag regex is used to get latest build from builds matching regex. */
+  /**
+   * Tag regex is used to get latest build from builds matching regex.
+   */
   String tagRegex;
-  /** RegistryHostname */
+  /**
+   * RegistryHostname
+   */
   String registryHostname;
-  /** Identifier for artifact. */
+  /**
+   * Identifier for artifact.
+   */
   String identifier;
-  /** Artifact type. */
+  /**
+   * Artifact type.
+   */
   String type;
-  /** Whether this config corresponds to primary artifact.*/
+  /**
+   * Whether this config corresponds to primary artifact.
+   */
   boolean primaryArtifact;
-  /** registryHostName/imagePath:tag */
+  /**
+   * registryHostName/imagePath:tag
+   */
   String image;
-  /** imagePullSecret for Gcr credentials base encoded.*/
+  /**
+   * imagePullSecret for Gcr credentials base encoded.
+   */
   String imagePullSecret;
+  Map<String, String> metadata;
+  Map<String, String> label;
+  /**
+   * dockerConfigJson for docker credentials base encoded.
+   */
+  String dockerConfigJsonSecret;
 
   @Override
   public ArtifactSummary getArtifactSummary() {

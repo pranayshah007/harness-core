@@ -359,6 +359,7 @@ import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordServ
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIAnalyserService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIConsecutiveMinutesProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityInstancesHandlerService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
@@ -374,6 +375,7 @@ import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLORecordSer
 import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLOServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.GraphDataServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.RatioAnalyserServiceImpl;
+import io.harness.cvng.servicelevelobjective.services.impl.SLIConsecutiveMinutesProcessorServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIDataProcessorServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIDataUnavailabilityInstancesHandlerServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIRecordServiceImpl;
@@ -1063,6 +1065,7 @@ public class CVServiceModule extends AbstractModule {
     bind(ServiceLevelIndicatorService.class).to(ServiceLevelIndicatorServiceImpl.class).in(Singleton.class);
     bind(SLIDataProcessorService.class).to(SLIDataProcessorServiceImpl.class);
     bind(SLIDataUnavailabilityInstancesHandlerService.class).to(SLIDataUnavailabilityInstancesHandlerServiceImpl.class);
+    bind(SLIConsecutiveMinutesProcessorService.class).to(SLIConsecutiveMinutesProcessorServiceImpl.class);
     bind(ServiceLevelIndicatorEntityAndDTOTransformer.class);
     bind(CompositeSLOService.class).to(CompositeSLOServiceImpl.class);
     bind(DebugService.class).to(DebugServiceImpl.class).in(Singleton.class);

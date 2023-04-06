@@ -11,9 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 
 import java.util.Map;
 import lombok.experimental.UtilityClass;
@@ -22,9 +24,19 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class EcrRequestResponseMapper {
   public EcrArtifactDelegateResponse toEcrResponse(
-      BuildDetailsInternal buildDetailsInternal, EcrArtifactDelegateRequest request, Map<String, String> label) {
+      BuildDetailsInternal buildDetailsInternal, EcrArtifactDelegateRequest request) {
+    ArtifactBuildDetailsNG artifactBuildDetailsNG;
+    ArtifactMetaInfo artifactMetaInfo = buildDetailsInternal.getArtifactMetaInfo();
+    Map<String, String> label = null;
+    if (artifactMetaInfo != null) {
+      artifactBuildDetailsNG = ArtifactBuildDetailsMapper.toBuildDetailsNG(
+          buildDetailsInternal, artifactMetaInfo.getSha(), artifactMetaInfo.getShaV2());
+      label = artifactMetaInfo.getLabels();
+    } else {
+      artifactBuildDetailsNG = ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal);
+    }
     return EcrArtifactDelegateResponse.builder()
-        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal))
+        .buildDetails(artifactBuildDetailsNG)
         .imagePath(request.getImagePath())
         .tag(buildDetailsInternal.getNumber())
         .label(label)

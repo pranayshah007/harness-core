@@ -450,7 +450,7 @@ public class PipelineResourceTest extends CategoryTest {
     ResponseDTO<PMSPipelineResponseDTO> responseDTO = pipelineResource.getPipelineByIdentifier(ACCOUNT_ID,
         ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false, false, BOOLEAN_FALSE_VALUE);
     PMSPipelineResponseDTO data = responseDTO.getData();
-    assertThat(data.getEntityValidityDetails().isValid()).isFalse();
+    assertThat(data.getEntityValidityDetails().isValid()).isTrue();
     assertThat(data.getEntityValidityDetails().getInvalidYaml()).isEqualTo(yaml);
     assertThat(data.getYamlPipeline()).isEqualTo(yaml);
     assertThat(data.getGovernanceMetadata()).isEqualTo(governanceMetadata);

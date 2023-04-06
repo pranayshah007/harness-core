@@ -151,6 +151,7 @@ ciExecutionServiceConfig:
       readTimeOutSeconds: 15
     queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
     envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
+    topic: ${HSQS_TOPIC:-ci}
   addonImageTag: releaseBuild-30
   liteEngineImageTag: releaseBuild-29
   defaultMemoryLimit: 500
@@ -310,6 +311,17 @@ ciExecutionServiceConfig:
       cacheGCS: plugins/cache:1.5.2
       cacheS3: plugins/cache:1.5.2
       sscaOrchestration: harness/ssca-plugin:latest
+    vmContainerlessStepConfig:
+      s3UploadConfig:
+        name: github.com/drone-plugins/drone-s3@refs/tags/v1.2.2
+      gcsUploadConfig:
+        name: github.com/drone-plugins/drone-gcs@refs/tags/v1.3.1
+      cacheS3Config:
+        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
+      cacheGCSConfig:
+        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
+      gitCloneConfig:
+        name: github.com/wings-software/drone-git@refs/tags/v1.3.2
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}

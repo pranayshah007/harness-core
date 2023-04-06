@@ -31,6 +31,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ResponseMessage;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -232,6 +233,7 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
     // combine both variable types
     List<String> allVariablesToCollect =
         Stream.concat(envVariablesToCollect.stream(), secretEnvVariablesToCollect.stream())
+            .filter(EmptyPredicate::isNotEmpty)
             .collect(Collectors.toList());
 
     if (!allVariablesToCollect.isEmpty()) {

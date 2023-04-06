@@ -831,6 +831,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     if (workflow == null) {
       return null;
     }
+    workflow.setTagLinks(harnessTagService.getTagLinksWithEntityId(workflow.getAccountId(), workflowId));
     loadOrchestrationWorkflow(workflow, version);
     return workflow;
   }
@@ -2972,7 +2973,8 @@ public class WorkflowServiceImpl implements WorkflowService {
             runtimeValues.put(parameter, previousRuntimeValues.getOrDefault(parameter, ""));
           }
         }
-        runtimeValues.put("buildNo", previousRuntimeValues.get("buildNo")); // special handling for buildNo
+        runtimeValues.put("buildNo",
+            previousRuntimeValues.get("buildNo")); // special handling for buildNo
         artifactStreamMetadata =
             ArtifactStreamMetadata.builder().artifactStreamId(artifactStreamId).runtimeValues(runtimeValues).build();
       }

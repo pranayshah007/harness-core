@@ -58,8 +58,8 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
   @Inject ExecutionInputService executionInputService;
 
   public PMSExpressionEvaluator(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
-      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific) {
-    super(variableResolverTracker, ambiance, entityTypes, refObjectSpecific);
+      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific, Map<String, String> contextMap) {
+    super(variableResolverTracker, ambiance, entityTypes, refObjectSpecific, contextMap);
   }
 
   @Override

@@ -42,6 +42,8 @@ import io.harness.aws.v2.ecs.EcsV2Client;
 import io.harness.aws.v2.ecs.EcsV2ClientImpl;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.aws.v2.ecs.ElbV2ClientImpl;
+import io.harness.aws.v2.eks.EksV2Client;
+import io.harness.aws.v2.eks.EksV2ClientImpl;
 import io.harness.aws.v2.lambda.AwsLambdaClient;
 import io.harness.aws.v2.lambda.AwsLambdaClientImpl;
 import io.harness.awscli.AwsCliClient;
@@ -510,7 +512,6 @@ import io.harness.pcf.CfSdkClient;
 import io.harness.pcf.cfcli.client.CfCliClientImpl;
 import io.harness.pcf.cfsdk.CfSdkClientImpl;
 import io.harness.perpetualtask.internal.AssignmentTask;
-import io.harness.perpetualtask.manifest.ArtifactoryHelmRepositoryService;
 import io.harness.perpetualtask.manifest.HelmRepositoryService;
 import io.harness.perpetualtask.manifest.ManifestRepositoryService;
 import io.harness.perpetualtask.polling.manifest.HelmChartCollectionService;
@@ -582,7 +583,6 @@ import software.wings.delegatetasks.ElkLogzDataCollectionTask;
 import software.wings.delegatetasks.GcbTask;
 import software.wings.delegatetasks.GitCommandTask;
 import software.wings.delegatetasks.GitFetchFilesTask;
-import software.wings.delegatetasks.HelmRepoConfigValidationTask;
 import software.wings.delegatetasks.HostValidationTask;
 import software.wings.delegatetasks.HttpTask;
 import software.wings.delegatetasks.JenkinsTask;
@@ -651,15 +651,16 @@ import software.wings.delegatetasks.cloudformation.CloudFormationCommandTask;
 import software.wings.delegatetasks.collect.artifacts.AmazonS3CollectionTask;
 import software.wings.delegatetasks.collect.artifacts.ArtifactoryCollectionTask;
 import software.wings.delegatetasks.collect.artifacts.AzureArtifactsCollectionTask;
-import software.wings.delegatetasks.collect.artifacts.BambooCollectionTask;
 import software.wings.delegatetasks.collect.artifacts.JenkinsCollectionTask;
 import software.wings.delegatetasks.collect.artifacts.NexusCollectionTask;
 import software.wings.delegatetasks.container.ContainerDummyTask;
 import software.wings.delegatetasks.cv.LogDataCollectionTask;
 import software.wings.delegatetasks.cv.MetricsDataCollectionTask;
 import software.wings.delegatetasks.cvng.K8InfoDataService;
+import software.wings.delegatetasks.helm.ArtifactoryHelmRepositoryService;
 import software.wings.delegatetasks.helm.HelmCollectChartTask;
 import software.wings.delegatetasks.helm.HelmCommandTask;
+import software.wings.delegatetasks.helm.HelmRepoConfigValidationTask;
 import software.wings.delegatetasks.helm.HelmValuesFetchTask;
 import software.wings.delegatetasks.helm.ManifestRepoServiceType;
 import software.wings.delegatetasks.jira.JiraTask;
@@ -694,6 +695,7 @@ import software.wings.helpers.ext.azure.AcrService;
 import software.wings.helpers.ext.azure.AcrServiceImpl;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsService;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsServiceImpl;
+import software.wings.helpers.ext.bamboo.BambooCollectionTask;
 import software.wings.helpers.ext.bamboo.BambooService;
 import software.wings.helpers.ext.bamboo.BambooServiceImpl;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
@@ -911,6 +913,19 @@ public class DelegateModule extends AbstractModule {
   public ScheduledExecutorService healthMonitorExecutor() {
     return new ScheduledThreadPoolExecutor(
         20, new ThreadFactoryBuilder().setNameFormat("healthMonitor-%d").setPriority(Thread.MAX_PRIORITY).build());
+  }
+
+  @Provides
+  public DataCollectionDSLService dataCollectionDSLService() throws KeyManagerBuilderException {
+    if (StringUtils.isNotEmpty(configuration.getClientCertificateFilePath())
+        && StringUtils.isNotEmpty(configuration.getClientCertificateKeyFilePath())) {
+      KeyManager keyManager = new X509KeyManagerBuilder()
+                                  .withClientCertificateFromFile(this.configuration.getClientCertificateFilePath(),
+                                      this.configuration.getClientCertificateKeyFilePath())
+                                  .build();
+      return new DataCollectionServiceImpl(keyManager);
+    }
+    return new DataCollectionServiceImpl();
   }
 
   /*
@@ -1345,7 +1360,6 @@ public class DelegateModule extends AbstractModule {
 
     bind(TerraformConfigInspectClient.class).toInstance(new TerraformConfigInspectClientImpl());
     bind(TerraformConfigInspectService.class).toInstance(new TerraformConfigInspectServiceImpl());
-    bind(DataCollectionDSLService.class).to(DataCollectionServiceImpl.class);
     bind(AzureComputeClient.class).to(AzureComputeClientImpl.class);
     bind(AzureAutoScaleSettingsClient.class).to(AzureAutoScaleSettingsClientImpl.class);
     bind(AzureNetworkClient.class).to(AzureNetworkClientImpl.class);
@@ -2129,6 +2143,7 @@ public class DelegateModule extends AbstractModule {
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);
     bind(GoogleCloudFunctionClient.class).to(GoogleCloudFunctionClientImpl.class);
     bind(GoogleCloudRunClient.class).to(GoogleCloudRunClientImpl.class);
+    bind(EksV2Client.class).to(EksV2ClientImpl.class);
 
     // AWS Lambda NG
     bind(AwsLambdaClient.class).to(AwsLambdaClientImpl.class);

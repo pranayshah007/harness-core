@@ -21,7 +21,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.perpetualtask.manifest.ArtifactoryHelmRepositoryService;
 import io.harness.perpetualtask.manifest.HelmRepositoryService;
 import io.harness.rule.Owner;
 

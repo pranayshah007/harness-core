@@ -22,6 +22,7 @@ import static io.harness.secretmanagerclient.SecretType.SecretText;
 import static io.harness.secretmanagerclient.ValueType.CustomSecretManagerValues;
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
+import static io.harness.utils.PageUtils.getPageRequest;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
@@ -91,12 +92,12 @@ import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.stream.BoundedInputStream;
-import io.harness.utils.PageUtils;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -115,7 +116,6 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PL)
@@ -378,8 +378,8 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   @Override
   public Page<SecretResponseWrapper> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<String> identifiers, List<SecretType> secretTypes, boolean includeSecretsFromEverySubScope,
-      String searchTerm, int page, int size, ConnectorCategory sourceCategory,
-      boolean includeAllSecretsAccessibleAtScope) {
+      String searchTerm, ConnectorCategory sourceCategory, boolean includeAllSecretsAccessibleAtScope,
+      PageRequest pageRequest) {
     Criteria criteria = Criteria.where(SecretKeys.accountIdentifier).is(accountIdentifier);
     addCriteriaForRequestedScopes(criteria, orgIdentifier, projectIdentifier, includeAllSecretsAccessibleAtScope,
         includeSecretsFromEverySubScope);
@@ -406,14 +406,21 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
     if (accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
             Resource.of(SECRET_RESOURCE_TYPE, null), SECRET_VIEW_PERMISSION)) {
-      SortOrder order =
-          SortOrder.Builder.aSortOrder().withField(SecretKeys.createdAt, SortOrder.OrderType.DESC).build();
-      PageRequest pageRequest = PageRequest.builder().pageSize(size).pageIndex(page).sortOrders(List.of(order)).build();
-      return ngSecretService.list(criteria, PageUtils.getPageRequest(pageRequest)).map(this::getResponseWrapper);
+      if (isEmpty(pageRequest.getSortOrders())) {
+        SortOrder order =
+            SortOrder.Builder.aSortOrder().withField(SecretKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();
+        pageRequest.setSortOrders(ImmutableList.of(order));
+      }
+      return ngSecretService.list(criteria, getPageRequest(pageRequest)).map(this::getResponseWrapper);
     } else {
-      List<Secret> allMatchingSecrets = ngSecretService.list(criteria, Pageable.unpaged()).getContent();
+      List<Secret> allMatchingSecrets =
+          ngSecretService
+              .list(criteria, getPageRequest(PageRequest.builder().sortOrders(pageRequest.getSortOrders()).build()))
+              .getContent();
       allMatchingSecrets = ngSecretService.getPermitted(allMatchingSecrets);
-      return ngSecretService.getPaginatedResult(allMatchingSecrets, page, size).map(this::getResponseWrapper);
+      return ngSecretService
+          .getPaginatedResult(allMatchingSecrets, pageRequest.getPageIndex(), pageRequest.getPageSize())
+          .map(this::getResponseWrapper);
     }
   }
 

@@ -38,6 +38,7 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.evaluators.ProvisionerExpressionEvaluator;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
@@ -347,10 +348,11 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     List<YamlProperties> outputProperties = new LinkedList<>();
     InfrastructureConfig infrastructureConfig =
         InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
-        infrastructureConfig.getInfrastructureDefinitionConfig().getSpec(), EnvironmentOutcome.builder().build(),
-        ServiceStepOutcome.builder().build(), infrastructureEntity.getAccountId(),
-        infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier());
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(infrastructureConfig.getInfrastructureDefinitionConfig().getSpec(),
+            new ProvisionerExpressionEvaluator(Collections.emptyMap()), EnvironmentOutcome.builder().build(),
+            ServiceStepOutcome.builder().build(), infrastructureEntity.getAccountId(),
+            infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier());
 
     List<String> infraStepOutputExpressions =
         VariableCreatorHelper.getExpressionsInObject(infrastructureOutcome, OutputExpressionConstants.INFRA);

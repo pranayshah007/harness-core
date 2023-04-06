@@ -38,6 +38,7 @@ public class K8sDryRunManifestRequest implements K8sDeployRequest {
   CommandUnitsProgress commandUnitsProgress;
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
+  Boolean useDeclarativeRollback;
 
   @Override
   public K8sTaskType getTaskType() {

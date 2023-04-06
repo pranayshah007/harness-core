@@ -136,6 +136,22 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     CurrentOrUpcomingWindow currentOrUpcomingWindow = FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(windows1);
     assertThat(currentOrUpcomingWindow.getStartTime()).isEqualTo(1705834800000L);
     assertThat(currentOrUpcomingWindow.getEndTime()).isEqualTo(1705836600000L);
+
+    FreezeWindow freezeWindow2 = new FreezeWindow();
+    freezeWindow2.setDuration("30m");
+    freezeWindow2.setStartTime("2023-01-21 04:30 PM");
+    freezeWindow2.setTimeZone(timeZone);
+    Recurrence recurrence2 = new Recurrence();
+    recurrence2.setRecurrenceType(RecurrenceType.MONTHLY);
+    RecurrenceSpec recurrenceSpec1 = new RecurrenceSpec();
+    recurrenceSpec.setValue(3);
+    recurrence2.setSpec(recurrenceSpec1);
+    freezeWindow2.setRecurrence(recurrence2);
+    List<FreezeWindow> windows2 = new ArrayList<>();
+    windows2.add(freezeWindow2);
+    CurrentOrUpcomingWindow currentOrUpcomingWindow1 = FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(windows2);
+    assertThat(currentOrUpcomingWindow1.getStartTime()).isEqualTo(1682074800000L);
+    assertThat(currentOrUpcomingWindow1.getEndTime()).isEqualTo(1682076600000L);
   }
 
   @Test
@@ -187,6 +203,22 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     windows1.add(freezeWindow1);
     List<Long> nextWindow = FreezeTimeUtils.fetchUpcomingTimeWindow(windows1);
     assertThat(nextWindow.get(0)).isEqualTo(1705834800000L);
+
+    FreezeWindow freezeWindow2 = new FreezeWindow();
+    freezeWindow2.setDuration("30m");
+    freezeWindow2.setStartTime("2023-01-21 04:30 PM");
+    freezeWindow2.setTimeZone(timeZone);
+    Recurrence recurrence2 = new Recurrence();
+    recurrence2.setRecurrenceType(RecurrenceType.MONTHLY);
+    RecurrenceSpec recurrenceSpec1 = new RecurrenceSpec();
+    recurrenceSpec.setUntil("2023-01-21 05:00 PM");
+    recurrenceSpec.setValue(3);
+    recurrence2.setSpec(recurrenceSpec1);
+    freezeWindow2.setRecurrence(recurrence2);
+    List<FreezeWindow> windows2 = new ArrayList<>();
+    windows2.add(freezeWindow2);
+    List<Long> nextWindow1 = FreezeTimeUtils.fetchUpcomingTimeWindow(windows2);
+    assertThat(nextWindow1.get(0)).isEqualTo(1682074800000L);
   }
 
   @Test

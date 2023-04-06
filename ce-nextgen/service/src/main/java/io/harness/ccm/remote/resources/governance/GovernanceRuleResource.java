@@ -62,6 +62,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.remote.GovernanceConfig;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.security.annotations.PublicApi;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.yaml.schema.YamlSchemaProvider;
@@ -136,8 +137,6 @@ import org.springframework.transaction.support.TransactionTemplate;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 
-@NextGenManagerAuth
-
 public class GovernanceRuleResource {
   private final GovernanceRuleService governanceRuleService;
   private final RuleSetService ruleSetService;
@@ -176,292 +175,13 @@ public class GovernanceRuleResource {
     this.configuration = configuration;
   }
 
-  // Internal API for OOTB rule creation
-  @POST
-  @Hidden
-  @Path("rule")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Add a new rule ", nickname = "CreateNewRule")
-  @Operation(operationId = "CreateNewRule", summary = "Add a new rule",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns newly created rule")
-      })
-  public ResponseDTO<Rule>
-  create(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(
-          required = true, description = "Request body containing Rule object") @Valid CreateRuleDTO createRuleDTO) {
-    rbacHelper.checkRuleEditPermission(accountId, null, null);
-    if (createRuleDTO == null) {
-      throw new InvalidRequestException(MALFORMED_ERROR);
-    }
-    Rule rule = createRuleDTO.getRule();
-    if (!rule.getIsOOTB()) {
-      rule.setAccountId(accountId);
-    } else if (rule.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
-      rule.setAccountId(GLOBAL_ACCOUNT_ID);
-    } else {
-      throw new InvalidRequestException("Not authorised to create OOTB rules. Make a custom rule instead");
-    }
-    if (governanceRuleService.fetchByName(accountId, rule.getName(), true) != null) {
-      throw new InvalidRequestException("Rule with the given name already exits");
-    }
-    GovernanceRuleFilter governancePolicyFilter = GovernanceRuleFilter.builder().build();
-    RuleList ruleList = governanceRuleService.list(governancePolicyFilter);
-    GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
-    if (ruleList.getRules().size() >= governanceConfig.getPolicyPerAccountLimit()) {
-      throw new InvalidRequestException("You have exceeded the limit for rules creation");
-    }
-    // TO DO: Handle this for custom rules and git connectors
-    rule.setStoreType(RuleStoreType.INLINE);
-    rule.setVersionLabel("0.0.1");
-    rule.setDeleted(false);
-    governanceRuleService.validateAWSSchema(rule);
-    governanceRuleService.custodianValidate(rule);
-    governanceRuleService.save(rule);
-    HashMap<String, Object> properties = new HashMap<>();
-    properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_NAME, rule.getName());
-    telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_CREATED, null, accountId, properties,
-        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(
-
-        Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-          outboxService.save(new RuleCreateEvent(accountId, rule.toDTO()));
-          return governanceRuleService.fetchByName(accountId, rule.getName(), false);
-        })));
-  }
-
-  @POST
-  @Path("ruleClone")
-  @Timed
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
-  @ExceptionMetered
-  @ApiOperation(value = "Clone a rule", nickname = "CloneRule")
-  @LogAccountIdentifier
-  @Operation(operationId = "CloneRule", description = "Clone a Rule with the given ID.", summary = "Clone a rule",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "newly created rule", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-      })
-  public ResponseDTO<Rule>
-  clone(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(
-          required = true, description = "Request body containing Rule uuid") @Valid CloneRuleDTO cloneRuleDTO) {
-    if (cloneRuleDTO == null) {
-      throw new InvalidRequestException(MALFORMED_ERROR);
-    }
-    RuleClone ruleClone = cloneRuleDTO.getRuleClone();
-    Rule existingRule = governanceRuleService.fetchById(accountId, ruleClone.getUuid(), false);
-    Rule newRule = Rule.builder().build();
-    newRule.setIsOOTB(false);
-    newRule.setName(existingRule.getName() + "-clone");
-    if (governanceRuleService.fetchByName(accountId, newRule.getName(), true) != null) {
-      throw new InvalidRequestException("A clone with the given name already exists");
-    }
-    newRule.setCloudProvider(existingRule.getCloudProvider());
-    newRule.setRulesYaml(existingRule.getRulesYaml());
-    newRule.setDescription(existingRule.getDescription());
-    newRule.setTags(existingRule.getTags());
-    CreateRuleDTO createRuleDTO = CreateRuleDTO.builder().rule(newRule).build();
-    return create(accountId, createRuleDTO);
-  }
-
-  @PUT
-  @Path("rule")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Update a existing Rule", nickname = "updateRule")
-  @LogAccountIdentifier
-  @Operation(operationId = "updateRule", description = "Update a Rule", summary = "Update a Rule",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            description = "update an existing Rule", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-      })
-  public ResponseDTO<Rule>
-  updateRule(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(
-          required = true, description = "Request body containing rule object") @Valid CreateRuleDTO createRuleDTO) {
-    rbacHelper.checkRuleEditPermission(accountId, null, null);
-    if (createRuleDTO == null) {
-      throw new InvalidRequestException(MALFORMED_ERROR);
-    }
-    Rule rule = createRuleDTO.getRule();
-    rule.toDTO();
-    Rule oldRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
-    if (oldRule.getIsOOTB()) {
-      throw new InvalidRequestException("Editing OOTB rule is not allowed");
-    }
-    HashMap<String, Object> properties = new HashMap<>();
-    properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_NAME, oldRule.getName());
-    if (rule.getRulesYaml() != null) {
-      Rule testSchema = Rule.builder().build();
-      testSchema.setName(oldRule.getName());
-      testSchema.setRulesYaml(rule.getRulesYaml());
-      governanceRuleService.validateAWSSchema(testSchema);
-      governanceRuleService.custodianValidate(testSchema);
-    }
-    governanceRuleService.update(rule, accountId);
-    Rule updatedRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
-    telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_UPDATED, null, accountId, properties,
-        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-
-    return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleUpdateEvent(accountId, updatedRule.toDTO(), oldRule.toDTO()));
-      return updatedRule;
-    })));
-  }
-
-  @PUT
-  @Hidden
-  @InternalApi
-  @Path("ruleOOTB")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Update a existing OOTB Rule", nickname = "updateOOTBRule", hidden = true)
-  @LogAccountIdentifier
-  @Operation(operationId = "updateOOTBRule", description = "Update a OOTB Rule", summary = "Update a OOTB Rule",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update an existing OOTB Rule",
-            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-      })
-  public ResponseDTO<Rule>
-  updateRuleOOTB(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(
-          required = true, description = "Request body containing rule object") @Valid CreateRuleDTO createRuleDTO) {
-    if (createRuleDTO == null) {
-      throw new InvalidRequestException(MALFORMED_ERROR);
-    }
-
-    Rule rule = createRuleDTO.getRule();
-    rule.toDTO();
-    if (!rule.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
-      throw new InvalidRequestException("Editing OOTB rule is not allowed");
-    }
-    Rule oldRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
-    if (rule.getRulesYaml() != null) {
-      Rule testSchema = Rule.builder().build();
-      testSchema.setName(oldRule.getName());
-      testSchema.setRulesYaml(rule.getRulesYaml());
-      governanceRuleService.validateAWSSchema(testSchema);
-      governanceRuleService.custodianValidate(testSchema);
-    }
-    return ResponseDTO.newResponse(governanceRuleService.update(rule, GLOBAL_ACCOUNT_ID));
-  }
-  // Internal API for deletion of OOTB rules
-
-  @DELETE
-  @Path("{ruleID}")
-  @Timed
-  @Hidden
-  @InternalApi
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
-  @ExceptionMetered
-  @ApiOperation(value = "Delete a OOTB rule", nickname = "deleteOOTBRule", hidden = true)
-  @LogAccountIdentifier
-  @Operation(operationId = "deleteOOTBRule", description = "Delete an OOTB Rule for the given a ID.",
-      summary = "Delete an OOTB Rule for the given a ID.",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "A boolean whether the delete was successful or not",
-            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-      })
-  public ResponseDTO<Boolean>
-  deleteOOTB(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @PathParam("ruleID") @Parameter(
-          required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
-    if (!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
-      throw new InvalidRequestException("Deleting OOTB rule is not allowed");
-    }
-    governanceRuleService.fetchById(GLOBAL_ACCOUNT_ID, uuid, false);
-    boolean result = governanceRuleService.delete(GLOBAL_ACCOUNT_ID, uuid);
-    return ResponseDTO.newResponse(result);
-  }
-
-  @DELETE
-  @Path("rule/{ruleID}")
-  @Timed
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
-  @ExceptionMetered
-  @ApiOperation(value = "Delete a rule", nickname = "deleteRule")
-  @LogAccountIdentifier
-  @Operation(operationId = "deleteRule", description = "Delete a Rule for the given a ID.", summary = "Delete a rule",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "A boolean whether the delete was successful or not",
-            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-      })
-  public ResponseDTO<Boolean>
-  delete(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @PathParam("ruleID") @Parameter(
-          required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
-    rbacHelper.checkRuleDeletePermission(accountId, null, null);
-    HashMap<String, Object> properties = new HashMap<>();
-    Rule rule = governanceRuleService.fetchById(accountId, uuid, false);
-    properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_NAME, rule.getName());
-    telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_DELETE, null, accountId, properties,
-        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleDeleteEvent(accountId, rule.toDTO()));
-      return governanceRuleService.delete(accountId, uuid);
-    })));
-  }
-
-  @POST
-  @Path("rule/list")
-  @ApiOperation(value = "Get rules for given account", nickname = "getPolicies")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
-  @Operation(operationId = "getPolicies", description = "Fetch rules ", summary = "Fetch rules for account",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            description = "Returns List of rules", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-      })
-  public ResponseDTO<RuleList>
-  listRule(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-               NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(required = true, description = "Request body containing rule object") @Valid ListDTO listDTO,
-      @Parameter(description = "Search by Rule name pattern") @QueryParam("RuleNamePattern") String ruleNamePattern) {
-    rbacHelper.checkRuleViewPermission(accountId, null, null);
-    GovernanceRuleFilter query;
-    if (listDTO == null) {
-      query = GovernanceRuleFilter.builder().build();
-    } else {
-      query = listDTO.getGovernanceRuleFilter();
-    }
-    if (ruleNamePattern != null) {
-      query.setSearch(ruleNamePattern);
-    }
-    query.setAccountId(accountId);
-    return ResponseDTO.newResponse(governanceRuleService.list(query));
-  }
-
+  @PublicApi
   @POST
   @Path("enqueue")
   @Timed
-  @ExceptionMetered
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Enqueues job for execution", nickname = "enqueueGovernanceJob")
+  @ApiOperation(value = "Enqueues job for execution", nickname = "enqueueGovernanceJob", hidden = true)
   // TO DO: Also check with PL team as this does not require accountId to be passed, how to add accountId in the log
   // context here ?
   @Operation(operationId = "enqueueGovernanceJob", description = "Enqueues job for execution.",
@@ -582,68 +302,378 @@ public class GovernanceRuleResource {
           }
         }
       }
-    } else {
-      // Call is from UI for adhoc evaluation. Directly enqueue in this case
-      // TO DO: See if UI adhoc requests can be sent to higher priority queue. This should also change in worker.
-      log.info("enqueuing for ad-hoc request");
-      if (isEmpty(accountId)) {
-        throw new InvalidRequestException("Missing accountId");
-      }
-      List<Rule> rulesList = governanceRuleService.list(accountId, Arrays.asList(governanceJobEnqueueDTO.getRuleId()));
-      if (rulesList == null) {
-        log.error("For rule id {}: no rules exists in mongo. Nothing to enqueue", governanceJobEnqueueDTO.getRuleId());
-        return ResponseDTO.newResponse(GovernanceEnqueueResponseDTO.builder().ruleExecutionId(null).build());
-      }
-      try {
-        GovernanceJobDetailsAWS governanceJobDetailsAWS =
-            GovernanceJobDetailsAWS.builder()
-                .accountId(accountId)
-                .awsAccountId(governanceJobEnqueueDTO.getTargetAccountId())
-                .externalId(governanceJobEnqueueDTO.getExternalId())
-                .roleArn(governanceJobEnqueueDTO.getRoleArn())
-                .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
-                .ruleId(governanceJobEnqueueDTO.getRuleId())
-                .region(governanceJobEnqueueDTO.getTargetRegion())
-                .ruleEnforcementId("") // This is adhoc run
-                .policy(governanceJobEnqueueDTO.getPolicy())
-                .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
-                .build();
-        Gson gson = new GsonBuilder().create();
-        String json = gson.toJson(governanceJobDetailsAWS);
-        log.info("Enqueuing job in Faktory {}", json);
-        // jobType, jobQueue, json
-        String jid = FaktoryProducer.push(configuration.getGovernanceConfig().getAwsFaktoryJobType(),
-            configuration.getGovernanceConfig().getAwsFaktoryQueueName(), json);
-        log.info("Pushed job in Faktory: {}", jid);
-        // Make a record in Mongo
-        RuleExecution ruleExecution = RuleExecution.builder()
-                                          .accountId(accountId)
-                                          .jobId(jid)
-                                          .cloudProvider(governanceJobEnqueueDTO.getRuleCloudProviderType())
-                                          .executionLogPath("") // Updated by worker when execution finishes
-                                          .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
-                                          .ruleEnforcementIdentifier(ruleEnforcementUuid)
-                                          .executionCompletedAt(null) // Updated by worker when execution finishes
-                                          .ruleIdentifier(governanceJobEnqueueDTO.getRuleId())
-                                          .targetAccount(governanceJobEnqueueDTO.getTargetAccountId())
-                                          .targetRegions(Arrays.asList(governanceJobEnqueueDTO.getTargetRegion()))
-                                          .executionLogBucketType("")
-                                          .resourceCount(0)
-                                          .ruleName(rulesList.get(0).getName())
-                                          .OOTB(rulesList.get(0).getIsOOTB())
-                                          .executionStatus(RuleExecutionStatusType.ENQUEUED)
-                                          .build();
-        enqueuedRuleExecutionIds.add(ruleExecutionService.save(ruleExecution));
-      } catch (Exception e) {
-        log.warn("Exception enqueueing job for ruleEnforcementUuid: {} for targetAccount: {} for targetRegions: {}, {}",
-            ruleEnforcementUuid, governanceJobEnqueueDTO.getTargetAccountId(),
-            governanceJobEnqueueDTO.getTargetRegion(), e);
-      }
     }
     return ResponseDTO.newResponse(
         GovernanceEnqueueResponseDTO.builder().ruleExecutionId(enqueuedRuleExecutionIds).build());
   }
 
+  // Internal API for OOTB rule creation
+  @NextGenManagerAuth
+  @POST
+  @Hidden
+  @Path("rule")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Add a new rule ", nickname = "CreateNewRule")
+  @Operation(operationId = "CreateNewRule", summary = "Add a new rule",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns newly created rule")
+      })
+  public ResponseDTO<Rule>
+  create(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(
+          required = true, description = "Request body containing Rule object") @Valid CreateRuleDTO createRuleDTO) {
+    rbacHelper.checkRuleEditPermission(accountId, null, null);
+    if (createRuleDTO == null) {
+      throw new InvalidRequestException(MALFORMED_ERROR);
+    }
+    Rule rule = createRuleDTO.getRule();
+    if (!rule.getIsOOTB()) {
+      rule.setAccountId(accountId);
+    } else if (rule.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
+      rule.setAccountId(GLOBAL_ACCOUNT_ID);
+    } else {
+      throw new InvalidRequestException("Not authorised to create OOTB rules. Make a custom rule instead");
+    }
+    if (governanceRuleService.fetchByName(accountId, rule.getName(), true) != null) {
+      throw new InvalidRequestException("Rule with the given name already exits");
+    }
+    GovernanceRuleFilter governancePolicyFilter = GovernanceRuleFilter.builder().build();
+    RuleList ruleList = governanceRuleService.list(governancePolicyFilter);
+    GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
+    if (ruleList.getRules().size() >= governanceConfig.getPolicyPerAccountLimit()) {
+      throw new InvalidRequestException("You have exceeded the limit for rules creation");
+    }
+    // TO DO: Handle this for custom rules and git connectors
+    rule.setStoreType(RuleStoreType.INLINE);
+    rule.setVersionLabel("0.0.1");
+    rule.setDeleted(false);
+    governanceRuleService.validateAWSSchema(rule);
+    governanceRuleService.custodianValidate(rule);
+    governanceRuleService.save(rule);
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(RULE_NAME, rule.getName());
+    telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_CREATED, null, accountId, properties,
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    return ResponseDTO.newResponse(
+
+        Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new RuleCreateEvent(accountId, rule.toDTO()));
+          return governanceRuleService.fetchByName(accountId, rule.getName(), false);
+        })));
+  }
+
+  @NextGenManagerAuth
+  @POST
+  @Path("ruleClone")
+  @Timed
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ExceptionMetered
+  @ApiOperation(value = "Clone a rule", nickname = "CloneRule")
+  @LogAccountIdentifier
+  @Operation(operationId = "CloneRule", description = "Clone a Rule with the given ID.", summary = "Clone a rule",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "newly created rule", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<Rule>
+  clone(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(
+          required = true, description = "Request body containing Rule uuid") @Valid CloneRuleDTO cloneRuleDTO) {
+    if (cloneRuleDTO == null) {
+      throw new InvalidRequestException(MALFORMED_ERROR);
+    }
+    RuleClone ruleClone = cloneRuleDTO.getRuleClone();
+    Rule existingRule = governanceRuleService.fetchById(accountId, ruleClone.getUuid(), false);
+    Rule newRule = Rule.builder().build();
+    newRule.setIsOOTB(false);
+    newRule.setName(existingRule.getName() + "-clone");
+    if (governanceRuleService.fetchByName(accountId, newRule.getName(), true) != null) {
+      throw new InvalidRequestException("A clone with the given name already exists");
+    }
+    newRule.setCloudProvider(existingRule.getCloudProvider());
+    newRule.setRulesYaml(existingRule.getRulesYaml());
+    newRule.setDescription(existingRule.getDescription());
+    newRule.setTags(existingRule.getTags());
+    CreateRuleDTO createRuleDTO = CreateRuleDTO.builder().rule(newRule).build();
+    return create(accountId, createRuleDTO);
+  }
+  @NextGenManagerAuth
+  @PUT
+  @Path("rule")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Update a existing Rule", nickname = "updateRule")
+  @LogAccountIdentifier
+  @Operation(operationId = "updateRule", description = "Update a Rule", summary = "Update a Rule",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            description = "update an existing Rule", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<Rule>
+  updateRule(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(
+          required = true, description = "Request body containing rule object") @Valid CreateRuleDTO createRuleDTO) {
+    rbacHelper.checkRuleEditPermission(accountId, null, null);
+    if (createRuleDTO == null) {
+      throw new InvalidRequestException(MALFORMED_ERROR);
+    }
+    Rule rule = createRuleDTO.getRule();
+    rule.toDTO();
+    Rule oldRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
+    if (oldRule.getIsOOTB()) {
+      throw new InvalidRequestException("Editing OOTB rule is not allowed");
+    }
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(RULE_NAME, oldRule.getName());
+    if (rule.getRulesYaml() != null) {
+      Rule testSchema = Rule.builder().build();
+      testSchema.setName(oldRule.getName());
+      testSchema.setRulesYaml(rule.getRulesYaml());
+      governanceRuleService.validateAWSSchema(testSchema);
+      governanceRuleService.custodianValidate(testSchema);
+    }
+    governanceRuleService.update(rule, accountId);
+    Rule updatedRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
+    telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_UPDATED, null, accountId, properties,
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+
+    return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
+      outboxService.save(new RuleUpdateEvent(accountId, updatedRule.toDTO(), oldRule.toDTO()));
+      return updatedRule;
+    })));
+  }
+  @NextGenManagerAuth
+  @PUT
+  @Hidden
+  @InternalApi
+  @Path("ruleOOTB")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Update a existing OOTB Rule", nickname = "updateOOTBRule", hidden = true)
+  @LogAccountIdentifier
+  @Operation(operationId = "updateOOTBRule", description = "Update a OOTB Rule", summary = "Update a OOTB Rule",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update an existing OOTB Rule",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<Rule>
+  updateRuleOOTB(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(
+          required = true, description = "Request body containing rule object") @Valid CreateRuleDTO createRuleDTO) {
+    if (createRuleDTO == null) {
+      throw new InvalidRequestException(MALFORMED_ERROR);
+    }
+
+    Rule rule = createRuleDTO.getRule();
+    rule.toDTO();
+    if (!rule.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
+      throw new InvalidRequestException("Editing OOTB rule is not allowed");
+    }
+    Rule oldRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
+    if (rule.getRulesYaml() != null) {
+      Rule testSchema = Rule.builder().build();
+      testSchema.setName(oldRule.getName());
+      testSchema.setRulesYaml(rule.getRulesYaml());
+      governanceRuleService.validateAWSSchema(testSchema);
+      governanceRuleService.custodianValidate(testSchema);
+    }
+    return ResponseDTO.newResponse(governanceRuleService.update(rule, GLOBAL_ACCOUNT_ID));
+  }
+  // Internal API for deletion of OOTB rules
+  @NextGenManagerAuth
+  @DELETE
+  @Path("{ruleID}")
+  @Timed
+  @Hidden
+  @InternalApi
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ExceptionMetered
+  @ApiOperation(value = "Delete a OOTB rule", nickname = "deleteOOTBRule", hidden = true)
+  @LogAccountIdentifier
+  @Operation(operationId = "deleteOOTBRule", description = "Delete an OOTB Rule for the given a ID.",
+      summary = "Delete an OOTB Rule for the given a ID.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "A boolean whether the delete was successful or not",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<Boolean>
+  deleteOOTB(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @PathParam("ruleID") @Parameter(
+          required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
+    if (!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
+      throw new InvalidRequestException("Deleting OOTB rule is not allowed");
+    }
+    governanceRuleService.fetchById(GLOBAL_ACCOUNT_ID, uuid, false);
+    boolean result = governanceRuleService.delete(GLOBAL_ACCOUNT_ID, uuid);
+    return ResponseDTO.newResponse(result);
+  }
+  @NextGenManagerAuth
+  @DELETE
+  @Path("rule/{ruleID}")
+  @Timed
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ExceptionMetered
+  @ApiOperation(value = "Delete a rule", nickname = "deleteRule")
+  @LogAccountIdentifier
+  @Operation(operationId = "deleteRule", description = "Delete a Rule for the given a ID.", summary = "Delete a rule",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "A boolean whether the delete was successful or not",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<Boolean>
+  delete(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @PathParam("ruleID") @Parameter(
+          required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
+    rbacHelper.checkRuleDeletePermission(accountId, null, null);
+    HashMap<String, Object> properties = new HashMap<>();
+    Rule rule = governanceRuleService.fetchById(accountId, uuid, false);
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(RULE_NAME, rule.getName());
+    telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_DELETE, null, accountId, properties,
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
+      outboxService.save(new RuleDeleteEvent(accountId, rule.toDTO()));
+      return governanceRuleService.delete(accountId, uuid);
+    })));
+  }
+  @NextGenManagerAuth
+  @POST
+  @Path("rule/list")
+  @ApiOperation(value = "Get rules for given account", nickname = "getPolicies")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Operation(operationId = "getPolicies", description = "Fetch rules ", summary = "Fetch rules for account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            description = "Returns List of rules", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<RuleList>
+  listRule(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+               NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(required = true, description = "Request body containing rule object") @Valid ListDTO listDTO,
+      @Parameter(description = "Search by Rule name pattern") @QueryParam("RuleNamePattern") String ruleNamePattern) {
+    rbacHelper.checkRuleViewPermission(accountId, null, null);
+    GovernanceRuleFilter query;
+    if (listDTO == null) {
+      query = GovernanceRuleFilter.builder().build();
+    } else {
+      query = listDTO.getGovernanceRuleFilter();
+    }
+    if (ruleNamePattern != null) {
+      query.setSearch(ruleNamePattern);
+    }
+    query.setAccountId(accountId);
+    return ResponseDTO.newResponse(governanceRuleService.list(query));
+  }
+
+  @NextGenManagerAuth
+  @POST
+  @Path("enqueueAdhoc")
+  @Timed
+  @ExceptionMetered
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Enqueues job for execution", nickname = "enqueueAdhocGovernanceJob")
+  // TO DO: Also check with PL team as this does not require accountId to be passed, how to add accountId in the log
+  // context here ?
+  @Operation(operationId = "enqueueGovernanceJob", description = "Enqueues job for execution.",
+      summary = "Enqueues job for execution",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns success when job is enqueued",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<GovernanceEnqueueResponseDTO>
+  enqueueAdhoc(@Parameter(required = false, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Valid String accountId,
+      @RequestBody(required = true, description = "Request body for queuing the governance job")
+      @Valid GovernanceJobEnqueueDTO governanceJobEnqueueDTO) throws IOException {
+    // TO DO: Refactor and make this method smaller
+    // Step-1 Fetch from mongo
+    String ruleEnforcementUuid = governanceJobEnqueueDTO.getRuleEnforcementId();
+    List<String> enqueuedRuleExecutionIds = new ArrayList<>();
+    // Call is from UI for adhoc evaluation. Directly enqueue in this case
+    // TO DO: See if UI adhoc requests can be sent to higher priority queue. This should also change in worker.
+    log.info("enqueuing for ad-hoc request");
+    if (isEmpty(accountId)) {
+      throw new InvalidRequestException("Missing accountId");
+    }
+    List<Rule> rulesList = governanceRuleService.list(accountId, Arrays.asList(governanceJobEnqueueDTO.getRuleId()));
+    if (rulesList == null) {
+      log.error("For rule id {}: no rules exists in mongo. Nothing to enqueue", governanceJobEnqueueDTO.getRuleId());
+      return ResponseDTO.newResponse(GovernanceEnqueueResponseDTO.builder().ruleExecutionId(null).build());
+    }
+    try {
+      GovernanceJobDetailsAWS governanceJobDetailsAWS = GovernanceJobDetailsAWS.builder()
+                                                            .accountId(accountId)
+                                                            .awsAccountId(governanceJobEnqueueDTO.getTargetAccountId())
+                                                            .externalId(governanceJobEnqueueDTO.getExternalId())
+                                                            .roleArn(governanceJobEnqueueDTO.getRoleArn())
+                                                            .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
+                                                            .ruleId(governanceJobEnqueueDTO.getRuleId())
+                                                            .region(governanceJobEnqueueDTO.getTargetRegion())
+                                                            .ruleEnforcementId("") // This is adhoc run
+                                                            .policy(governanceJobEnqueueDTO.getPolicy())
+                                                            .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
+                                                            .build();
+      Gson gson = new GsonBuilder().create();
+      String json = gson.toJson(governanceJobDetailsAWS);
+      log.info("Enqueuing job in Faktory {}", json);
+      // jobType, jobQueue, json
+      String jid = FaktoryProducer.push(configuration.getGovernanceConfig().getAwsFaktoryJobType(),
+          configuration.getGovernanceConfig().getAwsFaktoryQueueName(), json);
+      log.info("Pushed job in Faktory: {}", jid);
+      // Make a record in Mongo
+      RuleExecution ruleExecution = RuleExecution.builder()
+                                        .accountId(accountId)
+                                        .jobId(jid)
+                                        .cloudProvider(governanceJobEnqueueDTO.getRuleCloudProviderType())
+                                        .executionLogPath("") // Updated by worker when execution finishes
+                                        .isDryRun(governanceJobEnqueueDTO.getIsDryRun())
+                                        .ruleEnforcementIdentifier(ruleEnforcementUuid)
+                                        .executionCompletedAt(null) // Updated by worker when execution finishes
+                                        .ruleIdentifier(governanceJobEnqueueDTO.getRuleId())
+                                        .targetAccount(governanceJobEnqueueDTO.getTargetAccountId())
+                                        .targetRegions(Arrays.asList(governanceJobEnqueueDTO.getTargetRegion()))
+                                        .executionLogBucketType("")
+                                        .resourceCount(0)
+                                        .ruleName(rulesList.get(0).getName())
+                                        .OOTB(rulesList.get(0).getIsOOTB())
+                                        .executionStatus(RuleExecutionStatusType.ENQUEUED)
+                                        .build();
+      enqueuedRuleExecutionIds.add(ruleExecutionService.save(ruleExecution));
+    } catch (Exception e) {
+      log.warn("Exception enqueueing job for ruleEnforcementUuid: {} for targetAccount: {} for targetRegions: {}, {}",
+          ruleEnforcementUuid, governanceJobEnqueueDTO.getTargetAccountId(), governanceJobEnqueueDTO.getTargetRegion(),
+          e);
+    }
+    return ResponseDTO.newResponse(
+        GovernanceEnqueueResponseDTO.builder().ruleExecutionId(enqueuedRuleExecutionIds).build());
+  }
+
+  @NextGenManagerAuth
   @GET
   @Path("entitySchema")
   @Consumes(MediaType.APPLICATION_JSON)

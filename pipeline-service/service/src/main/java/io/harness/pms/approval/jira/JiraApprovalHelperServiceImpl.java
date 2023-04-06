@@ -8,6 +8,7 @@
 package io.harness.pms.approval.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.pms.approval.ApprovalUtils.sendTaskIdProgressUpdate;
 
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
@@ -144,6 +145,9 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
 
       log.info("Queuing delegate task");
       String taskId = queueTask(ambiance, instanceId, jiraTaskNGParameters);
+
+      sendTaskIdProgressUpdate(taskId, instanceId, waitNotifyEngine);
+
       log.info("Jira Approval Instance queued task with taskId - {}", taskId);
       logCallback.saveExecutionLog(String.format("Jira task: %s", taskId));
     } catch (Exception ex) {

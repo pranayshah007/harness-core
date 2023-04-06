@@ -17,8 +17,8 @@ import lombok.Data;
 
 @OwnedBy(CDP)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Builder
 @Data
+@Builder
 public class Variable {
   String key;
   String value;

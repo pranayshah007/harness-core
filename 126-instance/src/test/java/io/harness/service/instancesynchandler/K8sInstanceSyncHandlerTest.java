@@ -8,6 +8,7 @@
 package io.harness.service.instancesynchandler;
 
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,13 +23,19 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
+import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.entities.InstanceType;
+import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.model.K8sContainer;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.perpetualtask.PerpetualTaskType;
+import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesync.K8sDeploymentReleaseDetails;
 import io.harness.rule.Owner;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import org.junit.Test;
@@ -115,6 +122,29 @@ public class K8sInstanceSyncHandlerTest extends InstancesTestBase {
     assertThat(k8sDeploymentInfoDTO.getBlueGreenStageColor()).isEqualTo(BLUE_GREEN_COLOR);
     assertThat(k8sDeploymentInfoDTO.getReleaseName()).isEqualTo(RELEASE_NAME);
     assertThat(k8sDeploymentInfoDTO.getNamespaces()).contains(NAMESPACE);
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testGetDeploymentReleaseDetails() {
+    LinkedHashSet<String> namespaces = new LinkedHashSet<>();
+    namespaces.add("namespace1");
+    List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList = Arrays.asList(
+        DeploymentInfoDetailsDTO.builder()
+            .deploymentInfoDTO(K8sDeploymentInfoDTO.builder().releaseName("releaseName").namespaces(namespaces).build())
+            .build());
+    DeploymentReleaseDetails deploymentReleaseDetails =
+        k8sInstanceSyncHandler.getDeploymentReleaseDetails(deploymentInfoDetailsDTOList);
+
+    assertThat(deploymentReleaseDetails).isNotNull();
+    assertThat(deploymentReleaseDetails.getDeploymentDetailsCount()).isEqualTo(1);
+    assertThat(AnyUtils.unpack(deploymentReleaseDetails.getDeploymentDetails(0), K8sDeploymentReleaseDetails.class)
+                   .getReleaseName())
+        .isEqualTo("releaseName");
+    assertThat(AnyUtils.unpack(deploymentReleaseDetails.getDeploymentDetails(0), K8sDeploymentReleaseDetails.class)
+                   .getNamespaces(0))
+        .isEqualTo("namespace1");
   }
 
   private List<K8sContainer> getContainerList() {

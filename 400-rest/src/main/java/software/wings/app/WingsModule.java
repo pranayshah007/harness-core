@@ -44,6 +44,7 @@ import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactor
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryServiceImpl;
 import io.harness.audit.client.remote.AuditClientModule;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.ccm.anomaly.service.impl.AnomalyServiceImpl;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
 import io.harness.ccm.billing.GcpBillingService;
@@ -124,7 +125,6 @@ import io.harness.delegate.event.listener.ProjectEntityCRUDEventListener;
 import io.harness.delegate.heartbeat.HeartbeatModule;
 import io.harness.delegate.outbox.DelegateOutboxEventHandler;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
-import io.harness.delegate.queueservice.HQueueServiceClientFactory;
 import io.harness.delegate.service.impl.AccountDataProviderImpl;
 import io.harness.delegate.service.impl.DelegateDownloadServiceImpl;
 import io.harness.delegate.service.impl.DelegateFeedbacksServiceImpl;
@@ -168,7 +168,6 @@ import io.harness.governance.pipeline.service.evaluators.OnWorkflow;
 import io.harness.governance.pipeline.service.evaluators.PipelineStatusEvaluator;
 import io.harness.governance.pipeline.service.evaluators.WorkflowStatusEvaluator;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
-import io.harness.hsqs.client.HsqsClient;
 import io.harness.instancesync.InstanceSyncResourceClientModule;
 import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
 import io.harness.invites.NgInviteClientModule;
@@ -1547,7 +1546,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(K8sWatchTaskService.class).to(K8sWatchTaskServiceImpl.class);
     bind(HelmChartService.class).to(HelmChartServiceImpl.class);
     bind(LogStreamingServiceRestClient.class).toProvider(LogStreamingServiceClientFactory.class);
-    bind(HsqsClient.class).toProvider(HQueueServiceClientFactory.class);
     bind(IInstanceReconService.class).to(InstanceReconServiceImpl.class);
 
     // audit service
@@ -1556,6 +1554,9 @@ public class WingsModule extends AbstractModule implements ServersModule {
         this.configuration.isEnableAudit()));
     install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, MANAGER.getServiceId(), false));
 
+    install(new io.harness.hsqs.client.HsqsServiceClientModule(
+        configuration.getQueueServiceConfig().getQueueServiceClientConfig(),
+        AuthorizationServiceHeader.BEARER.getServiceId()));
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(WingsOutboxEventHandler.class);
     install(new CVCommonsServiceModule());

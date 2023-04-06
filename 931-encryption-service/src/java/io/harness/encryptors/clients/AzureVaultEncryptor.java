@@ -339,12 +339,12 @@ public class AzureVaultEncryptor implements VaultEncryptor {
       throw new SecretManagementDelegateException(AZURE_KEY_VAULT_OPERATION_ERROR, message, USER);
     }
   }
-
   private SecretClient getAzureVaultSecretsClient(AzureVaultConfig azureVaultConfig) {
     return KeyVaultAuthenticator.getSecretsClient(azureVaultConfig.getVaultName(),
         KeyVaultAuthenticator.getAzureHttpPipeline(azureVaultConfig.getClientId(), azureVaultConfig.getSecretKey(),
             azureVaultConfig.getTenantId(), azureVaultConfig.getSubscription(),
-            azureVaultConfig.getAzureEnvironmentType()),
+            azureVaultConfig.getAzureEnvironmentType(), azureVaultConfig.getUseManagedIdentity(),
+            azureVaultConfig.getAzureManagedIdentityType(), azureVaultConfig.getManagedClientId()),
         azureVaultConfig.getAzureEnvironmentType());
   }
 }

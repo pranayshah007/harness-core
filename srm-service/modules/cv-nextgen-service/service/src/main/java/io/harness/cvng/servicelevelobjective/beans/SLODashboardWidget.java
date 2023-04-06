@@ -45,7 +45,7 @@ public class SLODashboardWidget {
     return ErrorBudgetRisk.getFromPercentage(errorBudgetRemainingPercentage);
   }
   @NotNull long errorBudgetRemaining;
-  @NotNull int totalErrorBudget;
+  @NotNull long totalErrorBudget;
   @NotNull SLOTargetType sloTargetType;
   @NotNull int currentPeriodLengthDays;
   @NotNull long currentPeriodStartTime;
@@ -81,6 +81,7 @@ public class SLODashboardWidget {
     @JsonIgnore long errorBudgetBurned;
     @JsonIgnore double sliStatusPercentage;
     @JsonIgnore SLIEvaluationType evaluationType;
+    @JsonIgnore long totalErrorBudgetFromGraph;
     public double errorBudgetSpentPercentage() {
       return 100 - errorBudgetRemainingPercentage;
     }
@@ -105,6 +106,7 @@ public class SLODashboardWidget {
         .errorBudgetRemaining(sloGraphData.getErrorBudgetRemaining())
         .errorBudgetRemainingPercentage(sloGraphData.getErrorBudgetRemainingPercentage())
         .errorBudgetBurndown(sloGraphData.getErrorBudgetBurndown())
-        .sloPerformanceTrend(sloGraphData.getSloPerformanceTrend());
+        .sloPerformanceTrend(sloGraphData.getSloPerformanceTrend())
+        .totalErrorBudget(sloGraphData.totalErrorBudgetFromGraph);
   }
 }

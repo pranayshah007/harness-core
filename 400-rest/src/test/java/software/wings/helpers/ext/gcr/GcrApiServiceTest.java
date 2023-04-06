@@ -8,6 +8,7 @@
 package software.wings.helpers.ext.gcr;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.SHIVAM;
@@ -16,6 +17,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
@@ -25,9 +27,11 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.artifacts.docker.service.DockerRegistryUtils;
 import io.harness.artifacts.gcr.GcrRestClient;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.HintException;
 import io.harness.exception.WingsException;
@@ -43,17 +47,22 @@ import com.google.common.collect.Lists;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
 @OwnedBy(CDC)
 public class GcrApiServiceTest extends WingsBaseTest {
-  GcrApiServiceImpl gcrService = spy(new GcrApiServiceImpl());
+  @InjectMocks GcrApiServiceImpl gcrApiService;
+  @Mock DockerRegistryUtils dockerRegistryUtils;
+  GcrApiServiceImpl gcrService;
+  private static final String SHA = "sha256:1123234243";
   @Rule
   public WireMockRule wireMockRule = new WireMockRule(
       WireMockConfiguration.wireMockConfig().usingFilesUnderDirectory("400-rest/src/test/resources").port(0));
@@ -62,8 +71,13 @@ public class GcrApiServiceTest extends WingsBaseTest {
   GcrInternalConfig gcpInternalConfig;
   @Mock GcrRestClient gcrRestClient;
 
+  private static final Map<String, String> label = Map.of("a", "b", "c", "d");
+  private static final String LATEST = "latest";
+  private static final String SOME_IMAGE = "someImage";
+
   @Before
   public void setUp() {
+    gcrService = spy(gcrApiService);
     url = "localhost:" + wireMockRule.port();
     gcpInternalConfig = GcrConfigToInternalMapper.toGcpInternalConfig(url, basicAuthHeader);
     wireMockRule.stubFor(WireMock.get(WireMock.urlEqualTo("/v2/someImage/tags/list"))
@@ -74,22 +88,50 @@ public class GcrApiServiceTest extends WingsBaseTest {
     wireMockRule.stubFor(
         WireMock.get(WireMock.urlEqualTo("/v2/someImage/manifests/latest"))
             .withHeader("Authorization", equalTo("auth"))
-            .willReturn(aResponse().withStatus(200).withBody("{\n"
-                + "    \"schemaVersion\": 2,\n"
-                + "    \"mediaType\": \"application/vnd.docker.distribution.manifest.v2+json\",\n"
-                + "    \"config\": {\n"
-                + "        \"mediaType\": \"application/vnd.docker.container.image.v1+json\",\n"
-                + "        \"size\": 1457,\n"
-                + "        \"digest\": \"sha256:7a80323521ccd4c2b4b423fa6e38e5cea156600f40cd855e464cc52a321a24dd\"\n"
-                + "    },\n"
-                + "    \"layers\": [\n"
-                + "        {\n"
-                + "            \"mediaType\": \"application/vnd.docker.image.rootfs.diff.tar.gzip\",\n"
-                + "            \"size\": 773262,\n"
-                + "            \"digest\": \"sha256:50783e0dfb64b73019e973e7bce2c0d5a882301b781327ca153b876ad758dbd3\"\n"
-                + "        }\n"
-                + "    ]\n"
-                + "}")));
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Docker-Content-Digest", SHA)
+                    .withBody("{\n"
+                        + "    \"schemaVersion\": 2,\n"
+                        + "    \"mediaType\": \"application/vnd.docker.distribution.manifest.v2+json\",\n"
+                        + "    \"config\": {\n"
+                        + "        \"mediaType\": \"application/vnd.docker.container.image.v1+json\",\n"
+                        + "        \"size\": 1457,\n"
+                        + "        \"digest\": \"sha256:7a80323521ccd4c2b4b423fa6e38e5cea156600f40cd855e464cc52a321a24dd\"\n"
+                        + "    },\n"
+                        + "    \"layers\": [\n"
+                        + "        {\n"
+                        + "            \"mediaType\": \"application/vnd.docker.image.rootfs.diff.tar.gzip\",\n"
+                        + "            \"size\": 773262,\n"
+                        + "            \"digest\": \"sha256:50783e0dfb64b73019e973e7bce2c0d5a882301b781327ca153b876ad758dbd3\"\n"
+                        + "        }\n"
+                        + "    ]\n"
+                        + "}")));
+
+    wireMockRule.stubFor(
+        WireMock.get(WireMock.urlEqualTo("/v2/someImage/manifests/sha256:1123234243"))
+            .withHeader("Authorization", equalTo("auth"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Docker-Content-Digest", SHA)
+                    .withBody("{\n"
+                        + "    \"schemaVersion\": 2,\n"
+                        + "    \"mediaType\": \"application/vnd.docker.distribution.manifest.v2+json\",\n"
+                        + "    \"config\": {\n"
+                        + "        \"mediaType\": \"application/vnd.docker.container.image.v1+json\",\n"
+                        + "        \"size\": 1457,\n"
+                        + "        \"digest\": \"sha256:7a80323521ccd4c2b4b423fa6e38e5cea156600f40cd855e464cc52a321a24dd\"\n"
+                        + "    },\n"
+                        + "    \"layers\": [\n"
+                        + "        {\n"
+                        + "            \"mediaType\": \"application/vnd.docker.image.rootfs.diff.tar.gzip\",\n"
+                        + "            \"size\": 773262,\n"
+                        + "            \"digest\": \"sha256:50783e0dfb64b73019e973e7bce2c0d5a882301b781327ca153b876ad758dbd3\"\n"
+                        + "        }\n"
+                        + "    ]\n"
+                        + "}")));
 
     wireMockRule.stubFor(WireMock.get(WireMock.urlEqualTo("/v2/noImage/tags/list"))
                              .withHeader("Authorization", equalTo("auth"))
@@ -104,7 +146,6 @@ public class GcrApiServiceTest extends WingsBaseTest {
     wireMockRule.stubFor(WireMock.get(WireMock.urlEqualTo("/v2/teapot/tags/list"))
                              .withHeader("Authorization", equalTo("auth"))
                              .willReturn(aResponse().withStatus(418).withBody("I'm a teapot")));
-
     when(gcrService.getUrl(anyString())).thenReturn("http://" + url);
     // Remove retry back-off for faster testing.
     gcrService.retry = Retry.of("GCRRegistryTest", RetryConfig.custom().maxAttempts(GcrApiServiceImpl.RETRIES).build());
@@ -114,12 +155,12 @@ public class GcrApiServiceTest extends WingsBaseTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void shouldGetBuilds() {
-    List<BuildDetailsInternal> actual = gcrService.getBuilds(gcpInternalConfig, "someImage", 100);
+    List<BuildDetailsInternal> actual = gcrService.getBuilds(gcpInternalConfig, SOME_IMAGE, 100);
     assertThat(actual).hasSize(3);
     assertThat(actual.stream().map(BuildDetailsInternal::getNumber).collect(Collectors.toList()))
-        .isEqualTo(Lists.newArrayList("latest", "v1", "v2"));
+        .isEqualTo(Lists.newArrayList(LATEST, "v1", "v2"));
 
-    gcrService.getBuilds(GcrConfigToInternalMapper.toGcpInternalConfig(url, basicAuthHeader), "someImage", 100);
+    gcrService.getBuilds(GcrConfigToInternalMapper.toGcpInternalConfig(url, basicAuthHeader), SOME_IMAGE, 100);
   }
 
   @Test
@@ -144,22 +185,42 @@ public class GcrApiServiceTest extends WingsBaseTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testVerifyImageName() {
-    assertThat(gcrService.verifyImageName(gcpInternalConfig, "someImage")).isTrue();
+    assertThat(gcrService.verifyImageName(gcpInternalConfig, SOME_IMAGE)).isTrue();
   }
 
   @Test
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testValidateCredentials() {
-    assertThat(gcrService.validateCredentials(gcpInternalConfig, "someImage")).isTrue();
+    assertThat(gcrService.validateCredentials(gcpInternalConfig, SOME_IMAGE)).isTrue();
   }
 
   @Test
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void shouldGetBuild() {
-    BuildDetailsInternal actual = gcrService.verifyBuildNumber(gcpInternalConfig, "someImage", "latest");
-    assertThat(actual.getNumber()).isEqualTo("latest");
+    when(dockerRegistryUtils.parseArtifactMetaInfoResponse(any(), any()))
+        .thenReturn(ArtifactMetaInfo.builder().sha(SHA).labels(label).build());
+    BuildDetailsInternal actual = gcrService.verifyBuildNumber(gcpInternalConfig, SOME_IMAGE, LATEST);
+    assertThat(actual.getNumber()).isEqualTo(LATEST);
+    ArtifactMetaInfo artifactMetaInfo = actual.getArtifactMetaInfo();
+    assertThat(artifactMetaInfo.getSha()).isEqualTo(SHA);
+    assertThat(artifactMetaInfo.getShaV2()).isEqualTo(SHA);
+    assertThat(artifactMetaInfo.getLabels()).isEqualTo(label);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void shouldGetBuild_SHA() {
+    when(dockerRegistryUtils.parseArtifactMetaInfoResponse(any(), any()))
+        .thenReturn(ArtifactMetaInfo.builder().sha(SHA).labels(label).build());
+    BuildDetailsInternal actual = gcrService.verifyBuildNumber(gcpInternalConfig, SOME_IMAGE, SHA);
+    assertThat(actual.getNumber()).isEqualTo(SHA);
+    ArtifactMetaInfo artifactMetaInfo = actual.getArtifactMetaInfo();
+    assertThat(artifactMetaInfo.getSha()).isEqualTo(SHA);
+    assertThat(artifactMetaInfo.getShaV2()).isEqualTo(SHA);
+    assertThat(artifactMetaInfo.getLabels()).isEqualTo(label);
   }
 
   @Test
@@ -186,5 +247,27 @@ public class GcrApiServiceTest extends WingsBaseTest {
     } catch (Exception e) {
       verify(restClient, times(10)).listImageTags("authHeader", "realm-value");
     }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getArtifactMetaInfoTest() throws Exception {
+    when(dockerRegistryUtils.parseArtifactMetaInfoResponse(any(), any()))
+        .thenReturn(ArtifactMetaInfo.builder().sha(SHA).labels(label).build());
+    ArtifactMetaInfo artifactMetaInfo = gcrService.getArtifactMetaInfo(gcpInternalConfig, SOME_IMAGE, LATEST);
+    assertThat(artifactMetaInfo.getSha()).isEqualTo(SHA);
+    assertThat(artifactMetaInfo.getLabels()).isEqualTo(label);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getArtifactMetaInfoV2Test() throws Exception {
+    when(dockerRegistryUtils.parseArtifactMetaInfoResponse(any(), any()))
+        .thenReturn(ArtifactMetaInfo.builder().sha(SHA).labels(label).build());
+    ArtifactMetaInfo artifactMetaInfo = gcrService.getArtifactMetaInfoV2(gcpInternalConfig, SOME_IMAGE, LATEST);
+    assertThat(artifactMetaInfo.getSha()).isEqualTo(SHA);
+    assertThat(artifactMetaInfo.getLabels()).isEqualTo(label);
   }
 }

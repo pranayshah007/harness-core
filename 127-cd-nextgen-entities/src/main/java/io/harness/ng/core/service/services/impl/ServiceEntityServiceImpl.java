@@ -58,6 +58,8 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidator;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidatorFactory;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
@@ -65,8 +67,11 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
+import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PageUtils;
 import io.harness.utils.YamlPipelineUtils;
@@ -126,6 +131,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   private final ServiceOverrideService serviceOverrideService;
   private final ServiceEntitySetupUsageHelper entitySetupUsageHelper;
   @Inject private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
+  @Inject private TemplateResourceClient templateResourceClient;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
@@ -1002,5 +1008,26 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
     return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
         accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
+  }
+
+  @Override
+  public ValidateTemplateInputsResponseDTO validateTemplateInputs(
+      String accountId, String orgId, String projectId, String serviceIdentifier, String loadFromCache) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(serviceIdentifier), "service identifier must be present");
+
+    Optional<ServiceEntity> optionalService = get(accountId, orgId, projectId, serviceIdentifier, false);
+
+    if (optionalService.isPresent()) {
+      String yaml = optionalService.get().fetchNonEmptyYaml();
+
+      if (TemplateRefHelper.hasTemplateRef(yaml)) {
+        return NGRestUtils.getResponse(
+            templateResourceClient.validateTemplateInputsForGivenYaml(accountId, orgId, projectId, null, null, null,
+                null, null, null, null, null, loadFromCache, RefreshRequestDTO.builder().yaml(yaml).build()));
+      }
+    }
+
+    return ValidateTemplateInputsResponseDTO.builder().validYaml(true).build();
   }
 }

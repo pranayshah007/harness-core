@@ -107,7 +107,7 @@ function setupDelegateJars() {
 
     done
 
-    for version in v0.2 v0.3 v0.4; do
+    for version in v0.4.2; do
 
       echo "Copying go-template  ${version} binaries for ${platform}"
 

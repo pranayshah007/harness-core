@@ -21,8 +21,11 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
+import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.serializer.vm.VmPluginStepSerializer;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
@@ -45,6 +48,7 @@ public class VmPluginStepSerializerTest extends CategoryTest {
   @Mock private ConnectorUtils connectorUtils;
   @Mock private IACMStepsUtils iacmStepsUtils;
   @Mock private HarnessImageUtils harnessImageUtils;
+  @Mock private CIFeatureFlagService ciFeatureFlagService;
 
   @InjectMocks private VmPluginStepSerializer vmPluginStepSerializer;
   private final Ambiance ambiance = Ambiance.newBuilder()
@@ -93,8 +97,9 @@ public class VmPluginStepSerializerTest extends CategoryTest {
             .envVariables(ParameterField.createValueField(Map.of(
                 "key1", ParameterField.createValueField("val1"), "key2", ParameterField.createValueField("val2"))))
             .build();
+    StageInfraDetails stageInfraDetails = VmStageInfraDetails.builder().build();
     VmPluginStep vmPluginStep = (VmPluginStep) vmPluginStepSerializer.serialize(
-        pluginStepInfo, null, "harness-git-clone", null, null, ambiance, null, null);
+        pluginStepInfo, stageInfraDetails, "harness-git-clone", null, null, ambiance, null, null);
     assertThat(vmPluginStep.isPrivileged()).isTrue();
     assertThat(vmPluginStep.getImage()).isEqualTo("image");
     assertThat(vmPluginStep.getEnvVariables()).isEqualTo(Map.of("key1", "val1", "key2", "val2"));

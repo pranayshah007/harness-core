@@ -8,6 +8,7 @@
 package io.harness.cvng.servicelevelobjective.beans;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.downtime.beans.DowntimeStatusDetails;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.ng.core.mapper.TagMapper;
@@ -49,6 +50,7 @@ public class SLOHealthListView {
   @NotNull double sloTargetPercentage;
   @NotNull int noOfActiveAlerts;
   @NotNull SLIEvaluationType evaluationType;
+  DowntimeStatusDetails downtimeStatusDetails;
   @NotNull ProjectParams projectParams;
   @NotNull
   public ErrorBudgetRisk getErrorBudgetRisk() {

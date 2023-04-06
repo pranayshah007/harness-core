@@ -205,4 +205,41 @@ public class GcpConnectorValidatorTest extends CategoryTest {
         .isInstanceOf(WingsException.class)
         .hasMessage("Connector with credential type InheritFromDelegate does not support validation through harness");
   }
+
+  @Test
+  @Owner(developers = OwnerRule.RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void validateTestInheritFromDelegateWithExecuteOnDelegateAsTrue() {
+    GcpConnectorDTO gcpConnectorDTO =
+        GcpConnectorDTO.builder()
+            .credential(
+                GcpConnectorCredentialDTO.builder().gcpCredentialType(GcpCredentialType.INHERIT_FROM_DELEGATE).build())
+            .executeOnDelegate(true)
+            .build();
+    when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
+    when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
+    GcpManualDetailsDTO gcpManualDetailsDTO =
+        GcpManualDetailsDTO.builder().secretKeyRef(SecretRefData.builder().build()).build();
+    when(decryptionHelper.decrypt(any(), any())).thenReturn(gcpManualDetailsDTO);
+    when(gcpClient.getGkeContainerService(any())).thenReturn(null);
+    GcpValidationTaskHandler gcpValidationTaskHandler = mock(GcpValidationTaskHandler.class);
+    on(gcpValidationTaskHandler).set("gcpClient", gcpClient);
+    on(gcpValidationTaskHandler).set("decryptionHelper", decryptionHelper);
+    when(gcpValidationTaskHandler.validate(any(), any())).thenCallRealMethod();
+    GcpValidationParamsProvider gcpValidationParamsProvider = new GcpValidationParamsProvider();
+
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorType(ConnectorType.GCP)
+                                            .connectorConfig(gcpConnectorDTO)
+                                            .identifier("identifier")
+                                            .projectIdentifier("projectIdentifier")
+                                            .orgIdentifier("orgIdentifier")
+                                            .build();
+    on(gcpValidationParamsProvider).set("encryptionHelper", encryptionHelper);
+    ConnectorValidationResult connectorValidationResult =
+        gcpValidationTaskHandler.validate(gcpValidationParamsProvider.getConnectorValidationParams(connectorInfoDTO,
+                                              "connector", "accountIdentifier", "projectIdentifier", "orgIdentifier"),
+            "accountIdentifier");
+    assertThat(connectorValidationResult.getStatus()).isEqualTo(SUCCESS);
+  }
 }

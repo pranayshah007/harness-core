@@ -25,6 +25,7 @@ import io.kubernetes.client.informer.SharedInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.informer.cache.Store;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.models.V1CronJob;
 import io.kubernetes.client.openapi.models.V1DaemonSet;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -32,7 +33,6 @@ import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1ReplicaSet;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
-import io.kubernetes.client.openapi.models.V1beta1CronJob;
 import java.io.Closeable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,7 +53,7 @@ public class K8sWatchServiceDelegate {
           .put("DaemonSet", V1DaemonSet.class)
           .put("StatefulSet", V1StatefulSet.class)
           .put("Job", V1Job.class)
-          .put("CronJob", V1beta1CronJob.class)
+          .put("CronJob", V1CronJob.class)
           .build();
 
   private final WatcherFactory watcherFactory;

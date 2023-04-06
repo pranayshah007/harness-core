@@ -12,6 +12,7 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofSeconds;
 
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.AckRequest;
@@ -34,22 +35,22 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CIExecutionPoller implements Managed {
   @Inject CIInitTaskMessageProcessor ciInitTaskMessageProcessor;
+  @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject HsqsClientService hsqsClientService;
   @Inject InitializeTaskStepV2 initializeTaskStepV2;
   @Inject AsyncWaitEngine asyncWaitEngine;
   private AtomicBoolean shouldStop = new AtomicBoolean(false);
   private static final int WAIT_TIME_IN_SECONDS = 5;
-  private final String moduleName = "ci";
   private final int batchSize = 5;
 
   @Override
   public void start() {
-    ExecutorService executorService =
-        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("ci-queue-poller").build());
+    ExecutorService executorService = Executors.newSingleThreadExecutor(
+        new ThreadFactoryBuilder().setNameFormat(getModuleName() + "-queue-poller").build());
     executorService.execute(this::run);
   }
   public void run() {
-    log.info("Started the Consumer {}", this.getClass().getSimpleName());
+    log.info("Started the Consumer {} for {}", this.getClass().getSimpleName(), this.getModuleName());
 
     try {
       do {
@@ -62,8 +63,12 @@ public class CIExecutionPoller implements Managed {
     } catch (Exception ex) {
       log.error("hsqs Consumer unexpectedly stopped", ex);
     } finally {
-      log.info("finished consuming messages for ci init task");
+      log.info("finished consuming messages for {} init task", this.getModuleName());
     }
+  }
+
+  private String getModuleName() {
+    return ciExecutionServiceConfig.getQueueServiceClientConfig().getTopic();
   }
 
   private void readEventsFrameworkMessages() throws InterruptedException {
@@ -79,8 +84,8 @@ public class CIExecutionPoller implements Managed {
     try {
       List<DequeueResponse> messages = hsqsClientService.dequeue(DequeueRequest.builder()
                                                                      .batchSize(batchSize)
-                                                                     .consumerName(moduleName)
-                                                                     .topic(moduleName)
+                                                                     .consumerName(this.getModuleName())
+                                                                     .topic(this.getModuleName())
                                                                      .maxWaitDuration(100)
                                                                      .build());
       for (DequeueResponse message : messages) {
@@ -101,14 +106,14 @@ public class CIExecutionPoller implements Managed {
       if (processMessageResponse.getSuccess()) {
         hsqsClientService.ack(AckRequest.builder()
                                   .itemId(message.getItemId())
-                                  .topic(moduleName)
+                                  .topic(this.getModuleName())
                                   .subTopic(processMessageResponse.getAccountId())
-                                  .consumerName(moduleName)
+                                  .consumerName(this.getModuleName())
                                   .build());
       } else {
         UnAckRequest unAckRequest = UnAckRequest.builder()
                                         .itemId(message.getItemId())
-                                        .topic(moduleName)
+                                        .topic(this.getModuleName())
                                         .subTopic(processMessageResponse.getAccountId())
                                         .build();
         hsqsClientService.unack(unAckRequest);

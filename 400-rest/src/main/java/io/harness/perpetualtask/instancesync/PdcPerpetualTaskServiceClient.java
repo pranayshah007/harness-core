@@ -20,10 +20,10 @@ import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.perpetualtask.PerpetualTaskClientBase;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.HostValidationTaskParameters;
@@ -51,19 +51,19 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(CDP)
-public class PdcPerpetualTaskServiceClient extends PerpetualTaskClientBase implements PerpetualTaskServiceClient {
+public class PdcPerpetualTaskServiceClient implements PerpetualTaskServiceClient {
   @Inject private SecretManager secretManager;
   @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private SettingsService settingsService;
+  @Inject private KryoSerializer kryoSerializer;
 
   @Override
-  public Message getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
+  public Message getTaskParams(PerpetualTaskClientContext clientContext) {
     final PerpetualTaskData taskData = getPerpetualTaskData(clientContext);
 
     ByteString settingAttributeBytes =
-        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(taskData.getSettingAttribute().toDTO()));
-    ByteString encryptionDetailsBytes =
-        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(taskData.getEncryptedDataDetails()));
+        ByteString.copyFrom(kryoSerializer.asBytes(taskData.getSettingAttribute().toDTO()));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getEncryptedDataDetails()));
 
     return PdcInstanceSyncPerpetualTaskParams.newBuilder()
         .addAllHostNames(taskData.getHostNames())

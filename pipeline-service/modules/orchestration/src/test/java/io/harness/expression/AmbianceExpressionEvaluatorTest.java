@@ -499,7 +499,7 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
 
   public static class SampleEngineExpressionEvaluator extends AmbianceExpressionEvaluator {
     public SampleEngineExpressionEvaluator() {
-      super(null, Ambiance.newBuilder().build(), null, false);
+      super(null, Ambiance.newBuilder().build(), null, false, null);
     }
 
     @Override

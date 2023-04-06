@@ -48,6 +48,7 @@ import io.harness.azure.model.kube.AzureKubeConfig;
 import io.harness.azure.model.kube.UserConfig;
 import io.harness.azure.model.tag.TagDetails;
 import io.harness.azure.utility.AzureUtils;
+import io.harness.azurecli.AzureCliClient;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.data.encoding.EncodingUtils;
@@ -80,11 +81,11 @@ import io.harness.expression.RegexFunctor;
 import io.harness.k8s.model.KubernetesAzureConfig;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.model.kubeconfig.Exec;
 import io.harness.k8s.model.kubeconfig.InteractiveMode;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.helpers.ext.azure.AzureIdentityAccessTokenResponse;
@@ -400,8 +401,8 @@ public class AzureAsyncTaskHelper {
         .build();
   }
 
-  public KubernetesConfig getClusterConfig(AzureConfigContext azureConfigContext, LogCallback logCallback)
-      throws IOException {
+  public KubernetesConfig getClusterConfig(
+      AzureConfigContext azureConfigContext, String workingDirectory, LogCallback logCallback) throws IOException {
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
         azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
         azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
@@ -410,8 +411,7 @@ public class AzureAsyncTaskHelper {
 
     return getKubernetesConfigK8sCluster(azureConfig, azureConfigContext.getSubscriptionId(),
         azureConfigContext.getResourceGroup(), azureConfigContext.getCluster(), azureConfigContext.getNamespace(),
-        azureConfigContext.isUseClusterAdminCredentials(),
-        getAzureKubeconfigFormat(azureConfig.getAzureAuthenticationType(), logCallback));
+        azureConfigContext.isUseClusterAdminCredentials(), workingDirectory, logCallback);
   }
 
   public AzureRepositoriesResponse listRepositories(AzureConfigContext azureConfigContext) throws IOException {
@@ -554,14 +554,14 @@ public class AzureAsyncTaskHelper {
 
   private KubernetesConfig getKubernetesConfigK8sCluster(AzureConfig azureConfig, String subscriptionId,
       String resourceGroup, String cluster, String namespace, boolean shouldGetAdminCredentials,
-      AzureKubeconfigFormat azureKubeconfigFormat) {
+      String workingDirectory, LogCallback logCallback) {
     try {
       log.info(format(
           "Getting AKS kube config [subscription: %s] [resourceGroup: %s] [cluster: %s] [namespace: %s] [credentials: %s]",
           subscriptionId, resourceGroup, cluster, namespace, shouldGetAdminCredentials ? "admin" : "user"));
 
-      String kubeConfigContent = getKubeConfigContent(
-          azureConfig, subscriptionId, resourceGroup, cluster, shouldGetAdminCredentials, azureKubeconfigFormat);
+      String kubeConfigContent = getKubeConfigContent(azureConfig, subscriptionId, resourceGroup, cluster,
+          shouldGetAdminCredentials, getAzureKubeconfigFormat(logCallback));
 
       log.trace(format("Cluster credentials: \n %s", kubeConfigContent));
 
@@ -575,7 +575,11 @@ public class AzureAsyncTaskHelper {
       } else if (userConfig.getExec() != null) {
         String apiServerId = Exec.getValueFromArgsList(userConfig.getExec().getArgs(), KUBECFG_ARGS_SERVER_ID);
         azureKubeConfig.setAadToken(fetchAksAADToken(azureConfig, apiServerId));
-        userConfig.setExec(updateAzureKubeconfig(userConfig.getExec(), azureConfig, apiServerId));
+        Map<String, String> env = new HashMap<>();
+        if (AzureAuthenticationType.SERVICE_PRINCIPAL_CERT == azureConfig.getAzureAuthenticationType()) {
+          AzureCliClient.loginToAksCluster(azureConfig, env, workingDirectory, logCallback);
+        }
+        userConfig.setExec(updateAzureKubeconfig(userConfig.getExec(), azureConfig, apiServerId, env));
       }
 
       return getKubernetesConfig(azureKubeConfig, namespace);
@@ -826,12 +830,12 @@ public class AzureAsyncTaskHelper {
     return azureLocationsResponse;
   }
 
-  private Exec updateAzureKubeconfig(Exec exec, AzureConfig azureConfig, String serverId) {
+  private Exec updateAzureKubeconfig(Exec exec, AzureConfig azureConfig, String serverId, Map<String, String> env) {
     return Exec.builder()
         .apiVersion(exec.getApiVersion())
         .args(getArgsForAzureKubeconfig(azureConfig, serverId))
         .command(AZURE_AUTH_PLUGIN_BINARY)
-        .env(exec.getEnv())
+        .env(getEnvForAzureKubeconfig(env))
         .installHint(AZURE_AUTH_PLUGIN_INSTALL_HINT)
         .interactiveMode(InteractiveMode.NEVER)
         .provideClusterInfo(false)
@@ -877,34 +881,21 @@ public class AzureAsyncTaskHelper {
     return args;
   }
 
+  private List<EnvVariable> getEnvForAzureKubeconfig(Map<String, String> env) {
+    List<EnvVariable> envVariablesList = new ArrayList<>();
+    for (Map.Entry<String, String> entry : env.entrySet()) {
+      envVariablesList.add(EnvVariable.builder().name(entry.getKey()).value(entry.getValue()).build());
+    }
+    return envVariablesList;
+  }
+
   private List<String> prepareArgsForSpnAuth(AzureConfig azureConfig) {
     return Arrays.asList(KUBECFG_ARGS_ENV, azureConfig.getAzureEnvironmentType().getDisplayName(),
         KUBECFG_ARGS_CLIENT_ID, azureConfig.getClientId(), KUBECFG_ARGS_TENANT_ID, azureConfig.getTenantId());
   }
 
-  private AzureKubeconfigFormat getAzureKubeconfigFormat(
-      AzureAuthenticationType azureAuthenticationType, LogCallback logCallback) {
-    if (isExecAuthPluginBinaryAvailable(AZURE_AUTH_PLUGIN_BINARY, logCallback)) {
-      if (AzureAuthenticationType.SERVICE_PRINCIPAL_CERT == azureAuthenticationType) {
-        saveLogs(
-            "Certificate authentication is not yet supported for kubelogin credentials plugin. Using authentication provider",
-            logCallback, LogLevel.WARN);
-        return AzureKubeconfigFormat.AZURE;
-      }
-      return AzureKubeconfigFormat.EXEC;
-    }
-    return AzureKubeconfigFormat.AZURE;
-  }
-
-  private void saveLogs(String errorMsg, LogCallback logCallback, LogLevel logLevel) {
-    if (logCallback != null) {
-      logCallback.saveExecutionLog(errorMsg, logLevel);
-    } else {
-      if (logLevel == LogLevel.INFO) {
-        log.info(errorMsg);
-      } else {
-        log.warn(errorMsg);
-      }
-    }
+  private AzureKubeconfigFormat getAzureKubeconfigFormat(LogCallback logCallback) {
+    return isExecAuthPluginBinaryAvailable(AZURE_AUTH_PLUGIN_BINARY, logCallback) ? AzureKubeconfigFormat.EXEC
+                                                                                  : AzureKubeconfigFormat.AZURE;
   }
 }

@@ -196,7 +196,6 @@ public interface K8sConstants {
 
   String AZURE_AUTH_PLUGIN_BINARY = "kubelogin";
   String GCP_AUTH_PLUGIN_BINARY = "gke-gcloud-auth-plugin";
-
   String GCP_AUTH_PLUGIN_INSTALL_HINT = "gke-gcloud-auth-plugin is required to authenticate to the current cluster.\n"
       + "It can be installed on the delegate using following command from:\n"
       + "https://cloud.google.com/sdk/docs/install#rpm\n"
@@ -218,4 +217,7 @@ public interface K8sConstants {
       + "// USE_GKE_GCLOUD_AUTH_PLUGIN=True for kubernetes version <1.26\n"
       + "echo \"export USE_GKE_GCLOUD_AUTH_PLUGIN=True\" >> ~/.bashrc\n"
       + "source ~/.bashrc\n";
+  String EKS_AUTH_PLUGIN_BINARY = "aws-iam-authenticator";
+  String EKS_AUTH_PLUGIN_INSTALL_HINT =
+      "Please use the following AWS docs for installing the aws-iam-authenticator plugin https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html";
 }

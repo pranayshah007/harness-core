@@ -10,6 +10,18 @@
   <summary>Build triggers</summary>
 
 - Feature build: `trigger feature-build`
+- 
+  Specific builds
+  - `trigger manager`
+  - `trigger dms`
+  - `trigger ng_manager`
+  - `trigger cvng `
+  - `trigger cmdlib`
+  - `trigger template_svc`
+  - `trigger events_fmwrk_monitor`
+  - `trigger event_server`
+  - `trigger change_data_capture`
+  -  Trigger multiple builds together: For eg: `trigger dms, manager`
 - Immutable delegate `trigger publish-delegate`
 </details>
 
@@ -26,6 +38,7 @@ You can run multiple PR check triggers by comma separating them in a single comm
 - File-Permission-Check: `trigger checkpermission`
 - Recency: `trigger recency`
 - BuildNumberMetadata: `trigger buildnum`
+- Trigger CommonChecks: `trigger commonchecks`
 - PMD: `trigger pmd`
 - Copyright Check: `trigger copyrightcheck`
 - Feature Name Check: `trigger featurenamecheck`

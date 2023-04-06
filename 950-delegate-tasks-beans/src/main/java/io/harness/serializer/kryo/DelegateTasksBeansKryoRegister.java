@@ -21,6 +21,7 @@ import io.harness.audit.streaming.outgoing.Resource;
 import io.harness.audit.streaming.outgoing.ResourceScope;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.beans.HttpCertificate;
+import io.harness.beans.HttpCertificateNG;
 import io.harness.capability.AwsRegionParameters;
 import io.harness.capability.CapabilityParameters;
 import io.harness.capability.CapabilitySubjectPermission.PermissionResult;
@@ -383,6 +384,7 @@ import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
 import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntApplyTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntCommandType;
@@ -795,6 +797,8 @@ import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.artifact.ArtifactoryTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AwsS3TasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AzureDevOpsTasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.BambooTasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.JenkinsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
@@ -2456,5 +2460,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsLambdaCustomArtifactConfig.class, 10000519);
     kryo.register(CfRouteMappingRequestNG.class, 10000520);
     kryo.register(CfRouteMappingResponseNG.class, 10000521);
+
+    kryo.register(BambooTasArtifactRequestDetails.class, 10000522);
+    kryo.register(GoogleCloudStorageTasArtifactRequestDetails.class, 10000523);
+
+    kryo.register(S3StoreTFDelegateConfig.class, 10000524);
+    kryo.register(HttpCertificateNG.class, 10000526);
   }
 }

@@ -137,7 +137,6 @@ public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> 
     }
 
     ManifestsOutcome manifestsOutcome = k8sStepHelper.resolveManifestsOutcome(ambiance);
-    cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
     ManifestOutcome k8sManifestOutcome = k8sStepHelper.getK8sSupportedManifestOutcome(manifestsOutcome.values());
 
     rollbackRequestBuilder.commandName(K8S_DEPLOYMENT_ROLLING_ROLLBACK_COMMAND_NAME)

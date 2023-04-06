@@ -15,6 +15,7 @@ java_library(
         "//980-commons:module",
         "//clients/access-control/sdk:module",
         "//idp-service/contracts/openapi/v1:idp-service-server-spec-module",
+        "//idp-service/contracts/src/main/java/io/harness/idp/annotations:module",
         "//idp-service/modules/clients:module",
         "//idp-service/src/main/java/io/harness/idp/common:module",
         "@maven//:com_google_inject_guice",

@@ -44,6 +44,9 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
   // these nodes should be actually executed again rather than them being replicated from a previous execution
   List<String> preservedNodesInRollbackMode;
 
+  // Dependencies uuids to serviceAffinity map
+  Map<String, String> serviceAffinityMap;
+
   public Dependencies getDependencies() {
     return dependencies;
   }
@@ -167,7 +170,8 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     contextMap.put(key, value);
   }
 
-  private void addDependency(String yaml, String nodeId, String yamlPath) {
+  @Override
+  public void addDependency(String yaml, String nodeId, String yamlPath) {
     if ((dependencies != null && dependencies.getDependenciesMap().containsKey(nodeId))
         || (nodes != null && nodes.containsKey(nodeId))) {
       return;
@@ -177,6 +181,18 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
       return;
     }
     dependencies = dependencies.toBuilder().putDependencies(nodeId, yamlPath).build();
+  }
+
+  @Override
+  public void addServiceAffinityToResponse(String dependencyKey, String serviceAffinity) {
+    if (serviceAffinityMap == null) {
+      serviceAffinityMap = new HashMap<>();
+    } else if (!(serviceAffinityMap instanceof HashMap)) {
+      serviceAffinityMap = new HashMap<>(serviceAffinityMap);
+    }
+    if (EmptyPredicate.isNotEmpty(serviceAffinity)) {
+      serviceAffinityMap.put(dependencyKey, serviceAffinity);
+    }
   }
 
   private void mergeStartingNodeId(String otherStartingNodeId) {

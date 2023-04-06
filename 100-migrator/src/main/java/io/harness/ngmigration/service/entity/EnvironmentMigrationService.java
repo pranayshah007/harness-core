@@ -173,7 +173,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
 
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
-    return discover(environmentService.get(appId, entityId));
+    return discover(environmentService.getWithTags(appId, entityId));
   }
 
   @Override

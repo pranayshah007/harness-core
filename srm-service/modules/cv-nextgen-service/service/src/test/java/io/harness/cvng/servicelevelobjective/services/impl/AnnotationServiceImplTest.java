@@ -128,7 +128,7 @@ public class AnnotationServiceImplTest extends CvNextGenTestBase {
             .get(0)
             .getUuid();
     assertThatThrownBy(() -> annotationService.update(annotationId, annotationDTO))
-        .hasMessage("Can not update the start/end time.");
+        .hasMessage("Can not update the start/end time of a message");
   }
 
   @Test

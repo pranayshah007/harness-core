@@ -128,6 +128,7 @@ public class GraphDataServiceImpl implements GraphDataService {
               .isRecalculatingSLI(false)
               .isCalculatingSLI(isCalculatingSLI)
               .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
+              .totalErrorBudgetFromGraph(totalErrorBudgetMinutes)
               .build();
         }
         sloValue = SLOValue.builder().goodCount(goodCountFromStart).badCount(badCountFromStart).build();
@@ -169,6 +170,7 @@ public class GraphDataServiceImpl implements GraphDataService {
         .isRecalculatingSLI(false)
         .isCalculatingSLI(isCalculatingSLI)
         .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
+        .totalErrorBudgetFromGraph(totalErrorBudgetMinutes)
         .build();
   }
 
@@ -202,7 +204,10 @@ public class GraphDataServiceImpl implements GraphDataService {
     List<SLODashboardWidget.Point> errorBudgetBurndown = new ArrayList<>();
     double errorBudgetRemainingPercentage = 100;
     double sliStatusPercentage = 0;
-    long errorBudgetRemaining = totalErrorBudgetMinutes;
+    long initialErrorBudget =
+        serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW ? totalErrorBudgetMinutes : 0;
+    long totalErrorBudget = initialErrorBudget;
+    long errorBudgetRemaining = initialErrorBudget;
     long badCountTillRangeEndTime = 0;
     long badCountTillRangeStartTime = 0;
     boolean getBadCountTillRangeStartTime = true;
@@ -234,6 +239,10 @@ public class GraphDataServiceImpl implements GraphDataService {
         boolean enabled = isMinuteEnabled(disableTimes, currentDisabledRange, sliRecord);
 
         if (sliRecord.getSliVersion() != sliVersion) {
+          if (serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.REQUEST) {
+            errorBudgetRemaining = 0;
+            totalErrorBudget = 0;
+          }
           return SLODashboardWidget.SLOGraphData.builder()
               .errorBudgetBurndown(errorBudgetBurndown)
               .errorBudgetRemaining(errorBudgetRemaining)
@@ -244,6 +253,7 @@ public class GraphDataServiceImpl implements GraphDataService {
               .errorBudgetBurned(Math.max(badCountTillRangeEndTime - badCountTillRangeStartTime, 0))
               .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
               .evaluationType(serviceLevelIndicator.getSLIEvaluationType())
+              .totalErrorBudgetFromGraph(totalErrorBudget)
               .build();
         }
 
@@ -293,9 +303,9 @@ public class GraphDataServiceImpl implements GraphDataService {
 
       errorBudgetRemainingPercentage = errorBudgetBurndown.get(errorBudgetBurndown.size() - 1).getValue();
       sliStatusPercentage = sliTrend.get(sliTrend.size() - 1).getValue();
-      errorBudgetRemaining =
-          getTotalErrorBudget(serviceLevelIndicator, totalErrorBudgetMinutes, sliValue, serviceLevelObjective)
-          - sliValue.getBadCount();
+      totalErrorBudget =
+          getTotalErrorBudget(serviceLevelIndicator, totalErrorBudgetMinutes, sliValue, serviceLevelObjective);
+      errorBudgetRemaining = totalErrorBudget - sliValue.getBadCount();
     } else if (Instant.ofEpochMilli(serviceLevelIndicator.getCreatedAt())
                    .isBefore(clock.instant().minus(Duration.ofMinutes(10)))) {
       isCalculatingSLI = true;
@@ -314,6 +324,7 @@ public class GraphDataServiceImpl implements GraphDataService {
         .errorBudgetBurned(Math.max(badCountTillRangeEndTime - badCountTillRangeStartTime, 0))
         .sliStatusPercentage(sliStatusPercentage)
         .evaluationType(serviceLevelIndicator.getSLIEvaluationType())
+        .totalErrorBudgetFromGraph(totalErrorBudget)
         .build();
   }
 
@@ -321,6 +332,9 @@ public class GraphDataServiceImpl implements GraphDataService {
       SLIValue sliValue, AbstractServiceLevelObjective serviceLevelObjective) {
     long totalErrorBudget =
         getTotalErrorBudget(serviceLevelIndicator, totalErrorBudgetMinutes, sliValue, serviceLevelObjective);
+    if (totalErrorBudget == 0l) {
+      return 100.0;
+    }
     return ((totalErrorBudget - sliValue.getBadCount()) * 100.0) / totalErrorBudget;
   }
 

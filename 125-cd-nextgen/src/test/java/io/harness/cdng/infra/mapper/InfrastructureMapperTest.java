@@ -10,6 +10,7 @@ package io.harness.cdng.infra.mapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.common.beans.NGTag;
@@ -26,7 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
 
-public class InfrastructureMapperTest {
+public class InfrastructureMapperTest extends CategoryTest {
   private AutoCloseable mocks;
 
   @Before
@@ -114,7 +115,7 @@ public class InfrastructureMapperTest {
 
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(() -> InfrastructureMapper.toInfrastructureEntity("accountId", dto))
-        .withMessageContaining("deploymentType must not be null");
+        .withMessageContaining("deploymentType: must not be null");
   }
 
   @Test
@@ -148,8 +149,8 @@ public class InfrastructureMapperTest {
 
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(() -> InfrastructureMapper.toInfrastructureEntity("accountId", dto))
-        .withMessageContaining("deploymentType must not be null")
-        .withMessageContaining("environmentRef must not be empty");
+        .withMessageContaining("deploymentType: must not be null")
+        .withMessageContaining("environmentRef: must not be empty");
   }
 
   @Test

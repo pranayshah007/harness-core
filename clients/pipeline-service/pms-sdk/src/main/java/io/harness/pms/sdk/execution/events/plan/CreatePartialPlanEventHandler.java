@@ -87,7 +87,7 @@ public class CreatePartialPlanEventHandler
   public Dependencies handleDependencies(
       PlanCreationContext ctx, AsyncCreatorResponse finalUncastedResponse, Dependencies dependencies) {
     return planCreatorService.createPlanForDependencies(
-        ctx, (MergePlanCreationResponse) finalUncastedResponse, dependencies);
+        ctx, (MergePlanCreationResponse) finalUncastedResponse, dependencies, new HashMap<>());
   }
 
   @Override

@@ -34,7 +34,7 @@ import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeBase;
 import io.harness.models.dashboard.InstanceCountDetailsByService;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.service.instance.InstanceService;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -354,7 +354,7 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
     Map<String, Map<EnvironmentType, Integer>> serviceIdToEnvTypeVsInstanceCountMap = new HashMap<>();
     List<String> serviceRefs = serviceIdentifiers.stream()
                                    .map(serviceId
-                                       -> FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+                                       -> IdentifierRefHelper.getRefFromIdentifierOrRef(
                                            accountIdentifier, orgIdentifier, projectIdentifier, serviceId))
                                    .collect(Collectors.toList());
     instanceService

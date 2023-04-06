@@ -395,12 +395,14 @@ public interface AzureConstants {
   String KUBECFG_ARGS_TENANT_ID = "--tenant-id";
   String KUBECFG_ARGS_ENV = "--environment";
   String KUBECFG_ARGS_CLIENT_SECRET = "--client-secret";
-  String KUBECFG_ARGS_CLIENT_CERT_PATH = "--client-certificate";
   String KUBECFG_ARGS_LOGIN = "--login";
   String KUBECFG_ARGS_MSI = "msi";
   String KUBECFG_ARGS_SPN = "spn";
   String KUBECFG_ARGS_AZURE_CLI = "azurecli";
   String KUBECFG_ARGS_GET_TOKEN = "get-token";
+  String AZURE_CLI_CMD = "az";
+  String AZURE_CONFIG_DIR = "AZURE_CONFIG_DIR";
+  String AZURE_LOGIN_CONFIG_DIR_PATH = ".azure";
   String ACR_DEFAULT_DOCKER_USERNAME = "00000000-0000-0000-0000-000000000000";
   String AZURE_ARM_ROLLBACK_PATTERN = "rollback_";
   String ERROR_CODE_LOCATION_NOT_FOUND = "LocationNotAvailableForDeployment";

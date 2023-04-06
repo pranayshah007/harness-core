@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.engine.pms.execution.strategy.plan.PlanExecutionStrategy.ENFORCEMENT_CALLBACK_ID;
 import static io.harness.pms.contracts.execution.Status.ERRORED;
+import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -332,6 +333,23 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
       deletePlanExecutionMetadataInternal(batchPlanExecutions);
     }
     deletePlanExecutionsInternal(planExecutionIds);
+  }
+
+  /*
+  This functions calculates the status of the based on status of all node execution status excluding current node. If
+  the status comes out to be a terminal status, we are setting it to Running as currently is running. eg -> we have
+  matrix in which few stages have failed. But currently as the  pipeline is running (may be a CI stage), then it should
+  be marked to Running
+   */
+  @Override
+  public void calculateAndUpdateRunningStatus(String planNodeId, String nodeExecutionId) {
+    Status updateStatusTo = RUNNING;
+    Status planStatus = calculateStatusExcluding(planNodeId, nodeExecutionId);
+    if (!StatusUtils.isFinalStatus(planStatus)) {
+      updateStatusTo = planStatus;
+    }
+    log.info("Marking PlanExecution %s status to %s", planNodeId, updateStatusTo);
+    updateStatus(planNodeId, updateStatusTo);
   }
 
   private void deletePlanExecutionMetadataInternal(List<PlanExecution> batchPlanExecutions) {

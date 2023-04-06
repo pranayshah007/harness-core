@@ -7,6 +7,7 @@
 
 package io.harness.gitsync.common.impl;
 
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HARI;
@@ -14,7 +15,9 @@ import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -131,6 +134,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
     doReturn((ScmConnector) connectorInfo.getConnectorConfig())
         .when(gitSyncConnectorHelper)
         .getScmConnector(any(), any(), any(), any());
+    doNothing().when(gitSyncConnectorHelper).setUserGitCredsInConnector(anyString(), any());
     when(yamlGitConfigService.get(any(), any(), any(), any()))
         .thenReturn(YamlGitConfigDTO.builder()
                         .accountIdentifier(accountIdentifier)
@@ -379,6 +383,31 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
                                                           .build();
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(gitFileTaskResponseData);
     GitFileRequest gitFileRequest = GitFileRequest.builder().filepath(filePath).branch(branch).build();
+    GitFileResponse gitFileResponse =
+        scmDelegateFacilitatorService.getFile(scope, (ScmConnector) connectorInfo.getConnectorConfig(), gitFileRequest);
+    assertThat(gitFileResponse.getBranch()).isEqualTo(branch);
+    assertThat(gitFileResponse.getCommitId()).isEqualTo(commitId);
+    assertThat(gitFileResponse.getFilepath()).isEqualTo(filePath);
+    assertThat(gitFileResponse.getContent()).isEqualTo(content);
+    assertThat(gitFileResponse.getError()).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetFileForGetFileContentOnly() {
+    GitFileTaskResponseData gitFileTaskResponseData = GitFileTaskResponseData.builder()
+                                                          .gitFileResponse(GitFileResponse.builder()
+                                                                               .statusCode(200)
+                                                                               .branch(branch)
+                                                                               .commitId(commitId)
+                                                                               .content(content)
+                                                                               .filepath(filePath)
+                                                                               .build())
+                                                          .build();
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(gitFileTaskResponseData);
+    GitFileRequest gitFileRequest =
+        GitFileRequest.builder().filepath(filePath).branch(branch).getOnlyFileContent(true).build();
     GitFileResponse gitFileResponse =
         scmDelegateFacilitatorService.getFile(scope, (ScmConnector) connectorInfo.getConnectorConfig(), gitFileRequest);
     assertThat(gitFileResponse.getBranch()).isEqualTo(branch);

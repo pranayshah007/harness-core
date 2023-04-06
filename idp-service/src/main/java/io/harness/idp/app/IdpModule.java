@@ -21,6 +21,9 @@ import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
 import io.harness.idp.configmanager.resource.AppConfigApiImpl;
+import io.harness.idp.configmanager.resource.MergedPluginsConfigApiImpl;
+import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
+import io.harness.idp.configmanager.service.ConfigEnvVariablesServiceImpl;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.service.ConfigManagerServiceImpl;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvConfigVariableEntity.BackstageEnvConfigVariableMapper;
@@ -44,8 +47,8 @@ import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.namespace.service.NamespaceServiceImpl;
 import io.harness.idp.onboarding.config.OnboardingModuleConfig;
 import io.harness.idp.onboarding.resources.OnboardingResourceApiImpl;
-import io.harness.idp.onboarding.services.OnboardingService;
-import io.harness.idp.onboarding.services.impl.OnboardingServiceImpl;
+import io.harness.idp.onboarding.service.OnboardingService;
+import io.harness.idp.onboarding.service.impl.OnboardingServiceImpl;
 import io.harness.idp.plugin.resources.PluginInfoApiImpl;
 import io.harness.idp.plugin.services.PluginInfoService;
 import io.harness.idp.plugin.services.PluginInfoServiceImpl;
@@ -92,6 +95,7 @@ import io.harness.spec.server.idp.v1.BackstageEnvVariableApi;
 import io.harness.spec.server.idp.v1.BackstagePermissionsApi;
 import io.harness.spec.server.idp.v1.ConnectorInfoApi;
 import io.harness.spec.server.idp.v1.LayoutProxyApi;
+import io.harness.spec.server.idp.v1.MergedPluginsConfigApi;
 import io.harness.spec.server.idp.v1.NamespaceApi;
 import io.harness.spec.server.idp.v1.OnboardingResourceApi;
 import io.harness.spec.server.idp.v1.PluginInfoApi;
@@ -135,6 +139,7 @@ public class IdpModule extends AbstractModule {
     registerRequiredBindings();
     install(VersionModule.getInstance());
     install(new IdpPersistenceModule());
+    install(IdpGrpcModule.getInstance());
     install(new AbstractMongoModule() {
       @Provides
       @Singleton
@@ -259,9 +264,14 @@ public class IdpModule extends AbstractModule {
     bind(PluginInfoApi.class).to(PluginInfoApiImpl.class);
     bind(PluginInfoService.class).to(PluginInfoServiceImpl.class);
     bind(ConnectorInfoApi.class).to(ConnectorInfoApiImpl.class);
+    bind(MergedPluginsConfigApi.class).to(MergedPluginsConfigApiImpl.class);
+    bind(ConfigEnvVariablesService.class).to(ConfigEnvVariablesServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("backstageEnvVariableSyncer"))
         .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("userSyncer"))
+        .toInstance(new ManagedScheduledExecutorService("UserSyncer"));
 
     MapBinder<BackstageEnvVariableType, BackstageEnvVariableMapper> backstageEnvVariableMapBinder =
         MapBinder.newMapBinder(binder(), BackstageEnvVariableType.class, BackstageEnvVariableMapper.class);

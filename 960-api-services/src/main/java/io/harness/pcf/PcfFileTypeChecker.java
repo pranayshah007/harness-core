@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -39,7 +40,7 @@ public class PcfFileTypeChecker {
   private static final Yaml yaml;
 
   static {
-    yaml = new Yaml(new SafeConstructor());
+    yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
   }
 
   public ManifestType getManifestType(String content, @Nullable String fileName, LogCallback logCallback) {

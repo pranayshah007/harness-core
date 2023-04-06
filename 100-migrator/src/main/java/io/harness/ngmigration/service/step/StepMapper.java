@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.step;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
+
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.CollectionUtils;
@@ -23,6 +25,7 @@ import io.harness.ngmigration.service.workflow.WorkflowHandler;
 import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
@@ -43,6 +46,7 @@ import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -227,5 +231,34 @@ public abstract class StepMapper {
 
   public boolean loopingSupported() {
     return false;
+  }
+
+  protected void overrideTemplateDelegateSelectorInputs(JsonNode templateInputs, List<String> delegateSelectors) {
+    JsonNode delSelectors = templateInputs.at("/spec/delegateSelectors");
+    if (delSelectors instanceof TextNode) {
+      String selectors = delSelectors.asText();
+      if (RUNTIME_INPUT.equals(selectors)) {
+        ((ObjectNode) templateInputs.get("spec"))
+            .putPOJO("delegateSelectors", ListUtils.emptyIfNull(delegateSelectors));
+      }
+    }
+  }
+
+  protected ParameterField<String> getConnectorRef(WorkflowMigrationContext context, String connectorId) {
+    String connectorRef = NGMigrationConstants.RUNTIME_INPUT;
+    if (!context.isTemplatizeStepParams()) {
+      connectorRef = MigratorUtility.getIdentifierWithScopeDefaults(context.getMigratedEntities(), connectorId,
+          NGMigrationEntityType.CONNECTOR, NGMigrationConstants.RUNTIME_INPUT);
+    }
+    return ParameterField.createValueField(connectorRef);
+  }
+
+  protected ParameterField<String> getConnectorRef(MigrationContext context, String connectorId) {
+    String connectorRef = NGMigrationConstants.RUNTIME_INPUT;
+    if (!context.isTemplatizeStepParams()) {
+      connectorRef = MigratorUtility.getIdentifierWithScopeDefaults(context.getMigratedEntities(), connectorId,
+          NGMigrationEntityType.CONNECTOR, NGMigrationConstants.RUNTIME_INPUT);
+    }
+    return ParameterField.createValueField(connectorRef);
   }
 }
