@@ -74,7 +74,7 @@ public class AbstractDataCollectionTaskTest extends CategoryTest {
   public void setupTests() throws IllegalAccessException, DataCollectionException {
     initMocks(this);
     abstractDataCollectionTask = mock(AbstractDataCollectionTask.class, Mockito.CALLS_REAL_METHODS);
-    when(delegateCVActivityLogService.getLogger(any(), any(), anyLong(), any(), any(), any())).thenReturn(logger);
+    when(delegateCVActivityLogService.getLogger(any(), any(), anyLong(), any(), any(), anyLong(), anyLong())).thenReturn(logger);
     FieldUtils.writeField(abstractDataCollectionTask, "dataCollectorFactory", dataCollectorFactory, true);
     FieldUtils.writeField(abstractDataCollectionTask, "injector", injector, true);
     FieldUtils.writeField(abstractDataCollectionTask, "cvActivityLogService", delegateCVActivityLogService, true);

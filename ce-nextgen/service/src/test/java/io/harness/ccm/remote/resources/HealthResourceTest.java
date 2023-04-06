@@ -24,15 +24,19 @@ import io.harness.rule.Owner;
 
 import com.codahale.metrics.health.HealthCheck;
 import com.google.inject.Inject;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(CE)
+@RunWith(MockitoJUnitRunner.class)
 public class HealthResourceTest extends CategoryTest {
   @Mock private HealthService healthService;
   MockedStatic<MaintenanceController> maintenanceControllerMockedStatic;
@@ -41,6 +45,11 @@ public class HealthResourceTest extends CategoryTest {
   @Before
   public void setup() {
     maintenanceControllerMockedStatic = Mockito.mockStatic(MaintenanceController.class);
+  }
+
+  @After
+  public void cleanup() {
+    maintenanceControllerMockedStatic.close();
   }
 
   @Test
