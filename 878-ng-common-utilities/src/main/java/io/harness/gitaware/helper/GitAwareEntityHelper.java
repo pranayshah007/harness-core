@@ -60,10 +60,8 @@ public class GitAwareEntityHelper {
     String branch =
         isNullOrDefault(gitContextRequestParams.getBranchName()) ? "" : gitContextRequestParams.getBranchName();
 
-    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-    if (gitEntityInfo != null) {
-      gitEntityInfo.setDefaultBranch(isEmpty(branch));
-    }
+    // Set isDefaultBranch boolean in GitEntityInfo.
+    GitContextHelper.setIsDefaultBranchInGitEntityInfo();
 
     String filePath = gitContextRequestParams.getFilePath();
     if (isNullOrDefault(filePath)) {

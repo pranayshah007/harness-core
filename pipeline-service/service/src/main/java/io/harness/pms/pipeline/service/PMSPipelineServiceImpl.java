@@ -8,7 +8,6 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
@@ -188,15 +187,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       // Get branch from SCMGitMetadata.
       String branch = GitAwareContextHelper.getBranchFromSCMGitMetadata();
 
-      if (doPublishSetupUsages(createdEntity)) {
-        Map<String, String> metadata = new HashMap<>();
-        if (branch != null) {
-          metadata.put("branch", branch);
-        }
-
-        pipelineSetupUsageHelper.publishSetupUsageEvent(
-            pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), metadata);
-      }
+      // Publishing Setup Usages.
+      publishSetupUsages(createdEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
 
       try {
         String branchInRequest = GitAwareContextHelper.getBranchInRequest();
@@ -220,7 +212,21 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         || (pipelineEntity.getStoreType() == StoreType.REMOTE && defaultBranchCheckForGitX)) {
       return true;
     }
+
     return false;
+  }
+
+  private void publishSetupUsages(
+      PipelineEntity pipelineEntity, List<EntityDetailProtoDTO> referredEntities, String branch) {
+    if (doPublishSetupUsages(pipelineEntity)) {
+      Map<String, String> metadata = new HashMap<>();
+
+      if (branch != null) {
+        metadata.put("branch", branch);
+      }
+
+      pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, referredEntities, metadata);
+    }
   }
 
   private PipelineCRUDResult createPipeline(PipelineEntity pipelineEntity) {
@@ -359,17 +365,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
         pipelineEntity = pipelineEntityWithReferences.getPipelineEntity();
 
+        // Get branch from SCMGitMetadata.
         String branch = GitAwareContextHelper.getBranchFromSCMGitMetadata();
 
-        if (doPublishSetupUsages(pipelineEntity)) {
-          Map<String, String> metadata = new HashMap<>();
-          if (branch != null) {
-            metadata.put("branch", branch);
-          }
-
-          pipelineSetupUsageHelper.publishSetupUsageEvent(
-              pipelineEntity, pipelineEntityWithReferences.getReferredEntities(), metadata);
-        }
+        // Publishing setup usages.
+        publishSetupUsages(pipelineEntity, pipelineEntityWithReferences.getReferredEntities(), branch);
 
       } catch (IOException e) {
         log.error("Failed to update the pipeline info for the gitX enabled pipeline while reloading from git.");
@@ -619,15 +619,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       // Get branch from SCMGitMetadata.
       String branch = GitAwareContextHelper.getBranchFromSCMGitMetadata();
 
-      if (doPublishSetupUsages(pipelineEntity) && entityWithUpdatedInfoWithReferences != null) {
-        Map<String, String> metadata = new HashMap<>();
-        if (branch != null) {
-          metadata.put("branch", branch);
-        }
-
-        pipelineSetupUsageHelper.publishSetupUsageEvent(
-            pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), metadata);
-      }
+      // Publish setup usages.
+      publishSetupUsages(pipelineEntity, entityWithUpdatedInfoWithReferences.getReferredEntities(), branch);
 
       if (updatedResult == null) {
         throw new InvalidRequestException(format(
