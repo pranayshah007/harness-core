@@ -31,7 +31,6 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
-import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.constraints.NotNull;
