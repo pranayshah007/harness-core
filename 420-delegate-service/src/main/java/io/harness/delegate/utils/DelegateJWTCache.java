@@ -17,6 +17,7 @@ import com.google.inject.Singleton;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(DEL)
 @Singleton
@@ -25,9 +26,6 @@ public class DelegateJWTCache {
 
   private final Cache<String, DelegateJWTCacheValue> delegateJWTCache =
       Caffeine.newBuilder().maximumSize(100000).expireAfterWrite(25, TimeUnit.MINUTES).build();
-
-  private final Cache<String, String> revokedTokenCache =
-      Caffeine.newBuilder().maximumSize(100000).expireAfterWrite(23, TimeUnit.MINUTES).build();
 
   // if delegateTokenName is null that means delegate is not reusing the jwt.
   public void setDelegateJWTCache(
@@ -46,21 +44,22 @@ public class DelegateJWTCache {
   public DelegateJWTCacheValue getDelegateJWTCache(String cacheKey) {
     try {
       readWriteLock.readLock().lock();
-      DelegateJWTCacheValue delegateJWTCacheValue = delegateJWTCache.getIfPresent(cacheKey);
-      if (delegateJWTCacheValue != null
-          && revokedTokenCache.getIfPresent(delegateJWTCacheValue.getDelegateTokenName()) != null) {
-        delegateJWTCache.invalidate(cacheKey);
-        return new DelegateJWTCacheValue(false, 0L, delegateJWTCacheValue.getDelegateTokenName());
-      }
-      return delegateJWTCacheValue;
+      return delegateJWTCache.getIfPresent(cacheKey);
     } finally {
       readWriteLock.readLock().unlock();
     }
   }
 
-  public void setRevokedTokenCache(String delegateTokenName, String delegateTokenId) {
-    if (delegateTokenName != null) {
-      revokedTokenCache.put(delegateTokenName, delegateTokenId);
-    }
+  public void invalidateJWTTokenCache(@NotNull String delegateTokenName, @NotNull String accountId) {
+    delegateJWTCache.asMap()
+        .entrySet()
+        .stream()
+        .filter(ent
+            -> delegateTokenName.equals(ent.getValue().getDelegateTokenName())
+                && accountId.equals(ent.getValue().getAccountId()))
+        .forEach(delegateJWTCacheValueEntry
+            -> setDelegateJWTCache(delegateJWTCacheValueEntry.getKey(),
+                delegateJWTCacheValueEntry.getValue().getDelegateTokenName(),
+                new DelegateJWTCacheValue(false, 0L, null, delegateJWTCacheValueEntry.getValue().getAccountId())));
   }
 }

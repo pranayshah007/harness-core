@@ -129,7 +129,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     // mins.
 
     publishRevokeTokenAuditEvent(updatedDelegateToken);
-    delegateJWTCache.setRevokedTokenCache(updatedDelegateToken.getName(), updatedDelegateToken.getUuid());
+    delegateJWTCache.invalidateJWTTokenCache(updatedDelegateToken.getName(), updatedDelegateToken.getAccountId());
     return getDelegateTokenDetails(updatedDelegateToken, false);
   }
 

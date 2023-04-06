@@ -119,7 +119,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
         persistence.findAndModify(filterQuery, updateOperations, new FindAndModifyOptions());
     auditServiceHelper.reportForAuditingUsingAccountId(
         accountId, originalDelegateToken, updatedDelegateToken, Event.Type.UPDATE);
-    delegateJWTCache.setRevokedTokenCache(updatedDelegateToken.getName(), updatedDelegateToken.getUuid());
+    delegateJWTCache.invalidateJWTTokenCache(updatedDelegateToken.getName(), updatedDelegateToken.getAccountId());
   }
 
   @Override

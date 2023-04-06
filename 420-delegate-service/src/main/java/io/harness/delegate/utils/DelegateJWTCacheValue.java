@@ -10,6 +10,7 @@ package io.harness.delegate.utils;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import lombok.Builder;
 import lombok.Data;
 
 @Data
@@ -18,4 +19,5 @@ public class DelegateJWTCacheValue {
   private final boolean isValid;
   private final long expiryInMillis;
   private final String delegateTokenName;
+  private final String accountId;
 }
