@@ -108,13 +108,15 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
     this.config = (SshSessionConfig) config;
   }
 
-  // Done
   @Override
   public CommandExecutionStatus executeCommandString(String command, StringBuffer output, boolean displayCommand) {
     if (config.isUseSshClient()) {
       try {
         ExecResponse response = SshClientManager.exec(
             ExecRequest.builder().command(command).displayCommand(displayCommand).build(), config, logCallback);
+        if (output != null && isNotEmpty(response.getOutput())) {
+          output.append(response.getOutput());
+        }
         return response.getStatus();
       } catch (SshClientException ex) {
         log.error("Failed to exec due to: ", ex);
@@ -132,7 +134,6 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
     }
   }
 
-  // this is tested
   @NotNull
   private CommandExecutionStatus executeCommandString(
       String command, StringBuffer output, boolean displayCommand, boolean isRetry) {
@@ -222,13 +223,11 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
     }
   }
 
-  // done
   @Override
   public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect) {
     return executeCommandString(command, envVariablesToCollect, Collections.emptyList(), null);
   }
 
-  // done
   @Override
   public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
       List<String> secretEnvVariablesToCollect, Long timeoutInMillis) {
@@ -250,7 +249,6 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
     }
   }
 
-  // done
   private ExecuteCommandResponse executeWithSshClient(
       String command, List<String> envVariablesToCollect, List<String> secretEnvVariablesToCollect) {
     command = setupBashEnvironment(command, config, envVariablesToCollect, secretEnvVariablesToCollect);
@@ -260,11 +258,11 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
     if (response.getStatus() == SUCCESS
         && isNotEmpty(getVariables(envVariablesToCollect, secretEnvVariablesToCollect))) {
       SftpResponse sftpResponse =
-          SshClientManager.sftpUpload(SftpRequest.builder()
-                                          .fileName(getEnvVariablesFilename(config))
-                                          .directory(resolveEnvVarsInPath(config.getWorkingDirectory() + "/"))
-                                          .cleanup(true)
-                                          .build(),
+          SshClientManager.sftpDownload(SftpRequest.builder()
+                                            .fileName(getEnvVariablesFilename(config))
+                                            .directory(resolveEnvVarsInPath(config.getWorkingDirectory() + "/"))
+                                            .cleanup(true)
+                                            .build(),
               config, logCallback);
       String content = sftpResponse.getContent();
       BufferedReader reader = null;
@@ -295,7 +293,6 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
     }
   }
 
-  // done
   private String setupBashEnvironment(String command, SshSessionConfig sshSessionConfig,
       List<String> envVariablesToCollect, List<String> secretEnvVariablesToCollect) {
     String directoryPath = resolveEnvVarsInPath(sshSessionConfig.getWorkingDirectory() + "/");
@@ -320,13 +317,11 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
     return command;
   }
 
-  // done
   @NotNull
   private static String getEnvVariablesFilename(SshSessionConfig sshSessionConfig) {
     return "harness-" + sshSessionConfig.getExecutionId() + ".out";
   }
 
-  // done
   @NotNull
   private static List<String> getVariables(
       List<String> envVariablesToCollect, List<String> secretEnvVariablesToCollect) {
@@ -343,7 +338,6 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
     return allVariablesToCollect;
   }
 
-  // done
   public ExecuteCommandResponse getExecuteCommandResponse(
       String command, List<String> envVariablesToCollect, List<String> secretEnvVariablesToCollect, boolean isRetry) {
     ShellExecutionDataBuilder executionDataBuilder = ShellExecutionData.builder();
@@ -483,7 +477,6 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
     }
   }
 
-  // done
   protected String buildExportForEnvironmentVariables(Map<String, String> envVariables) {
     StringBuilder sb = new StringBuilder();
     for (Map.Entry<String, String> entry : envVariables.entrySet()) {
@@ -492,7 +485,6 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
     return sb.toString();
   }
 
-  // done
   private Channel getSftpConnectedChannel() throws JSchException {
     Channel channel = SshSessionManager.getCachedSession(this.config, this.logCallback).openChannel("sftp");
     try {

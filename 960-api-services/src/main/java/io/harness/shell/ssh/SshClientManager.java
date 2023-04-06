@@ -39,6 +39,8 @@ public class SshClientManager {
       String key = cacheKey.get();
       if (!clientCache.containsKey(key)) {
         clientCache.put(key, SshFactory.getSshClient(sshSessionConfig, logCallback));
+      } else {
+        clientCache.get(key).setLogCallback(logCallback);
       }
       return clientCache.get(key);
     } else {
@@ -52,17 +54,17 @@ public class SshClientManager {
     try {
       return sshClient.exec(execRequest);
     } finally {
-      cleanUp(sshSessionConfig, sshClient);
+      cleanUpIfNotInCache(sshSessionConfig, sshClient);
     }
   }
 
-  public SftpResponse sftpUpload(SftpRequest sftpRequest, SshSessionConfig sshSessionConfig, LogCallback logCallback)
+  public SftpResponse sftpDownload(SftpRequest sftpRequest, SshSessionConfig sshSessionConfig, LogCallback logCallback)
       throws SshClientException {
     SshClient sshClient = updateCache(sshSessionConfig, logCallback);
     try {
       return sshClient.sftpDownload(sftpRequest);
     } finally {
-      cleanUp(sshSessionConfig, sshClient);
+      cleanUpIfNotInCache(sshSessionConfig, sshClient);
     }
   }
 
@@ -72,12 +74,12 @@ public class SshClientManager {
     try {
       return sshClient.scpUpload(scpRequest);
     } finally {
-      cleanUp(sshSessionConfig, sshClient);
+      cleanUpIfNotInCache(sshSessionConfig, sshClient);
     }
   }
 
-  public void evictCache(SshSessionConfig config) throws SshClientException {
-    Optional<String> cacheKey = SshUtils.getCacheKey(config);
+  public void evictCacheAndDisconnect(String executionId, String host) throws SshClientException {
+    Optional<String> cacheKey = SshUtils.getCacheKey(executionId, host);
     if (cacheKey.isPresent()) {
       SshClient sshClient = clientCache.get(cacheKey.get());
       if (null != sshClient) {
@@ -87,7 +89,7 @@ public class SshClientManager {
     }
   }
 
-  private void cleanUp(SshSessionConfig sshSessionConfig, SshClient sshClient) throws SshClientException {
+  private void cleanUpIfNotInCache(SshSessionConfig sshSessionConfig, SshClient sshClient) throws SshClientException {
     if (SshUtils.getCacheKey(sshSessionConfig).isEmpty()) {
       sshClient.close();
     }

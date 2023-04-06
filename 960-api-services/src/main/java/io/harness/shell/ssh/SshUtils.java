@@ -13,7 +13,6 @@ import io.harness.shell.SshSessionConfig;
 
 import java.util.Optional;
 import java.util.regex.Pattern;
-import lombok.experimental.UtilityClass;
 
 public class SshUtils {
   public static final String SSH_NETWORK_PROXY = "SSH_NETWORK_PROXY";
@@ -38,15 +37,20 @@ public class SshUtils {
    * The constant log.
    */
   public static final String CHANNEL_IS_NOT_OPENED = "channel is not opened.";
+  public static final int JSCH_SCP_ALLOWED_BYTES = 1024 * 1024; // 1MB
 
   public static Optional<String> getCacheKey(SshSessionConfig config) {
-    if (null == config || isEmpty(config.getExecutionId()) || isEmpty(config.getHost())) {
+    if (null == config) {
       return Optional.empty();
     } else {
-      return Optional.of(getKey(config.getExecutionId(), config.getHost()));
+      return getCacheKey(config.getExecutionId(), config.getHost());
     }
   }
-  private static String getKey(String executionId, String host) {
-    return executionId + "~" + host.trim();
+  public static Optional<String> getCacheKey(String executionId, String host) {
+    if (isEmpty(executionId) || isEmpty(host)) {
+      return Optional.empty();
+    } else {
+      return Optional.of(executionId + "~" + host.trim());
+    }
   }
 }

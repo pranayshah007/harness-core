@@ -36,8 +36,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class SshClient implements AutoCloseable {
   @Getter(AccessLevel.PROTECTED) @Setter(AccessLevel.PROTECTED) private SshSessionConfig sshSessionConfig;
-  @Getter(AccessLevel.PROTECTED) @Setter(AccessLevel.PROTECTED) private LogCallback logCallback;
-  private List<SshConnection> connectionCache = new LinkedList<>();
+  @Getter(AccessLevel.PROTECTED) @Setter private LogCallback logCallback;
+  private final List<SshConnection> connectionCache = new LinkedList<>();
 
   protected char[] getCopyOfKey() {
     return Arrays.copyOf(sshSessionConfig.getKey(), sshSessionConfig.getKey().length);

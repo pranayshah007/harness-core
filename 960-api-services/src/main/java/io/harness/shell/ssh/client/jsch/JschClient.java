@@ -21,6 +21,7 @@ import static io.harness.shell.SshHelperUtils.normalizeError;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
 import static io.harness.shell.ssh.SshUtils.CHANNEL_IS_NOT_OPENED;
 import static io.harness.shell.ssh.SshUtils.CHUNK_SIZE;
+import static io.harness.shell.ssh.SshUtils.JSCH_SCP_ALLOWED_BYTES;
 import static io.harness.shell.ssh.SshUtils.LINE_BREAK_PATTERN;
 import static io.harness.shell.ssh.SshUtils.MAX_BYTES_READ_PER_CHANNEL;
 import static io.harness.shell.ssh.SshUtils.SSH_NETWORK_PROXY;
@@ -78,8 +79,6 @@ import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 public class JschClient extends SshClient {
-  private static final int SCP_ALLOWED_BYTES = 1024 * 1024; // 1MB
-
   public JschClient(SshSessionConfig config, LogCallback logCallback) {
     setSshSessionConfig(config);
     setLogCallback(logCallback);
@@ -371,7 +370,7 @@ public class JschClient extends SshClient {
         }
         totalBytesRead++;
         sb.append((char) c);
-      } while (c != '\n' && totalBytesRead <= SCP_ALLOWED_BYTES);
+      } while (c != '\n' && totalBytesRead <= JSCH_SCP_ALLOWED_BYTES);
 
       if (b <= 2) {
         saveExecutionLogError(sb.toString());
