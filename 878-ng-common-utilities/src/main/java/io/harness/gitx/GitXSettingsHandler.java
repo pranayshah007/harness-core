@@ -7,6 +7,9 @@
 
 package io.harness.gitx;
 
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
@@ -17,7 +20,8 @@ import io.harness.remote.client.NGRestUtils;
 
 import com.google.inject.Inject;
 
-public class GitExperienceSettingsHandler {
+@OwnedBy(PIPELINE)
+public class GitXSettingsHandler {
   @Inject private NGSettingsClient ngSettingsClient;
   public boolean isGitExperienceEnforcedInSettings(
       String accountIdentifier, String orgIdentifier, String projIdentifier) {

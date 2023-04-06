@@ -94,8 +94,8 @@ public class TemplateGitXServiceImplTest {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    templateGitXService = new TemplateGitXServiceImpl(
-        scmGitSyncHelper, gitSyncSdkService, templateRepository, gitAwareEntityHelper, ngSettingsClient);
+    templateGitXService =
+        new TemplateGitXServiceImpl(scmGitSyncHelper, gitSyncSdkService, templateRepository, gitAwareEntityHelper);
   }
 
   @Test
