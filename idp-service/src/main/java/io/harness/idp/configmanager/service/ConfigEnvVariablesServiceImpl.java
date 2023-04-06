@@ -109,6 +109,15 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
         getEnvVariablesFromEntities(pluginsEnvVariablesEntity), accountIdentifier);
   }
 
+  @Override
+  public List<String> getAllEnvVariablesForAccountIdentifierAndPluginId(String accountIdentifier, String pluginId) {
+    List<PluginConfigEnvVariablesEntity> pluginsEnvVariablesEntity =
+        configEnvVariablesRepository.findAllByAccountIdentifierAndPluginId(accountIdentifier, pluginId);
+    return pluginsEnvVariablesEntity.stream()
+        .map(PluginConfigEnvVariablesEntity::getEnvName)
+        .collect(Collectors.toList());
+  }
+
   private List<BackstageEnvVariable> getListOfBackstageEnvSecretVariable(AppConfig appConfig) {
     List<BackstageEnvSecretVariable> appConfigEnvVariables = appConfig.getEnvVariables();
     List<BackstageEnvVariable> resultList = new ArrayList<>();

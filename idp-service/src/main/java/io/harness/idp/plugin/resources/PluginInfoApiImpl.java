@@ -31,20 +31,20 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
-@NextGenManagerAuth
+// @NextGenManagerAuth
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
 public class PluginInfoApiImpl implements PluginInfoApi {
   private PluginInfoService pluginInfoService;
   @Override
-  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+//   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response getPlugins(@AccountIdentifier String harnessAccount) {
     List<PluginInfo> plugins = pluginInfoService.getAllPluginsInfo(harnessAccount);
     return Response.status(Response.Status.OK).entity(PluginInfoMapper.toResponseList(plugins)).build();
   }
 
   @Override
-  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+//   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response getPluginsInfoPluginId(String pluginId, @AccountIdentifier String harnessAccount) {
     try {
       PluginDetailedInfo pluginDetailedInfo = pluginInfoService.getPluginDetailedInfo(pluginId, harnessAccount);

@@ -1040,10 +1040,24 @@ components:
           $ref: '#/components/schemas/Exports'
           x-stoplight:
             id: ns1ky9089aalt
+        env_variables:
+          x-stoplight:
+            id: 4tj9fofa4b3hn
+          type: array
+          items:
+            $ref: '#/components/schemas/EnvVariableMap'
+            x-stoplight:
+              id: ronpvj9j00zjn
+        saved:
+          type: boolean
+          x-stoplight:
+            id: b06clr6ww9ku0
       required:
         - plugin_details
         - config
         - exports
+        - env_variables
+        - saved
     ManualImportEntityRequest:
       title: ManualImportEntityRequest
       x-stoplight:
@@ -1246,6 +1260,23 @@ components:
             id: 4cbw2qu8gjz0n
       required:
         - merged_config
+    EnvVariableMap:
+      title: EnvVariableMap
+      x-stoplight:
+        id: aa2n2ly90hai3
+      type: object
+      properties:
+        env_name:
+          type: string
+          x-stoplight:
+            id: szydq4xh36j9t
+        secret_id:
+          type: string
+          x-stoplight:
+            id: wqg8pykhnehie
+      required:
+        - env_name
+        - secret_id
   parameters:
     AccountHeader:
       name: Harness-Account
