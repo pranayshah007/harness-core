@@ -120,8 +120,7 @@ public class DelegateSetupResourceV2 {
       @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier,
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @Body @RequestBody(description = "Details of the Delegate filter properties to be applied")
-      DelegateFilterPropertiesDTO delegateFilterPropertiesDTO,
-      @BeanParam PageRequest pageRequest) {
+      DelegateFilterPropertiesDTO delegateFilterPropertiesDTO, @BeanParam PageRequest pageRequest) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
 
