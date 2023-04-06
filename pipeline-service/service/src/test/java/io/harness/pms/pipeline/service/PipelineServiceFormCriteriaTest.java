@@ -22,6 +22,7 @@ import io.harness.PipelineSettingsService;
 import io.harness.category.element.UnitTests;
 import io.harness.filter.service.FilterService;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.gitx.GitXSettingsHandler;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -34,7 +35,6 @@ import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
-import io.harness.gitx.GitXSettingsHandler;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
@@ -70,8 +70,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
   @Inject private PipelineMetadataService pipelineMetadataService;
 
   @Mock private PipelineSettingsService pipelineSettingsService;
-  @Mock
-  GitXSettingsHandler gitXSettingsHandler;
+  @Mock GitXSettingsHandler gitXSettingsHandler;
   @InjectMocks private PMSPipelineServiceImpl pmsPipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
 
