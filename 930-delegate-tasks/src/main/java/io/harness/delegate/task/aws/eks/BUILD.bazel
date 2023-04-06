@@ -21,12 +21,12 @@ java_library(
         "//970-api-services-beans/src/main/java/io/harness/k8s/model:module",
         "//970-api-services-beans/src/main/java/io/harness/k8s/model/kubeconfig:module",
         "//970-api-services-beans/src/main/java/io/harness/logging:module",
+        "//970-api-services-beans/src/main/java/software/wings/beans:module",
+        "//970-ng-commons/src/main/java/io/harness/encryption:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//980-commons/src/main/java/io/harness/exception:module",
-        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_inject_guice",
         "@maven//:org_apache_commons_commons_lang3",
-        "@maven//:software_amazon_awssdk_eks",
     ],
 )
 

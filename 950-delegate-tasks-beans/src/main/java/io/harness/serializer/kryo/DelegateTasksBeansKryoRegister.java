@@ -21,6 +21,7 @@ import io.harness.audit.streaming.outgoing.Resource;
 import io.harness.audit.streaming.outgoing.ResourceScope;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.beans.HttpCertificate;
+import io.harness.beans.HttpCertificateNG;
 import io.harness.capability.AwsRegionParameters;
 import io.harness.capability.CapabilityParameters;
 import io.harness.capability.CapabilitySubjectPermission.PermissionResult;
@@ -2464,5 +2465,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GoogleCloudStorageTasArtifactRequestDetails.class, 10000523);
 
     kryo.register(S3StoreTFDelegateConfig.class, 10000524);
+    kryo.register(HttpCertificateNG.class, 10000526);
   }
 }

@@ -19,6 +19,7 @@ import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.getFilesUnderPath;
 import static io.harness.filesystem.FileIo.getFilesUnderPathMatchesFirstLine;
+import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
 import static io.harness.helm.HelmConstants.HELM_PATH_PLACEHOLDER;
 import static io.harness.helm.HelmConstants.HELM_RELEASE_LABEL;
 import static io.harness.k8s.K8sConstants.KUBERNETES_CHANGE_CAUSE_ANNOTATION;
@@ -53,7 +54,6 @@ import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 import static software.wings.beans.LogWeight.Normal;
-import static software.wings.delegatetasks.helm.HelmTaskHelper.copyManifestFilesToWorkingDir;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.Boolean.FALSE;
@@ -2587,6 +2587,17 @@ public class K8sTaskHelperBase {
     }
   }
 
+  public static void copyManifestFilesToWorkingDir(File src, File dest) throws IOException {
+    if (src.isDirectory()) {
+      FileUtils.copyDirectory(src, dest);
+    } else {
+      Path destFilePath = Paths.get(dest.getPath(), src.getName());
+      FileUtils.copyFile(src, destFilePath.toFile());
+    }
+    deleteDirectoryAndItsContentIfExists(src.getAbsolutePath());
+    waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+  }
+
   private boolean downloadManifestFilesFromGit(StoreDelegateConfig storeDelegateConfig, String manifestFilesDirectory,
       LogCallback executionLogCallback, String accountId) throws Exception {
     if (!(storeDelegateConfig instanceof GitStoreDelegateConfig)) {
@@ -2683,7 +2694,7 @@ public class K8sTaskHelperBase {
     File dest = new File(workingDirectory);
     deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
     FileUtils.copyDirectory(src, dest);
-    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+    waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
   }
 
   public boolean downloadFilesFromChartRepo(ManifestDelegateConfig manifestDelegateConfig, String destinationDirectory,

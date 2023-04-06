@@ -8,11 +8,11 @@
 package io.harness.ccm.views.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
-import static io.harness.ccm.views.businessMapping.entities.SharingStrategy.PROPORTIONAL;
+import static io.harness.ccm.views.businessmapping.entities.SharingStrategy.PROPORTIONAL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
-import io.harness.ccm.views.businessMapping.entities.SharedCost;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.SharedCost;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;

@@ -235,6 +235,8 @@ public class HTTPStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.stage1.spec.execution.steps.step1.spec.method",
             "pipeline.stages.stage1.spec.execution.steps.step1.spec.requestBody",
             "pipeline.stages.stage1.spec.execution.steps.step1.spec.assertion",
+            "pipeline.stages.stage1.spec.execution.steps.step1.spec.certificate",
+            "pipeline.stages.stage1.spec.execution.steps.step1.spec.certificateKey",
             "pipeline.stages.stage1.spec.execution.steps.step1.when");
 
     // yaml extra properties
