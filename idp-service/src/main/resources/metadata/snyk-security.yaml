@@ -13,8 +13,24 @@ config: |-
       headers:
         User-Agent: tech-services/backstage-plugin/1.0
         Authorization: token ${SNYK_TOKEN}
-tokens:
+environmentVariables:
   - SNYK_TOKEN
 exports:
-  defaultEntityTypes: []
-  exportDetails: []
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: CARD
+      name: SnykOverview
+      addByDefault: true
+      layoutSchemaSpecs:
+        gridProps:
+          md: 6
+    - type: TAB_CONTENT
+      name: EntitySnykContent
+      addByDefault: true
+      defaultRoute: /snyk
+      layoutSchemaSpecs:
+        name: EntitySnykContent
+        title: Snyk
+        contents:
+          - component: EntitySnykContent

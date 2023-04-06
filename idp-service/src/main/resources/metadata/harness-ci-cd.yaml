@@ -13,8 +13,18 @@ config: |-
       target: 'https://app.harness.io/'
       headers:
         'x-api-key': ${HARNESS_TOKEN}
-tokens:
+environmentVariables:
   - HARNESS_TOKEN
 exports:
-  defaultEntityTypes: []
-  exportDetails: []
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: TAB_CONTENT
+      name: EntityHarnessCiCdContent
+      addByDefault: true
+      defaultRoute: /ci-cd
+      layoutSchemaSpecs:
+        name: EntityHarnessCiCdContent
+        title: CI/CD
+        contents:
+          - component: EntityHarnessCiCdContent

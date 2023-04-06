@@ -8,14 +8,18 @@ iconUrl: https://backstage.io/img/github-pull-requests-board-logo.svg
 imageUrl: ''
 exports:
   defaultEntityTypes:
-    - component
     - service
-    - website
   exportDetails:
     - type: CARD
       name: EntityTeamPullRequestsCard
       addByDefault: true
+      layoutSchemaSpecs: {}
     - type: TAB_CONTENT
       name: EntityTeamPullRequestsContent
       addByDefault: true
       defaultRoute: /pull-requests
+      layoutSchemaSpecs:
+        name: EntityTeamPullRequestsContent
+        title: Pull Request
+        contents:
+          - component: EntityTeamPullRequestsContent

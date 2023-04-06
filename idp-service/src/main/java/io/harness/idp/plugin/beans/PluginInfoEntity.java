@@ -43,7 +43,7 @@ public class PluginInfoEntity implements PersistentEntity {
   @Builder.Default private boolean core = false;
   private String source;
   private String config;
-  private List<String> tokens;
+  @JsonProperty("environmentVariables") private List<String> envVariables;
   private String iconUrl;
   private String imageUrl;
   @JsonProperty("exports") private ExportsData exports;

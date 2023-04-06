@@ -21,7 +21,6 @@ import io.harness.idp.plugin.mappers.PluginInfoMapper;
 import io.harness.idp.plugin.repositories.PluginInfoRepository;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
-import io.harness.spec.server.idp.v1.model.EnvVariableMap;
 import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
 import io.harness.spec.server.idp.v1.model.PluginInfo;
 
@@ -67,27 +66,21 @@ public class PluginInfoServiceImpl implements PluginInfoService {
     }
     PluginInfoEntity pluginEntity = pluginInfoEntity.get();
     AppConfig appConfig = configManagerService.getPluginConfig(harnessAccount, identifier);
-    List<EnvVariableMap> envVariableMaps = new ArrayList<>();
-    if (pluginEntity.getTokens() != null && appConfig != null) {
+    List<BackstageEnvSecretVariable> backstageEnvSecretVariables = new ArrayList<>();
+    if (pluginEntity.getEnvVariables() != null && appConfig != null) {
       List<String> envNames =
           configEnvVariablesService.getAllEnvVariablesForAccountIdentifierAndPluginId(harnessAccount, identifier);
-      List<BackstageEnvSecretVariable> backstageEnvSecretVariables =
+      backstageEnvSecretVariables =
           backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(harnessAccount, envNames);
-      backstageEnvSecretVariables.forEach(backstageEnvSecretVariable -> {
-        EnvVariableMap envVariableMap = new EnvVariableMap();
-        envVariableMap.setEnvName(backstageEnvSecretVariable.getEnvName());
-        envVariableMap.setSecretId(backstageEnvSecretVariable.getHarnessSecretIdentifier());
-        envVariableMaps.add(envVariableMap);
-      });
-    } else if (pluginEntity.getTokens() != null) {
-      pluginEntity.getTokens().forEach(token -> {
-        EnvVariableMap envVariableMap = new EnvVariableMap();
-        envVariableMap.setEnvName(token);
-        envVariableMap.setSecretId(null);
-        envVariableMaps.add(envVariableMap);
-      });
+    } else if (pluginEntity.getEnvVariables() != null) {
+      for (String envVariable : pluginEntity.getEnvVariables()) {
+        BackstageEnvSecretVariable backstageEnvSecretVariable = new BackstageEnvSecretVariable();
+        backstageEnvSecretVariable.setEnvName(envVariable);
+        backstageEnvSecretVariable.setHarnessSecretIdentifier(null);
+        backstageEnvSecretVariables.add(backstageEnvSecretVariable);
+      }
     }
-    return PluginDetailedInfoMapper.toDTO(pluginEntity, appConfig, envVariableMaps);
+    return PluginDetailedInfoMapper.toDTO(pluginEntity, appConfig, backstageEnvSecretVariables);
   }
 
   @Override

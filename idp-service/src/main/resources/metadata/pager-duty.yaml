@@ -12,13 +12,15 @@ config: |-
       target: https://api.pagerduty.com
       headers:
         Authorization: Token token=${PAGERDUTY_TOKEN}
-tokens:
+environmentVariables:
   - PAGERDUTY_TOKEN
 exports:
   defaultEntityTypes:
-    - component
     - service
   exportDetails:
     - type: CARD
       name: EntityPagerDutyCard
       addByDefault: true
+      layoutSchemaSpecs:
+        gridProps:
+          md: 6

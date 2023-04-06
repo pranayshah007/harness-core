@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
 import io.harness.idp.plugin.enums.ExportType;
 import io.harness.spec.server.idp.v1.model.AppConfig;
-import io.harness.spec.server.idp.v1.model.EnvVariableMap;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.Exports;
 import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
 
@@ -22,8 +22,8 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class PluginDetailedInfoMapper {
-  public PluginDetailedInfo toDTO(
-      PluginInfoEntity pluginInfoEntity, AppConfig appConfig, List<EnvVariableMap> envVariableMapList) {
+  public PluginDetailedInfo toDTO(PluginInfoEntity pluginInfoEntity, AppConfig appConfig,
+      List<BackstageEnvSecretVariable> backstageEnvSecretVariables) {
     PluginDetailedInfo pluginDetailedInfo = new PluginDetailedInfo();
     boolean isConfigSaved = appConfig != null;
     boolean isEnabled = isConfigSaved && appConfig.isEnabled();
@@ -42,7 +42,7 @@ public class PluginDetailedInfoMapper {
     pluginDetailedInfo.setSaved(isConfigSaved);
     pluginDetailedInfo.setExports(exports);
     pluginDetailedInfo.setConfig(config);
-    pluginDetailedInfo.setEnvVariables(envVariableMapList);
+    pluginDetailedInfo.setEnvVariables(backstageEnvSecretVariables);
     return pluginDetailedInfo;
   }
 

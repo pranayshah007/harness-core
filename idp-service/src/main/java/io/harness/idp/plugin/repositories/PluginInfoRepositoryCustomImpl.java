@@ -50,7 +50,7 @@ public class PluginInfoRepositoryCustomImpl implements PluginInfoRepositoryCusto
     update.set(PluginInfoEntityKeys.iconUrl, pluginInfoEntity.getIconUrl());
     update.set(PluginInfoEntityKeys.exports, pluginInfoEntity.getExports());
     update.set(PluginInfoEntityKeys.config, pluginInfoEntity.getConfig());
-    update.set(PluginInfoEntityKeys.tokens, pluginInfoEntity.getTokens());
+    update.set(PluginInfoEntityKeys.envVariables, pluginInfoEntity.getEnvVariables());
     return update;
   }
 }
