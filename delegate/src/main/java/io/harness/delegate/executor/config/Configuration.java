@@ -14,7 +14,8 @@ import lombok.Value;
 @Builder
 public class Configuration {
   @Builder.Default private String taskInputPath = "/etc/config/taskfile";
-  @Builder.Default private String delegateToken = System.getenv(Env.DELEGATE_TOKEN.name());
+  @Builder.Default
+  private String delegateToken = "2f6b0988b6fb3370073c3d0505baee58" /*System.getenv(Env.DELEGATE_TOKEN.name())*/;
   /**
    * set to false when testing locally without delegate core
    */

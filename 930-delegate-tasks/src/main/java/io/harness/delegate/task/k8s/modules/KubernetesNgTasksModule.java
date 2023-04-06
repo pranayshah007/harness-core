@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.k8s.modules;
 
+import io.harness.aws.v2.eks.EksV2Client;
+import io.harness.aws.v2.eks.EksV2ClientImpl;
 import io.harness.azure.client.AzureAuthorizationClient;
 import io.harness.azure.client.AzureComputeClient;
 import io.harness.azure.client.AzureContainerRegistryClient;
@@ -143,12 +145,13 @@ public class KubernetesNgTasksModule extends AbstractModule {
 
     bind(NGGitService.class).to(NGGitServiceImpl.class);
     bind(GitClientV2.class).to(GitClientV2Impl.class).asEagerSingleton();
-    bind(KustomizeClient.class).to(KustomizeClientImpl.class);
+    // bind(KustomizeClient.class).to(KustomizeClientImpl.class);
 
     bind(OpenShiftClient.class).to(OpenShiftClientImpl.class);
     bind(ScmDelegateClient.class).to(ScmDelegateClientImpl.class);
     bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
     bind(CustomManifestService.class).to(CustomManifestServiceImpl.class);
+    bind(EksV2Client.class).to(EksV2ClientImpl.class);
   }
 
   private void bindExceptionHandlers() {
