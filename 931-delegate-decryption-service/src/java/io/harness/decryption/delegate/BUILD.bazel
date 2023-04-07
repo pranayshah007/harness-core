@@ -14,7 +14,6 @@ java_library(
     deps = [
         "//:lombok",
         "//931-delegate-decryption-service/src/java/io/harness/decryption/delegate/module",
-        "//931-secret-providers/src/java/software/wings/beans:module",
         "//960-api-services/src/main/java/io/harness/security/encryption:module",
         "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
         "//980-commons/src/main/java/io/harness/serializer:module",

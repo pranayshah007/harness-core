@@ -12,7 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//931-encryption-service/src/java/software/wings/service/intfc/security:module",
-        "//960-api-services:module",
+        "//960-api-services/src/main/java/io/harness/security/encryption:module",
         "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_inject_guice",
