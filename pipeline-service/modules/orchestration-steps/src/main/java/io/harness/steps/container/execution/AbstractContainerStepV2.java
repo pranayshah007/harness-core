@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -13,9 +13,9 @@ import static java.util.Collections.singletonList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.TaskData;
-import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -24,15 +24,13 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.serializer.KryoSerializer;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
-import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.tasks.ResponseData;
-import io.harness.waiter.WaitNotifyEngine;
 import io.harness.yaml.core.timeout.Timeout;
+import io.harness.yaml.core.variables.OutputNGVariable;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -40,28 +38,26 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
-public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<StepElementParameters> {
+public abstract class AbstractContainerStepV2 implements AsyncExecutableWithRbac<StepElementParameters> {
   @Inject private ContainerStepCleanupHelper containerStepCleanupHelper;
-  @Inject private ContainerRunStepHelper containerRunStepHelper;
-
-  @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
-  @Inject private WaitNotifyEngine waitNotifyEngine;
+  ContainerV2RunStepHelper containerV2RunStepHelper;
   @Inject private ContainerDelegateTaskHelper containerDelegateTaskHelper;
-  @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
-
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private ContainerStepBaseHelper containerStepBaseHelper;
+  @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     // done in last step
   }
 
+  public abstract ParameterField<Map<String, String>> getEnvironmentVariables();
+  public abstract ParameterField<List<OutputNGVariable>> getOutputVariables();
+
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     log.info("Starting run in container step");
-    ContainerStepSpec containerStepInfo = (ContainerStepSpec) stepElementParameters.getSpec();
+    CdAbstractStepNode cdAbstractStepInfo = (CdAbstractStepNode) stepParameters.getSpec();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     List<Level> levelsList = ambiance.getLevelsList();
     long startTs = System.currentTimeMillis() - Duration.ofMinutes(10).toMillis(); // defaulting to 10 mins.
@@ -72,17 +68,20 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
       }
     }
 
-    long timeout =
-        Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis()
+    long timeout = Timeout.fromString((String) stepParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis()
         - (System.currentTimeMillis() - startTs);
     timeout = Math.max(timeout, 100);
     log.info("Timeout for container step left {}", timeout);
+
     String parkedTaskId = containerDelegateTaskHelper.queueParkedDelegateTask(ambiance, timeout, accountId);
-    TaskData runStepTaskData = containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo,
-        AmbianceUtils.getAccountId(ambiance), containerStepBaseHelper.getLogPrefix(ambiance), timeout, parkedTaskId);
+
+    TaskData runStepTaskData = containerV2RunStepHelper.getRunStepTask(ambiance, cdAbstractStepInfo,
+        AmbianceUtils.getAccountId(ambiance), containerStepBaseHelper.getLogPrefix(ambiance), timeout, parkedTaskId,
+        getEnvironmentVariables(), getOutputVariables());
+
     String liteEngineTaskId = containerDelegateTaskHelper.queueTask(ambiance, runStepTaskData, accountId);
     log.info("Created parked task {} and lite engine task {} for  step {}", parkedTaskId, liteEngineTaskId,
-        containerStepInfo.getIdentifier());
+        cdAbstractStepInfo.getIdentifier());
 
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(parkedTaskId)

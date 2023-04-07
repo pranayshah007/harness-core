@@ -10,59 +10,29 @@ package io.harness.cdng.aws.sam;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
-import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
-import io.harness.pms.sdk.core.steps.io.StepInputPackage;
-import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.supplier.ThrowingSupplier;
-import io.harness.tasks.ResponseData;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.container.execution.AbstractContainerStepV2;
+import io.harness.yaml.core.variables.OutputNGVariable;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDP)
-@Slf4j
-public class AwsSamDeployStep extends TaskChainExecutableWithRollbackAndRbac {
+public class AwsSamDeployStep extends AbstractContainerStepV2 {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AWS_SAM_DEPLOY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    // nothing
+  public ParameterField<Map<String, String>> getEnvironmentVariables() {
+    return null;
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
-      throws Exception {
-    log.info("Calling executeNextLink");
-    return TaskChainResponse.builder().build();
-  }
-
-  @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-    return StepResponse.builder()
-        .status(Status.SUCCEEDED)
-        .stepOutcome(StepResponse.StepOutcome.builder().build())
-        .build();
-  }
-
-  @Override
-  public TaskChainResponse startChainLinkAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return TaskChainResponse.builder().build();
-  }
-
-  @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public ParameterField<List<OutputNGVariable>> getOutputVariables() {
+    return null;
   }
 }
