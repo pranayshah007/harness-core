@@ -32,7 +32,6 @@ import io.harness.shell.ShellExecutionData.ShellExecutionDataBuilder;
 import io.harness.shell.ssh.SshClientManager;
 import io.harness.shell.ssh.connection.ExecRequest;
 import io.harness.shell.ssh.connection.ExecResponse;
-import io.harness.shell.ssh.exception.SshClientException;
 import io.harness.shell.ssh.sftp.SftpRequest;
 import io.harness.shell.ssh.sftp.SftpResponse;
 import io.harness.stream.BoundedInputStream;
@@ -118,7 +117,7 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
           output.append(response.getOutput());
         }
         return response.getStatus();
-      } catch (SshClientException ex) {
+      } catch (Exception ex) {
         log.error("Failed to exec due to: ", ex);
         throw ex;
       }
@@ -232,7 +231,14 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
   public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
       List<String> secretEnvVariablesToCollect, Long timeoutInMillis) {
     if (config.isUseSshClient()) {
-      return executeWithSshClient(command, envVariablesToCollect, secretEnvVariablesToCollect);
+      try {
+        return executeWithSshClient(command, envVariablesToCollect, secretEnvVariablesToCollect);
+      } catch (Exception ex) {
+        log.error("Failed to execute command: ", ex);
+        throw ex;
+      } finally {
+        logCallback.dispatchLogs();
+      }
     } else {
       try {
         return getExecuteCommandResponse(command, envVariablesToCollect,

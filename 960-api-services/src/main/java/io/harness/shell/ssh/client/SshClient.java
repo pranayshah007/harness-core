@@ -12,6 +12,7 @@ import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.shell.ssh.SshUtils.getCacheKey;
 
+import io.harness.eraro.ErrorCode;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.shell.SshSessionConfig;
@@ -25,8 +26,8 @@ import io.harness.shell.ssh.xfer.ScpResponse;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -37,45 +38,78 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class SshClient implements AutoCloseable {
   @Getter(AccessLevel.PROTECTED) @Setter(AccessLevel.PROTECTED) private SshSessionConfig sshSessionConfig;
   @Getter(AccessLevel.PROTECTED) @Setter private LogCallback logCallback;
-  private final List<SshConnection> connectionCache = new LinkedList<>();
+  private final List<SshConnection> connectionCache = new CopyOnWriteArrayList<>();
 
   protected char[] getCopyOfKey() {
     return Arrays.copyOf(sshSessionConfig.getKey(), sshSessionConfig.getKey().length);
   }
 
-  public ExecResponse exec(ExecRequest commandData) throws SshClientException {
-    SshConnection sshConnection = getCachedConnection();
-    return execInternal(commandData, sshConnection);
+  public ExecResponse exec(ExecRequest request) throws SshClientException {
+    try {
+      SshConnection sshConnection = getCachedConnection(request);
+      return execInternal(request, sshConnection);
+    } catch (SshClientException se) {
+      if (!request.isRetry() && se.getCode() == ErrorCode.SSH_RETRY) {
+        log.info("Retrying exec on host {}...", sshSessionConfig.getHost());
+        request.setRetry(true);
+        return exec(request);
+      } else {
+        throw se;
+      }
+    }
   }
 
-  public ScpResponse scpUpload(ScpRequest commandData) throws SshClientException {
-    SshConnection sshConnection = getCachedConnection();
-    return scpUploadInternal(commandData, sshConnection);
+  public ScpResponse scpUpload(ScpRequest request) throws SshClientException {
+    try {
+      SshConnection sshConnection = getCachedConnection(request);
+      return scpUploadInternal(request, sshConnection);
+    } catch (SshClientException se) {
+      if (!request.isRetry() && se.getCode() == ErrorCode.SSH_RETRY) {
+        log.info("Retrying scp on host {}...", sshSessionConfig.getHost());
+        request.setRetry(true);
+        return scpUpload(request);
+      } else {
+        throw se;
+      }
+    }
   }
 
-  public SftpResponse sftpDownload(SftpRequest commandData) throws SshClientException {
-    SshConnection sshConnection = getCachedConnection();
-    return sftpDownloadInternal(commandData, sshConnection);
+  public SftpResponse sftpDownload(SftpRequest request) throws SshClientException {
+    try {
+      SshConnection sshConnection = getCachedConnection(request);
+      return sftpDownloadInternal(request, sshConnection);
+    } catch (SshClientException se) {
+      if (!request.isRetry() && se.getCode() == ErrorCode.SSH_RETRY) {
+        log.info("Retrying sftp on host {}...", sshSessionConfig.getHost());
+        request.setRetry(true);
+        return sftpDownload(request);
+      } else {
+        throw se;
+      }
+    }
   }
 
-  private synchronized SshConnection getCachedConnection() {
-    if (connectionCache.isEmpty()) {
+  private SshConnection getCachedConnection(BaseSshRequest request) {
+    SshConnection connection;
+    if (connectionCache.isEmpty() || request.isRetry()) {
       log.info("No connection found. Create new connection for executionId : {}, hostName: {}",
           getSshSessionConfig().getExecutionId(), getSshSessionConfig().getHost());
-      connectionCache.add(getConnection());
+      connection = getConnection();
+      connectionCache.add(connection);
+    } else {
+      connection = connectionCache.get(connectionCache.size() - 1);
+      try {
+        // Unnecessary but required test before session reuse for Jsch.
+        // test channel. http://stackoverflow.com/questions/16127200/jsch-how-to-keep-the-session-alive-and-up
+        testSession(connection);
+      } catch (SshClientException ex) {
+        log.info("Test failure. Creating new connection for executionId : {}, hostName: {}",
+            getSshSessionConfig().getExecutionId(), getSshSessionConfig().getHost());
+        connection = getConnection();
+        connectionCache.add(connection);
+      }
     }
-
-    SshConnection sshConnection = connectionCache.get(connectionCache.size() - 1);
-
-    try {
-      testSession(sshConnection);
-    } catch (SshClientException ex) {
-      log.info("Test failure. Creating new connection for executionId : {}, hostName: {}",
-          getSshSessionConfig().getExecutionId(), getSshSessionConfig().getHost());
-      sshConnection = getConnection();
-      connectionCache.add(sshConnection);
-    }
-    return sshConnection;
+    return connection;
   }
 
   protected abstract ScpResponse scpUploadInternal(ScpRequest commandData, SshConnection connection)

@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SshClientManager {
   private final ConcurrentMap<String, SshClient> clientCache = new ConcurrentHashMap<>();
 
-  private SshClient updateCache(SshSessionConfig sshSessionConfig, LogCallback logCallback) {
+  private SshClient getSshClient(SshSessionConfig sshSessionConfig, LogCallback logCallback) {
     Optional<String> cacheKey = SshUtils.getCacheKey(sshSessionConfig);
     if (cacheKey.isPresent()) {
       String key = cacheKey.get();
@@ -50,19 +50,35 @@ public class SshClientManager {
 
   public ExecResponse exec(ExecRequest execRequest, SshSessionConfig sshSessionConfig, LogCallback logCallback)
       throws SshClientException {
-    SshClient sshClient = updateCache(sshSessionConfig, logCallback);
+    SshClient sshClient = getSshClient(sshSessionConfig, logCallback);
     try {
       return sshClient.exec(execRequest);
+    } catch (SshClientException se) {
+      handleSshException(se, "exec");
+      throw se;
     } finally {
       cleanUpIfNotInCache(sshSessionConfig, sshClient);
     }
   }
 
+  private static void handleSshException(SshClientException se, String op) {
+    log.error("Failed due to {}", op, se);
+  }
+
+  public void test(SshSessionConfig sshSessionConfig) {
+    try (SshClient sshClient = SshFactory.getSshClient(sshSessionConfig)) {
+      sshClient.testConnection();
+    }
+  }
+
   public SftpResponse sftpDownload(SftpRequest sftpRequest, SshSessionConfig sshSessionConfig, LogCallback logCallback)
       throws SshClientException {
-    SshClient sshClient = updateCache(sshSessionConfig, logCallback);
+    SshClient sshClient = getSshClient(sshSessionConfig, logCallback);
     try {
       return sshClient.sftpDownload(sftpRequest);
+    } catch (SshClientException se) {
+      handleSshException(se, "sftp");
+      throw se;
     } finally {
       cleanUpIfNotInCache(sshSessionConfig, sshClient);
     }
@@ -70,9 +86,12 @@ public class SshClientManager {
 
   public ScpResponse scpUpload(ScpRequest scpRequest, SshSessionConfig sshSessionConfig, LogCallback logCallback)
       throws SshClientException {
-    SshClient sshClient = updateCache(sshSessionConfig, logCallback);
+    SshClient sshClient = getSshClient(sshSessionConfig, logCallback);
     try {
       return sshClient.scpUpload(scpRequest);
+    } catch (SshClientException se) {
+      handleSshException(se, "scp");
+      throw se;
     } finally {
       cleanUpIfNotInCache(sshSessionConfig, sshClient);
     }
