@@ -15,7 +15,6 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.plugin.PluginStepV2;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.Collections;
@@ -24,12 +23,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class DefaultPluginInfoProvider implements PluginInfoProvider {
-  @Inject YamlUtils yamlUtils;
-
   public PluginCreationResponse getPluginInfo(PluginCreationRequest request) {
     PluginStepV2 pluginStep;
     try {
-      pluginStep = yamlUtils.read(request.getStepJsonNode(), PluginStepV2.class);
+      pluginStep = YamlUtils.read(request.getStepJsonNode(), PluginStepV2.class);
     } catch (IOException e) {
       throw new ContainerPluginParseException("Error parsing plugin step", e);
     }
@@ -42,12 +39,15 @@ public class DefaultPluginInfoProvider implements PluginInfoProvider {
                                                .setCpu(resources.getCpu().getValue())
                                                .setMemory(resources.getMemory().getValue())
                                                .build())
-                              .setStepUuid(pluginStep.getUuid())
-                              .setStepIdentifier(pluginStep.getIdentifier())
                               .putAllEnvVariables(pluginStep.getEnvVariables() == null ? Collections.emptyMap()
                                                                                        : pluginStep.getEnvVariables())
                               .setImageDetails(PluginImageUtils.getImageDetails(pluginStep.getImageDetails()))
                               .build())
         .build();
+  }
+
+  @Override
+  public boolean isSupported(String stepType) {
+    return true;
   }
 }

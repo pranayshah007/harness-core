@@ -72,13 +72,18 @@ public class TasElasticContainerRegistrySettingsProviderTest extends CategoryTes
                                 .accessKeyRef(
                                     SecretRefData.builder().decryptedValue("test-accessKey".toCharArray()).build())
                                 .secretKeyRef(
-                                    SecretRefData.builder().decryptedValue("test-secretKey".toCharArray()).build())
+                                    SecretRefData.builder().decryptedValue("test-accessKey".toCharArray()).build())
                                 .build())
                     .build())
             .build();
 
     doReturn(null).when(secretDecryptionService).decrypt(any(), anyList());
-    doReturn(AwsInternalConfig.builder().build()).when(awsNgConfigMapper).createAwsInternalConfig(any());
+    doReturn(AwsInternalConfig.builder()
+                 .accessKey("test-accessKey".toCharArray())
+                 .secretKey("test-secretKey".toCharArray())
+                 .build())
+        .when(awsNgConfigMapper)
+        .createAwsInternalConfig(any());
 
     doReturn(BAZE_64_AWS_ENCODED_TOKEN)
         .when(awsEcrApiHelperServiceDelegate)
@@ -87,8 +92,8 @@ public class TasElasticContainerRegistrySettingsProviderTest extends CategoryTes
     TasArtifactCreds dockerSettings = tasElasticContainerRegistrySettingsProvider.getContainerSettings(
         TasTestUtils.createTestContainerArtifactConfig(awsConnectorDTO, TasArtifactRegistryType.ECR), decryptionHelper);
 
-    assertThat(dockerSettings.getPassword()).isEqualTo("test-token");
-    assertThat(dockerSettings.getUsername()).isEqualTo("AWS");
+    assertThat(dockerSettings.getPassword()).isEqualTo("test-secretKey");
+    assertThat(dockerSettings.getUsername()).isEqualTo("test-accessKey");
     assertThat(dockerSettings.getUrl()).isEqualTo("https://test.registry.io/");
   }
 

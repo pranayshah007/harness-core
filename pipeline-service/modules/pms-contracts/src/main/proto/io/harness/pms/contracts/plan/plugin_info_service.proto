@@ -10,14 +10,18 @@ package io.harness.pms.contracts.plan;
 option java_multiple_files = true;
 
 import "io/harness/pms/contracts/plan/plan_creation_service.proto";
+import "io/harness/pms/contracts/ambiance/ambiance.proto";
 
-service PluginInfoService {
+service PluginInfoProviderService {
   rpc getPluginInfos(PluginCreationRequest) returns (PluginCreationResponse);
 }
 
 message PluginCreationRequest {
   string type = 1;
   string stepJsonNode = 2;
+  io.harness.pms.contracts.ambiance.Ambiance ambiance = 3;
+  string accountId = 4;
+  string osType = 5;
 }
 
 message PluginCreationResponse {
@@ -30,13 +34,11 @@ message PluginCreationResponse {
 }
 
 message PluginDetails {
-  string stepIdentifier = 1;
-  string stepUuid = 2;
-  PluginContainerResources resource = 3;
-  ImageDetails imageDetails = 4;
-  map<string, string> envVariables = 5;
-  bool privileged = 6;
-  int32 runAsUser = 7;
+  PluginContainerResources resource = 1;
+  ImageDetails imageDetails = 2;
+  map<string, string> envVariables = 3;
+  bool privileged = 4;
+  int32 runAsUser = 5;
 }
 
 message PluginContainerResources {

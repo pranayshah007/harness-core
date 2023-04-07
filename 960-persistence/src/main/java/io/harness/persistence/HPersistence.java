@@ -124,6 +124,11 @@ public interface HPersistence extends HealthMonitor {
   }
 
   default AdvancedDatastore getDefaultAnalyticsDatastore(Class cls) {
+    Optional<Store> secondaryStore = getSecondaryStore(cls);
+    if (secondaryStore.isPresent() && isMigrationEnabled(cls.getName())) {
+      return getDatastore(secondaryStore.get());
+    }
+
     Map<Class, Store> classStores = new HashMap<>(getClassStores());
     Store classStore = classStores.computeIfAbsent(cls,
         klass

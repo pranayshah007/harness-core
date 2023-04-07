@@ -270,6 +270,8 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(githubPackagesArtifactConfig.getIdentifier())
         .primaryArtifact(githubPackagesArtifactConfig.isPrimaryArtifact())
         .versionRegex(githubPackagesArtifactConfig.getVersionRegex().getValue())
+        .metadata(useDelegateResponse ? getMetadata(githubPackagesArtifactDelegateResponse) : null)
+        .label(getLabels(githubPackagesArtifactDelegateResponse))
         .packageType(githubPackagesArtifactConfig.getPackageType().getValue())
         .build();
   }
@@ -685,6 +687,13 @@ public class ArtifactResponseToOutcomeMapper {
   }
 
   private Map<String, String> getLabels(DockerArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || EmptyPredicate.isEmpty(artifactDelegateResponse.getLabel())) {
+      return Collections.emptyMap();
+    }
+    return artifactDelegateResponse.getLabel();
+  }
+
+  private Map<String, String> getLabels(GithubPackagesArtifactDelegateResponse artifactDelegateResponse) {
     if (artifactDelegateResponse == null || EmptyPredicate.isEmpty(artifactDelegateResponse.getLabel())) {
       return Collections.emptyMap();
     }

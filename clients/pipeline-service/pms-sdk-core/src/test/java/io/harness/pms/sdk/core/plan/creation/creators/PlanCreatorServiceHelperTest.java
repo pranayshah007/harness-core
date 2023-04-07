@@ -7,6 +7,9 @@
 
 package io.harness.pms.sdk.core.plan.creation.creators;
 
+import static io.harness.pms.contracts.plan.RollbackModeBehaviour.PRESERVE;
+import static io.harness.pms.contracts.plan.RollbackModeBehaviour.UNDEFINED_BEHAVIOUR;
+import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
@@ -16,7 +19,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
+import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.PipelineVersion;
@@ -26,6 +31,7 @@ import io.harness.rule.Owner;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import com.google.protobuf.ByteString;
 import io.fabric8.utils.Lists;
 import java.io.IOException;
 import java.net.URL;
@@ -146,5 +152,67 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     Optional<PartialPlanCreator<?>> partialPlanCreatorOptional =
         PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, PipelineVersion.V1);
     assertThat(partialPlanCreatorOptional.isPresent()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testDecorateResponseWithRollbackModeBehaviour() {
+    PlanNode planNode1 = PlanNode.builder().uuid("u1").build();
+    PlanNode planNode2 = PlanNode.builder().uuid("u2").build();
+    PlanNode planNode3 = PlanNode.builder().uuid("u3").build();
+    PlanCreationResponse noDependencies =
+        PlanCreationResponse.builder().planNode(planNode1).node("u2", planNode2).node("u3", planNode3).build();
+    PlanCreationResponse noDependenciesCopy =
+        PlanCreationResponse.builder().planNode(planNode1).node("u2", planNode2).node("u3", planNode3).build();
+
+    PlanCreatorServiceHelper.decorateResponseWithRollbackModeBehaviour(null, noDependencies);
+    assertThat(noDependencies).isEqualTo(noDependenciesCopy);
+
+    PlanCreatorServiceHelper.decorateResponseWithRollbackModeBehaviour(
+        Dependency.newBuilder().setRollbackModeBehaviour(UNDEFINED_BEHAVIOUR).build(), noDependencies);
+    assertThat(noDependencies).isEqualTo(noDependenciesCopy);
+
+    ByteString randomByteString = ByteString.copyFromUtf8("random");
+    PlanCreationResponse withDependencies =
+        PlanCreationResponse.builder()
+            .planNode(planNode1)
+            .node("u2", planNode2)
+            .node("u3", planNode3)
+            .dependencies(Dependencies.newBuilder()
+                              .putDependencies("du1", "fqn1")
+                              .putDependencies("du2", "fqn2")
+                              .putDependencyMetadata(
+                                  "du1", Dependency.newBuilder().putMetadata("something", randomByteString).build())
+                              .build())
+            .build();
+    PlanCreationResponse withDependenciesCopy =
+        PlanCreationResponse.builder()
+            .planNode(planNode1)
+            .node("u2", planNode2)
+            .node("u3", planNode3)
+            .dependencies(Dependencies.newBuilder()
+                              .putDependencies("du1", "fqn1")
+                              .putDependencies("du2", "fqn2")
+                              .putDependencyMetadata(
+                                  "du1", Dependency.newBuilder().putMetadata("something", randomByteString).build())
+                              .build())
+            .build();
+
+    PlanCreatorServiceHelper.decorateResponseWithRollbackModeBehaviour(null, withDependencies);
+    assertThat(withDependencies).isEqualTo(withDependenciesCopy);
+
+    PlanCreatorServiceHelper.decorateResponseWithRollbackModeBehaviour(
+        Dependency.newBuilder().setRollbackModeBehaviour(UNDEFINED_BEHAVIOUR).build(), withDependencies);
+    assertThat(withDependencies).isEqualTo(withDependenciesCopy);
+
+    PlanCreatorServiceHelper.decorateResponseWithRollbackModeBehaviour(
+        Dependency.newBuilder().setRollbackModeBehaviour(PRESERVE).build(), withDependencies);
+    assertThat(withDependencies.getPreservedNodesInRollbackMode()).containsExactlyInAnyOrder("u1", "u2", "u3");
+    Map<String, Dependency> dependencyMetadataMap = withDependencies.getDependencies().getDependencyMetadataMap();
+    assertThat(dependencyMetadataMap.keySet()).containsExactly("du1", "du2");
+    assertThat(dependencyMetadataMap.get("du1").getRollbackModeBehaviour()).isEqualTo(PRESERVE);
+    assertThat(dependencyMetadataMap.get("du1").getMetadataMap().get("something")).isEqualTo(randomByteString);
+    assertThat(dependencyMetadataMap.get("du2").getRollbackModeBehaviour()).isEqualTo(PRESERVE);
   }
 }

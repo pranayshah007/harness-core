@@ -7,12 +7,16 @@
 
 package io.harness.plancreator.steps;
 
+import io.harness.plancreator.execution.StepsExecutionConfig;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.plugin.InitContainerV2StepInfo;
+import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
+import io.harness.steps.plugin.infrastructure.K8sDirectInfra;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -24,12 +28,13 @@ public class K8sStepGroupHandler implements StepGroupInfraHandler {
 
   @Override
   public PlanNode handle(StepGroupElementConfigV2 config, PlanCreationContext ctx, YamlField stepsField) {
-    // todo(abhinav): add init node once contract is ready
-    InitContainerV2StepInfo initContainerStepInfo =
+    InitContainerV2StepInfo initContainerV2StepInfo =
         InitContainerV2StepInfo.builder()
-            .stepGroupIdentifier(stepsField.getUuid())
-            //                                                      .stepElementConfig(config)
-            //                                                      .timeout(DEFAULT_TIMEOUT)
+            .stepGroupIdentifier(config.getIdentifier())
+            .stepGroupName(config.getName())
+            .infrastructure(
+                ContainerK8sInfra.builder().spec(((K8sDirectInfra) config.getStepGroupInfra()).getSpec()).build())
+            .stepsExecutionConfig(StepsExecutionConfig.builder().steps(config.getSteps()).build())
             .build();
     String initNodeId = "init-" + ctx.getCurrentField().getNode().getUuid();
 
@@ -37,6 +42,6 @@ public class K8sStepGroupHandler implements StepGroupInfraHandler {
     ByteString advisorParametersInitStep = ByteString.copyFrom(
         kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(nextNodeId).build()));
     return InitContainerStepPlanCreater.createPlanForField(
-        initNodeId, initContainerStepInfo, advisorParametersInitStep);
+        initNodeId, initContainerV2StepInfo, advisorParametersInitStep, StepSpecTypeConstants.INIT_CONTAINER_STEP_V2);
   }
 }

@@ -271,6 +271,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
           if (!EmptyPredicate.isEmpty(executionInputTemplate)) {
             planForField.setExecutionInputTemplateInPlanNode(executionInputTemplate);
           }
+          PlanCreatorServiceHelper.decorateResponseWithRollbackModeBehaviour(dependency, planForField);
           PlanCreatorServiceHelper.decorateNodesWithStageFqn(field, planForField, ctx.getYamlVersion());
           PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(
               planForField, serviceName, field, currentNodeServiceAffinity);

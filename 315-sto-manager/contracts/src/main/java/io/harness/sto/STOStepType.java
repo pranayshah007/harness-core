@@ -28,10 +28,12 @@ import io.harness.beans.steps.nodes.security.BrakemanScanNode;
 import io.harness.beans.steps.nodes.security.BurpScanNode;
 import io.harness.beans.steps.nodes.security.CheckmarxScanNode;
 import io.harness.beans.steps.nodes.security.ClairScanNode;
+import io.harness.beans.steps.nodes.security.CodeqlScanNode;
 import io.harness.beans.steps.nodes.security.CustomIngestScanNode;
 import io.harness.beans.steps.nodes.security.DataTheoremScanNode;
 import io.harness.beans.steps.nodes.security.DockerContentTrustScanNode;
 import io.harness.beans.steps.nodes.security.FortifyOnDemandScanNode;
+import io.harness.beans.steps.nodes.security.FossaScanNode;
 import io.harness.beans.steps.nodes.security.GrypeScanNode;
 import io.harness.beans.steps.nodes.security.JfrogXrayScanNode;
 import io.harness.beans.steps.nodes.security.MendScanNode;
@@ -106,8 +108,14 @@ public enum STOStepType {
       DockerContentTrustScanNode.class, EntityType.DOCKER_CONTENT_TRUST, new String[] {CONTAINER_SECURITY}),
   CUSTOM_INGEST("CustomIngest", "Custom Ingest", FeatureName.STO_STEP_PALETTE_Q1_2023, CustomIngestScanNode.class,
       EntityType.CUSTOM_INGEST, new String[] {SECURITY}),
+  CODE_QL("CodeQL", null, FeatureName.STO_STEP_PALETTE_CODEQL, CodeqlScanNode.class, EntityType.CODEQL,
+      new String[] {SAST}),
+  FOSSA("Fossa", null, FeatureName.STO_STEP_PALETTE_FOSSA, FossaScanNode.class, EntityType.FOSSA, new String[] {SAST}),
   FORTIFY_ON_DEMAND("FortifyOnDemand", "Fortify On Demand", FeatureName.DONT_ENABLE_STO_STEP_PALETTE_V3,
       FortifyOnDemandScanNode.class, EntityType.FORTIFY_ON_DEMAND, new String[] {SECURITY}),
+
+  GIT_LEAKS("GitLeaks", null, FeatureName.STO_STEP_PALETTE_GIT_LEAKS, FossaScanNode.class, EntityType.GIT_LEAKS,
+      new String[] {SAST}),
   GRYPE("Grype", null, null, GrypeScanNode.class, EntityType.GRYPE, new String[] {CONTAINER_SECURITY}),
   JFROG_XRAY("JfrogXray", "Jfrog Xray", FeatureName.DONT_ENABLE_STO_STEP_PALETTE_V3, JfrogXrayScanNode.class,
       EntityType.JFROG_XRAY, new String[] {SECURITY}),

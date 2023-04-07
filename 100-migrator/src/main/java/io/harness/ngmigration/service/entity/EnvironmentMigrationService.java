@@ -177,8 +177,8 @@ public class EnvironmentMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     if (yamlFile.isExists()) {
       return MigrationImportSummaryDTO.builder()
           .errors(
@@ -200,7 +200,9 @@ public class EnvironmentMigrationService extends NgMigrationService {
                                                       .yaml(getYamlString(yamlFile))
                                                       .build();
     Response<ResponseDTO<ConnectorResponseDTO>> resp =
-        ngClient.createEnvironment(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(environmentRequestDTO))
+        ngClient
+            .createEnvironment(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                JsonUtils.asTree(environmentRequestDTO))
             .execute();
     log.info("Environment creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);

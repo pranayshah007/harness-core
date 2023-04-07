@@ -199,6 +199,9 @@ public interface YamlTypes {
   String ORG = "organization";
   String SPACE = "space";
 
+  String SERVICE_HOOKS = "hooks";
+  String PRE_HOOK = "preHook";
+  String POST_HOOK = "postHook";
   String ELASTIGROUP_BG_STAGE_SETUP = StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP;
   String ELASTIGROUP_SWAP_ROUTE = StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE;
 

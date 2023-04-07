@@ -43,6 +43,7 @@ import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -819,6 +820,17 @@ public class CDStepHelper {
     }
 
     return Optional.of((ConfigFilesOutcome) configFilesOutcome.getOutcome());
+  }
+
+  public Optional<ServiceHooksOutcome> getServiceHooksOutcome(Ambiance ambiance) {
+    OptionalOutcome serviceHooksOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE_HOOKS));
+
+    if (!serviceHooksOutcome.isFound()) {
+      return Optional.empty();
+    }
+
+    return Optional.of((ServiceHooksOutcome) serviceHooksOutcome.getOutcome());
   }
 
   public InfrastructureOutcome getInfrastructureOutcome(Ambiance ambiance) {

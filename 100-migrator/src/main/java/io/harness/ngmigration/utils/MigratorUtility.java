@@ -585,7 +585,7 @@ public class MigratorUtility {
         .build();
   }
 
-  public static MigrationInputDTO getMigrationInput(ImportDTO importDTO) {
+  public static MigrationInputDTO getMigrationInput(String requestAuthToken, ImportDTO importDTO) {
     Map<NGMigrationEntityType, InputDefaults> defaults = new HashMap<>();
     Map<CgEntityId, BaseProvidedInput> overrides = new HashMap<>();
     Map<String, Object> expressions = new HashMap<>();
@@ -608,6 +608,10 @@ public class MigratorUtility {
     }
 
     return MigrationInputDTO.builder()
+        .destinationAccountIdentifier(StringUtils.defaultIfBlank(
+            importDTO.getDestinationDetails().getAccountIdentifier(), importDTO.getAccountIdentifier()))
+        .destinationAuthToken(
+            StringUtils.defaultIfBlank(importDTO.getDestinationDetails().getAuthToken(), requestAuthToken))
         .accountIdentifier(importDTO.getAccountIdentifier())
         .orgIdentifier(importDTO.getDestinationDetails().getOrgIdentifier())
         .projectIdentifier(importDTO.getDestinationDetails().getProjectIdentifier())

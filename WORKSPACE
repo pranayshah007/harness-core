@@ -15,7 +15,7 @@ http_archive(
     name = "com_github_bazelbuild_buildtools",
     sha256 = "932160d5694e688cb7a05ac38efba4b9a90470c75f39716d85fb1d2f95eec96d",
     strip_prefix = "buildtools-4.0.1",
-    url = "http://jfrogdev.dev.harness.io:80/artifactory/bazel-buildtools-github/archive/refs/tags/4.0.1.zip",
+    url = "https://harness-artifactory.dev.harness.io/artifactory/bazel-buildtools-github/archive/refs/tags/4.0.1.zip",
 )
 
 # Workaround for https://github.com/bazelbuild/bazel-gazelle/issues/1285. Ideally,
@@ -38,7 +38,7 @@ http_archive(
     sha256 = "6aff9834fd7c540875e1836967c8d14c6897e3785a2efac629f69860fb7834ff",
     strip_prefix = "protobuf-3.15.0",
     urls = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/protobuf-github/archive/v3.15.0.tar.gz",
+        "https://harness-artifactory.dev.harness.io/artifactory/protobuf-github/archive/v3.15.0.tar.gz",
         #"https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.14.0.tar.gz",
         #"https://github.com/protocolbuffers/protobuf/archive/v3.14.0.tar.gz",
     ],
@@ -61,7 +61,7 @@ http_archive(
     name = "io_bazel_rules_go",
     sha256 = "56d8c5a5c91e1af73eca71a6fab2ced959b67c86d12ba37feedb0a2dfea441a6",
     urls = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/rules-go-github/download/v0.37.0/rules_go-v0.37.0.zip",
+        "https://harness-artifactory.dev.harness.io/artifactory/rules-go-github/download/v0.37.0/rules_go-v0.37.0.zip",
         #"https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.37.0/rules_go-v0.37.0.zip",
         #"https://github.com/bazelbuild/rules_go/releases/download/v0.37.0/rules_go-v0.37.0.zip",
     ],
@@ -71,7 +71,7 @@ http_archive(
     name = "bazel_gazelle",
     sha256 = "448e37e0dbf61d6fa8f00aaa12d191745e14f07c31cabfa731f0c8e8a4f41b97",
     urls = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/bazel-gazelle-github/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
+        "https://harness-artifactory.dev.harness.io/artifactory/bazel-gazelle-github/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
         #"https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
         #"https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
     ],
@@ -3896,7 +3896,7 @@ http_archive(
     strip_prefix = "rules_rust-f37b9d6a552e9412285e627f30cb124e709f4f7a",
     urls = [
         # Master branch as of 2021-01-27
-        "http://jfrogdev.dev.harness.io:80/artifactory/rules-rust-github/archive/f37b9d6a552e9412285e627f30cb124e709f4f7a.tar.gz",
+        "https://harness-artifactory.dev.harness.io/artifactory/rules-rust-github/archive/f37b9d6a552e9412285e627f30cb124e709f4f7a.tar.gz",
     ],
 )
 
@@ -4607,7 +4607,7 @@ http_archive(
     name = "rules_proto_grpc",
     sha256 = "5f0f2fc0199810c65a2de148a52ba0aff14d631d4e8202f41aff6a9d590a471b",
     strip_prefix = "rules_proto_grpc-1.0.2",
-    urls = ["http://jfrogdev.dev.harness.io:80/artifactory/rules-proto-grpc-github/archive/1.0.2.tar.gz"],
+    urls = ["https://harness-artifactory.dev.harness.io/artifactory/rules-proto-grpc-github/archive/1.0.2.tar.gz"],
 )
 
 load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
@@ -4645,7 +4645,7 @@ http_archive(
     name = "rules_spring",
     sha256 = "9385652bb92d365675d1ca7c963672a8091dc5940a9e307104d3c92e7a789c8e",
     urls = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/rules-spring-github/download/2.1.4/rules-spring-2.1.4.zip",
+        "https://harness-artifactory.dev.harness.io/artifactory/rules-spring-github/download/2.1.4/rules-spring-2.1.4.zip",
     ],
 )
 
@@ -4655,7 +4655,7 @@ http_archive(
     name = "rules_jvm_external",
     sha256 = "f36441aa876c4f6427bfb2d1f2d723b48e9d930b62662bf723ddfb8fc80f0140",
     strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
-    url = "http://jfrogdev.dev.harness.io:80/artifactory/rules-jvm-external-github/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
+    url = "https://harness-artifactory.dev.harness.io/artifactory/rules-jvm-external-github/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
 )
 
 load("@rules_jvm_external//:defs.bzl", "maven_install")
@@ -5550,7 +5550,7 @@ maven_install(
         "org.mongodb:mongodb-driver": "@maven//:org_mongodb_mongodb_driver_core",
     },
     repositories = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
+        "https://harness-artifactory.dev.harness.io/artifactory/portal-maven",
         "https://harness.jfrog.io/artifactory/harness-internal",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
@@ -5571,7 +5571,7 @@ maven_install(
         "com.fasterxml.jackson.core:jackson-databind": "@maven//:com_fasterxml_jackson_core_jackson_databind",
     },
     repositories = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
+        "https://harness-artifactory.dev.harness.io/artifactory/portal-maven",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
     version_conflict_policy = "pinned",
@@ -5587,7 +5587,7 @@ maven_install(
         "com.azure:azure-storage-common:12.15.1",
     ],
     repositories = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
+        "https://harness-artifactory.dev.harness.io/artifactory/portal-maven",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
     version_conflict_policy = "pinned",
@@ -5606,7 +5606,7 @@ maven_install(
         "com.azure.resourcemanager:azure-resourcemanager-resources:2.14.0",
     ],
     repositories = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
+        "https://harness-artifactory.dev.harness.io/artifactory/portal-maven",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
     version_conflict_policy = "pinned",
@@ -5627,7 +5627,7 @@ maven_install(
         "com.github.sevntu-checkstyle:sevntu-checks:1.35.0",
     ],
     repositories = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
+        "https://harness-artifactory.dev.harness.io/artifactory/portal-maven",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
 )
@@ -5652,7 +5652,7 @@ maven_install(
         ),
     ],
     repositories = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
+        "https://harness-artifactory.dev.harness.io/artifactory/portal-maven",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
 )
@@ -5669,7 +5669,7 @@ exports_files(["WORKSPACE"], visibility = ["//visibility:public"])
 """,
     sha256 = "f39b523c724d0e0047d238eb2bb17a9565a60574cf651206c867ee5fc000ab43",
     strip_prefix = "jdk8u242-b08",
-    urls = ["http://jfrogdev.dev.harness.io:80/artifactory/adoptjdk8u242-b08-github/download/jdk8u242-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u242b08.tar.gz"],
+    urls = ["https://harness-artifactory.dev.harness.io/artifactory/adoptjdk8u242-b08-github/download/jdk8u242-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u242b08.tar.gz"],
 )
 
 http_archive(
@@ -5684,7 +5684,7 @@ java_runtime(
 """,
     sha256 = "06675b7d65bce0313ee1f2e888dd44267e8afeced75e0b39b5ad1f5fdff54e0b",
     strip_prefix = "jdk8u242-b08",
-    urls = ["http://jfrogdev.dev.harness.io:80/artifactory/adoptjdk8u242-b08-github/download/jdk8u242-b08/OpenJDK8U-jdk_x64_mac_hotspot_8u242b08.tar.gz"],
+    urls = ["https://harness-artifactory.dev.harness.io/artifactory/adoptjdk8u242-b08-github/download/jdk8u242-b08/OpenJDK8U-jdk_x64_mac_hotspot_8u242b08.tar.gz"],
 )
 
 load("//tools/bazel/pmd:toolchains.bzl", "rules_pmd_toolchains")
@@ -5735,7 +5735,7 @@ http_archive(
     name = "io_bazel_rules_docker",
     sha256 = "59d5b42ac315e7eadffa944e86e90c2990110a1c8075f1cd145f487e999d22b3",
     strip_prefix = "rules_docker-0.17.0",
-    urls = ["http://jfrogdev.dev.harness.io:80/artifactory/rules-docker-github/download/v0.17.0/rules_docker-v0.17.0.tar.gz"],
+    urls = ["https://harness-artifactory.dev.harness.io/artifactory/rules-docker-github/download/v0.17.0/rules_docker-v0.17.0.tar.gz"],
 )
 
 load(
@@ -5794,7 +5794,7 @@ http_archive(
     name = "rules_pkg",
     sha256 = "038f1caa773a7e35b3663865ffb003169c6a71dc995e39bf4815792f385d837d",
     urls = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/rules-pkg-github/download/0.4.0/rules_pkg-0.4.0.tar.gz",
+        "https://harness-artifactory.dev.harness.io/artifactory/rules-pkg-github/download/0.4.0/rules_pkg-0.4.0.tar.gz",
         #"https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.4.0/rules_pkg-0.4.0.tar.gz",
         #"https://github.com/bazelbuild/rules_pkg/releases/download/0.4.0/rules_pkg-0.4.0.tar.gz",
     ],
@@ -5890,7 +5890,7 @@ http_archive(
     name = "contrib_rules_jvm",
     sha256 = "a939cd04da2deee16131898d91d8e23559dcd1a30a5128beac30a2b01b33c94f",
     strip_prefix = "rules_jvm-0.4.0",
-    url = "http://jfrogdev.dev.harness.io:80/artifactory/bazel-contrib-rules-jvm/archive/v0.4.0.tar.gz",
+    url = "https://harness-artifactory.dev.harness.io/artifactory/bazel-contrib-rules-jvm/archive/v0.4.0.tar.gz",
 )
 
 # Fetches the contrib_rules_jvm dependencies.
