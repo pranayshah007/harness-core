@@ -22,6 +22,7 @@ public interface PlanService {
   Plan save(Plan plan);
 
   <T extends Node> T fetchNode(String planId, String nodeId);
+  List<Node> fetchNodes(String planId);
 
   Plan fetchPlan(String planId);
 

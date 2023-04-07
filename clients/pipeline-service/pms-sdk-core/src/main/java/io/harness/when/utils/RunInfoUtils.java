@@ -83,7 +83,8 @@ public class RunInfoUtils {
   public String getRunConditionForRollback(
       ParameterField<StepWhenCondition> stepWhenCondition, ExecutionMode executionMode) {
     if (ParameterField.isNull(stepWhenCondition) || stepWhenCondition.getValue() == null) {
-      return getStatusExpression(isRollbackMode(executionMode) ? ALWAYS : STAGE_FAILURE);
+      return "(<+ambiance.metadata.executionMode> == \"POST_EXECUTION_ROLLBACK\") || (<+ambiance.metadata.executionMode> == \"PIPELINE_ROLLBACK\") || ("
+          + getStatusExpression(STAGE_FAILURE) + ")";
     }
     if (stepWhenCondition.getValue().getStageStatus() == null) {
       throw new InvalidRequestException("Stage Status in step when condition cannot be empty.");

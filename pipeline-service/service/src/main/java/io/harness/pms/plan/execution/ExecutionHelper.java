@@ -469,15 +469,21 @@ public class ExecutionHelper {
     try (AutoLogContext ignore =
              PlanCreatorUtils.autoLogContext(executionMetadata, accountId, orgIdentifier, projectIdentifier)) {
       PlanCreationBlobResponse resp;
+      Plan plan;
       try {
-        String version = executionMetadata.getHarnessVersion();
-        resp = planCreatorMergeService.createPlanVersioned(
-            accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
+        if (executionMetadata.getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
+          String originalPlanId = planExecutionService.get(previousExecutionId).getPlanId();
+          plan = planService.fetchPlan(originalPlanId).withPlanNodes(planService.fetchNodes(originalPlanId));
+        } else {
+          String version = executionMetadata.getHarnessVersion();
+          resp = planCreatorMergeService.createPlanVersioned(
+              accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
+          plan = PlanExecutionUtils.extractPlan(resp);
+        }
       } catch (IOException e) {
         log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(e)), e);
         throw new InvalidYamlException(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(e)), e);
       }
-      Plan plan = PlanExecutionUtils.extractPlan(resp);
       ImmutableMap<String, String> abstractions = ImmutableMap.<String, String>builder()
                                                       .put(SetupAbstractionKeys.accountId, accountId)
                                                       .put(SetupAbstractionKeys.orgIdentifier, orgIdentifier)
@@ -486,13 +492,14 @@ public class ExecutionHelper {
       long endTs = System.currentTimeMillis();
       log.info("[PMS_PLAN] Time taken to complete plan: {}ms ", endTs - startTs);
       ExecutionMode executionMode = executionMetadata.getExecutionMode();
-      plan = transformPlan(resp, plan, isRetry, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier,
+      plan = transformPlan(plan.getPreservedNodesInRollbackMode(), plan, isRetry, identifierOfSkipStages,
+          previousExecutionId, retryStagesIdentifier,
           planExecutionMetadata.getStagesExecutionMetadata().getStageIdentifiers(), executionMode);
       return orchestrationService.startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
     }
   }
 
-  Plan transformPlan(PlanCreationBlobResponse resp, Plan plan, boolean isRetry, List<String> identifierOfSkipStages,
+  Plan transformPlan(List<String> nodeIDsToPreserve, Plan plan, boolean isRetry, List<String> identifierOfSkipStages,
       String previousExecutionId, List<String> retryStagesIdentifier, List<String> rollbackStageIds,
       ExecutionMode executionMode) {
     if (isRetry) {
@@ -501,7 +508,7 @@ public class ExecutionHelper {
     }
     if (isRollbackMode(executionMode)) {
       return rollbackModeExecutionHelper.transformPlanForRollbackMode(
-          plan, previousExecutionId, resp.getPreservedNodesInRollbackModeList(), rollbackStageIds, executionMode);
+          plan, previousExecutionId, nodeIDsToPreserve, rollbackStageIds, executionMode);
     }
     return plan;
   }
