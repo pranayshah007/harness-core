@@ -18,6 +18,7 @@ import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_INSTALL_HINT;
 import static io.harness.k8s.K8sConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.k8s.K8sConstants.USE_GKE_GCLOUD_AUTH_PLUGIN;
 import static io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable;
+import static io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper.saveLogs;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
@@ -365,17 +366,5 @@ public class GkeClusterHelper {
           logCallback, LogLevel.WARN);
     }
     return envVariableList;
-  }
-
-  private void saveLogs(String errorMsg, LogCallback logCallback, LogLevel logLevel) {
-    if (logCallback != null) {
-      logCallback.saveExecutionLog(errorMsg, logLevel);
-    } else {
-      if (logLevel == LogLevel.INFO) {
-        log.info(errorMsg);
-      } else {
-        log.warn(errorMsg);
-      }
-    }
   }
 }

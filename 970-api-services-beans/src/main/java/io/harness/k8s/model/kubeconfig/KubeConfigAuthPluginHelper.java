@@ -80,12 +80,11 @@ public class KubeConfigAuthPluginHelper {
   public static void saveLogs(String errorMsg, LogCallback logCallback, LogLevel logLevel) {
     if (logCallback != null) {
       logCallback.saveExecutionLog(errorMsg, logLevel);
+    }
+    if (logLevel == LogLevel.INFO) {
+      log.info(errorMsg);
     } else {
-      if (logLevel == LogLevel.INFO) {
-        log.info(errorMsg);
-      } else {
-        log.warn(errorMsg);
-      }
+      log.warn(errorMsg);
     }
   }
 

@@ -34,7 +34,7 @@ public interface GkeClusterService {
       String zoneClusterName, String namespace, boolean isInstanceSync);
 
   KubernetesConfig getCluster(SettingAttribute computeProviderSetting, List<EncryptedDataDetail> encryptedDataDetails,
-      String locationClusterName, String namespace, String workingDirectoryboolean, boolean isInstanceSync);
+      String locationClusterName, String namespace, String workingDirectory, boolean isInstanceSync);
 
   KubernetesConfig getCluster(GcpConfig gcpConfig, List<EncryptedDataDetail> encryptedDataDetails,
       String locationClusterName, String namespace, String workingDirectory, boolean isInstanceSync);
