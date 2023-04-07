@@ -750,13 +750,14 @@ if [[ "" != "$AZURE_MARKETPLACE_SECRETKEY" ]]; then
   export AZURE_MARKETPLACE_SECRETKEY; yq -i '.mktPlaceConfig.azureMarketplaceSecretKey=env(AZURE_MARKETPLACE_SECRETKEY)' $CONFIG_FILE
 fi
 if [[ "" != "$QUEUE_SERVICE_BASE_URL" ]]; then
-  export QUEUE_SERVICE_BASE_URL; yq -i '.delegateQueueServiceConfig.queueServiceConfig.baseUrl=env(QUEUE_SERVICE_BASE_URL)' $CONFIG_FILE
+  export QUEUE_SERVICE_BASE_URL; yq -i '.delegateQueueServiceConfig.queueServiceClientConfig.httpClientConfig.baseUrl=env(QUEUE_SERVICE_BASE_URL)' $CONFIG_FILE
+fi
+if [[ "" != "$QUEUE_SERVICE_AUTH_TOKEN" ]]; then
+  export QUEUE_SERVICE_AUTH_TOKEN; yq -i '.delegateQueueServiceConfig.queueServiceClientConfig.queueServiceSecret=env(QUEUE_SERVICE_AUTH_TOKEN)' $CONFIG_FILE
 fi
 if [[ "" != "$ENABLE_TASK_QUEUE_DEQUEUE" ]]; then
   export ENABLE_TASK_QUEUE_DEQUEUE; yq -i '.delegateQueueServiceConfig.enableQueueAndDequeue=env(ENABLE_TASK_QUEUE_DEQUEUE)' $CONFIG_FILE
 fi
-
-
 
 if [[ "" != "$WORKERS" ]]; then
   IFS=',' read -ra WORKER_ITEMS <<< "$WORKERS"

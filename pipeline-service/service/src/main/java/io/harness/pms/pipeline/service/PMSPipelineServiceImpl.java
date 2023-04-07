@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
@@ -15,10 +16,12 @@ import static io.harness.pms.pipeline.MoveConfigOperationType.REMOTE_TO_INLINE;
 import static io.harness.pms.pipeline.service.PMSPipelineServiceStepHelper.LIBRARY;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 
 import io.harness.EntityType;
 import io.harness.PipelineSettingsService;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
@@ -51,6 +54,8 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.governance.PipelineSaveResponse;
@@ -81,6 +86,7 @@ import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.project.remote.ProjectClient;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.utils.PipelineGitXHelper;
@@ -138,6 +144,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PipelineValidationService pipelineValidationService;
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
+
+  @Inject private final AccountClient accountClient;
+  @Inject NGSettingsClient settingsClient;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -610,10 +619,33 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     return true;
   }
 
+  private boolean isForceDeleteEnabled(String accountIdentifier) {
+    try {
+      boolean isForceDeleteEnabledBySettings =
+          isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+      return isForceDeleteEnabledBySettings;
+    } catch (Exception e) {
+      log.error("Failed to fetch feature flag info for force delete ", e);
+      return false;
+    }
+  }
+
+  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
+    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
+  }
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
+    return parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(
+                                SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
+                            .getValue());
+  }
   @Override
   public boolean delete(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, Long version) {
-    validateSetupUsage(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+    if (!isForceDeleteEnabled(accountId)) {
+      validateSetupUsage(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+    }
     if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
       return deleteForOldGitSync(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     }

@@ -86,7 +86,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
     }
     cdExpressionResolver.updateExpressions(ambiance, configFiles);
 
-    JavaxValidator.validateOrThrow(new ConfigFileValidatorDTO(configFiles));
+    JavaxValidator.validateBeanOrThrow(new ConfigFileValidatorDTO(configFiles));
     checkForAccessOrThrow(ambiance, configFiles);
 
     final ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();

@@ -270,6 +270,8 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(githubPackagesArtifactConfig.getIdentifier())
         .primaryArtifact(githubPackagesArtifactConfig.isPrimaryArtifact())
         .versionRegex(githubPackagesArtifactConfig.getVersionRegex().getValue())
+        .metadata(useDelegateResponse ? getMetadata(githubPackagesArtifactDelegateResponse) : null)
+        .label(getLabels(githubPackagesArtifactDelegateResponse))
         .packageType(githubPackagesArtifactConfig.getPackageType().getValue())
         .build();
   }
@@ -473,6 +475,7 @@ public class ArtifactResponseToOutcomeMapper {
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
         .displayName(displayName)
+        .label(getLabels(artifactDelegateResponse))
         .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
         .build();
   }
@@ -607,6 +610,8 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.ACR.getDisplayName())
         .primaryArtifact(acrArtifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(acrArtifactConfig)))
+        .metadata(useDelegateResponse ? getMetadata(acrArtifactDelegateResponse) : null)
+        .label(getLabels(acrArtifactDelegateResponse))
         .dockerConfigJsonSecret(createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(acrArtifactConfig)))
         .build();
   }
@@ -691,6 +696,20 @@ public class ArtifactResponseToOutcomeMapper {
     return artifactDelegateResponse.getLabel();
   }
 
+  private Map<String, String> getLabels(GithubPackagesArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || EmptyPredicate.isEmpty(artifactDelegateResponse.getLabel())) {
+      return Collections.emptyMap();
+    }
+    return artifactDelegateResponse.getLabel();
+  }
+
+  private Map<String, String> getLabels(NexusArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || EmptyPredicate.isEmpty(artifactDelegateResponse.getLabel())) {
+      return Collections.emptyMap();
+    }
+    return artifactDelegateResponse.getLabel();
+  }
+
   private Map<String, String> getLabels(GarDelegateResponse artifactDelegateResponse) {
     if (artifactDelegateResponse == null || artifactDelegateResponse.getLabel() == null) {
       return Collections.emptyMap();
@@ -704,6 +723,13 @@ public class ArtifactResponseToOutcomeMapper {
       return Collections.emptyMap();
     }
     return gcrArtifactDelegateResponse.getLabel();
+  }
+
+  private Map<String, String> getLabels(AcrArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || EmptyPredicate.isEmpty(artifactDelegateResponse.getLabel())) {
+      return Collections.emptyMap();
+    }
+    return artifactDelegateResponse.getLabel();
   }
 
   private String getRegistryHostnameValue(ArtifactDelegateResponse artifactDelegateResponse) {

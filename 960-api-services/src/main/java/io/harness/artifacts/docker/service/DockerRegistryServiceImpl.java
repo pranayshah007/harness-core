@@ -477,7 +477,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
     }
   }
 
-  private String getToken(
+  public String getToken(
       DockerInternalConfig dockerConfig, Headers headers, DockerRegistryRestClient registryRestClient) {
     String authHeaderValue = headers.get(AUTHENTICATE_HEADER);
     if (!cachedBearerTokens.containsKey(authHeaderValue)) {

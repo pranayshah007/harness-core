@@ -43,6 +43,7 @@ import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -71,7 +72,6 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
-import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
@@ -575,7 +575,8 @@ public class CDStepHelper {
   }
 
   public String getFileContentAsBase64(Ambiance ambiance, String scopedFilePath, long allowedBytesFileSize) {
-    return EncodingUtils.encodeBase64(getFileContentAsString(ambiance, scopedFilePath, allowedBytesFileSize));
+    String content = getFileContentAsString(ambiance, scopedFilePath, allowedBytesFileSize);
+    return "${ngBase64Manager.encode(\"" + content + "\")}";
   }
 
   public String getFileContentAsString(Ambiance ambiance, final String scopedFilePath, long allowedBytesFileSize) {
@@ -819,6 +820,17 @@ public class CDStepHelper {
     }
 
     return Optional.of((ConfigFilesOutcome) configFilesOutcome.getOutcome());
+  }
+
+  public Optional<ServiceHooksOutcome> getServiceHooksOutcome(Ambiance ambiance) {
+    OptionalOutcome serviceHooksOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE_HOOKS));
+
+    if (!serviceHooksOutcome.isFound()) {
+      return Optional.empty();
+    }
+
+    return Optional.of((ServiceHooksOutcome) serviceHooksOutcome.getOutcome());
   }
 
   public InfrastructureOutcome getInfrastructureOutcome(Ambiance ambiance) {

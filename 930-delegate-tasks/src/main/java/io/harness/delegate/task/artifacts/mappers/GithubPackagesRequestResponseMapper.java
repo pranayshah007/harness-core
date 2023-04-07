@@ -103,6 +103,7 @@ public class GithubPackagesRequestResponseMapper {
         .versionRegex(request.getVersionRegex())
         .sourceType(ArtifactSourceType.GITHUB_PACKAGES)
         .packageUrl(buildDetails.getArtifactPath())
+        .label(buildDetails.getLabels())
         .build();
   }
 

@@ -71,7 +71,7 @@ public class WorkflowImportService implements ImportService {
   @Inject private MigrationTemplateUtils migrationTemplateUtils;
   @Inject @Named("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
 
-  public DiscoveryResult discover(String authToken, ImportDTO importConnectorDTO) {
+  public DiscoveryResult discover(ImportDTO importConnectorDTO) {
     WorkflowFilter filter = (WorkflowFilter) importConnectorDTO.getFilter();
     String accountId = importConnectorDTO.getAccountIdentifier();
     String appId = filter.getAppId();
@@ -114,7 +114,7 @@ public class WorkflowImportService implements ImportService {
 
   public void createWorkflowsAsPipeline(
       String authToken, ImportDTO importDTO, DiscoveryResult discoveryResult, SaveSummaryDTO summaryDTO) {
-    MigrationInputDTO inputDTO = MigratorUtility.getMigrationInput(importDTO);
+    MigrationInputDTO inputDTO = MigratorUtility.getMigrationInput(authToken, importDTO);
     List<MigratedDetails> stageTemplates = new ArrayList<>();
     stageTemplates.addAll(extractStageTemplates(summaryDTO.getNgYamlFiles(), summaryDTO.getAlreadyMigratedDetails()));
     stageTemplates.addAll(
@@ -126,19 +126,20 @@ public class WorkflowImportService implements ImportService {
       if (discoveryResult.getEntities().containsKey(cgEntityId)) {
         Workflow workflow = (Workflow) discoveryResult.getEntities().get(cgEntityId).getEntity();
         PipelineConfig config = getPipelineConfig(workflow, inputDTO, migratedDetails.getNgEntityDetail());
-        createPipeline(authToken, inputDTO, config);
+        createPipeline(inputDTO, config);
       }
     }
   }
 
-  private void createPipeline(String auth, MigrationInputDTO inputDTO, PipelineConfig pipelineConfig) {
+  private void createPipeline(MigrationInputDTO inputDTO, PipelineConfig pipelineConfig) {
     PmsClient pmsClient = MigratorUtility.getRestClient(pipelineServiceClientConfig, PmsClient.class);
     String yaml = YamlUtils.write(pipelineConfig);
     try {
       Response<ResponseDTO<PipelineSaveResponse>> resp =
           pmsClient
-              .createPipeline(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                  inputDTO.getProjectIdentifier(), RequestBody.create(MediaType.parse("application/yaml"), yaml))
+              .createPipeline(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                  inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                  RequestBody.create(MediaType.parse("application/yaml"), yaml))
               .execute();
       log.info("Workflow as pipeline creation Response details {} {}", resp.code(), resp.message());
       if (resp.code() >= 400) {
@@ -203,7 +204,7 @@ public class WorkflowImportService implements ImportService {
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(ngEntityDetail));
     templateLinkConfig.setTemplateInputs(
-        migrationTemplateUtils.getTemplateInputs(ngEntityDetail, workflow.getAccountId()));
+        migrationTemplateUtils.getTemplateInputs(ngEntityDetail, inputDTO.getDestinationAccountIdentifier()));
 
     TemplateStageNode templateStageNode = new TemplateStageNode();
     templateStageNode.setName(name);

@@ -13,7 +13,7 @@ import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveFieldsData;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;

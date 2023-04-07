@@ -184,7 +184,6 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
           accountId, extractOrganization(owner), extractProject(owner));
       return getDelegateTokenDetails(token.get(), true);
     }
-
     UpdateOperations<DelegateToken> updateOperations =
         persistence.createUpdateOperations(DelegateToken.class)
             .setOnInsert(DelegateTokenKeys.uuid, UUIDGenerator.generateUuid())
@@ -193,10 +192,15 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
             .set(DelegateTokenKeys.status, DelegateTokenStatus.ACTIVE)
             .set(DelegateTokenKeys.isNg, true)
             .set(DelegateTokenKeys.value, encodeBase64(Misc.generateSecretKey()));
-
+    String tokenIdentifier = getDefaultTokenName(owner);
     if (owner != null) {
       updateOperations.set(DelegateTokenKeys.owner, owner);
+      String orgId = DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(owner.getIdentifier());
+      String projectId = DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(owner.getIdentifier());
+      tokenIdentifier = String.format("%s_%s_%s", getDefaultTokenName(owner), orgId, projectId);
     }
+    updateOperations.set(DelegateTokenKeys.encryptedTokenId,
+        delegateTokenEncryptDecrypt.encrypt(accountId, getDefaultTokenName(owner), tokenIdentifier.trim()));
 
     DelegateToken delegateToken = persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
     log.info("Default Delegate NG Token inserted/updated for account {}, organization {} and project {}", accountId,

@@ -77,7 +77,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
   private final PlanCreationResponseBlobHelper planCreationResponseBlobHelper;
   private final PmsGitSyncHelper pmsGitSyncHelper;
   @Inject
-  public PlanCreatorService(@NotNull PipelineServiceInfoProvider pipelineServiceInfoProvider,
+  public PlanCreatorService(@NotNull PipelineServiceInfoDecorator pipelineServiceInfoProvider,
       @NotNull FilterCreatorService filterCreatorService, VariableCreatorService variableCreatorService,
       PlanCreationResponseBlobHelper planCreationResponseBlobHelper, PmsGitSyncHelper pmsGitSyncHelper) {
     this.planCreators = pipelineServiceInfoProvider.getPlanCreators();
@@ -271,6 +271,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
           if (!EmptyPredicate.isEmpty(executionInputTemplate)) {
             planForField.setExecutionInputTemplateInPlanNode(executionInputTemplate);
           }
+          PlanCreatorServiceHelper.decorateResponseWithRollbackModeBehaviour(dependency, planForField);
           PlanCreatorServiceHelper.decorateNodesWithStageFqn(field, planForField, ctx.getYamlVersion());
           PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(
               planForField, serviceName, field, currentNodeServiceAffinity);

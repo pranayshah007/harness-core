@@ -170,8 +170,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         validatePath(encryptedData.getPath(), encryptedData.getEncryptionType());
         break;
       case CustomSecretManagerValues:
-        // At the time of creation, ensure secret exist.
-        validateCustomSecretManagerPathValue(accountIdentifier, encryptedData, secretManager, secret.getValue());
         break;
       default:
         throw new RuntimeException("Secret value type is unknown");

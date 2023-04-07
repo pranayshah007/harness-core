@@ -117,5 +117,9 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
         SweepingOutputSecretFunctor.builder().mode(mode).simpleEncryption(new SimpleEncryption()).build();
 
     addFunctor("sweepingOutputSecrets", sweepingOutputSecretFunctor);
+
+    Base64ManagerFunctor base64ManagerFunctor =
+        Base64ManagerFunctor.builder().mode(mode).expressionFunctors(super.getExpressionFunctorMap().keySet()).build();
+    addFunctor("ngBase64Manager", base64ManagerFunctor);
   }
 }

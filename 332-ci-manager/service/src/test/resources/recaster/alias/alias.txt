@@ -231,6 +231,13 @@ io.harness.beans.steps.nodes.security.DataTheoremScanNode
 io.harness.beans.steps.stepinfo.security.ZapStepInfo
 io.harness.beans.steps.nodes.security.ReapsawScanNode
 io.harness.beans.steps.nodes.security.AquaTrivyScanNode
+io.harness.beans.steps.stepinfo.security.FossaStepInfo
+io.harness.beans.steps.stepinfo.security.GitLeaksStepInfo
+io.harness.beans.steps.nodes.security.FossaScanNode
+io.harness.beans.steps.nodes.security.CodeqlScanNode
+io.harness.beans.steps.stepinfo.security.CodeqlStepInfo
+io.harness.yaml.sto.variables.STOYamlCustomIngestConfig
+io.harness.beans.steps.nodes.security.GitLeaksScanNode
 io.harness.beans.steps.nodes.security.GrypeScanNode
 io.harness.beans.steps.stepinfo.security.SonarqubeStepInfo
 io.harness.beans.steps.stepinfo.security.TenableStepInfo

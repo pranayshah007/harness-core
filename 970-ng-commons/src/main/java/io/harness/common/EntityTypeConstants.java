@@ -90,11 +90,14 @@ public interface EntityTypeConstants {
   String BURP = "Burp";
   String CHECKMARX = "Checkmarx";
   String CLAIR = "Clair";
+  String CODEQL = "CodeQL";
   String DATA_THEOREM = "DataTheorem";
   String DOCKER_CONTENT_TRUST = "DockerContentTrust";
   String CUSTOM_INGEST = "CustomIngest";
   String EXTERNAL = "External";
   String FORTIFY_ON_DEMAND = "FortifyOnDemand";
+  String FOSSA = "Fossa";
+  String GIT_LEAKS = "GitLeaks";
   String GRYPE = "Grype";
   String JFROG_XRAY = "JfrogXray";
   String MEND = "Mend";

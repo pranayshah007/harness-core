@@ -9,6 +9,7 @@ package software.wings.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.utils.PhysicalDataCenterUtils.extractHostnameFromHost;
+import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
 import static io.harness.govern.Switch.noop;
 import static io.harness.shell.SshHelperUtils.normalizeError;
 import static io.harness.winrm.WinRmHelperUtils.buildErrorDetailsFromWinRmClientException;
@@ -30,6 +31,8 @@ import io.harness.logging.NoopExecutionCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionFactory;
+import io.harness.shell.ssh.SshFactory;
+import io.harness.shell.ssh.exception.SshClientException;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.ExecutionCredential;
@@ -113,8 +116,8 @@ public class HostValidationServiceImpl implements HostValidationService {
         hostValidationResponses.add(HostValidationResponse.Builder.aHostValidationResponse()
                                         .withHostName(hostNames.get(idx))
                                         .withStatus(ExecutionStatus.FAILED.name())
-                                        .withErrorCode(ErrorCode.UNKNOWN_ERROR.name())
-                                        .withErrorDescription(ErrorCode.UNKNOWN_ERROR.getDescription())
+                                        .withErrorCode(UNKNOWN_ERROR.name())
+                                        .withErrorDescription(UNKNOWN_ERROR.getDescription())
                                         .build());
       }
     }
@@ -165,8 +168,18 @@ public class HostValidationServiceImpl implements HostValidationService {
                                           .withStatus(ExecutionStatus.SUCCESS.name())
                                           .build();
     try {
-      Session sshSession = SshSessionFactory.getSSHSession(sshSessionConfig);
-      sshSession.disconnect();
+      if (sshSessionConfig.isUseSshClient()) {
+        SshFactory.getSshClient(sshSessionConfig).testConnection();
+      } else {
+        Session sshSession = SshSessionFactory.getSSHSession(sshSessionConfig);
+        sshSession.disconnect();
+      }
+    } catch (SshClientException ex) {
+      ErrorCode errorCode = ex.getCode() == null ? UNKNOWN_ERROR : ex.getCode();
+      response.setStatus(ExecutionStatus.FAILED.name());
+      response.setErrorCode(errorCode.name());
+      response.setErrorDescription(errorCode.getDescription());
+      log.error("Failed to validate Host: ", ex);
     } catch (JSchException jschEx) {
       ErrorCode errorCode = normalizeError(jschEx);
       response.setStatus(ExecutionStatus.FAILED.name());

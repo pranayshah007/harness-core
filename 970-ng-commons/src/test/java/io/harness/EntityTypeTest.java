@@ -235,6 +235,10 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(201, "AWS_SECURITY_HUB");
     entityTypeOrdinalMapping.put(202, "CUSTOM_INGEST");
     entityTypeOrdinalMapping.put(203, "BACKSTAGE_ENVIRONMENT_VARIABLE");
+    entityTypeOrdinalMapping.put(204, "FOSSA");
+    entityTypeOrdinalMapping.put(205, "CODEQL");
+    entityTypeOrdinalMapping.put(206, "GIT_LEAKS");
+
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }

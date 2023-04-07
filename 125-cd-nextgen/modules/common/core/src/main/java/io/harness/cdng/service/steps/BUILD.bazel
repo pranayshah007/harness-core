@@ -20,6 +20,7 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment/helper:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/gitops/constants:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/helpers:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/hooks/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/steps/outcome:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/steps/output:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/beans:module",

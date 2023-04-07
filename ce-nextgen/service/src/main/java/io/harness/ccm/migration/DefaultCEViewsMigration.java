@@ -121,7 +121,7 @@ public class DefaultCEViewsMigration implements NGMigration {
       ceView.setDataSources(Collections.emptyList());
     }
     if (Objects.isNull(ceView.getViewType())) {
-      ceView.setViewType(ViewType.CUSTOMER);
+      ceView.setViewType(ViewType.DEFAULT);
     }
   }
 }

@@ -244,7 +244,7 @@ public class ManifestOutcomeMapper {
         .skipResourceVersioning(helmChartManifest.getSkipResourceVersioning())
         .enableDeclarativeRollback(helmChartManifest.getEnableDeclarativeRollback())
         .commandFlags(helmChartManifest.getCommandFlags())
-        .subChartName(helmChartManifest.getSubChartName())
+        .subChartPath(helmChartManifest.getSubChartPath())
         .build();
   }
 

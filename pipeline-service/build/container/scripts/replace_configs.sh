@@ -378,6 +378,10 @@ if [[ "" != "$REDIS_TIMEOUT" ]]; then
   export REDIS_TIMEOUT; yq -i '.singleServerConfig.timeout=env(REDIS_TIMEOUT)' $REDISSON_CACHE_FILE
 fi
 
+if [[ "" != "$REDIS_SUBSCRIPTIONS_PER_CONNECTION" ]]; then
+  export REDIS_SUBSCRIPTIONS_PER_CONNECTION; yq -i '.singleServerConfig.subscriptionsPerConnection=env(REDIS_SUBSCRIPTIONS_PER_CONNECTION)' $REDISSON_CACHE_FILE
+fi
+
 yq -i 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then

@@ -1,11 +1,11 @@
 infrastructureDefinition:
-  name: aa
-  identifier: aa
+  name: name
+  identifier: identifier
   description: ""
   tags: {}
-  orgIdentifier: default
-  projectIdentifier: s
-  environmentRef: envvvv
+  orgIdentifier: orgId
+  projectIdentifier: projId
+  environmentRef: nonprodenv
   deploymentType: IncorrectDeploymentType
   type: KubernetesGcp
   spec:

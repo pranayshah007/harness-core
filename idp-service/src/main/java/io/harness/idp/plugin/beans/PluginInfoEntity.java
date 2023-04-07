@@ -18,6 +18,7 @@ import io.harness.spec.server.idp.v1.model.PluginInfo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -42,6 +43,7 @@ public class PluginInfoEntity implements PersistentEntity {
   @Builder.Default private boolean core = false;
   private String source;
   private String config;
+  @JsonProperty("environmentVariables") private List<String> envVariables;
   private String iconUrl;
   private String imageUrl;
   @JsonProperty("exports") private ExportsData exports;
