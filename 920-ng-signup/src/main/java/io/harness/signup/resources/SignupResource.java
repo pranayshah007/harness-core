@@ -73,6 +73,22 @@ public class SignupResource {
   }
 
   /**
+   * Follows the "complete marketplace sign up" path
+   *
+   * @param dto
+   * @return
+   */
+  // ! Added new endpoint because we may need to sign up w/o verification (Existing process)
+  // ! We also want to complete process for inviteId and marketPlace
+  @POST
+  @Path("/marketplace")
+  @PublicApi
+  public RestResponse<UserInfo> marketplaceSignup(
+      SignupDTO dto, @QueryParam("inviteId") String inviteId, @QueryParam("marketPlaceToken") String marketPlaceToken) {
+    return new RestResponse<>(signupService.marketplaceSignup(dto, inviteId, marketPlaceToken));
+  }
+
+  /**
    * Follows the "free trial sign up" path
    * Module type can be optional but by default we will always redirect to NG
    *

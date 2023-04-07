@@ -187,6 +187,35 @@ public class SignupServiceImpl implements SignupService {
     });
     return user;
   }
+  /**
+   * Signup in non email verification blocking flow
+   */
+  @Override
+  public UserInfo marketplaceSignup(SignupDTO dto, String inviteId, String marketPlaceToken) throws WingsException {
+    verifySignupDTO(dto);
+
+    dto.setEmail(dto.getEmail().toLowerCase());
+
+    AccountDTO account = createAccount(dto);
+    // ! Company name & account name are added to the user
+    UserInfo user = createUser(dto, account);
+    sendSucceedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), user,
+        SignupType.MARKETPLACE_PROVISION, account.getName(), referer, null, null);
+    executorService.submit(() -> {
+      SignupVerificationToken verificationToken = generateNewToken(user.getEmail());
+      // ! Double check that user does not need to verify email since they came from marketplace and had a token
+      // ! Their marketPlace record will have details for which product they have access to and we just need to
+      // ! complete signup (Add accountId to the marketPlace & inviteId collections)
+      try {
+        String url = generateVerifyUrl(user.getDefaultAccountId(), verificationToken.getToken(), dto.getEmail());
+        signupNotificationHelper.sendSignupNotification(
+            user, EmailType.VERIFY, PredefinedTemplate.EMAIL_VERIFY.getIdentifier(), url);
+      } catch (URISyntaxException e) {
+        log.error(VERIFY_URL_GENERATION_FAILED, e);
+      }
+    });
+    return user;
+  }
 
   /**
    * Signup in non email verification blocking flow
