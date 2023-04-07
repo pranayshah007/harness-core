@@ -60,6 +60,7 @@ import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
+import io.harness.cvng.utils.ScopedInformation;
 import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.persistence.HPersistence;
@@ -605,5 +606,12 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                                       .endTime(endTime.getEpochSecond())
                                       .build()));
     orchestrationService.queueAnalysis(verificationTaskId, startTime, endTime);
+  }
+
+  @Override
+  public String getScopedIdentifier(ServiceLevelIndicator serviceLevelIndicator) {
+    return ScopedInformation.getScopedInformation(serviceLevelIndicator.getAccountId(),
+        serviceLevelIndicator.getOrgIdentifier(), serviceLevelIndicator.getProjectIdentifier(),
+        serviceLevelIndicator.getIdentifier());
   }
 }
