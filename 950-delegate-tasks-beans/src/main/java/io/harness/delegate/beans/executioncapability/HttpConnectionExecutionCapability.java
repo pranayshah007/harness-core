@@ -13,6 +13,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.beans.KeyValuePair;
 
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 import lombok.Builder;
@@ -81,7 +82,7 @@ public class HttpConnectionExecutionCapability implements ExecutionCapability {
       uriBuilder.setPort(port);
     }
     if (isNotBlank(path)) {
-      uriBuilder.setPath('/' + path);
+      uriBuilder.setPath(Paths.get('/' + path).normalize().toString());
     }
     if (isNotBlank(query)) {
       uriBuilder.setCustomQuery(query);
