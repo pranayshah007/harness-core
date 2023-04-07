@@ -34,6 +34,10 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- end }}
       initContainers:
+
+
+
+      {{- if .Values.global.database.mongo.installed }}
       - name: wait-for-mongo
         image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
         {{- if .Values.waitForInitContainer.resources }}
@@ -46,6 +50,7 @@ spec:
         args:
           - "pod"
           - "-lapp=mongodb-replicaset"
+      {{- end }}
       - name: wait-for-timescale
         image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
         {{- if .Values.waitForInitContainer.resources }}
@@ -98,15 +103,15 @@ spec:
             - name: TIMESCALEDB_USERNAME
               value: postgres
             - name: MONGO_URI
-              value: {{ include "harnesscommon.database.mongo" (dict "database" "harness" "context" $) }}
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness" "context" $) }}
             - name: EVENTS_MONGO_URI
-              value: {{ include "harnesscommon.database.mongo" (dict "database" "events" "context" $) }}
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "events" "context" $) }}
             - name: PMS_MONGO_URI
-              value: {{ include "harnesscommon.database.mongo" (dict "database" "pms-harness" "context" $) }}
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "pms-harness" "context" $) }}
             - name: CDC_MONGO_URI
-              value: {{ include "harnesscommon.database.mongo" (dict "database" "change-data-capture" "context" $) }}
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "change-data-capture" "context" $) }}
             - name: NG_HARNESS_MONGO_URI
-              value: {{ include "harnesscommon.database.mongo" (dict "database" "ng-harness" "context" $) }}
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "ng-harness" "context" $) }}
             - name: TIMESCALEDB_URI
               value: 'jdbc:postgresql://timescaledb-single-chart.{{ .Release.Namespace }}:5432/harness'
             {{- if .Values.extraEnvVars }}
