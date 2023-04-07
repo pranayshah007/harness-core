@@ -2425,7 +2425,7 @@ public class K8sTaskHelperBase {
         return renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(),
             getManifestDirectoryForHelmChartWithSubCharts(manifestFilesDirectory, helmChartManifest),
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, helmChartManifest.getHelmVersion(),
-            timeoutInMillis, helmChartManifest.getHelmCommandFlag(), helmChartManifest.getSubChartName());
+            timeoutInMillis, helmChartManifest.getHelmCommandFlag(), helmChartManifest.getSubChartPath());
 
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
@@ -2911,7 +2911,7 @@ public class K8sTaskHelperBase {
 
   public List<FileData> renderTemplateForHelm(String helmPath, String manifestFilesDirectory, List<String> valuesFiles,
       String releaseName, String namespace, LogCallback executionLogCallback, HelmVersion helmVersion,
-      long timeoutInMillis, HelmCommandFlag helmCommandFlag, String subChartName) throws Exception {
+      long timeoutInMillis, HelmCommandFlag helmCommandFlag, String subChartPath) throws Exception {
     String valuesFileOptions = createValuesFileOptions(manifestFilesDirectory, valuesFiles, executionLogCallback);
     log.info("Values file options: " + valuesFileOptions);
 
@@ -2934,9 +2934,8 @@ public class K8sTaskHelperBase {
             new HelmClientException(getErrorMessageIfProcessFailed("Failed to render template. ", processResult), USER,
                 HelmCliCommandType.RENDER_CHART));
       }
-      int index = isEmpty(subChartName)
-          ? -1
-          : helmTaskHelperBase.checkForDependencyUpdateFlag(helmCommandFlag.getValueMap(), processResult.outputUTF8());
+      int index =
+          helmTaskHelperBase.checkForDependencyUpdateFlag(helmCommandFlag.getValueMap(), processResult.outputUTF8());
       result.add(
           FileData.builder()
               .fileName("manifest.yaml")
@@ -3090,10 +3089,10 @@ public class K8sTaskHelperBase {
   private String getManifestDirectoryForHelmChartWithSubCharts(
       String baseManifestDirectory, HelmChartManifestDelegateConfig helmChartManifest) {
     String manifestDir = getManifestDirectoryForHelmChart(baseManifestDirectory, helmChartManifest);
-    if (isEmpty(helmChartManifest.getSubChartName())) {
+    if (isEmpty(helmChartManifest.getSubChartPath())) {
       return manifestDir;
     }
-    return Paths.get(manifestDir, "charts", helmChartManifest.getSubChartName()).toString();
+    return Paths.get(manifestDir, helmChartManifest.getSubChartPath()).toString();
   }
 
   @NotNull

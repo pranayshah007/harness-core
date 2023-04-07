@@ -827,6 +827,8 @@ io.harness.cdng.infra.beans.K8sAwsInfraMapping
 io.harness.cdng.hooks.ServiceHook
 io.harness.cdng.hooks.ServiceHookWrapper
 io.harness.cdng.hooks.ServiceHookOutcome
+io.harness.cdng.hooks.steps.ServiceHooksOutcome
+io.harness.cdng.hooks.steps.ServiceHooksMetadataSweepingOutput
 io.harness.cdng.tas.TasRouteType
 io.harness.cdng.tas.TasRouteMappingStepInfo
 io.harness.cdng.tas.TasRouteMappingStepParameters

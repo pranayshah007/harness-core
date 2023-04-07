@@ -183,8 +183,8 @@ public class InfraMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     if (yamlFile.isExists()) {
       return MigrationImportSummaryDTO.builder()
           .errors(Collections.singletonList(
@@ -209,7 +209,10 @@ public class InfraMigrationService extends NgMigrationService {
                                                .yaml(getYamlString(yamlFile))
                                                .build();
     Response<ResponseDTO<ConnectorResponseDTO>> resp =
-        ngClient.createInfrastructure(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(infraReqDTO)).execute();
+        ngClient
+            .createInfrastructure(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                JsonUtils.asTree(infraReqDTO))
+            .execute();
     log.info("Infrastructure creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }

@@ -40,6 +40,7 @@ import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
 import io.harness.ci.license.impl.CILicenseServiceImpl;
 import io.harness.ci.logserviceclient.CILogServiceClientModule;
+import io.harness.ci.plugin.CiPluginStepInfoProvider;
 import io.harness.ci.tiserviceclient.TIServiceClientModule;
 import io.harness.ci.validation.CIAccountValidationService;
 import io.harness.ci.validation.CIAccountValidationServiceImpl;
@@ -71,7 +72,9 @@ import io.harness.grpc.client.AbstractManagerGrpcClientModule;
 import io.harness.grpc.client.ManagerGrpcClientModule;
 import io.harness.iacmserviceclient.IACMServiceClientModule;
 import io.harness.impl.scm.ScmServiceClientImpl;
+import io.harness.licensing.CILicenseUsageImpl;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
+import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
@@ -79,6 +82,7 @@ import io.harness.mongo.MongoPersistence;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.opaclient.OpaClientModule;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.project.ProjectClientModule;
 import io.harness.redis.RedisConfig;
@@ -111,6 +115,8 @@ import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
+import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.jackson.Jackson;
@@ -237,6 +243,7 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(CILicenseService.class).to(CILicenseServiceImpl.class).in(Singleton.class);
     bind(CIOverviewDashboardService.class).to(CIOverviewDashboardServiceImpl.class);
     bind(CICacheManagementService.class).to(CICacheManagementServiceImpl.class);
+    bind(LicenseUsageInterface.class).to(CILicenseUsageImpl.class);
     bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
     bind(GithubService.class).to(GithubServiceImpl.class);
     bind(GitlabService.class).to(GitlabServiceImpl.class);
@@ -269,6 +276,9 @@ public class CIManagerServiceModule extends AbstractModule {
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
     bind(AwsClient.class).to(AwsClientImpl.class);
+    Multibinder<PluginInfoProvider> pluginInfoProviderMultibinder =
+        Multibinder.newSetBinder(binder(), new TypeLiteral<PluginInfoProvider>() {});
+    pluginInfoProviderMultibinder.addBinding().to(CiPluginStepInfoProvider.class);
     registerEventListeners();
     try {
       bind(TimeScaleDBService.class)

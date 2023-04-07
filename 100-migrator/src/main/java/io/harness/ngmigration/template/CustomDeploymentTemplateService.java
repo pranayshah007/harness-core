@@ -20,6 +20,7 @@ import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.plancreator.customDeployment.CustomDeploymentExecutionConfig;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.serializer.JsonUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import software.wings.beans.template.Template;
@@ -27,6 +28,7 @@ import software.wings.beans.template.deploymenttype.CustomDeploymentTypeTemplate
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -87,15 +89,22 @@ public class CustomDeploymentTemplateService implements NgTemplateService {
           (k, v) -> { attributes.add(CustomDeploymentInstanceAttributes.builder().name(k).jsonPath(v).build()); });
     }
 
-    Map<String, Object> infrastructureSpec =
+    Builder<String, Object> infrastructureSpec =
         ImmutableMap.<String, Object>builder()
             .put("variables", variables)
-            .put("fetchInstancesScript", ImmutableMap.of("store", storeConfigWrapper))
             .put("instanceAttributes", attributes)
-            .put("instancesListPath", customDeploymentTypeTemplate.getHostObjectArrayPath())
-            .build();
-    return JsonPipelineUtils.asTree(ImmutableMap.of("infrastructure", infrastructureSpec, "execution",
-        CustomDeploymentExecutionConfig.builder().stepTemplateRefs(new ArrayList<>()).build()));
+            .put("instancesListPath", customDeploymentTypeTemplate.getHostObjectArrayPath());
+
+    if (storeConfigWrapper != null) {
+      infrastructureSpec.put(
+          "fetchInstancesScript", ImmutableMap.<String, Object>builder().put("store", storeConfigWrapper).build());
+    }
+
+    return JsonUtils.asTree(
+        ImmutableMap.<String, Object>builder()
+            .put("infrastructure", JsonPipelineUtils.asTree(infrastructureSpec.build()))
+            .put("execution", CustomDeploymentExecutionConfig.builder().stepTemplateRefs(new ArrayList<>()).build())
+            .build());
   }
 
   @Override

@@ -14,6 +14,7 @@ import static java.util.stream.Collectors.toList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -127,9 +128,10 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
       throw new InvalidArgumentsException("Parameter serverInstanceInfoList cannot be null or empty");
     }
     if (!((infrastructureOutcome instanceof K8sDirectInfrastructureOutcome)
-            || (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome))) {
+            || (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome)
+            || (infrastructureOutcome instanceof K8sAwsInfrastructureOutcome))) {
       throw new InvalidArgumentsException(Pair.of("infrastructureOutcome",
-          "Must be instance of K8sDirectInfrastructureOutcome or K8sGcpInfrastructureOutcome"));
+          "Must be instance of K8sDirectInfrastructureOutcome, K8sGcpInfrastructureOutcome or K8sAwsInfrastructureOutcome"));
     }
     if (!(serverInstanceInfoList.get(0) instanceof K8sServerInstanceInfo)) {
       throw new InvalidArgumentsException(Pair.of("serverInstanceInfo", "Must be instance of K8sServerInstanceInfo"));

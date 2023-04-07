@@ -20,11 +20,14 @@ import static io.harness.cdng.visitor.YamlTypes.ENVIRONMENT_YAML;
 import static io.harness.cdng.visitor.YamlTypes.K8S_MANIFEST;
 import static io.harness.cdng.visitor.YamlTypes.MANIFEST_CONFIG;
 import static io.harness.cdng.visitor.YamlTypes.MANIFEST_LIST_CONFIG;
+import static io.harness.cdng.visitor.YamlTypes.POST_HOOK;
+import static io.harness.cdng.visitor.YamlTypes.PRE_HOOK;
 import static io.harness.cdng.visitor.YamlTypes.PRIMARY;
 import static io.harness.cdng.visitor.YamlTypes.ROLLBACK_STEPS;
 import static io.harness.cdng.visitor.YamlTypes.SERVICE_CONFIG;
 import static io.harness.cdng.visitor.YamlTypes.SERVICE_DEFINITION;
 import static io.harness.cdng.visitor.YamlTypes.SERVICE_ENTITY;
+import static io.harness.cdng.visitor.YamlTypes.SERVICE_HOOKS;
 import static io.harness.cdng.visitor.YamlTypes.SIDECAR;
 import static io.harness.cdng.visitor.YamlTypes.SIDECARS;
 import static io.harness.cdng.visitor.YamlTypes.SPEC;
@@ -319,12 +322,13 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
   private static final List<String> ASG_CATEGORY = Arrays.asList(ASG);
 
-  private static final Set<String> EMPTY_FILTER_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
-      CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
-      CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, STEP_GROUP, EXECUTION);
+  private static final Set<String> EMPTY_FILTER_IDENTIFIERS =
+      Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG, CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS,
+          ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS, CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY,
+          MANIFEST_LIST_CONFIG, STEP_GROUP, EXECUTION, SERVICE_HOOKS, PRE_HOOK, POST_HOOK);
   private static final Set<String> EMPTY_VARIABLE_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
       CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
-      CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG);
+      CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, SERVICE_HOOKS, PRE_HOOK, POST_HOOK);
   private static final Set<String> EMPTY_SIDECAR_TYPES =
       Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME, DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME,
           ARTIFACTORY_REGISTRY_NAME, ECR_NAME, GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME,

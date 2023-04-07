@@ -378,6 +378,7 @@ public enum FeatureName {
   STO_STEP_PALETTE_BURP_ENTERPRISE("Enable Burp Enterpise step for STO", HarnessTeam.STO),
 
   STO_STEP_PALETTE_CODEQL("Enable CodeQL step for STO", HarnessTeam.STO),
+  STO_STEP_PALETTE_GIT_LEAKS("Enable GitLeaks step for STO", HarnessTeam.STO),
 
   DONT_ENABLE_STO_STEP_PALETTE_V3(
       "Enable the rest of STO Steps Q2 2023 and beyond, NOT READY for use in PRODUCTION", HarnessTeam.STO),
@@ -706,7 +707,8 @@ public enum FeatureName {
   CDS_NG_CONFIG_FILE_EXPRESSION(
       "Enable Harness variable rendering in Hanress config files (SSH/WinRM)", HarnessTeam.CDP),
   CDS_TERRAFORM_S3_NG("Enables storing Terraform config, backend and var files in S3", HarnessTeam.CDP),
-  CDS_HTTP_STEP_NG_CERTIFICATE("Allow enforce SSL/TLS certificate in NG HTTP step", HarnessTeam.CDC);
+  CDS_HTTP_STEP_NG_CERTIFICATE("Allow enforce SSL/TLS certificate in NG HTTP step", HarnessTeam.CDC),
+  SRM_ENABLE_JIRA_INTEGRATION("Enable Jira integration in CVNG Verify step UI", HarnessTeam.CV);
 
   @Deprecated
   FeatureName() {

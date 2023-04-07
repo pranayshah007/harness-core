@@ -203,8 +203,26 @@ ciExecutionServiceConfig:
         image: harness/blackduckhub-job-runner
       - product: brakeman_default
         image: harness/brakeman-job-runner
-      - product: customingest_.*
+      - product: custom_.*
         image: harness/sto-plugin
+        entrypoint:
+          - /bin/sto_plugin
+          - "--run-strategy"
+          - single-container
+      - product: codeql_.*
+        image: harness/sto-plugin
+        entrypoint:
+          - /bin/sto_plugin
+          - "--run-strategy"
+          - single-container
+      - product: gitleaks_.*
+        image: harness/sto-plugin
+        entrypoint:
+          - /bin/sto_plugin
+          - "--run-strategy"
+          - single-container
+      - product: fossa
+        image: harness/fossa-job-runner
       - product: grype_default
         image: harness/grype-job-runner
       - product: nmap_.*
@@ -214,7 +232,7 @@ ciExecutionServiceConfig:
       - product: metasploit_.*
         image: harness/sto-plugin
       - product: owasp_default
-        image: harness/owasp-job-runner
+        image: harness/owasp-dependency-check-job-runner
       - product: snyk_default
         image: harness/snyk-job-runner
       - product: sonarqube_default

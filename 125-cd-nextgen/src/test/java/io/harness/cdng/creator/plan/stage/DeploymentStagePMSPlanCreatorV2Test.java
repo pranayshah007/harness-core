@@ -174,14 +174,15 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap =
         deploymentStagePMSPlanCreator.createPlanForChildrenNodes(ctx, node);
 
-    assertThat(planCreationResponseMap).hasSize(10);
+    assertThat(planCreationResponseMap).hasSize(11);
     assertThat(planCreationResponseMap.values()
                    .stream()
                    .map(PlanCreationResponse::getPlanNode)
                    .filter(Objects::nonNull)
                    .map(PlanNode::getIdentifier)
                    .collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder("provisioner", "service", "infrastructure", "artifacts", "manifests", "configFiles");
+        .containsExactlyInAnyOrder(
+            "provisioner", "service", "infrastructure", "artifacts", "manifests", "configFiles", "hooks");
   }
 
   @Test

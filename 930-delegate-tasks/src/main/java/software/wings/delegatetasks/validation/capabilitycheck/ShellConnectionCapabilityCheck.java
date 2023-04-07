@@ -20,6 +20,7 @@ import io.harness.delegate.task.winrm.WinRmSession;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
+import io.harness.shell.ssh.SshFactory;
 
 import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.delegatetasks.validation.capabilities.ShellConnectionCapability;
@@ -28,7 +29,6 @@ import software.wings.service.intfc.security.SecretManagementDelegateService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import com.jcraft.jsch.JSchException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -90,7 +90,11 @@ public class ShellConnectionCapabilityCheck implements CapabilityCheck {
   }
 
   @VisibleForTesting
-  void performTest(SshSessionConfig expectedSshConfig) throws JSchException {
-    getSSHSession(expectedSshConfig).disconnect();
+  void performTest(SshSessionConfig expectedSshConfig) throws Exception {
+    if (expectedSshConfig.isUseSshClient()) {
+      SshFactory.getSshClient(expectedSshConfig).testConnection();
+    } else {
+      getSSHSession(expectedSshConfig).disconnect();
+    }
   }
 }

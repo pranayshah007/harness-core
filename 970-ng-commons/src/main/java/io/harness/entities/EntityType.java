@@ -570,7 +570,13 @@ public enum EntityType {
       ModuleType.STO, EntityTypeConstants.CUSTOM_INGEST, IdentifierRef.class, EntityYamlRootNames.CUSTOM_INGEST),
   @JsonProperty(EntityTypeConstants.BACKSTAGE_ENVIRONMENT_VARIABLE)
   BACKSTAGE_ENVIRONMENT_VARIABLE(
-      ModuleType.IDP, EntityTypeConstants.BACKSTAGE_ENVIRONMENT_VARIABLE, IdentifierRef.class);
+      ModuleType.IDP, EntityTypeConstants.BACKSTAGE_ENVIRONMENT_VARIABLE, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.FOSSA)
+  FOSSA(ModuleType.STO, EntityTypeConstants.FOSSA, IdentifierRef.class, EntityYamlRootNames.FOSSA),
+  @JsonProperty(EntityTypeConstants.CODEQL)
+  CODEQL(ModuleType.STO, EntityTypeConstants.CODEQL, IdentifierRef.class, EntityYamlRootNames.CODEQL),
+  @JsonProperty(EntityTypeConstants.GIT_LEAKS)
+  GIT_LEAKS(ModuleType.STO, EntityTypeConstants.GIT_LEAKS, IdentifierRef.class, EntityYamlRootNames.GIT_LEAKS);
 
   private final ModuleType moduleType;
   String yamlName;

@@ -42,6 +42,7 @@ public interface StepSpecTypeConstants {
   String INIT_CONTAINER_STEP = "InitContainer";
   String RUN_CONTAINER_STEP = "RunContainer";
   String INIT_CONTAINER_STEP_V2 = "InitializeContainer";
+  //  String INIT_CONTAINER_STEP_V2 = "InitContainer";
 
   String APPROVAL_FACILITATOR = "APPROVAL_FACILITATOR";
   String RESOURCE_RESTRAINT_FACILITATOR_TYPE = "RESOURCE_RESTRAINT";

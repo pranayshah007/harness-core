@@ -270,13 +270,12 @@ public class DiscoveryService {
         discoveryResult.getRoot(), migratedEntities, leafTracker);
   }
 
-  public SaveSummaryDTO migrateEntity(String auth, MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
+  public SaveSummaryDTO migrateEntities(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
     YamlGenerationDetails generationDetails = migrateEntity(inputDTO, discoveryResult);
-    return createEntities(auth, inputDTO, generationDetails);
+    return createEntities(inputDTO, generationDetails);
   }
 
-  private SaveSummaryDTO createEntities(
-      String auth, MigrationInputDTO inputDTO, YamlGenerationDetails generationDetails) {
+  private SaveSummaryDTO createEntities(MigrationInputDTO inputDTO, YamlGenerationDetails generationDetails) {
     List<NGYamlFile> ngYamlFiles = generationDetails.getYamlFileList();
     List<NGSkipDetail> skipDetails = generationDetails.getSkipDetails();
     NGClient ngClient = MigratorUtility.getRestClient(ngClientConfig, NGClient.class);
@@ -299,7 +298,7 @@ public class DiscoveryService {
         NgMigrationService ngMigration = migrationFactory.getMethod(file.getType());
         if (!file.isExists()) {
           MigrationImportSummaryDTO importSummaryDTO =
-              ngMigration.migrate(auth, ngClient, pmsClient, templateClient, inputDTO, file);
+              ngMigration.migrate(ngClient, pmsClient, templateClient, inputDTO, file);
           if (importSummaryDTO != null && importSummaryDTO.isSuccess()) {
             summaryDTO.getStats().get(file.getType()).incrementSuccessfullyMigrated();
             summaryDTO.getSuccessfullyMigratedDetails().add(MigratedDetails.builder()

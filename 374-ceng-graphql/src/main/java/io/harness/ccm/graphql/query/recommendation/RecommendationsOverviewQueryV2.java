@@ -24,6 +24,7 @@ import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_VIEW;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
+import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.ViewsQueryHelper.getPerspectiveIdFromMetadataFilter;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_HOURLY_AGGREGRATED;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_HOURLY_AGGREGRATED_CH;
@@ -62,6 +63,7 @@ import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewIdOperator;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.graphql.QLCEView;
+import io.harness.ccm.views.graphql.QLCEViewFieldInput;
 import io.harness.ccm.views.graphql.QLCEViewFilter;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewMetadataFilter;
@@ -98,7 +100,10 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -146,6 +151,7 @@ public class RecommendationsOverviewQueryV2 {
   private static final Set<String> CLOUD_SERVICE_INSTANCE_TYPES =
       ImmutableSet.of(ECS_TASK_EC2.name(), ECS_TASK_FARGATE.name());
   private static final String DEFAULT_CLUSTER_VIEW_NAME = "Cluster";
+  public static final long ONE_DAY_MILLIS = 86400000;
 
   private static final Gson GSON = new Gson();
 
@@ -271,11 +277,13 @@ public class RecommendationsOverviewQueryV2 {
   public void markRecommendationAsApplied(@GraphQLArgument(name = "recommendationId") String recommendationId,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    HashMap<String, CEViewShortHand> allowedRecommendationsIdAndPerspectives =
-        listAllowedRecommendationsIdAndPerspectives(accountId);
-    if (!allowedRecommendationsIdAndPerspectives.containsKey(recommendationId)) {
-      throw new NGAccessDeniedException(
-          String.format(PERMISSION_MISSING_MESSAGE, PERSPECTIVE_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
+    if (!rbacHelper.hasPerspectiveViewOnAllResources(accountId, null, null)) {
+      HashMap<String, CEViewShortHand> allowedRecommendationsIdAndPerspectives =
+          listAllowedRecommendationsIdAndPerspectives(accountId);
+      if (!allowedRecommendationsIdAndPerspectives.containsKey(recommendationId)) {
+        throw new NGAccessDeniedException(
+            String.format(PERMISSION_MISSING_MESSAGE, PERSPECTIVE_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
+      }
     }
     recommendationService.updateRecommendationState(recommendationId, RecommendationState.APPLIED);
   }
@@ -817,6 +825,7 @@ public class RecommendationsOverviewQueryV2 {
         Condition condition = getRbacPerspectiveIndividualCondition(
             Collections.singletonList(
                 QLCEViewFilterWrapper.builder()
+                    .timeFilter(getDefaultTimeFilter())
                     .viewMetadataFilter(
                         QLCEViewMetadataFilter.builder().viewId(perspective.getUuid()).isPreview(false).build())
                     .build()),
@@ -855,5 +864,28 @@ public class RecommendationsOverviewQueryV2 {
     Condition condition = getValidRecommendationFilter();
     final Condition perspectiveCondition = getPerspectiveCondition(perspectiveFilters, accountId);
     return condition.and(perspectiveCondition);
+  }
+
+  private QLCEViewTimeFilter getDefaultTimeFilter() {
+    // Impact of adding this filter would be that restricted user
+    // will be able to see 30 days old recommendations only
+    return QLCEViewTimeFilter.builder()
+        .field(QLCEViewFieldInput.builder()
+                   .fieldId("startTime")
+                   .fieldName("startTime")
+                   .identifier(ViewFieldIdentifier.COMMON)
+                   .identifierName(ViewFieldIdentifier.COMMON.getDisplayName())
+                   .build())
+        .operator(AFTER)
+        .value(getStartOfLastMonth())
+        .build();
+  }
+
+  private long getStartOfLastMonth() {
+    // We will show recommendations up till last 30 days
+    ZoneId zoneId = ZoneId.of("GMT");
+    LocalDate today = LocalDate.now(zoneId);
+    ZonedDateTime zdtStart = today.atStartOfDay(zoneId);
+    return (zdtStart.toEpochSecond() * 1000) - 30 * ONE_DAY_MILLIS;
   }
 }

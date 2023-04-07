@@ -711,10 +711,62 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
+  public void testGetDockerDelegateRequestTagAsNull() {
+    DockerHubArtifactConfig dockerHubArtifactConfig = DockerHubArtifactConfig.builder()
+                                                          .imagePath(ParameterField.createValueField("IMAGE"))
+                                                          .tag(ParameterField.createValueField(null))
+                                                          .tagRegex(ParameterField.createValueField(null))
+                                                          .build();
+    DockerConnectorDTO connectorDTO = DockerConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    DockerArtifactDelegateRequest dockerDelegateRequest = ArtifactConfigToDelegateReqMapper.getDockerDelegateRequest(
+        dockerHubArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(dockerDelegateRequest.getDockerConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(dockerDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(dockerDelegateRequest.getImagePath()).isEqualTo(dockerHubArtifactConfig.getImagePath().getValue());
+    assertThat(dockerDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.DOCKER_REGISTRY);
+    assertThat(dockerDelegateRequest.getTagsList()).isNull();
+    assertThat(dockerDelegateRequest.getTagRegex()).isEqualTo(ACCEPT_ALL_REGEX);
+    assertThat(dockerDelegateRequest.getShouldFetchDockerV2DigestSHA256()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
   public void testGetGitHubDelegateRequestTagAsRegex() {
     GithubPackagesArtifactConfig githubPackagesArtifactConfig =
         GithubPackagesArtifactConfig.builder()
             .version(ParameterField.createValueField(ACCEPT_ALL_REGEX))
+            .packageName(ParameterField.createValueField("PACKAGE"))
+            .packageType(ParameterField.createValueField("type"))
+            .org(ParameterField.createValueField("org"))
+            .build();
+    GithubConnectorDTO connectorDTO = GithubConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    GithubPackagesArtifactDelegateRequest githubPackagesArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getGithubPackagesDelegateRequest(
+            githubPackagesArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(githubPackagesArtifactDelegateRequest.getGithubConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(githubPackagesArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(githubPackagesArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.GITHUB_PACKAGES);
+    assertThat(githubPackagesArtifactDelegateRequest.getPackageName()).isNotNull();
+    assertThat(githubPackagesArtifactDelegateRequest.getPackageType()).isEqualTo("type");
+    assertThat(githubPackagesArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(githubPackagesArtifactDelegateRequest.getVersionRegex()).isEqualTo("*");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetGitHubDelegateRequestTagAsNull() {
+    GithubPackagesArtifactConfig githubPackagesArtifactConfig =
+        GithubPackagesArtifactConfig.builder()
+            .version(ParameterField.createValueField(null))
+            .versionRegex(ParameterField.createValueField(null))
             .packageName(ParameterField.createValueField("PACKAGE"))
             .packageType(ParameterField.createValueField("type"))
             .org(ParameterField.createValueField("org"))
@@ -766,6 +818,34 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
+  public void testGetAzureDelegateRequestTagAsNull() {
+    AzureArtifactsConfig azureArtifactsConfig = AzureArtifactsConfig.builder()
+                                                    .packageName(ParameterField.createValueField("PACKAGE"))
+                                                    .packageType(ParameterField.createValueField("type"))
+                                                    .project(ParameterField.createValueField("project"))
+                                                    .feed(ParameterField.createValueField("feed"))
+                                                    .version(ParameterField.createValueField(null))
+                                                    .versionRegex(ParameterField.createValueField(""))
+                                                    .build();
+    AzureArtifactsConnectorDTO connectorDTO = AzureArtifactsConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    AzureArtifactsDelegateRequest azureArtifactsDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getAzureArtifactsDelegateRequest(
+            azureArtifactsConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(azureArtifactsDelegateRequest.getAzureArtifactsConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(azureArtifactsDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(azureArtifactsDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.AZURE_ARTIFACTS);
+    assertThat(azureArtifactsDelegateRequest.getPackageName()).isNotNull();
+    assertThat(azureArtifactsDelegateRequest.getPackageType()).isEqualTo("type");
+    assertThat(azureArtifactsDelegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(azureArtifactsDelegateRequest.getVersionRegex()).isEqualTo("*");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
   public void testGetAMIDelegateRequestTagAsRegex() {
     AMIArtifactConfig amiArtifactConfig =
         AMIArtifactConfig.builder()
@@ -792,6 +872,33 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
+  public void testGetAMIDelegateRequestTagAsNull() {
+    AMIArtifactConfig amiArtifactConfig =
+        AMIArtifactConfig.builder()
+            .version(ParameterField.createValueField(null))
+            .versionRegex(ParameterField.createValueField(null))
+            .region(ParameterField.createValueField("IMAGE"))
+            .filters(ParameterField.createValueField(
+                Collections.singletonList(AMIFilter.builder().name("test").value("test").build())))
+            .tags(ParameterField.createValueField(
+                Collections.singletonList(AMITag.builder().name("name").value("test").build())))
+            .build();
+    AwsConnectorDTO connectorDTO = AwsConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    AMIArtifactDelegateRequest amiArtifactDelegateRequest = ArtifactConfigToDelegateReqMapper.getAMIDelegateRequest(
+        amiArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(amiArtifactDelegateRequest.getAwsConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(amiArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(amiArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.AMI);
+    assertThat(amiArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(amiArtifactDelegateRequest.getVersionRegex()).isEqualTo("*");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
   public void testGetJenkinsDelegateRequestTagAsRegex() {
     JenkinsArtifactConfig jenkinsArtifactConfig = JenkinsArtifactConfig.builder()
                                                       .artifactPath(ParameterField.createValueField("ARTIFACT"))
@@ -813,6 +920,31 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(jenkinsArtifactDelegateRequest.getJobName()).isEqualTo(jenkinsArtifactConfig.getJobName().getValue());
     assertThat(jenkinsArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(jenkinsArtifactDelegateRequest.getBuildNumber()).isEqualTo("");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetJenkinsDelegateRequestTagAsNull() {
+    JenkinsArtifactConfig jenkinsArtifactConfig = JenkinsArtifactConfig.builder()
+                                                      .artifactPath(ParameterField.createValueField("ARTIFACT"))
+                                                      .jobName(ParameterField.createValueField("JOB"))
+                                                      .build(ParameterField.createValueField(null))
+                                                      .build();
+    JenkinsConnectorDTO connectorDTO = JenkinsConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getJenkinsDelegateRequest(
+            jenkinsArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(jenkinsArtifactDelegateRequest.getJenkinsConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(jenkinsArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(jenkinsArtifactDelegateRequest.getArtifactPaths())
+        .isEqualTo(Arrays.asList(jenkinsArtifactConfig.getArtifactPath().getValue()));
+    assertThat(jenkinsArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.JENKINS);
+    assertThat(jenkinsArtifactDelegateRequest.getJobName()).isEqualTo(jenkinsArtifactConfig.getJobName().getValue());
+    assertThat(jenkinsArtifactDelegateRequest.getBuildNumber()).isNull();
   }
 
   @Test
@@ -881,6 +1013,43 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
+  public void testGetCustomDelegateRequestTagAsNull() {
+    CustomArtifactConfig customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .version(ParameterField.createValueField(null))
+            .versionRegex(ParameterField.createValueField(null))
+            .scripts(CustomArtifactScripts.builder()
+                         .fetchAllArtifacts(
+                             FetchAllArtifacts.builder()
+                                 .artifactsArrayPath(ParameterField.createValueField("results"))
+                                 .versionPath(ParameterField.createValueField("version"))
+                                 .shellScriptBaseStepInfo(
+                                     CustomArtifactScriptInfo.builder()
+                                         .source(CustomArtifactScriptSourceWrapper.builder()
+                                                     .type("Inline")
+                                                     .spec(CustomScriptInlineSource.builder()
+                                                               .script(ParameterField.createValueField("echo test"))
+                                                               .build())
+                                                     .build())
+                                         .build())
+                                 .build())
+                         .build())
+            .build();
+
+    CustomArtifactDelegateRequest customArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+    assertThat(customArtifactDelegateRequest.getArtifactsArrayPath()).isEqualTo("results");
+    assertThat(customArtifactDelegateRequest.getVersionPath()).isEqualTo("version");
+    assertThat(customArtifactDelegateRequest.getScript()).isEqualTo("echo test");
+    assertThat(customArtifactDelegateRequest.getVersionRegex()).isEqualTo("");
+    assertThat(customArtifactDelegateRequest.getVersion()).isNull();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
   public void testGetGCRDelegateRequestTagAsRegex() {
     GcrArtifactConfig gcrArtifactConfig = GcrArtifactConfig.builder()
                                               .imagePath(ParameterField.createValueField("IMAGE"))
@@ -890,14 +1059,37 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
-    GcrArtifactDelegateRequest amiArtifactDelegateRequest = ArtifactConfigToDelegateReqMapper.getGcrDelegateRequest(
+    GcrArtifactDelegateRequest gcrDelegateRequest = ArtifactConfigToDelegateReqMapper.getGcrDelegateRequest(
         gcrArtifactConfig, connectorDTO, encryptedDataDetailList, "");
 
-    assertThat(amiArtifactDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
-    assertThat(amiArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
-    assertThat(amiArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.GCR);
-    assertThat(amiArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
-    assertThat(amiArtifactDelegateRequest.getTagRegex()).isEqualTo(".*?");
+    assertThat(gcrDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(gcrDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(gcrDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.GCR);
+    assertThat(gcrDelegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(gcrDelegateRequest.getTagRegex()).isEqualTo(".*?");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetGCRDelegateRequestTagAsNUll() {
+    GcrArtifactConfig gcrArtifactConfig = GcrArtifactConfig.builder()
+                                              .imagePath(ParameterField.createValueField("IMAGE"))
+                                              .tag(ParameterField.createValueField(null))
+                                              .registryHostname(ParameterField.createValueField("host"))
+                                              .build();
+    GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    GcrArtifactDelegateRequest gcrDelegateRequest = ArtifactConfigToDelegateReqMapper.getGcrDelegateRequest(
+        gcrArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(gcrDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(gcrDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(gcrDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.GCR);
+    assertThat(gcrDelegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(gcrDelegateRequest.getTagRegex()).isEqualTo(ACCEPT_ALL_REGEX);
+    assertThat(gcrDelegateRequest.getTag()).isNull();
   }
 
   @Test
@@ -926,6 +1118,31 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
+  public void testGetGARDelegateRequestRegexTagAsNull() {
+    GoogleArtifactRegistryConfig garArtifactInfo = GoogleArtifactRegistryConfig.builder()
+                                                       .region(ParameterField.createValueField("region"))
+                                                       .version(ParameterField.createValueField(null))
+                                                       .versionRegex(ParameterField.createValueField(null))
+                                                       .repositoryName(ParameterField.createValueField("repo"))
+                                                       .pkg(ParameterField.createValueField("pkg"))
+                                                       .project(ParameterField.createValueField("project"))
+                                                       .build();
+    GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    GarDelegateRequest amiArtifactDelegateRequest = ArtifactConfigToDelegateReqMapper.getGarDelegateRequest(
+        garArtifactInfo, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(amiArtifactDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(amiArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(amiArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY);
+    assertThat(amiArtifactDelegateRequest.getVersionRegex()).isEqualTo("/*");
+    assertThat(amiArtifactDelegateRequest.getVersion()).isNull();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
   public void testGetECRDelegateRequestTagAsRegex() {
     EcrArtifactConfig ecrArtifactConfig = EcrArtifactConfig.builder()
                                               .region(ParameterField.createValueField("region"))
@@ -942,6 +1159,29 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ECR);
     assertThat(delegateRequest.getTagRegex()).isEqualTo("*");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetECRDelegateRequestTagAsNull() {
+    EcrArtifactConfig ecrArtifactConfig = EcrArtifactConfig.builder()
+                                              .region(ParameterField.createValueField("region"))
+                                              .tag(ParameterField.createValueField(null))
+                                              .tagRegex(ParameterField.createValueField(null))
+                                              .imagePath(ParameterField.createValueField("image"))
+                                              .build();
+    AwsConnectorDTO connectorDTO = AwsConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    EcrArtifactDelegateRequest delegateRequest = ArtifactConfigToDelegateReqMapper.getEcrDelegateRequest(
+        ecrArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(delegateRequest.getAwsConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ECR);
+    assertThat(delegateRequest.getTagRegex()).isEqualTo(ACCEPT_ALL_REGEX);
+    assertThat(delegateRequest.getTag()).isNull();
   }
 
   @Test
@@ -983,6 +1223,44 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
+  public void testGetNexusDelegateRequestTagAsNull() {
+    NexusRegistryDockerConfig nexusRegistryDockerConfig =
+        NexusRegistryDockerConfig.builder()
+            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .repositoryPort(ParameterField.createValueField("TEST_REPO"))
+            .build();
+
+    NexusRegistryArtifactConfig artifactConfig =
+        NexusRegistryArtifactConfig.builder()
+            .repository(ParameterField.createValueField("TEST_REPO"))
+            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
+            .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
+            .tag(ParameterField.createValueField(null))
+            .tagRegex(ParameterField.createValueField(null))
+            .build();
+    NexusConnectorDTO connectorDTO = NexusConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    NexusArtifactDelegateRequest delegateRequest = ArtifactConfigToDelegateReqMapper.getNexusArtifactDelegateRequest(
+        artifactConfig, connectorDTO, encryptedDataDetailList, "");
+    nexusRegistryDockerConfig = (NexusRegistryDockerConfig) artifactConfig.getNexusRegistryConfigSpec();
+
+    assertThat(delegateRequest.getNexusConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(delegateRequest.getRepositoryName()).isEqualTo(artifactConfig.getRepository().getValue());
+    assertThat(delegateRequest.getRepositoryFormat()).isEqualTo(RepositoryFormat.docker.name());
+    assertThat(delegateRequest.getRepositoryPort()).isEqualTo(nexusRegistryDockerConfig.getRepositoryPort().getValue());
+    assertThat(delegateRequest.getArtifactRepositoryUrl()).isNull();
+    assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(delegateRequest.getArtifactPath()).isEqualTo(nexusRegistryDockerConfig.getArtifactPath().getValue());
+    assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.NEXUS3_REGISTRY);
+    assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(delegateRequest.getTagRegex()).isEqualTo(ACCEPT_ALL_REGEX);
+    assertThat(delegateRequest.getTag()).isNull();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
   public void testGetNexusDelegateRequestTagAsRegexNonDocker() {
     NexusRegistryNpmConfig nexusRegistryNpmConfig =
         NexusRegistryNpmConfig.builder().packageName(ParameterField.createValueField("package")).build();
@@ -1008,6 +1286,38 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.NEXUS2_REGISTRY);
     assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(delegateRequest.getTagRegex()).isEqualTo(".*?");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetNexusDelegateRequestTagAsNullNonDocker() {
+    NexusRegistryNpmConfig nexusRegistryNpmConfig =
+        NexusRegistryNpmConfig.builder().packageName(ParameterField.createValueField("package")).build();
+
+    Nexus2RegistryArtifactConfig artifactConfig =
+        Nexus2RegistryArtifactConfig.builder()
+            .repository(ParameterField.createValueField("TEST_REPO"))
+            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.npm.name()))
+            .nexusRegistryConfigSpec(nexusRegistryNpmConfig)
+            .tag(ParameterField.createValueField(null))
+            .tagRegex(ParameterField.createValueField(null))
+            .build();
+    NexusConnectorDTO connectorDTO = NexusConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    NexusArtifactDelegateRequest delegateRequest = ArtifactConfigToDelegateReqMapper.getNexus2ArtifactDelegateRequest(
+        artifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(delegateRequest.getNexusConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(delegateRequest.getRepositoryName()).isEqualTo(artifactConfig.getRepository().getValue());
+    assertThat(delegateRequest.getRepositoryFormat()).isEqualTo(RepositoryFormat.npm.name());
+    assertThat(delegateRequest.getArtifactRepositoryUrl()).isNull();
+    assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.NEXUS2_REGISTRY);
+    assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(delegateRequest.getTagRegex()).isEqualTo(ACCEPT_ALL_REGEX);
+    assertThat(delegateRequest.getTag()).isNull();
   }
 
   @Test
@@ -1043,6 +1353,38 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
+  public void testGetArtifactoryDelegateRequestTagAsNull() {
+    ArtifactoryRegistryArtifactConfig artifactConfig =
+        ArtifactoryRegistryArtifactConfig.builder()
+            .repository(ParameterField.createValueField("TEST_REPO"))
+            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
+            .repositoryUrl(ParameterField.createValueField("harness-repo.jfrog.io"))
+            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .tag(ParameterField.createValueField(null))
+            .tagRegex(ParameterField.createValueField(null))
+            .build();
+    ArtifactoryConnectorDTO connectorDTO = ArtifactoryConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    ArtifactoryArtifactDelegateRequest delegateRequest =
+        (ArtifactoryArtifactDelegateRequest) ArtifactConfigToDelegateReqMapper.getArtifactoryArtifactDelegateRequest(
+            artifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(delegateRequest.getArtifactoryConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(delegateRequest.getRepositoryName()).isEqualTo(artifactConfig.getRepository().getValue());
+    assertThat(delegateRequest.getRepositoryFormat()).isEqualTo(RepositoryFormat.docker.name());
+    assertThat(delegateRequest.getArtifactRepositoryUrl()).isEqualTo(artifactConfig.getRepositoryUrl().getValue());
+    assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(delegateRequest.getArtifactPath()).isEqualTo(artifactConfig.getArtifactPath().getValue());
+    assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY);
+    assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(delegateRequest.getTagRegex()).isEqualTo(ACCEPT_ALL_REGEX);
+    assertThat(delegateRequest.getTag()).isNull();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
   public void testGetAcrDelegateRequestWithTagAsRegex() {
     AcrArtifactConfig acrArtifactConfig =
         AcrArtifactConfig.builder()
@@ -1065,5 +1407,34 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(acrDelegateRequest.getRegistry()).isEqualTo(acrArtifactConfig.getRegistry().getValue());
     assertThat(acrDelegateRequest.getRepository()).isEqualTo(acrArtifactConfig.getRepository().getValue());
     assertThat(acrDelegateRequest.getTagRegex()).isEqualTo(".*?");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetAcrDelegateRequestWithTagAsNull() {
+    AcrArtifactConfig acrArtifactConfig =
+        AcrArtifactConfig.builder()
+            .subscriptionId(ParameterField.createValueField("123456-6543-3456-654321"))
+            .registry(ParameterField.createValueField("AZURE_CR"))
+            .repository(ParameterField.createValueField("library/testapp"))
+            .tag(ParameterField.createValueField(null))
+            .tagRegex(ParameterField.createValueField(ACCEPT_ALL_REGEX))
+            .build();
+    AzureConnectorDTO connectorDTO = AzureConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    AcrArtifactDelegateRequest acrDelegateRequest =
+        (AcrArtifactDelegateRequest) ArtifactConfigToDelegateReqMapper.getAcrDelegateRequest(
+            acrArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(acrDelegateRequest.getAzureConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(acrDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(acrDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ACR);
+    assertThat(acrDelegateRequest.getSubscription()).isEqualTo(acrArtifactConfig.getSubscriptionId().getValue());
+    assertThat(acrDelegateRequest.getRegistry()).isEqualTo(acrArtifactConfig.getRegistry().getValue());
+    assertThat(acrDelegateRequest.getRepository()).isEqualTo(acrArtifactConfig.getRepository().getValue());
+    assertThat(acrDelegateRequest.getTagRegex()).isEqualTo(ACCEPT_ALL_REGEX);
+    assertThat(acrDelegateRequest.getTag()).isEqualTo("");
   }
 }

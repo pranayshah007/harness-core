@@ -65,6 +65,7 @@ import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.project.remote.ProjectClient;
+import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.service.remote.ServiceResourceClient;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
 import io.harness.spec.server.idp.v1.model.EntitiesForImport;
@@ -195,6 +196,9 @@ public class OnboardingServiceImpl implements OnboardingService {
     connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo,
         onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), initialFileToPush);
 
+    io.harness.security.dto.UserPrincipal userPrincipalFromContext =
+        (io.harness.security.dto.UserPrincipal) SourcePrincipalContextBuilder.getSourcePrincipal();
+
     saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType);
     saveStatusInfo(accountIdentifier, StatusType.ONBOARDING.name(), StatusInfo.CurrentStatusEnum.COMPLETED,
         STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED);
@@ -203,6 +207,8 @@ public class OnboardingServiceImpl implements OnboardingService {
 
     log.info("Starting async operations for remaining entities import");
     new Thread(() -> {
+      SourcePrincipalContextBuilder.setSourcePrincipal(userPrincipalFromContext);
+
       List<String> filesToPush = new ArrayList<>();
       List<String> locationTargets = new ArrayList<>();
 
