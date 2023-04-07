@@ -32,9 +32,9 @@ public class PipelineRollbackStageHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testAddPipelineRollbackStageDependency() throws IOException {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
-    String stages = "- stage: {}\n" +
-            "- stage: {}\n" +
-            "- stage: {}\n";
+    String stages = "- stage: {}\n"
+        + "- stage: {}\n"
+        + "- stage: {}\n";
     YamlField stagesYamlField = YamlUtils.readTree(stages);
     PipelineRollbackStageHelper.addPipelineRollbackStageDependency(planCreationResponseMap, stagesYamlField);
     assertThat(planCreationResponseMap).hasSize(1);
